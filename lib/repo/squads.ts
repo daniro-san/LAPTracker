@@ -1,6 +1,6 @@
 // member_squads and squad_reads (D117): the squads the tracker saw, stored append-only, and the nightly
 // read's own record. Plain reads and writes; the rules are in lib/squads-read.ts and lib/squads.ts.
-import { and, asc, desc, eq, isNull, lt, or } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, lt, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyRosters } from "../schema";
@@ -175,6 +175,45 @@ export async function allLatestSquads(
     .from(s)
     .where(eq(s.unionId, unionId))
     .orderBy(asc(s.uid), asc(s.squad), desc(s.readAt), desc(s.id));
+}
+
+/** One squad number's newest stored row of a member: its might and when the tracker saw it. */
+export interface SquadSighting {
+  uid: number;
+  squad: number;
+  power: number;
+  seenAt: Date | null;
+}
+
+/**
+ * Each (member, squad number) pair's newest stored row in the alliance, might and seen time only (no
+ * heroes, no troops). A recursive read that walks `member_squads_latest_idx` backwards: one index descent
+ * per pair, which lands on that pair's newest row, so it grows with the pairs, not the rows (D149).
+ */
+export async function latestSquadSightings(db: Db, unionId: number): Promise<SquadSighting[]> {
+  const result = await db.execute<{
+    uid: string;
+    squad: number;
+    power: string;
+    seen_at: string | Date | null;
+  }>(sql`
+    with recursive newest as (
+      (select uid, squad, power, seen_at from member_squads where union_id = ${unionId}
+       order by uid desc, squad desc, read_at desc, id desc limit 1)
+      union all
+      select n.* from newest p cross join lateral (
+        select s.uid, s.squad, s.power, s.seen_at from member_squads s
+        where s.union_id = ${unionId} and (s.uid, s.squad) < (p.uid, p.squad)
+        order by s.uid desc, s.squad desc, s.read_at desc, s.id desc limit 1
+      ) n
+    )
+    select uid::text, squad, power::text, seen_at from newest`);
+  return result.rows.map((r) => ({
+    uid: Number(r.uid),
+    squad: r.squad,
+    power: Number(r.power),
+    seenAt: r.seen_at === null ? null : new Date(r.seen_at),
+  }));
 }
 
 const heroesOf = (squad: SquadInput): StoredHero[] =>

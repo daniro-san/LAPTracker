@@ -6,8 +6,16 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
-import { dailyReads, dailyRosters, memberFacts } from "../schema";
-import { playerHistory } from "../schema-squads";
+import {
+  allianceSnapshots,
+  dailyReads,
+  dailyRosters,
+  events,
+  memberFacts,
+  memberSnapshots,
+  snapshots,
+} from "../schema";
+import { memberSquads, playerHistory } from "../schema-squads";
 import { requireWorkspace } from "./access";
 import { insightsView } from "./insights";
 import { createSession } from "./session";
@@ -58,6 +66,48 @@ async function roster(day: string, unionId: number, uids: number[], raw = false)
   });
 }
 
+/** Signed in as an officer of a new "ogs" workspace. */
+async function officer() {
+  await saveWorkspace(db, {
+    unionId: OURS,
+    slug: "ogs",
+    discordGuildId: "1",
+    leaderRoleIds: ["2"],
+  });
+  const ws = await findWorkspaceBySlug(db, "ogs");
+  const userId = await recordSignIn(db, ws?.id ?? 0, "ogs-ana", "Ana", NOW);
+  const { token } = await createSession(db, ws?.id ?? 0, userId, NOW, null, "officer");
+  const access = await requireWorkspace(db, "ogs", { get: () => ({ value: token }) }, NOW);
+  if (!access.ok) throw new Error("no access");
+  return access;
+}
+
+/** A scheduled event of `unionId` with Start and End rows: uid → [might before, might after]. */
+async function kvk(at: Date, unionId: number, might: Record<number, [number, number]>) {
+  const [event] = await db
+    .insert(events)
+    .values({ name: "Saturday", eventAtUtc: at, allianceIds: [unionId], beforeAt: at, afterAt: at })
+    .returning({ id: events.id });
+  for (const [i, phase] of (["before", "after"] as const).entries()) {
+    const [snap] = await db
+      .insert(snapshots)
+      .values({ eventId: event?.id ?? 0, phase, startedAt: at, status: "complete" })
+      .returning({ id: snapshots.id });
+    const [row] = await db
+      .insert(allianceSnapshots)
+      .values({ snapshotId: snap?.id ?? 0, unionId, source: "v1", isFresh: true })
+      .returning({ id: allianceSnapshots.id });
+    await db.insert(memberSnapshots).values(
+      Object.entries(might).map(([uid, p]) => ({
+        allianceSnapshotId: row?.id ?? 0,
+        uid: Number(uid),
+        name: `P${uid}`,
+        power: p[i] ?? null,
+      })),
+    );
+  }
+}
+
 describe("the Insights read (issue 489)", () => {
   it("finds where joiners came from and leavers went, leaves a member on a break out, and shows no private field", async () => {
     await saveWorkspace(db, {
@@ -106,5 +156,42 @@ describe("the Insights read (issue 489)", () => {
     expect(view.effort?.leftOut).toEqual({ fresh: 2, away: 1, noMight: 0 });
     expect(view.effort?.members).toBe(4);
     expect(JSON.stringify(view)).not.toMatch(/98765|54321|1763337600|last_?online/);
+  });
+
+  it("reads our KvKs' might and each squad's newest sighting, and nothing of another alliance", async () => {
+    const access = await officer();
+    await roster("2026-11-14", OURS, [101, 102, 103], true);
+    await roster("2026-11-15", OURS, [101, 102, 103], true);
+    // Roster might is uid × 100k: 101 is at 10.1M now, after 20M before and 5M after.
+    await kvk(new Date("2026-11-14T14:00:00Z"), OURS, { 101: [20_000_000, 5_000_000] });
+    await kvk(new Date("2026-11-14T15:00:00Z"), FERN, { 101: [1, 1] });
+    const squad = (uid: number, n: number, power: number, at: string) => ({
+      unionId: OURS,
+      uid,
+      squad: n,
+      power,
+      heroes: [],
+      seenAt: new Date(at),
+      readAt: new Date(at),
+    });
+    await db
+      .insert(memberSquads)
+      .values([
+        squad(101, 1, 9_000_000, "2026-11-18T10:00:00Z"),
+        squad(101, 1, 9_500_000, "2026-11-20T10:00:00Z"),
+        squad(101, 2, 7_000_000, "2026-11-20T10:00:00Z"),
+        squad(102, 1, 4_000_000, "2026-11-16T10:00:00Z"),
+        { ...squad(103, 1, 1, "2026-11-20T10:00:00Z"), unionId: FERN },
+      ]);
+
+    const view = await insightsView(db, access, NOW, ZONE);
+
+    expect(view.kvk).toHaveLength(1);
+    expect(view.kvk[0]).toMatchObject({ members: 1, before: 20_000_000, after: 5_000_000 });
+    expect(view.kvk[0]?.help).toEqual([{ uid: 101, name: "P101" }]);
+    // 101: 2 squads, seen 2 h ago; 102: 1 squad, 4 days ago; 103's only row is another alliance's.
+    expect(view.squads).toMatchObject({ counts: [1, 1, 0], none: 1, fresh: [1, 0, 1] });
+    // Fewer than 4 members with squads make no might groups.
+    expect(view.squads?.bands).toEqual([]);
   });
 });

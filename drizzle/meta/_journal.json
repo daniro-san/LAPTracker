@@ -470,6 +470,13 @@
       "when": 1795281569453,
       "tag": "0066_roll_call_marks_call_written",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795284665681,
+      "tag": "0067_member_squads_latest",
+      "breakpoints": true
     }
   ]
 }

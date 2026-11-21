@@ -9,12 +9,15 @@ import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import type { Db } from "../db";
 import { sightingsElsewhere } from "../queries/roster-stays";
 import { allianceLabels, type AllianceLabel } from "../repo/alliances";
-import { endOfDayReads, firstSeenDays } from "../repo/workspace-rosters";
+import { latestSquadSightings } from "../repo/squads";
+import { endOfDayReads, firstSeenDays, scheduledEventMight } from "../repo/workspace-rosters";
 import { serverDay } from "../schedule";
 import { playerHistory } from "../schema-squads";
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
 import { awayUntil } from "./fact-fields";
+import { featureOn } from "./features";
+import { kvkOf, type KvkEvent } from "./insights-kvk";
 import {
   bandsOf,
   cameFrom,
@@ -34,6 +37,7 @@ import {
   type Place,
   type PulseView,
 } from "./insights-rules";
+import { squadsCoverageOf, type SquadsCoverage } from "./insights-squads";
 import { factsOf } from "./member-facts";
 import { isNewMember } from "./member-week";
 
@@ -69,6 +73,10 @@ export interface InsightsView {
     firstRead: string;
     newcomers: ReturnType<typeof newcomersOf>;
   } | null;
+  /** KvK cost and recovery: the newest scheduled events inside the reads, the newest first. */
+  kvk: KvkEvent[];
+  /** Squads seen, counts only; null with the squads read turned off (D126). */
+  squads: SquadsCoverage | null;
   labels: Map<number, AllianceLabel>;
   /** The newest read's members, for the thanks sheet's "Add someone else". */
   roster: { uid: number; name: string }[];
@@ -103,16 +111,9 @@ async function historyTags(db: Db, access: WorkspaceAccess, uids: number[], zone
 type Reads = Awaited<ReturnType<typeof endOfDayReads>>;
 type Facts = Awaited<ReturnType<typeof factsOf>>;
 
-/** Effort in each quarter of might; new members and members on a break are left out (D75). */
-function effortPart(
-  reads: Reads,
-  firstSeen: Map<number, string>,
-  oldest: string,
-  facts: Facts,
-  today: string,
-): InsightsView["effort"] {
-  const newest = reads.at(-1) as Reads[number];
-  const away = new Set(
+/** The newest read's members on a break (an officer's status or an away note that still runs). */
+function awayOf(newest: Reads[number], facts: Facts, today: string): Set<number> {
+  return new Set(
     newest.members
       .filter((m) => {
         const f = facts.get(m.uid);
@@ -120,6 +121,16 @@ function effortPart(
       })
       .map((m) => m.uid),
   );
+}
+
+/** Effort in each quarter of might; new members and members on a break are left out (D75). */
+function effortPart(
+  reads: Reads,
+  firstSeen: Map<number, string>,
+  oldest: string,
+  away: Set<number>,
+): InsightsView["effort"] {
+  const newest = reads.at(-1) as Reads[number];
   const fresh = new Set(
     newest.members
       .filter((m) => !away.has(m.uid) && isNewMember(firstSeen.get(m.uid), oldest, newest.day))
@@ -208,16 +219,41 @@ export async function insightsView(
   ]);
   const newest = reads.at(-1);
   if (!newest)
-    return { newest: null, pulse: null, effort: null, flow: null, labels: new Map(), roster: [] };
+    return {
+      newest: null,
+      pulse: null,
+      effort: null,
+      flow: null,
+      kvk: [],
+      squads: null,
+      labels: new Map(),
+      roster: [],
+    };
   const oldest = [...firstSeen.values()].reduce((a, b) => (b < a ? b : a), newest.day);
   const pulse = pulseView(reads);
   const weeks = (pulse?.weeks ?? []).map((w) => w.monday);
-  const { flow, labels } = await flowPart(db, access, reads, weeks, firstSeen, oldest, zone);
+  const squadsOn = featureOn(access, "squads");
+  const away = awayOf(newest, facts, serverDay(now, { SERVER_TZ: zone }));
+  // Events from the day before the oldest read: their End read may sit on that read's day.
+  const since = new Date(Date.parse(`${addDays(reads[0]?.day ?? newest.day, -1)}T00:00:00Z`));
+  const [{ flow, labels }, events, sightings] = await Promise.all([
+    flowPart(db, access, reads, weeks, firstSeen, oldest, zone),
+    scheduledEventMight(db, access.unionId, since),
+    squadsOn ? latestSquadSightings(db, access.unionId) : [],
+  ]);
   return {
     newest: newest.day,
     pulse,
-    effort: effortPart(reads, firstSeen, oldest, facts, serverDay(now, { SERVER_TZ: zone })),
+    effort: effortPart(reads, firstSeen, oldest, away),
     flow,
+    kvk: kvkOf(events, reads, zone, away),
+    squads: squadsOn
+      ? squadsCoverageOf(
+          newest.members.map((m) => m.uid),
+          sightings,
+          now,
+        )
+      : null,
     labels,
     roster: newest.members.map((m) => ({ uid: m.uid, name: m.name })),
   };

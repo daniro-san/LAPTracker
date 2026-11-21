@@ -11,7 +11,7 @@ import { withNoData } from "./NoData";
 import type { ShareThanksProps } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
 
-function Card({
+export function Card({
   id,
   title,
   based,
@@ -103,7 +103,7 @@ function Days({ metric, noData }: { metric: PulseMetricWords; noData: string }) 
   );
 }
 
-function Sub({ children }: { children: ReactNode }) {
+export function Sub({ children }: { children: ReactNode }) {
   return <h3 className="mt-3 text-body-sm font-semibold">{children}</h3>;
 }
 

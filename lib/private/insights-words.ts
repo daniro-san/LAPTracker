@@ -1,13 +1,13 @@
 // The Insights page's words (issue 489), pure: each section's numbers as the rows its HTML bars draw (D68:
 // labels and numbers in HTML beside every bar) and the lines that say what the section rests on. A missing
 // number is "—" (NONE), drawn as the NoData mark; never 0.
-import { compactLarge } from "../compact";
 import { fill, isolate } from "../copy";
 import type { AllianceLabel } from "../repo/alliances";
 import { calendarDates } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import { NONE } from "./fact-text";
 import type { InsightsView } from "./insights";
+import { compact, counted, percent, whole, type Formats } from "./insights-format";
 import {
   EFFORT_METRICS,
   EFFORT_MIN_READS,
@@ -61,19 +61,6 @@ export interface InsightsWords {
   } | null;
 }
 
-type Formats = { t: WorkspaceDictionary; language: WorkspaceLanguage };
-
-function counted(t: WorkspaceDictionary, key: string, n: number, language: string, vars = {}) {
-  const form = new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
-  return fill(t[`${key}.${form}` as WorkspaceKey], { n, ...vars });
-}
-
-const whole = (n: number, language: string) =>
-  new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(n);
-const compact = (n: number, language: string) =>
-  Math.abs(n) < 1000 ? whole(n, language) : compactLarge(n, language);
-const percent = (x: number, language: string) =>
-  new Intl.NumberFormat(language, { style: "percent", maximumFractionDigits: 0 }).format(x);
 const signedPercent = (x: number, language: string) =>
   new Intl.NumberFormat(language, {
     style: "percent",
