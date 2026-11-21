@@ -63,4 +63,4 @@
 - A write that changes squads targets or creates a rehearsal outside the tick must call `ctx.wakeCache.forget()`.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/524
