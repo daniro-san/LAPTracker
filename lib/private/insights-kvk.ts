@@ -1,0 +1,152 @@
+// The Insights page's KvK cost and recovery (issue 489, section 3), pure: for each recent scheduled event,
+// the alliance's might at its Start and End reads and now, and the share of the loss back on each
+// end-of-day read after it; for the newest, each member's loss and how far they are back, and "Took a heavy
+// hit — maybe offer help". Only members in both event reads and in the newest read are counted, so a member
+// who joined after the event or left since never moves the numbers. A null might is left out (D15, D75).
+// Help, never blame: the list is in name order with no number beside a name, leaves out members on a break
+// (D75), and tests the whole percents the page shows, so a name never sits beside "now 80%".
+import type { EventMight, RosterRead } from "../repo/workspace-rosters";
+import { addDays, dayIn } from "./calendar-time";
+
+/** Events shown: about a month of Saturdays inside the page's 36 reads. */
+export const KVK_EVENTS = 4;
+/** Recovery reads shown per event, at most: the week until the next one. */
+export const RECOVERY_READS = 7;
+/** "A heavy hit": lost more than this share of their might in the event. */
+export const HEAVY_LOSS = 0.25;
+/** …and still below this share of their might before it. */
+export const HELP_BELOW = 0.8;
+
+export interface KvkMember {
+  uid: number;
+  name: string;
+  /** Share of their Start might lost by the End (negative: grew). */
+  lost: number;
+  /** Their might now as a share of their Start might. */
+  back: number;
+}
+
+export interface KvkEvent {
+  at: Date;
+  /** The event's server day. */
+  day: string;
+  /**
+   * The read "now" is taken from: the newest for the newest event; for an older one, its last recovery
+   * read before the next event, so a later KvK's loss never shows as this one's.
+   */
+  nowDay: string;
+  /** Members counted: in the Start, End and "now" reads, with a might in each. */
+  members: number;
+  /** Members of the "now" read not counted: joined since, missing from one event read, or no might. */
+  others: number;
+  /** In both event reads but not in the "now" read: left since. */
+  left: number;
+  before: number;
+  after: number;
+  now: number;
+  /** Each read from the day after, for a week until the next event: the share of the loss back (null: nothing lost). */
+  days: { day: string; share: number | null }[];
+  /** The newest event only: every counted member in name order, and who might want help. */
+  people: KvkMember[];
+  help: { uid: number; name: string }[];
+}
+
+const sum = (list: readonly number[]) => list.reduce((a, b) => a + b, 0);
+
+/** The share of the loss from `before` to `after` that `then` has back; null when nothing was lost. */
+const recovered = (before: number, after: number, then: number) =>
+  before > after ? (then - after) / (before - after) : null;
+
+function eventOf(
+  e: EventMight,
+  next: EventMight | undefined,
+  reads: readonly RosterRead[],
+  zone: string,
+  newest: { event: boolean; away: ReadonlySet<number> },
+): KvkEvent | null {
+  const day = dayIn(zone, e.at.getTime());
+  // From the server day after the event (its own read only repeats the End read), for at most a week:
+  // a next KvK whose End failed is not in `events`, so the week also ends the window.
+  const later = reads
+    .filter(
+      (r) =>
+        r.day > day && r.day < addDays(day, 7) && r.at > e.afterAt && (!next || r.at < next.at),
+    )
+    .slice(0, RECOVERY_READS);
+  const last = (newest.event ? reads.at(-1) : (later.at(-1) ?? reads.at(-1))) as RosterRead;
+  const nowOf = new Map(last.members.flatMap((m) => (m.power === null ? [] : [[m.uid, m]])));
+  const both = [...e.before].flatMap(([uid, b]) => {
+    const a = e.after.get(uid);
+    return b && a !== null && a !== undefined ? [{ uid, before: b, after: a }] : [];
+  });
+  const counted = both.flatMap((m) => {
+    const now = nowOf.get(m.uid);
+    return now ? [{ ...m, name: now.name, now: now.power as number }] : [];
+  });
+  if (counted.length === 0) return null;
+  const inCount = new Set(counted.map((m) => m.uid));
+  const days = later.map((r) => {
+    const power = new Map(r.members.map((m) => [m.uid, m.power]));
+    const here = counted.filter((m) => typeof power.get(m.uid) === "number");
+    const then = sum(here.map((m) => power.get(m.uid) as number));
+    return {
+      day: r.day,
+      share: recovered(sum(here.map((m) => m.before)), sum(here.map((m) => m.after)), then),
+    };
+  });
+  const people = newest.event
+    ? counted
+        .map((m) => ({
+          uid: m.uid,
+          name: m.name,
+          lost: (m.before - m.after) / m.before,
+          back: m.now / m.before,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+  return {
+    at: e.at,
+    day,
+    nowDay: last.day,
+    members: counted.length,
+    others: last.members.filter((m) => !inCount.has(m.uid)).length,
+    left: both.filter((m) => !last.members.some((n) => n.uid === m.uid)).length,
+    before: sum(counted.map((m) => m.before)),
+    after: sum(counted.map((m) => m.after)),
+    now: sum(counted.map((m) => m.now)),
+    days,
+    people,
+    help: people
+      .filter(
+        (p) =>
+          !newest.away.has(p.uid) &&
+          Math.round(p.lost * 100) > HEAVY_LOSS * 100 &&
+          Math.round(p.back * 100) < HELP_BELOW * 100,
+      )
+      .map((p) => ({ uid: p.uid, name: p.name })),
+  };
+}
+
+/**
+ * The newest KVK_EVENTS events (newest first) against the page's end-of-day reads; [] with no read. `away`:
+ * members on a break, left out of the help list.
+ */
+export function kvkOf(
+  events: readonly EventMight[],
+  reads: readonly RosterRead[],
+  zone: string,
+  away: ReadonlySet<number>,
+): KvkEvent[] {
+  const newest = reads.at(-1);
+  if (!newest) return [];
+  // An event whose End is newer than the newest read waits for the next read (KvK day, End to 23:30):
+  // until then "now" would be the day before the event.
+  const sorted = events
+    .filter((e) => e.afterAt < newest.at)
+    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .slice(0, KVK_EVENTS);
+  return sorted.flatMap((e, i) => {
+    const one = eventOf(e, sorted[i - 1], reads, zone, { event: i === 0, away });
+    return one ? [one] : [];
+  });
+}

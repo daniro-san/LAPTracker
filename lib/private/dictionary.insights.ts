@@ -2,7 +2,10 @@
 // workspace dictionaries spread. People first (D75): nobody is ranked, the only names are a thanks list,
 // a day with no read never counts, and every section says what it rests on. French puts a no-break space
 // before : ; ? !.
+import { insightsMoreEn, insightsMoreFr, insightsMorePt } from "./dictionary.insights-more";
+
 export const insightsEn = {
+  ...insightsMoreEn,
   "members.view.insights": "Insights",
   "insights.lead":
     "How the alliance is doing, from the daily reads. Nobody is ranked here, and a day with no read never counts.",
@@ -88,6 +91,7 @@ export const insightsEn = {
 type InsightsWords = Record<keyof typeof insightsEn, string>;
 
 export const insightsPt: InsightsWords = {
+  ...insightsMorePt,
   "members.view.insights": "Análises",
   "insights.lead":
     "Como a aliança está, pelas leituras diárias. Ninguém é ranqueado aqui, e um dia sem leitura nunca conta.",
@@ -171,6 +175,7 @@ export const insightsPt: InsightsWords = {
 };
 
 export const insightsFr: InsightsWords = {
+  ...insightsMoreFr,
   "members.view.insights": "Analyses",
   "insights.lead":
     "Où en est l’alliance, d’après les relevés quotidiens. Personne n’est classé ici, et un jour sans relevé ne compte jamais.",

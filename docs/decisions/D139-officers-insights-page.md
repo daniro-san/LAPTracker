@@ -69,3 +69,34 @@ The issue's "74 of 98 at the coin cap" left out the members with no coin count. 
 - `lib/private/insights.test.ts`: the read from PGlite. It covers both origin sources, a member on a break left out, and no private field in the view.
 - The issue 471 suite (`cross-workspace-reads.test.ts`): Alpha's view holds none of Bravo's members, history tags or private markers.
 - `turned-off.test.ts`: with the switch off, the page goes to Home.
+
+**Amendment 2026-11-21 (issue 489 part 2): KvK cost and recovery (section 3) and squads seen (section 5).** Two more cards after the membership flow, from stored data only (0 upstream calls). The page was about 4,700 px tall at 360 px, so each new card shows a one-line summary and keeps the rest behind "Show the details" (a native `<details>`, 44 px, `text-button`).
+
+- **KvK cost and recovery** (`lib/private/insights-kvk.ts`, read by `scheduledEventMight` in `lib/repo/workspace-rosters.ts`).
+  - **Which events.** The public scheduled events (not manual, not test, not admin-only) from the day before the oldest of the page's 36 reads, whose Start and End rows of our alliance are both fresh and not failed, and whose End is older than the newest daily read. On KvK day the event waits for the night read; until then "now" would be the day before it (QA). At most 4 (`KVK_EVENTS`), the newest first.
+  - **Who counts.** Members in the Start read, the End read and the "now" read, with a might in each. The "now" read is the newest read for the newest event. For an older event it is the last read of its recovery week, so a later KvK's loss never shows as this one's (QA). Members of that read not counted (joined since, missing from one event read, or no might) are "other current members"; members who left are a count. Neither moves the numbers.
+  - **What it shows.** The summary: "Last KvK, Sat, Nov 14: the alliance lost 11% of its might, and 73% of that is back." Behind the fold, for the newest event: Before (Start read), After (End read) and Now bars, and the share of the loss back on each daily read. The reads run from the server day after the event (its own read only repeats the End read) for at most a week and never past the next event's time. They show as a 7-column day grid like the pulse's. Each older event folds to one line, "KvK Sat, Nov 7 · lost 13% · 50% back", and its last bar reads "On Nov 13, before the next KvK".
+  - **Per member** (newest event only, in its own fold, in name order): "lost 31% · now 64% of before".
+  - **"Took a heavy hit — maybe offer help"**, visible on the card: members who lost more than 25% of their Start might and whose might now is under 80% of it ("below 80% of it" in the issue: of their might before the KvK). Both tests use the whole percents the page shows, so a name never sits beside "now 80%" (persona panel). Members on a break are left out (D75). Name order, no number beside a name, each name a link to that member's card (`/w/[slug]/members?m=<uid>`). With nobody: "Nobody from the last KvK is still far below where they were."
+  - **No KvK yet:** "No KvK in these weeks has both a Start and an End read yet. This fills in after the next one."
+- **Squads seen** (`lib/private/insights-squads.ts`, read by `latestSquadSightings` in `lib/repo/squads.ts`). Only while the squads read is on (D126); with it off there is no card.
+  - Counts only, for the members of the newest daily read: no names, no heroes, no lineup (owner, 2026-11-20). The summary: "91 of 100 members have squads seen; 74 of them in the last 24 hours." ("none in the last 24 hours" at 0).
+  - Behind the fold: members with 1 squad, 2 squads, 3 or more (3 is normal and nothing is compared against 4, D136), and "None seen yet" set apart; how fresh each member's newest sighting is (in the last 24 hours, 1 to 3 days ago, more than 3 days ago, and "The tracker sent no time" when it sent none); and the strongest squad's might in four equal groups with each group's middle value, as section 2 groups might. Fewer than 4 members with squads make no groups. The lead says it counts the squads the tracker has seen, not every squad a member has.
+- **Raid Shield history (section 6) is not built here.** It is listed as a follow-up in the handoff.
+
+**Bounded reads (D149).**
+
+- The KvK read is one statement bounded by the date. It reads events by `events_event_at_utc_unique`, then each table by its own unique index. On one year of invented data (52 KvKs × 30 alliances, 312k member snapshots) it touches 91 buffers in 0.19 ms.
+- The squads read walks a new index, `member_squads_latest_idx (union_id, uid, squad, read_at, id)` (migration `0067_member_squads_latest`), backwards. This is the same recursive form as `latestFacts`: one descent per (member, squad number) pair, landing on that pair's newest row. It grows with the pairs, not the rows. On 310k squad rows it makes 270 descents, 1,144 buffers, 1.06 ms. The index replaces `member_squads_member_idx (union_id, uid, squad)`; the card's `latestSquads` and `squadPairs` still lead with the same columns.
+- Per Insights view: 7.3 transactions, about 1,840 buffer hits and 25–26 ms, against 5.3–6 transactions, about 430 hits and 23 ms before. Measured with `pg_stat_database` through the real lib functions, 20 views per run, warm.
+- Nothing is cached. The page stays per request and private (D143); per-member names are `ph-no-capture` (issue 549).
+
+**Copy** in `lib/private/dictionary.insights-more.ts` (EN, PT-BR, FR), spread by `dictionary.insights.ts`.
+
+**Tests.** `lib/private/insights-kvk.test.ts`:
+
+- who counts and the recovery day by day;
+- the help rule at the 79.6% edge, its name order and members on a break;
+- squads seen, freshness and the four groups.
+
+`lib/private/insights.test.ts` reads both from PGlite and checks that another alliance's KvK and squad rows stay out.
