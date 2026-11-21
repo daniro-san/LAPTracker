@@ -1,6 +1,6 @@
 # fix-481 — A roster above its capacity
 
-Issue 481. Branch `fix/roster-over-capacity`, cut from `origin/dev` at 99da9705.
+Issue 481. Branch `fix/roster-over-capacity`, cut from `origin/dev` at 99da9705, rebased onto c4314a63 (after #517 and #522).
 
 ## Built
 
@@ -33,7 +33,7 @@ Issue 481. Branch `fix/roster-over-capacity`, cut from `origin/dev` at 99da9705.
 
 ## Verified
 
-- `pnpm check`: exit 0. That is Prettier, ESLint, tsc, Vitest (257 files passed, 2 skipped; 1,354 tests passed, 4 skipped; one earlier run had a SIGSEGV worker crash in `lib/queries/turnout.test.ts`, which passed alone and on the rerun), drift and i18n.
+- `pnpm check`: exit 0. That is Prettier, ESLint, tsc, Vitest (264 files passed, 2 skipped; 1,383 tests passed, 4 skipped), after the rebase. Before it, one run had a SIGSEGV worker crash in `lib/queries/turnout.test.ts`, which passed alone and on the rerun, drift and i18n.
 - With the filter in `toSnapshotInput` removed, the 101/100 test fails (`memberCount` 101). With the filter back, it passes.
 - All 27 recorded `/v1` alliance bodies have `member_count` equal to the length of `members`. Three bodies, all from the 2026-11-16 recording, have unranked members: 67111155 (101/100, 1 unranked), 67111128 (65/100, 3) and 67111040 (62/100, 6). The unranked ones in the last two are level 6–10.
 - No upstream calls. The test bodies are invented: "Member 1"… and alliance "INV".
