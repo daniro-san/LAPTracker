@@ -53,11 +53,11 @@ Findings F4, F5, F6, F16, F18, F27 and F48 of the #585 review, on the desk, the 
 - On the board page, `<Week {...{ t, language, today, now }} {...view} />` spreads the view, to keep `BoardPage` under the 80-line limit.
 - The public alliances page count and the site footer moved from ink/60 and ink/65 to ink/70. They are outside the four areas, but the floor is site-wide.
 - `cellLabel`'s "null" was fixed although it is pre-existing: this branch made screen readers read it.
-- `RaidPrepRow.tsx`, `RollCallMarks.tsx` and `TeamPicker.tsx` were edited on dev's version for the labels. PR #590 changes the same files (see Open issues).
+- The branch is rebased on `origin/dev` after #590 (batch 1) merged. #590's sticky roll-call search row is about 20 px taller with its visible label, so its `scroll-padding-top` went from 4.5rem to 5.75rem (`app/globals.css`). The squads test's "16 h ago" pattern allows the new no-wrap span.
 
 ## Verified
 
-- `pnpm check` passed: prettier, eslint, tsc, vitest, drift and i18n (17 languages up to date).
+- `pnpm check` passed on the rebased branch: prettier, eslint, tsc, vitest (296 files, 1,533 tests), drift and i18n (17 languages up to date). One PGlite test (`roster-stays`) timed out once under load and passed alone and on the next full run.
 - Ran a local production build with `db:local` and the #585 kit's invented seed (about 100 members, sealed invented key and webhooks, no upstream or Discord call). Before is `origin/dev` b509ad32 and after is this branch, on the same seed. There were 127 runs over 17 pages: 360 and 1280 px, light and dark, EN; 360 px light and dark, PT; and 200 % zoom (640 × 400 CSS px) in EN and PT. Admin is EN only.
 
   | | Before | After |
@@ -95,7 +95,7 @@ Findings F4, F5, F6, F16, F18, F27 and F48 of the #585 review, on the desk, the 
     - axe: 0 contrast and 0 label-in-name. Text cut at 360: 0 (92 before, its wider set). No sideways scroll anywhere.
     - Behaviour checks: all passed. Console: only the seed's missing hero images (404).
     - Its SHOULD-1 ("null") is fixed. Its SHOULD-2 (month-grid labels cut at 1280) predates this branch.
-  - I re-ran my measurement after the panel fixes (`measure-after3`): still 0 on every row of the table above.
+  - I re-ran my measurement after the panel fixes and again after the rebase (`measure-after3`, `measure-after4`): still 0 on every row of the table above. The Shift+Tab focus probe finds 0 of 60 stops hidden on Raid prep (360×780 and 640×400) and on Members (360×780, 640×400, 320×400).
 - **PostHog, the three-way check** (project 741657, read-only, last 30 days). Pageviews:
   - Home 127, Members 95, Calendar 64, Notices 59, /admin 55, Roll call 44, board 20, Follow-up 17, Settings 9, Start here 2, Me 1.
   - On phones (under 640 px): 53 % of Home views, 63 % of Members and 56 % of Calendar.
@@ -108,7 +108,7 @@ Findings F4, F5, F6, F16, F18, F27 and F48 of the #585 review, on the desk, the 
   - Wrapped rows show the reason an officer acts on.
 
   None of them ranks people or adds a consequence.
-- Screenshots: before and after full pages are in `scratchpad/a11y/measure-before/`, `measure-after2/` and `measure-after3/`. The panel's are in `scratchpad/a11y/look/`, `panel-look/` and `qa/run-full/`. I read my own shots of Home, Members, the card, Calendar, the board and Me at 360, in EN and PT, light and dark.
+- Screenshots: before and after full pages are in `scratchpad/a11y/measure-before/`, `measure-after2/`, `measure-after3/` and `measure-after4/`. The panel's are in `scratchpad/a11y/look/`, `panel-look/` and `qa/run-full/`. I read my own shots of Home, Members, the card, Calendar, the board and Me at 360, in EN and PT, light and dark.
 - The diff names no member of the fixture roster: a script compared the 307 roster names against it.
 
 ## Open issues
@@ -121,12 +121,12 @@ Findings F4, F5, F6, F16, F18, F27 and F48 of the #585 review, on the desk, the 
 - **Follow-up.** "Talked to them" and "Add a note" repeat on every row with no name in their accessible name. The rows don't look tappable to sighted officers. Both are pre-existing.
 - **Font sizes are in px** (F50, batch 9). A larger default font setting does not scale the desk.
 - **Seed artifacts seen by the panel.** Elixir "Team : 12/20" with an empty team letter, /admin "3869 of 1,000", and the hero pictures (404).
-- **PR #590 overlaps.** It changes `RaidPrepRow.tsx`, `RollCallMarks.tsx` and `TeamPicker.tsx`, which this branch touches for the labels. With the label, its sticky search row is about 20 px taller, so #590's `scroll-padding-top: 4.5rem` (72 px) should become about 5.75rem. Whichever merges second resolves this.
+- **#590 and this branch.** Resolved in the rebase (see Deviations). Raid prep's new tiles were measured again: 0 axe findings, 0 hidden focus stops.
 
 ## Next
 
 - Model/effort: keep.
-- Owner first: decide the two calls above (an end time for KvK; "no" marks on Me). There is no migration and no environment change. If #590 is merged first, this branch takes the `scroll-padding-top` change above.
+- Owner first: decide the two calls above (an end time for KvK; "no" marks on Me). There is no migration and no environment change.
 - Plan change: none. Batches run from issue 585; `docs/SESSION_PLAYBOOK.md` has no prompt for them.
 
 <adjustments>
