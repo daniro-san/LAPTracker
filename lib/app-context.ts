@@ -2,7 +2,7 @@
 // the clock, the adapters and Neon; route tests replace this module (vi.mock) with fakes and PGlite.
 import { groqChat, type ChatModel, type Generation } from "./ai/groq";
 import { captureServer, type EventWorkspace } from "./analytics/server";
-import { openDb, type Db } from "./db";
+import { openDb, type Db, type PoolSize } from "./db";
 import { getEnv, type Env } from "./env";
 import { nextEventCache, type EventCache } from "./event-cache";
 import { internal, v1 } from "./sources";
@@ -16,7 +16,8 @@ export interface AppContext {
   internal: InternalSource;
   /** For Discord webhooks. */
   fetch: typeof fetch;
-  openDb: () => { db: Db; close: () => Promise<void> };
+  /** `size` for a Pool kept for a whole request (lib/page.ts); the driver's defaults otherwise. */
+  openDb: (size?: PoolSize) => { db: Db; close: () => Promise<void> };
   /** The event page's shared cache; a write that changes an event invalidates it (issue 327). */
   eventCache: EventCache;
   /** What the tick knows without the database between calls (D141). */
@@ -54,7 +55,7 @@ export function getAppContext(): AppContext {
     v1,
     internal,
     fetch: send,
-    openDb: () => openDb(),
+    openDb: (size) => openDb(undefined, size),
     eventCache: nextEventCache,
     wakeCache: nextWakeCache,
     ai: groqKey ? (where) => groqChat(groqKey, send, undefined, observeAi(env, send, where)) : null,

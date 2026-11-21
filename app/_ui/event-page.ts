@@ -6,7 +6,7 @@ import { cache } from "react";
 import { getAppContext } from "@/lib/app-context";
 import { DONE_MAX_AGE_S, LIVE_MAX_AGE_S } from "@/lib/event-cache";
 import { isOn } from "@/lib/flags";
-import { withPageDb } from "@/lib/page";
+import { withOwnDb, withPageDb } from "@/lib/page";
 import { getEventPage } from "@/lib/queries/event-page";
 import {
   eventPulses,
@@ -19,8 +19,9 @@ import { eventProgressOf, progressRows } from "@/lib/queries/live";
 
 import { requestClock, requestCopy } from "./locale";
 
-// The turnout so far is read only while the event has no End: a live event's entry. Its read opens its own
-// connection, because Next can run it in the background after this request's connection is closed.
+// The turnout so far is read only while the event has no End: a live event's entry. Like every shared-cache
+// loader here, its read opens its own connection (withOwnDb): Next can run it in the background after the
+// request's connection is closed, and a viewer of another request can be the one waiting for it.
 // War turnout and kill share vs might share are read only while their flags are on (D91); the flags are
 // read per request, while the event is, and never stored in the event cache.
 export const loadEventPage = cache(async (id: number | null) => {
@@ -34,7 +35,7 @@ export const loadEventPage = cache(async (id: number | null) => {
       getAppContext().env.SNAPSHOT_WINDOW_MIN,
       (eventId, load) =>
         getAppContext().eventCache.read(eventId, "turnout-so-far", LIVE_MAX_AGE_S, () =>
-          withPageDb(load),
+          withOwnDb(load),
         ),
       sections,
     ),
@@ -71,7 +72,7 @@ export const progressRowsOf: RowsOf = (eventId, done) =>
     eventId,
     done ? "progress-done" : "progress",
     done ? DONE_MAX_AGE_S : LIVE_MAX_AGE_S,
-    () => withPageDb((db) => progressRows(db, eventId)),
+    () => withOwnDb((db) => progressRows(db, eventId)),
   );
 
 /** What the views across events need to read each event's slots (D86). */
