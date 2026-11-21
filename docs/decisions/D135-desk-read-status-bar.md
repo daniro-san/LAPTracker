@@ -50,3 +50,5 @@ Why: officers could not tell why a card was not updated yet: the squads read (D1
 - The member-session sweep covers the new route.
 
 **Amendment (2026-11-20, owner, issue 474, D137): the Raid Shield check's line.** While `shield_check` is on, the bar has a `shield` line for the check's quota day until KvK starts: "Checking Raid Shields · 40 of 101 · started 23:31 ST" while a read runs (progress, the bar polls), then "Raid Shield check 23:42 ST · 87 of 101 seen with a shield" (quiet). Counts and server times only. See D137.
+
+**Amendment (2026-11-20, issue 521, D141): the poll follows the ticks.** While a line is running, the 30 s poll asks only in the first 5 minutes of each 15-minute tick slot, when a batch can be running and the database is awake for it anyway. Becoming visible still asks at once. See D141.

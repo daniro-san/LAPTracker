@@ -31,6 +31,8 @@ export async function POST(
       now,
     });
     if (!done.ok) return privateError(STATUS[done.code], done.code);
+    // D141: the squads targets may have changed, so the ticks look at the queue again.
+    ctx.wakeCache.forget();
     const body = Response.json({ ok: true, on: done.on }, { headers: NO_STORE });
     return counted(ctx, access, "features", input.on ? "turn_on" : "turn_off", body);
   });

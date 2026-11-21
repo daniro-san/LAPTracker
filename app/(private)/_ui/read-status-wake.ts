@@ -9,3 +9,14 @@ export function nextWake(lines: readonly StatusLine[], now: number): number | nu
   const ahead = lines.flatMap((l) => (l.until !== undefined && l.until > now ? [l.until] : []));
   return ahead.length > 0 ? Math.min(...ahead) - now : null;
 }
+
+/** cron-job.org's ticks come at :00, :15, :30 and :45 (D30), and each one starts the reads' next batch. */
+const TICK_EVERY_MS = 15 * 60_000;
+/** A tick's batches end within this of its slot: its own work (100 s) and its `after` (180 s, D137). */
+const BATCH_SPAN_MS = 5 * 60_000;
+
+/**
+ * D141: a running read changes only while a tick's batch runs, so the bar's 30 s poll asks only in the first
+ * 5 minutes of each tick slot, while the database is awake for the batch anyway.
+ */
+export const batchMayRun = (now: number): boolean => now % TICK_EVERY_MS < BATCH_SPAN_MS;

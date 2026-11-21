@@ -41,6 +41,8 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    // D141: a key decides the squads targets, so the ticks look at the queue again.
+    ctx.wakeCache.forget();
     if (input.action === "remove") {
       const view = await removeTrackerKey(db, access, ctx.env, input, now);
       return counted(ctx, access, "tracker_key", "delete", answer(view));

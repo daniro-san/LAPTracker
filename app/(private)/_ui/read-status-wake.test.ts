@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import type { StatusLine } from "@/lib/private/read-status";
 
-import { nextWake } from "./read-status-wake";
+import { batchMayRun, nextWake } from "./read-status-wake";
 
 const done = (until: number): StatusLine => ({
   id: "squads",
@@ -22,5 +22,16 @@ describe("nextWake (D135)", () => {
     // Every `until` has passed: no timer, so nothing redraws the bar again.
     expect(nextWake([key, done(5_000)], 5_000)).toBeNull();
     expect(nextWake([key], 1_000)).toBeNull();
+  });
+});
+
+describe("batchMayRun (D141)", () => {
+  it("lets the poll ask only in the first 5 minutes of each 15-minute tick slot", () => {
+    const at = (hhmm: string) => Date.parse(`2026-11-20T${hhmm}:00Z`);
+    expect(batchMayRun(at("23:30"))).toBe(true);
+    expect(batchMayRun(at("23:34"))).toBe(true);
+    expect(batchMayRun(at("23:35"))).toBe(false);
+    expect(batchMayRun(at("23:44"))).toBe(false);
+    expect(batchMayRun(at("23:45"))).toBe(true);
   });
 });

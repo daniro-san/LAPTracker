@@ -8,7 +8,7 @@ import {
   testContext,
 } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
-import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { noQueryDb, openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { startTick } from "@/lib/repo/ticks";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -21,7 +21,8 @@ const { POST } = await import("./route");
 
 const watch = () =>
   POST(request("/api/tick/watch", { headers: { authorization: `Bearer ${TEST_CRON_SECRET}` } }));
-const LAST_TICK = new Date("2026-11-04T10:00:00Z");
+/** 61 and 70 minutes later fall in the watcher's slot, 12:30–12:45 UTC (D141). */
+const LAST_TICK = new Date("2026-11-04T11:31:00Z");
 const after = (minutes: number) => new Date(LAST_TICK.getTime() + minutes * 60_000);
 
 let db: Db;
@@ -49,10 +50,20 @@ describe("POST /api/tick/watch", () => {
     expect(posts[0]?.content).toContain("No tick for 61 min");
   });
 
-  it("posts nothing when the last tick was 30 minutes ago", async () => {
+  it("posts nothing when the last tick was 60 minutes ago", async () => {
     const { ctx, clock, posts } = testContext(db);
     holder.ctx = ctx;
-    clock.now = after(30);
+    clock.now = after(60);
+
+    expect((await watch()).status).toBe(204);
+    expect(posts).toEqual([]);
+  });
+
+  it("asks the database nothing outside its slot (D141)", async () => {
+    const { ctx, clock, posts } = testContext(db);
+    holder.ctx = ctx;
+    ctx.openDb = () => ({ db: noQueryDb, close: async () => {} });
+    clock.now = after(120); // 13:31 UTC
 
     expect((await watch()).status).toBe(204);
     expect(posts).toEqual([]);

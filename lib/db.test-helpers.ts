@@ -46,3 +46,10 @@ export async function truncateAll(db: Db): Promise<void> {
     sql`truncate workspace_sessions, workspace_users, workspaces, player_frames, daily_rosters, daily_reads, run_logs, member_snapshots, alliance_snapshots, snapshots, events, auth_attempts, app_errors, app_alerts, tick_log, member_squads, player_reads, player_history, hero_catalog, workspace_tombstones, access_requests, alliance_invites, alliance_board, tracked_sets, alliance_lookups restart identity cascade`,
   );
 }
+
+/** A database that fails the test on any query: what "asks the database nothing" checks (D141). */
+export const noQueryDb = new Proxy({} as Db, {
+  get() {
+    throw new Error("queried the database");
+  },
+});
