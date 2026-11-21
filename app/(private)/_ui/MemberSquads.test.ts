@@ -87,13 +87,40 @@ describe("the member card's squads (D117)", () => {
     expect(card?.empty).toBe("2 slots empty");
     const html = render("en", [SQUAD]);
     // The lineup is hidden from screen readers; the list in slot order is read instead.
-    expect(html).toContain('aria-hidden="true" class="mt-2 hidden');
+    expect(html).toContain('aria-hidden="true" class="mt-2 grid');
     const list = html.slice(html.indexOf("<ol"));
     expect(list.indexOf("Slot 1:")).toBeLessThan(list.indexOf("Ilvane"));
     expect(list.indexOf("Ilvane")).toBeLessThan(list.indexOf("Kesso"));
     expect(list).toContain("Slot 5:");
     expect(list).toContain("Empty slot");
     expect(html).not.toMatch(/soldier|troop/i);
+  });
+
+  it("puts slots 1–2 in the front row on top and 3–5 in the back row below, at every width", () => {
+    const five = [10001, 10002, 10003, 10004, 10005];
+    const names = new Map(five.map((id) => [id, `Hero ${id}`]));
+    const full = squad(
+      1,
+      1,
+      five.map((id) => hero(id, 100, 25, 5)),
+    );
+    const card = squadsCardOf(only([full]), names, EN, F);
+    const html = renderToStaticMarkup(createElement(MemberSquads, { squads: card }));
+    const lineup = html.slice(html.indexOf('aria-hidden="true"'), html.indexOf("<ol"));
+    // Each slot's grid place: no breakpoint classes, so the phone and the desktop draw the same rows.
+    const place = (id: number) =>
+      lineup
+        .slice(0, lineup.indexOf(`src="/img/hero/${id}"`))
+        .match(/col-start-\d row-start-\d/g)
+        ?.at(-1);
+    expect(five.map(place)).toEqual([
+      "col-start-2 row-start-1",
+      "col-start-4 row-start-1",
+      "col-start-1 row-start-2",
+      "col-start-3 row-start-2",
+      "col-start-5 row-start-2",
+    ]);
+    expect(lineup).not.toMatch(/\b(min-\[|sm:|md:|lg:)/);
   });
 
   it("speaks Portuguese, and says the tracker has seen none in one line", () => {
