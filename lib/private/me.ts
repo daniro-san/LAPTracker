@@ -2,17 +2,27 @@
 // board's door and an approved link), so the uid is the link's and never the request's, and every read is
 // of that one player of the workspace's own alliance (D71). A member no longer in the alliance's newest
 // roster gets nothing past that check. Never read here: rankings, other members, officers' notes, facts,
-// statuses or follow-ups, and x, y, online, last_online_at and joined_at. Nothing here is logged.
+// statuses or follow-ups, and x, y, online, last_online_at, joined_at and avatar_url. The member's own
+// daily_tech, daily_honor and active (owner, 2026-11-21, D142) are returned to this page only: nothing
+// here is logged, cached or sent anywhere.
 import type { Db } from "../db";
 import { heroNames } from "../repo/hero-catalog";
 import { mightBeforeEvent, ownDays, ownMarks, ownSeats, ownTeam } from "../repo/me";
 import { squadPairs } from "../repo/squads";
 import type { MeAccess } from "./access";
-import { dayIn, mondayOf } from "./calendar-time";
+import { addDays, dayIn, mondayOf } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
-import { neededLines, recoveryLine, seriesOf, PROGRESS_DAYS, type Series } from "./me-parts";
+import {
+  neededLines,
+  recoveryLine,
+  seriesOf,
+  weekCard,
+  PROGRESS_DAYS,
+  type Series,
+} from "./me-parts";
 import { cardFormats } from "./member-card";
 import { daysFormats } from "./member-card-parts";
+import type { DaysCard } from "./member-days";
 import { squadsCardOf, type SquadsCard } from "./member-squads";
 
 const DAY_MS = 86_400_000;
@@ -23,6 +33,7 @@ export type MeView =
       left: false;
       name: string;
       progress: { might: Series | null; kills: Series | null; kvk: string | null };
+      week: DaysCard | null;
       squads: SquadsCard;
       needed: string[];
     };
@@ -36,7 +47,7 @@ export async function meView(
   const { now, zone, t } = at;
   const today = dayIn(zone, now.getTime());
   const week = mondayOf(today);
-  const days = await ownDays(db, me.unionId, me.uid);
+  const days = await ownDays(db, me.unionId, me.uid, addDays(week, -7));
   const newest = days.at(-1);
   const name = days.findLast((d) => d.name !== null)?.name ?? "";
   // INVARIANT me.left-closes: a member the newest roster does not list sees nothing more.
@@ -61,6 +72,7 @@ export async function meView(
       kills: seriesOf(days, "kills", t, d),
       kvk: recoveryLine(days, kvk, t, d.date),
     },
+    week: weekCard(days, today, t, d),
     squads: { ...squadsCardOf(pairs, heroes, t, f), none: t["me.squads.none"] },
     needed: neededLines({ team, seats, marks }, week, t, d.date),
   };

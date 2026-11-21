@@ -1,7 +1,8 @@
 // A member's own page (issue 487, D142): reads of one player of one alliance or workspace. lib/private passes
-// the MeAccess's union id, workspace id and uid (the approved link's), never a request's. raw_json is never
-// read: no daily field (daily_tech, daily_honor, active; CLAUDE.md, D71), no other member's values and no
-// blocked field (x, y, online, last_online_at, joined_at).
+// the MeAccess's union id, workspace id and uid (the approved link's), never a request's. raw_json is read
+// only for that one member and only for the three daily fields (D127; owner, 2026-11-21, D142), on the last
+// two game weeks' rows; no other member's values and no blocked field (x, y, online, last_online_at,
+// joined_at, avatar_url) is read.
 import { and, desc, eq, gte, isNull, lte, ne, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
@@ -32,12 +33,19 @@ export interface OwnDay {
   name: string | null;
   power: number | null;
   kills: number | null;
+  /** The member's daily fields as sent (D127), on rows from `dailyFrom` that kept raw_json; else null. */
+  daily: { active: unknown; daily_honor: unknown; daily_tech: unknown } | null;
 }
 
 const num = (v: string | null) => (v === null ? null : Number(v));
 
 /** The alliance's newest OWN_ROWS usable rosters, the oldest first, as they concern `uid`. */
-export async function ownDays(db: Db, unionId: number, uid: number): Promise<OwnDay[]> {
+export async function ownDays(
+  db: Db,
+  unionId: number,
+  uid: number,
+  dailyFrom: string,
+): Promise<OwnDay[]> {
   const i = sql`array_position(${dailyRosters.memberUids}, ${uid}::bigint)`;
   const rows = await db
     .select({
@@ -47,12 +55,17 @@ export async function ownDays(db: Db, unionId: number, uid: number): Promise<Own
       // As text: Drizzle reads a null bigint element as 0, and a null stays null (D15).
       power: sql<string | null>`((${dailyRosters.memberPower})[${i}])::text`,
       kills: sql<string | null>`((${dailyRosters.memberKills})[${i}])::text`,
+      daily: sql<
+        OwnDay["daily"]
+      >`case when ${i} is not null and ${dailyRosters.readDay} >= ${dailyFrom} then (select jsonb_build_object('active', m->'active', 'daily_honor', m->'daily_honor', 'daily_tech', m->'daily_tech') from jsonb_array_elements(${dailyRosters.rawJson}->'members') m where m->>'uid' = ${String(uid)} limit 1) end`,
     })
     .from(dailyRosters)
     .where(usable(unionId))
     .orderBy(desc(dailyRosters.readDay))
     .limit(OWN_ROWS);
-  return rows.reverse().map((r) => ({ ...r, power: num(r.power), kills: num(r.kills) }));
+  return rows
+    .reverse()
+    .map((r) => ({ ...r, power: num(r.power), kills: num(r.kills), daily: r.daily ?? null }));
 }
 
 /**

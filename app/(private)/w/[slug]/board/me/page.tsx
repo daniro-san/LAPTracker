@@ -25,7 +25,7 @@ import { BoardAccount } from "../../../../_ui/BoardAccount";
 import { LINK } from "../../../../_ui/BoardSections";
 import { Frame, workspaceWords } from "../../../../_ui/Frame";
 import { MeLink } from "../../../../_ui/MeLink";
-import { MeNeeded, MeProgress, MeSquads } from "../../../../_ui/MeSections";
+import { MeNeeded, MeProgress, MeSquads, MeWeek } from "../../../../_ui/MeSections";
 import { refuse } from "../../../../_ui/refuse";
 
 export const metadata: Metadata = { title: "Your page" };
@@ -98,6 +98,7 @@ function Body(props: {
       main={
         <>
           <MeProgress view={view} t={t} language={language} f={f} />
+          <MeWeek view={view} t={t} />
           <MeSquads view={view} />
         </>
       }
