@@ -83,8 +83,8 @@ describe('"This is me", between two workspaces (D71)', () => {
     // The search's roster is OGs' own: NSE's player is not in it.
     expect(view.roster.map((p) => p.uid)).toEqual([11, 12]);
     // NSE's player is not in OGs' roster.
-    expect(await linkPlayer(db, ogs, 21)).toBe("not_in_alliance");
-    expect(await linkPlayer(db, ogs, 11)).toMatchObject({
+    expect(await linkPlayer(db, ogs, 21, NOW)).toBe("not_in_alliance");
+    expect(await linkPlayer(db, ogs, 11, NOW)).toMatchObject({
       player: { uid: 11, name: "Kasoar•Thorne" },
     });
     expect((await signedIn("ogs", "Kasoar")).user.playerUid).toBe(11);
@@ -94,5 +94,15 @@ describe('"This is me", between two workspaces (D71)', () => {
     const unlinked = await unlinkPlayer(db, await signedIn("ogs", "Kasoar"));
     expect(unlinked.player).toBeNull();
     expect((await signedIn("ogs", "Kasoar")).user.playerUid).toBeNull();
+  });
+
+  it("refuses a player another user of the workspace holds (D142: one user per player)", async () => {
+    await linkPlayer(db, await signedIn("ogs", "Fennel"), 11, NOW);
+    const ws = await findWorkspaceBySlug(db, "ogs");
+    const other = await recordSignIn(db, ws?.id ?? 0, "officer-two", "Second", NOW);
+    const { token } = await createSession(db, ws?.id ?? 0, other, NOW, null, "officer");
+    const second = await requireWorkspace(db, "ogs", { get: () => ({ value: token }) }, NOW);
+    if (!second.ok) throw new Error("no access");
+    expect(await linkPlayer(db, second, 11, NOW)).toBe("taken");
   });
 });

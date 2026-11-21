@@ -36,18 +36,20 @@ export async function scheduledEvent(db: Db, eventAtUtc: Date) {
 /** The newest requests-left reading: after a snapshot run, or the daily roster read's quota check
  * (D60), whichever ran last. */
 export async function latestQuota(db: Db) {
-  const [run] = await db
-    .select({ remaining: snapshots.quotaRemainingAfter, at: snapshots.startedAt })
-    .from(snapshots)
-    .where(isNotNull(snapshots.quotaRemainingAfter))
-    .orderBy(desc(snapshots.startedAt))
-    .limit(1);
-  const [daily] = await db
-    .select({ remaining: dailyReads.quotaRemainingBefore, at: dailyReads.startedAt })
-    .from(dailyReads)
-    .where(isNotNull(dailyReads.quotaRemainingBefore))
-    .orderBy(desc(dailyReads.startedAt))
-    .limit(1);
+  const [[run], [daily]] = await Promise.all([
+    db
+      .select({ remaining: snapshots.quotaRemainingAfter, at: snapshots.startedAt })
+      .from(snapshots)
+      .where(isNotNull(snapshots.quotaRemainingAfter))
+      .orderBy(desc(snapshots.startedAt))
+      .limit(1),
+    db
+      .select({ remaining: dailyReads.quotaRemainingBefore, at: dailyReads.startedAt })
+      .from(dailyReads)
+      .where(isNotNull(dailyReads.quotaRemainingBefore))
+      .orderBy(desc(dailyReads.startedAt))
+      .limit(1),
+  ]);
   if (!run || !daily) return run ?? daily ?? null;
   return daily.at > run.at ? daily : run;
 }

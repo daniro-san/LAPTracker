@@ -241,6 +241,7 @@ export async function findSession(db: Db, tokenHash: string) {
       displayName: workspaceUsers.displayName,
       chosenName: workspaceUsers.chosenName,
       playerUid: workspaceUsers.playerUid,
+      playerLink: workspaceUsers.playerLink,
       blocked: workspaceUsers.blocked,
     })
     .from(workspaceSessions)
@@ -299,7 +300,7 @@ export async function updateWorkspaceUser(
   db: Db,
   workspaceId: number,
   userId: number,
-  set: { chosenName: string } | { playerUid: number | null },
+  set: { chosenName: string },
 ): Promise<void> {
   await db
     .update(workspaceUsers)

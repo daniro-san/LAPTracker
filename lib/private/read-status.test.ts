@@ -24,6 +24,11 @@ vi.mock("../app-context", async (original) => ({
   ...(await original<typeof import("../app-context")>()),
   getAppContext: () => holder.ctx,
 }));
+// withPageDb closes the request's connection in `after` (D141, 2026-11-21), which needs a Next request.
+vi.mock("next/server", async (original) => ({
+  ...(await original<typeof import("next/server")>()),
+  after: () => undefined,
+}));
 
 /** Friday 01:00 server time (UTC−2): Thursday's 23:30 daily read is the quota day's, its window closed. */
 const NOW = new Date("2026-11-20T03:00:00Z");
@@ -279,14 +284,13 @@ describe("readStatus (D135)", () => {
 
 describe("frameReadStatus (D135)", () => {
   it("renders nothing and logs a code only when the connection fails", async () => {
-    holder.ctx = {
-      env: TEST_ENV,
-      openDb: () => {
-        throw new Error("connect ECONNREFUSED postgres://secret@db.test");
-      },
-    } as unknown as AppContext;
+    const openDb = vi.fn(() => {
+      throw new Error("connect ECONNREFUSED postgres://secret@db.test");
+    });
+    holder.ctx = { env: TEST_ENV, openDb } as unknown as AppContext;
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
     expect(await frameReadStatus(access(), t, NOW)).toBeNull();
+    expect(openDb).toHaveBeenCalledTimes(1);
     expect(log.mock.calls).toEqual([[JSON.stringify({ code: "w.read_status.failed" })]]);
     log.mockRestore();
   });

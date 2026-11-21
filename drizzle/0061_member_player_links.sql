@@ -1,0 +1,6 @@
+ALTER TABLE "workspace_users" ADD COLUMN "player_link" text;--> statement-breakpoint
+ALTER TABLE "workspace_users" ADD COLUMN "player_linked_at" timestamp with time zone;--> statement-breakpoint
+UPDATE "workspace_users" AS "u" SET "player_uid" = NULL WHERE "u"."player_uid" IS NOT NULL AND EXISTS (SELECT 1 FROM "workspace_users" AS "o" WHERE "o"."workspace_id" = "u"."workspace_id" AND "o"."player_uid" = "u"."player_uid" AND "o"."id" < "u"."id");--> statement-breakpoint
+UPDATE "workspace_users" SET "player_link" = 'approved', "player_linked_at" = now() WHERE "player_uid" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "workspace_users_player_unique" ON "workspace_users" USING btree ("workspace_id","player_uid") WHERE "workspace_users"."player_link" = 'approved';--> statement-breakpoint
+ALTER TABLE "workspace_users" ADD CONSTRAINT "workspace_users_player_link_check" CHECK (("workspace_users"."player_uid" is null) = ("workspace_users"."player_link" is null) and ("workspace_users"."player_link" is null or "workspace_users"."player_link" in ('approved', 'pending')));

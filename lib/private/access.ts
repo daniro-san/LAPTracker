@@ -76,8 +76,12 @@ export type BoardAccess = {
   /** True for an officer's session: the board shows the officer's way back to the desk. */
   readonly officer: boolean;
   readonly name: string | null;
-  /** The workspace user, only for the pseudonymous analytics id (D115); no read takes it. */
+  /** The workspace user: the pseudonymous analytics id (D115), and the one row a member's own link writes. */
   readonly userId: number;
+  /** The name Discord gave at the last sign-in (the server nickname first), for the D74 matcher (D142). */
+  readonly discordName: string | null;
+  /** "This is me" (D87, D142): the player this person says they are, and whether an officer approved it. */
+  readonly player: { readonly uid: number; readonly approved: boolean } | null;
   /** D126: the board itself, and its notices, can be turned off. */
   readonly features: WorkspaceFeatures;
   /** The alliance's newest tag and name (D133); null when nothing names it yet. */
@@ -211,10 +215,38 @@ export async function requireBoard(
     officer,
     name: session.chosenName ?? session.displayName,
     userId: session.userId,
+    discordName: session.displayName,
+    player:
+      session.playerUid === null
+        ? null
+        : { uid: session.playerUid, approved: session.playerLink === "approved" },
     features,
     alliance,
   };
   return fields as BoardAccess;
+}
+
+declare const meBrand: unique symbol;
+
+/**
+ * A member's own page (D142): the board's door and an approved link. The uid is the link's, never the
+ * request's; every read behind it takes this one uid of the workspace's own alliance.
+ */
+export type MeAccess = {
+  readonly workspaceId: number;
+  readonly unionId: number;
+  readonly uid: number;
+  readonly [meBrand]: true;
+};
+
+/**
+ * INVARIANT me.link-approved: only an approved link opens the member's own data; a pending one opens nothing.
+ * A member's link is approved only by an officer (D142, amended 2026-11-21).
+ */
+export function meAccess(board: BoardAccess): MeAccess | null {
+  if (!board.player?.approved) return null;
+  const fields = { workspaceId: board.workspaceId, unionId: board.unionId, uid: board.player.uid };
+  return fields as MeAccess;
 }
 
 type Granted = Omit<WorkspaceAccess, "ok" | "user" | "features" | "alliance" | typeof accessBrand>;

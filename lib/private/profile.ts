@@ -2,6 +2,7 @@
 // the workspace's own alliance (D71: union_id = access.unionId). Only each member's uid, name, might and rank are read.
 // Nothing here is logged or sent to analytics.
 import type { Db } from "../db";
+import { clearLink, setLink } from "../repo/player-links";
 import { latestRoster, type RosterEntry } from "../repo/workspace-rosters";
 import { updateWorkspaceUser } from "../repo/workspaces";
 import { matchName } from "../screenshot/match-name";
@@ -87,15 +88,20 @@ export async function renameOfficer(
   return profileOf(db, access, name, access.user.playerUid);
 }
 
-/** "This is me": only a member of the workspace's own alliance, in its newest roster. */
+/**
+ * "This is me": only a member of the workspace's own alliance, in its newest roster. An officer's link is
+ * approved at once (D142); a player another user of the workspace holds is "taken".
+ */
 export async function linkPlayer(
   db: Db,
   access: WorkspaceAccess,
   uid: number,
-): Promise<Profile | "not_in_alliance"> {
+  now: Date,
+): Promise<Profile | "not_in_alliance" | "taken"> {
   const player = (await latestRoster(db, access.unionId)).find((p) => p.uid === uid);
   if (!player) return "not_in_alliance";
-  await updateWorkspaceUser(db, access.workspaceId, access.user.id, { playerUid: uid });
+  const link = { uid, state: "approved" as const, at: now };
+  if ((await setLink(db, access.workspaceId, access.user.id, link)) === "taken") return "taken";
   return {
     name: access.user.displayName ?? "",
     player: { uid, name: player.name },
@@ -105,6 +111,6 @@ export async function linkPlayer(
 }
 
 export async function unlinkPlayer(db: Db, access: WorkspaceAccess): Promise<Profile> {
-  await updateWorkspaceUser(db, access.workspaceId, access.user.id, { playerUid: null });
+  await clearLink(db, access.workspaceId, access.user.id);
   return profileOf(db, access, access.user.displayName ?? "", null);
 }

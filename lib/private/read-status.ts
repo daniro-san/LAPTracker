@@ -91,8 +91,8 @@ export async function readStatus(
 }
 
 /**
- * The frame's read (D135): the same lines on a connection of its own, or null when that connection or a
- * query fails. The bar is never worth the desk page: the failure is logged as a code only.
+ * The frame's read (D135): the same lines on the request's connection (withPageDb, D141 2026-11-21), or null
+ * when that connection or a query fails. The bar is never worth the desk page: the failure is logged as a code only.
  */
 export async function frameReadStatus(
   access: WorkspaceAccess,

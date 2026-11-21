@@ -1,7 +1,10 @@
 // The members' board's words (D105, issue 331) in English, Brazilian Portuguese and French: the board, the
 // officers' Start here editor and the link to the board from the desk. One module that the three workspace
-// dictionaries spread. French puts a no-break space before : ; ! and ?.
+// dictionaries spread. French puts a no-break space before : ; ! and ?. A member's own page (D142) rides along.
+import { meEn, meFr, mePt } from "./dictionary.me";
+
 export const boardEn = {
+  ...meEn,
   "board.name": "Members’ board",
   "board.title": "This week in the alliance",
   "board.lead": "Your officers keep this page. New here?",
@@ -64,6 +67,7 @@ export const boardEn = {
 type BoardWords = Record<keyof typeof boardEn, string>;
 
 export const boardPt: BoardWords = {
+  ...mePt,
   "board.name": "Mural dos membros",
   "board.title": "Esta semana na aliança",
   "board.lead": "Os oficiais cuidam desta página. Chegou agora?",
@@ -124,6 +128,7 @@ export const boardPt: BoardWords = {
 };
 
 export const boardFr: BoardWords = {
+  ...meFr,
   "board.name": "Tableau des membres",
   "board.title": "Cette semaine dans l’alliance",
   "board.lead": "Vos officiers tiennent cette page à jour. Nouveau ici ?",

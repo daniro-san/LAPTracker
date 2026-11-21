@@ -30,6 +30,11 @@ vi.mock("next/headers", () => ({
   }),
   headers: async () => new Headers(),
 }));
+// withPageDb closes the request's connection in `after` (D141, 2026-11-21), which needs a Next request.
+vi.mock("next/server", async (original) => ({
+  ...(await original<typeof import("next/server")>()),
+  after: () => undefined,
+}));
 vi.mock("next/navigation", async (original) => ({
   ...(await original<typeof import("next/navigation")>()),
   notFound: vi.fn(() => {

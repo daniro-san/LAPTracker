@@ -20,6 +20,11 @@ vi.mock("@/lib/env", async (original) => ({
   ...(await original<typeof import("@/lib/env")>()),
   getEnv: () => TEST_ENV,
 }));
+// withPageDb closes the request's connection in `after` (D141, 2026-11-21), which needs a Next request.
+vi.mock("next/server", async (original) => ({
+  ...(await original<typeof import("next/server")>()),
+  after: () => undefined,
+}));
 vi.mock("next/headers", () => ({
   cookies: async () => ({
     get: (name: string) => (name === SESSION_COOKIE ? { value: holder.token } : undefined),

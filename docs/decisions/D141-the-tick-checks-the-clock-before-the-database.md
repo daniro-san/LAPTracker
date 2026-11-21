@@ -111,3 +111,30 @@ Page views, admin presses, deploys (`pnpm db:migrate` in the build) and a status
   - `&&` with 100 uids: 805 ms, then 5 ms;
   - the old `= any`: 17.9 ms in a parallel sequential scan, even with the index there.
 - **Tests.** `lib/tick-batch.test.ts` replaces the `batchMayRun` test in `read-status-wake.test.ts`. `app/_ui/admin/useRunWatch.test.ts` covers four cases: no refresh outside a window; no refresh in a window before `pollFrom`; every 20 s in a window from `pollFrom` on; every 4 s while a run is going. `lib/tick-gate.test.ts` adds `pollFrom`. `lib/queries/roster-stays.test.ts` shows `rosterSightings` returns the rows `= any` returned.
+
+**Amendment (2026-11-21, issue 521, perf Batch 3): one database connection per request.**
+
+- **Why.** Each `withPageDb` opened its own Pool and closed it when its read returned. One /admin render opened 6 Pools and 27 Postgres sessions; a desk page opened 2 Pools and up to 17 sessions. Every new session is a WebSocket, TLS and auth handshake from iad1 to Neon.
+- **The rule.** `withPageDb` (`lib/page.ts`) keeps one Pool per request with React `cache`. Every read of the render shares it: the page, the layouts, `generateMetadata`, the desk frame's status bar (`frameReadStatus`, D135) and the public `UpstreamBanner`. Its close is registered with `after()` before the Pool is created, so it runs once, when the response is done: after streamed Suspense parts, and also when a render throws, calls `notFound()` or `redirect()`. A scope with no Next request cannot register the close, and then nothing is opened.
+- **Reads that can outlive the request** keep a connection of their own, `withOwnDb`, closed when the read returns: both event-cache loaders in `app/_ui/event-page.ts` (`turnout-so-far`, and `progress`/`progress-done`). `unstable_cache` re-reads an expired entry in the background after the response, and another request can be the one waiting on the shared `inFlight` load (D79). Nothing a page runs from `after` reads the database.
+- **This replaces** the note above that the frame keeps its own connection. No desk page changed: the frame's read reaches the page's Pool through the same `withPageDb`. The bar still renders nothing when its read fails, and the banner too.
+- **Sequential reads.** A statement log of each view showed the chains are almost all data-dependent (session, then the workspace's reads; an event, then its snapshots). Two independent ones now run together: `latestQuota`'s two reads on /admin, and desk Home's `thanksNudge` with the page's other reads. The player page keeps `playerHistory` first, because a 404 then reads nothing more.
+- **The request's Pool is small** (`REQUEST_POOL` in `lib/page.ts`): at most 3 connections, and an idle one closes after 200 ms. With the driver's defaults (10 connections, 10 s idle), the QA pass found that one Pool held every connection it had opened until `after`: 20 requests at once held 89 Postgres connections, against 44–56 with separate Pools, and bursts of 39 requests got 11–13 "too many clients" refusals against 0–9 (local `max_connections` = 100).
+- **Every Pool listens for `error`** (`lib/db.ts`). An idle connection that fails is emitted on its Pool; with no listener Node threw it as an uncaught exception, which on Fluid Compute ends every request the instance serves. It is logged as the code `db.pool.idle_error` only. Before this change the same bursts showed up to 1 uncaught exception each.
+- **Measured** (local production build, local Postgres 18 through the bridge, invented data with 24,240 `daily_rosters` rows; median of 5 views before and 7 after; ms is local and only a rough guide):
+
+  | View                                   | Pools | Postgres sessions | Transactions | ms       |
+  | -------------------------------------- | ----- | ----------------- | ------------ | -------- |
+  | `/`                                    | 3 → 1 | 6 → 3             | 17 → 14      | 70 → 56  |
+  | `/alliances`                           | 3 → 1 | 4 → 3             | 9 → 8        | 29 → 48  |
+  | `/players/[uid]` (200, GIN index used) | 2 → 1 | 4 → 3             | 15 → 14      | 44 → 45  |
+  | `/w/[slug]` (desk Home)                | 2 → 1 | 17 → 3            | 63 → 49      | 62 → 64  |
+  | `/w/[slug]/members`                    | 2 → 1 | 13 → 3            | 48 → 38      | 68 → 62  |
+  | `/admin`                               | 6 → 1 | 27 → 3            | 74 → 50      | 232 → 84 |
+
+  Each new session costs one transaction in `pg_stat_database`, so the transaction cut equals the session cut. The statements themselves did not change. Under load (same mix of 39 pages at once, 4 bursts): 0 refusals and 0 uncaught exceptions, against 0–9 refusals and up to 1 uncaught exception before. 20 pages at once: 35–47 Postgres connections at peak, against 47–56.
+
+- **Bounds this accepts.**
+  - A request's reads share 3 connections. A page that starts more reads at once queues them; /admin, the widest, takes 84 ms locally against 63 ms with 10 connections and 232 ms before. No page code runs a transaction, so nothing can wait on itself.
+  - When a client disconnects mid-stream, `after` runs at once and ends the Pool while reads may still be going. Those reads fail ("Cannot use a pool after calling end"); nobody is there to see the page.
+- **Tests.** `lib/page.test.ts`: two reads of one scope share one `openDb` and close it once, after the scope; a read that throws still leaves one close; a scope that cannot register the close opens nothing. `frameReadStatus`'s failed-connection test now asserts the connection was tried.
