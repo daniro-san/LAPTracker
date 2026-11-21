@@ -102,4 +102,4 @@
 - The request's Pool is `{ max: 3, idleTimeoutMillis: 200 }` (`REQUEST_POOL`). Measure the cached pages' misses with the same burst scripts (`scratchpad/b3/qa/burst.sh`, `peak.mjs`).
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/535
