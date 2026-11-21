@@ -49,11 +49,13 @@ function claim(
   return current.id;
 }
 
-/** `tracked`: the tracked set a Before copies (D133); `labels`: the alliances' tags and names. */
+/** `tracked`: the tracked set a Before copies (D133); `labels`: the alliances' tags and names; `rosters`:
+ * each alliance's newest daily roster uids. */
 export function createMemoryRepo(
   seedEvents: EventRow[] = [],
   tracked: number[] = [],
   labels: Map<number, { tag: string | null; name: string | null }> = new Map(),
+  rosters: Map<number, number[]> = new Map(),
 ): Repo & { tables: MemoryTables } {
   const tables: MemoryTables = {
     events: new Map(seedEvents.map((e) => [e.id, { ...e }])),
@@ -84,9 +86,7 @@ export function createMemoryRepo(
           .map((r) => r.row.unionId),
       ),
     ],
-    clearAllianceRows: async (id) => {
-      tables.rows.delete(id);
-    },
+    clearAllianceRows: async (id) => void tables.rows.delete(id),
     clearFailedAllianceRows: async (id, stale) => {
       const kept = rowsOf(id).filter(({ row }) => row.error === null && (!stale || row.isFresh));
       tables.rows.set(id, kept);
@@ -129,5 +129,6 @@ export function createMemoryRepo(
     },
     trackedAllianceIds: async () => [...tracked],
     allianceLabels: async (ids) => new Map([...labels].filter(([id]) => ids.includes(id))),
+    lastMemberUids: async (ids) => new Map([...rosters].filter(([id]) => ids.includes(id))),
   };
 }

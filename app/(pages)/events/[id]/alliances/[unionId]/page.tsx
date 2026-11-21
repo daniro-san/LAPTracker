@@ -26,6 +26,7 @@ import { previewImage } from "@/app/_ui/preview";
 import { sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
+import { SplitMark } from "@/app/_ui/SplitMark";
 import { AllianceStanding } from "@/app/_ui/Standing";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
@@ -42,6 +43,7 @@ import {
   getAllianceDetail,
   homeEvent,
   memberMovers,
+  rosterChanges,
 } from "@/lib/queries";
 
 const usable = (a: AllianceRow | null) => a !== null && a.isFresh && !a.failed;
@@ -99,6 +101,9 @@ function Summary({
                 stack
                 memberMark={m.memberMark === true}
               />
+              {m.split && m.delta !== null && (
+                <SplitMark total={m.delta} split={m.split} name={m.label} />
+              )}
             </dd>
           </div>
         ))}
@@ -133,20 +138,36 @@ function Summary({
   );
 }
 
+/** The alliance's roster change from Start to End (D69 amendment, 2026-11-21); undefined before the End. */
+async function changeOf(
+  db: Parameters<typeof rosterChanges>[0],
+  events: Awaited<ReturnType<typeof sharedEvents>>,
+  eventId: number,
+  unionId: number,
+) {
+  const phases = events.find((e) => e.id === eventId)?.snapshots ?? [];
+  const [b, a] = (["before", "after"] as const).map((p) => phases.find((s) => s.phase === p));
+  if (!b || !a) return undefined;
+  return (await rosterChanges(db, eventId, { before: b.id, after: a.id }, unionId)).get(unionId);
+}
+
 /** Shared by the page and its <title> within one request. */
 const loadAlliance = cache((eventId: number, unionId: number) =>
   withPageDb(async (db) => {
     const detail = await getAllianceDetail(db, eventId, unionId);
     if (!detail) return null;
-    const [events, history, names, ranks, statement] = await Promise.all([
-      sharedEvents(),
+    const listed = sharedEvents();
+    const [events, history, names, ranks, statement, change] = await Promise.all([
+      listed,
       allianceHistory(db, unionId),
       allianceNames(db, [unionId]),
       eventRanks(db, eventId),
       allianceStatement(db, unionId),
+      listed.then((list) => changeOf(db, list, eventId, unionId)),
     ]);
     const phases = events.find((e) => e.id === eventId)?.snapshots ?? [];
     return {
+      change,
       detail,
       events,
       homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
@@ -228,15 +249,12 @@ export default async function AlliancePage({ params }: { params: Params }) {
     requestLocale(),
   ]);
   if (!data) notFound();
-  const { detail, events, homeId, history, names, ledger, statement, phases, movers } = data;
+  const { detail, events, homeId, history, names, ledger, statement, phases, movers, change } =
+    data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
-  const left = canCompare(detail.membersBefore, detail.membersAfter)
-    ? memberViews(detail.membersBefore, detail.membersAfter).filter((m) => m.status === "left")
-        .length
-    : 0;
-  const metrics = totalsMetrics(detail, canDelta, left, copy);
+  const metrics = totalsMetrics(detail, canDelta, change, copy);
   return (
     <>
       <SiteHeader events={events} currentId={eventId} homeId={homeId} clock={clock} copy={copy} />
@@ -273,7 +291,11 @@ export default async function AlliancePage({ params }: { params: Params }) {
           clock={clock}
           copy={copy}
         />
-        <Legend memberMark={showsMemberMark(metrics, history)} copy={copy} />
+        <Legend
+          memberMark={showsMemberMark(metrics, history)}
+          split={metrics.some((m) => m.split)}
+          copy={copy}
+        />
         <NameTimeline names={names} clock={clock} copy={copy} />
         <Summary
           detail={detail}

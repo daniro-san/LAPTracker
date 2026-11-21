@@ -6,9 +6,8 @@
 // Start's finished time (the strip and the first interval start there), nor a Start still running, nor an
 // End that exists but is running or failed (the page is not live then): it drops running snapshots and
 // takes the Start's and End's times from the schedule. See the INVARIANT in lib/queries/visibility.ts.
-import { and, asc, eq, isNull, ne } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
 
-import type { Measured } from "../compute";
 import type { Db } from "../db";
 import {
   BUSIEST_MIN_INTERVALS,
@@ -19,6 +18,7 @@ import {
   standings,
   type Busiest,
   type PulseSlot,
+  type Reading,
   type Slice,
   type Standing,
 } from "../live";
@@ -64,11 +64,15 @@ export type ProgressRow = {
   isFresh: boolean | null;
   totalPower: number | null;
   totalKills: number | null;
+  /** `Reading.gained` and `Reading.step` (D69 amendment, 2026-11-21); absent on an End's row and on a row
+   * with no members. */
+  gained?: number;
+  step?: number;
 };
 
 /** The readings of Start and samples by snapshot: their time and every alliance read. */
 function readSlices(rows: readonly ProgressRow[]) {
-  const slices = new Map<number, { at: Date; alliances: Map<number, Measured> }>();
+  const slices = new Map<number, { at: Date; alliances: Map<number, Reading> }>();
   for (const r of rows) {
     if (r.phase === "after" || r.status === "running" || r.unionId === null) continue;
     const at = new Date(
@@ -79,6 +83,8 @@ function readSlices(rows: readonly ProgressRow[]) {
       isFresh: r.isFresh === true,
       totalPower: r.totalPower,
       totalKills: r.totalKills,
+      ...(r.gained !== undefined && { gained: r.gained }),
+      ...(r.step !== undefined && { step: r.step }),
     });
     slices.set(r.snapshotId, slice);
   }
@@ -101,8 +107,54 @@ export function readingsOf(rows: readonly ProgressRow[]): {
   return { start, samples };
 }
 
-/** The public event's Start and sample rows (alliance totals) and its End's bare row; none when it is not
- * public. Nothing here depends on `now`, so the event cache can share it between requests. */
+/**
+ * Per Start and sample row, its members' kills (D69 amendment, 2026-11-21), in SQL so only two numbers per
+ * row leave the database: `gained`, each member's kills minus their kills at their first reading of the event
+ * in the alliance; `step`, over the members also in the alliance's row of the reading just before. A null
+ * kills counts as 0 (D15, as #271's `killsTurnout`). Keyed `snapshotId:unionId`.
+ */
+async function memberGains(db: Db, eventId: number): Promise<Map<string, [number, number]>> {
+  const result = await db.execute<{
+    id: number;
+    union_id: string;
+    gained: number;
+    step: number;
+  }>(sql`
+    with reads as (
+      select id, phase, row_number() over (order by phase <> 'before', slot_at) as k
+      from snapshots
+      where event_id = ${eventId} and phase in ('before', 'sample') and status <> 'running'
+    ),
+    m as (
+      select r.id, r.k, a.union_id, ms.uid, coalesce(ms.kills, 0) as kills
+      from reads r
+      join alliance_snapshots a on a.snapshot_id = r.id and a.error is null
+      join member_snapshots ms on ms.alliance_snapshot_id = a.id
+      where r.phase = 'before'
+      union all
+      select r.id, r.k, a.union_id, u.uid, coalesce(u.kills, 0)
+      from reads r
+      join alliance_snapshots a on a.snapshot_id = r.id and a.error is null
+      cross join lateral unnest(a.member_uids, a.member_kills) as u(uid, kills)
+      where r.phase = 'sample'
+    ),
+    seq as (
+      select id, k, union_id, kills, lag(k) over w as pk, lag(kills) over w as pkills,
+        first_value(kills) over w as first
+      from m
+      window w as (partition by union_id, uid order by k)
+    )
+    select id, union_id,
+      coalesce(sum(kills - first), 0)::float8 as gained,
+      coalesce(sum(kills - pkills) filter (where pk = k - 1), 0)::float8 as step
+    from seq group by id, union_id`);
+  return new Map(
+    result.rows.map((r) => [`${r.id}:${Number(r.union_id)}`, [Number(r.gained), Number(r.step)]]),
+  );
+}
+
+/** The public event's Start and sample rows (alliance totals and `memberGains`) and its End's bare row; none
+ * when it is not public. Nothing here depends on `now`, so the event cache can share it between requests. */
 export async function progressRows(db: Db, eventId: number): Promise<ProgressRow[]> {
   const rows = await db
     .select({
@@ -131,13 +183,18 @@ export async function progressRows(db: Db, eventId: number): Promise<ProgressRow
     )
     .where(and(eq(events.id, eventId), publicEvent))
     .orderBy(asc(snapshots.slotAt), asc(allianceSnapshots.unionId));
-  return rows.map((r) => ({
-    ...r,
-    slotAt: r.slotAt?.getTime() ?? null,
-    startedAt: r.startedAt.getTime(),
-    finishedAt: r.finishedAt?.getTime() ?? null,
-    afterAt: r.afterAt.getTime(),
-  }));
+  const gains = rows.length > 0 ? await memberGains(db, eventId) : new Map();
+  return rows.map((r) => {
+    const g = gains.get(`${r.snapshotId}:${r.unionId}`);
+    return {
+      ...r,
+      slotAt: r.slotAt?.getTime() ?? null,
+      startedAt: r.startedAt.getTime(),
+      finishedAt: r.finishedAt?.getTime() ?? null,
+      afterAt: r.afterAt.getTime(),
+      ...(g && { gained: g[0], step: g[1] }),
+    };
+  });
 }
 
 /**

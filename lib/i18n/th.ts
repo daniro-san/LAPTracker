@@ -70,9 +70,10 @@ export const th = {
     liveStandings: "อันดับจนถึงตอนนี้",
     liveStandingsDone: "ณ การอ่านล่าสุด",
     liveDuring: "ระหว่างกิจกรรม",
-    liveStandingsHelp: "การเปลี่ยนแปลงจากเริ่ม เรียงจาก Kills ที่เพิ่มมากสุดก่อน",
+    liveStandingsHelp:
+      "การเปลี่ยนแปลงจากเริ่ม เรียงจาก Kills ที่เพิ่มมากสุดก่อน นับ Kills ที่สมาชิกได้ ไม่รวมที่สมาชิกเข้าใหม่นำมา",
     livePulse: "ชีพจรเซิร์ฟเวอร์",
-    livePulseHelp: "พันธมิตร {n} แห่งได้ Kills เพิ่มในทุก {min} นาที",
+    livePulseHelp: "สมาชิกของพันธมิตร {n} แห่งได้ Kills เพิ่มในทุก {min} นาที",
     liveBusiest: "ช่วง {span} นาทีที่คึกที่สุดจนถึงตอนนี้: {from}–{to} · {share} ของ Kills",
     liveBusiestDone: "ช่วง {span} นาทีที่คึกที่สุด: {from}–{to} · {share} ของ Kills",
     liveNoUpdate: "เกมไม่ส่งการอัปเดตมา",
@@ -117,7 +118,7 @@ export const th = {
     fewGainers: "ผู้ได้เพิ่มน้อย",
     carried: "สัดส่วน Kills เทียบ สัดส่วน Might",
     carriedHelp:
-      "สัดส่วนของ Kills ของแต่ละพันธมิตร คู่กับสัดส่วนของ Might Kills นับจากเริ่มถึงสิ้นสุด Might นับตอนเริ่ม สายตั้งรับและสายซัพพอร์ตไม่เพิ่ม Kills",
+      "สัดส่วนของ Kills ของแต่ละพันธมิตร คู่กับสัดส่วนของ Might Kills ที่สมาชิกซึ่งอยู่ในทั้งสองรายชื่อได้จากเริ่มถึงสิ้นสุด Might นับตอนเริ่ม สายตั้งรับและสายซัพพอร์ตไม่เพิ่ม Kills",
     carriedTotal: "รวม {n} พันธมิตร: Kills ที่เพิ่ม {kills}, Might ตอนเริ่ม {might}",
     carriedMightMark: "สัดส่วน Might ตอนเริ่ม",
     carriedKillsMark: "สัดส่วน Kills ที่เพิ่ม",
@@ -360,6 +361,14 @@ export const th = {
     rank: "อันดับ",
     rounded: "ปัดเศษ",
     members: "รวมการเปลี่ยนสมาชิก",
+    membersTap: "รวมการเปลี่ยนสมาชิก: แตะ * เพื่อดูรายละเอียด",
+  },
+  split: {
+    open: "รวมการเปลี่ยนสมาชิก: ดูรายละเอียด",
+    total: "รวม",
+    joined: "ที่สมาชิกเข้าใหม่ {n} คนนำมา",
+    left: "ที่สมาชิกออก {n} คนนำไป",
+    without: "ไม่นับพวกเขา",
   },
   members: {
     search: "ชื่อสมาชิก",

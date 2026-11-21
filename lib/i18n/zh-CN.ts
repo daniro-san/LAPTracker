@@ -70,9 +70,10 @@ export const zhCN = {
     liveStandings: "目前排行",
     liveStandingsDone: "截至最后一次读取",
     liveDuring: "活动期间",
-    liveStandingsHelp: "自开始以来的变化，Kills 增加最多的排在前面",
+    liveStandingsHelp:
+      "自开始以来的变化，Kills 增加最多的排在前面。只计成员获得的 Kills，不含加入者带来的",
     livePulse: "服务器脉搏",
-    livePulseHelp: "{n} 个联盟在每 {min} 分钟内获得的 Kills",
+    livePulseHelp: "{n} 个联盟的成员在每 {min} 分钟内获得的 Kills",
     liveBusiest: "截至目前最热闹的 {span} 分钟：{from}–{to} · 占 Kills 总数的 {share}",
     liveBusiestDone: "最热闹的 {span} 分钟：{from}–{to} · 占 Kills 总数的 {share}",
     liveNoUpdate: "游戏没有更新",
@@ -114,7 +115,7 @@ export const zhCN = {
     fewGainers: "上涨人数少",
     carried: "Kills 占比 对 Might 占比",
     carriedHelp:
-      "每个联盟的 Kills 占比，与其 Might 占比并列。Kills 统计从开始到结束，Might 取开始时的数值。防守者和辅助玩家不获得 Kills。",
+      "每个联盟的 Kills 占比，与其 Might 占比并列。Kills 为两份名单中都在的成员从开始到结束获得的，Might 取开始时的数值。防守者和辅助玩家不获得 Kills。",
     carriedTotal: "全部 {n} 个联盟：共获得 {kills} Kills，开始时 Might 共 {might}。",
     carriedMightMark: "开始时的 Might 占比",
     carriedKillsMark: "获得的 Kills 占比",
@@ -352,6 +353,14 @@ export const zhCN = {
     rank: "排名",
     rounded: "已取整",
     members: "含成员变动",
+    membersTap: "含成员变动：点 * 查看拆分",
+  },
+  split: {
+    open: "含成员变动：查看拆分",
+    total: "合计",
+    joined: "{n} 名加入者带来",
+    left: "{n} 名离开者带走",
+    without: "不含他们",
   },
   members: {
     search: "成员名",

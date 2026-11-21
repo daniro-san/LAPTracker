@@ -14,6 +14,7 @@ import { errorsCopy } from "./copy-errors";
 import { flowCopy } from "./copy-flow";
 import { liveCopy } from "./copy-live";
 import { mergeCopy } from "./copy-merge";
+import { splitCopy } from "./copy-split";
 import { standingCopy } from "./copy-standing";
 import { alliancesCopy, statementCopy } from "./copy-statement";
 import { warCopy } from "./copy-war";
@@ -224,7 +225,10 @@ export const en = {
     rounded: "Rounded",
     /** The footnote mark `*` on a falling Might or Kills change when members left. */
     members: "Includes member changes",
+    /** The same item when a `*` opens the split of the change it marks (D69 amendment, 2026-11-21). */
+    membersTap: "Includes member changes: tap * for the split",
   },
+  split: splitCopy,
   members: {
     search: "Member name",
     sort: "Sort",

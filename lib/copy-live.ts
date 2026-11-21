@@ -8,9 +8,10 @@ export const liveCopy = {
   liveStandings: "Standings so far",
   liveStandingsDone: "At the last reading",
   liveDuring: "During the event",
-  liveStandingsHelp: "Change since Start, most kills gained first",
+  liveStandingsHelp:
+    "Change since Start, most kills gained first. Kills its members gained, not what members who joined brought in",
   livePulse: "Server pulse",
-  livePulseHelp: "Kills gained by {n} alliances in each {min} minutes",
+  livePulseHelp: "Kills gained by the members of {n} alliances in each {min} minutes",
   /** `{span}`: two reading intervals, in minutes (30 at the 15-minute cadence). */
   liveBusiest: "Busiest {span} minutes so far: {from}–{to} · {share} of the kills",
   liveBusiestDone: "Busiest {span} minutes: {from}–{to} · {share} of the kills",

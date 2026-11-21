@@ -2,6 +2,7 @@
 // error classes, never a third-party message (plan §12.3). Split from lib/collector.ts for its size.
 import {
   type UpstreamDetail,
+  IdentityError,
   NotFoundError,
   NotLiveError,
   QuotaExhaustedError,
@@ -16,6 +17,7 @@ export function describe(e: unknown): string {
   if (e instanceof NotLiveError) return "not live";
   if (e instanceof SchemaError) return e.code;
   if (e instanceof QuotaExhaustedError) return "quota exhausted (429)";
+  if (e instanceof IdentityError) return e.message;
   return e instanceof Error ? e.name : "unknown error";
 }
 
@@ -24,6 +26,8 @@ export function httpStatusOf(e: unknown): number | null {
   if (e === undefined) return 200;
   if (e instanceof UpstreamError) return e.status;
   if (e instanceof QuotaExhaustedError) return 429;
+  // The upstream answered; the body held another alliance.
+  if (e instanceof IdentityError) return 200;
   return e instanceof NotFoundError ? 404 : null;
 }
 

@@ -26,12 +26,19 @@ const cell = (unionId: number, tag: string, power: number, failed = false) => ({
 const snap = (phase: "before" | "after", alliances: ReturnType<typeof cell>[]) =>
   ({ phase, alliances }) as unknown as Snap;
 
-const killsRow = (before: number, after: number, left: number) => {
-  const at = (phase: "before" | "after", kills: number) =>
-    snap(phase, [{ ...cell(1, "OGs", 10), totalKills: kills }]);
+/** `kills`: what the members who joined came in with and what those who left took (RosterChange). */
+const killsRow = (
+  before: number,
+  after: number,
+  left: number,
+  kills = { joined: 0, left: 0 },
+  joined = 0,
+) => {
+  const at = (phase: "before" | "after", total: number) =>
+    snap(phase, [{ ...cell(1, "OGs", 10), totalKills: total }]);
   const rows = comparisonRows(
     [at("before", before), at("after", after)],
-    new Map([[1, { joined: 0, left }]]),
+    new Map([[1, { joined, left, kills, power: { joined: 0, left: 0 } }]]),
     new Map(),
     new Map(),
     en,
@@ -44,6 +51,14 @@ describe("member mark", () => {
     expect(killsRow(100, 80, 2)?.memberMark).toBe(true);
     expect(killsRow(100, 80, 0)?.memberMark).toBe(false);
     expect(killsRow(100, 120, 2)?.memberMark).toBe(false);
+  });
+
+  it("keeps the total and gives the split when members who joined or left moved it (D69 amendment)", () => {
+    // +6,100 in all: 5,340 came in with 3 who joined, 1,680 went with 1 who left.
+    const m = killsRow(10_000, 16_100, 1, { joined: 5_340, left: 1_680 }, 3);
+    expect(m?.delta).toBe(6_100);
+    expect(m?.memberMark).toBeUndefined();
+    expect(m?.split).toEqual({ joined: { n: 3, value: 5_340 }, left: { n: 1, value: 1_680 } });
   });
 });
 

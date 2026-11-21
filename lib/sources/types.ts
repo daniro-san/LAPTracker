@@ -232,6 +232,17 @@ export class NotLiveError extends Error {
   override name = "NotLiveError";
 }
 
+/**
+ * A 200 answer for alliance X that holds another alliance's roster (D69 amendment, 2026-11-21): another id
+ * (`id`), or a tag X is not known by with members X does not have (`tag`). Counted as a failed read of X.
+ */
+export class IdentityError extends Error {
+  override name = "IdentityError";
+  constructor(readonly reason: "id" | "tag") {
+    super(`wrong alliance (${reason})`);
+  }
+}
+
 /** The response no longer matches the fields we read. `code` is the run_logs code. Paths only, no values. */
 export class SchemaError extends Error {
   override name = "SchemaError";

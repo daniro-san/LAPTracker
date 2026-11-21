@@ -70,9 +70,10 @@ export const itIT = {
     liveStandings: "Graduatoria finora",
     liveStandingsDone: "All’ultima lettura",
     liveDuring: "Durante l’evento",
-    liveStandingsHelp: "Variazione da Inizio, prima chi ha guadagnato più Kills",
+    liveStandingsHelp:
+      "Variazione da Inizio, prima chi ha guadagnato più Kills. Kills guadagnate dai membri, senza quelle portate da chi è entrato",
     livePulse: "Ritmo server",
-    livePulseHelp: "Kills guadagnati da {n} alleanze ogni {min} minuti",
+    livePulseHelp: "Kills guadagnate dai membri di {n} alleanze ogni {min} minuti",
     liveBusiest: "I {span} minuti più intensi finora: {from}–{to} · {share} dei Kills",
     liveBusiestDone: "I {span} minuti più intensi: {from}–{to} · {share} dei Kills",
     liveNoUpdate: "Nessun aggiornamento dal gioco",
@@ -124,7 +125,7 @@ export const itIT = {
     fewGainers: "pochi guadagni",
     carried: "Quota Kills vs quota Might",
     carriedHelp:
-      "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine, accanto alla sua quota di Might a Inizio. I difensori e i giocatori di supporto non guadagnano Kills.",
+      "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine dai membri presenti in entrambe le liste, accanto alla sua quota di Might a Inizio. I difensori e i giocatori di supporto non guadagnano Kills.",
     carriedTotal: "Tutte le {n} alleanze: {kills} Kills guadagnate, {might} di Might a Inizio",
     carriedMightMark: "Quota di Might a Inizio",
     carriedKillsMark: "Quota di Kills guadagnate",
@@ -370,6 +371,14 @@ export const itIT = {
     rank: "Posizione",
     rounded: "Arrotondato",
     members: "Include cambi di membri",
+    membersTap: "Include cambi di membri: tocca * per il dettaglio",
+  },
+  split: {
+    open: "Include cambi di membri: mostra il dettaglio",
+    total: "Totale",
+    joined: "Portato da {n} entrati",
+    left: "Uscito con {n} usciti",
+    without: "Senza di loro",
   },
   members: {
     search: "Nome del membro",

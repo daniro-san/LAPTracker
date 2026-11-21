@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { allianceSnapshots, events, snapshots } from "../schema";
+import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { findBlockedKeys } from "./blocked-keys";
 import { whoCarried } from "./carried";
 import { getEventPage } from "./event-page";
@@ -13,12 +13,15 @@ interface Side {
   might: number;
   kills: number;
   fresh?: boolean;
+  /** A member who is only in this roster, with these lifetime kills (on top of `kills`). */
+  joiner?: number;
 }
 
 let db: Db;
 let day = 0;
 
-/** One event with a Start and an End; the figures are alliance totals. Returns the event's id. */
+/** One event with a Start and an End; each alliance has one member who holds its `kills`, and a joiner
+ * when given. Returns the event's id. */
 async function seedEvent(before: Side[], after: Side[]): Promise<number> {
   const at = new Date(Date.UTC(2026, 9, 1 + day++, 14));
   const [event] = await db
@@ -34,17 +37,28 @@ async function seedEvent(before: Side[], after: Side[]): Promise<number> {
       .insert(snapshots)
       .values({ eventId, phase, startedAt: at, status: "complete" })
       .returning({ id: snapshots.id });
-    await db.insert(allianceSnapshots).values(
-      rows.map((r) => ({
-        snapshotId: (snap as { id: number }).id,
-        unionId: r.unionId,
-        tag: `T${r.unionId}`,
-        source: "v1" as const,
-        isFresh: r.fresh ?? true,
-        totalPower: r.might,
-        totalKills: r.kills,
-        rawJson: { members: [{ uid: 1, x: 1, y: 2, online: true }] },
-      })),
+    const ids = await db
+      .insert(allianceSnapshots)
+      .values(
+        rows.map((r) => ({
+          snapshotId: (snap as { id: number }).id,
+          unionId: r.unionId,
+          tag: `T${r.unionId}`,
+          source: "v1" as const,
+          isFresh: r.fresh ?? true,
+          totalPower: r.might,
+          totalKills: r.kills + (r.joiner ?? 0),
+          rawJson: { members: [{ uid: 1, x: 1, y: 2, online: true }] },
+        })),
+      )
+      .returning({ id: allianceSnapshots.id });
+    await db.insert(memberSnapshots).values(
+      rows.flatMap((r, i) => {
+        const allianceSnapshotId = (ids[i] as { id: number }).id;
+        const own = { allianceSnapshotId, uid: r.unionId * 100, name: "m", kills: r.kills };
+        const joined = { allianceSnapshotId, uid: r.unionId * 100 + 1, name: "j", kills: r.joiner };
+        return r.joiner === undefined ? [own] : [own, joined];
+      }),
     );
   }
   return eventId;
@@ -93,6 +107,17 @@ describe("whoCarried (#280)", () => {
     );
     expect(carried?.rows.map((r) => r.unionId)).toEqual([1, 2]);
     expect(carried?.totals.might).toBe(400);
+  });
+
+  it("leaves a joiner's lifetime kills out of the kills gained and the shares", async () => {
+    const carried = await carriedOf(
+      await seedEvent(start(), [
+        { unionId: 1, might: 100, kills: 300 },
+        { unionId: 2, might: 300, kills: 100, joiner: 5_000 },
+      ]),
+    );
+    expect(carried?.rows[0]).toMatchObject({ unionId: 1, killShare: 0.75 });
+    expect(carried?.totals.killsGained).toBe(400);
   });
 
   it("is null until the event has an End", async () => {

@@ -10,6 +10,7 @@ import {
   listAllianceRows,
 } from "./alliance-snapshots";
 import { allianceLabels, trackedAllianceIds } from "./alliances";
+import { lastMemberUids } from "./daily-reads";
 import { getEvent, setEventAllianceIds } from "./events";
 import { findSnapshot, finishSnapshot, startSample, startSnapshot } from "./snapshots";
 
@@ -114,6 +115,8 @@ export interface Repo {
   trackedAllianceIds(): Promise<number[]>;
   /** The newest tag and name of each id that has one (D133). */
   allianceLabels(ids: number[]): Promise<Map<number, { tag: string | null; name: string | null }>>;
+  /** Each id's uids in its newest daily roster (D60); ids with none are left out. */
+  lastMemberUids(ids: number[]): Promise<Map<number, number[]>>;
 }
 
 export function createRepo(db: Db): Repo {
@@ -133,5 +136,6 @@ export function createRepo(db: Db): Repo {
     finishSnapshot: (id, result) => finishSnapshot(db, id, result),
     trackedAllianceIds: () => trackedAllianceIds(db),
     allianceLabels: (ids) => allianceLabels(db, ids),
+    lastMemberUids: (ids) => lastMemberUids(db, ids),
   };
 }

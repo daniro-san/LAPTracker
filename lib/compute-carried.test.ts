@@ -6,7 +6,7 @@ import { carriedShares, ratioSpread } from "./compute";
 const count = fc.option(fc.nat({ max: 2_000_000_000 }), { nil: null });
 
 describe("carriedShares (#280)", () => {
-  const input = fc.array(fc.record({ might: count, killsBefore: count, killsAfter: count }), {
+  const input = fc.array(fc.record({ might: count, gained: count }), {
     maxLength: 12,
   });
 
@@ -25,9 +25,9 @@ describe("carriedShares (#280)", () => {
 
   it("divides the kill share by the might share and leaves out an alliance with a null total", () => {
     const shares = carriedShares([
-      { key: 1, might: 100, killsBefore: 0, killsAfter: 300 },
-      { key: 2, might: 300, killsBefore: 10, killsAfter: 110 },
-      { key: 3, might: null, killsBefore: 0, killsAfter: 999 },
+      { key: 1, might: 100, gained: 300 },
+      { key: 2, might: 300, gained: 100 },
+      { key: 3, might: null, gained: 999 },
     ]);
     expect(shares.map((s) => s.key)).toEqual([1, 2]);
     expect(shares[0]).toMatchObject({ mightShare: 0.25, killShare: 0.75, ratio: 3 });
@@ -35,8 +35,8 @@ describe("carriedShares (#280)", () => {
 
   it("counts a fall in an alliance's kills as no gain", () => {
     const shares = carriedShares([
-      { key: 1, might: 1, killsBefore: 50, killsAfter: 10 },
-      { key: 2, might: 1, killsBefore: 0, killsAfter: 10 },
+      { key: 1, might: 1, gained: -40 },
+      { key: 2, might: 1, gained: 10 },
     ]);
     expect(shares.map((s) => s.killShare)).toEqual([0, 1]);
   });
