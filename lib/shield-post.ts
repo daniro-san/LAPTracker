@@ -41,20 +41,22 @@ export interface PostDeps {
   origin: string;
 }
 
-/** The leaders' webhook URL, opened for this call only; null when none is usable. */
-async function leadersHook(db: Db, env: PostEnv, target: ShieldTarget): Promise<string | null> {
+/** The leaders' webhook, opened for this call only, and whether it is a forum; null when none is usable. */
+type Hook = { url: string; forum: boolean };
+async function leadersHook(db: Db, env: PostEnv, target: ShieldTarget): Promise<Hook | null> {
   const id = target.workspaceId as number;
   const row = (await sealedWebhooks(db, id)).find((r) => r.channel === "leaders");
   const secret = env.WORKSPACE_KEYS_SECRET;
   if (row && secret && row.masterFp === masterFingerprint(secret)) {
     try {
-      return openKey(secret, id, row, "webhook-leaders");
+      return { url: openKey(secret, id, row, "webhook-leaders"), forum: row.forum };
     } catch {
       return null;
     }
   }
   if (row && secret) return null;
-  return env.WORKSPACE_DISCORD_WEBHOOKS?.[target.slug]?.leaders?.url ?? null;
+  const site = env.WORKSPACE_DISCORD_WEBHOOKS?.[target.slug]?.leaders;
+  return site ? { url: site.url, forum: site.forum } : null;
 }
 
 /** One read in numbers: who was seen shielded, who not yet, and the newest answer's time. */
@@ -145,31 +147,38 @@ export async function postShieldSummary(
   if (check?.messageHash === GONE) return false;
   const hook = await leadersHook(db, deps.env, target);
   if (!hook) return false;
-  const content = await messageOf(deps, db, run);
+  const { content, title } = await messageOf(deps, db, run);
   const hash = createHash("sha256").update(content).digest("hex");
   if (check?.messageId && check.messageHash === hash) return true;
-  return deliver(deps, db, { q, hook, content, hash, id: check?.messageId ?? null });
+  return deliver(deps, db, { q, hook, content, title, hash, id: check?.messageId ?? null });
 }
 
-/** The first post, or an edit of the posted message; a deleted message is marked `gone`, not posted. */
+/**
+ * The first post, or an edit of the posted message; a deleted message is marked `gone`, not posted. A forum
+ * channel refuses a post without a title (`thread_name`: a 400), and the first message of a forum post has
+ * the post's own id, so an edit there names that id as `thread_id`.
+ */
 async function deliver(
   deps: PostDeps,
   db: Db,
   m: {
     q: { day: string; unionId: number };
-    hook: string;
+    hook: Hook;
     content: string;
+    title: string;
     hash: string;
     id: string | null;
   },
 ): Promise<boolean> {
   const body = { content: m.content, allowed_mentions: { parse: [] } };
   if (!m.id) {
-    const id = await sendOrEdit(deps.fetch, m.hook, body, null);
+    const first = m.hook.forum ? { ...body, thread_name: m.title } : body;
+    const id = await sendOrEdit(deps.fetch, m.hook.url, first, null);
     if (id) await keepMessage(db, m.q, { id, hash: m.hash }, deps.now());
     return id !== null;
   }
-  const edited = await editOnly(deps.fetch, m.hook, body, m.id);
+  const thread = m.hook.forum ? m.id : null;
+  const edited = await editOnly(deps.fetch, m.hook.url, body, m.id, thread);
   if (edited === "failed") return false;
   if (edited === "gone") console.warn("shield.message_gone");
   const hash = edited === "ok" ? m.hash : GONE;
@@ -205,5 +214,7 @@ async function messageOf(
   const lang = target.settings?.language as ShieldLanguage;
   const words = SHIELD_POST[SHIELD_LANGUAGES.includes(lang) ? lang : "en"];
   const url = `${deps.origin}/w/${target.slug}/roll-call?week=${mondayOf(day)}`;
-  return shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url);
+  const content = shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url);
+  // The forum post's title: the message's title without its bold marks.
+  return { content, title: words.title.replaceAll("*", "") };
 }
