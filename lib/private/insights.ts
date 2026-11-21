@@ -2,13 +2,14 @@
 // the day each member was first seen, the officers' break notes (D75: members on a break and new members
 // are left out of the effort comparison), and for the people who joined or left, the public daily rosters
 // of the other alliances we read and the alliance tags in our members' own /v1/players history rows (D132,
-// D136). Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are
-// never used; avatar_url is never read.
+// D136). While the Raid Shield check is on (D134), its weekly counts of the night and morning checks'
+// readings (D137), counts only. Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are never used; avatar_url is never read.
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { sightingsElsewhere } from "../queries/roster-stays";
 import { allianceLabels, type AllianceLabel } from "../repo/alliances";
+import { shieldPassCounts } from "../repo/shield-checks";
 import { latestSquadSightings } from "../repo/squads";
 import { endOfDayReads, firstSeenDays, scheduledEventMight } from "../repo/workspace-rosters";
 import { serverDay } from "../schedule";
@@ -37,6 +38,7 @@ import {
   type Place,
   type PulseView,
 } from "./insights-rules";
+import { shieldFridays, shieldWeeksOf, shieldWindows, type ShieldWeek } from "./insights-shield";
 import { squadsCoverageOf, type SquadsCoverage } from "./insights-squads";
 import { factsOf } from "./member-facts";
 import { isNewMember } from "./member-week";
@@ -77,6 +79,8 @@ export interface InsightsView {
   kvk: KvkEvent[];
   /** Squads seen, counts only; null with the squads read turned off (D126). */
   squads: SquadsCoverage | null;
+  /** Raid Shield history, the newest week first; null with the Raid Shield check turned off (D134). */
+  shield: ShieldWeek[] | null;
   labels: Map<number, AllianceLabel>;
   /** The newest read's members, for the thanks sheet's "Add someone else". */
   roster: { uid: number; name: string }[];
@@ -226,6 +230,7 @@ export async function insightsView(
       flow: null,
       kvk: [],
       squads: null,
+      shield: null,
       labels: new Map(),
       roster: [],
     };
@@ -233,13 +238,16 @@ export async function insightsView(
   const pulse = pulseView(reads);
   const weeks = (pulse?.weeks ?? []).map((w) => w.monday);
   const squadsOn = featureOn(access, "squads");
-  const away = awayOf(newest, facts, serverDay(now, { SERVER_TZ: zone }));
+  const today = serverDay(now, { SERVER_TZ: zone });
+  const away = awayOf(newest, facts, today);
+  const fridays = featureOn(access, "shield_check") ? shieldFridays(today, now, zone) : null;
   // Events from the day before the oldest read: their End read may sit on that read's day.
   const since = new Date(Date.parse(`${addDays(reads[0]?.day ?? newest.day, -1)}T00:00:00Z`));
-  const [{ flow, labels }, events, sightings] = await Promise.all([
+  const [{ flow, labels }, events, sightings, passes] = await Promise.all([
     flowPart(db, access, reads, weeks, firstSeen, oldest, zone),
     scheduledEventMight(db, access.unionId, since),
     squadsOn ? latestSquadSightings(db, access.unionId) : [],
+    fridays ? shieldPassCounts(db, access.unionId, shieldWindows(fridays, zone)) : [],
   ]);
   return {
     newest: newest.day,
@@ -254,6 +262,7 @@ export async function insightsView(
           now,
         )
       : null,
+    shield: fridays ? shieldWeeksOf(fridays, passes) : null,
     labels,
     roster: newest.members.map((m) => ({ uid: m.uid, name: m.name })),
   };

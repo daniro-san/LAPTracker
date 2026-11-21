@@ -37,15 +37,20 @@ export function Card({
   );
 }
 
-/** Horizontal bars: label and number on one line, the bar under them, a muted note after the number. */
+/**
+ * Horizontal bars: label and number on one line, the bar under them, a muted note after the number.
+ * `bare`: a row with no share draws no empty track.
+ */
 export function Bars({
   rows,
   noData,
   tone = "plum",
+  bare = false,
 }: {
   rows: BarRow[];
   noData: string;
   tone?: "plum" | "ink";
+  bare?: boolean;
 }) {
   return (
     <ul className="mt-1">
@@ -58,14 +63,16 @@ export function Bars({
               {r.note && <span className="ml-2 font-normal text-ink/70">{r.note}</span>}
             </span>
           </p>
-          <span aria-hidden="true" className="mt-1 block h-2 w-full bg-ink/10">
-            {r.share !== null && (
-              <span
-                className={`block h-2 ${tone === "plum" ? "bg-plum/60" : "bg-ink/45"}`}
-                style={{ width: `${Math.round(Math.max(0, Math.min(1, r.share)) * 100)}%` }}
-              />
-            )}
-          </span>
+          {!(bare && r.share === null) && (
+            <span aria-hidden="true" className="mt-1 block h-2 w-full bg-ink/10">
+              {r.share !== null && (
+                <span
+                  className={`block h-2 ${tone === "plum" ? "bg-plum/60" : "bg-ink/45"}`}
+                  style={{ width: `${Math.round(Math.max(0, Math.min(1, r.share)) * 100)}%` }}
+                />
+              )}
+            </span>
+          )}
         </li>
       ))}
     </ul>
