@@ -103,6 +103,20 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.43.0",
+    date: "2026-11-21",
+    title: "Insights: Raid Shield history",
+    changes: [
+      "Insights has a Raid Shield history (when the Raid Shield check is on): for the last 8 Fridays, the share of members seen with a shield at the night check and at the morning check.",
+      'Alliance totals only, no names. A week or check with no reading shows "no reading", never 0%; a check still running shows "under way".',
+      "The section explains that these are the tracker's map scans, so the night share is usually low: most shields turned on for the raid show only in the morning.",
+    ],
+    needsYou: [
+      "After the next raid, compare the two shares with Raid prep's own counts for that week.",
+    ],
+    prs: [582],
+  },
+  {
     version: "v5.42.0",
     date: "2026-11-21",
     title: "Insights: KvK cost and recovery, and squads seen",
