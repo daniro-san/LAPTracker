@@ -60,8 +60,13 @@ async function roster(unionId: number, day: string, people: [number, string, num
         active,
         daily_honor: active,
         daily_tech: active,
-        x: 1,
-        y: 2,
+        // Blocked even for the member themself (CLAUDE.md, D71, D142): invented markers to look for.
+        x: 4321,
+        y: 8765,
+        online: true,
+        last_online_at: 1_777_000_001,
+        joined_at: 1_666_000_002,
+        avatar_url: "https://avatar.invalid/ana.png",
       })),
     },
   });
@@ -184,12 +189,41 @@ describe("a member's own page (D142, issue 471)", () => {
     const text = JSON.stringify(view);
     expect(view).toMatchObject({ left: false, name: "Ana Invented", needed: [] });
     expect(text).toContain("Ana Invented");
-    // No daily quest points, coins or donations, not even the member's own (CLAUDE.md, D71, D142).
-    expect(text).not.toMatch(/active|daily_honor|daily_tech|dailyHonor|dailyTech|"501"|:501\b/);
-    // Nobody else's name, numbers, squads or team; no map position.
+    // Nobody else's name, numbers, squads or team.
     for (const other of ["Bo Invented", "909", "8,888", "8.89K", "Team A", "Cy Invented"])
       expect(text).not.toContain(other);
-    expect(text).not.toMatch(/"x"|"y"|online|joined/i);
+    // Still blocked for the member themself: map position, online, join date and photo address.
+    for (const blocked of ["4321", "8765", "1777000001", "1666000002", "avatar.invalid"])
+      expect(text).not.toContain(blocked);
+    expect(text).not.toMatch(/"x"|"y"|online|joined|avatar/i);
+  });
+
+  it("shows the member's own daily fields for their own approved link only (owner, 2026-11-21)", async () => {
+    const values = async (who: string) => {
+      const view = await shown(who);
+      if (!view || view.left || !view.week) return null;
+      return view.week.rows.map((r) => [r.metric, r.bars.slice(0, 5).map((b) => b.value)]);
+    };
+    // Pending: nothing, not even the member's own week.
+    await post("me", "alpha:Ana Invented", { action: "claim", uid: 101 });
+    expect(await values("alpha:Ana Invented")).toBeNull();
+    const ana = { user: users["alpha:Ana Invented"], uid: 101 };
+    await post("member-links", "alpha:Rook", { action: "approve", ...ana });
+    // Monday to Friday of this game week: no reading Monday, 501 on Tuesday and Friday.
+    const own = ["—", "501", "—", "—", "501"];
+    expect(await values("alpha:Ana Invented")).toEqual([
+      ["quests", own],
+      ["coins", own],
+      ["donations", own],
+    ]);
+    // Bobby, linked to the other player, sees that player's 909 and never Ana's 501.
+    await linked("alpha:Bobby", 102);
+    const bobby = JSON.stringify(await shown("alpha:Bobby"));
+    expect(bobby).toContain("909");
+    expect(bobby).not.toContain("501");
+    // Removed: the page and its week close again.
+    await post("member-links", "alpha:Rook", { action: "unlink", ...ana });
+    expect(await values("alpha:Ana Invented")).toBeNull();
   });
 
   it("never lets a false claim lock the real player out, or an answer reach a later claim", async () => {
