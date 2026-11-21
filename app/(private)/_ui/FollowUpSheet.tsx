@@ -217,7 +217,7 @@ export function FollowUpPanel(props: PanelProps) {
   const f = useRecord(props);
   const card = useCard(props.slug, row.uid);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const data = card?.data ?? null;
+  const data = card.data;
   // A fact still to ask opens the editor at its field: after the editor's sheet took its first focus.
   useEffect(() => {
     if (editing?.focus) focusField(editing.focus);
@@ -259,7 +259,7 @@ export function FollowUpPanel(props: PanelProps) {
         </ul>
       </section>
       <Message row={row} words={words} />
-      <Fill row={row} words={words} ready={data !== null} onOpen={setEditing} />
+      <Fill row={row} words={words} card={card} onOpen={setEditing} />
       <Answers value={f.action} words={words} onChange={f.choose} />
       {f.action === "break" && (
         <BackOn f={f} today={props.today} language={props.language} words={words} />
@@ -284,7 +284,11 @@ export function FollowUpPanel(props: PanelProps) {
           facts={data.stored}
           autoStatus={data.autoStatus}
           mode={editing.mode}
-          onClose={() => setEditing(null)}
+          onClose={() => {
+            // Read the card again, so a second edit starts from this save's versions, not a 409.
+            setEditing(null);
+            card.reload();
+          }}
         />
       )}
     </Sheet>

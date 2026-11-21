@@ -17,7 +17,7 @@ import {
   type MemberFollowUp,
 } from "../repo/member-follow-ups";
 import { gameLanguages } from "../repo/player-reads";
-import { endOfDayReads, type RosterRead } from "../repo/workspace-rosters";
+import type { RosterRead } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import type { WorkspaceLanguage } from "./dictionary";
@@ -31,7 +31,7 @@ import {
   type FollowUpAction,
   type WorkItem,
 } from "./follow-up-rules";
-import { LAST_DAYS, lastDays } from "./member-days";
+import { lastDays } from "./member-days";
 import { isMember, saveFacts, type FactChange } from "./member-facts";
 import { DAY_MS, gameWeek, OFFLINE_GRACE_DAYS } from "./member-week";
 import { membersView, type MemberRow } from "./members";
@@ -50,6 +50,9 @@ export interface FollowUpView {
   /** Attackers in the thefts log whose follow-up is Open or Open again (D97). */
   thefts: AttackerGroup[];
 }
+
+/** How far back a member's game language is read: the squads read runs every day (D132). */
+const LANGUAGE_DAYS = 14;
 
 /** A member on the list and the language of their ready message: null when no language is known. */
 export type FollowUpItem = WorkItem & { language: WorkspaceLanguage | null };
@@ -81,14 +84,21 @@ export async function followUpView(
   zone: string,
 ): Promise<FollowUpView> {
   const today = dayIn(zone, now.getTime());
-  const [members, rows, thefts, reads, game] = await Promise.all([
+  const [members, rows, thefts] = await Promise.all([
     membersView(db, access, now, zone),
     followedUpSince(db, access.workspaceId, weekStart(today, zone)),
     theftsView(db, access, { now, zone }),
-    endOfDayReads(db, access.unionId, LAST_DAYS),
-    gameLanguages(db, access.unionId),
   ]);
-  const items = worklist(members.members, resolvedBy(rows), tipsOf(members.members, reads));
+  // The coins tip reads the rosters membersView already has (its last 7 days are among them).
+  const items = worklist(members.members, resolvedBy(rows), tipsOf(members.members, members.reads));
+  // Only the members on the list, and only recent reads (#521).
+  const since = new Date(now.getTime() - LANGUAGE_DAYS * DAY_MS);
+  const game = await gameLanguages(
+    db,
+    access.unionId,
+    items.map((i) => i.member.uid),
+    since,
+  );
   return {
     early: members.early,
     week: gameWeek(today),

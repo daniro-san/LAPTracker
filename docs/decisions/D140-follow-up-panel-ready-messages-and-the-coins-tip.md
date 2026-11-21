@@ -35,12 +35,19 @@ A save closes the panel and shows D104's saved line with Undo. A member whose fa
 - the tip ("Small tip: helping alliance mates gives you Alliance Help coins, up to 1,000 a day.");
 - every fact still to ask by name ("Quick one for the alliance sheet: could you tell me your main squad might, troop tier and languages?");
 - the end: "Just checking in 🙂" after a reason, "Thanks! 🙂" after a question, "Have fun! 🙂" after the tip alone (a thanks there reads as praise for doing better).
-- No number, no "you didn't", nothing about being watched. The issue's example "Haven't seen you around for a couple of days" was softened by the persona panel: it told a member someone tracks when they are online. The owner may restore it (`READY_MESSAGE.*.idle`).
+- No number about the member (the 1,000 in the tip is the game's daily cap), no "you didn't", nothing about being watched. The issue's example "Haven't seen you around for a couple of days" was softened by the persona panel: it told a member someone tracks when they are online. The owner may restore it (`READY_MESSAGE.*.idle`).
 - PT and FR are written gender-neutral and informal (você, tu), as a message between players.
 
 **The member's language** (`messageLanguage`): the languages officers recorded (member facts) first, then the game's language from this workspace's own newest `player_reads` row that has one (`gameLanguages`, D132), else the officer's own language. D137's Raid prep message uses the same pick with English last. In six real reads (2026-11-20) the game language was "en" for 5 and "fr" for 1: it is the game client's language, so a Portuguese speaker who plays in English gets English until an officer records their languages or picks PT on the chip.
 
 **Privacy** (D71). Reads go through `lib/private` after `requireWorkspace`. The game language is read for the workspace's own alliance only; another workspace's reads of the same player are never seen (the issue 471 suite). Nothing new is logged or sent; no blocked roster field reaches the page.
+
+**Review of PR 523 (2026-11-20).**
+
+- After a facts save the panel reads the card again (`useCard`'s `reload`), and offers no editor until the new read is in, so a second edit in the same open panel starts from the officer's own save, not a 409 (`follow-up-card.ts`, `panelCard`).
+- A failed card read says "Could not read their card, so their notes and info are not here." with Try again, and a signed-out one shows the signed-out note (D99); never "No notes yet". The "Fill in" buttons stay off and the same line says why.
+- `gameLanguages` reads only the members on the list, from the last 14 days (`LANGUAGE_DAYS`), one row each (`DISTINCT ON`): no scan of the whole history (#521).
+- The coins tip reads the end-of-day rosters `membersView` already fetched (`MembersView.reads`), not a second fetch.
 
 **Not built here** (left as follow-ups): a separate "Shared the tip" answer and collapsing the tip group above some size (decide after a real week's count); one line on what the two copies change; saying where the language came from ("from their languages", "game language"); the issue's AI translation into other languages.
 

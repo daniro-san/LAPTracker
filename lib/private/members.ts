@@ -112,6 +112,9 @@ export interface MembersView {
    * so the Members tab does not read them again.
    */
   facts: Map<number, MemberFacts>;
+  /** The end-of-day reads the view was made from, oldest first (none before the first), for Follow-up's
+   * coins tip, so they are not fetched twice. */
+  reads: RosterRead[];
 }
 
 /** The rank as the game shows it, with an R4's title by the game's name (D56). */
@@ -241,13 +244,23 @@ function earlyView(
       thanks: none,
       zones: [],
       facts: s.facts,
+      reads: [],
     };
   const week = gameWeek(serverDay(roster.at, { SERVER_TZ: zone }));
   const members = roster.members
     .map((m) => ({ ...plainRow(m, week, s.firstSeen), ...factsPart(m.uid, s), early: true }))
     .sort(order);
   const zones = usedZones(s.facts, [...roster.members.map((m) => m.uid), ...s.pending]);
-  return { readAt: roster.at, early: true, week, members, thanks: none, zones, facts: s.facts };
+  const view = {
+    readAt: roster.at,
+    early: true,
+    week,
+    members,
+    thanks: none,
+    zones,
+    facts: s.facts,
+  };
+  return { ...view, reads: [] };
 }
 
 /** Check in first; then R5, R4 … R1, then by might; a member without a rank or might last. */
@@ -316,6 +329,7 @@ export async function membersView(
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),
     facts,
+    reads,
   };
 }
 

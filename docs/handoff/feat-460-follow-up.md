@@ -84,6 +84,16 @@
 - **Persona panel:** an R4 on a phone, a member receiving the message, a Portuguese-first member who plays in English, and product strategy. All four voted "accept with changes". The agreed fixes are applied (see D140).
 - **Privacy:** none of the 2,064 names in the fixture rosters appears in the added lines.
 
+## Review of PR 523
+
+- **A second edit no longer gets a 409.** After a facts save, the panel reads the card again and keeps the editor off until the new read is in. Test: `app/(private)/_ui/follow-up-card.test.ts`.
+- **A failed card read** shows an error line with Try again. A signed-out read shows the signed-out note. Neither says "No notes yet". The "Fill in" buttons stay off and the line says why. Same test file.
+- **`gameLanguages` is bounded.** It reads only the members on the list, from the last 14 days, one row each (`DISTINCT ON`). Test: `lib/repo/player-reads.test.ts`.
+- **The coins tip reuses `membersView`'s rosters** (`MembersView.reads`) instead of fetching the last 7 rosters again.
+- **D140 wording:** the 1,000 in the tip is the game's cap, not a number about the member.
+- **Left for the coordinator's follow-up issue:** the dictionary import into the browser bundle, edge-case tests for the tip rule, and the duplicated grace logic.
+- **Not re-run:** the browser e2e. Only `pnpm check` ran after these fixes.
+
 ## Open issues
 
 - **The tip's real volume is unknown.** End-of-day reads had about a quarter of members below the cap. After one real week, decide whether to collapse "A tip to share" above some size, or to add a "Shared the tip" answer (persona panel, "not now").

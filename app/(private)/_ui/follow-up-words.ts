@@ -46,6 +46,8 @@ export const FOLLOW_UP_KEYS = [
   "followup.notes",
   "followup.noNotes",
   "followup.loading",
+  "followup.cardFailed",
+  "followup.retry",
   "facts.edit",
   "facts.paste",
 ] as const;
