@@ -169,4 +169,4 @@ Tests:
 - `previousEventTotals` (lib/queries/events.ts) is in the shared `event-page` entry and can feed a "since last event" card without a new read.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/551
