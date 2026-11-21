@@ -160,4 +160,4 @@ Before the fix, Chrome stopped at "X after a reload" (the card stayed open), and
 - Anything that keeps an open item in the address below 1024 must write it onto the sheet's own history entry (after the sheet has pushed it), never onto the entry under the sheet. A sheet's close takes its entry off with `history.back()`, and whatever the entry under it says is read again.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/573
