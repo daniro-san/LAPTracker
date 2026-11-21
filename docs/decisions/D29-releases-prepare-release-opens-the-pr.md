@@ -10,3 +10,8 @@ Why: a release was three manual steps (PR, merge, `gh release create`) and the t
 - **Setting needed.** "Allow GitHub Actions to create and approve pull requests" must be on, or `gh pr create` fails with the `GITHUB_TOKEN`. `default_workflow_permissions` stays `read`; each workflow declares its own permissions.
 - **Required check.** A PR opened with `GITHUB_TOKEN` starts no new workflow runs, but a required status check is read from the head commit, and `ci` already ran on the push to `dev` (check run `check`, from github-actions, the integration the ruleset names). If the newest push to `dev` has no finished `check`, the release PR will wait on it.
 - **Limit.** Workflows run from the default branch, so Prepare release exists in the Actions tab only after a release carries it to `main`.
+
+**Amendment 2026-11-21 (owner, issue 592): who merges, and where `check` comes from.**
+
+- Since #444, `ci` runs on `pull_request` and `workflow_dispatch` only, so a push to `dev` no longer reports `check`. Prepare release now ends with `gh workflow run ci.yml --ref dev`, which reports `check` on the release PR's head commit. The PR's own `pull_request` run shows `action_required`, because `GITHUB_TOKEN` opened it.
+- The orchestrator approves that held run, waits for a green `check`, and merges the release PR with a merge commit (owner, 2026-11-16 and 2026-11-21). Nobody merges with `--admin`, and nothing reaches `main` any other way.

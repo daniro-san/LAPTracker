@@ -17,15 +17,16 @@
   - It reads `session_id` and `stop_hook_active` from the payload and counts consecutive blocks in `$TMPDIR/laptracker-stop-check-<session>`. When the third stop in a row still fails (two fix rounds), it exits 0 with a "stop and report" message. Before, it blocked without end.
 - `lefthook.yml`: a new pre-commit job, `branch`, refuses a commit on `dev` or `main`.
 - `.claude/settings.json`
-  - Deny: pushes to `main` and `dev` in every form tested, force included (see Verified); `gh pr create` with base `main`; `gh api … base=main`, `pulls/*/merge` and `dispatches`; `gh workflow run tick*`.
+  - Deny: pushes to `main` and `dev` in the forms tested, force included (see Verified); `gh pr create|edit` with base `main`; `gh pr merge --admin`; `gh api … base=main`, `pulls/*/merge`, `dispatches`, write methods and GraphQL mutations; `git commit -n` / `--no-verify`, `core.hooksPath`, `LEFTHOOK=0`; `gh workflow run tick*`.
   - Deny `curl` to `*api/quota*` and to prod `/api/tick` and `/api/snapshot`.
-  - Deny `Read` of `.env`, `.env.local`, `.env.*.local`, `.env.development*`, `.env.preview*` and `.env.production*` anywhere (`//**/`). `.env.example` stays readable.
-  - Deny `pnpm dlx`, `pnpm exec node`, `pnpm node`, `pnpm db:seed`, `pnpm discord:register`, `drizzle-kit push`, and `rm -fr`.
+  - Deny `Read` of secret `.env` files anywhere (`//**/`): `.env`, `.env.local`, `.env.*.local`, and `.env.` followed by `dev`, `prod`, `preview`, `staging`, `test`, `vercel`, `bak`, `old`, `backup`, `copy`, `save`, plus `.env~`. `.env.example` stays readable.
+  - Deny `pnpm dlx`, `pnpm exec node`, `pnpm node`, `db:seed` and `discord:register` (through `pnpm`, `npm` or the script path), `drizzle-kit push`, and `rm -fr`.
   - `curl` allows are narrowed to `http://localhost:*`, `http://127.0.0.1:*` and `https://laptracker-inky.vercel.app/*`, so `localhost.evil.tld` no longer matches.
-  - `gh api` allows: `repos/daniro-san/LAPTracker/*` and the run-approve call.
-  - `gh pr` allows: `create`, `view`, `diff`, `checks`, `list`, `comment`, and `merge` with `--squash` or `--merge`.
+  - `gh api` allows: GET forms only (plain, `--paginate`, `-X GET`, `--method GET`) under `repos/daniro-san/LAPTracker/*` and `repos/{owner}/{repo}/*`, plus the run-approve call.
+  - `gh pr` allows: `create --base dev`, `view`, `diff`, `checks`, `list`, `comment`, `edit`, `ready`, and `merge` with `--squash` or `--merge` (with or without a PR number).
   - `gh workflow` allows: `list`, `view` and `run release-prepare.yml`.
-  - Also allowed: `gh issue view` / `list` and `git push origin HEAD:refs/heads/*`.
+  - Also allowed: `gh issue view` / `list`, and `git push origin HEAD:refs/heads/*` with or without `--force-with-lease`.
+- `scripts/hooks/pr-base-guard.sh` (new, PreToolUse on Bash): refuses a `gh pr create` that does not name `--base dev`, `--base=dev` or `-B dev`, in any flag order.
 - `REVIEW.md`
   - Scope is all of `lib/` and `app/`, including the private paths. `/pr-review` reads it.
   - Correctness, privacy and regressions come first; findings about style only are skipped.
@@ -81,7 +82,7 @@
   | clean tree | 0, silent |
   | dirty, first stop | 2, install message |
   | `stop_hook_active` true (fix round 1 failed) | 2 |
-  | `stop_hook_active` true (fix round 2 failed) | 0, "stop and report" |
+  | `stop_hook_active` true (fix round 2 failed) | 0, `{"systemMessage": …}` on stdout |
   | next stop with `stop_hook_active` false | 2 (count reset) |
   | other session, spaced JSON | 2 |
   | clean tree with a local commit not on `origin/dev` | 2 |
@@ -113,21 +114,36 @@
     - the `curl` and `gh` allow breadth.
   - SHOULDs fixed: the owner login, "session" → "task", PR title and merge, playbook precedence, collector tests as a blocker, `lib/budget.ts`, the 401 scope, app_errors and names, fixture neutralisation per D76, extra rule paths, `ph-mask`, `gh pr merge` / `gh workflow` / `gh issue` scope, and the CONTRIBUTING Stop-hook claim.
   - The rest are listed below.
+- **`/pr-review` round on PR #594** (6 Security, 13 Warnings). Fixed on top of `c669ebbc`, one line per point the orchestrator listed:
+  1. `gh api`: the allows are GET forms only. PUT, PATCH and DELETE (`-X`, `-XPUT`, `--method`, `--method=`) and POST to pulls, merges, git, contents, releases, branches, rulesets and hooks are denied, as are GraphQL mutations. The approve allow stays. Simulated: approve allowed; `-X PUT …/merge`, `contents … -X PUT`, `-XPATCH`, `--method DELETE`, `--method=DELETE`, `POST …/pulls`, `POST …/git/refs` and a `mutation` all denied.
+  2. `gh pr create`: allowed only as `gh pr create --base dev *`. `-Bmain` and `--base main` are denied. The new PreToolUse hook refuses any `gh pr create` without `--base dev`, whatever the flag order. Tested: base dev first, last, `--base=dev` and `-B dev` pass (exit 0); no base, `--base main`, `-Bmain` and `--base develop` are refused (exit 2); other commands pass.
+  3. `gh pr merge *--admin*` is denied.
+  4. `git commit -n…`, `* -n`, `* -n *` and `*--no-verify*` are denied, plus `git *core.hooksPath*` and `*LEFTHOOK=0*`. Simulated: all denied; `git commit -m x` allowed.
+  5. `db:seed` and `discord:register` are denied through `pnpm` (`run`, `-s`, `exec`), `npm`, or the script path (`scripts/seed.ts`, `discord-register-command`). Simulated: all six forms denied; `pnpm db:local:seed` and `pnpm db:migrate` allowed.
+  6. Read denies now cover `.env.test*`, `.env.staging*`, `.env.vercel*`, `.env.dev*`, `.env.prod*` and backup names. `.env.example` stays readable.
+  7. `git push -u origin HEAD`: CONTRIBUTING "Enforcement layers" says why it stays allowed (lefthook stops the commit; GitHub rejects the push).
+  8. Merge wording: CLAUDE.md now says build agents never merge; the orchestrator squash-merges into `dev` after every gate and merges the release PR; nobody uses `--admin`. The merge allows stay.
+  9. The stop hook's final notice is `{"systemMessage": …}` on stdout. The hooks docs say stderr on exit 0 never reaches Claude and `systemMessage` is shown to the user. The comment now names Claude Code's own cap of 8 continuations. Re-tested: same exit codes, JSON printed on the third failing stop.
+  10. CONTRIBUTING release step 4 and the Deploy paragraph match `release-prepare.yml`. The PR's `pull_request` run shows `action_required`; the workflow's `gh workflow run ci.yml --ref dev` reports `check`; the orchestrator approves, waits for green and merges with a merge commit. D29 gets a dated amendment saying the same: since #444, `check` no longer comes from a push.
+  11. Amendments: `docs/decisions/README.md` and CONTRIBUTING both say a refinement is a dated amendment appended at the end of the decision, and earlier text is never rewritten.
+  12. DESIGN.md: persona panels are AI requests. They see real public data locally (names, might, kills, public pages) and never the private roster fields. Nothing they see is committed or published.
+  13. `docs/IMPLEMENTATION_PLAN.md` §11.4 is rewritten to match settings, hooks, lefthook, CI and the real `pnpm check`, marked "(Corrected 2026-11-21, owner)". It has no generic force deny, and the GitHub rulesets are named as the guard.
+  14. Prompting regressions: `gh api --paginate` / `-X GET` reads, `gh pr edit`, `gh pr ready`, `gh pr merge --squash|--merge` without a number, and `--force-with-lease` to feature branches are allowed. The record-fixture skill's `curl` to the upstream API still prompts, on purpose: each call spends quota, and the skill is the deliberate, confirmed way to spend it.
+- **"Denied in every form"** is no longer claimed anywhere. CONTRIBUTING "Enforcement layers" says the client-side patterns are dodged by `pnpm exec git push`, `git -C …` or another spelling, and that GitHub's rulesets (no bypass actors) are the guard.
 
 ## Open issues
 
 ### Owner follow-ups
 
-- **`docs/IMPLEMENTATION_PLAN.md` §11.4, the parts not about branches.** The permissions line still lists plain `curl` and `gh api` as allowed, and its `pnpm check` line leaves out `check-drift` and `i18n-check`. The owner's permission covered only the push and branch wording, so these were left as they are.
 - **CLAUDE.md vs D115 on `app_errors`.** CLAUDE.md says the private fields never go to `app_errors`. D115 says `app_errors.detail` keeps message, stack and cause "because a message may be built from private data". This change kept the stricter CLAUDE.md rule. The owner should decide which holds.
-- **docs/decisions/README.md** says entries are append-only, but D76, D99, D142 and D143 carry dated amendments in place. The README should say which way is current.
 - **`docs/SESSION_PLAYBOOK.md`** lines 161, 167 and 170 hold an old copy of the rules. CLAUDE.md now says it wins.
 
 ### Not closed by settings
 
 - A `Read` deny does not stop `cat .env.local` through Bash. In bypass-permissions mode only denies apply.
 - A prefix allow still lets extra arguments through, e.g. a second URL or `-T file` after `curl http://localhost:…`. Only `sandbox.enabled` with a network allowlist closes exfiltration.
-- The `gh api repos/daniro-san/LAPTracker/*` allow also matches write calls whose `-X` or `-f` comes after the path.
+- The `gh api repos/daniro-san/LAPTracker/*` allow also matches a POST whose `-X` or `-f` comes after the path to an endpoint not on the deny list (issue comments, for example). A generic POST deny would also block the approve call, because a deny always wins over an allow.
+- Every client-side layer matches command text: `pnpm exec git push`, `git -C . push`, `env git …` or a script get past it. The GitHub rulesets are the guard.
 - A bare `git push` on a branch that tracks `dev` matches no deny. The server rulesets on `dev` and `main` still refuse it.
 - Build agents run as subagents, so the Stop hook (`Stop`, not `SubagentStop`) never gates them.
 
@@ -141,7 +157,7 @@ What was missing from the task prompt? The path-scoped rule matcher is not docum
 
 ## Next
 
-- Owner: settle the D115 vs CLAUDE.md `app_errors` question; decide whether the rest of §11.4 (curl, gh api, the `pnpm check` line) should be brought up to date.
+- Owner: settle the D115 vs CLAUDE.md `app_errors` question.
 - Scope `api-routes.md` to `app/(private)/api/**` too.
 - Optionally add a PreToolUse hook that refuses Bash commands naming secret `.env` files, plus a `SubagentStop` gate for worktree agents.
 - When a pr-review version with `--learn` is installed, run it and add matching proposals under `## Learned review rules` in `.claude/pr-review.md`.

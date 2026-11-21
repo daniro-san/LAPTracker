@@ -496,7 +496,7 @@ Short, dry, grandmotherly. Written in English; the public pages also read in 17 
   - a product-strategy persona.
 - **Every persona panel includes a product-strategy persona.** It proposes changes and new uses of the data, not only critique.
 - **The officer panel.** Experienced players of this kind of game, aged 20s to 50s, from several countries, some native English readers and some not. They are not novices, but they lack our context about the platform. Don't over-simplify, and don't leave things implicit. Every flow is clear; where it can't be, add in-place help (a hint, a short guide, a GIF or a video). Check reading level, contrast and text size for older eyes.
-- **Real data stays local.** Panels may see real data, private fields and names included, only on the local machine: in a scratchpad, never committed, published, logged or posted, and deleted afterwards. Reports and commits follow the privacy rules.
+- **Panels see real public data, locally, and never private fields.** A persona panel is an AI request, so the CLAUDE.md roster-fields rule applies. Panels may see real public data (names, might, kills, what the public pages show) on the local machine. They never get `x`, `y`, `online`, `last_online_at`, `joined_at`, `daily_*`, `active` or `avatar_url`, not even locally (`.claude/rules/private.md`). Nothing a panel sees is committed, published, logged or posted, and the raw files are deleted afterwards.
 - **UX review before the owner.** Every chart or visualization PR gets a designer review of the real app and the Discord render, and its fixes land before the owner reads the PR. It covers:
   - phones at 360, 390 and 412 in WebKit and Chrome;
   - tablets in portrait at 600 to 820, and in landscape at 1024 and 1180 (iPad in WebKit);

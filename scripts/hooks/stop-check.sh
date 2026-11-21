@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Claude Code Stop hook: `pnpm check` must pass before a turn ends (plan §11.4).
-# Exit 2 keeps the agent working with the failure in view. After two fix rounds in a row still fail
-# (`stop_hook_active` true on each), the turn may end, so the agent reports instead of looping (CLAUDE.md).
+# Exit 2 keeps the agent working with the failure (stderr) in view. After two fix rounds in a row still fail
+# (`stop_hook_active` true on each), the turn may end, so the agent reports instead of looping (CLAUDE.md);
+# Claude Code's own cap is 8 continuations. On that exit 0, stderr reaches no one, so the notice goes to
+# stdout as JSON `systemMessage`, which Claude Code shows to the user.
 set -uo pipefail
 cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" || exit 0
 payload=$(cat)
@@ -21,7 +23,7 @@ block() {
   n=$((n + 1))
   if [ "$n" -gt 2 ]; then
     rm -f "$rounds_file"
-    printf 'stop-check: still failing after two fix rounds; stop and report it.\n%s\n' "$1" >&2
+    echo '{"systemMessage": "stop-check: the check still fails after two fix rounds, so this turn ends without a passing pnpm check (or without node_modules). Run pnpm check to see the failure."}'
     exit 0
   fi
   echo "$n" >"$rounds_file"
