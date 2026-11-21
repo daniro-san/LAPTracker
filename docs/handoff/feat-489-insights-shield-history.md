@@ -103,4 +103,4 @@
 - A coverage share ("seen by the tracker or ✓ by an officer") would need the week's Raid prep marks. The newest version per member per roll call (`newestMarks`) costs about 32 buffers for 8 weeks.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/582
