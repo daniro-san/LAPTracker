@@ -6,6 +6,7 @@ import { discordEn, discordPt } from "./dictionary.discord";
 import { discordFr } from "./dictionary.discord-fr";
 import { inviteEn, invitePt } from "./dictionary.invite";
 import { inviteFr } from "./dictionary.invite-fr";
+import { pushEn, pushFr, pushPt } from "./dictionary.push";
 
 export const settingsEn = {
   "settings.link": "Alliance settings",
@@ -72,6 +73,7 @@ export const settingsEn = {
   ...discordEn,
   ...inviteEn,
   ...chooserEn,
+  ...pushEn,
 };
 
 export const settingsPt: typeof settingsEn = {
@@ -144,6 +146,7 @@ export const settingsPt: typeof settingsEn = {
   ...discordPt,
   ...invitePt,
   ...chooserPt,
+  ...pushPt,
 };
 
 export const settingsFr: typeof settingsEn = {
@@ -218,4 +221,5 @@ export const settingsFr: typeof settingsEn = {
   ...discordFr,
   ...inviteFr,
   ...chooserFr,
+  ...pushFr,
 };

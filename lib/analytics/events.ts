@@ -4,6 +4,7 @@
 // does not import posthog-js, so a page that only tracks never downloads it by itself.
 import type { PostHog } from "posthog-js";
 
+import type { PushUse } from "../schema-push";
 import type { Allowance, Feature } from "../workspace-features";
 
 /** The workspace languages (D71); the same three as lib/private/dictionary.ts, which this module may not import. */
@@ -119,6 +120,10 @@ export interface AnalyticsEvents {
    * is on afterwards (a cap: not 0). Nothing about the workspace: /admin events carry none (issue 452).
    */
   admin_feature_changed: { feature: Feature | `${Allowance}_cap`; on: boolean };
+  /** A notification use turned on for this device (D148): one event per use, nothing about the device. */
+  ws_push_enabled: { use: PushUse };
+  /** A notification use turned off for this device, or the device turned off (one per use it had). */
+  ws_push_disabled: { use: PushUse };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 
@@ -155,6 +160,8 @@ export const ANALYTICS_EVENTS = [
   "ws_invite_completed",
   "ws_key_saved",
   "admin_feature_changed",
+  "ws_push_enabled",
+  "ws_push_disabled",
 ] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */

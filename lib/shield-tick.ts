@@ -2,10 +2,12 @@
 // on the same connection and inside the same `after`, the read that is due now for each alliance whose
 // `shield_check` is on (D134): Friday's burst from 23:30 ST, Saturday's morning read from the alliance's
 // morning time. Then each alliance's leaders' message is posted or edited, and its workspace's Raid prep
-// filled from the readings (lib/raid-prep-fill.ts, D137 2026-11-21). Nothing runs at other times.
+// filled from the readings (lib/raid-prep-fill.ts, D137 2026-11-21), and its officers notified when a read is
+// over or its count changed (lib/push-uses.ts, D148). Nothing runs at other times.
 import { captureServer, eventWorkspace } from "./analytics/server";
 import type { Db } from "./db";
 import type { Env } from "./env";
+import { pushShield } from "./push-uses";
 import { fillRaidPrep } from "./raid-prep-fill";
 import { getDailyRead } from "./repo/daily-reads";
 import { allShieldSettings } from "./repo/shield-checks";
@@ -32,7 +34,16 @@ async function shieldTargets(deps: SquadsDeps, db: Db, now: Date): Promise<Shiel
 type TickDeps = SquadsDeps & {
   origin: string;
   env: SquadsDeps["env"] &
-    Pick<Env, "WORKSPACE_DISCORD_WEBHOOKS" | "SERVER_TZ" | "VERCEL_ENV" | "POSTHOG_KEY">;
+    Pick<
+      Env,
+      | "WORKSPACE_DISCORD_WEBHOOKS"
+      | "SERVER_TZ"
+      | "VERCEL_ENV"
+      | "POSTHOG_KEY"
+      | "VAPID_PUBLIC_KEY"
+      | "VAPID_PRIVATE_KEY"
+      | "VAPID_SUBJECT"
+    >;
 };
 
 /**
@@ -72,6 +83,12 @@ export async function shieldTick(deps: TickDeps, db: Db, deadline: number): Prom
   // only (a query's text could hold a member's uid and mark, D71).
   let failed = false;
   for (const d of due) await fillPrep(deps, db, d.day, d.target).catch(() => (failed = true));
+  // D148: the officers' notifications last, all at once (each send has its own 5 s timeout); one that
+  // fails never fails the read, the summary or the fill: a code-only line.
+  const pushed = await Promise.allSettled(
+    due.map((d) => pushShield(deps, db, { day: d.day, target: d.target, pass: d.pass })),
+  );
+  if (pushed.some((p) => p.status === "rejected")) console.error("push.failed", { use: "shield" });
   if (failed) throw new Error("raid_prep_fill_failed");
 }
 

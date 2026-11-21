@@ -3,7 +3,9 @@
 // through `grant`. Every private query takes one, so the workspace id never comes from a request. A member's
 // session never gets one: `requireBoard` gives it a BoardAccess, which opens only the members' board.
 import type { Db } from "../db";
+import { endpointHash } from "../push";
 import { workspaceAllianceLabel, type AllianceLabel } from "../repo/alliances";
+import { deleteDevice } from "../repo/push";
 import {
   deleteSession,
   findSession,
@@ -301,13 +303,15 @@ export function officerAccess(
 
 /**
  * Sign out: ends this browser's session, only when it is a valid one of this workspace. Returns the name of
- * the cookie that carried it, to clear (D131), or null.
+ * the cookie that carried it, to clear (D131), or null. `endpoint`: this browser's push subscription, whose
+ * notifications for this person go with the session (D148).
  */
 export async function signOut(
   db: Db,
   slug: string,
   cookies: CookieReader,
   now: Date,
+  endpoint?: string,
 ): Promise<string | null> {
   // A session waiting for its role check (D99) can still be ended, and so can a member's (D105).
   const found = await openSession(db, slug, cookies);
@@ -316,5 +320,9 @@ export async function signOut(
   const { workspace, session } = found;
   if (await servedOrNot(db, workspace, session, now, Number.POSITIVE_INFINITY)) return null;
   await revokeSession(db, workspace.id, carried.value);
+  if (endpoint) {
+    const device = { workspaceId: workspace.id, userId: session.userId };
+    await deleteDevice(db, { ...device, endpointHash: endpointHash(endpoint) });
+  }
   return carried.name;
 }

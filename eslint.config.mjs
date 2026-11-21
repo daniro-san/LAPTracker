@@ -122,6 +122,21 @@ export default defineConfig(
     },
   },
   {
+    // D148, the one exception: the tick's roll call reminders take the Roll call page's counts (no name) from
+    // one lib/private module, so the reminder and the page never count differently.
+    files: ["lib/push-tick.ts"],
+    rules: {
+      "import-x/no-restricted-paths": restrict([
+        {
+          target: "./lib/push-tick.ts",
+          from: "./lib/private",
+          except: ["./push-roll-calls.ts"],
+          message: "lib/push-tick.ts imports only lib/private/push-roll-calls.ts (D148).",
+        },
+      ]),
+    },
+  },
+  {
     files: ["lib/private/**"],
     rules: {
       "import-x/no-restricted-paths": restrict([
