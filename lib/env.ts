@@ -1,6 +1,8 @@
 // Validated environment (plan §11.2, §12.2). Parse once, fail fast with key names only — never values.
 import { z } from "zod";
 
+import { POSTHOG_UI_HOST } from "./analytics/region";
+
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "expected HH:MM");
 const optional = <T extends z.ZodType>(schema: T) => schema.optional();
 
@@ -113,6 +115,14 @@ export const envSchema = z.object({
   // Feature flags turned on without PostHog (D91): comma-separated flag keys, read only when POSTHOG_KEY is
   // not set (local `next dev`, reviews). Never set it on Vercel.
   LOCAL_FLAGS: optional(z.string()),
+  // PostHog Endpoints (D145): a personal API key with read-only query scope on project 741657. A secret,
+  // server only, sent only to PostHog. Optional: without it the usage numbers on /admin and the desk are not
+  // drawn. Not POSTHOG_PERSONAL_API_KEY, which is for the source-map upload only (D115).
+  POSTHOG_QUERY_API_KEY: optional(
+    z.string().startsWith("phx_", "expected a phx_ personal API key"),
+  ),
+  // Where the Endpoints are run: PostHog's US app (D77). Overridable so the local e2e reaches a stub.
+  POSTHOG_API_BASE_URL: z.url().default(POSTHOG_UI_HOST),
   // Translate and Improve writing in the notices library (D81). Optional: without it the buttons say
   // they are not set up, and nothing is sent anywhere.
   GROQ_API_KEY: optional(z.string().startsWith("gsk_", "expected a gsk_ key")),
