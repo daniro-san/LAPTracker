@@ -2,8 +2,9 @@
 // day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
 // Between an event's Before and After, a sample every SAMPLE_EVERY_MIN (D69), only when no phase is due.
 // The daily roster read (D60) comes last, when nothing else is due; after the day's first one, the workspaces
-// whose deletion grace ended are deleted (D125).
+// whose deletion grace ended are deleted (D125), and app_errors older than 30 days go (D115).
 import { secretsOf, type AppContext } from "./app-context";
+import { reportError } from "./app-errors";
 import { RUN_DEADLINE_MS } from "./compute";
 import { autoRetryDailyRead, runDailyRead, type DailyReadSummary } from "./daily-read";
 import { databaseDown } from "./data-unavailable";
@@ -16,7 +17,7 @@ import {
 } from "./notify";
 import { dailyReadMessage } from "./notify-daily";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
-import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
+import { claimAlert, purgeOldAppErrors, TICK_SILENCE_ALERT } from "./repo/app-errors";
 import {
   claimQuotaCheck,
   duePhases,
@@ -94,8 +95,8 @@ async function dailyRead(
   if (change) await createNotifier(ctx.env, ctx.fetch).admin(change);
   const first = await readThenInvalidate(ctx, () => runDailyRead(deps, db, due.day, targets));
   // D125: once a day, after the day's first read, the workspaces whose 14 days ended are deleted; D132:
-  // and the player reads' raw bodies older than 90 days are cleared.
-  if (first) await purgeWorkspaces(db, ctx.now());
+  // and the player reads' raw bodies older than 90 days are cleared; D115: app_errors past 30 days go.
+  if (first) await purgeWorkspaces(ctx, db, ctx.now());
   const summary =
     first ?? (await readThenInvalidate(ctx, () => autoRetryDailyRead(deps, db, due.day, targets)));
   if (!summary) return null;
@@ -135,28 +136,32 @@ async function invalidateOnThrow<T>(ctx: AppContext, write: () => Promise<T>): P
 }
 
 /**
- * The daily jobs of D125 and D132 (raw bodies past 90 days): counts only in the log, and a failure never
- * fails the day's read.
+ * The daily jobs of D125, D132 (raw bodies past 90 days) and D115 (app_errors past 30 days): counts only in
+ * the log, and a failure never fails the day's read. A job that throws is one code-only line and a handled
+ * PostHog exception (D115's 2026-11-21 amendment).
  */
-async function purgeWorkspaces(db: Db, now: Date): Promise<void> {
-  try {
-    const { workspaces, rows, failed } = await purgeDueWorkspaces(db, now);
-    console.info("workspaces.purged", { workspaces, rows, failed: failed.length });
-    // One workspace's failure stops none of the others: each is logged by its error class.
-    for (const code of failed) console.error("workspaces.purge_failed", { code, workspaces, rows });
-  } catch (error: unknown) {
-    console.error("workspaces.purge_failed", {
-      code: error instanceof Error ? error.name : "unknown",
-    });
-  }
-  try {
-    console.info("players.raw_cleared", { reads: await clearOldPlayerRaw(db, now) });
-  } catch (error: unknown) {
-    console.error("players.raw_clear_failed", {
-      code: error instanceof Error ? error.name : "unknown",
-    });
-  }
+async function purgeWorkspaces(ctx: AppContext, db: Db, now: Date): Promise<void> {
+  await purgeDueWorkspaces(db, now)
+    .then(({ workspaces, rows, failed }) => {
+      console.info("workspaces.purged", { workspaces, rows, failed: failed.length });
+      // One workspace's failure stops none of the others: each is logged by its error class.
+      for (const code of failed)
+        console.error("workspaces.purge_failed", { code, workspaces, rows });
+    })
+    .catch(tickJobFailed(ctx, "workspaces.purge_failed"));
+  await clearOldPlayerRaw(db, now)
+    .then((reads) => console.info("players.raw_cleared", { reads }))
+    .catch(tickJobFailed(ctx, "players.raw_clear_failed"));
+  await purgeOldAppErrors(db, now)
+    .then((rows) => console.info("app_errors.purged", { rows }))
+    .catch(tickJobFailed(ctx, "app_errors.purge_failed"));
 }
+
+/** A tick job's failure: a code-only line, and PostHog's handled exception. */
+const tickJobFailed = (ctx: AppContext, code: string) => (error: unknown) => {
+  console.error(code, { code: error instanceof Error ? error.name : "unknown" });
+  reportError(ctx, { route: "/api/tick", kind: code, error });
+};
 
 /** The due sample of the slot holding now (D69), or null: a slot no tick took is not caught up.
  * SAMPLE_EVERY_MIN=0 is off. */
@@ -220,9 +225,7 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
       // A failure is logged by its code and never fails the Friday check (review of PR 422).
       const picturesPruned = await pruneEndedPictures(db, serverDay(now, ctx.env), now).catch(
         (error: unknown) => {
-          console.error("notices.pictures.prune_failed", {
-            code: error instanceof Error ? error.name : "unknown",
-          });
+          tickJobFailed(ctx, "notices.pictures.prune_failed")(error);
           return 0;
         },
       );

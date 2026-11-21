@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 import { after } from "next/server";
 
 import type { AppContext } from "./app-context";
+import { reportError } from "./app-errors";
 import { PUSH_WORDS, type PushWords } from "./copy-push";
 import type { Db } from "./db";
 import type { Env } from "./env";
@@ -120,15 +121,20 @@ export async function notifyOfficers(
 
 /**
  * Runs `work` after the answer on a connection of its own (the request's is closed with the response), or at
- * once where there is no request (a test). A failure is one code-only log line: it never reaches the caller.
+ * once where there is no request (a test). A failure is one code-only log line and a handled PostHog exception:
+ * it never reaches the caller.
  */
-export function pushLater(ctx: Pick<AppContext, "openDb">, work: (db: Db) => Promise<unknown>) {
+export function pushLater(
+  ctx: Pick<AppContext, "openDb" | "env" | "fetch">,
+  work: (db: Db) => Promise<unknown>,
+) {
   const run = async () => {
     const { db, close } = ctx.openDb();
     try {
       await work(db);
     } catch (error: unknown) {
       console.error("push.failed", { code: error instanceof Error ? error.name : "unknown" });
+      reportError(ctx, { route: "lib/push.ts", kind: "push.failed", error });
     } finally {
       await close();
     }

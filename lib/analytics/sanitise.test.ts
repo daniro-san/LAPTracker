@@ -163,4 +163,19 @@ describe("PostHog before_send (D77)", () => {
     expect(scrubMessage("it's 'Ana'")).toBe("it's '…'");
     expect(scrubMessage("Ana’s ‘Bramble’ and `Quill`")).toBe("Ana’s ‘…’ and `…`");
   });
+
+  it("applies the private-field redactor and cuts a long message first, so it stays fast (D115, 2026-11-21)", () => {
+    expect(scrubMessage("bad row x=512 https://phs-image.globallap.com/h/ab.png")).toBe(
+      "bad row x=… …",
+    );
+    for (const text of [
+      "a.".repeat(50_000) + "phs-image.globallap.co",
+      "a@b.".repeat(25_000),
+      "/a?".repeat(33_000),
+    ]) {
+      const started = performance.now();
+      scrubMessage(text);
+      expect(performance.now() - started).toBeLessThan(50);
+    }
+  });
 });

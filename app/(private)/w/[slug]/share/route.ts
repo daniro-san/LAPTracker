@@ -107,6 +107,7 @@ export async function POST(
         digest: null,
         error,
         slug,
+        handled: true,
       });
       return go(`${home}?shared=failed`);
     } finally {

@@ -249,6 +249,14 @@ describe("admin messages", () => {
       "✗ App error on /api/events/[id]: route TypeError · digest 123 · /admin/errors",
     );
   });
+
+  it("replaces private roster values in an app error's line and keeps its other words (D115)", () => {
+    const reason =
+      'route Error — Bad row for Invented Bramble {"x":98765,"y":54321} last_online_at=2026-11-20T10:00:00Z dailyTech: 4321 https://phs-image.globallap.com/h/7a1b9c.png';
+    expect(appErrorMessage("/api/tick", reason, null)).toBe(
+      '✗ App error on /api/tick: route Error — Bad row for Invented Bramble {"x":…,"y":…} last_online_at=… dailyTech: … … · /admin/errors',
+    );
+  });
 });
 
 describe("manual round public message", () => {

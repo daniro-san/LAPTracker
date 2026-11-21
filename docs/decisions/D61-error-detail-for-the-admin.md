@@ -15,3 +15,5 @@ Why: the owner saw `✗ failed [NSE]: v1 TimeoutError` and `✗ App error on /ad
   - The run page: a failed `v1.fetch` log line has its entry and **Details**.
   - The daily read's admin message: under each `✗ reason (n): …` line, a `↳ meaning action` line.
 - **Size:** body 1,000 characters, message 500, 12 frames, a fixed header list. Rows recorded before this change have no detail and show only the one-line text.
+
+**Amendment (owner, 2026-11-21, D115's amendment of the same day):** the detail fields now also pass the private-field redactor (`redactPrivate`, `lib/redact.ts`) through `redact()`: app error detail, upstream detail in `run_logs.data.detail` and `daily_rosters.error_detail`. A failed query's parameters are dropped (`params: …`). The message and cause are redacted at up to 2,000 characters, then cut to 500. The admin alert's line passes it again. `app_errors` rows are deleted after 30 days, in addition to the 500-row cap.

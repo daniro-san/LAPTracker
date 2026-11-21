@@ -24,7 +24,14 @@ export async function withContext(
   try {
     return await handler(ctx, db);
   } catch (error) {
-    await recordAppError(ctx, { route, kind: "route", digest: null, error, ...(slug && { slug }) });
+    await recordAppError(ctx, {
+      route,
+      kind: "route",
+      digest: null,
+      error,
+      handled: true,
+      ...(slug && { slug }),
+    });
     return errorResponse(500, "internal");
   } finally {
     await close();

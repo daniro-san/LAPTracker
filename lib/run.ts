@@ -3,6 +3,7 @@
 // final and the logger's inserts settled before the response leaves, on every path.
 import { OWN_ALLIANCE_ID } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
+import { reportError } from "./app-errors";
 import { RunRefusedError, runSample, runSnapshot, type Deps, type RunSummary } from "./collector";
 import type { Db } from "./db";
 import { createRunLogger } from "./logger";
@@ -84,8 +85,9 @@ async function finaliseCrashed(
       quotaUnseenCalls: 0,
       boardPulledAt: null,
     });
-  } catch {
+  } catch (error) {
     console.error("snapshot.finalise_failed", { snapshot_id: snapshotId });
+    reportError(ctx, { route: "lib/run.ts", kind: "snapshot.finalise_failed", error });
   }
   return summary;
 }
@@ -182,7 +184,10 @@ async function collect(
     summary = await start(deps);
   } catch (e) {
     if (e instanceof RunRefusedError) refused = e;
-    else await logger.error("run.crashed", { error: e instanceof Error ? e.name : "unknown" });
+    else {
+      await logger.error("run.crashed", { error: e instanceof Error ? e.name : "unknown" });
+      reportError(ctx, { route: "lib/run.ts", kind: "run.crashed", error: e });
+    }
   } finally {
     // INVARIANT run.finalised-in-finally: a claimed row never stays `running` past the response.
     if (summary === null && claimedId !== null) {

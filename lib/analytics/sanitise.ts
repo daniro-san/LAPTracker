@@ -9,7 +9,10 @@
 // - exception messages scrubbed in every area (D115, replacing D77's "[masked]" on the workspace and /admin):
 //   the type, the words and the stack frames stay; digit runs, emails, URLs' query strings and quoted text go.
 //   Quoted text stays only where the engine quotes a built-in member: "(reading 'map')", never
-//   "(reading 'Bramble')".
+//   "(reading 'Bramble')". Before all of that, the private-field redactor (lib/redact.ts `redactPrivate`), the
+//   same rule the server's errors pass (D115's 2026-11-21 amendment).
+import { redactPrivate } from "../redact";
+
 export type Area = "public" | "workspace" | "admin";
 
 type Props = Record<string, unknown>;
@@ -73,6 +76,8 @@ const builtInPath = (inner: string) =>
 const MARK = String.fromCharCode(0x2063);
 /** Pieces of code kept per message, one letter each (a–z); past that, quoted code is scrubbed too. */
 const MAX_HELD = 26;
+/** An exception message is cut to this before it is scrubbed (the server's app error keeps 500). */
+const MESSAGE_CHARS = 2_000;
 
 /** The desk's and the board's pages, and /admin's (D115). */
 const SECTIONS = new Set([
@@ -114,7 +119,8 @@ export function areaOf(path: string): { area: Area; workspace?: string; section?
 /** An exception message without what could name or locate a person (D115); see the header. */
 export function scrubMessage(text: string): string {
   const held: string[] = [];
-  const quoted = text
+  // Cut first: every rule below then works on at most MESSAGE_CHARS, on the browser's main thread too.
+  const quoted = redactPrivate(text.slice(0, MESSAGE_CHARS))
     .replaceAll(MARK, "")
     .replace(URL_IN_TEXT, "$1")
     .replace(EMAIL, "[email]")
