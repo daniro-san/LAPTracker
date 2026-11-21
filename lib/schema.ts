@@ -310,6 +310,9 @@ export const dailyRosters = pgTable(
   (t) => [
     unique("daily_rosters_day_union_unique").on(t.readDay, t.unionId),
     index("daily_rosters_union_idx").on(t.unionId),
+    // One player's rows (`@>`, roster-stays.ts and player-progress.ts) and a set's (`&&`, member-history.ts
+    // and sightingsElsewhere) without reading the whole table (issue 521).
+    index("daily_rosters_member_uids_idx").using("gin", t.memberUids),
   ],
 );
 

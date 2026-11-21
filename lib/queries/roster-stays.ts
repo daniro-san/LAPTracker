@@ -1,7 +1,7 @@
 // Which alliance's usable daily roster listed one player on each day (D60, D89; issue 461): the public
 // membership the alliance pages already show, day by day. Fields read: the alliance id and the read day. No
 // name, might, kills or blocked roster key is selected (the uids are read only to pick the asked ones).
-import { and, arrayOverlaps, asc, gte, ne, sql } from "drizzle-orm";
+import { and, arrayContains, arrayOverlaps, asc, gte, ne } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyRosters } from "../schema";
@@ -18,7 +18,7 @@ export function rosterSightings(db: Db, uid: number): Promise<RosterSighting[]> 
   return db
     .select({ day: dailyRosters.readDay, unionId: dailyRosters.unionId })
     .from(dailyRosters)
-    .where(and(dailyFit, sql`${uid} = any(${dailyRosters.memberUids})`))
+    .where(and(dailyFit, arrayContains(dailyRosters.memberUids, [uid])))
     .orderBy(asc(dailyRosters.readDay), asc(dailyRosters.unionId));
 }
 

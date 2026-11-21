@@ -12,6 +12,9 @@ import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } fro
 import { runProblems } from "./run-problems";
 import { phaseColumn, phaseSnapshot } from "./visibility";
 
+/** /admin's run watch asks from now on while a pressed rehearsal is pending (D141 amendment). */
+export { hasPendingRehearsal } from "../repo/rehearsals";
+
 export interface ManualEventStatus {
   id: number;
   name: string;

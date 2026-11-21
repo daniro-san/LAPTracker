@@ -11,7 +11,7 @@ import { createRehearsal } from "./rehearsal";
 import { saveWorkspace } from "./repo/workspaces";
 import { dailyReads } from "./schema";
 import { squadReads } from "./schema-squads";
-import { squadsMayRun, tickClockDue, tickMayBeDue } from "./tick-gate";
+import { pollFrom, squadsMayRun, tickClockDue, tickMayBeDue } from "./tick-gate";
 
 const at = (iso: string) => new Date(`${iso}Z`);
 
@@ -39,6 +39,19 @@ describe("tickClockDue (D141)", () => {
     // Slot 20:00 UTC; created by 20:45 at the latest, After at +45 min, its window 45 min: until 22:15.
     expect(tickClockDue(at("2026-11-18T22:14"), env)).toBe(true);
     expect(tickClockDue(at("2026-11-18T22:16"), env)).toBe(false);
+  });
+});
+
+describe("pollFrom (D141 amendment)", () => {
+  it("is the first tick at which the clock has work, counting one whose batch can still run", () => {
+    const from = (iso: string) => pollFrom(at(iso), TEST_ENV);
+    // Wednesday 14:07 ST: nothing until the 18:00 UTC heartbeat.
+    expect(from("2026-11-18T16:07")).toBe(at("2026-11-18T18:00").getTime());
+    // 18:04: the heartbeat tick's batch can still be running.
+    expect(from("2026-11-18T18:04")).toBe(at("2026-11-18T18:00").getTime());
+    // 18:20: past the heartbeat slot; the next is 21:00 UTC's (every 3 h), then the daily read at 23:30 ST.
+    expect(from("2026-11-18T18:20")).toBe(at("2026-11-18T21:00").getTime());
+    expect(from("2026-11-19T00:20")).toBe(at("2026-11-19T01:30").getTime());
   });
 });
 

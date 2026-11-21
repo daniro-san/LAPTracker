@@ -12,9 +12,11 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { adminSession } from "@/lib/admin-session";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { listRuns, runningSnapshots } from "@/lib/queries/admin";
+import { hasPendingRehearsal, listRuns, runningSnapshots } from "@/lib/queries/admin";
 import { listDailyReads } from "@/lib/queries/daily-runs";
+import { pollFrom } from "@/lib/tick-gate";
 
 import { LogoutButton, PinGate } from "./PinGate";
 import { LiveNow, RunWatch } from "./RunWatch";
@@ -31,7 +33,14 @@ export async function AdminShell({ title, children }: { title: string; children?
   return (
     // English whatever the viewer's language (D48): the lang attribute says so for this subtree.
     <div lang="en">
-      <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} publicPage={false} />
+      <SiteHeader
+        events={[]}
+        currentId={null}
+        homeId={null}
+        copy={copy}
+        publicPage={false}
+        prefetch={false}
+      />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         {session === "valid" ? (
           <Unlocked title={title}>{children}</Unlocked>
@@ -46,15 +55,24 @@ export async function AdminShell({ title, children }: { title: string; children?
 
 async function Unlocked({ title, children }: { title: string; children?: ReactNode }) {
   const now = new Date();
-  const [[running, [last], [daily]], clock] = await Promise.all([
+  const env = getEnv();
+  const [[running, [last], [daily], rehearsal], clock] = await Promise.all([
     withPageDb((db) =>
-      Promise.all([runningSnapshots(db, now), listRuns(db, 1), listDailyReads(db, 1)]),
+      Promise.all([
+        runningSnapshots(db, now),
+        listRuns(db, 1),
+        listDailyReads(db, 1),
+        hasPendingRehearsal(db, now, env.SNAPSHOT_WINDOW_MIN * 60_000),
+      ]),
     ),
     requestServerClock(),
   ]);
   const views = watchViews(running, last, daily, now, clock);
+  // D141 amendment: idle, the watch asks only from the next tick that can start a run; a pending rehearsal
+  // is run by a later tick that the clock alone does not foresee, so it asks from now.
+  const from = rehearsal ? now.getTime() : pollFrom(now, env);
   return (
-    <RunWatch running={views.running} latest={views.latest}>
+    <RunWatch running={views.running} latest={views.latest} pollFrom={from}>
       <nav
         aria-label={copy.admin.nav.label}
         className="mb-3 flex flex-wrap items-center gap-x-1 border-b border-rule"
@@ -63,6 +81,7 @@ async function Unlocked({ title, children }: { title: string; children?: ReactNo
           <TextLink
             key={n.href}
             href={n.href}
+            prefetch={false}
             className="flex min-h-11 items-center px-3 text-sm font-medium"
           >
             {n.label}

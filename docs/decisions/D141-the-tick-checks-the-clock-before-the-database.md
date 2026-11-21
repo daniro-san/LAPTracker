@@ -84,3 +84,30 @@ Page views, admin presses, deploys (`pnpm db:migrate` in the build) and a status
 - **Owner step.** Disable the watcher job on cron-job.org as soon as the release is live. Until then it calls the route every 15 minutes, and each call now reads the tick log: about 4 extra wakes an hour. It applies the same slot rule, so it alerts only when a slot really had no tick.
 - **`uptime.yml`'s timeout** goes from 5 to 8 minutes. The worst case is two probe rounds of 3 × 30 s with the 60 s pause between them, then the watcher's 30 s, plus the runner's start.
 - **Tests.** `lib/tick-gate.test.ts`: the heartbeat opens at 03:05 and stays shut at 04:05. `app/api/tick/watch/route.test.ts`: an alert when the 12:00 heartbeat never came, and none on a re-run; no alert when a tick came in the slot, for a run on time, 50 minutes late or 3 h late; the 00:00 UTC slot across the day boundary.
+
+**Amendment (2026-11-21, issue 521, perf Batch 1): /admin's watch asks only when a run can start, no /admin link prefetches, and an index on `daily_rosters.member_uids`.**
+
+- **Why.** In 12 h of production CDN records, 98.4 % of function calls (about 1,128 an hour) came from one idle /admin tab. Its 20 s `router.refresh()` also prefetched every link in view again. Measured locally on an idle /admin tab (production build, invented data): 2.9 refreshes, 15.9 prefetches and about 226 database transactions a minute, all day. The estimate table above left /admin out; with such a tab open, the database never suspended.
+- **The rule.** Idle, /admin's run watch (`app/_ui/admin/useRunWatch.ts`) refreshes every 20 s only while both hold:
+  - `batchMayRun(now)`: the 5 minutes after a tick of either scheduler. The rule moved to `lib/tick-batch.ts`, which the status bar and /admin both import.
+  - `now >= pollFrom`. `pollFrom` (`lib/tick-gate.ts`) is the first tick from the current one on, up to 24 h ahead, at which `tickClockDue` holds. While a pressed rehearsal is pending it is `now`, because a later tick runs it and the clock alone does not foresee that. The shell computes it on every render, so every refresh brings a new one.
+
+  `batchMayRun` alone was not enough. Its gaps (2 and 3 minutes) are shorter than Neon's 5-minute suspend, so the database stayed awake. With `pollFrom`, the tab asks nothing between ticks that have work.
+
+- **Unchanged.** The 4 s poll while a run is going, the "finished" line, and the owner's own press (it refreshes at once). Becoming visible refreshes at once.
+- **Prefetch.** Every link /admin renders has `prefetch={false}`: the nav, the overview's "Open" link to the last run, and the run rows and filters on /admin/runs. So do the header's `/` and `/players` links on /admin only (`SiteHeader`'s `prefetch` prop, on by default, so public pages keep Next's default prefetch).
+- **Measured after** (same setup, 15 minutes each):
+  - nothing due by the clock: 0 refreshes, 0 prefetches and 0 transactions beyond the 2 a minute of background noise, inside tick windows too;
+  - the daily read's window open: 3 refreshes and about 204 transactions a minute inside the 5-minute windows, 0 outside them, and 0 prefetches.
+
+  On a quiet weekday, the idle tab's database time falls from 24 h to the windows the tick has work in anyway: the heartbeats, the daily read and the event.
+
+- **Bounds this accepts.**
+  - A press made on another device shows on an idle tab only at the next refresh: the next tick window with work, a visibility change, or a reload. Inside a window that is at most 20 s. Between windows it is about 3 minutes when the press itself falls in a window, otherwise until the next one.
+  - A run shorter than the gap between two refreshes may never be seen as running. The run log shows it, but the "finished" line does not.
+  - A late `tick.yml` start can show up to about 3 minutes late, at the next window.
+- **The index.** Migration 0060 adds `daily_rosters_member_uids_idx`, a GIN index on `member_uids`. `rosterSightings` now uses `@>` (`arrayContains`) instead of `= any`, which no index serves. `playerProgress` (`@>`) and member history and `sightingsElsewhere` (`&&`) already used operators the index serves. EXPLAIN ANALYZE on 24,000 invented rows:
+  - `@>`: 66 ms, then 1.3 ms with a bitmap index scan;
+  - `&&` with 100 uids: 805 ms, then 5 ms;
+  - the old `= any`: 17.9 ms in a parallel sequential scan, even with the index there.
+- **Tests.** `lib/tick-batch.test.ts` replaces the `batchMayRun` test in `read-status-wake.test.ts`. `app/_ui/admin/useRunWatch.test.ts` covers four cases: no refresh outside a window; no refresh in a window before `pollFrom`; every 20 s in a window from `pollFrom` on; every 4 s while a run is going. `lib/tick-gate.test.ts` adds `pollFrom`. `lib/queries/roster-stays.test.ts` shows `rosterSightings` returns the rows `= any` returned.

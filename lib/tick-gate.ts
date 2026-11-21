@@ -75,6 +75,21 @@ export function tickClockDue(now: Date, cfg: ScheduleConfig): boolean {
 }
 
 /**
+ * When /admin's idle poll starts asking (D141 amendment, issue 521): the first tick of either scheduler
+ * (:00/:15/:30/:45, :07/:22/:37/:52) from the one whose batch can still be running, up to 24 h ahead, at
+ * which the clock says the tick has work. Null when none does. Between such ticks no run can start from the
+ * clock, so an idle tab leaves the database asleep.
+ */
+export function pollFrom(now: Date, cfg: ScheduleConfig): number | null {
+  const minute = Math.floor(now.getTime() / MINUTE) * MINUTE;
+  for (let t = minute - 4 * MINUTE; t <= minute + DAY_MS; t += MINUTE) {
+    const tick = new Date(t);
+    if ([0, 7].includes(tick.getUTCMinutes() % 15) && tickClockDue(tick, cfg)) return t;
+  }
+  return null;
+}
+
+/**
  * Every squads target of `day` is done, stopped or skipped, or has no roster that could still come (the
  * day's read is over and its window closed): until a target or a roster changes, no batch has work.
  */

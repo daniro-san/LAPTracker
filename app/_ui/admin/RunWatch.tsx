@@ -50,17 +50,20 @@ export function LiveNow({ on }: { on: boolean }) {
 export function RunWatch({
   running,
   latest,
+  pollFrom,
   children,
 }: {
   running: RunningView[];
   latest: { event: string; phase: string; status: string } | null;
+  /** Epoch ms of the next tick that can start a run (lib/tick-gate.ts), or null: when the idle poll asks. */
+  pollFrom: number | null;
   children: ReactNode;
 }) {
   const [finished, setFinished] = useState<Finished | null>(null);
   const [pressing, setPressing] = useState(false);
   const press = useMemo(() => ({ pressing, setPressing }), [pressing]);
   const say = useCallback((text: string) => setFinished((f) => ({ text, n: (f?.n ?? 0) + 1 })), []);
-  useRunWatch(running, latest, say);
+  useRunWatch(running, latest, pollFrom, say);
   return (
     <PressContext.Provider value={press}>
       <FinishedContext.Provider value={finished}>{children}</FinishedContext.Provider>

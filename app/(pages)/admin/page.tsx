@@ -181,27 +181,31 @@ function Status({
               </StateChip>
             )
           }
-          note={
-            last && (
-              <>
-                <TextLink
-                  href={`/admin/runs/${last.id}`}
-                  className="inline-flex min-h-11 items-center"
-                >
-                  {st.open}
-                </TextLink>
-                {durations.length > 0 && (
-                  <span className="block tabular-nums">
-                    {fill(t.runs.recent, { n: durations.length, list: durations.join(" · ") })}
-                  </span>
-                )}
-              </>
-            )
-          }
+          note={last && <LastRunNote id={last.id} durations={durations} />}
         />
         <TickFact ticks={ticks} clock={clock} />
       </div>
     </AdminSection>
+  );
+}
+
+/** "Open" to the last run (no prefetch: the run watch's refreshes would fetch it again, issue 521). */
+function LastRunNote({ id, durations }: { id: number; durations: string[] }) {
+  return (
+    <>
+      <TextLink
+        href={`/admin/runs/${id}`}
+        prefetch={false}
+        className="inline-flex min-h-11 items-center"
+      >
+        {st.open}
+      </TextLink>
+      {durations.length > 0 && (
+        <span className="block tabular-nums">
+          {fill(t.runs.recent, { n: durations.length, list: durations.join(" · ") })}
+        </span>
+      )}
+    </>
   );
 }
 

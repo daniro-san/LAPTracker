@@ -1,0 +1,1 @@
+CREATE INDEX "daily_rosters_member_uids_idx" ON "daily_rosters" USING gin ("member_uids");
