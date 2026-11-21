@@ -121,4 +121,4 @@ Project 741657. Dashboard name: **Workspaces**. Every setup insight filters `pro
 - The setup table SQL above is the Endpoint's query; the per-alliance trends use `alliance` breakdowns on `ws_action` and `$pageview`.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/542
