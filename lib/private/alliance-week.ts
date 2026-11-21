@@ -18,7 +18,7 @@ export interface AllianceWeek {
   monday: string;
   /** The week's donations added up over its reads; null when none was sent. */
   donations: number | null;
-  /** Days of that week that should have a read by now and have none, oldest first. */
+  /** Days of that week, and of today's week, that should have a read by now and have none, oldest first. */
   noRead: string[];
 }
 
@@ -29,7 +29,9 @@ export function allianceWeek(reads: readonly RosterRead[], today: string): Allia
   const week = gameWeek(newest.day);
   const inWeek = reads.filter((r) => week.includes(r.day));
   const gifts = inWeek.flatMap((r) => r.members.flatMap((m) => m.dailyTech ?? []));
-  const read = new Set(inWeek.map((r) => r.day));
+  const read = new Set(reads.map((r) => r.day));
+  // The newest read's week, and today's week when the newest read is older (D75: never silent).
+  const days = [...new Set([...week, ...gameWeek(today)])];
   return {
     day: newest.day,
     coins: pulseOf([newest]).coins,
@@ -39,6 +41,6 @@ export function allianceWeek(reads: readonly RosterRead[], today: string): Allia
     monday: week[0] as string,
     donations: gifts.length === 0 ? null : gifts.reduce((a, b) => a + b, 0),
     // Today's read runs at the end of the day, so today is never "no read" yet.
-    noRead: week.filter((d) => !read.has(d) && (d <= newest.day || d < today)),
+    noRead: days.filter((d) => !read.has(d) && (d <= newest.day || d < today)),
   };
 }

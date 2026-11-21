@@ -1,6 +1,6 @@
-// The alliance's week in one line (issue 466, D76), on Home's members note and under the Members week line:
-// "Alliance Help: 62 of 100 reached 1,000 yesterday · daily quest points, median 540 · donations this week
-// 1.2M", then the days with no read, left out (D75). Alliance-level numbers from the reads `membersView`
+// The alliance's week in one line (issue 466, D76), on Home's members note after the thanks and under the
+// Members week line: "Alliance Help: 62 of 100 reached 1,000 yesterday · daily quest points yesterday,
+// median 540 · donations this week 1.2M", then the days with no read, not in the total (D75). Alliance-level numbers from the reads `membersView`
 // already holds: no query, no name, no ranking. Nothing before the first end-of-day read.
 import { fill } from "@/lib/copy";
 import { allianceWeek } from "@/lib/private/alliance-week";
@@ -35,7 +35,8 @@ export function allianceWeekParts(
         ? t["week.last"]
         : fill(t["week.of"], { date: f.date(w.monday) });
   const weekday = new Intl.DateTimeFormat(f.language, { weekday: "short", timeZone: "UTC" });
-  const days = new Intl.ListFormat(f.language, { style: "short" }).format(
+  // "Tue, Wed, Thu", as Insights lists them.
+  const days = new Intl.ListFormat(f.language, { style: "short", type: "unit" }).format(
     w.noRead.map((d) => weekday.format(new Date(`${d}T00:00:00Z`))),
   );
   return [
@@ -49,7 +50,9 @@ export function allianceWeekParts(
           }),
         ]
       : []),
-    w.quests ? fill(t["week.quests"], { v: f.number(w.quests.value) }) : t["week.questsNone"],
+    w.quests
+      ? fill(t["week.quests"], { when, v: f.number(w.quests.value) })
+      : fill(t["week.questsNone"], { when }),
     w.donations === null
       ? fill(t["week.donationsNone"], { week })
       : fill(t["week.donations"], { week, v: f.compact(w.donations) }),
@@ -59,6 +62,7 @@ export function allianceWeekParts(
 
 export function AllianceWeekLine({ parts, className }: { parts: string[]; className: string }) {
   return parts.length === 0 ? null : (
-    <p className={`text-body-sm ${className}`}>{parts.join(" · ")}</p>
+    // A no-break space before each " · ", so a line never starts with one (D122).
+    <p className={`text-body-sm ${className}`}>{parts.join(" · ")}</p>
   );
 }

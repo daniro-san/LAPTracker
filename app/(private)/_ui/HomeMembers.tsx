@@ -74,10 +74,6 @@ export function HomeMembers(props: {
         <p className="py-2">{t["home.notYet"]}</p>
       ) : (
         <>
-          <AllianceWeekLine
-            parts={allianceWeekParts(view, t, f, today)}
-            className="max-w-sm py-2"
-          />
           {thanks.length > 0 && (
             <div className="max-w-sm py-2">
               <h3 className="text-body-sm font-semibold text-ink/75">{t[key]}</h3>
@@ -101,6 +97,11 @@ export function HomeMembers(props: {
               share={shareThanksProps({ slug, t, language, view, today, switches: props.switches })}
             />
           )}
+          {/* Issue 466: the alliance's week after the thanks (D75: thanks first). */}
+          <AllianceWeekLine
+            parts={allianceWeekParts(view, t, f, today)}
+            className="max-w-sm py-2"
+          />
           {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114). */}
           {checkins === 0 ? (
             !sharing && <p className="py-2">{t["members.checkinNone"]}</p>

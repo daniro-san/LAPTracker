@@ -282,6 +282,7 @@ function Roster(props: {
   const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   const share = shareThanksProps({ slug, t, language, view, today, switches: props.switches });
+  const allianceWeek = allianceWeekParts(view, t, f, today);
   const lead = (
     <>
       <MembersSource
@@ -293,7 +294,7 @@ function Roster(props: {
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
-      <AllianceWeekLine parts={allianceWeekParts(view, t, f, today)} className="mt-1" />
+      <AllianceWeekLine parts={allianceWeek} className="mt-1 max-w-(--measure)" />
       <MembersThanks view={view} t={t} f={f} share={share} />
       {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
       <p className={view.early ? "hidden" : "mt-3"}>

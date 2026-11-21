@@ -112,9 +112,9 @@ export const membersEn = {
   "shot.notKept": "The picture is not kept.",
   // The alliance's week in one line (issue 466): alliance-level numbers only, joined with " · ".
   "week.coins": "Alliance Help: {n} of {of} reached {cap} {when}",
-  "week.quests": "daily quest points, median {v}",
-  "week.questsNone": "no daily quest points",
-  "week.donations": "donations {week} {v}",
+  "week.quests": "daily quest points {when}, median {v}",
+  "week.questsNone": "no daily quest points {when}",
+  "week.donations": "donations {week} {v}",
   "week.donationsNone": "no donations {week}",
   "week.today": "today",
   "week.yesterday": "yesterday",
@@ -122,7 +122,7 @@ export const membersEn = {
   "week.this": "this week",
   "week.last": "last week",
   "week.of": "the week of {date}",
-  "week.noRead": "no read on {days}, left out",
+  "week.noRead": "no read on {days}, not in the total",
 } as const;
 
 export type MembersWords = Record<keyof typeof membersEn, string>;

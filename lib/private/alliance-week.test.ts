@@ -66,6 +66,16 @@ describe("the alliance's week in one line (issue 466)", () => {
     // Monday 16 read; Tuesday 17 failed; Wednesday 18 read; today is Friday 20, before its read.
     const reads = [read("2026-11-16", [member(1)]), read("2026-11-18", [member(1)])];
     expect(allianceWeek(reads, "2026-11-20")?.noRead).toEqual(["2026-11-17", "2026-11-19"]);
+    // Reads up to Sunday 22; today is Tuesday 24 and Monday 23 failed: Monday is named too.
+    const older = [read("2026-11-16", [member(1)]), read("2026-11-22", [member(1)])];
+    expect(allianceWeek(older, "2026-11-24")?.noRead).toEqual([
+      "2026-11-17",
+      "2026-11-18",
+      "2026-11-19",
+      "2026-11-20",
+      "2026-11-21",
+      "2026-11-23",
+    ]);
     expect(allianceWeek([], "2026-11-20")).toBeNull();
   });
 });
