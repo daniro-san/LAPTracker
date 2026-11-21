@@ -41,6 +41,15 @@ describe("a member's own week (D142)", () => {
     expect(quests?.average).toBe("This week: Average 500 · 2 days");
     expect(quests?.last).toBe("Last week: Average 400 · 2 days");
     expect(weekCard([], "2026-11-05", t, f)).toBeNull();
+    // No number yet this week: no average, and last week stays a plain line, never a target.
+    const early = weekCard([day("2026-10-28", 500), day("2026-11-02", null)], "2026-11-02", t, f);
+    expect(early?.rows[0]).toMatchObject({
+      average: "This week: no average yet",
+      last: "Last week: Average 500 · 1 day",
+    });
+    expect(weekCard([day("2026-11-02", 500)], "2026-11-02", t, f)?.rows[0]?.last).toBe(
+      "Last week: no average",
+    );
   });
 
   it("draws might over 30 days, and the recovery since KvK against their own might before it", () => {

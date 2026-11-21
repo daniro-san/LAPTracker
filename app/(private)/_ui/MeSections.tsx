@@ -10,6 +10,7 @@ import type { Series } from "@/lib/private/me-parts";
 import { LineChart } from "../../_ui/charts/LineChart";
 import { MemberLastDays } from "./MemberLastDays";
 import { MemberSquads } from "./MemberSquads";
+import { NoData } from "./NoData";
 
 type Shown = Extract<MeView, { left: false }>;
 
@@ -71,9 +72,25 @@ export function MeWeek({ view, t }: { view: Shown; t: WorkspaceDictionary }) {
       <h2 id="me-week" className={HEAD}>
         {t["me.week.head"]}
       </h2>
+      <p className="mt-1 text-body-sm">{t["me.week.thanks"]}</p>
       <p className="mt-1 text-body-sm text-ink/75">{t["me.week.lead"]}</p>
       {view.week ? (
-        <MemberLastDays days={{ ...view.week, head: "" }} />
+        <>
+          {/* ph-no-capture: session replay records the bars as an empty box, so no bar height reaches
+              analytics (the member's daily values are never sent to analytics). */}
+          <div className="ph-no-capture">
+            <MemberLastDays days={{ ...view.week, head: "" }} />
+          </div>
+          <ul className="mt-3 text-[12px] leading-5 text-ink/70">
+            <li>
+              <span aria-hidden="true">
+                <NoData label={view.week.noData} />
+              </span>{" "}
+              {t["me.week.legend"]}
+            </li>
+            <li>{t["me.week.legendNone"]}</li>
+          </ul>
+        </>
       ) : (
         <p className="mt-2 text-body-sm">{t["me.week.early"]}</p>
       )}

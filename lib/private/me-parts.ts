@@ -74,8 +74,11 @@ export function weekCard(
         : null;
       return {
         ...row,
+        label: row.metric === "coins" ? t["me.week.coins"] : row.label,
         average:
-          row.average === NONE ? row.average : fill(t["me.week.this"], { line: row.average }),
+          row.average === NONE
+            ? t["me.week.thisNone"]
+            : fill(t["me.week.this"], { line: row.average }),
         last: line ? fill(t["me.week.last"], { line }) : t["me.week.lastNone"],
         bars: row.bars.map((b, i) => {
           const day = f.date(week[i] as string);

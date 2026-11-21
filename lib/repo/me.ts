@@ -57,7 +57,7 @@ export async function ownDays(
       kills: sql<string | null>`((${dailyRosters.memberKills})[${i}])::text`,
       daily: sql<
         OwnDay["daily"]
-      >`case when ${i} is not null and ${dailyRosters.readDay} >= ${dailyFrom} then (select jsonb_build_object('active', m->'active', 'daily_honor', m->'daily_honor', 'daily_tech', m->'daily_tech') from jsonb_array_elements(${dailyRosters.rawJson}->'members') m where m->>'uid' = ${String(uid)} limit 1) end`,
+      >`case when ${i} is not null and ${dailyRosters.readDay} >= ${dailyFrom} then (select jsonb_build_object('active', m->'active', 'daily_honor', m->'daily_honor', 'daily_tech', m->'daily_tech') from jsonb_array_elements(${dailyRosters.rawJson}->'members') with ordinality e(m, n) where m->>'uid' = ${String(uid)} order by n limit 1) end`,
     })
     .from(dailyRosters)
     .where(usable(unionId))
