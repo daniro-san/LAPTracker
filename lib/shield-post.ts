@@ -1,8 +1,9 @@
-// The Raid Shield check's one message to the alliance's leaders' channel (issue 474, D137): posted after
-// Friday night's read and edited in place by Saturday morning's, through the workspace's own leaders
-// webhook (D129; WORKSPACE_DISCORD_WEBHOOKS as its fallback). Only when the officers turned it on in
-// Alliance settings, never to the members' channel or anywhere public. Names only of members the tracker
-// did not see shielded, as a hint (D75); nothing is logged but counts, and the webhook URL never is.
+// The Raid Shield check's one message to the alliance's leadership (issue 474, D137): posted after Friday
+// night's read and edited in place by Saturday morning's, only through the workspace's own Raid Shield
+// channel (D147, owner's rule of 2026-11-21): without one, nothing is posted, never to the leaders' channel.
+// Only when the officers turned it on in Alliance settings, never to the members' channel or anywhere
+// public. Names only of members the tracker did not see shielded, as a hint (D75); nothing is logged but
+// counts, and the webhook URL never is.
 import { createHash } from "node:crypto";
 
 import {
@@ -33,7 +34,7 @@ const NAMES_MAX = 40;
 /** `message_hash` once Discord said the message was deleted. */
 const GONE = "gone";
 
-type PostEnv = Pick<Env, "SERVER_TZ" | "WORKSPACE_KEYS_SECRET" | "WORKSPACE_DISCORD_WEBHOOKS">;
+type PostEnv = Pick<Env, "SERVER_TZ" | "WORKSPACE_KEYS_SECRET">;
 export interface PostDeps {
   env: PostEnv;
   fetch: typeof fetch;
@@ -41,22 +42,36 @@ export interface PostDeps {
   origin: string;
 }
 
-/** The leaders' webhook, opened for this call only, and whether it is a forum; null when none is usable. */
-type Hook = { url: string; forum: boolean };
-async function leadersHook(db: Db, env: PostEnv, target: ShieldTarget): Promise<Hook | null> {
+/**
+ * The webhook to post through, opened for this call only: its URL, whether it is a forum, and `key`, the
+ * URL's sha256 (on one host: discordapp.com is discord.com), stored with the message so it is edited only
+ * through the same webhook (D147).
+ */
+type Hook = { url: string; forum: boolean; key: string };
+const hookOf = (url: string, forum: boolean): Hook => ({
+  url,
+  forum,
+  key: createHash("sha256")
+    .update(url.replace(/^https:\/\/discordapp\.com\//, "https://discord.com/"))
+    .digest("hex"),
+});
+
+/**
+ * The Raid Shield channel the workspace saved, and nothing else (D147, owner's rule of 2026-11-21): none
+ * saved, one the master key cannot open, or no master key posts nothing, never to the leaders' channel or
+ * the site's.
+ */
+async function summaryHook(db: Db, env: PostEnv, target: ShieldTarget): Promise<Hook | null> {
   const id = target.workspaceId as number;
-  const row = (await sealedWebhooks(db, id)).find((r) => r.channel === "leaders");
   const secret = env.WORKSPACE_KEYS_SECRET;
-  if (row && secret && row.masterFp === masterFingerprint(secret)) {
-    try {
-      return { url: openKey(secret, id, row, "webhook-leaders"), forum: row.forum };
-    } catch {
-      return null;
-    }
+  if (!secret) return null;
+  const row = (await sealedWebhooks(db, id)).find((r) => r.channel === "shield");
+  if (!row || row.masterFp !== masterFingerprint(secret)) return null;
+  try {
+    return hookOf(openKey(secret, id, row, "webhook-shield"), row.forum);
+  } catch {
+    return null;
   }
-  if (row && secret) return null;
-  const site = env.WORKSPACE_DISCORD_WEBHOOKS?.[target.slug]?.leaders;
-  return site ? { url: site.url, forum: site.forum } : null;
 }
 
 /** One read in numbers: who was seen shielded, who not yet, and the newest answer's time. */
@@ -131,9 +146,10 @@ const mondayOf = (day: string) => {
 };
 
 /**
- * Posts the summary, or edits the one posted for this check, only when its text changed. A message
- * Discord says was deleted is not posted again (a code-only log line). Nothing when turned off or no
- * channel.
+ * Posts the summary, or edits the one posted for this check through the same webhook, only when its text
+ * changed. A message Discord says was deleted is not posted again in that channel (a code-only log line).
+ * A channel changed since the message was posted gets a fresh one, and the old message is left as it is
+ * (D147). Nothing when turned off or no channel.
  */
 export async function postShieldSummary(
   deps: PostDeps,
@@ -143,14 +159,25 @@ export async function postShieldSummary(
   const { target } = run;
   if (!target.settings?.discord || target.workspaceId === null) return false;
   const q = { day: run.day, unionId: target.unionId };
-  const check = await getShieldCheck(db, q);
-  if (check?.messageHash === GONE) return false;
-  const hook = await leadersHook(db, deps.env, target);
+  const hook = await summaryHook(db, deps.env, target);
   if (!hook) return false;
+  const posted = await postedThrough(db, q, hook);
+  if (posted?.hash === GONE) return false;
   const { content, title } = await messageOf(deps, db, run);
   const hash = createHash("sha256").update(content).digest("hex");
-  if (check?.messageId && check.messageHash === hash) return true;
-  return deliver(deps, db, { q, hook, content, title, hash, id: check?.messageId ?? null });
+  if (posted?.hash === hash) return true;
+  return deliver(deps, db, { q, hook, content, title, hash, id: posted?.id ?? null });
+}
+
+/**
+ * The check's message, only when it went through this same webhook: else the channel changed (D147). A
+ * message posted before D147 has no `message_hook`: it went through the leaders' channel, so it is never
+ * edited, and the Raid Shield channel gets a fresh post.
+ */
+async function postedThrough(db: Db, q: { day: string; unionId: number }, hook: Hook) {
+  const check = await getShieldCheck(db, q);
+  if (!check?.messageId || check.messageHook !== hook.key) return null;
+  return { id: check.messageId, hash: check.messageHash };
 }
 
 /**
@@ -174,7 +201,7 @@ async function deliver(
   if (!m.id) {
     const first = m.hook.forum ? { ...body, thread_name: m.title } : body;
     const id = await sendOrEdit(deps.fetch, m.hook.url, first, null);
-    if (id) await keepMessage(db, m.q, { id, hash: m.hash }, deps.now());
+    if (id) await keepMessage(db, m.q, { id, hash: m.hash, hook: m.hook.key }, deps.now());
     return id !== null;
   }
   const thread = m.hook.forum ? m.id : null;
@@ -182,7 +209,7 @@ async function deliver(
   if (edited === "failed") return false;
   if (edited === "gone") console.warn("shield.message_gone");
   const hash = edited === "ok" ? m.hash : GONE;
-  await keepMessage(db, m.q, { id: m.id, hash }, deps.now());
+  await keepMessage(db, m.q, { id: m.id, hash, hook: m.hook.key }, deps.now());
   return edited === "ok";
 }
 

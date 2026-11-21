@@ -24,14 +24,14 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
-    text: 'At the next shield window (Friday 2026-11-27, 23:30 server time), check that the Raid Shield summary appears in the leaders\' forum as a post titled "Raid Shield check".',
+    text: "Set the Raid Shield channel (Alliance settings → Discord) before Friday 23:30 ST; without it no summary is posted.",
   },
   {
     text: 'For the OGs alliance, Discord: on its desk, Alliance settings → Discord, tap Check, save both webhooks and send a test message. When /admin shows both channels as "set", delete WORKSPACE_DISCORD_WEBHOOKS in Vercel.',
     issue: 527,
   },
   {
-    text: "For the OGs alliance, Raid prep: check once that the Raid Shield check is allowed on /admin and turned on in Alliance settings → Features. Optional: turn on the leaders' channel message and check Saturday's time (10:00 by default).",
+    text: "For the OGs alliance, Raid prep: check once that the Raid Shield check is allowed on /admin and turned on in Alliance settings → Features. Optional: turn on the Raid Shield summary (it needs the Raid Shield channel) and check Saturday's time (10:00 by default).",
     issue: 527,
   },
   {

@@ -50,6 +50,11 @@ export const shieldChecks = pgTable(
      * message was deleted: it is never posted again that night.
      */
     messageHash: text("message_hash"),
+    /**
+     * The sha256 of the webhook the message went through (never the URL): a message is edited only through
+     * the same webhook, so a channel changed since posts fresh (D147).
+     */
+    messageHook: text("message_hook"),
     postedAt: tstz("posted_at"),
   },
   (t) => [

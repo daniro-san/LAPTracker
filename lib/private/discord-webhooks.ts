@@ -1,9 +1,10 @@
-// The workspace's two notice channels (D129, issue 451; D102): officers paste each channel's webhook in Alliance
-// settings. The server checks it with one GET to the webhook (Discord answers its server and channel and posts
+// The workspace's two notice channels (D129, issue 451; D102) and the Raid Shield summary's own channel (D147):
+// officers paste each channel's webhook in Alliance settings. The server checks it with one GET to the webhook (Discord answers its server and channel and posts
 // nothing) and refuses one from another server than the workspace's. It is stored sealed like D124's key, under
 // WORKSPACE_KEYS_SECRET with the workspace and the channel as associated data, and opened only here, at call
 // time, to post. No answer, page, log or event carries the URL: only the channel name officers gave.
-// WORKSPACE_DISCORD_WEBHOOKS stays the fallback for a channel the workspace has not saved yet.
+// WORKSPACE_DISCORD_WEBHOOKS stays the fallback for a notice channel the workspace has not saved yet; the Raid
+// Shield channel has none: without a saved one no summary is posted (lib/shield-post.ts).
 import { z } from "zod";
 
 import type { Db } from "../db";
@@ -76,6 +77,10 @@ export interface WebhookView {
   savedAt: Date | null;
 }
 
+/** The site's WORKSPACE_DISCORD_WEBHOOKS entry: notices only. The Raid Shield channel has none (D147). */
+const siteHook = (env: Secret, slug: string, c: WebhookChannel) =>
+  c === "shield" ? undefined : env.WORKSPACE_DISCORD_WEBHOOKS?.[slug]?.[c];
+
 function viewOf(env: Secret, slug: string, c: WebhookChannel, row?: WebhookFacts): WebhookView {
   const secret = env.WORKSPACE_KEYS_SECRET;
   if (row && secret && row.masterFp === masterFingerprint(secret)) {
@@ -83,7 +88,7 @@ function viewOf(env: Secret, slug: string, c: WebhookChannel, row?: WebhookFacts
   }
   if (row && secret)
     return { channel: c, state: "reenter", name: row.name, forum: row.forum, savedAt: null };
-  const site = env.WORKSPACE_DISCORD_WEBHOOKS?.[slug]?.[c];
+  const site = siteHook(env, slug, c);
   if (site) return { channel: c, state: "site", name: site.name, forum: site.forum, savedAt: null };
   return { channel: c, state: "none", name: null, forum: false, savedAt: null };
 }
@@ -111,22 +116,26 @@ export async function channelNames(db: Db, ws: Workspace, env: Secret) {
   return { members: name("members"), leaders: name("leaders") };
 }
 
-/** The channels to post to, their webhooks opened for this call only; null where none is usable. */
+type Sealed = Awaited<ReturnType<typeof sealedWebhooks>>;
+
+/** One channel's webhook, opened for this call only; null where none is usable. */
+function opened(env: Secret, ws: Workspace, rows: Sealed, c: WebhookChannel): Channel | null {
+  const row = rows.find((r) => r.channel === c);
+  const view = viewOf(env, ws.slug, c, row);
+  if (view.state === "site") return siteHook(env, ws.slug, c) ?? null;
+  if (view.state !== "set" || !row || !env.WORKSPACE_KEYS_SECRET) return null;
+  try {
+    const url = openKey(env.WORKSPACE_KEYS_SECRET, ws.workspaceId, row, purpose(c));
+    return { url, name: row.name, forum: row.forum };
+  } catch {
+    return null;
+  }
+}
+
+/** The notice channels to post to, their webhooks opened for this call only; null where none is usable. */
 export async function noticeChannels(db: Db, ws: Workspace, env: Secret): Promise<Channels> {
   const rows = await sealedWebhooks(db, ws.workspaceId);
-  const one = (c: WebhookChannel): Channel | null => {
-    const row = rows.find((r) => r.channel === c);
-    const view = viewOf(env, ws.slug, c, row);
-    if (view.state === "site") return env.WORKSPACE_DISCORD_WEBHOOKS?.[ws.slug]?.[c] ?? null;
-    if (view.state !== "set" || !row || !env.WORKSPACE_KEYS_SECRET) return null;
-    try {
-      const url = openKey(env.WORKSPACE_KEYS_SECRET, ws.workspaceId, row, purpose(c));
-      return { url, name: row.name, forum: row.forum };
-    } catch {
-      return null;
-    }
-  };
-  return { members: one("members"), leaders: one("leaders") };
+  return { members: opened(env, ws, rows, "members"), leaders: opened(env, ws, rows, "leaders") };
 }
 
 export type WebhookResult =
@@ -217,7 +226,7 @@ export async function testWebhook(
     deps.now,
   );
   if (tries > TESTS) return { ok: false, code: "rate_limited" };
-  const target = (await noticeChannels(db, access, deps.env))[c];
+  const target = opened(deps.env, access, await sealedWebhooks(db, access.workspaceId), c);
   if (!target) return { ok: false, code: "not_set_up" };
   const { sent, status } = await postMessages(deps.fetch, target, deps.title, [deps.text]);
   privateLog("discord.webhook.test", { sent, http: status ?? 0 });

@@ -36,7 +36,7 @@ export interface WorkspaceView extends WorkspaceSettings {
   allowlist: string[];
   /** "Tracker key: set · invalid (2 hours ago)" or "Tracker key: not set" (D124). */
   trackerKey: string;
-  /** "Discord: bot in server · commands: … · leaders' webhook: set · …" (D129). */
+  /** "Discord: bot in server · commands: … · leaders' webhook: set · … · Raid Shield webhook: …" (D129, D147). */
   discord: string;
   /** "Deletion asked by … · deleted after …" (D125), or null when none is asked. */
   deletion: string | null;

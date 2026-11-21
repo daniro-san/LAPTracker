@@ -1,8 +1,8 @@
 "use client";
 
 // Alliance settings → Raid Shield check (issue 474, D137): Saturday's read time (10:00 to 11:00 ST) and the
-// leaders' channel summary, opt-in, in a language the officers pick. Shown only while the check is on
-// (D134). One Save; a refusal or no answer says so and keeps what was typed.
+// Discord summary (only to the Raid Shield channel, D147), opt-in, in a language the officers pick. Shown
+// only while the check is on (D134). One Save; a refusal or no answer says so and keeps what was typed.
 import { useState } from "react";
 
 import { Button } from "@/lib/brand/components/Button";
@@ -20,12 +20,25 @@ const LANGUAGES: { code: WorkspaceLanguage; name: string }[] = [
   { code: "fr", name: "Français" },
 ];
 
+/**
+ * The switch's help line: what the summary does, or why it has no channel yet (D147). Switched on with no
+ * Raid Shield channel, it says plainly that nothing is posted (the leaders' channel is never used).
+ */
+function helpKey(channel: "ok" | "reenter" | "none", on: boolean): keyof WorkspaceDictionary {
+  if (channel === "ok") return "prep.settings.discordHelp";
+  if (channel === "reenter") return "prep.settings.reenter";
+  return on ? "prep.settings.notPosting" : "prep.settings.noChannel";
+}
+
 export function RaidPrepSettings(props: {
   slug: string;
   view: ShieldSettingsView;
   choices: number[];
-  /** The leaders' channel can take the message (D129). */
-  leaders: boolean;
+  /**
+   * ok: the Raid Shield channel can take the message (D129, D147; never the leaders'); reenter:
+   * the saved Raid Shield webhook must be pasted again; none: no channel yet.
+   */
+  channel: "ok" | "reenter" | "none";
   t: WorkspaceDictionary;
 }) {
   const { t } = props;
@@ -65,9 +78,9 @@ export function RaidPrepSettings(props: {
       <div className="mt-3">
         <CheckField
           label={t["prep.settings.discord"]}
-          help={props.leaders ? t["prep.settings.discordHelp"] : t["prep.settings.noChannel"]}
+          help={t[helpKey(props.channel, v.discord)]}
           checked={v.discord}
-          disabled={!props.leaders && !v.discord}
+          disabled={props.channel !== "ok" && !v.discord}
           onChange={(e) => setV({ ...v, discord: e.target.checked })}
         />
       </div>

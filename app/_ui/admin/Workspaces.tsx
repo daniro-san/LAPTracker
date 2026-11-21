@@ -53,7 +53,8 @@ function deletionLine(deletion: AdminWorkspace["deletion"]): string | null {
 
 /**
  * D129: the bot seen or not, the commands registered (or not), and each channel's webhook: set by the
- * workspace, `env` while WORKSPACE_DISCORD_WEBHOOKS still covers it, or not set. Never a webhook.
+ * workspace, `env` while WORKSPACE_DISCORD_WEBHOOKS still covers it, or not set. The Raid Shield channel
+ * (D147) has no `env`: while not set, no summary is posted at all. Never a webhook.
  */
 function discordLine(w: AdminWorkspace, site: Partial<Record<string, unknown>> | undefined) {
   const d = t.discord;
@@ -65,6 +66,7 @@ function discordLine(w: AdminWorkspace, site: Partial<Record<string, unknown>> |
     commands: commands === null ? d.noCommands : commands.length ? commands.join(", ") : d.noneOn,
     leaders: hook("leaders"),
     members: hook("members"),
+    shield: w.discord.webhooks.includes("shield") ? d.set : d.shieldUnset,
   });
 }
 
