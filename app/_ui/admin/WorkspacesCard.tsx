@@ -120,7 +120,12 @@ function WorkspaceList({
   return (
     <ul className="grid gap-4">
       {workspaces.map((w) => (
-        <li key={w.id} className="border-b border-rule pb-4 last:border-0">
+        // `#w-<slug>`: the Alliances table's rows open here (D144).
+        <li
+          key={w.id}
+          id={`w-${w.slug}`}
+          className="scroll-mt-4 border-b border-rule pb-4 last:border-0"
+        >
           <p className="font-semibold">
             /w/{w.slug} · <bdi>{w.alliance}</bdi>
           </p>

@@ -13,6 +13,8 @@ export interface AppErrorRow {
   message: string;
   /** D61: AppErrorDetail (lib/app-errors.ts), already redacted. */
   detail?: unknown;
+  /** The workspace's slug under /w/[slug] (D144); null or absent elsewhere. */
+  workspaceSlug?: string | null;
 }
 
 export async function insertAppError(db: Db, row: AppErrorRow): Promise<void> {
