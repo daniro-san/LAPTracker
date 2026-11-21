@@ -37,7 +37,7 @@ function Row({ m }: { m: MoverItem }) {
         )}
         {m.badgeId !== undefined && <AllianceBadge badgeId={m.badgeId} />}
         <span className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-2">
-          <span className="min-w-0 max-w-full break-words">
+          <span className="min-w-0 max-w-full name-fit">
             {m.label}
             {m.tag && <span className="text-sm text-ink/70"> [{m.tag}]</span>}
           </span>

@@ -130,10 +130,31 @@ summary.details-bar:focus-visible:has(> .drawn-frame-soft) {
 }
 summary.details-bar:focus-visible > .drawn-frame-soft {
   outline: 2px solid var(--plum);
-  outline-offset: 2px;
+  outline-offset: 5px;
+}
+/* A control in the soft drawn frame (chips, filter links, header controls): the frame hangs 3 px outside the
+   box, so the keyboard ring sits past it, 2 px of plum, never the control's own text colour, which is paper
+   on a pressed chip (issue 473). On the plum header bar the ring is wax paper, closer, so it stays inside
+   the bar's 4 px edge. */
+.drawn-frame-soft:focus-visible {
+  outline: 2px solid var(--plum);
+  outline-offset: 5px;
+}
+header .drawn-frame-soft:focus-visible {
+  outline-color: var(--wax-paper);
+  outline-offset: 3px;
 }
 body {
   overflow-wrap: break-word;
+}
+/* A name in a row or card (an alliance, a player): it wraps between words only, and a word longer than its
+   line ends in an ellipsis instead of breaking mid-word (issue 473). The element must be a block or a flex
+   item. The clip margin keeps a focused link's ring and underline. */
+.name-fit {
+  overflow-wrap: normal;
+  overflow: clip;
+  overflow-clip-margin: 4px;
+  text-overflow: ellipsis;
 }
 
 /* Error-page vignettes (DESIGN.md "Motion"): one small keyframe loop per page, about the pivot each

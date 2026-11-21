@@ -7,7 +7,8 @@ import type { Db } from "@/lib/db";
 import { withOwnDb } from "@/lib/page";
 import { listEvents, upstreamRows } from "@/lib/queries";
 import { allianceList, eventAllianceIds } from "@/lib/queries/alliance-list";
-import { searchPlayers } from "@/lib/queries/players";
+import { sampledEventIds } from "@/lib/queries/fight-clock";
+import { searchPlayers } from "@/lib/queries/player-search";
 
 /** `load`'s value under `name` and `key`, shared by every viewer until the next write. */
 export const sharedRead = <T>(
@@ -16,8 +17,14 @@ export const sharedRead = <T>(
   load: (db: Db) => Promise<T>,
 ) => getAppContext().publicCache.read(name, key, () => withOwnDb(load));
 
-/** The public events with their phase rows: every page's header and the home event's input. */
-export const sharedEvents = () => sharedRead("events", [], listEvents);
+/** The public events with their phase rows: every page's header and the home event's input. `sampled`: the
+ * event has a 15-minute reading, so the header lists the fight clock (issue 473). A sample's run
+ * invalidates `reads` (lib/run.ts), so the first sample shows on the next view. */
+export const sharedEvents = () =>
+  sharedRead("events", [], async (db) => {
+    const [list, sampled] = await Promise.all([listEvents(db), sampledEventIds(db)]);
+    return list.map((e) => ({ ...e, sampled: sampled.has(e.id) }));
+  });
 
 /** /alliances: the newest board, one page of it. Kept under the page it shows (`asked` clamped to the pages
  * there are, from page 1's entry), so a made-up `?page=` adds no entry. */

@@ -16,8 +16,7 @@ import { Delta, Num } from "./Num";
 import { LABEL } from "./StatTable";
 
 const MUTED = "text-ink/70";
-const PLAYER =
-  "text-link inline-flex min-h-11 min-w-0 items-center font-medium [overflow-wrap:anywhere]";
+const PLAYER = "text-link inline-flex min-h-11 min-w-0 max-w-full items-center font-medium";
 /** Name, Kills, Might: the same tracks in the header and every row, so the columns line up. */
 const CHANGE_COLS =
   "grid grid-cols-[minmax(0,1fr)_5rem_6rem] gap-x-2 sm:grid-cols-[minmax(0,1fr)_8rem_8rem]";
@@ -26,7 +25,7 @@ const FIRST_CHANGES = 10;
 
 const player = (m: { uid: number; name: string }) => (
   <Link href={`/players/${m.uid}`} className={PLAYER}>
-    <bdi>{m.name}</bdi>
+    <bdi className="min-w-0 name-fit">{m.name}</bdi>
   </Link>
 );
 

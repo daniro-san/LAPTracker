@@ -5,9 +5,9 @@ export const standingCopy = {
   title: "Standing over time",
   /** Under the title: what is ranked, what the server is and which days count. */
   help: "The tracked alliances ranked by might from each daily update, with the change since {from}. A day with no update for an alliance is left out. The server here is the tracked alliances' total.",
-  /** The first sentence. `{label}` is the alliance, `{rank}` its rank on the period's newest day and
-   * `{before}` on its first day (`#4`), `{to}` and `{from}` those days. */
-  lead: "{label} was {rank} by might on {to} and {before} on {from}.",
+  /** The first sentence, in time order (issue 473). `{label}` is the alliance, `{before}` its rank on the
+   * period's first day and `{rank}` on its newest (`#4`), `{from}` and `{to}` those days. */
+  lead: "By might, {label} went from {before} on {from} to {rank} on {to}.",
   /** After the lead; `{growth}` and `{server}` are signed percents. */
   leadGrowth:
     "Its might changed {growth} since then. The tracked alliances' total changed {server}.",

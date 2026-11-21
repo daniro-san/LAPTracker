@@ -17,7 +17,13 @@ describe("SiteHeader", () => {
     const html = renderToStaticMarkup(
       createElement(SiteHeader, {
         events: [
-          { id: 3, name: "Saturday Event 2026-11-07", manual: false, eventAtUtc: at },
+          {
+            id: 3,
+            name: "Saturday Event 2026-11-07",
+            manual: false,
+            eventAtUtc: at,
+            sampled: true,
+          },
           { id: 2, name: "Manual round 2026-11-05", manual: true, eventAtUtc: at },
         ],
         currentId: 2,
@@ -29,12 +35,25 @@ describe("SiteHeader", () => {
     const links = [...html.matchAll(/<a [^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g)]
       .filter(([, href]) => href === "/" || href?.startsWith("/events/"))
       .map(([, href, body]) => [href, body?.includes(en.site.latest)]);
-    // The first "/" is the logo; the fight clock (D86) heads the list.
+    // The first "/" is the logo; the fight clock (D86) heads the list once an event has 15-minute readings.
     expect(links).toEqual([
       ["/", false],
       ["/events/fight-clock", false],
       ["/events/3", false],
       ["/", true],
     ]);
+  });
+
+  it("leaves the fight clock out while no event has 15-minute readings (issue 473)", () => {
+    const html = renderToStaticMarkup(
+      createElement(SiteHeader, {
+        events: [{ id: 3, name: "Saturday Event 2026-11-07", manual: false, eventAtUtc: at }],
+        currentId: 3,
+        homeId: 3,
+        clock,
+        copy: en,
+      }),
+    );
+    expect(html).not.toContain("/events/fight-clock");
   });
 });

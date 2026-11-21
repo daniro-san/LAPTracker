@@ -58,7 +58,8 @@ export const idID = {
     movers: "Perubahan terbesar di event ini",
     progress: "Progres harian",
     progressMight: "Kamu: {change} sejak {date}.",
-    progressMedian: "Anggota tengah {tag}: {percent}.",
+    progressMedian: "Anggota khas {tag}: {percent}.",
+    rankIn: "di {tag}",
     progressEvents: "Event (Awal ke Akhir): {dates}",
     progressWar: "Might sering turun di event perang. Itu wajar.",
     progressEmpty: "Belum cukup pembacaan untuk grafik.",
@@ -240,7 +241,7 @@ export const idID = {
   standing: {
     title: "Klasemen dari waktu ke waktu",
     help: "Aliansi yang dilacak diurutkan menurut Might dari tiap pembacaan harian, dengan perubahan sejak {from}. Hari tanpa pembacaan untuk sebuah aliansi tidak dihitung. Server di sini adalah total aliansi yang dilacak.",
-    lead: "{label} berada di peringkat {rank} menurut Might pada {to} dan {before} pada {from}.",
+    lead: "Menurut Might, {label} berpindah dari {before} pada {from} ke {rank} pada {to}.",
     leadGrowth:
       "Might-nya berubah {growth} sejak itu. Total aliansi yang dilacak berubah {server}.",
     server: "Aliansi dilacak",
@@ -303,6 +304,7 @@ export const idID = {
     first: "Pembacaan pertama: belum ada yang dibandingkan.",
     noChange: "Tidak ada perubahan anggota.",
     renamed: "Ganti nama",
+    renamedCount: "{n} ganti nama",
     nowIn: "sekarang di {tag}",
     show: "Tampilkan",
     all: "Semua",
@@ -395,6 +397,8 @@ export const idID = {
     seen: "Terlihat",
     limit: "{n} pertama",
     noMatch: "Tidak ada pemain dengan nama itu. Periksa ejaannya, atau ketik sebagian namanya.",
+    results: "Hasil: {n}",
+    hint: "Ketik sebagian nama pemain. Nama lama juga ditemukan.",
     pending: "Nenek sedang mencari di buku…",
   },
   errors: {

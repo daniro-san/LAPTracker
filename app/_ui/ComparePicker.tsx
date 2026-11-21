@@ -38,6 +38,7 @@ function EventSelect({
   value,
   choices,
   clock,
+  className = "",
 }: {
   name: string;
   letter: string;
@@ -45,9 +46,10 @@ function EventSelect({
   value: number | null;
   choices: Choice[];
   clock: Clock;
+  className?: string;
 }) {
   return (
-    <label className="min-w-0">
+    <label className={`min-w-0 ${className}`}>
       <span className={`${LABEL} block`} aria-hidden="true">
         {letter}
       </span>
@@ -92,7 +94,7 @@ export function ComparePicker({
     <form
       method="get"
       action={COMPARE_PATH}
-      className="mb-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"
+      className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"
     >
       <EventSelect name="a" letter="A" label={c.first} value={a} choices={choices} clock={clock} />
       <Link
@@ -102,7 +104,17 @@ export function ComparePicker({
       >
         <span aria-hidden="true">⇄</span>
       </Link>
-      <EventSelect name="b" letter="B" label={c.second} value={b} choices={choices} clock={clock} />
+      {/* Below 640 px B sits under A, each select as wide as the page allows, so an event's title reads
+          (issue 473); ⇄ stays beside A. */}
+      <EventSelect
+        name="b"
+        letter="B"
+        label={c.second}
+        value={b}
+        choices={choices}
+        clock={clock}
+        className="col-start-1 sm:col-start-3"
+      />
       {unionId !== null && <input type="hidden" name="alliance" value={unionId} />}
       {uid !== null && <input type="hidden" name="player" value={uid} />}
       <button type="submit" className={buttonClass("primary", "col-span-full sm:col-span-1")}>

@@ -26,7 +26,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin          | Admin elle başlatır             | `status.byHand`                                                                                                                   |
 | grandma                           | nine                            | the voice in empty states and errors                                                                                              |
 | Daily progress                    | Günlük ilerleme                 | `ledger.progress` — the player page's section heading                                                                             |
-| Median                            | Ortadaki üye                    | `ledger.progressMedian` — the middle member's change                                                                              |
+| Median                            | Tipik üye                       | `ledger.progressMedian` — the typical member's change                                                                             |
 | English                           | tr                              | Key and use                                                                                                                       |
 | -------------------------         | ------------------------------- | --------------------------------------------------------------------------------------                                            |
 | Server 325 · Event Ledger         | Sunucu 325 · Etkinlik Defteri   | `site.ledger` — the page title                                                                                                    |
@@ -113,7 +113,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin          | Admin elle başlatır             | `status.byHand`                                                                                                                   |
 | grandma                           | nine                            | the voice in empty states and errors                                                                                              |
 | Daily progress                    | Günlük ilerleme                 | `ledger.progress` — the player page's section heading                                                                             |
-| Median                            | Ortadaki üye                    | `ledger.progressMedian` — the middle member's change                                                                              |
+| Median                            | Tipik üye                       | `ledger.progressMedian` — the typical member's change                                                                             |
 | English                           | tr                              | Key and use                                                                                                                       |
 | -------------------------         | ------------------------------- | --------------------------------------------------------------------------------------                                            |
 | Server 325 · Event Ledger         | Sunucu 325 · Etkinlik Defteri   | `site.ledger` — the page title                                                                                                    |
@@ -171,7 +171,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin          | Admin elle başlatır             | `status.byHand`                                                                                                                   |
 | grandma                           | nine                            | the voice in empty states and errors                                                                                              |
 | Daily progress                    | Günlük ilerleme                 | `ledger.progress` — the player page's section heading                                                                             |
-| Median                            | Ortadaki üye                    | `ledger.progressMedian` — the middle member's change                                                                              |
+| Median                            | Tipik üye                       | `ledger.progressMedian` — the typical member's change                                                                             |
 | English                           | tr                              | Key and use                                                                                                                       |
 | -------------------------         | ------------------------------- | --------------------------------------------------------------------------------------                                            |
 | Server 325 · Event Ledger         | Sunucu 325 · Etkinlik Defteri   | `site.ledger` — the page title                                                                                                    |
@@ -258,7 +258,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin          | Admin elle başlatır             | `status.byHand`                                                                                                                   |
 | grandma                           | nine                            | the voice in empty states and errors                                                                                              |
 | Daily progress                    | Günlük ilerleme                 | `ledger.progress` — the player page's section heading                                                                             |
-| Median                            | Ortadaki üye                    | `ledger.progressMedian` — the middle member's change                                                                              |
+| Median                            | Tipik üye                       | `ledger.progressMedian` — the typical member's change                                                                             |
 | English                           | tr                              | Key and use                                                                                                                       |
 | -------------------------         | ------------------------------- | --------------------------------------------------------------------------------------                                            |
 | Server 325 · Event Ledger         | Sunucu 325 · Etkinlik Defteri   | `site.ledger` — the page title                                                                                                    |

@@ -18,12 +18,20 @@ import { StandingList } from "./StandingList";
 
 const MUTED = "text-ink/70";
 
-/** `OGs was #4 by might on Nov 16 and #6 on Nov 9. Its might changed +3.1% since then; …`. */
+/** `[OGs] OldGrandmas` with a no-break space after the tag, so the tag stays with the name (issue 473). */
+const labelOf = (row: StandingRow) =>
+  allianceLabel(row.tag ?? String(row.unionId), row.name).replace(/^(\[[^\]]*\]) /, "$1\u00a0");
+
+/** A growth's colour and arrow: yarn ▲ up, seal ▼ down, muted = flat (DESIGN.md three channels). */
+const growthTone = (g: number) => (g > 0 ? "text-yarn" : g < 0 ? "text-seal" : MUTED);
+const growthArrow = (g: number) => (g > 0 ? "▲" : g < 0 ? "▼" : "=");
+
+/** `By might, OGs went from #6 on Nov 9 to #4 on Nov 16. Its might changed +3.1% since then; …`. */
 function lead(row: StandingRow, s: Figures, clock: Clock, locale: string, copy: Dictionary) {
   const from = clock.day(day(s.days[0]));
   const to = clock.day(day(s.days.at(-1)));
   const rank = fill(copy.standing.lead, {
-    label: allianceLabel(row.tag ?? String(row.unionId), row.name),
+    label: labelOf(row),
     rank: `#${row.rank}`,
     before: `#${row.ranks[0]}`,
     from,
@@ -63,17 +71,17 @@ function Row({
 }) {
   const [first, last] = [s.days[0], s.days.at(-1)];
   const [t0, t1] = [day(first).getTime(), day(last).getTime()];
-  const label = allianceLabel(row.tag ?? String(row.unionId), row.name);
+  const label = labelOf(row);
   return (
     <li
       id={rowAnchor(row.unionId)}
       aria-current={own ? "true" : undefined}
-      className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 has-[[data-mine]]:bg-yarn/15 aria-[current=true]:border-plum aria-[current=true]:bg-plum/10 sm:grid-cols-[4.5rem_minmax(0,1fr)_6rem_9rem_4.5rem]"
+      className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 has-[[data-mine]]:bg-yarn/5 aria-[current=true]:border-plum aria-[current=true]:bg-plum/10 sm:grid-cols-[4.5rem_minmax(0,1fr)_6rem_9rem_4.5rem]"
     >
       <Rank n={row.rank} move={row.move} />
       <span className="flex min-w-0 items-center gap-2">
         <AllianceBadge badgeId={row.badgeId} />
-        <span className="min-w-0 break-words">
+        <span className="min-w-0 name-fit">
           {label}
           {own && (
             <span className="ml-2 inline-block border border-ink/40 px-1.5 text-xs font-medium">
@@ -87,14 +95,17 @@ function Row({
         <span className="sm:text-right">
           <Num n={row.might} />
         </span>
-        <span className={`sm:text-right ${MUTED}`}>
-          {row.growth === null
-            ? "—"
-            : fill(copy.standing.growthSince, {
-                growth: percentText(row.growth, locale),
-                from: clock.day(day(first)),
-              })}
-        </span>
+        {row.growth === null ? (
+          <span className={`sm:text-right ${MUTED}`}>—</span>
+        ) : (
+          <span className={`sm:text-right ${growthTone(row.growth)}`}>
+            <span aria-hidden="true">{growthArrow(row.growth)} </span>
+            {fill(copy.standing.growthSince, {
+              growth: percentText(row.growth, locale),
+              from: clock.day(day(first)),
+            })}
+          </span>
+        )}
       </span>
       <span className="col-start-3 row-span-2 row-start-1 justify-self-end sm:col-start-5 sm:row-span-1 sm:row-start-1">
         <Sparkline

@@ -26,7 +26,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | grandma                   | a vovó                             | the voice in empty states and errors                                                   |
 | daily update              | atualização diária                 | `history.daily`, `standing.*`, `balance.*`, `flow.*` — the once-a-day member lists     |
 | chart                     | gráfico                            | `ledger.chart`, `ledger.progressEmpty` — a player's progress graph                     |
-| median                    | do meio                            | `ledger.progressMedian` — "Membro do meio de {tag}", the middle member                 |
+| typical (median)          | típico                             | `ledger.progressMedian` — "Membro típico de {tag}", the alliance's median member       |
 | English                   | pt-BR                              | Key and use                                                                            |
 | ------------------------- | ---------------------------------- | -----------------------------------------------------------------------------------    |
 | Server 325 · Event Ledger | Servidor 325 · Registro de eventos | `site.ledger` — the page title                                                         |
@@ -103,7 +103,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | grandma                   | a vovó                             | the voice in empty states and errors                                                   |
 | daily update              | atualização diária                 | `history.daily`, `standing.*`, `balance.*`, `flow.*` — the once-a-day member lists     |
 | chart                     | gráfico                            | `ledger.chart`, `ledger.progressEmpty` — a player's progress graph                     |
-| median                    | do meio                            | `ledger.progressMedian` — "Membro do meio de {tag}", the middle member                 |
+| typical (median)          | típico                             | `ledger.progressMedian` — "Membro típico de {tag}", the alliance's median member       |
 | English                   | pt-BR                              | Key and use                                                                            |
 | ------------------------- | ---------------------------------- | -----------------------------------------------------------------------------------    |
 | Server 325 · Event Ledger | Servidor 325 · Registro de eventos | `site.ledger` — the page title                                                         |

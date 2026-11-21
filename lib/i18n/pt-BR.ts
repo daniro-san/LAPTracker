@@ -57,7 +57,8 @@ export const ptBR = {
     movers: "Maiores mudanças neste evento",
     progress: "Progresso diário",
     progressMight: "Você: {change} desde {date}.",
-    progressMedian: "Membro do meio de {tag}: {percent}.",
+    progressMedian: "Membro típico de {tag}: {percent}.",
+    rankIn: "em {tag}",
     progressEvents: "Evento (Início a Fim): {dates}",
     progressWar: "O Might costuma cair em eventos de guerra. Isso é esperado.",
     progressEmpty: "Ainda não há leituras suficientes para um gráfico.",
@@ -237,7 +238,7 @@ export const ptBR = {
   standing: {
     title: "Classificação ao longo do tempo",
     help: "As alianças acompanhadas, ordenadas por Might a partir de cada atualização diária, com a mudança desde {from}. Um dia sem atualização de uma aliança fica de fora. O servidor aqui é o total das alianças acompanhadas.",
-    lead: "{label} estava em {rank} por Might em {to} e em {before} em {from}.",
+    lead: "Por Might, {label} foi de {before} em {from} para {rank} em {to}.",
     leadGrowth:
       "Desde então, o Might dela mudou {growth}. O total das alianças acompanhadas mudou {server}.",
     server: "Alianças acompanhadas",
@@ -300,6 +301,7 @@ export const ptBR = {
     first: "Primeira leitura: nada para comparar ainda.",
     noChange: "Nenhuma mudança de membros.",
     renamed: "Renomeado",
+    renamedCount: "{n} renomeados",
     nowIn: "agora em {tag}",
     show: "Mostrar",
     all: "Todos",
@@ -392,6 +394,8 @@ export const ptBR = {
     seen: "Visto em",
     limit: "Primeiros {n}",
     noMatch: "Nenhum jogador com esse nome. Confira a grafia ou digite parte do nome.",
+    results: "Resultados: {n}",
+    hint: "Digite parte do nome de um jogador. Nomes anteriores também são encontrados.",
     pending: "A vovó está procurando no registro…",
   },
   errors: {

@@ -57,7 +57,8 @@ export const es = {
     movers: "Lo que más cambió en este evento",
     progress: "Progreso diario",
     progressMight: "Tú: {change} desde {date}.",
-    progressMedian: "Miembro del medio de {tag}: {percent}.",
+    progressMedian: "Miembro típico de {tag}: {percent}.",
+    rankIn: "en {tag}",
     progressEvents: "Evento (de Inicio a Fin): {dates}",
     progressWar: "Might suele bajar en los eventos de guerra. Es lo esperado.",
     progressEmpty: "Todavía no hay suficientes lecturas para un gráfico.",
@@ -240,7 +241,7 @@ export const es = {
   standing: {
     title: "Clasificación en el tiempo",
     help: "Las alianzas seguidas ordenadas por Might según cada actualización diaria, con el cambio desde {from}. Un día sin actualización de una alianza queda fuera. El servidor aquí es el total de las alianzas seguidas.",
-    lead: "{label} estuvo {rank} por Might el {to} y {before} el {from}.",
+    lead: "Por Might, {label} pasó de {before} el {from} a {rank} el {to}.",
     leadGrowth:
       "Su Might cambió {growth} desde entonces. El total de las alianzas seguidas cambió {server}.",
     server: "Alianzas seguidas",
@@ -304,6 +305,7 @@ export const es = {
     first: "Primera lectura: nada con qué comparar todavía.",
     noChange: "Sin cambios de miembros.",
     renamed: "Renombrado",
+    renamedCount: "Renombrados: {n}",
     nowIn: "ahora en {tag}",
     show: "Mostrar",
     all: "Todos",
@@ -397,6 +399,8 @@ export const es = {
     limit: "Primeros {n}",
     noMatch:
       "No hay ningún jugador con ese nombre. Revisa la escritura o escribe parte del nombre.",
+    results: "Resultados: {n}",
+    hint: "Escribe parte del nombre de un jugador. También aparecen los nombres anteriores.",
     pending: "La abuela está buscando en el registro…",
   },
   errors: {

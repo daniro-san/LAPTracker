@@ -38,6 +38,7 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | Server fight clock                  | Годинник боїв сервера       | `ledger.fightClock`, `ledger.fightClockLink` — event slots on the server clock                                                              |
 | Share of the kills                  | Частка Kills                | `ledger.fightClockShare`, `ledger.fightClockLead`, `ledger.comparePulseHelp` — an event's share of its Kills gained                         |
 | daily update                        | щоденне оновлення           | `history.daily`, `flow.notCounted`, `balance.trendHelp`, `standing.help` — the once-a-day read of the member lists; one phrase in every key |
+| Typical member (median)             | Типовий учасник             | `ledger.progressMedian` — the alliance's median member's might change, `{tag}` is `[OGs]`                                                   |
 | Sign in                             | Увійти                      | `site.signIn`, `site.signInFooter` — the header and footer links to the Discord sign-in                                                     |
 | English                             | uk                          | Key and use                                                                                                                                 |
 | ----------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------                          |

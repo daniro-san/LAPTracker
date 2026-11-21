@@ -201,7 +201,7 @@ function Ornaments() {
         </div>
       </Spec>
       <Spec name={t.settings.name} use={t.settings.use}>
-        <div className="flex w-full justify-end bg-plum p-2 text-paper">
+        <div className="flex w-full justify-end bg-masthead p-2 text-wax-paper">
           <ViewerSettings />
         </div>
       </Spec>

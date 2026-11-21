@@ -57,7 +57,8 @@ export const sv = {
     movers: "Största förändringarna i eventet",
     progress: "Dagsutveckling",
     progressMight: "Du: {change} sedan {date}.",
-    progressMedian: "Mittenmedlem i {tag}: {percent}.",
+    progressMedian: "Typisk medlem i {tag}: {percent}.",
+    rankIn: "i {tag}",
     progressEvents: "Event (Början till Slut): {dates}",
     progressWar: "Might brukar sjunka i krigsevent. Det är normalt.",
     progressEmpty: "Inte tillräckligt med avläsningar för ett diagram än.",
@@ -183,7 +184,7 @@ export const sv = {
   standing: {
     title: "Ställningen över tid",
     help: "De bevakade allianserna placerade efter Might från varje daglig uppdatering, med förändringen sedan {from}. En dag utan daglig uppdatering för en allians räknas inte med. Servern här är de bevakade allianserna tillsammans.",
-    lead: "{label} var {rank} efter Might den {to} och {before} den {from}.",
+    lead: "Efter Might gick {label} från {before} den {from} till {rank} den {to}.",
     leadGrowth:
       "Dess Might har ändrats {growth} sedan dess. De bevakade allianserna tillsammans har ändrats {server}.",
     server: "Bevakade allianser",
@@ -244,6 +245,7 @@ export const sv = {
     first: "Första avläsningen: inget att jämföra med än.",
     noChange: "Inga medlemsändringar.",
     renamed: "Namnbyte",
+    renamedCount: "Namnbyten: {n}",
     nowIn: "nu i {tag}",
     show: "Visa",
     all: "Alla",
@@ -336,6 +338,8 @@ export const sv = {
     seen: "Sedd",
     limit: "Första {n}",
     noMatch: "Ingen spelare med det namnet. Kontrollera stavningen, eller skriv en del av namnet.",
+    results: "Resultat: {n}",
+    hint: "Skriv en del av spelarens namn. Tidigare namn hittas också.",
     pending: "Mormor letar i loggen…",
   },
   errors: {

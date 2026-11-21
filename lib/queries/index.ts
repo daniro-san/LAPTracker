@@ -40,9 +40,10 @@ export {
   type PulseOptions,
   type RowsOf,
 } from "./fight-clock";
-export { playerHistory, searchPlayers } from "./players";
+export { playerHistory } from "./players";
+export { searchPlayers, type PlayerMatch } from "./player-search";
 export type { Photo } from "./photo";
-export type { PlayerEventRow, PlayerHistory, PlayerMatch } from "./players";
+export type { PlayerEventRow, PlayerHistory } from "./players";
 export {
   playerProgress,
   type PlayerProgress,

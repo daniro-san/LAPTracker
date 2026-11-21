@@ -14,7 +14,7 @@ import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { Leadership } from "@/app/_ui/Leadership";
-import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
+import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { canCompare, leadership, memberViews, withRoles } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
 import { memberScope } from "@/app/_ui/mover-lists";
@@ -189,7 +189,7 @@ async function idsOf(params: Params) {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const ids = await idsOf(params);
   const data = ids && (await loadAlliance(ids.eventId, ids.unionId));
-  if (!data) return {};
+  if (!data) return notFoundTitle();
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const now = data.detail.after ?? data.detail.before;
   const event = data.events.find((e) => e.id === ids.eventId);

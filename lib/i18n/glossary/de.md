@@ -177,6 +177,7 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Alliance officers                     | Allianz-Offiziere                      | `site.signInFooter` — the officers and members who sign in with Discord                                                                      |
 | Ranks board                           | Rangliste                              | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the game's ranks board, dated                                                  |
 | Read every day / lookup               | Täglich abgerufen / Abruf              | `alliances.tracked`, `alliances.get*`, `alliances.usedUp` — the daily read of an alliance's details                                          |
+| Results                               | Treffer                                | `search.results` — the count of players a name search matched                                                                                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

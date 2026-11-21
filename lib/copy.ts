@@ -82,8 +82,11 @@ export const en = {
     progress: "Daily progress",
     /** Its summary line, the player's might change in percent: `You: +4.1% since Nov 9.` */
     progressMight: "You: {change} since {date}.",
-    /** After it, when both readings are of one alliance: the change of that alliance's middle member (the median). */
-    progressMedian: "Middle member of {tag}: {percent}.",
+    /** After it, when both readings are of one alliance: the change of that alliance's typical member (the
+     * median member). `{tag}` is `[OGs]`. */
+    progressMedian: "Typical {tag} member: {percent}.",
+    /** Beside a player's rank in an alliance's roster (`#34`): `in OGs`. `{tag}` is the alliance's tag. */
+    rankIn: "in {tag}",
     /** Under the might chart: what the event marks are, and the Start date of each. */
     progressEvents: "Event (Start to End): {dates}",
     /** Under the might chart. */
@@ -144,6 +147,8 @@ export const en = {
     first: "First reading: nothing to compare yet.",
     noChange: "No member changes.",
     renamed: "Renamed",
+    /** In a card's head, beside `+3 joined · −2 left`: how many members changed name. */
+    renamedCount: "{n} renamed",
     /** Beside a member who left, when they are now in another tracked alliance. */
     nowIn: "now in {tag}",
     /** The filter links' group label and its first link. */
@@ -248,6 +253,10 @@ export const en = {
     seen: "Seen",
     limit: "First {n}",
     noMatch: "No player with that name. Check the spelling, or type part of the name.",
+    /** Above the results: how many players matched. */
+    results: "Results: {n}",
+    /** Under the empty search field. */
+    hint: "Type part of a player's name. Earlier names are found too.",
     pending: "Grandma is searching the ledger…",
   },
   errors: errorsCopy,

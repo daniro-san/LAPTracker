@@ -112,7 +112,7 @@ function Lead({ row }: { row: StatRow }) {
           {row.icon}
         </span>
       )}
-      <div className="min-w-0 break-words">
+      <div className="min-w-0 name-fit">
         {row.href ? (
           <TextLink stretch href={row.href} className="font-subhead text-display-sm leading-tight">
             {row.lead}
@@ -194,10 +194,11 @@ export function StatTable({
   copy: Dictionary;
 }) {
   if (rows.length === 0) return <EmptyState>{empty ?? copy.empty.kettle}</EmptyState>;
-  // At ≥ 640 px a fifth, fixed column holds the Details control, so the header and every row align.
+  // At ≥ 640 px a fifth, fixed column holds the Details control, so the header and every row align. A
+  // figure column is never narrower than its change, which stays on one line (issue 473); the name gives way.
   const more = rows.some((r) => r.summary || r.detail);
   const grid = {
-    "--cols": `minmax(0,2.4fr) repeat(${columns.length}, minmax(0,1fr))${more ? " 6.75rem" : ""}`,
+    "--cols": `minmax(6rem,2.4fr) repeat(${columns.length}, minmax(min-content,1fr))${more ? " 6.75rem" : ""}`,
   } as CSSProperties;
   return (
     <div>

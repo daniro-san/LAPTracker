@@ -150,10 +150,11 @@ export default async function FightClockPage() {
   const clocks = events.flatMap((e) => (e.pulse.clock ? [e.pulse.clock] : []));
   const [columns, most] = [clockColumns(clocks), mostShare(clocks)];
   const v: View = { everyMin, details, clock, copy, locale };
+  const sampled = new Set(events.filter((e) => e.pulse.sampled).map((e) => e.id));
   return (
     <>
       <SiteHeader
-        events={listed}
+        events={listed.map((e) => ({ ...e, sampled: sampled.has(e.id) }))}
         currentId={null}
         homeId={homeEvent(listed, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null}
         clock={clock}

@@ -8,14 +8,7 @@ import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
-import type {
-  Carried,
-  getEventDetail,
-  listEvents,
-  Ranks,
-  RosterChange,
-  TurnoutLists,
-} from "@/lib/queries";
+import type { getEventDetail, listEvents, RosterChange } from "@/lib/queries";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
@@ -26,6 +19,7 @@ import {
   comparisonRows,
   emptyLine,
   nextUpdateAt,
+  withSinceLast,
   type AllianceCell,
   type ComparisonRow,
 } from "./event-rows";
@@ -47,7 +41,8 @@ import { TopStatus } from "./TopStatus";
 import { WhoCarried } from "./WhoCarried";
 import { WhoFought } from "./WhoFought";
 
-type Movers = NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
+type Page = NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>;
+type Movers = Page["movers"];
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Events = Awaited<ReturnType<typeof listEvents>>;
 
@@ -87,6 +82,21 @@ function RowDetail({
       )}
     </>
   );
+}
+
+/** The row with its "since" line under each figure when it changed a lot since the previous event (issue
+ * 473). The figures shown are the End's, or the Start's when the End failed. */
+function sinceLast(
+  r: ComparisonRow,
+  previous: Page["previous"],
+  clock: Clock,
+  copy: Dictionary,
+): ComparisonRow {
+  if (!previous) return r;
+  const shown = r.after && !r.after.failed ? r.after : r.before;
+  const label = fill(copy.ledger.since, { date: clock.day(previous.at) });
+  const fresh = shown?.isFresh === true && !shown.failed;
+  return { ...r, metrics: withSinceLast(r.metrics, previous.rows.get(r.unionId), fresh, label) };
 }
 
 function toStatRow(
@@ -217,17 +227,8 @@ export async function EventView({
   movers,
   turnout,
   carried,
-}: {
-  movers: Movers;
-  turnout: TurnoutLists | null;
-  carried: Carried | null;
-  events: Events;
-  homeId: number | null;
-  detail: Detail;
-  changes: Map<number, RosterChange>;
-  names: Map<number, NameHistoryEntry[]>;
-  ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>;
-}) {
+  previous,
+}: Page & { events: Events; homeId: number | null }) {
   const now = new Date();
   const [clock, copy, locale, progress] = await Promise.all([
     requestClock(),
@@ -235,7 +236,9 @@ export async function EventView({
     requestLocale(),
     loadProgress(detail, now),
   ]);
-  const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
+  const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy).map((r) =>
+    sinceLast(r, previous, clock, copy),
+  );
   const moverScopes = moverScopesOf(movers, detail.id, changes, copy);
   const liveProps = { eventId: detail.id, rows, endAt: endTime(detail), clock, copy, locale };
   const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));

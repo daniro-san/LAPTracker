@@ -57,7 +57,8 @@ export const itIT = {
     movers: "Variazioni maggiori di questo evento",
     progress: "Progresso giornaliero",
     progressMight: "Tu: {change} da {date}.",
-    progressMedian: "Membro di mezzo di {tag}: {percent}.",
+    progressMedian: "Membro tipico di {tag}: {percent}.",
+    rankIn: "in {tag}",
     progressEvents: "Evento (da Inizio a Fine): {dates}",
     progressWar: "Il Might spesso cala negli eventi di guerra. È previsto.",
     progressEmpty: "Ancora poche letture per un grafico.",
@@ -241,7 +242,7 @@ export const itIT = {
   standing: {
     title: "Graduatoria nel tempo",
     help: "Le alleanze seguite in classifica per Might, da ogni aggiornamento giornaliero, con la variazione dal {from}. Un giorno senza aggiornamento per un’alleanza viene escluso. Il server qui è il totale delle alleanze seguite.",
-    lead: "{label} era {rank} per Might il {to} e {before} il {from}.",
+    lead: "Per Might, {label} è passato da {before} il {from} a {rank} il {to}.",
     leadGrowth:
       "Il suo Might è cambiato di {growth} da allora. Il totale delle alleanze seguite è cambiato di {server}.",
     server: "Alleanze seguite",
@@ -303,6 +304,7 @@ export const itIT = {
     first: "Prima lettura: ancora nulla da confrontare.",
     noChange: "Nessun cambio di membri.",
     renamed: "Rinominato",
+    renamedCount: "{n} rinominati",
     nowIn: "ora in {tag}",
     show: "Mostra",
     all: "Tutti",
@@ -396,6 +398,8 @@ export const itIT = {
     limit: "Primi {n}",
     noMatch:
       "Nessun giocatore con quel nome. Controlla come è scritto, oppure scrivi una parte del nome.",
+    results: "Risultati: {n}",
+    hint: "Scrivi una parte del nome del giocatore. Si trovano anche i nomi precedenti.",
     pending: "La nonna sta cercando nel registro…",
   },
   errors: {

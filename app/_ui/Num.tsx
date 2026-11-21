@@ -4,7 +4,7 @@
 // "Exact numbers" switch shows one or the other for the whole page with CSS only (globals.css). Every
 // change carries three channels (DESIGN.md): colour, an arrow and the signed number.
 
-import { compact, exact, MEMBER_MARK, percent, percentText, signOf } from "./format";
+import { compact, exact, MEMBER_MARK, percent, percentText, ratioText, signOf } from "./format";
 import { useCopy, useLocale } from "./LocaleProvider";
 
 const MUTED = "text-ink/70";
@@ -82,6 +82,16 @@ export function Delta({
         {memberMark && <MemberMark />}
       </span>
       {note && <span className="font-normal"> · {note}</span>}
+    </span>
+  );
+}
+
+/** `3.1×`: one change as a multiple of another (the compare page's difference line), muted. */
+export function Ratio({ ratio }: { ratio: number }) {
+  const locale = useLocale();
+  return (
+    <span className={`whitespace-nowrap ${MUTED}`} suppressHydrationWarning>
+      {ratioText(ratio, locale)}
     </span>
   );
 }

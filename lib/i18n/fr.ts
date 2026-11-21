@@ -58,6 +58,7 @@ export const fr = {
     progress: "Progression quotidienne",
     progressMight: "Vous : {change} depuis {date}.",
     progressMedian: "Membre du milieu de {tag} : {percent}.",
+    rankIn: "dans {tag}",
     progressEvents: "Événement (Début à Fin) : {dates}",
     progressWar: "Le Might baisse souvent pendant les événements de guerre. C’est normal.",
     progressEmpty: "Pas encore assez de relevés pour un graphique.",
@@ -242,7 +243,7 @@ export const fr = {
   standing: {
     title: "Classement au fil du temps",
     help: "Les alliances suivies classées par Might d’après chaque mise à jour quotidienne, avec l’évolution depuis le {from}. Un jour sans mise à jour pour une alliance est laissé de côté. Ici, le serveur est le total des alliances suivies.",
-    lead: "{label} était {rank} par Might le {to} et {before} le {from}.",
+    lead: "Par Might, {label} est passé de {before} le {from} à {rank} le {to}.",
     leadGrowth:
       "Son Might a changé de {growth} depuis. Le total des alliances suivies a changé de {server}.",
     server: "Alliances suivies",
@@ -305,6 +306,7 @@ export const fr = {
     first: "Premier relevé. Rien à comparer pour l’instant.",
     noChange: "Aucun changement de membre.",
     renamed: "Renommé",
+    renamedCount: "{n} renommé(s)",
     nowIn: "désormais dans {tag}",
     show: "Afficher",
     all: "Tous",
@@ -397,6 +399,8 @@ export const fr = {
     seen: "Vu",
     limit: "Les {n} premiers",
     noMatch: "Aucun joueur de ce nom. Vérifiez l’orthographe, ou tapez une partie du nom.",
+    results: "Résultats : {n}",
+    hint: "Tapez une partie du nom du joueur. Les anciens noms sont aussi trouvés.",
     pending: "Mamie cherche dans le registre…",
   },
   errors: {

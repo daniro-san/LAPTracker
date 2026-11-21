@@ -1,7 +1,7 @@
 // Read models for the player pages (plan Phase 5d, 5e). Served member fields: uid, name, power,
 // kills, lv only, plus the alliance tag, badge and event dates (§12.1) and whether a photo exists
 // (never its URL, D22); raw_json is never selected.
-import { and, asc, desc, eq, ilike, inArray, max, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import {
   nameHistory,
@@ -16,13 +16,11 @@ import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema
 import { rolesOf, type Role } from "./leadership";
 import { type Photo, photoColumns } from "./photo";
 import type { Ranks } from "./ranks";
-import { chainEvent, phaseColumn, publicEvent } from "./visibility";
-
-export const SEARCH_LIMIT = 50;
+import { chainEvent, phaseColumn } from "./visibility";
 
 type Phase = "before" | "after";
 
-interface Sighting extends Photo {
+export interface Sighting extends Photo {
   allianceSnapshotId: number;
   eventId: number;
   eventName: string;
@@ -144,7 +142,7 @@ const sightingColumns = {
 
 /** One roster row per uid and snapshot of a real event, oldest first; test events are never part of it.
  * Two rows in one snapshot: compute.pickRosterRow, as the compare page picks (issue 234). */
-async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: number })[]> {
+export async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: number })[]> {
   const rows = await db
     .select({ uid: memberSnapshots.uid, ...sightingColumns })
     .from(memberSnapshots)
@@ -287,59 +285,4 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
     names: nameHistory(sightedNames),
     alliances: allianceStays(sightings),
   };
-}
-
-export interface PlayerMatch extends Photo {
-  uid: number;
-  name: string;
-  /** The older name that matched when the current one does not. */
-  matchedName: string | null;
-  unionId: number;
-  tag: string | null;
-  allianceName: string | null;
-  /** The alliance's preset badge (101–110) in the latest sighting; served by /img/badge/[id] (D22). */
-  badgeId: number | null;
-  lastEventId: number;
-  lastSeen: Date;
-}
-
-/** `%`, `_` and `\` in the search text are literals, not wildcards. */
-const likePattern = (q: string) => `%${q.replace(/[\\%_]/g, "\\$&")}%`;
-
-/** Players whose current or any earlier name contains `q` (ILIKE, §3.8): most recently seen first, at most 50. */
-export async function searchPlayers(db: Db, q: string): Promise<PlayerMatch[]> {
-  const text = q.trim();
-  if (text === "") return [];
-  const lastSeen = max(events.eventAtUtc);
-  const hits = await db
-    .select({ uid: memberSnapshots.uid })
-    .from(memberSnapshots)
-    .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
-    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
-    .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(ilike(memberSnapshots.name, likePattern(text)), publicEvent))
-    .groupBy(memberSnapshots.uid)
-    .orderBy(desc(lastSeen), asc(memberSnapshots.uid))
-    .limit(SEARCH_LIMIT);
-  const uids = hits.map((h) => h.uid);
-  if (uids.length === 0) return [];
-  const all = await sightingsOf(db, uids);
-  return uids.map((uid) => {
-    const own = all.filter((s) => s.uid === uid);
-    const latest = own.at(-1) as Sighting;
-    const matched = own.findLast((s) => s.name.toLowerCase().includes(text.toLowerCase()));
-    return {
-      uid,
-      name: latest.name,
-      matchedName: matched && matched.name !== latest.name ? matched.name : null,
-      unionId: latest.unionId,
-      tag: latest.tag,
-      allianceName: latest.allianceName,
-      badgeId: latest.badgeId,
-      hasAvatar: latest.hasAvatar,
-      frameId: latest.frameId,
-      lastEventId: latest.eventId,
-      lastSeen: latest.eventAtUtc,
-    };
-  });
 }

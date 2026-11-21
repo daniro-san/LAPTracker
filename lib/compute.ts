@@ -198,16 +198,17 @@ export function rankDelta(
 
 /**
  * How much more one event's change was than another's: `second − first` (the event compare page's
- * difference line, D57). `base` is the size of the first change, so the percent takes the difference's
- * own sign whatever the first change's. Null when either change is unknown (INVARIANT
- * freshness.no-stale-delta: a stale or failed side has none).
+ * difference line, D57), and `ratio`, the second change as a multiple of the first, when both went the
+ * same way (issue 473: a percent of a change, "−314.2%", read as nonsense). Null when either change is
+ * unknown (INVARIANT freshness.no-stale-delta: a stale or failed side has none).
  */
 export function changeDifference(
   first: number | null | undefined,
   second: number | null | undefined,
-): { delta: number; base: number } | null {
+): { delta: number; ratio: number | null } | null {
   if (first == null || second == null) return null;
-  return { delta: second - first, base: Math.abs(first) };
+  const sameWay = (first > 0 && second > 0) || (first < 0 && second < 0);
+  return { delta: second - first, ratio: sameWay ? second / first : null };
 }
 
 /** How many of an alliance's biggest kills gains the concentration figure adds up (#271). */

@@ -57,7 +57,8 @@ export const de = {
     movers: "Größte Änderungen in diesem Event",
     progress: "Tägliche Entwicklung",
     progressMight: "Du: {change} seit {date}.",
-    progressMedian: "Mitglied in der Mitte von {tag}: {percent}.",
+    progressMedian: "Typisches Mitglied von {tag}: {percent}.",
+    rankIn: "in {tag}",
     progressEvents: "Event (Beginn bis Ende): {dates}",
     progressWar: "Bei Kriegs-Events sinkt Might oft. Das ist zu erwarten.",
     progressEmpty: "Noch nicht genug Erfassungen für ein Diagramm.",
@@ -241,7 +242,7 @@ export const de = {
   standing: {
     title: "Rangverlauf",
     help: "Die erfassten Allianzen nach Might, aus jedem Tagesabruf, mit der Änderung seit {from}. Ein Tag, an dem eine Allianz nicht abgerufen wurde, fehlt. Der Server ist hier die Summe der erfassten Allianzen.",
-    lead: "{label} war am {to} nach Might auf {rank} und am {from} auf {before}.",
+    lead: "Nach Might ging {label} von {before} am {from} auf {rank} am {to}.",
     leadGrowth:
       "Das Might der Allianz hat sich seitdem um {growth} verändert. Die Summe der erfassten Allianzen hat sich um {server} verändert.",
     server: "Erfasste Allianzen",
@@ -303,6 +304,7 @@ export const de = {
     first: "Erste Erfassung: noch nichts zum Vergleichen.",
     noChange: "Keine Mitgliederwechsel.",
     renamed: "Umbenannt",
+    renamedCount: "{n} umbenannt",
     nowIn: "jetzt in {tag}",
     show: "Zeigen",
     all: "Alle",
@@ -396,6 +398,8 @@ export const de = {
     limit: "Erste {n}",
     noMatch:
       "Kein Spieler mit diesem Namen. Prüfe die Schreibweise oder tippe einen Teil des Namens.",
+    results: "Treffer: {n}",
+    hint: "Tippe einen Teil des Spielernamens. Frühere Namen werden auch gefunden.",
     pending: "Oma sucht in der Chronik…",
   },
   errors: {

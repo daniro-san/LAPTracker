@@ -57,7 +57,8 @@ export const vi = {
     movers: "Thay đổi lớn nhất trong sự kiện",
     progress: "Tiến độ hằng ngày",
     progressMight: "Bạn: {change} từ {date}.",
-    progressMedian: "Thành viên ở giữa của {tag}: {percent}.",
+    progressMedian: "Thành viên điển hình của {tag}: {percent}.",
+    rankIn: "ở {tag}",
     progressEvents: "Sự kiện (Bắt đầu đến Kết thúc): {dates}",
     progressWar: "Lực Chiến thường giảm trong các sự kiện chiến tranh. Chuyện đó là bình thường.",
     progressEmpty: "Chưa đủ lần đọc để vẽ biểu đồ.",
@@ -235,7 +236,7 @@ export const vi = {
   standing: {
     title: "Thứ hạng theo thời gian",
     help: "Các liên minh theo dõi xếp theo Lực Chiến từ mỗi lần đọc hằng ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không có lần đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
-    lead: "{label} đứng hạng {rank} theo Lực Chiến ngày {to} và {before} ngày {from}.",
+    lead: "Theo Lực Chiến, {label} từ hạng {before} ngày {from} đến hạng {rank} ngày {to}.",
     leadGrowth:
       "Lực Chiến của liên minh này đã đổi {growth} kể từ đó. Tổng các liên minh theo dõi đã đổi {server}.",
     server: "Liên minh theo dõi",
@@ -297,6 +298,7 @@ export const vi = {
     first: "Lần đọc đầu tiên: chưa có gì để so sánh.",
     noChange: "Không có thay đổi thành viên.",
     renamed: "Đổi tên",
+    renamedCount: "{n} đổi tên",
     nowIn: "hiện ở {tag}",
     show: "Hiện",
     all: "Tất cả",
@@ -389,6 +391,8 @@ export const vi = {
     seen: "Thấy lần cuối",
     limit: "{n} người đầu",
     noMatch: "Không có người chơi nào tên đó. Kiểm tra lại chính tả, hoặc gõ một phần tên.",
+    results: "Kết quả: {n}",
+    hint: "Gõ một phần tên người chơi. Tên cũ cũng được tìm thấy.",
     pending: "Bà đang tìm trong sổ…",
   },
   errors: {

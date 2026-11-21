@@ -57,7 +57,8 @@ export const pl = {
     movers: "Największe zmiany w tym wydarzeniu",
     progress: "Postęp dzienny",
     progressMight: "Ty: {change} od {date}.",
-    progressMedian: "Środkowy członek {tag}: {percent}.",
+    progressMedian: "Typowy członek {tag}: {percent}.",
+    rankIn: "w {tag}",
     progressEvents: "Wydarzenie (od Początku do Końca): {dates}",
     progressWar: "Might często spada w wydarzeniach wojennych. Tak to bywa.",
     progressEmpty: "Na wykres jeszcze za mało odczytów.",
@@ -239,7 +240,7 @@ export const pl = {
   standing: {
     title: "Miejsce w czasie",
     help: "Śledzone sojusze ułożone według Might z każdej dziennej aktualizacji, ze zmianą od {from}. Dzień, w którym sojusz nie został odczytany, jest pominięty. Serwer to tutaj suma śledzonych sojuszy.",
-    lead: "{label} w dniu {to} zajmował miejsce {rank} pod względem Might, a w dniu {from} {before}.",
+    lead: "Pod względem Might {label} przeszedł z miejsca {before} w dniu {from} na miejsce {rank} w dniu {to}.",
     leadGrowth:
       "Jego Might zmieniło się od tego czasu o {growth}. Suma śledzonych sojuszy zmieniła się o {server}.",
     server: "Śledzone sojusze",
@@ -303,6 +304,7 @@ export const pl = {
     first: "Pierwszy odczyt: nie ma jeszcze z czym porównać.",
     noChange: "Bez zmian w składzie.",
     renamed: "Zmiana nazwy",
+    renamedCount: "Zmienione nazwy: {n}",
     nowIn: "teraz w {tag}",
     show: "Pokaż",
     all: "Wszystkie",
@@ -395,6 +397,8 @@ export const pl = {
     seen: "Widziany",
     limit: "Pierwsze {n}",
     noMatch: "Nie ma gracza o tej nazwie. Sprawdź pisownię albo wpisz część nazwy.",
+    results: "Wyniki: {n}",
+    hint: "Wpisz część nazwy gracza. Znajdziemy też dawne nazwy.",
     pending: "Babcia szuka w księdze…",
   },
   errors: {

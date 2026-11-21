@@ -22,6 +22,8 @@ import { ViewerSettings } from "./ViewerSettings";
 
 export interface SelectorEvent extends LabeledEvent {
   id: number;
+  /** The event has a 15-minute reading (fight-clock's `sampledEventIds`): the fight clock has something to show. */
+  sampled?: boolean;
 }
 
 /** Plum-header controls: in the soft drawn frame (paper ink), a paper tint on hover, deeper while
@@ -60,7 +62,7 @@ function EventSelector({
   return (
     <Disclosure label={copy.site.events} className="group relative">
       <summary
-        className={`flex min-h-11 items-center gap-1 whitespace-nowrap px-2 text-sm drawn-frame-soft sm:px-3 font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
+        className={`flex min-h-11 items-center gap-1 whitespace-nowrap px-2 text-sm drawn-frame-soft sm:px-3 font-medium group-open:bg-wax-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
         {current ? (
           <>
@@ -87,7 +89,8 @@ function EventSelector({
         </span>
       </summary>
       <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto bg-paper p-1 text-ink drawn-frame before:inset-0">
-        <FightClockItem copy={copy} />
+        {/* The fight clock only once any event has 15-minute readings (issue 473). */}
+        {events.some((e) => e.sampled) && <FightClockItem copy={copy} />}
         {events.map((e) => {
           const named = eventTitle(e);
           const home = e.id === homeId;
@@ -154,16 +157,16 @@ export function SiteHeader({
   prefetch?: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-30 text-plum">
+    <header className="sticky top-0 z-30 text-masthead">
       {publicPage && (
         <a
           href="#main"
-          className="drawn-frame-soft tint-button sr-only items-center bg-paper px-3 font-medium text-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-3 focus:z-50 focus:flex focus:min-h-11 sm:focus:left-6"
+          className="drawn-frame-soft tint-button sr-only items-center bg-paper px-3 font-medium text-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-3 focus:z-50 focus:flex focus:min-h-11 focus:px-4 sm:focus:left-6"
         >
           {copy.site.skip}
         </a>
       )}
-      <div className="bg-plum pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-paper">
+      <div className="bg-masthead pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-1 px-3 py-1 sm:gap-2 sm:px-6">
           <Link
             href="/"
@@ -183,7 +186,7 @@ export function SiteHeader({
               href="/players"
               prefetch={prefetch ? null : false}
               aria-current={section === "players" ? "page" : undefined}
-              className={`drawn-frame-soft flex min-h-11 min-w-11 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-sm font-medium aria-[current=page]:bg-paper/20 ${CONTROL}`}
+              className={`drawn-frame-soft flex min-h-11 min-w-11 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-sm font-medium aria-[current=page]:bg-wax-paper/20 ${CONTROL}`}
             >
               <Magnifier />
               <span className="sr-only min-[420px]:not-sr-only">{copy.site.players}</span>

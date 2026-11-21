@@ -57,7 +57,8 @@ export const nl = {
     movers: "Grootste veranderingen in dit event",
     progress: "Dagelijkse voortgang",
     progressMight: "Jij: {change} sinds {date}.",
-    progressMedian: "Middelste lid van {tag}: {percent}.",
+    progressMedian: "Typisch lid van {tag}: {percent}.",
+    rankIn: "in {tag}",
     progressEvents: "Event (Begin tot Einde): {dates}",
     progressWar: "Might daalt vaak bij oorlogsevents. Dat is normaal.",
     progressEmpty: "Nog niet genoeg metingen voor een grafiek.",
@@ -240,7 +241,7 @@ export const nl = {
   standing: {
     title: "Stand door de tijd",
     help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag zonder dagelijkse meting voor een alliantie wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
-    lead: "{label} stond op {to} {rank} op might en op {from} {before}.",
+    lead: "Op might ging {label} van {before} op {from} naar {rank} op {to}.",
     leadGrowth:
       "Haar might veranderde sindsdien {growth}. Het totaal van de gevolgde allianties veranderde {server}.",
     server: "Gevolgde allianties",
@@ -302,6 +303,7 @@ export const nl = {
     first: "Eerste meting: nog niets om mee te vergelijken.",
     noChange: "Geen ledenwijzigingen.",
     renamed: "Hernoemd",
+    renamedCount: "{n} hernoemd",
     nowIn: "nu in {tag}",
     show: "Toon",
     all: "Alle",
@@ -394,6 +396,8 @@ export const nl = {
     seen: "Gezien",
     limit: "Eerste {n}",
     noMatch: "Geen speler met die naam. Controleer de spelling, of typ een deel van de naam.",
+    results: "Resultaten: {n}",
+    hint: "Typ een deel van de naam van een speler. Eerdere namen worden ook gevonden.",
     pending: "Oma zoekt in het logboek…",
   },
   errors: {

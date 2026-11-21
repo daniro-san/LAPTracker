@@ -174,10 +174,11 @@ describe("rankDelta", () => {
 });
 
 describe("changeDifference", () => {
-  it("subtracts the first event's change from the second's, on the first's size, and is null without both", () => {
-    expect(changeDifference(100, 130)).toEqual({ delta: 30, base: 100 });
-    expect(changeDifference(-100, -40)).toEqual({ delta: 60, base: 100 });
-    expect(changeDifference(0, 5)).toEqual({ delta: 5, base: 0 });
+  it("subtracts the first event's change from the second's, a multiple only when both went the same way, and is null without both", () => {
+    expect(changeDifference(100, 130)).toEqual({ delta: 30, ratio: 1.3 });
+    expect(changeDifference(-100, -40)).toEqual({ delta: 60, ratio: 0.4 });
+    expect(changeDifference(-60, 40)).toEqual({ delta: 100, ratio: null });
+    expect(changeDifference(0, 5)).toEqual({ delta: 5, ratio: null });
     expect(changeDifference(null, 5)).toBeNull();
     expect(changeDifference(5, undefined)).toBeNull();
   });

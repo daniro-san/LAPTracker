@@ -72,12 +72,21 @@ describe("memberHistory (D60)", () => {
     expect(await memberHistory(db, 99)).toBeNull();
   });
 
-  it("indexes the same cards, times and spans as the full history, without member lists", async () => {
+  it("indexes the same cards, times and spans as the full history, with counts instead of member lists", async () => {
     const [index, full] = await Promise.all([memberHistoryIndex(db, 1), memberHistory(db, 1)]);
 
     expect(index?.entries).toEqual(
-      full?.cards.map(({ at, event, since }) => ({ at, event, since })),
+      full?.cards.map(({ at, event, since, joined, left, renamed }) => ({
+        at,
+        event,
+        since,
+        counts:
+          since === null
+            ? null
+            : { joined: joined.length, left: left.length, renamed: renamed.length },
+      })),
     );
+    expect(index?.entries[0]?.counts).toEqual({ joined: 1, left: 1, renamed: 1 });
     expect(index?.tag).toBe("OGs");
     expect(await memberHistoryIndex(db, 99)).toBeNull();
   });

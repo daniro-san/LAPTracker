@@ -58,7 +58,8 @@ export const tr = {
     movers: "Bu etkinlikteki en büyük değişimler",
     progress: "Günlük ilerleme",
     progressMight: "Sen: {date} sonrası {change}.",
-    progressMedian: "{tag} ortadaki üyesi: {percent}.",
+    progressMedian: "{tag} tipik üyesi: {percent}.",
+    rankIn: "{tag} içinde",
     progressEvents: "Etkinlik (Başlangıç–Bitiş): {dates}",
     progressWar: "Savaş etkinliklerinde Might çoğu zaman düşer. Bu beklenen bir durum.",
     progressEmpty: "Grafik için henüz yeterli okuma yok.",
@@ -240,7 +241,7 @@ export const tr = {
   standing: {
     title: "Zaman içinde durum",
     help: "Takip edilen ittifaklar, her günlük okumadaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifak için günlük okuma olmayan gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
-    lead: "{label}, {to} günü Might’a göre {rank}, {from} günü {before} sıradaydı.",
+    lead: "Might’a göre {label}, {from} günü {before} sıradaydı, {to} günü {rank} oldu.",
     leadGrowth:
       "Ondan beri Might’ı {growth} değişti. Takip edilen ittifakların toplamı {server} değişti.",
     server: "Takipteki toplam",
@@ -302,6 +303,7 @@ export const tr = {
     first: "İlk okuma: henüz karşılaştırılacak bir şey yok.",
     noChange: "Üye değişikliği yok.",
     renamed: "Adı değişti",
+    renamedCount: "Adı değişti: {n}",
     nowIn: "şimdi {tag} içinde",
     show: "Göster",
     all: "Tümü",
@@ -394,6 +396,8 @@ export const tr = {
     seen: "Görüldü",
     limit: "İlk {n}",
     noMatch: "Bu adda oyuncu yok. Yazılışını kontrol et ya da adın bir parçasını yaz.",
+    results: "Sonuç: {n}",
+    hint: "Oyuncu adının bir parçasını yaz. Eski adlar da bulunur.",
     pending: "Nine defterde arıyor…",
   },
   errors: {
