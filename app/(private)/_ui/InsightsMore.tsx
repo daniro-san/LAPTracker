@@ -1,14 +1,20 @@
-// The Insights page's KvK cost and recovery and squads seen cards (issue 489), server-rendered. The page is
-// long, so each card shows its one-line summary (and, for KvK, the help list) and keeps the rest behind
-// "Show the details" (a native <details>, 44 px). Older KvKs fold to one line each. Bars follow D68: label
-// and number in HTML beside every bar; the recovery is a 7-column day grid like the pulse's. Per-member
-// names are ph-no-capture (issue 549); the help list is in name order with no number beside a name, and each
-// name opens that member's card (`?m=`, D122). Squads are counts only: no lineup.
+// The Insights page's KvK cost and recovery, squads seen and Raid Shield history cards (issue 489),
+// server-rendered. The page is long, so each card shows its one-line summary (and, for KvK, the help list)
+// and keeps the rest behind "Show the details" (a native <details>, 44 px). Older KvKs fold to one line
+// each. Bars follow D68: label and number in HTML beside every bar; the recovery is a 7-column day grid like
+// the pulse's. Per-member names are ph-no-capture (issue 549); the help list is in name order with no number
+// beside a name, and each name opens that member's card (`?m=`, D122). Squads and Raid Shields are counts
+// only: no lineup, no names.
 import type { ReactNode } from "react";
 
 import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
-import type { KvkEventWords, KvkWords, SquadsWords } from "@/lib/private/insights-more-words";
+import type {
+  KvkEventWords,
+  KvkWords,
+  ShieldWords,
+  SquadsWords,
+} from "@/lib/private/insights-more-words";
 import type { BarRow } from "@/lib/private/insights-words";
 
 import { Bars, Card, Sub } from "./InsightsSections";
@@ -177,6 +183,39 @@ export function SquadsCard({
             <Bars rows={squads.power} noData={noData} />
           </>
         )}
+      </Fold>
+    </Card>
+  );
+}
+
+/** Raid Shield history: thanks first, counts only, a week with no check is one "no reading" line (D75). */
+export function ShieldCard({
+  shield,
+  t,
+  noData,
+}: {
+  shield: ShieldWords;
+  t: WorkspaceDictionary;
+  noData: string;
+}) {
+  return (
+    <Card id="insights-shield" title={t["insights.shield.head"]} based={[shield.headline]}>
+      <Fold summary={t["insights.more"]} className="mt-2">
+        <p className="text-body-sm font-semibold">{t["insights.shield.thanks"]}</p>
+        <p className="mt-1 text-body-sm text-ink/80">{t["insights.shield.lead"]}</p>
+        <Sub>{t["insights.shield.weeks"]}</Sub>
+        <ol>
+          {shield.weeks.map((w) => (
+            <li key={w.label} className="mt-1 border-t-2 border-rule pt-1.5">
+              <h4 className="text-body-sm font-semibold">{w.label}</h4>
+              {w.rows.length === 0 ? (
+                <p className="pb-1.5 text-body-sm text-ink/70">{t["insights.shield.noReading"]}</p>
+              ) : (
+                <Bars rows={w.rows} noData={noData} bare />
+              )}
+            </li>
+          ))}
+        </ol>
       </Fold>
     </Card>
   );

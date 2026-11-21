@@ -1,12 +1,14 @@
-// The words of the Insights page's KvK cost and recovery and squads seen sections (issue 489), pure: the
-// rows their HTML bars draw (D68: label and number in HTML beside every bar) and the lines that say what
-// each rests on. The only names are the help list and the per-member list, both in name order (D75).
+// The words of the Insights page's KvK cost and recovery, squads seen and Raid Shield history sections
+// (issue 489), pure: the rows their HTML bars draw (D68: label and number in HTML beside every bar) and the
+// lines that say what each rests on. The only names are the help list and the per-member list, both in
+// name order (D75); the Raid Shield history is counts only.
 import { fill } from "../copy";
 import { calendarDates } from "./calendar-words";
 import type { WorkspaceKey } from "./dictionary";
 import { NONE } from "./fact-text";
 import { compact, counted, percent, type Formats } from "./insights-format";
 import type { KvkEvent } from "./insights-kvk";
+import { SHIELD_WEEKS, type PassShare, type ShieldWeek } from "./insights-shield";
 import { FRESH_HOURS, SQUAD_COUNTS, type SquadsCoverage } from "./insights-squads";
 import type { BarRow } from "./insights-words";
 
@@ -34,6 +36,12 @@ export interface SquadsWords {
   counts: BarRow[];
   fresh: BarRow[];
   power: BarRow[];
+}
+
+export interface ShieldWords {
+  headline: string;
+  /** Each week, the newest first: no rows when neither check has a reading (D75: never 0 %). */
+  weeks: { label: string; rows: BarRow[] }[];
 }
 
 const lossOf = (e: KvkEvent) => (e.before > 0 ? (e.before - e.after) / e.before : 0);
@@ -172,6 +180,53 @@ export function squadsWords(s: SquadsCoverage, f: Formats): SquadsWords {
       value: compact(b.median, language),
       share: b.median / top,
       note: fill(t["insights.effort.members"], { n: b.n }),
+    })),
+  };
+}
+
+/**
+ * The Raid Shield history's words: the newest week with a reading leads, a missing check is no reading, a
+ * morning check still running is "under way" with no share, and a check that read fewer members than it
+ * missed is a partial reading.
+ */
+export function shieldWords(weeks: ShieldWeek[], f: Formats): ShieldWords {
+  const { t, language } = f;
+  const dates = calendarDates(language);
+  const share = (p: PassShare) => percent(p.seen / p.read, language);
+  const row = (label: string, p: PassShare | null): BarRow => {
+    if (!p) return { label, value: NONE, share: null, note: t["insights.shield.noReading"] };
+    const missing = p.roster - p.read;
+    return {
+      label: !p.running && missing >= p.read ? `${label} · ${t["insights.shield.partial"]}` : label,
+      value: p.running ? t["insights.shield.underWay"] : share(p),
+      share: p.running ? null : p.seen / p.read,
+      note: [
+        fill(t["insights.shield.of"], { seen: p.seen, read: p.read }),
+        ...(missing > 0 ? [fill(t["insights.shield.notRead"], { n: missing })] : []),
+      ].join(" · "),
+    };
+  };
+  const last = weeks.find((w) => w.night || w.morning);
+  const date = last ? dates.short(last.friday) : "";
+  const night = last?.night ? share(last.night) : null;
+  let headline = fill(t["insights.shield.none"], { n: SHIELD_WEEKS });
+  if (last?.morning?.running)
+    headline = night
+      ? fill(t["insights.shield.headlineRunning"], { date, night })
+      : fill(t["insights.shield.headlineRunningNoNight"], { date });
+  else if (last?.morning)
+    headline = night
+      ? fill(t["insights.shield.headline"], { date, morning: share(last.morning), night })
+      : fill(t["insights.shield.headlineMorning"], { date, morning: share(last.morning) });
+  else if (night) headline = fill(t["insights.shield.headlineNight"], { date, night });
+  return {
+    headline,
+    weeks: weeks.map((w) => ({
+      label: dates.short(w.friday),
+      rows:
+        w.night || w.morning
+          ? [row(t["insights.shield.night"], w.night), row(t["insights.shield.morning"], w.morning)]
+          : [],
     })),
   };
 }
