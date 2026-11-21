@@ -5,7 +5,7 @@
 // the member off this week's list; a member also leaves it by themselves once the signal clears. Undo
 // appends "withdrawn", which cancels the newest record and puts its fact back when nobody changed it
 // since. Members of the workspace's own alliance only (D71). Nothing here is logged: notes are what
-// officers typed.
+// officers typed. D140: each item also carries the coins tip and the language its ready message is in.
 import type { Db } from "../db";
 import { factVersion } from "../repo/member-facts";
 import {
@@ -16,10 +16,14 @@ import {
   listMemberFollowUps,
   type MemberFollowUp,
 } from "../repo/member-follow-ups";
+import { gameLanguages } from "../repo/player-reads";
+import { endOfDayReads, type RosterRead } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
+import type { WorkspaceLanguage } from "./dictionary";
 import type { FactSource } from "./fact-fields";
 import {
+  coinsTip,
   liveRecords,
   resolvedBy,
   weekStart,
@@ -27,9 +31,11 @@ import {
   type FollowUpAction,
   type WorkItem,
 } from "./follow-up-rules";
+import { LAST_DAYS, lastDays } from "./member-days";
 import { isMember, saveFacts, type FactChange } from "./member-facts";
-import { gameWeek } from "./member-week";
-import { membersView } from "./members";
+import { DAY_MS, gameWeek, OFFLINE_GRACE_DAYS } from "./member-week";
+import { membersView, type MemberRow } from "./members";
+import { messageLanguage } from "./ready-message";
 import type { AttackerGroup } from "./theft-groups";
 import { theftsView } from "./thefts";
 
@@ -38,9 +44,33 @@ export interface FollowUpView {
   early: boolean;
   /** The game week that holds today, Monday to Sunday (server days). */
   week: string[];
-  items: WorkItem[];
+  items: FollowUpItem[];
+  /** The time zones the members have, most used first, for the facts editor's picker. */
+  zones: string[];
   /** Attackers in the thefts log whose follow-up is Open or Open again (D97). */
   thefts: AttackerGroup[];
+}
+
+/** A member on the list and the language of their ready message: null when no language is known. */
+export type FollowUpItem = WorkItem & { language: WorkspaceLanguage | null };
+
+/**
+ * The members with the coins tip (D140) in the last 7 days of `reads`, less those first seen under
+ * OFFLINE_GRACE_DAYS ago (the offline signal's grace, D127): a newcomer is still settling in.
+ */
+function tipsOf(members: readonly MemberRow[], reads: readonly RosterRead[]): Set<number> {
+  const newest = reads.at(-1)?.day;
+  const ms = (day: string) => Date.parse(`${day}T00:00:00Z`);
+  const settling = (m: MemberRow) =>
+    m.isNew &&
+    m.seenSince !== null &&
+    newest !== undefined &&
+    ms(newest) - ms(m.seenSince) < OFFLINE_GRACE_DAYS * DAY_MS;
+  return new Set(
+    members
+      .filter((m) => !settling(m) && coinsTip(lastDays(reads, m.uid)?.rows.coins ?? []))
+      .map((m) => m.uid),
+  );
 }
 
 /** The week's list as of `now`; `zone` is the server's (SERVER_TZ). */
@@ -51,15 +81,26 @@ export async function followUpView(
   zone: string,
 ): Promise<FollowUpView> {
   const today = dayIn(zone, now.getTime());
-  const [members, rows, thefts] = await Promise.all([
+  const [members, rows, thefts, reads, game] = await Promise.all([
     membersView(db, access, now, zone),
     followedUpSince(db, access.workspaceId, weekStart(today, zone)),
     theftsView(db, access, { now, zone }),
+    endOfDayReads(db, access.unionId, LAST_DAYS),
+    gameLanguages(db, access.unionId),
   ]);
+  const items = worklist(members.members, resolvedBy(rows), tipsOf(members.members, reads));
   return {
     early: members.early,
     week: gameWeek(today),
-    items: worklist(members.members, resolvedBy(rows)),
+    // The officers' recorded languages first, then the game's (D137's order).
+    items: items.map((i) => ({
+      ...i,
+      language: messageLanguage([
+        ...(i.member.facts.languages?.value ?? []),
+        game.get(i.member.uid) ?? null,
+      ]),
+    })),
+    zones: members.zones,
     // Every attacker not yet resolved, whatever step they are at (D104, amended 2026-11-19).
     thefts: thefts.groups
       .flatMap((g) => g.attackers)

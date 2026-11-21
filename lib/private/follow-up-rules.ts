@@ -2,10 +2,12 @@
 // a follow-up as one line of the member card's history. The list reuses the Members rules as they are
 // (D75, D98): the reasons are the Members tab's (offline proxy, might unchanged per D70, the held KvK
 // reason), shown under Check in or under Needs help (`needsAWord`), and the facts still to ask are
-// Members' "Missing info" (`factsToAsk`). No donation reason, no ranking: the list is by name.
+// Members' "Missing info" (`factsToAsk`). No donation reason, no ranking: the list is by name. D140 adds
+// one tip of Follow-up's own: Alliance Help coins below 1,000 on most days with data (`coinsTip`).
 import { fill, isolate } from "../copy";
 import { mondayOf, zonedInstant } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
+import { COINS_MAX, type DayCell } from "./member-days";
 import type { MemberRow } from "./members";
 import { factsToAsk, needsAWord, whoOf, type AskFact } from "./members-list";
 
@@ -19,22 +21,42 @@ export interface WorkItem {
   checkIn: boolean;
   /** A new member's facts not recorded yet (Members' "Missing info"). */
   toAsk: AskFact[];
+  /** Alliance Help coins below 1,000 on most days (D140): a tip to share, never a fault. */
+  tip: boolean;
 }
+
+/** D140 (owner, issue 460): the tip shows when coins were below 1,000 on at least 5 days with data. */
+export const COINS_TIP_DAYS = 5;
+
+/**
+ * The coins tip from a member's last 7 days of Alliance Help coins (`lastDays`): at least COINS_TIP_DAYS
+ * days below 1,000. "none" (a read that lists the member with no coins, D127) is below 1,000; a day with
+ * no read is not counted at all, so missing data never brings the tip (D75).
+ */
+export const coinsTip = (cells: readonly DayCell[]) =>
+  cells.filter((c) => c === "none" || (typeof c === "number" && c < COINS_MAX)).length >=
+  COINS_TIP_DAYS;
 
 /**
  * The members to look at this week, minus those an officer followed up this week (`resolved`), by name:
  * - a reason to look while not on a break: Check in, or Needs help whose signal still holds (an officer's
  *   Needs help keeps the reasons, D80, so the member comes back each week while the signal holds);
- * - new with a fact still missing (a member on a break is not asked, D75).
+ * - new with a fact still missing (a member on a break is not asked, D75);
+ * - in `tips` (the coins tip, D140), not on a break.
  */
-export function worklist(members: readonly MemberRow[], resolved: ReadonlySet<number>): WorkItem[] {
+export function worklist(
+  members: readonly MemberRow[],
+  resolved: ReadonlySet<number>,
+  tips: ReadonlySet<number> = new Set(),
+): WorkItem[] {
   return members
     .flatMap((member) => {
       if (resolved.has(member.uid)) return [];
       const who = whoOf(member);
       const checkIn = member.reasons.length > 0 && needsAWord(who);
       const toAsk = who.includes("new") && !who.includes("break") ? factsToAsk(member.facts) : [];
-      return checkIn || toAsk.length > 0 ? [{ member, checkIn, toAsk }] : [];
+      const tip = tips.has(member.uid) && !who.includes("break");
+      return checkIn || toAsk.length > 0 || tip ? [{ member, checkIn, toAsk, tip }] : [];
     })
     .sort((a, b) => a.member.name.localeCompare(b.member.name));
 }

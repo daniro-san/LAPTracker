@@ -22,6 +22,7 @@ import { addDays, mondayOf } from "./calendar-time";
 import { awayOn, type MemberFacts } from "./fact-fields";
 import { featureOn } from "./features";
 import { factsOf } from "./member-facts";
+import { messageLanguage } from "./ready-message";
 import {
   ensureCall,
   openOccasion,
@@ -77,13 +78,9 @@ export interface PrepView {
 
 const ms = (d: Date | null) => (d ? d.getTime() : null);
 
-/** The officers' recorded languages first, then the game's from either read. */
-function languageOf(facts: MemberFacts | undefined, game: (string | null)[]): MessageLanguage {
-  const codes = [...(facts?.languages?.value ?? []), ...game].map((c) => (c ?? "").toLowerCase());
-  const first = codes.find((c) => c.startsWith("en") || c.startsWith("pt") || c.startsWith("fr"));
-  if (first?.startsWith("pt")) return "pt-BR";
-  return first?.startsWith("fr") ? "fr" : "en";
-}
+/** The officers' recorded languages first, then the game's from either read, else English. */
+const languageOf = (facts: MemberFacts | undefined, game: (string | null)[]): MessageLanguage =>
+  messageLanguage([...(facts?.languages?.value ?? []), ...game]) ?? "en";
 
 function hintOf(
   night: StoredReading | null,
