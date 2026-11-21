@@ -12,6 +12,7 @@ import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
 import { serverDay } from "@/lib/schedule";
 
+import { AllianceWeekLine, allianceWeekParts } from "./AllianceWeekLine";
 import { LINK } from "./BoardText";
 import { shareThanksProps, type ShareThanksProps, type ThanksSwitches } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
@@ -73,6 +74,10 @@ export function HomeMembers(props: {
         <p className="py-2">{t["home.notYet"]}</p>
       ) : (
         <>
+          <AllianceWeekLine
+            parts={allianceWeekParts(view, t, f, today)}
+            className="max-w-sm py-2"
+          />
           {thanks.length > 0 && (
             <div className="max-w-sm py-2">
               <h3 className="text-body-sm font-semibold text-ink/75">{t[key]}</h3>

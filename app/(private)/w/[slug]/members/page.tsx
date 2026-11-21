@@ -42,6 +42,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
+import { AllianceWeekLine, allianceWeekParts } from "../../../_ui/AllianceWeekLine";
 import { editorWords, updatesWords } from "../../../_ui/facts-form";
 import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
@@ -292,6 +293,7 @@ function Roster(props: {
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
+      <AllianceWeekLine parts={allianceWeekParts(view, t, f, today)} className="mt-1" />
       <MembersThanks view={view} t={t} f={f} share={share} />
       {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
       <p className={view.early ? "hidden" : "mt-3"}>
