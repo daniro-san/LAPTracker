@@ -15,7 +15,8 @@ import {
   memberSnapshots,
   snapshots,
 } from "../schema";
-import { memberSquads, playerHistory } from "../schema-squads";
+import { shieldChecks } from "../schema-shield";
+import { memberSquads, playerHistory, playerReads } from "../schema-squads";
 import { requireWorkspace } from "./access";
 import { insightsView } from "./insights";
 import { createSession } from "./session";
@@ -193,5 +194,52 @@ describe("the Insights read (issue 489)", () => {
     expect(view.squads).toMatchObject({ counts: [1, 1, 0], none: 1, fresh: [1, 0, 1] });
     // Fewer than 4 members with squads make no might groups.
     expect(view.squads?.bands).toEqual([]);
+  });
+
+  it("counts each week's Raid Shield checks over Friday's roster, and nothing while off", async () => {
+    const access = await officer();
+    await roster("2026-11-06", OURS, [101, 102, 103], true);
+    await roster("2026-11-13", OURS, [101, 102, 103], true);
+    // Nov 13: both checks ran; Nov 6: only the night check; Oct 30: none.
+    await db.insert(shieldChecks).values([
+      { day: "2026-11-13", unionId: OURS, nightAt: NOW, morningStatus: "done" },
+      { day: "2026-11-06", unionId: OURS, nightAt: NOW },
+    ]);
+    // ST is UTC−2: Friday 23:00–00:00 ST is 01:00–02:00 UTC on Saturday, the morning 12:00–14:00 UTC.
+    const reading = (uid: number, at: string, shielding: number | null, unionId = OURS) => ({
+      unionId,
+      uid,
+      readAt: new Date(at),
+      shielding,
+    });
+    await db
+      .insert(playerReads)
+      .values([
+        reading(101, "2026-11-14T01:10:00Z", 0),
+        reading(101, "2026-11-14T01:40:00Z", 1),
+        reading(102, "2026-11-14T01:20:00Z", 0),
+        reading(103, "2026-11-14T01:30:00Z", 1, FERN),
+        ...[101, 102, 103].map((uid) => reading(uid, "2026-11-14T12:30:00Z", 1)),
+        reading(101, "2026-11-07T01:30:00Z", 1),
+        reading(102, "2026-11-07T01:30:00Z", 1),
+        reading(103, "2026-11-07T01:30:00Z", null),
+      ]);
+
+    const view = await insightsView(db, access, NOW, ZONE);
+    const counts = (roster: number, read: number, seen: number) => ({
+      roster,
+      read,
+      seen,
+      running: false,
+    });
+    expect(view.shield?.slice(0, 3)).toEqual([
+      { friday: "2026-11-13", night: counts(3, 2, 1), morning: counts(3, 3, 3) },
+      { friday: "2026-11-06", night: counts(3, 2, 2), morning: null },
+      { friday: "2026-10-30", night: null, morning: null },
+    ]);
+
+    const on = new Set([...access.features.on].filter((f) => f !== "shield_check"));
+    const off = { ...access, features: { ...access.features, on } };
+    expect((await insightsView(db, off, NOW, ZONE)).shield).toBeNull();
   });
 });

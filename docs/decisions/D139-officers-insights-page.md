@@ -82,7 +82,7 @@ The issue's "74 of 98 at the coin cap" left out the members with no coin count. 
 - **Squads seen** (`lib/private/insights-squads.ts`, read by `latestSquadSightings` in `lib/repo/squads.ts`). Only while the squads read is on (D126); with it off there is no card.
   - Counts only, for the members of the newest daily read: no names, no heroes, no lineup (owner, 2026-11-20). The summary: "91 of 100 members have squads seen; 74 of them in the last 24 hours." ("none in the last 24 hours" at 0).
   - Behind the fold: members with 1 squad, 2 squads, 3 or more (3 is normal and nothing is compared against 4, D136), and "None seen yet" set apart; how fresh each member's newest sighting is (in the last 24 hours, 1 to 3 days ago, more than 3 days ago, and "The tracker sent no time" when it sent none); and the strongest squad's might in four equal groups with each group's middle value, as section 2 groups might. Fewer than 4 members with squads make no groups. The lead says it counts the squads the tracker has seen, not every squad a member has.
-- **Raid Shield history (section 6) is not built here.** It is listed as a follow-up in the handoff.
+- **Raid Shield history (section 6) is not built here.** It is listed as a follow-up in the handoff. (Built 2026-11-21, see the amendment below.)
 
 **Bounded reads (D149).**
 
@@ -100,3 +100,36 @@ The issue's "74 of 98 at the coin cap" left out the members with no coin count. 
 - squads seen, freshness and the four groups.
 
 `lib/private/insights.test.ts` reads both from PGlite and checks that another alliance's KvK and squad rows stay out.
+
+**Amendment 2026-11-21 (issue 489 part 3): Raid Shield history (section 6).** A sixth card after squads seen, from stored data only (0 upstream calls). It is shown only while the Raid Shield check is on (`shield_check`, D134). With the check off there is no card and no read. The page keeps its officer gating (D71).
+
+- **What it shows.** One row per week for the last 8 Fridays (`SHIELD_WEEKS`), the newest first. This week's Friday counts once its night window has opened (23:00 ST). Each week has two bars:
+  - "Night check": the share seen with a shield;
+  - "Morning check": the same share for the morning.
+  - Each bar's note reads "28 seen of 95 read · 5 not read".
+- **The summary while closed.** "Last raid, Fri, Nov 20: 89% seen with a shield in the morning (Friday night: 29%)." Behind "Show the details", the card first shows "Thank you to everyone who turned on a shield." (D75, thanks first), then the lead. The lead says these are the tracker's map scans and that a shield turned on later may not show. It also says the night check runs before the reset on map scans 1 to 7 hours old, so most shields turned on for the raid show only in the morning. That keeps the night share from reading like a verdict (persona panel).
+- **What counts.**
+  - A check counts only when `shield_checks` says it ran: the night when `night_at` is set, the morning when `morning_status` is running, done or stopped. A skipped morning does not count.
+  - Members: those of that Friday's daily roster with no error. Each member's newest `player_reads` row in the check's window counts (`passWindows`: Friday 23:00–00:00 ST, Saturday 10:00–12:00 ST, the same windows Raid prep uses).
+  - Share: members seen with a shield, out of members whose reading said shielded or not. Members with no reading, or with a missing field, are "not read" and never count as a miss (D75).
+- **Missing and partial.**
+  - A check that did not run, or that finished having read nobody, is "no reading", never 0 %. A week with neither check is its date and one "no reading" line, with no bar.
+  - A check with at least as many members not read as read is labelled "partial reading".
+  - A morning check still running shows "under way" in its row and in the summary, with no share yet.
+- **Alliance-level counts only.** No name, no uid, no ranking, no "who forgot" list (D75). The officers' hand-mark count (the issue's optional part) was dropped (persona panel): it measured officers more than the raid, and it cost a read.
+- **The read (D149).** One statement, `shieldPassCounts` in `lib/repo/shield-checks.ts`.
+  - It reads the checks and Friday rosters by their keys, and each window's readings through `player_reads_read_at_idx`. A window holds every alliance's reads of that hour (10 alliances' squads reads in the test data), but no older history.
+  - An earlier form went member by member through `player_reads_member_idx` and touched 3.7k buffers. The window form touches 347 buffers in 1.9 ms on one year of invented data: 368k player reads, 51 checks, 100 members.
+- **Cost per Insights view**, from `pg_stat_database` through the real `insightsView`, 20 views a run, warm, 3 runs:
+
+  |                  | transactions | buffer hits | ms (median) |
+  | ---------------- | ------------ | ----------- | ----------- |
+  | before           | 7.3          | 1,843       | 25.0–25.8   |
+  | after            | 8.3          | 2,076–2,126 | 28.1–28.2   |
+  | after, check off | 7.3          | 1,843       | 25.3        |
+
+- **Privacy (amends D137's "read only by lib/private/raid-prep.ts").** `lib/private/insights.ts` also reads the shield columns, after `requireWorkspace`, for the workspace's own alliance only. It returns counts only, to the officers' page. Nothing is logged, cached or sent.
+- **Code and tests.**
+  - Code: `lib/private/insights-shield.ts` (pure: the Fridays, the windows, the weeks); `shieldWords` in `lib/private/insights-more-words.ts`; `ShieldCard` in `app/(private)/_ui/InsightsMore.tsx`. `Bars` gains `bare`, so a row with no share draws no empty track.
+  - Copy: `insights.shield.*` in `dictionary.insights-more.ts` (EN, PT-BR, FR).
+  - Tests: `lib/private/insights-kvk.test.ts` covers the Fridays, a check with no reading, a partial reading and a running morning. `lib/private/insights.test.ts` (PGlite) covers each week's counts over Friday's roster, a night-only week, a week with no check, another alliance's reading left out, and no card while the check is off.

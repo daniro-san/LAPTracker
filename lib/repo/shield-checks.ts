@@ -201,3 +201,70 @@ export async function shieldReadings(
     .where(and(eq(p.unionId, unionId), gte(p.readAt, from), lt(p.readAt, to)))
     .orderBy(p.uid, desc(p.readAt));
 }
+
+/** One read of one week's check (Insights, D139): Friday's roster, its members read, and seen shielded. */
+export interface PassCount {
+  day: string;
+  pass: "night" | "morning";
+  roster: number;
+  /** Members of Friday's roster whose newest reading in the window says shielded or not. */
+  read: number;
+  seen: number;
+  /** The morning check is still under way (`morning_status` running). */
+  running: boolean;
+}
+
+/**
+ * For each window (a Friday and one of its two reads, `passWindows`), the counts of the checks that ran:
+ * the night when `night_at` is set, the morning when it ran (not `skipped`). Only Friday's roster (a
+ * daily roster with no error) counts, each member's newest reading in the window. One statement: the
+ * checks and rosters by their keys, the readings by the window (`player_reads_read_at_idx`, D149), which
+ * holds every alliance's reads of that hour but no older history. A week whose check never ran gives no
+ * row.
+ */
+export async function shieldPassCounts(
+  db: Db,
+  unionId: number,
+  windows: { day: string; pass: PassCount["pass"]; from: Date; to: Date }[],
+): Promise<PassCount[]> {
+  if (windows.length === 0) return [];
+  const values = sql.join(
+    windows.map(
+      (w) =>
+        sql`(${w.day}::date, ${w.pass}::text, ${w.from.toISOString()}::timestamptz, ${w.to.toISOString()}::timestamptz)`,
+    ),
+    sql`, `,
+  );
+  const result = await db.execute<{
+    day: string;
+    pass: PassCount["pass"];
+    roster: number;
+    read: number;
+    seen: number;
+    running: boolean;
+  }>(sql`
+    with w(day, pass, f, t) as (values ${values})
+    select w.day::text as day, w.pass, max(cardinality(r.member_uids)) as roster,
+      (count(p.uid) filter (where p.shielding is not null))::int as read,
+      (count(p.uid) filter (where p.shielding = 1))::int as seen,
+      bool_or(w.pass = 'morning' and c.morning_status = 'running') as running
+    from w
+    join shield_checks c on c.day = w.day and c.union_id = ${unionId}
+    join daily_rosters r on r.read_day = w.day and r.union_id = ${unionId} and r.error is null
+    left join lateral (
+      select distinct on (x.uid) x.uid, x.shielding from player_reads x
+      where x.union_id = ${unionId} and x.read_at >= w.f and x.read_at < w.t
+      order by x.uid, x.read_at desc
+    ) p on p.uid = any(r.member_uids)
+    where (w.pass = 'night' and c.night_at is not null)
+      or (w.pass = 'morning' and c.morning_status in ('running', 'done', 'stopped'))
+    group by w.day, w.pass`);
+  return result.rows.map((r) => ({
+    day: r.day,
+    pass: r.pass,
+    roster: Number(r.roster),
+    read: Number(r.read),
+    seen: Number(r.seen),
+    running: r.running === true,
+  }));
+}
