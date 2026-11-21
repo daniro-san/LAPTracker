@@ -147,4 +147,4 @@ What was missing from the task prompt? The path-scoped rule matcher is not docum
 - When a pr-review version with `--learn` is installed, run it and add matching proposals under `## Learned review rules` in `.claude/pr-review.md`.
 - Orchestrator: mark the memory notes moved into the repo as "now in the repo", and fix the stale ones (see the report table).
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/594
