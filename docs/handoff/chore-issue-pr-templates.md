@@ -30,12 +30,23 @@
   The hints are HTML comments.
 - `CONTRIBUTING.md`: a new section "Issues and pull requests", placed before "Deploy and release". It covers:
   - S: the form is the whole spec;
-  - M or L feature: run `tlc-spec-lean` first (the Claude Code skill `ckl-delivery:tlc-spec-lean`, from the ckl-delivery plugin), then build against its frozen criteria;
+  - M or L feature: run `/tlc-spec-lean` first (`.claude/skills/tlc-spec-lean`), then build against its frozen criteria;
   - QA checks the criteria one by one;
   - what `ready` and `decision` mean.
 - Labels:
   - `ready` (#0e8a16, "Criteria settled; can be built"): created on GitHub with `gh label create`.
   - `decision` ("Needs the owner's call", #d9cdb4): it already existed, and the forms and CONTRIBUTING.md use it for "wait for the owner".
+
+- `.claude/skills/tlc-spec-lean/` (owner, 2026-11-21): the `tlc-spec-lean` skill, ported so every session has it, cloud sessions included.
+  - Source: Tech Leads Club, https://github.com/tech-leads-club/agent-skills, path `packages/skills-catalog/skills/(development)/tlc-spec-lean`.
+  - Pinned at `f69e6154b3ac900ea661687479b407cc1be9d4a9` (2026-10-31, skill version 2.2.0). It is the newest commit on that path that is at least two weeks old. The three commits from 2026-11-18 (version 3.1.0) were too new.
+  - The 19 upstream files are byte-identical to the pin, and all are mode 100644:
+    - `SKILL.md`;
+    - `references/`: `build.md`, `checks.md`, `memory.md`, `plan.md`, `verify.md` and `verify-screens.md`;
+    - `scripts/`: `check_commit.py`, `check_proofs.py`, `lean_config.py`, `lessons.py`, `selftest.py`, `validate_checks.py`, `validate_plan.py` and `validate_verification.py`;
+    - `scripts/fixtures/`: `checks.md`, `plan.md`, `proofs.md` and `verification.md`.
+  - The added `NOTICE.md` holds the source, the pin, the author, the licences, "unmodified", how to re-sync, and the full MIT text. Upstream licenses `SKILL.md` and `references/` under CC-BY-4.0 and the scripts under the repository's MIT License.
+  - `.prettierignore` skips the upstream files, so they stay identical to the pin. `NOTICE.md` is still checked.
 
 ## Decisions
 
@@ -62,12 +73,23 @@
 - `prettier --check .`: "All matched files use Prettier code style!". A glob run printed `config.yml` and the PR template, which confirms Prettier covers the new files.
 - `close-issues.yml`: the template's bare `Closes #` and the `#N` inside hints have no digits, so the keyword match never fires on an unfilled template.
 - `pnpm check`: exit 0. Prettier, ESLint and tsc are clean; Vitest ran 296 test files passed and 2 skipped, 1532 tests passed and 4 skipped; drift and i18n checks pass.
+- tlc-spec-lean port:
+  - The upstream download went into its own scratchpad directory, through a sparse fetch of the pinned commit. `diff -r` against the copy is empty.
+  - Script review, before copying (read only, nothing executed):
+    - Only the standard library is imported.
+    - No network calls.
+    - `check_proofs.py` runs, through `/bin/sh`, only the `Run`/`Build:` lines the author writes in `.specs/features/<f>/checks.md`, plus read-only `git` commands. `validate_verification.py` also runs only read-only `git` commands.
+    - Writes go only under `.specs/`. `selftest.py` deletes only `tempfile.mkdtemp()` directories.
+  - Privacy scan: no company names, people other than the public upstream credit, emails, local paths or credentials. The only URLs are conventionalcommits.org and an `example.com` placeholder in `selftest.py`.
+  - Not run: `selftest.py` and the other scripts. The task said to run nothing from the download.
 - Labels: `gh label list --search decision` shows only `decision`, and `--search ready` shows `ready`. Before the delete, `gh issue list` and `gh pr list --label needs-decision --state all` both returned `[]`.
 - Not verified: how the forms render on GitHub. Forms render only from the default branch (`main`), so they appear after the next release.
 
 ## Open issues
 
 - The issue forms show on GitHub only after this reaches `main` through a release.
+- `tlc-spec-lean` writes its artifacts to `.specs/` at the repo root. The repo has no rule yet on whether `.specs/` is committed. It is public, so a spec may not hold real names or private fields.
+- `selftest.py` has not been run here. After reading it, the owner or the orchestrator can run `python3 .claude/skills/tlc-spec-lean/scripts/selftest.py` to prove the gates on this machine. It works only in temp directories.
 
 ## Next
 

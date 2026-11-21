@@ -9,3 +9,6 @@ docs/handoff/
 drizzle/
 # Third-party font licences, kept as published (D58).
 lib/brand/fonts/
+# Upstream tlc-spec-lean skill, kept byte-identical to its pin (see its NOTICE.md).
+.claude/skills/tlc-spec-lean/*
+!.claude/skills/tlc-spec-lean/NOTICE.md
