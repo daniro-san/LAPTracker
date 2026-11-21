@@ -148,4 +148,4 @@ Issue #412, rollout PR 5 (Roll call). Owner: "a grid instead of rows in the roll
 - Seed and e2e: scratchpad `412p5-e2e/` (`gen.mjs`, `reset.mjs`, `shots.mjs`; `with-env.mjs` with `E2E_NODE_OPTIONS="--import <repo>/scripts/db-local-preload.mjs"` for the bridge).
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/529
