@@ -103,6 +103,21 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.42.0",
+    date: "2026-11-21",
+    title: "Insights: KvK cost and recovery, and squads seen",
+    changes: [
+      "Insights has a KvK section: how much might the alliance lost in the last KvK and how much is back, day by day, plus up to 3 older KvKs.",
+      '"Took a heavy hit — maybe offer help": members who lost more than 25% and are still under 80% of their might before the KvK, names only, never a ranking. Members on a break are left out.',
+      "A Squads seen section (when the squads read is on): how many members have 1, 2 or 3+ squads seen, how fresh the sightings are, and the strongest squad's might in four groups. Counts only, no lineups.",
+      "Both sections use stored data only, with no extra calls to the tracker.",
+    ],
+    needsYou: [
+      "After the next KvK, check the help list and the recovery days on the desk; they were tested on invented data only.",
+    ],
+    prs: [579],
+  },
+  {
     version: "v5.41.0",
     date: "2026-11-21",
     title: "Desk pages read less of the database as data grows",
