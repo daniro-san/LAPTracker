@@ -16,7 +16,8 @@ export function AllianceHead(props: {
   label: string;
   badgeId: number | null;
   board: (BoardAlliance & { day: string }) | null;
-  details: DetailsState;
+  /** Null: unknown, the database cannot be reached (D143); no "Get today's details". */
+  details: DetailsState | null;
   statement: AllianceStatement | null;
   clock: Clock;
   locale: string;
@@ -24,7 +25,7 @@ export function AllianceHead(props: {
 }) {
   const { label, clock, locale, copy } = props;
   const onBoard = boardLine(props.board, clock, locale, copy);
-  const details = detailsView(props.details, clock);
+  const details = props.details && detailsView(props.details, clock);
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -37,7 +38,7 @@ export function AllianceHead(props: {
         <ExactToggle />
       </div>
       {onBoard && <p className="mt-1 text-body-sm tabular-nums">{onBoard}</p>}
-      {props.details.daily && <p className="text-body-sm text-ink/70">{copy.alliances.tracked}</p>}
+      {props.details?.daily && <p className="text-body-sm text-ink/70">{copy.alliances.tracked}</p>}
       {details && <AllianceDetails unionId={props.unionId} view={details} />}
       <AllianceStatementCard
         statement={props.statement}

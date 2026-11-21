@@ -67,7 +67,9 @@ export const withPageDb = scopedDb(() => getAppContext().openDb(REQUEST_POOL), c
 
 /** A connection of its own, closed when `read` returns: for reads that may run after the request. */
 export async function withOwnDb<T>(read: (db: Db) => Promise<T>): Promise<T> {
+  // At most 3 connections, as the request's Pool: the event page's read runs 6 queries at once (issue 538).
   const { db, close } = getAppContext().openDb({
+    max: REQUEST_POOL.max,
     connectionTimeoutMillis: PAGE_CONNECT_TIMEOUT_MS,
   });
   try {

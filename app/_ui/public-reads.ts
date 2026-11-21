@@ -12,7 +12,7 @@ import { searchPlayers } from "@/lib/queries/players";
 /** `load`'s value under `name` and `key`, shared by every viewer until the next write. */
 export const sharedRead = <T>(
   name: string,
-  key: readonly (string | number | null)[],
+  key: readonly (string | number | boolean | null)[],
   load: (db: Db) => Promise<T>,
 ) => getAppContext().publicCache.read(name, key, () => withOwnDb(load));
 

@@ -70,7 +70,11 @@ export function memoryEventCache(): EventCache {
 export function memoryPublicCache(): PublicCache {
   const values = new Map<string, Promise<unknown>>();
   return {
-    read<T>(name: string, key: readonly (string | number | null)[], load: () => Promise<T>) {
+    read<T>(
+      name: string,
+      key: readonly (string | number | boolean | null)[],
+      load: () => Promise<T>,
+    ) {
       const id = JSON.stringify([name, ...key]);
       const kept = values.get(id) as Promise<T> | undefined;
       if (kept) return kept;
