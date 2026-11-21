@@ -41,7 +41,7 @@ body:
     id: environment
     attributes:
       label: Environment and version
-      value: |
+      placeholder: |
         Where: production / preview / local
         Version: (newest release on /admin/changes or the Releases page)
         Device and browser:
@@ -75,7 +75,7 @@ body:
       value: |
         Tests (a test that fails before the fix):
         QA flows:
-        Widths: 360 / 768 / 1280
+        Widths: 360 / 768 / 1024 / 1280 / 1440 (DESIGN.md § Layout system)
         Themes: light and dark
   - type: textarea
     id: design

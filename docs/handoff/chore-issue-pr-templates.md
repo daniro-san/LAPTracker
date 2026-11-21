@@ -9,8 +9,8 @@
   - `config.yml`: `blank_issues_enabled: true`.
 - Field details:
   - Acceptance criteria: the placeholder shows one `- [ ]` line per criterion in EARS style, using the five patterns `tlc-spec-lean` lists (When, While, If, Where, and a plain "shall").
-  - Data and privacy: a prefilled value that names the fields touched, any private roster field, and whether data reaches logs, caches, analytics or Discord. The description lists the private fields from CLAUDE.md.
-  - How to verify: a prefilled value with tests, QA flows, widths 360 / 768 / 1280, and light and dark.
+  - Data and privacy: the prompt names the fields touched, any private roster field, and whether data reaches logs, caches, analytics or Discord. The description lists the private fields from CLAUDE.md. In feature and improvement the field is required, so the prompt is a `placeholder`; prefilled text would count as an answer. The same applies to the bug form's required "Environment and version". The bug form's optional privacy field keeps a prefilled `value`.
+  - How to verify: a prefilled value with tests, QA flows, widths 360 / 768 / 1024 / 1280 / 1440 (the layout widths in DESIGN.md § Layout system, D122), and light and dark. The PR template lists the same widths.
   - Design validation: points to DESIGN.md § Validation (persona panel, PostHog usage, product persona). It is optional.
   - Size: a dropdown with S, M and L. In the feature and improvement forms, the M and L options say "run tlc-spec-lean first".
   - Required fields:
@@ -30,7 +30,7 @@
   The hints are HTML comments.
 - `CONTRIBUTING.md`: a new section "Issues and pull requests", placed before "Deploy and release". It covers:
   - S: the form is the whole spec;
-  - M or L feature: run `tlc-spec-lean` first, then build against its frozen criteria;
+  - M or L feature: run `tlc-spec-lean` first (the Claude Code skill `ckl-delivery:tlc-spec-lean`, from the ckl-delivery plugin), then build against its frozen criteria;
   - QA checks the criteria one by one;
   - what `ready` and `decision` mean.
 - Labels:
@@ -43,6 +43,7 @@
 - The task asked for a new `needs-decision` label. I created it, and then the orchestrator decided to keep the existing `decision` label instead, because existing issues already use it. No issue or PR used `needs-decision`, so it was deleted from GitHub.
 - The forms do not apply `ready` or `decision` themselves. A form cannot pick a label from an answer. A default `decision` would block every issue the owner files, and a default `ready` would mark unreviewed issues as buildable. The markdown header of each form says when to add which.
 - The bug form leaves criteria, privacy, verify, design and done when optional. Steps, expected and actual already define the fix for most bugs.
+- After `/pr-review` on #596, the widths come from DESIGN.md § Layout system (D122) and not from § Validation. § Validation lists its own widths (360, 390, 412, 600–820, 1024, 1180 and 1280), and only for the UX review of charts. The layout section is where the general set lives. The references to DESIGN.md § Validation and `/pr-review` stay as they are: PR 594 adds both, and this branch is rebased on `dev` after 594 merges.
 - The section in CONTRIBUTING.md sits before "Deploy and release" and not at the end of the file. PR 594 appends "Working rules" at the end and edits the harness section. This placement avoids a rebase conflict with it.
 
 ## Deviations

@@ -22,7 +22,7 @@ Closes #
 
 - [ ] `pnpm check`
 - [ ] QA: <!-- flows run, on a production build -->
-- [ ] Widths 360 / 768 / 1280, light and dark
+- [ ] Widths 360 / 768 / 1024 / 1280 / 1440 (DESIGN.md § Layout system), light and dark
 - [ ] DB cost <!-- only when reads or writes changed: queries per view, rows read -->
 
 ## Design validation
