@@ -6,6 +6,7 @@ import type { RunSummary } from "./collector";
 import { topMovers } from "./compute";
 import { copy, fill } from "./copy";
 import {
+  escapeDiscord,
   MINUS,
   percentFormat,
   shareText,
@@ -19,7 +20,7 @@ import type { TurnoutLists } from "./queries";
 import type { Verdict } from "./rehearsal";
 import type { SnapshotPhase } from "./repo";
 
-export { discordClock, type DiscordClock } from "./discord-format";
+export { discordClock, escapeDiscord, type DiscordClock } from "./discord-format";
 export { quotaReportMessage, type QuotaReport } from "./notify-quota";
 
 /** The public message's parts: the status chip as the title, the lines under it, the event page. */
@@ -105,16 +106,6 @@ export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier 
       ),
   };
 }
-
-/**
- * Text people type (a round's name; an alliance's tag and name, typed in game) shows literally:
- * Discord markdown is backslash-escaped and mentions get a zero-width space after the `@`.
- */
-export const escapeDiscord = (text: string) =>
-  text
-    .replace(/[\\*_~`|>[\]]/g, "\\$&")
-    .replace(/@(everyone|here)/g, "@\u200b$1")
-    .replace(/<@/g, "<@\u200b");
 
 /** `[NSE] Natural Selection`; the union id when the row has neither. */
 export const allianceLabel = (a: { unionId: number; tag: string | null; name?: string | null }) =>

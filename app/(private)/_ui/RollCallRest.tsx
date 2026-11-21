@@ -52,19 +52,37 @@ function countLine(
   p: { left: number; rest: number; away: number; part?: string | undefined },
   words: RollSheetWords,
 ) {
+  // One away or one not seen takes the singular: PT and FR agree the word with the count (issue 585).
+  const notSeen = p.left - p.rest;
   const counts = [
     p.away > 0
-      ? fill(words["roll.leftAway"], { n: p.left, away: p.away })
+      ? fill(words[p.away === 1 ? "roll.leftAway.one" : "roll.leftAway"], {
+          n: p.left,
+          away: p.away,
+        })
       : fill(words["roll.left"], { n: p.left }),
-    ...(p.rest < p.left ? [fill(words["roll.prep.notSeenLeft"], { n: p.left - p.rest })] : []),
+    ...(notSeen > 0
+      ? [
+          fill(words[notSeen === 1 ? "roll.prep.notSeenLeft.one" : "roll.prep.notSeenLeft"], {
+            n: notSeen,
+          }),
+        ]
+      : []),
   ].join(" · ");
   return p.part ? `${p.part}: ${counts}` : counts;
 }
 
+/** The "the rest" button's words, when the bar offers it: the kind has one, someone is left, and it is wanted. */
+const offered = (marks: MarkWords, rest: number, offer: boolean | undefined) =>
+  marks.rest && rest > 0 && offer !== false ? marks.rest.button : null;
+
 /**
  * The sticky bar: above the bottom tabs below 768, at the window's foot from 768, where the tabs are a rail
  * (D122; until then it floated 60 px up the list, issue 412 UX pass). It spans the content's width on solid
- * paper with a 2 px ink rule on top, so the rows that pass under it end at a clear edge.
+ * paper with a 2 px ink rule on top, so the rows that pass under it end at a clear edge. It is one line
+ * (issue 585): below 640 the button alone, its counts kept for screen readers (the chips and "n of m
+ * marked" above show them), from 640 the counts beside it. `data-rest-bar` gives the page its
+ * scroll-padding, so a focused control never hides under the bar (globals.css).
  */
 export function RestBar(props: {
   left: number;
@@ -73,6 +91,11 @@ export function RestBar(props: {
   /** Raid prep: the part the counts are about ("Shield: 61 not set · 16 not seen yet, left out"). */
   part?: string;
   away: number;
+  /**
+   * Raid prep (issue 585): false while "Mark ✓ the n seen with a shield" acts on the same members, so the
+   * page offers one button for them; the count line stays.
+   */
+  offer?: boolean;
   words: RollSheetWords;
   marks: MarkWords;
   r: ReturnType<typeof useRest>;
@@ -83,8 +106,12 @@ export function RestBar(props: {
   const count = countLine({ left, rest, away: props.away, part: props.part }, words);
   // "All marked" sits by the counts at the top (issue 412), so with nothing left the bar goes.
   if (left === 0 && !(r.fresh && r.text)) return null;
+  const button = offered(marks, rest, props.offer);
   return (
-    <div className="sticky bottom-[calc(3.5rem+4px+env(safe-area-inset-bottom))] z-10 shadow-[0_4px_0_0_var(--paper)] md:shadow-none -mx-4 mt-4 border-t-2 border-ink bg-paper px-4 py-2 sm:-mx-6 sm:px-6 md:bottom-0 md:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+    <div
+      data-rest-bar
+      className="sticky bottom-[calc(3.5rem+4px+env(safe-area-inset-bottom))] z-10 shadow-[0_4px_0_0_var(--paper)] md:shadow-none -mx-4 mt-4 border-t-2 border-ink bg-paper px-4 py-2 md:-mx-6 md:px-6 md:bottom-0 md:pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+    >
       {r.fresh && r.text ? (
         <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>{r.text}</span>
@@ -100,16 +127,20 @@ export function RestBar(props: {
           )}
         </p>
       ) : (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <p className="min-w-0 text-body-sm tabular-nums sm:flex-1">{count}</p>
-          {marks.rest && rest > 0 && (
+        <div className="flex items-center gap-3">
+          <p
+            className={`min-w-0 flex-1 text-body-sm tabular-nums ${button ? "max-sm:sr-only" : ""}`}
+          >
+            {count}
+          </p>
+          {button && (
             <button
               type="button"
               disabled={r.busy}
               onClick={props.onRest}
-              className={buttonClass("secondary", "w-full sm:w-auto")}
+              className={buttonClass("secondary", "w-full text-body-sm sm:w-auto")}
             >
-              {fill(marks.rest.button, { n: rest })}
+              {fill(button, { n: rest })}
             </button>
           )}
         </div>

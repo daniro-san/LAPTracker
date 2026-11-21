@@ -1,38 +1,48 @@
 // The roll call grid (issue 412, D103 amended): "To mark" lists the not set and folds the marked under
 // "Marked", a mark never moves a tile until a chip is tapped, a search looks through everyone, and Raid
-// prep's two marks count as marked only when both are set (D137). Not set is never ✗ (D75).
+// prep's chips count the Shield only, as its "n of m marked" does (D137, issue 585). Not set is never ✗ (D75).
 import { describe, expect, it } from "vitest";
 
-import { gridCounts, matches, sections, takeSnap, type Parts } from "./roll-call-grid";
+import type { Mark } from "@/lib/private/roll-call-rules";
+
+import { gridCounts, sections, takeSnap } from "./roll-call-grid";
 
 const rows = [1, 2, 3, 4].map((uid) => ({ uid, name: `Wren ${uid}` }));
 const uids = rows.map((r) => r.uid);
 
 describe("the roll call grid", () => {
   it("lists the not set under To mark, folds the marked, and keeps both while marking", () => {
-    const marks: Record<number, Parts> = { 1: [null], 2: ["yes"], 3: [null], 4: ["no"] };
-    const partsOf = (uid: number) => marks[uid] ?? [null];
-    const snap = takeSnap("todo", uids, partsOf);
-    marks[1] = ["yes"];
-    const s = sections(rows, snap, partsOf, null);
+    const marks: Record<number, Mark | null> = { 1: null, 2: "yes", 3: null, 4: "no" };
+    const markOf = (uid: number) => marks[uid] ?? null;
+    const snap = takeSnap("todo", uids, markOf);
+    marks[1] = "yes";
+    const s = sections(rows, snap, markOf, null);
     expect(s.list.map((r) => r.uid)).toEqual([1, 3]);
     expect(s.marked.map((r) => r.uid)).toEqual([2, 4]);
-    expect(gridCounts(uids, partsOf)).toEqual({ todo: 1, yes: 2, no: 1, all: 4 });
-    const again = sections(rows, takeSnap("todo", uids, partsOf), partsOf, null);
+    expect(gridCounts(uids, markOf)).toEqual({ todo: 1, yes: 2, no: 1, all: 4 });
+    const again = sections(rows, takeSnap("todo", uids, markOf), markOf, null);
     expect(again.list.map((r) => r.uid)).toEqual([3]);
   });
 
   it("searches every member, whatever is folded", () => {
-    const partsOf = (uid: number): Parts => [uid === 2 ? "yes" : null];
-    const s = sections(rows, takeSnap("todo", uids, partsOf), partsOf, (r) => r.name.endsWith("2"));
+    const markOf = (uid: number): Mark | null => (uid === 2 ? "yes" : null);
+    const s = sections(rows, takeSnap("todo", uids, markOf), markOf, (r) => r.name.endsWith("2"));
     expect(s).toEqual({ list: [rows[1]], marked: [] });
   });
 
-  it("reads Raid prep's two marks: to mark while either is not set, ✓ only when both are done", () => {
-    expect(matches("todo", ["yes", null])).toBe(true);
-    expect(matches("yes", ["assumed", "yes"])).toBe(true);
-    expect(matches("yes", ["yes", null])).toBe(false);
-    expect(matches("no", [null, "no"])).toBe(true);
-    expect(matches("no", [null, null])).toBe(false);
+  it("counts Raid prep by its Shield: 92 of 98 marked is To mark 6, whatever the wall says", () => {
+    // 98 members: 70 ✓ Shield up, 2 "no problem seen", 20 ✗, 6 not set; nobody marked the wall.
+    const team = Array.from({ length: 98 }, (_, i) => ({ uid: 500 + i, name: `Aster ${i}` }));
+    const shield = (uid: number): Mark | null => {
+      const i = uid - 500;
+      if (i < 70) return "yes";
+      if (i < 72) return "assumed";
+      return i < 92 ? "no" : null;
+    };
+    const all = team.map((t) => t.uid);
+    expect(gridCounts(all, shield)).toEqual({ todo: 6, yes: 72, no: 20, all: 98 });
+    const s = sections(team, takeSnap("todo", all, shield), shield, null);
+    expect(s.list).toHaveLength(6);
+    expect(s.marked).toHaveLength(92);
   });
 });

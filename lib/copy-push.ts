@@ -7,7 +7,7 @@ import type { PushLanguage } from "./schema-push";
 
 export interface PushWords {
   shieldTitle: string;
-  /** "{read}": Friday's or Saturday's read, from `fri` / `sat`. */
+  /** "{read}": the night check or the morning check, from `fri` / `sat` (issue 585's one vocabulary). */
   shieldSome: string;
   shieldNone: string;
   fri: string;
@@ -29,8 +29,8 @@ export const PUSH_WORDS: Record<PushLanguage, PushWords> = {
     shieldTitle: "Raid Shield check",
     shieldSome: "{read}: {n} not seen with a shield yet. Tap to review in Raid prep.",
     shieldNone: "{read}: every member read was seen with a shield.",
-    fri: "Friday’s read",
-    sat: "Saturday’s read",
+    fri: "Night check",
+    sat: "Morning check",
     nightTitle: "Roster read failed",
     nightBody:
       "The read and its retry failed. Nothing to do: the desk keeps the last numbers and reads again tomorrow.",
@@ -52,8 +52,8 @@ export const PUSH_WORDS: Record<PushLanguage, PushWords> = {
     shieldTitle: "Conferência do Escudo de raid",
     shieldSome: "{read}: {n} ainda sem escudo visto. Toque para revisar na Preparação do raid.",
     shieldNone: "{read}: todos os membros lidos foram vistos com escudo.",
-    fri: "Leitura de sexta",
-    sat: "Leitura de sábado",
+    fri: "Conferência da noite",
+    sat: "Conferência da manhã",
     nightTitle: "A leitura da lista falhou",
     nightBody:
       "A leitura e a nova tentativa falharam. Nada a fazer: a mesa mantém os últimos números e lê de novo amanhã.",
@@ -76,8 +76,8 @@ export const PUSH_WORDS: Record<PushLanguage, PushWords> = {
     shieldSome:
       "{read} : pas encore de bouclier vu pour {n}. Touchez pour vérifier dans la Préparation du raid.",
     shieldNone: "{read} : tous les membres lus ont été vus avec un bouclier.",
-    fri: "Lecture de vendredi",
-    sat: "Lecture de samedi",
+    fri: "Vérification du soir",
+    sat: "Vérification du matin",
     nightTitle: "La lecture de la liste a échoué",
     nightBody:
       "La lecture et sa nouvelle tentative ont échoué. Rien à faire : le bureau garde les derniers chiffres et relit demain.",

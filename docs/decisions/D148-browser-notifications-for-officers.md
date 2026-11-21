@@ -73,3 +73,5 @@ Why: officers learn about the Raid Shield check, a failed night read, a member's
 - `lib/push-uses.test.ts`: each use once per trigger (the Raid Shield count again only when it changed), only to the workspace concerned, and the decrypted notification holds no roster name or uid; no Raid prep reminder while the Raid Shield check is on.
 - `app/(private)/api/w/[slug]/push/route.test.ts`: the device saved sealed, its uses changed (a use whose D134 switch is off is not stored) and turned off; issue 471: Alpha's officer changes and deletes nothing of Bravo's and is signed out at Bravo's address; no card and nothing stored without the keys; an endpoint off the push services refused; sign-out with the endpoint deletes the row.
 - The member-session suite has the new route's fixture.
+
+**Amendment (2026-11-21, issue 585):** the Raid Shield notification names the check as the desk does: "Night check: 11 not seen with a shield yet", "Morning check: …". See D137's amendment of that date.

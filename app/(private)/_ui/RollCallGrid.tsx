@@ -4,7 +4,7 @@
 // each with its count), the members' tiles, and under "To mark" the members already marked, collapsed into
 // "Marked (n)", opened 40 at a time. The sections are taken when the page opens and when a chip is tapped
 // (roll-call-grid.ts), never by a mark, so a tile stays where it is while the officer marks. A search
-// looks through every member. Every roll call kind uses it, Raid prep with its two marks (D137).
+// looks through every member. Every roll call kind uses it; Raid prep's chips count the Shield only (D137).
 import { useState, type ReactNode } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
@@ -17,13 +17,16 @@ import {
   sections,
   takeSnap,
   type GridFilter,
-  type Parts,
+  type MarkOf,
 } from "./roll-call-grid";
 
-/** Tiles for one mark: two across at 360, three from 640, four from 1024. Raid prep's: one, two, three. */
+/**
+ * Tiles for one mark: two across at 360, three from 640, four from 1024. Raid prep's wider tiles: one,
+ * two from 640, three from 1024, four from 1280 on the wide frame (issue 585).
+ */
 const COLS = {
   one: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
-  two: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+  two: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
 };
 
 /** A member's tile: a hairline box, tinted once every part is marked, so the done ones read at a glance. */
@@ -31,25 +34,25 @@ export function tileClass(done: boolean) {
   return `min-w-0 border border-rule px-2 pt-1.5 pb-2 ${done ? "bg-ink/[0.04]" : ""}`;
 }
 
-export function useGrid<T extends { uid: number }>(rows: T[], partsOf: (uid: number) => Parts) {
+export function useGrid<T extends { uid: number }>(rows: T[], markOf: MarkOf) {
   const uids = rows.map((r) => r.uid);
-  const [snap, setSnap] = useState(() => takeSnap("todo", uids, partsOf));
+  const [snap, setSnap] = useState(() => takeSnap("todo", uids, markOf));
   const [open, setOpen] = useState(false);
   const [limit, setLimit] = useState(MARKED_PAGE);
   return {
     snap,
-    counts: gridCounts(uids, partsOf),
+    counts: gridCounts(uids, markOf),
     open,
     limit,
     /** A chip tap takes the sections again, the one already chosen too ("tap a filter to sort again"). */
     choose: (filter: GridFilter) => {
-      setSnap(takeSnap(filter, uids, partsOf));
+      setSnap(takeSnap(filter, uids, markOf));
       setOpen(false);
       setLimit(MARKED_PAGE);
     },
     toggle: () => setOpen((o) => !o),
     more: () => setLimit((l) => l + MARKED_PAGE),
-    sectionsOf: (found: ((row: T) => boolean) | null) => sections(rows, snap, partsOf, found),
+    sectionsOf: (found: ((row: T) => boolean) | null) => sections(rows, snap, markOf, found),
   };
 }
 

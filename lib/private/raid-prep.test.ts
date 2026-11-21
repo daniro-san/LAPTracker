@@ -1,7 +1,8 @@
 // Raid prep (D137) against a real Postgres (PGlite): the tracker's hints on each row ("not seen yet" is a
 // hint, a shield seen shows no length, a shield lost overnight), "Accept
 // the tracker's" writing only ✓ for those seen with a shield, and the squads-off-the-wall mark kept apart
-// from the Shield mark, and the tick's marks still to check until "Checked" or a tap on the row.
+// from the Shield mark, the tick's marks still to check until "Checked" or a tap on the row, and the
+// Discord summary's state (a past week's check shows only what it recorded).
 import { randomUUID } from "node:crypto";
 
 import { eq } from "drizzle-orm";
@@ -15,7 +16,7 @@ import { dailyReads, dailyRosters } from "../schema";
 import { rollCallMarks } from "../schema-rollcall";
 import { playerReads } from "../schema-squads";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { acceptTracker, checkTracker, prepView } from "./raid-prep";
+import { acceptTracker, checkTracker, prepView, summaryOf } from "./raid-prep";
 import { addCall, markOne, openOccasion } from "./roll-call";
 import { callView } from "./roll-call-view";
 import { createSession } from "./session";
@@ -226,5 +227,32 @@ describe("Raid prep (D137)", () => {
     // ✓ on the tracker's ✓ makes it the officer's own.
     await markOne(db, access, { occasion, uid: 101, mark: "yes", version: 1 }, NOW);
     expect((await view()).rows.get(101)?.fromTracker).toBeNull();
+  });
+});
+
+describe("the Discord summary's state on Raid prep (issue 585)", () => {
+  const now = NOW.getTime();
+  const on = { discord: true, channel: true, current: true };
+  const reads = (newest: number) => ({ night: { read: 3, on: 2, at: newest }, morning: null });
+  const none = { messageId: null, messageHash: null, postedAt: null };
+
+  it("reads posted and deleted from the check's row, and infers the rest only before KvK", () => {
+    const posted = { messageId: "9", messageHash: "h", postedAt: at("2026-11-21T01:36:00Z") };
+    expect(summaryOf(posted, { ...on, discord: false }, reads(now), now)).toEqual({
+      state: "posted",
+      at: posted.postedAt.getTime(),
+    });
+    expect(summaryOf({ ...posted, messageHash: "gone" }, on, reads(now), now)).toEqual({
+      state: "gone",
+    });
+    expect(summaryOf(none, { ...on, discord: false }, reads(now), now)).toEqual({ state: "off" });
+    expect(summaryOf(none, { ...on, channel: false }, reads(now), now)).toEqual({ state: "unset" });
+    expect(summaryOf(none, on, reads(now - 60_000), now)).toEqual({ state: "waiting" });
+    expect(summaryOf(none, on, reads(now - 10 * 60_000), now)).toEqual({ state: "failed" });
+  });
+
+  it("shows nothing for a past week's check that recorded no message, never failed", () => {
+    const past = { ...on, current: false };
+    expect(summaryOf(none, past, reads(now - 7 * 86_400_000), now)).toBeNull();
   });
 });
