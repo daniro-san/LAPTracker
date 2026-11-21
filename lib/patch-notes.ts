@@ -103,6 +103,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.40.0",
+    date: "2026-11-21",
+    title: "Member cards close and stay closed on a phone",
+    changes: [
+      'On a phone, closing a member card sometimes flickered, showed "Loading…" and opened the card again. It now closes at once, with no trip to the server, whichever way you close it (X, tapping outside, Escape or the back gesture).',
+      "Cause: the page address kept the member after the card closed, and the browser's back step reopened it.",
+      "Shared links to a member still open that member's card. The same fix covers Former members and Follow-up.",
+    ],
+    prs: [573],
+  },
+  {
     version: "v5.39.0",
     date: "2026-11-21",
     title: "Browser notifications for officers",
