@@ -21,8 +21,7 @@ const { POST } = await import("./route");
 
 const watch = () =>
   POST(request("/api/tick/watch", { headers: { authorization: `Bearer ${TEST_CRON_SECRET}` } }));
-const LAST_TICK = new Date("2026-11-04T10:00:00Z");
-const after = (minutes: number) => new Date(LAST_TICK.getTime() + minutes * 60_000);
+const at = (iso: string) => new Date(`${iso}Z`);
 
 let db: Db;
 beforeAll(async () => {
@@ -30,31 +29,47 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   await truncateAll(db);
-  await startTick(db, LAST_TICK);
+  await startTick(db, at("2026-11-04T09:00")); // the 09:00 UTC heartbeat
 });
 
-describe("POST /api/tick/watch", () => {
-  it("posts one admin alert after 61 silent minutes, and nothing again at 70", async () => {
+describe("POST /api/tick/watch (D141: uptime.yml, every 3 h at :10)", () => {
+  it("posts one admin alert when the 12:00 heartbeat never came, and nothing again on a re-run", async () => {
     const { ctx, clock, posts } = testContext(db);
     holder.ctx = ctx;
     const statuses: number[] = [];
 
-    clock.now = after(61);
+    clock.now = at("2026-11-04T12:10");
     statuses.push((await watch()).status);
-    clock.now = after(70);
+    clock.now = at("2026-11-04T12:40");
     statuses.push((await watch()).status);
 
     expect(statuses).toEqual([204, 204]);
     expect(posts.map((p) => p.url)).toEqual([ADMIN_WEBHOOK]);
-    expect(posts[0]?.content).toContain("No tick for 61 min");
+    expect(posts[0]?.content).toContain("No tick for 190 min");
   });
 
-  it("posts nothing when the last tick was 30 minutes ago", async () => {
+  it("posts nothing when a tick came in the slot, also for a run GitHub starts 50 min or 3 h late", async () => {
     const { ctx, clock, posts } = testContext(db);
     holder.ctx = ctx;
-    clock.now = after(30);
+    await startTick(db, at("2026-11-04T12:00"));
 
-    expect((await watch()).status).toBe(204);
+    for (const iso of ["2026-11-04T12:10", "2026-11-04T13:00", "2026-11-04T15:09"]) {
+      clock.now = at(iso);
+      expect((await watch()).status).toBe(204);
+    }
     expect(posts).toEqual([]);
+  });
+
+  it("judges the 00:00 UTC slot across the day boundary", async () => {
+    const { ctx, clock, posts } = testContext(db);
+    holder.ctx = ctx;
+    await startTick(db, at("2026-11-04T21:00"));
+
+    clock.now = at("2026-11-05T00:05"); // the 00:00 slot is not judged yet: 21:00 counts
+    await watch();
+    expect(posts).toEqual([]);
+    clock.now = at("2026-11-05T00:10"); // no 00:00 tick
+    await watch();
+    expect(posts.map((p) => p.content)).toEqual([expect.stringContaining("No tick for 190 min")]);
   });
 });

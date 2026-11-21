@@ -1,9 +1,11 @@
 // Issue 471: what the desk's pages read for Alpha's officer when the address names Bravo's records (a notice,
-// its history, posts and reviews, a draft, a roll call, a garrison plan, a member card), and Home's activity
-// pages. Each finds nothing of Bravo's. The pages call these reads after requireWorkspace, with the id from
-// the address. Invented names only.
+// its history, posts and reviews, a draft, a roll call, a garrison plan, a member card), Home's activity
+// pages, the Insights page's read (issue 489) and Follow-up's ready messages (D140). Each finds nothing of
+// Bravo's. The pages call these reads after requireWorkspace, with the id from the address. Invented names
+// only.
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -11,8 +13,10 @@ import type { Db } from "@/lib/db";
 import { openTestDb } from "@/lib/db.test-helpers";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { followUpView } from "@/lib/private/follow-up";
 import { garrisonView } from "@/lib/private/garrison";
 import { draftView } from "@/lib/private/import-view";
+import { insightsView } from "@/lib/private/insights";
 import { memberCard } from "@/lib/private/member-card";
 import { lastPublish } from "@/lib/private/notice-publish";
 import { noticeReviews } from "@/lib/private/notice-reviews";
@@ -21,9 +25,10 @@ import { prepView } from "@/lib/private/raid-prep";
 import { addCall, openOccasion } from "@/lib/private/roll-call";
 import { callView } from "@/lib/private/roll-call-view";
 import { quotaDayRead } from "@/lib/schedule";
-import { dailyReads } from "@/lib/schema";
+import { dailyReads, dailyRosters } from "@/lib/schema";
 import { workspaceKeys } from "@/lib/schema-keys";
-import { playerReads, squadQueue, squadReads } from "@/lib/schema-squads";
+import { playerHistory, playerReads, squadQueue, squadReads } from "@/lib/schema-squads";
+import { PRIVATE_MARKERS } from "@/lib/workspace-data.test-helpers";
 import { masterFingerprint } from "@/lib/workspace-keys";
 
 import {
@@ -115,6 +120,36 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     expect(view.night).toMatchObject({ read: 1, on: 0 });
   });
 
+  it("write Alpha's Follow-up messages from Alpha's own reads only, never Bravo's (D140)", async () => {
+    // Alpha's member 101 gave 400 Alliance Help coins on the four days before the seeded read: the tip.
+    for (const day of ["2026-11-14", "2026-11-15", "2026-11-16", "2026-11-17"]) {
+      const at = new Date(`${day}T23:37:00Z`);
+      await db.insert(dailyReads).values({ day, startedAt: at, status: "complete" });
+      await db.insert(dailyRosters).values({
+        readDay: day,
+        unionId: ALPHA,
+        memberCount: 1,
+        sourceUpdatedAt: at,
+        isFresh: true,
+        memberUids: [101],
+        memberNames: ["Ana Example"],
+        memberPower: [1000],
+        memberKills: [10],
+        rawJson: { members: [{ uid: 101, nick_name: "Ana Example", daily_honor: 400 }] },
+      });
+    }
+    // Alpha's own read of 101 says English (seeded); Bravo's workspace read the same player later, in
+    // French, and its own member 202.
+    const later = new Date(SEED_AT.getTime() + 3_600_000);
+    await db.insert(playerReads).values([
+      { unionId: BRAVO, uid: 101, readAt: later, language: "fr" },
+      { unionId: BRAVO, uid: 202, readAt: later, language: "fr" },
+    ]);
+    // The next week, so the seeded "Talked" of 101 no longer takes them off the list.
+    const view = await followUpView(db, a, new Date("2026-11-25T12:00:00Z"), ZONE);
+    expect(view.items.map((i) => [i.member.uid, i.tip, i.language])).toEqual([[101, true, "en"]]);
+  });
+
   it("Home's activity pages carry Alpha's lines only", async () => {
     const page = await call(two, "activity", {
       query: `?before=${SEED_AT.getTime() + 86_400_000}`,
@@ -156,5 +191,36 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     const theirs = JSON.stringify((await call(two, "read-status", { who: "bravo" })).json);
     expect(theirs).toContain("Squads: 7 of 9 read");
     expect(theirs).not.toContain("of 3 read");
+  });
+  it("the Insights read counts Alpha's own alliance only, with none of the roster's private fields", async () => {
+    // Bravo's roster as an end-of-day read, and a history row of Bravo's naming Alpha's member.
+    await db
+      .update(dailyRosters)
+      .set({
+        rawJson: { members: [{ uid: 202, nick_name: "Bea Invented", power: 2000, active: 700 }] },
+      })
+      .where(eq(dailyRosters.unionId, BRAVO));
+    await db.insert(playerHistory).values({
+      unionId: BRAVO,
+      uid: 101,
+      t: new Date(SEED_AT.getTime() - 3_600_000),
+      playerUnionId: BRAVO,
+      unionAbbr: "BRV",
+    });
+    const view = await insightsView(db, a, SEED_AT, ZONE);
+    expect(view.roster).toEqual([{ uid: 101, name: "Ana Example" }]);
+    const text = JSON.stringify(view);
+    expect(text).not.toMatch(/Bea Invented|"uid":202|BRV/);
+    for (const marker of PRIVATE_MARKERS) expect(text).not.toContain(marker);
+    const bravo = await requireWorkspace(
+      db,
+      "bravo",
+      { get: () => ({ value: two.token.bravo }) },
+      SEED_AT,
+    );
+    if (!bravo.ok) throw new Error("no access");
+    expect((await insightsView(db, bravo, SEED_AT, ZONE)).roster).toEqual([
+      { uid: 202, name: "Bea Invented" },
+    ]);
   });
 });

@@ -101,19 +101,31 @@ export const usable = (unionId: number) =>
     gt(dailyRosters.memberCount, 0),
   );
 
-/** The alliance's newest `n` usable end-of-day rosters that kept every field (D72), oldest first. */
+/** The alliance's newest `n` usable end-of-day rosters that kept every field (D72), oldest first. Only the
+ * row's own members: raw_json also keeps those the read left out for an empty rank (issue 481). */
 export async function endOfDayReads(db: Db, unionId: number, n: number): Promise<RosterRead[]> {
   const rows = await db
-    .select({ day: dailyRosters.readDay, at: dailyRosters.sourceUpdatedAt, members })
+    .select({
+      day: dailyRosters.readDay,
+      at: dailyRosters.sourceUpdatedAt,
+      uids: dailyRosters.memberUids,
+      members,
+    })
     .from(dailyRosters)
     .where(and(usable(unionId), isNotNull(dailyRosters.rawJson)))
     .orderBy(desc(dailyRosters.readDay))
     .limit(n);
-  return rows.reverse().map((r) => ({
-    day: r.day,
-    at: r.at as Date,
-    members: r.members.map(member).filter((m) => m !== null),
-  }));
+  return rows.reverse().map((r) => {
+    const uids = new Set(r.uids);
+    return {
+      day: r.day,
+      at: r.at as Date,
+      members: r.members
+        .map(member)
+        .filter((m) => m !== null)
+        .filter((m) => uids.has(m.uid)),
+    };
+  });
 }
 
 /**

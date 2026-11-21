@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { historyLine, weekStart } from "./follow-up-rules";
+import { coinsTip, historyLine, weekStart } from "./follow-up-rules";
 
 const dayOf = (at: Date) => at.toISOString().slice(0, 10);
 
@@ -31,5 +31,11 @@ describe("the Follow-up rules (issue 340, D104)", () => {
       by: null,
     };
     expect(historyLine(onBreak, t, date, day)).toBe("On a break 2026-11-16 – 2026-11-20");
+  });
+
+  it("gives the coins tip on 5 days below 1,000 with data; a day with no read never counts (D140)", () => {
+    expect(coinsTip([400, 999, "none", 400, 400, 1000, 1000])).toBe(true);
+    expect(coinsTip([400, 400, 400, 400, 1000, 1000, 1000])).toBe(false);
+    expect(coinsTip([400, 400, 400, 400, null, null, null])).toBe(false);
   });
 });

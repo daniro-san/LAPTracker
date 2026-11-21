@@ -10,6 +10,7 @@ import { followUpEn } from "./dictionary.followup";
 import { fr } from "./dictionary.fr";
 import { garrisonEn } from "./dictionary.garrison";
 import { importEn } from "./dictionary.import";
+import { insightsEn } from "./dictionary.insights";
 import { lifecycleEn } from "./dictionary.lifecycle";
 import { membersEn } from "./dictionary.members";
 import { noticesEn } from "./dictionary.notices";
@@ -267,6 +268,7 @@ const en = {
   ...translateEn,
   ...boardEn,
   ...followUpEn,
+  ...insightsEn,
   ...activityEn,
   ...shareEn,
   ...squadsEn,

@@ -11,3 +11,5 @@ Why: the owner (issue 479) wants each alliance's own statement on its public pag
   - A text that may run past six lines at 360 px (a conservative estimate of 32 characters a line) is cut at six lines, with a real "Show all" / "Show less" button (44 px, `aria-expanded`). That one small client component hides the button where the text fits. A shorter text is rendered on the server with no script.
   - The last line is "As of {date}", the server day of the read used. With no text, the card is titled "Joining" and holds the joining line alone.
 - **Not done.** The statement is not translated (Groq), as the issue scopes it. The history page `/alliances/[id]/history` does not show the card.
+
+**Amendment (2026-11-20, D138, issue 481).** "the game reports 101/100" above was the tracker, not the game. The card's members are now at most `capacity`, so it reads "Full (100/100)", never "101/100".

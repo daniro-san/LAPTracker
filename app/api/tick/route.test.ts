@@ -13,7 +13,7 @@ import {
 } from "@/lib/app-context.test-helpers";
 import { ago, fakeV1, IDS, minutes, roster } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
-import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { noQueryDb, openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import {
   dailyReads,
   dailyRosters,
@@ -82,13 +82,27 @@ describe("POST /api/tick", () => {
   it("writes a heartbeat row with its start, end and outcome", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
-    clock.now = new Date("2026-11-04T10:00:00Z");
+    clock.now = new Date("2026-11-04T12:00:00Z"); // the 3-hourly heartbeat slot (D141)
 
     expect((await tick()).status).toBe(204);
 
     expect(await db.select().from(tickLog)).toEqual([
       { id: 1, startedAt: clock.now, finishedAt: clock.now, outcome: "idle" },
     ]);
+  });
+
+  it("asks the database nothing and starts no batch on a tick with nothing that can be due (D141)", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T16:00:00Z"); // Wednesday 14:00 ST
+    // The first idle tick keeps what only the database knows: no rehearsal pending, the queue settled.
+    expect((await tick()).status).toBe(204);
+    later.length = 0;
+    ctx.openDb = () => ({ db: noQueryDb, close: async () => {} });
+    clock.now = new Date("2026-11-04T16:15:00Z");
+
+    expect((await tick()).status).toBe(204);
+    expect(later).toEqual([]);
   });
 
   it("writes no heartbeat row for a tick with the wrong secret", async () => {
@@ -298,7 +312,7 @@ describe("POST /api/tick", () => {
     expect(await days()).toEqual([]);
   });
 
-  it("starts a squads batch after every tick's answer, which reads nothing before the day's read", async () => {
+  it("starts a squads batch after the day's read, and none on a day whose read never came (D141)", async () => {
     // D117, amendment 2026-11-19; D132: cron-job.org's ticks at :00/:15/:30/:45 carry the squads queue.
     // D125: the own alliance is read only while it has a workspace.
     await db
@@ -312,17 +326,15 @@ describe("POST /api/tick", () => {
       players.push(uid);
       return playerAnswer(uid);
     };
-    clock.now = new Date("2026-11-10T13:00:00Z"); // Tuesday 11:00 server time: no day's read yet
+    clock.now = new Date("2026-11-10T13:00:00Z"); // Tuesday 11:00 server time: Monday's read never came
     expect((await tick()).status).toBe(204);
-    expect(later).toHaveLength(1);
-    await later[0]?.();
-    expect(players).toEqual([]);
+    expect(later).toHaveLength(0);
 
     clock.now = new Date("2026-11-11T01:30:00Z"); // Tuesday 23:30 server time: the daily read answers
     expect((await tick()).status).toBe(200);
-    expect(later).toHaveLength(2);
+    expect(later).toHaveLength(1);
     expect(players).toEqual([]); // nothing before the answer
-    await later[1]?.();
+    await later[0]?.();
     const own = (OWN_ALLIANCE_ID * 10 + 1) as number;
     expect(players).toEqual([own, own + 1, own + 2]);
     const [read] = await db.select().from(squadReads);

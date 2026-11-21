@@ -1,19 +1,29 @@
 "use client";
 
-// The Follow-up tab's record sheet (issue 340, D104), opened by "Add a note": the member's reasons and every
-// fact still to ask, four answers in a 2 × 2 grid with none chosen at first (Save stays off until one is),
-// "Back on" only for On a break, and a short note. One request id per open sheet (D100). On a break and
-// They need help are member facts (D80): another officer's newer value comes back (409) in an amber line
-// naming them, and a second Save replaces it. `send` and the row type are shared with the list.
-import { useState } from "react";
+// A member's Follow-up panel (issue 340, D104; issue 460, D140), opened by a tap on the person or "Add a
+// note": a sheet below 1024, the pane beside the list from 1024 (D122). Top to bottom: where they came from
+// (the card's origin lines, D136), why they are on the list, a ready message in their language with "Copy
+// for game mail" and "Copy for Discord" (nothing is sent for the officer), "Fill in what they told you"
+// (each fact still to ask opens the facts editor at its field; "Paste what they told you", D109), how it
+// went (four answers in a 2 × 2 grid, none chosen at first, Save off until one is; "Back on" only for On a
+// break; a short note) and the last notes. One request id per open panel (D100). On a break and They need
+// help are member facts (D80): another officer's newer value comes back (409) in an amber line naming
+// them, and a second Save replaces it. `send` and the row type are shared with the list.
+import { useEffect, useState } from "react";
 
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
 import { addDays } from "@/lib/private/calendar-time";
+import type { WorkspaceLanguage } from "@/lib/private/dictionary";
+import type { FactField } from "@/lib/private/fact-fields";
 import { FOLLOW_UP_ACTIONS, type FollowUpAction } from "@/lib/private/follow-up-rules";
 
 import { FIELD, Labeled, TextInput } from "./CalendarFields";
+import { focusField } from "./FactFields";
+import { FactsEditor } from "./FactsEditor";
 import type { FollowUpWords } from "./follow-up-words";
+import { Fill, HEAD, Message, Notes, SECTION, useCard, type Editing } from "./FollowUpPanelParts";
+import type { EditorContext } from "./MemberCards";
 import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
@@ -24,10 +34,12 @@ export interface FollowUpRow {
   rank: string | null;
   /** "Needs help" when an officer set it; the group heading says the rest. */
   tag: string | null;
-  /** The short lines under the name, in the officer's words. */
+  /** Why they are on the list, in the officer's words: the reasons, the facts still to ask, the tip. */
   lines: string[];
-  /** The longer lines the sheet shows (every fact still to ask). */
-  detail: string[];
+  /** Every fact still to ask, each a way into the facts editor at its field. */
+  ask: { field: FactField; label: string }[];
+  /** The ready message in each language, and the one shown first: the member's, else the officer's (D140). */
+  message: { language: WorkspaceLanguage; texts: Record<WorkspaceLanguage, string> };
   /** The versions of the member's away and status facts the page saw (D80). */
   versions: { away: number; status: number };
 }
@@ -48,20 +60,23 @@ export async function send(slug: string, body: object): Promise<Sent | null> {
   return { status: res.status, body: (await res.json().catch(() => ({}))) as Sent["body"] };
 }
 
-type SheetProps = {
+type PanelProps = {
   slug: string;
   row: FollowUpRow;
   today: string;
   language: string;
   words: FollowUpWords;
+  editor: EditorContext;
+  /** Beside the list from 1024 (D122), not a dialog. */
+  pane: boolean;
   onSaved: (requestId: string) => void;
   onClose: () => void;
 };
 
 type Stale = { said: string; version: number };
 
-/** The sheet's answers, its check and its save. */
-function useRecord(props: SheetProps) {
+/** The panel's answers, its check and its save. */
+function useRecord(props: PanelProps) {
   const { row, words } = props;
   const [requestId] = useState(() => newRequestId());
   const [action, setAction] = useState<FollowUpAction | null>(null);
@@ -112,29 +127,32 @@ function Answers(props: {
   onChange: (a: FollowUpAction) => void;
 }) {
   return (
-    <fieldset className="mt-4">
-      <legend className="text-body-sm font-semibold">{props.words["followup.what"]}</legend>
-      <div className="mt-1 grid grid-cols-2 gap-2">
-        {FOLLOW_UP_ACTIONS.map((a) => (
-          <label
-            key={a}
-            className={`drawn-frame-soft tint-button flex min-h-11 cursor-pointer items-center gap-2 px-3 py-2 ${
-              props.value === a ? "bg-plum/10 font-semibold text-plum" : ""
-            }`}
-          >
-            <input
-              type="radio"
-              name="follow-up-action"
-              value={a}
-              checked={props.value === a}
-              onChange={() => props.onChange(a)}
-              className="size-5 shrink-0 accent-plum"
-            />
-            {props.words[`followup.action.${a}`]}
-          </label>
-        ))}
-      </div>
-    </fieldset>
+    // In a div: the section's rule on a fieldset would run through its legend.
+    <div className={SECTION}>
+      <fieldset>
+        <legend className={HEAD}>{props.words["followup.what"]}</legend>
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          {FOLLOW_UP_ACTIONS.map((a) => (
+            <label
+              key={a}
+              className={`drawn-frame-soft tint-button flex min-h-11 cursor-pointer items-center gap-2 px-3 py-2 ${
+                props.value === a ? "bg-plum/10 font-semibold text-plum" : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="follow-up-action"
+                value={a}
+                checked={props.value === a}
+                onChange={() => props.onChange(a)}
+                className="size-5 shrink-0 accent-plum"
+              />
+              {props.words[`followup.action.${a}`]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    </div>
   );
 }
 
@@ -194,11 +212,19 @@ function BackOn(props: {
   );
 }
 
-export function RecordSheet(props: SheetProps) {
+export function FollowUpPanel(props: PanelProps) {
   const { row, words } = props;
   const f = useRecord(props);
+  const card = useCard(props.slug, row.uid);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const data = card.data;
+  // A fact still to ask opens the editor at its field: after the editor's sheet took its first focus.
+  useEffect(() => {
+    if (editing?.focus) focusField(editing.focus);
+  }, [editing]);
   return (
     <Sheet
+      pane={props.pane}
       labelledBy="follow-up-title"
       onCancel={props.onClose}
       title={<bdi translate="no">{row.name}</bdi>}
@@ -211,11 +237,29 @@ export function RecordSheet(props: SheetProps) {
       }}
       note={<Refusal f={f} words={words} />}
     >
-      <ul className="text-body-sm">
-        {row.detail.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
+      {row.rank && (
+        <p translate="no" className="text-body-sm text-ink/80">
+          {row.rank}
+        </p>
+      )}
+      {/* Officers always see where a member came from (D136). */}
+      {data?.origin.map((line) => (
+        <p key={line} className="text-body-sm text-ink/80">
+          {line}
+        </p>
+      ))}
+      <section className="mt-3" aria-labelledby="follow-up-why-h">
+        <h3 id="follow-up-why-h" className={HEAD}>
+          {words["followup.why"]}
+        </h3>
+        <ul className="text-body-sm">
+          {row.lines.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </section>
+      <Message row={row} words={words} />
+      <Fill row={row} words={words} card={card} onOpen={setEditing} />
       <Answers value={f.action} words={words} onChange={f.choose} />
       {f.action === "break" && (
         <BackOn f={f} today={props.today} language={props.language} words={words} />
@@ -231,6 +275,22 @@ export function RecordSheet(props: SheetProps) {
           className={`${FIELD} py-2`}
         />
       </Labeled>
+      <Notes card={card} words={words} />
+      {editing && data && (
+        <FactsEditor
+          {...props.editor}
+          uid={row.uid}
+          name={row.name}
+          facts={data.stored}
+          autoStatus={data.autoStatus}
+          mode={editing.mode}
+          onClose={() => {
+            // Read the card again, so a second edit starts from this save's versions, not a 409.
+            setEditing(null);
+            card.reload();
+          }}
+        />
+      )}
     </Sheet>
   );
 }

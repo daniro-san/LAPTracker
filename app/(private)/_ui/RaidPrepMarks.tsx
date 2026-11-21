@@ -3,8 +3,9 @@
 // Raid prep (issue 474, D137): the Raid Shield roll call with two marks per member, Shield and Squads off
 // the wall. Above the rows, the tracker's reads ("Friday's read: 87 of 98 with a shield seen") and "Accept
 // the tracker's", which marks ✓ Shield up for those the tracker saw with a shield and nobody marked yet.
-// Everything else is the roll call's own: rows keep their order, "the rest" is "no problem seen" for the
-// Shield, away members are apart (RollCallMarks.tsx). Not set never counts (D75).
+// Everything else is the roll call's own: the grid of tiles with "Marked (n)" for those with both marks
+// set (RollCallGrid.tsx), tiles keep their order, "the rest" is "no problem seen" for the Shield, away
+// members are apart (RollCallMarks.tsx). Not set never counts (D75).
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
@@ -19,6 +20,7 @@ import { useFreshOnReturn } from "./CalendarAgenda";
 import type { PrepHeadView, PrepRowView } from "./prep-data";
 import { RaidPrepRow } from "./RaidPrepRow";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
+import { RollGrid, useGrid } from "./RollCallGrid";
 import { AwayGroup, Intro, SearchBar, useOrder } from "./RollCallMarks";
 import { RestBar, useRest } from "./RollCallRest";
 import { RefusalLine } from "./SignedOut";
@@ -51,19 +53,15 @@ function TrackerBar(props: {
           {line}
         </p>
       ))}
-      {head.hint && <p className="mt-1 text-body-sm text-ink/80">{head.hint}</p>}
       {acceptable.length > 0 && (
-        <>
-          <p className="mt-2 text-body-sm text-ink/75">{words["roll.prep.acceptHelp"]}</p>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void accept()}
-            className={`${chip()} mt-1`}
-          >
-            {fill(words["roll.prep.accept"], { n: acceptable.length })}
-          </button>
-        </>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void accept()}
+          className={`${chip()} mt-2`}
+        >
+          {fill(words["roll.prep.accept"], { n: acceptable.length })}
+        </button>
       )}
       {done && (
         <p role="status" className="text-body-sm font-semibold text-plum">
@@ -74,40 +72,11 @@ function TrackerBar(props: {
   );
 }
 
-function PrepList(props: {
-  rows: MarkRowView[];
-  m: ReturnType<typeof useMarks>;
-  w: ReturnType<typeof useMarks>;
-  prep: Record<number, PrepRowView>;
-  when: "reset" | "kvk";
-  words: RollSheetWords;
-  marks: MarkWords;
-  times: CalendarSheetWords;
-}) {
-  const { m, w } = props;
-  return (
-    <ul>
-      {props.rows.map((row) => (
-        <RaidPrepRow
-          key={row.uid}
-          row={row}
-          prep={props.prep[row.uid]}
-          shield={m.shown(row.uid).mark}
-          wall={w.shown(row.uid).mark}
-          note={m.notes[row.uid] || w.notes[row.uid]}
-          when={props.when}
-          words={props.words}
-          marks={props.marks}
-          times={props.times}
-          onShield={(v) => m.tap(row.uid, v)}
-          onWall={(v) => w.tap(row.uid, v)}
-        />
-      ))}
-    </ul>
-  );
-}
-
 const WALL = { part: "wall" };
+
+/** The tracker card's two explanations, under "How this works" (issue 412 persona review). */
+const trackerNotes = (head: PrepHeadView, words: RollSheetWords) =>
+  head.lines.length === 0 ? [] : [...(head.hint ? [head.hint] : []), words["roll.prep.acceptHelp"]];
 
 /**
  * The order the page opens with (D103: not set first, never moved by a tap): among the not-set rows, the
@@ -127,18 +96,45 @@ const wallRowsOf = (rows: MarkRowView[], prep: Record<number, PrepRowView>) =>
     version: prep[r.uid]?.wall.version ?? 0,
   }));
 
-export function RaidPrepMarks(props: {
-  slug: string;
-  occasion: Occasion;
-  rows: MarkRowView[];
+type Marks = ReturnType<typeof useMarks>;
+interface TileProps {
   prep: Record<number, PrepRowView>;
   head: PrepHeadView;
   words: RollSheetWords;
   marks: MarkWords;
   times: CalendarSheetWords;
-  language: string;
-  today: string;
-}) {
+}
+
+/** One member's tile with both parts' marks (`m` the Shield's, `w` the wall's). */
+const tileOf = (m: Marks, w: Marks, p: TileProps) =>
+  function PrepTile(row: MarkRowView) {
+    return (
+      <RaidPrepRow
+        key={row.uid}
+        row={row}
+        prep={p.prep[row.uid]}
+        shield={m.shown(row.uid).mark}
+        wall={w.shown(row.uid).mark}
+        note={m.notes[row.uid] || w.notes[row.uid]}
+        when={p.head.when}
+        words={p.words}
+        marks={p.marks}
+        times={p.times}
+        onShield={(v) => m.tap(row.uid, v)}
+        onWall={(v) => w.tap(row.uid, v)}
+      />
+    );
+  };
+
+export function RaidPrepMarks(
+  props: TileProps & {
+    slug: string;
+    occasion: Occasion;
+    rows: MarkRowView[];
+    language: string;
+    today: string;
+  },
+) {
   const { words, marks, prep } = props;
   useFreshOnReturn();
   const failed = words["roll.failed"];
@@ -153,8 +149,9 @@ export function RaidPrepMarks(props: {
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
   // "No problem seen" is never given to someone the tracker did not see with a shield (D137).
   const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false);
+  const g = useGrid(asked, (uid) => [m.shown(uid).mark, w.shown(uid).mark]);
   const needle = fold(q.trim());
-  const found = asked.filter((row) => needle === "" || fold(row.name).includes(needle));
+  const found = needle === "" ? null : (row: MarkRowView) => fold(row.name).includes(needle);
   const error = m.error ?? w.error;
   return (
     <>
@@ -165,27 +162,20 @@ export function RaidPrepMarks(props: {
         marks={marks}
         shield
         undo={r.undoable && !r.fresh ? () => void r.undo() : null}
+        more={trackerNotes(props.head, words)}
       />
       <TrackerBar head={props.head} notSet={notSet} words={words} m={m} />
       <SearchBar q={q} words={words} onQ={setQ} onAway={() => setAway("pick")} />
-      {needle !== "" && found.length === 0 && (
+      {found && !asked.some(found) && (
         <p className="py-3">{fill(words["roll.noMatch"], { q: q.trim() })}</p>
       )}
-      <PrepList
-        rows={found}
-        m={m}
-        w={w}
-        prep={prep}
-        when={props.head.when}
-        words={words}
-        marks={marks}
-        times={props.times}
-      />
+      <RollGrid g={g} found={found} cols="two" words={words} tile={tileOf(m, w, props)} />
       {error && <RefusalLine text={error} className="mt-2 text-seal" />}
       <AwayGroup rows={awayRows} words={words} onOpen={setAway} />
       <RestBar
         left={notSet.length}
         rest={rest.length}
+        part={words["roll.prep.shield"]}
         away={awayRows.length}
         words={words}
         marks={marks}

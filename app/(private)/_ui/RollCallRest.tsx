@@ -2,9 +2,9 @@
 
 // "The rest" on a roll call (issue 298, D103): the sticky bar above the tabs and its state. The bar says
 // how many are not set and how many are away, and its button names the count and the kind's default
-// ("Mark the other 57 as took part"); with nothing left it says only "All marked". After the tap it reads
-// "57 marked as took part · Undo" for about 10 s; "Undo the rest" stays by the counts while any of those
-// marks is unchanged. Plunders have no "the rest" (owner, 2026-11-17): the bar keeps only its count.
+// ("Mark the other 57 as took part"); with nothing left it goes, and "All marked" shows by the counts at
+// the top (issue 412). After the tap it reads "57 marked as took part · Undo" for about 10 s; "Undo the
+// rest" stays by the counts while any of those marks is unchanged. Plunders have no "the rest" (owner, 2026-11-17): the bar keeps only its count.
 import { useRef, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -47,6 +47,20 @@ export function useRest(m: ReturnType<typeof useMarks>, marks: MarkWords, words:
   return { text: last?.text ?? null, fresh, busy, undoable, rest, undo };
 }
 
+/** "57 not set · 3 away, left out"; Raid prep's "Shield: 61 not set · 16 not seen yet, left out". */
+function countLine(
+  p: { left: number; rest: number; away: number; part?: string | undefined },
+  words: RollSheetWords,
+) {
+  const counts = [
+    p.away > 0
+      ? fill(words["roll.leftAway"], { n: p.left, away: p.away })
+      : fill(words["roll.left"], { n: p.left }),
+    ...(p.rest < p.left ? [fill(words["roll.prep.notSeenLeft"], { n: p.left - p.rest })] : []),
+  ].join(" · ");
+  return p.part ? `${p.part}: ${counts}` : counts;
+}
+
 /**
  * The sticky bar: above the bottom tabs below 768, at the window's foot from 768, where the tabs are a rail
  * (D122; until then it floated 60 px up the list, issue 412 UX pass). It spans the content's width on solid
@@ -56,6 +70,8 @@ export function RestBar(props: {
   left: number;
   /** D137: how many "the rest" marks, when fewer than `left` (Raid prep leaves out the not-seen). */
   rest?: number;
+  /** Raid prep: the part the counts are about ("Shield: 61 not set · 16 not seen yet, left out"). */
+  part?: string;
   away: number;
   words: RollSheetWords;
   marks: MarkWords;
@@ -64,12 +80,11 @@ export function RestBar(props: {
 }) {
   const { words, marks, r, left } = props;
   const rest = props.rest ?? left;
-  const count =
-    props.away > 0
-      ? fill(words["roll.leftAway"], { n: left, away: props.away })
-      : fill(words["roll.left"], { n: left });
+  const count = countLine({ left, rest, away: props.away, part: props.part }, words);
+  // "All marked" sits by the counts at the top (issue 412), so with nothing left the bar goes.
+  if (left === 0 && !(r.fresh && r.text)) return null;
   return (
-    <div className="sticky bottom-[calc(3.5rem+4px+env(safe-area-inset-bottom))] z-10 -mx-4 mt-4 border-t-2 border-ink bg-paper px-4 py-2 sm:-mx-6 sm:px-6 md:bottom-0 md:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+    <div className="sticky bottom-[calc(3.5rem+4px+env(safe-area-inset-bottom))] z-10 shadow-[0_4px_0_0_var(--paper)] md:shadow-none -mx-4 mt-4 border-t-2 border-ink bg-paper px-4 py-2 sm:-mx-6 sm:px-6 md:bottom-0 md:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
       {r.fresh && r.text ? (
         <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>{r.text}</span>
@@ -84,8 +99,6 @@ export function RestBar(props: {
             </button>
           )}
         </p>
-      ) : left === 0 ? (
-        <p className="flex min-h-11 items-center text-ink/80">{words["roll.done"]}</p>
       ) : (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <p className="min-w-0 text-body-sm tabular-nums sm:flex-1">{count}</p>

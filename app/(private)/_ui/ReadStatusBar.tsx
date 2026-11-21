@@ -12,7 +12,7 @@ import { type ReactNode, useEffect, useState } from "react";
 
 import type { ReadStatus, StatusLine } from "@/lib/private/read-status";
 
-import { nextWake } from "./read-status-wake";
+import { batchMayRun, nextWake } from "./read-status-wake";
 
 const POLL_MS = 30_000;
 
@@ -35,7 +35,10 @@ export interface StatusWords {
   settings: string;
 }
 
-/** Asks the route every 30 s while a read runs and the tab is visible; refreshes the page once at the end. */
+/**
+ * Asks the route every 30 s while a read runs, the tab is visible and a tick's batch can be running (D141);
+ * refreshes the page once at the end.
+ */
 function usePolling(slug: string, running: boolean, take: (s: ReadStatus) => void) {
   const router = useRouter();
   useEffect(() => {
@@ -59,7 +62,11 @@ function usePolling(slug: string, running: boolean, take: (s: ReadStatus) => voi
       timer = undefined;
     };
     const start = () => {
-      if (document.visibilityState === "visible" && !timer) timer = setInterval(ask, POLL_MS);
+      // D141: only while a tick's batch can be running; becoming visible still asks at once.
+      if (document.visibilityState === "visible" && !timer)
+        timer = setInterval(() => {
+          if (batchMayRun(Date.now())) void ask();
+        }, POLL_MS);
     };
     const onVisibility = () => {
       if (document.visibilityState !== "visible") return stop();

@@ -1,0 +1,258 @@
+// The officers' Insights page (issue 489) in English, Brazilian Portuguese and French: one module the three
+// workspace dictionaries spread. People first (D75): nobody is ranked, the only names are a thanks list,
+// a day with no read never counts, and every section says what it rests on. French puts a no-break space
+// before : ; ? !.
+export const insightsEn = {
+  "members.view.insights": "Insights",
+  "insights.lead":
+    "How the alliance is doing, from the daily reads. Nobody is ranked here, and a day with no read never counts.",
+  "insights.early": "Insights come with the first daily update.",
+  "insights.rules.head": "How this page counts",
+  "insights.rules.read": "Only end-of-day reads count. A day with no read is left out, never 0.",
+  "insights.rules.none":
+    "A member a read lists with no quests or donations did none that day. That is a fact, not missing data, and it counts as 0 in an average.",
+  "insights.rules.left":
+    "New members and members on a break are left out of the comparison by might.",
+  "insights.rules.private": "Only officers see this page. Nothing here is sent anywhere.",
+  "insights.pulse.head": "The week’s pulse",
+  "insights.pulse.based.one": "Based on {n} daily read this week: {days}.",
+  "insights.pulse.based.other": "Based on {n} daily reads this week: {days}.",
+  "insights.pulse.noRead": "No read on {days}: left out.",
+  "insights.pulse.quests": "Earned daily quest points",
+  "insights.pulse.coins": "At the 1,000 coin cap",
+  "insights.pulse.tech": "Donations (middle value)",
+  "insights.pulse.questsOf": "{n} of {of} members",
+  "insights.pulse.coinsOf": "{n} of {of} members",
+  "insights.pulse.techOf": "middle of the {n} of {of} members who donated",
+  "insights.pulse.lastRead": "{date}: {value}",
+  "insights.pulse.weeks": "Week by week",
+  "insights.pulse.week": "Week of {date}",
+  "insights.pulse.thisWeek": "This week",
+  "insights.pulse.days.one": "{n} read",
+  "insights.pulse.days.other": "{n} reads",
+  "insights.pulse.noReadWeek": "no read",
+  "insights.effort.head": "Effort at every might level",
+  "insights.effort.lead":
+    "Members in four equal groups by might, with the middle value of each group. Compare the groups; nobody is ranked.",
+  "insights.effort.based.other":
+    "Based on the last {n} daily reads ({range}), {members} members. An average counts the days a read lists them; a day with none counts as 0.",
+  "insights.effort.based.one": "Based on the last daily read ({range}), {members} members.",
+  "insights.effort.leftOut": "Left out: {list}.",
+  "insights.effort.fresh": "{n} new",
+  "insights.effort.away": "{n} on a break",
+  "insights.effort.noMight": "{n} with no might in the read",
+  "insights.effort.band": "Might {low} – {high}",
+  "insights.effort.members": "{n} members",
+  "insights.effort.quests": "Daily quest points",
+  "insights.effort.coins": "Alliance Help coins (max 1,000)",
+  "insights.effort.tech": "Donations",
+  "insights.effort.few": "Needs at least 3 daily reads to compare; {n} so far.",
+  "insights.quiet.head": "Quiet contributors",
+  "insights.quiet.lead":
+    "Below the alliance’s middle might, and above its middle in both daily quest points and donations over these days. Worth a thank-you.",
+  "insights.quiet.none": "Nobody fits this time. That’s fine: it changes week to week.",
+  "insights.quiet.deed": "kept up their daily quests and donations",
+  "insights.quiet.pickHelp":
+    "The quiet contributors are ticked. Untick anyone you’d rather not name.",
+  "insights.flow.head": "Membership flow",
+  "insights.flow.based.one":
+    "Based on {n} daily read since {date}. A change shows on the first read after it.",
+  "insights.flow.based.other":
+    "Based on {n} daily reads since {date}. A change shows on the first read after it.",
+  "insights.flow.weeks": "Joined and left, week by week",
+  "insights.flow.joined": "joined",
+  "insights.flow.left": "left",
+  "insights.flow.came": "Where newcomers came from",
+  "insights.flow.went": "Where leavers went",
+  "insights.flow.unknown": "Not known",
+  "insights.flow.places":
+    "From the daily rosters of the alliances we read and our members’ tracker history. An alliance we don’t read shows as not known.",
+  "insights.flow.nobodyJoined": "Nobody joined in these weeks.",
+  "insights.flow.nobodyLeft": "Nobody left in these weeks.",
+  "insights.tenure.head": "How long members have been with us",
+  "insights.tenure.based": "Counted from the first daily read that lists them.",
+  "insights.tenure.0": "Under 2 weeks",
+  "insights.tenure.1": "2 weeks to a month",
+  "insights.tenure.2": "1 to 3 months",
+  "insights.tenure.over": "3 months or more",
+  "insights.tenure.start": "Already here at our first read, {date}",
+  "insights.newcomers.head": "Newcomers’ growth",
+  "insights.newcomers.none": "Nobody new in the last 30 days.",
+  "insights.newcomers.count.one": "{n} member joined in the last 30 days.",
+  "insights.newcomers.count.other": "{n} members joined in the last 30 days.",
+  "insights.newcomers.grew":
+    "{grew} of {counted} grew their might since their first day with us. The middle change is {median}.",
+  "insights.newcomers.noMight": "No might from their first day yet.",
+};
+
+type InsightsWords = Record<keyof typeof insightsEn, string>;
+
+export const insightsPt: InsightsWords = {
+  "members.view.insights": "Análises",
+  "insights.lead":
+    "Como a aliança está, pelas leituras diárias. Ninguém é ranqueado aqui, e um dia sem leitura nunca conta.",
+  "insights.early": "As análises chegam com a primeira atualização diária.",
+  "insights.rules.head": "Como esta página conta",
+  "insights.rules.read":
+    "Só contam as leituras do fim do dia. Um dia sem leitura fica de fora, nunca vira 0.",
+  "insights.rules.none":
+    "Um membro que a leitura lista sem missões ou doações não fez nenhuma naquele dia. É um fato, não um dado faltando, e conta como 0 na média.",
+  "insights.rules.left": "Membros novos e membros de pausa ficam fora da comparação por poder.",
+  "insights.rules.private": "Só oficiais veem esta página. Nada daqui é enviado para lugar nenhum.",
+  "insights.pulse.head": "O pulso da semana",
+  "insights.pulse.based.one": "Com base em {n} leitura diária nesta semana: {days}.",
+  "insights.pulse.based.other": "Com base em {n} leituras diárias nesta semana: {days}.",
+  "insights.pulse.noRead": "Sem leitura em {days}: fica de fora.",
+  "insights.pulse.quests": "Ganharam pontos de missões diárias",
+  "insights.pulse.coins": "No limite de 1.000 moedas",
+  "insights.pulse.tech": "Doações (valor do meio)",
+  "insights.pulse.questsOf": "{n} de {of} membros",
+  "insights.pulse.coinsOf": "{n} de {of} membros",
+  "insights.pulse.techOf": "meio dos {n} de {of} membros que doaram",
+  "insights.pulse.lastRead": "{date}: {value}",
+  "insights.pulse.weeks": "Semana a semana",
+  "insights.pulse.week": "Semana de {date}",
+  "insights.pulse.thisWeek": "Esta semana",
+  "insights.pulse.days.one": "{n} leitura",
+  "insights.pulse.days.other": "{n} leituras",
+  "insights.pulse.noReadWeek": "sem leitura",
+  "insights.effort.head": "Esforço em cada nível de poder",
+  "insights.effort.lead":
+    "Membros em quatro grupos iguais por poder, com o valor do meio de cada grupo. Compare os grupos; ninguém é ranqueado.",
+  "insights.effort.based.other":
+    "Com base nas últimas {n} leituras diárias ({range}), {members} membros. A média conta os dias em que a leitura os lista; um dia sem nada conta como 0.",
+  "insights.effort.based.one": "Com base na última leitura diária ({range}), {members} membros.",
+  "insights.effort.leftOut": "Fora da conta: {list}.",
+  "insights.effort.fresh": "{n} novos",
+  "insights.effort.away": "{n} de pausa",
+  "insights.effort.noMight": "{n} sem poder na leitura",
+  "insights.effort.band": "Poder {low} – {high}",
+  "insights.effort.members": "{n} membros",
+  "insights.effort.quests": "Pontos de missões diárias",
+  "insights.effort.coins": "Moedas da Ajuda da Aliança (máx. 1.000)",
+  "insights.effort.tech": "Doações",
+  "insights.effort.few": "Precisa de pelo menos 3 leituras diárias para comparar; até agora {n}.",
+  "insights.quiet.head": "Quem ajuda sem aparecer",
+  "insights.quiet.lead":
+    "Abaixo do poder do meio da aliança, e acima do meio tanto em pontos de missões diárias quanto em doações nesses dias. Vale um obrigado.",
+  "insights.quiet.none": "Ninguém desta vez. Tudo bem: muda de semana para semana.",
+  "insights.quiet.deed": "manteve as missões diárias e as doações",
+  "insights.quiet.pickHelp":
+    "Quem ajuda sem aparecer já vem marcado. Desmarque quem você prefere não citar.",
+  "insights.flow.head": "Entradas e saídas",
+  "insights.flow.based.one":
+    "Com base em {n} leitura diária desde {date}. Uma mudança aparece na primeira leitura depois dela.",
+  "insights.flow.based.other":
+    "Com base em {n} leituras diárias desde {date}. Uma mudança aparece na primeira leitura depois dela.",
+  "insights.flow.weeks": "Entraram e saíram, semana a semana",
+  "insights.flow.joined": "entraram",
+  "insights.flow.left": "saíram",
+  "insights.flow.came": "De onde vieram os novos",
+  "insights.flow.went": "Para onde foram os que saíram",
+  "insights.flow.unknown": "Não se sabe",
+  "insights.flow.places":
+    "Pelas listas diárias das alianças que lemos e pelo histórico dos nossos membros no tracker. Uma aliança que não lemos aparece como não se sabe.",
+  "insights.flow.nobodyJoined": "Ninguém entrou nessas semanas.",
+  "insights.flow.nobodyLeft": "Ninguém saiu nessas semanas.",
+  "insights.tenure.head": "Há quanto tempo estão com a gente",
+  "insights.tenure.based": "Contado da primeira leitura diária que os lista.",
+  "insights.tenure.0": "Menos de 2 semanas",
+  "insights.tenure.1": "2 semanas a um mês",
+  "insights.tenure.2": "1 a 3 meses",
+  "insights.tenure.over": "3 meses ou mais",
+  "insights.tenure.start": "Já estavam na nossa primeira leitura, {date}",
+  "insights.newcomers.head": "Crescimento dos novos",
+  "insights.newcomers.none": "Ninguém novo nos últimos 30 dias.",
+  "insights.newcomers.count.one": "{n} membro entrou nos últimos 30 dias.",
+  "insights.newcomers.count.other": "{n} membros entraram nos últimos 30 dias.",
+  "insights.newcomers.grew":
+    "{grew} de {counted} cresceram em poder desde o primeiro dia com a gente. A mudança do meio é {median}.",
+  "insights.newcomers.noMight": "Ainda sem o poder do primeiro dia.",
+};
+
+export const insightsFr: InsightsWords = {
+  "members.view.insights": "Analyses",
+  "insights.lead":
+    "Où en est l’alliance, d’après les relevés quotidiens. Personne n’est classé ici, et un jour sans relevé ne compte jamais.",
+  "insights.early": "Les analyses arrivent avec la première mise à jour quotidienne.",
+  "insights.rules.head": "Comment cette page compte",
+  "insights.rules.read":
+    "Seuls les relevés de fin de journée comptent. Un jour sans relevé est laissé de côté, jamais compté 0.",
+  "insights.rules.none":
+    "Un membre listé sans quêtes ni dons n’en a fait aucun ce jour-là. C’est un fait, pas une donnée manquante, et il compte 0 dans une moyenne.",
+  "insights.rules.left":
+    "Les nouveaux membres et ceux en pause sont laissés hors de la comparaison par puissance.",
+  "insights.rules.private":
+    "Seuls les officiers voient cette page. Rien d’ici n’est envoyé ailleurs.",
+  "insights.pulse.head": "Le pouls de la semaine",
+  "insights.pulse.based.one": "D’après {n} relevé quotidien cette semaine : {days}.",
+  "insights.pulse.based.other": "D’après {n} relevés quotidiens cette semaine : {days}.",
+  "insights.pulse.noRead": "Sans relevé, laissé de côté : {days}.",
+  "insights.pulse.quests": "Ont gagné des points de quêtes du jour",
+  "insights.pulse.coins": "Au plafond de 1 000 pièces",
+  "insights.pulse.tech": "Dons (valeur du milieu)",
+  "insights.pulse.questsOf": "{n} sur {of} membres",
+  "insights.pulse.coinsOf": "{n} sur {of} membres",
+  "insights.pulse.techOf": "milieu des {n} sur {of} membres qui ont donné",
+  "insights.pulse.lastRead": "{date} : {value}",
+  "insights.pulse.weeks": "Semaine par semaine",
+  "insights.pulse.week": "Semaine du {date}",
+  "insights.pulse.thisWeek": "Cette semaine",
+  "insights.pulse.days.one": "{n} relevé",
+  "insights.pulse.days.other": "{n} relevés",
+  "insights.pulse.noReadWeek": "pas de relevé",
+  "insights.effort.head": "L’effort à chaque niveau de puissance",
+  "insights.effort.lead":
+    "Les membres en quatre groupes égaux par puissance, avec la valeur du milieu de chaque groupe. Comparez les groupes ; personne n’est classé.",
+  "insights.effort.based.other":
+    "D’après les {n} derniers relevés quotidiens ({range}), {members} membres. Une moyenne compte les jours où un relevé les liste ; un jour sans rien compte 0.",
+  "insights.effort.based.one": "D’après le dernier relevé quotidien ({range}), {members} membres.",
+  "insights.effort.leftOut": "Laissés de côté : {list}.",
+  "insights.effort.fresh": "{n} nouveaux",
+  "insights.effort.away": "{n} en pause",
+  "insights.effort.noMight": "{n} sans puissance dans le relevé",
+  "insights.effort.band": "Puissance {low} – {high}",
+  "insights.effort.members": "{n} membres",
+  "insights.effort.quests": "Points de quêtes du jour",
+  "insights.effort.coins": "Pièces d’Aide d’alliance (max 1 000)",
+  "insights.effort.tech": "Dons",
+  "insights.effort.few":
+    "Il faut au moins 3 relevés quotidiens pour comparer ; {n} pour l’instant.",
+  "insights.quiet.head": "Ceux qui aident sans bruit",
+  "insights.quiet.lead":
+    "Sous la puissance du milieu de l’alliance, et au-dessus de son milieu en points de quêtes du jour comme en dons sur ces jours. Ça vaut un merci.",
+  "insights.quiet.none":
+    "Personne cette fois. Ce n’est pas grave : ça change d’une semaine à l’autre.",
+  "insights.quiet.deed": "a tenu ses quêtes du jour et ses dons",
+  "insights.quiet.pickHelp":
+    "Ceux qui aident sans bruit sont cochés. Décochez ceux que vous préférez ne pas nommer.",
+  "insights.flow.head": "Arrivées et départs",
+  "insights.flow.based.one":
+    "D’après {n} relevé quotidien depuis le {date}. Un changement apparaît au premier relevé qui le suit.",
+  "insights.flow.based.other":
+    "D’après {n} relevés quotidiens depuis le {date}. Un changement apparaît au premier relevé qui le suit.",
+  "insights.flow.weeks": "Arrivées et départs, semaine par semaine",
+  "insights.flow.joined": "arrivés",
+  "insights.flow.left": "partis",
+  "insights.flow.came": "D’où viennent les nouveaux",
+  "insights.flow.went": "Où sont allés ceux qui sont partis",
+  "insights.flow.unknown": "Inconnu",
+  "insights.flow.places":
+    "D’après les listes quotidiennes des alliances que nous relevons et l’historique de nos membres dans le tracker. Une alliance que nous ne relevons pas apparaît comme inconnue.",
+  "insights.flow.nobodyJoined": "Personne n’est arrivé ces semaines-ci.",
+  "insights.flow.nobodyLeft": "Personne n’est parti ces semaines-ci.",
+  "insights.tenure.head": "Depuis quand ils sont avec nous",
+  "insights.tenure.based": "Compté depuis le premier relevé quotidien qui les liste.",
+  "insights.tenure.0": "Moins de 2 semaines",
+  "insights.tenure.1": "2 semaines à un mois",
+  "insights.tenure.2": "1 à 3 mois",
+  "insights.tenure.over": "3 mois ou plus",
+  "insights.tenure.start": "Déjà là à notre premier relevé, {date}",
+  "insights.newcomers.head": "La croissance des nouveaux",
+  "insights.newcomers.none": "Personne de nouveau ces 30 derniers jours.",
+  "insights.newcomers.count.one": "{n} membre est arrivé ces 30 derniers jours.",
+  "insights.newcomers.count.other": "{n} membres sont arrivés ces 30 derniers jours.",
+  "insights.newcomers.grew":
+    "{grew} sur {counted} ont gagné en puissance depuis leur premier jour avec nous. Le changement du milieu est de {median}.",
+  "insights.newcomers.noMight": "Pas encore de puissance de leur premier jour.",
+};

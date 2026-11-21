@@ -1,6 +1,6 @@
 // The collector's one log line per /v1 call (plan "Observability"). Split from lib/collector.ts.
 import type { Logger } from "./logger";
-import type { Quota } from "./sources/types";
+import type { AllianceSnapshotInput, Quota } from "./sources/types";
 import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
 
 /** One run_logs line per /v1 call; retries add their own v1.retry lines. */
@@ -20,5 +20,20 @@ export async function logV1Fetch(
     quota_remaining: result.quota?.remaining ?? null,
     // D61: what the upstream answered (status, headers, body start, or the timeout), for the run page.
     ...(e === undefined ? {} : { error: describe(e), detail: upstreamDetail(e) }),
+  });
+}
+
+/** Issue 481: a body that lists more members than its capacity keeps its read without its members with an
+ * empty rank. One counts-only line says so, for /admin/runs. */
+export async function logRosterCheck(logger: Logger, a: AllianceSnapshotInput): Promise<void> {
+  const listed = a.listed ?? a.members.length;
+  const unranked = listed - a.members.length;
+  const capacity = a.capacity ?? null;
+  if (capacity === null || listed <= capacity) return;
+  await logger.warn("roster.over_capacity", {
+    union_id: a.unionId,
+    members: listed,
+    capacity,
+    unranked,
   });
 }

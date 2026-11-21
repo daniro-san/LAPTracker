@@ -34,7 +34,7 @@ export const rollPt: RollWords = {
   "roll.legend": "Toque em ✓ ou ✗. Toque de novo para apagar.",
   "roll.legend.shield": "Nenhum problema visto: não conferido um a um.",
   "roll.order":
-    "Quem está sem marca vem primeiro, e os ausentes por último. As linhas não mudam de lugar enquanto você marca.",
+    "Quem está sem marca vem primeiro, e os ausentes por último; quem já foi marcado fica em “Marcados”. Nada muda de lugar enquanto você marca. Toque num filtro para reorganizar.",
   "roll.progress": "{n} de {total} marcados",
   "roll.left": "{n} sem marca",
   "roll.rest.assumed": "Marcar os outros {n} como nenhum problema visto",
@@ -131,4 +131,13 @@ export const rollPt: RollWords = {
   "roll.archived.none": "Nenhuma chamada arquivada. Arquive uma pela página dela quando terminar.",
   "roll.archived.week.one": "1 chamada arquivada nesta semana ›",
   "roll.archived.week.other": "{n} chamadas arquivadas nesta semana ›",
+  "roll.grid.aria": "Quem mostrar",
+  "roll.grid.todo": "Para marcar",
+  "roll.grid.yes": "{n} marcados ✓",
+  "roll.grid.no": "{n} marcados ✗",
+  "roll.grid.all": "Todos",
+  "roll.grid.marked": "Marcados ({n})",
+  "roll.grid.more": "Mostrar mais {n}",
+  "roll.grid.none.todo": "Ninguém falta marcar.",
+  "roll.grid.none": "Ninguém aqui.",
 };

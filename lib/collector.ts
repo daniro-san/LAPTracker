@@ -3,7 +3,7 @@
 import { requiredQuota, sampleQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
 import { allianceIds, fetchBoard } from "./collector-ids";
-import { logV1Fetch } from "./collector-log";
+import { logRosterCheck, logV1Fetch } from "./collector-log";
 import { dataRow, errorRow, failedList } from "./collector-rows";
 import { callOptions, SAMPLE_DEADLINE_MS } from "./collector-sample";
 import { RUN_DEADLINE_MS } from "./compute";
@@ -145,6 +145,7 @@ async function fallbackRow(run: Run, unionId: number, v1Error: unknown) {
   try {
     const a = await deps.internal.fetchAlliance(unionId);
     await deps.logger.warn("internal.fallback", { union_id: unionId, v1_error: describe(v1Error) });
+    await logRosterCheck(deps.logger, a);
     return { row: dataRow(run.board, deps.now(), a, "internal"), members: a.members };
   } catch (fallbackError) {
     const error = `v1 ${describe(v1Error)}; internal ${describe(fallbackError)}`;
@@ -167,6 +168,7 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
       callOptions(run, unionId),
     );
     await logV1Fetch(run, started, call, { cached: a.cached, quota: a.quota });
+    await logRosterCheck(deps.logger, a);
     noteQuota(run, a.quota?.remaining);
     row = dataRow(run.board, deps.now(), a, "v1");
     members = a.members;

@@ -33,6 +33,7 @@ const { default: CaravansPage } = await import("./calendar/caravans/page");
 const { default: NoticesPage } = await import("./notices/page");
 const { default: StartHerePage } = await import("./start-here/page");
 const { default: BoardPage } = await import("./board/page");
+const { default: InsightsPage } = await import("./insights/page");
 
 const params = Promise.resolve({ slug: "ogs" });
 const searchParams = Promise.resolve({});
@@ -86,6 +87,7 @@ describe("a page turned off for the alliance (D126, issue 483)", () => {
       caravans: false,
       notices: false,
       board: false,
+      insights: false,
     });
     const pages = [
       () => TheftsPage({ params }),
@@ -94,6 +96,7 @@ describe("a page turned off for the alliance (D126, issue 483)", () => {
       () => NoticesPage({ params, searchParams }),
       () => StartHerePage({ params }),
       () => BoardPage({ params }),
+      () => InsightsPage({ params }),
     ];
     for (const page of pages) expect(await outcome(page)).toBe("→ /w/ogs");
   });

@@ -1,8 +1,8 @@
 "use client";
 
-// One member on Raid prep (issue 474, D137): the name, the tracker's line with the map scan's time on both
-// clocks, the Shield pair and the Squads off the wall pair (each ✓ / ✗, 48 px, the same button again
-// clears), and the ready private message in the member's language with only the parts not yet ✓. The
+// One member's tile on Raid prep (issue 474, D137; a grid tile since issue 412): the name, the tracker's
+// line with the map scan's time on both clocks, the Shield pair and the Squads off the wall pair (each
+// ✓ / ✗, 44 px, the same button again clears), and the ready private message in the member's language with only the parts not yet ✓. The
 // tracker's line is a hint (D75): "not seen yet" is never shown as a ✗.
 import { useState } from "react";
 
@@ -16,6 +16,8 @@ import type { CalendarSheetWords } from "./calendar-data";
 import type { PrepRowView, PrepTrackerView } from "./prep-data";
 import { prepMessage, shieldDone } from "./prep-message";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
+import { tileClass } from "./RollCallGrid";
+import { MarkLine } from "./RollCallMarks";
 import { Times } from "./YourTime";
 
 function Pair(props: {
@@ -24,15 +26,17 @@ function Pair(props: {
   mark: Mark | null;
   words: { yes: string; no: string; assumed?: string };
   button: string;
+  notSet: string;
   onTap: (tapped: "yes" | "no") => void;
 }) {
-  // Every mark shows its word, "no problem seen" too (it has no button of its own), as RollCallMarks does.
-  const said = props.mark ? props.words[props.mark] : undefined;
+  // Every mark shows its word, "no problem seen" too (it has no button of its own), as RollCallMarks does;
+  // "Not set" while there is none, so the tile keeps its height. The label, the word and the buttons are the
+  // tile's three rows (subgrid), so a label that wraps keeps both pairs' buttons level.
   return (
-    <div className="min-w-0">
+    <div className="row-span-3 grid min-w-0 grid-rows-subgrid">
       <p className="text-body-sm text-ink/80">{props.label}</p>
-      {said && <Tag tone={props.mark === "yes" ? "progress" : "neutral"}>{said}</Tag>}
-      <div className="mt-0.5 flex gap-3">
+      <MarkLine mark={props.mark} words={props.words} notSet={props.notSet} />
+      <div className="mt-0.5 grid grid-cols-2 gap-2">
         {(["yes", "no"] as const).map((v) => (
           <button
             key={v}
@@ -40,7 +44,7 @@ function Pair(props: {
             aria-pressed={props.mark === v}
             aria-label={fill(props.button, { word: props.words[v], name: isolate(props.name) })}
             onClick={() => props.onTap(v)}
-            className={`${chip(props.mark === v)} min-h-12 min-w-12 shrink-0 justify-center text-[22px]`}
+            className={`${chip(props.mark === v)} min-h-11 justify-center text-[22px]`}
           >
             <span aria-hidden="true">{v === "yes" ? "✓" : "✗"}</span>
           </button>
@@ -130,19 +134,20 @@ export function RaidPrepRow(props: {
   };
   const message = messageOf(prep, row.name, props.when, done, words);
   return (
-    <li className="border-t border-rule py-2">
+    <li className={tileClass(props.shield !== null && props.wall !== null)}>
       <p translate="no" className="truncate font-semibold">
         <bdi>{row.name}</bdi>
       </p>
       {prep?.tracker && <TrackerLines tr={prep.tracker} times={props.times} />}
       {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
-      <div className="mt-1 grid max-w-md grid-cols-2 gap-3">
+      <div className="mt-1 grid grid-cols-2 gap-x-3">
         <Pair
           label={words["roll.prep.shield"]}
           name={row.name}
           mark={props.shield}
           words={props.marks}
           button={words["roll.button"]}
+          notSet={words["roll.notSet"]}
           onTap={props.onShield}
         />
         <Pair
@@ -151,6 +156,7 @@ export function RaidPrepRow(props: {
           mark={props.wall}
           words={{ yes: words["roll.prep.wall.yes"], no: words["roll.prep.wall.no"] }}
           button={words["roll.button"]}
+          notSet={words["roll.notSet"]}
           onTap={props.onWall}
         />
       </div>

@@ -5,6 +5,7 @@ import { ago, fakeInternal, fakeV1, minutes, roster, T0 } from "./collector.test
 import type { Db } from "./db";
 import { parseEnv } from "./env";
 import type { EventCache } from "./event-cache";
+import type { WakeCache } from "./wake-cache";
 
 export const TEST_PIN = "482913";
 export const TEST_CRON_SECRET = "test".repeat(10); // 40 chars, low entropy: not key-shaped
@@ -63,6 +64,20 @@ export function memoryEventCache(): EventCache {
   };
 }
 
+/** Next's wake cache (lib/wake-cache.ts) in memory: a fact is kept once it holds; nothing expires. */
+export function memoryWakeCache(): WakeCache {
+  const held = new Set<string>();
+  return {
+    async holds(key, _maxAgeS, check) {
+      if (!held.has(key) && (await check())) held.add(key);
+      return held.has(key);
+    },
+    forget() {
+      held.clear();
+    },
+  };
+}
+
 export function testContext(db: Db, env = TEST_ENV) {
   const clock = { now: T0 };
   /** `file`: the name of the picture sent with the message (D58), as multipart `files[0]`. */
@@ -93,6 +108,7 @@ export function testContext(db: Db, env = TEST_ENV) {
     },
     openDb: () => ({ db, close: async () => {} }),
     eventCache: memoryEventCache(),
+    wakeCache: memoryWakeCache(),
     ai: null,
   };
   return { ctx, clock, posts, edits, v1 };

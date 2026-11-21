@@ -7,6 +7,7 @@ import { getEnv, type Env } from "./env";
 import { nextEventCache, type EventCache } from "./event-cache";
 import { internal, v1 } from "./sources";
 import type { InternalSource, V1Source } from "./sources/types";
+import { nextWakeCache, type WakeCache } from "./wake-cache";
 
 export interface AppContext {
   env: Env;
@@ -18,6 +19,8 @@ export interface AppContext {
   openDb: () => { db: Db; close: () => Promise<void> };
   /** The event page's shared cache; a write that changes an event invalidates it (issue 327). */
   eventCache: EventCache;
+  /** What the tick knows without the database between calls (D141). */
+  wakeCache: WakeCache;
   /**
    * The notices' Translate and Improve writing (D81), for the workspace that asks (issue 452: its slug and
    * tag go on each `$ai_generation`; null when a Discord server's workspace is gone); null without GROQ_API_KEY.
@@ -53,6 +56,7 @@ export function getAppContext(): AppContext {
     fetch: send,
     openDb: () => openDb(),
     eventCache: nextEventCache,
+    wakeCache: nextWakeCache,
     ai: groqKey ? (where) => groqChat(groqKey, send, undefined, observeAi(env, send, where)) : null,
   };
 }

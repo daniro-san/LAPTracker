@@ -47,9 +47,9 @@ describe("v1.fetchAlliance parsing", () => {
       mockFetch(respond(body));
       const a = await fetchAlliance(raw.union_id);
       expect(a.unionId).toBe(raw.union_id);
-      expect(a.totalKills).toBe(raw.members.reduce((t, m) => t + (m.kills ?? 0), 0));
+      expect(a.totalKills).toBe(a.members.reduce((t, m) => t + (m.kills ?? 0), 0));
       expect(a.totalPower).toBe(raw.power);
-      expect(a.members).toHaveLength(raw.members.length);
+      expect(a.listed).toBe(raw.members.length);
       expect(a.raw).toEqual(raw);
     }
   });
@@ -73,15 +73,17 @@ describe("v1.fetchAlliance parsing", () => {
     expect(a.members.some((m) => m.rankCode === 105 && m.rankLabel === "R5")).toBe(true);
   });
 
-  it("reads a member whose rank_code, rank_label, photo or frame is null instead of failing the read", async () => {
+  it("keeps the read but leaves out a member with an empty rank, and a null photo or frame fails nothing (issue 481)", async () => {
     const body = JSON.parse(readFixture(OGS_NULL_RANK)) as { members: Record<string, unknown>[] };
-    const unlisted = body.members.findIndex((m) => m.rank_code === null);
-    expect(unlisted).toBeGreaterThan(0);
+    const unlisted = body.members.find((m) => m.rank_code === null && m.rank_label === "");
+    expect(unlisted).toBeDefined();
     Object.assign(body.members[0] ?? {}, { avatar_url: null, frame_url: null, rank_label: null });
     mockFetch(respond(JSON.stringify(body)));
     const a = await fetchAlliance(67111155);
-    expect(a.members).toHaveLength(body.members.length);
-    expect(a.members[unlisted]).toMatchObject({ uid: body.members[unlisted]?.uid, rankCode: null });
+    expect(a.members).toHaveLength(body.members.length - 1);
+    expect(a.members.some((m) => m.uid === unlisted?.uid)).toBe(false);
+    expect(a.listed).toBe(body.members.length);
+    expect(a.raw).toEqual(body);
     expect(a.members[0]).toMatchObject({ avatarUrl: null, frameId: null, rankLabel: null });
   });
 

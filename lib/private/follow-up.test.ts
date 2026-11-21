@@ -6,6 +6,7 @@ import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters, memberFollowUps } from "../schema";
+import { playerReads } from "../schema-squads";
 import { theftFollowUps, thefts } from "../schema-thefts";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
@@ -30,8 +31,13 @@ beforeAll(async () => {
   db = await openTestDb();
 });
 
-/** An end-of-day read: uid → daily quest points (null: none that day), with nothing donated. */
-async function endOfDay(day: string, members: Record<number, number | null>) {
+/** An end-of-day read: uid → daily quest points (null: none that day), with nothing donated; `coins`
+ * uid → Alliance Help coins (none when left out). */
+async function endOfDay(
+  day: string,
+  members: Record<number, number | null>,
+  coins: Record<number, number> = {},
+) {
   const uids = Object.keys(members).map(Number);
   const at = new Date(`${day}T23:37:00-02:00`);
   await db.insert(dailyReads).values({ day, startedAt: at, status: "complete" });
@@ -55,6 +61,7 @@ async function endOfDay(day: string, members: Record<number, number | null>) {
         rank_label: "R3",
         daily_tech: null,
         active: members[uid],
+        daily_honor: coins[uid] ?? null,
       })),
     },
   });
@@ -162,6 +169,23 @@ describe("the Follow-up list (issue 340, D104)", () => {
     await endOfDay("2026-11-22", { 101: null });
     await endOfDay("2026-11-23", { 101: null });
     expect(await listed(ana, new Date("2026-11-24T12:00:00Z"))).toEqual([[101, true, []]]);
+  });
+
+  it("lists the coins tip on 5 days below 1,000, never for days with no read, in the game's language (D140)", async () => {
+    const ana = await signedIn("Ana");
+    // 102 gave 400 coins on the four days before, none since; 101 is not in those reads.
+    for (const day of ["2026-11-13", "2026-11-14", "2026-11-15", "2026-11-16"]) {
+      await endOfDay(day, { 102: 10 }, { 102: 400 });
+    }
+    await db.insert(playerReads).values({ unionId: OGS, uid: 102, readAt: NOW, language: "pt" });
+    const items = (await followUpView(db, ana, NOW, CLOCK.zone)).items;
+    expect(items.find((i) => i.member.uid === 102)).toMatchObject({
+      checkIn: false,
+      toAsk: [],
+      tip: true,
+      language: "pt-BR",
+    });
+    expect(items.find((i) => i.member.uid === 101)).toMatchObject({ tip: false, language: null });
   });
 
   it("drops a member whose signal clears, with nothing recorded", async () => {

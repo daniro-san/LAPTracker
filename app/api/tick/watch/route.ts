@@ -1,5 +1,6 @@
-// POST /api/tick/watch — the no-tick watcher (D45). A second cron-job.org job calls it every 15 min;
-// it reads the newest tick time and posts one admin alert per silent hour. No snapshot, no quota.
+// POST /api/tick/watch — the no-tick watcher (D45). uptime.yml calls it after its page probes, every 3 h at
+// :10 UTC (D141), so both share one database wake. It reads the newest tick time and posts one admin alert
+// when the last heartbeat slot had no tick. No snapshot, no quota.
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
