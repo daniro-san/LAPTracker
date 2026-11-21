@@ -91,3 +91,5 @@ Why: the owner (issue 485, 2026-11-20) wants to see on /admin what each alliance
   - a used-up limit;
   - the features changed;
   - the order and each reason's words.
+
+**Amendment 2026-11-21 (perf panel; D149).** The cost line above no longer holds for the setup steps' marks part: it read the whole `roll_call_marks` table on every view. It now reads each roll call's first mark from `roll_call_marks_call_written_idx` (migration `0066_roll_call_marks_call_written`). The posts part still scans `notice_publishes` and `garrison_plans`: 0.8 ms at 20k notice posts, so they get no index.

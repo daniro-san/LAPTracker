@@ -9,7 +9,7 @@ import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
 import { photosOf, type Photo } from "../queries/photo";
-import { factHistory, type FactRow } from "../repo/member-facts";
+import { factHistorySince, type FactRow } from "../repo/member-facts";
 import { openPendings } from "../repo/pending-members";
 import { anyRoster, namesSeen, type AnyRoster } from "../repo/workspace-any-roster";
 import {
@@ -269,9 +269,23 @@ const order = (a: MemberRow, b: MemberRow) =>
   (b.rankCode ?? 0) - (a.rankCode ?? 0) ||
   (b.might ?? -1) - (a.might ?? -1);
 
-/** Every main squad and AD Tech version of the workspace, for the week's progress (D109). */
-export const progressHistory = (db: Db, access: WorkspaceAccess) =>
-  factHistory(db, access.workspaceId, TREND_FIELDS);
+/**
+ * The main squad and AD Tech versions the week's progress compares (D109), for the thanks week of `now`
+ * (`zone` is SERVER_TZ): those saved from a day before the week's Monday on, and the version before them.
+ * A day of room covers any server zone's offset, and progressOf splits the week by server day itself, so
+ * the thanks are those of the whole history (issue 521, D149).
+ */
+export const progressHistory = (db: Db, access: WorkspaceAccess, now: Date, zone: string) =>
+  factHistorySince(
+    db,
+    access.workspaceId,
+    TREND_FIELDS,
+    new Date(Date.parse(`${thanksWeek(serverDay(now, { SERVER_TZ: zone }))}T00:00:00Z`) - DAY_MS),
+  );
+
+/** The Members tab with the week's progress in its thanks (D109), as Home and Members show it. */
+export const membersWithProgress = (db: Db, access: WorkspaceAccess, now: Date, zone: string) =>
+  progressHistory(db, access, now, zone).then((h) => membersView(db, access, now, zone, h));
 
 /** The Members tab of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function membersView(
@@ -280,8 +294,8 @@ export async function membersView(
   now: Date,
   zone: string,
   /**
-   * Every main squad and AD Tech version (`progressHistory`), passed only by the pages that show the
-   * week's progress (Members, Home); without it `thanks.progress` is empty (D109).
+   * The thanks week's main squad and AD Tech versions (`progressHistory`), passed only by the pages that
+   * show the week's progress (Members, Home); without it `thanks.progress` is empty (D109).
    */
   history?: readonly FactRow[],
 ): Promise<MembersView> {

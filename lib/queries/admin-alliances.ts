@@ -69,7 +69,8 @@ const at = (cell: Date | string | null) => (cell === null ? null : new Date(cell
  * - webhook set: the earliest `saved_at` of its stored channels (a save again moves it later; Remove drops it);
  * - first roll call marked: the first `roll_call_marks` write of its roll calls;
  * - first notice published: the first `notice_publishes` row that went through.
- * The marks part reads the whole marks table once, for all workspaces; the others are small tables.
+ * The marks part reads each roll call's first mark from `roll_call_marks_call_written_idx`, one index probe
+ * a roll call instead of every mark (D149); the others are small tables.
  */
 const SETUP_PARTS = sql.raw(`key_set as (
       select workspace_id, min(changed_at) as at from workspace_key_changes
@@ -81,8 +82,12 @@ const SETUP_PARTS = sql.raw(`key_set as (
       group by workspace_id
     ),
     marked as (
-      select r.workspace_id, min(m.written_at) as at
-      from roll_call_marks m join roll_calls r on r.id = m.roll_call_id
+      select r.workspace_id, min(m.at) as at
+      from roll_calls r cross join lateral (
+        select written_at as at from roll_call_marks
+        where roll_call_id = r.id
+        order by written_at limit 1
+      ) m
       group by r.workspace_id
     ),
     published as (

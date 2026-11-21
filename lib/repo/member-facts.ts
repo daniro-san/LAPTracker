@@ -24,18 +24,56 @@ const columns = {
   writtenAt: memberFacts.writtenAt,
 };
 
-/** The newest version of every field of every member of the workspace. */
+/**
+ * A raw statement's fact row: Postgres sends a bigint as a string, and a time as a Date or a string. The
+ * value goes through the jsonb column's own decoder, as Drizzle's selects do, so a raw read gives the
+ * values factHistory and factVersion give.
+ */
+interface RawFact extends Record<string, unknown> {
+  uid: string | number;
+  field: string;
+  version: number;
+  value: unknown;
+  source: FactRow["source"];
+  written_at: Date | string;
+}
+
+const factOf = (r: RawFact): FactRow => ({
+  uid: Number(r.uid),
+  field: r.field,
+  version: r.version,
+  value: memberFacts.value.mapFromDriverValue(r.value),
+  source: r.source,
+  writtenAt: new Date(r.written_at),
+});
+
+/**
+ * The newest version of every field of every member of the workspace, by member and field. One index
+ * descent per (member, field) on `member_facts_version_unique`, walked backwards: the row before the last
+ * pair's is the newest version of the pair before it. So the read grows with the pairs (about 7 a member),
+ * not with the versions, which the tracker adds nightly (issue 521, D149).
+ */
 export async function latestFacts(db: Db, workspaceId: number): Promise<FactRow[]> {
-  return db
-    .selectDistinctOn([memberFacts.uid, memberFacts.field], columns)
-    .from(memberFacts)
-    .where(eq(memberFacts.workspaceId, workspaceId))
-    .orderBy(memberFacts.uid, memberFacts.field, desc(memberFacts.version));
+  const result = await db.execute<RawFact>(sql`
+    with recursive newest as (
+      (select uid, field, version, value, source, written_at from member_facts
+       where workspace_id = ${workspaceId}
+       order by uid desc, field desc, version desc limit 1)
+      union all
+      select n.* from newest p cross join lateral (
+        select f.uid, f.field, f.version, f.value, f.source, f.written_at from member_facts f
+        where f.workspace_id = ${workspaceId} and (f.uid, f.field) < (p.uid, p.field)
+        order by f.uid desc, f.field desc, f.version desc limit 1
+      ) n
+    )
+    select * from newest order by uid, field`);
+  return result.rows.map(factOf);
 }
 
 /**
  * Every version of `fields` in the workspace (of one member when `uid` is given), oldest first per member
- * and field: the card's change since the previous version and the week's progress (D109).
+ * and field: the card's change since the previous version (D109). The week's progress reads
+ * factHistorySince.
  */
 export async function factHistory(
   db: Db,
@@ -54,6 +92,41 @@ export async function factHistory(
       ),
     )
     .orderBy(memberFacts.uid, memberFacts.field, asc(memberFacts.version));
+}
+
+/**
+ * The versions of `fields` written from `since` on, and for each member and field among them the newest
+ * version written before `since`, ordered as factHistory: what the week's progress compares when the week
+ * starts after `since` (D109). The window goes through `member_facts_workspace_written_idx`, the version
+ * before it through one descent per pair, so the read grows with one week's saves, not with the history
+ * (issue 521, D149).
+ */
+export async function factHistorySince(
+  db: Db,
+  workspaceId: number,
+  fields: readonly string[],
+  since: Date,
+): Promise<FactRow[]> {
+  const at = since.toISOString();
+  const result = await db.execute<RawFact>(sql`
+    with recent as (
+      select uid, field, version, value, source, written_at from member_facts
+      where workspace_id = ${workspaceId} and written_at >= ${at}::timestamptz
+        and field in (${sql.join(
+          fields.map((f) => sql`${f}`),
+          sql`, `,
+        )})
+    )
+    select * from recent
+    union all
+    select b.* from (select distinct uid, field from recent) p cross join lateral (
+      select f.uid, f.field, f.version, f.value, f.source, f.written_at from member_facts f
+      where f.workspace_id = ${workspaceId} and f.uid = p.uid and f.field = p.field
+        and f.written_at < ${at}::timestamptz
+      order by f.version desc limit 1
+    ) b
+    order by uid, field, version`);
+  return result.rows.map(factOf);
 }
 
 /** One field of one member: its newest version, or the version asked for; null when there is none. */
