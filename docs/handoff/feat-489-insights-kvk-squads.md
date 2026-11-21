@@ -124,4 +124,4 @@
 - Measure it with the harness in the scratchpad's `489b-e2e/statdb.mts`. Today the page costs 7.3 transactions and about 1,850 buffer hits per view.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/579
