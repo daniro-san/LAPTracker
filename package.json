@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "check": "prettier --check . && eslint . && tsc --noEmit && vitest run && tsx scripts/check-drift.ts && tsx scripts/i18n-check.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
@@ -47,6 +48,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.15",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.0",
     "@posthog/cli": "0.19.0",
     "@tailwindcss/postcss": "4.3.5",
     "@types/node": "26.6.6",

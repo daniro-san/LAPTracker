@@ -1,0 +1,144 @@
+// The suite's `test` (issue 477): every page in a test runs behind two guards, checked when the test ends.
+// 1. No request leaves this machine: any other host is aborted and fails the test.
+// 2. No private roster field reaches a page it may not (CLAUDE.md "Roster fields", D71): every HTML, JSON and
+//    RSC answer is searched for the seed's sentinels (e2e/fixtures/seed.ts). Public pages and the members'
+//    board show none. A workspace's desk shows only its own alliance's: joined_at on its pages (the Members
+//    copy for a spreadsheet carries it; D71 keeps x, y, online and last_online_at out of copies), and the map
+//    position and last online only in an officer's member card (/api/w/<slug>/members/<uid>, read when the
+//    card opens). No answer carries the photo URL, and a private answer of one workspace never names the
+//    other's members.
+import { test as base, expect, type BrowserContext, type Page, type Response } from "@playwright/test";
+
+import { BASE_URL } from "../env";
+import { ALLIANCES, AVATAR_SENTINEL, SENTINELS, TOKENS, type Side } from "./seed";
+
+const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost"]);
+const HOST = new URL(BASE_URL).hostname;
+const SIDES = ["a", "b"] as const;
+const other = (side: Side): Side => (side === "a" ? "b" : "a");
+
+/** A sentinel standing alone, not inside a longer number or word (a chunk name such as "x2088y"). */
+const alone = (re: string) => new RegExp(`(?<![\\w.,])${re}(?![\\w])`);
+/** A six-digit coordinate as sent or as printed with a thousands separator ("713,579", "713 579"). */
+const coordinate = (n: number) => alone(String(n).replace(/^(\d{3})/, "$1[,.\\s\\u00a0\\u202f]?"));
+/** Both alliances' last online fall on 29 February, which the card prints without the year (EN, PT, FR). */
+const FORMATTED_LAST_ONLINE = /\bFeb 29\b|\b29 Feb\b|\b29 de fev|\b29 févr/i;
+
+function sentinelPatterns(side: Side): [string, RegExp][] {
+  const s = SENTINELS[side];
+  return [
+    ["x", coordinate(s.x)],
+    ["y", coordinate(s.y)],
+    ["last_online_at", alone(s.lastOnline.slice(0, 4))],
+    ["joined_at", alone(s.joined.slice(0, 4))],
+  ];
+}
+
+const slugOf = (side: Side) => ALLIANCES[side].slug;
+
+/** The own alliance's fields an answer from `path` may carry, and whose they are; none for any other path. */
+function allowedAt(path: string): { side: Side; fields: string[] } | null {
+  for (const side of SIDES) {
+    const slug = slugOf(side);
+    if (new RegExp(`^/api/w/${slug}/members/\\d+$`).test(path)) {
+      return { side, fields: ["x", "y", "last_online_at", "joined_at"] };
+    }
+    if (new RegExp(`^(/api)?/w/${slug}(/|$)`).test(path) && !path.startsWith(`/w/${slug}/board`)) {
+      return { side, fields: ["joined_at"] };
+    }
+  }
+  return null;
+}
+
+/** Which private fields of whose show in `body`, an answer from `url`. */
+export function leaksIn(url: string, body: string): string[] {
+  const path = new URL(url).pathname;
+  const found: string[] = body.includes(AVATAR_SENTINEL) ? ["avatar_url"] : [];
+  const allowed = allowedAt(path);
+  for (const side of SIDES) {
+    for (const [field, re] of sentinelPatterns(side)) {
+      const own = allowed?.side === side && allowed.fields.includes(field);
+      if (!own && re.test(body)) found.push(`${side}.${field}`);
+    }
+  }
+  if (!allowed?.fields.includes("last_online_at") && FORMATTED_LAST_ONLINE.test(body)) {
+    found.push("last_online_at (as printed)");
+  }
+  return [...found, ...otherMembersIn(path, body)];
+}
+
+/** On one workspace's private path, the other workspace's member names found in `body`. */
+function otherMembersIn(path: string, body: string): string[] {
+  const privateOf = SIDES.find((s) => new RegExp(`^(/api)?/w/${slugOf(s)}(/|$)`).test(path));
+  return privateOf ? ALLIANCES[other(privateOf)].names.filter((name) => body.includes(name)) : [];
+}
+
+const SCANNED = /text\/html|application\/json|text\/x-component/;
+
+/**
+ * Adds the session cookie of `side`'s officer or member, as a sign-in through Discord would (D131); `name`
+ * puts the token under another cookie name, as a forged cookie would.
+ */
+export async function signIn(
+  context: BrowserContext,
+  side: Side,
+  tier: "officer" | "member",
+  name = `__Host-lap_ws.${ALLIANCES[side].slug}`,
+) {
+  await context.addCookies([
+    {
+      name,
+      value: TOKENS[side][tier],
+      // A domain, not a url: Playwright drops Secure from a cookie given an http url, and a __Host- cookie
+      // without Secure is refused.
+      domain: HOST,
+      path: "/",
+      secure: true,
+      httpOnly: true,
+      sameSite: "Lax",
+    },
+    // The first-use steps (D73) and the desk language, as a returning officer has them.
+    { name: "lap_ws_intro", value: "1", domain: HOST, path: "/" },
+    { name: "lap_ws_lang", value: "en", domain: HOST, path: "/" },
+  ]);
+}
+
+/** Waits until the page's scripts have loaded: a tap on a server-drawn button before hydration does nothing. */
+export const hydrated = (page: Page) => page.waitForLoadState("networkidle");
+
+export const test = base.extend<{ guards: undefined }>({
+  guards: [
+    async ({ context }, use) => {
+      const outbound: string[] = [];
+      const leaks: string[] = [];
+      const reads: Promise<void>[] = [];
+      await context.route("**/*", (route) => {
+        const url = new URL(route.request().url());
+        if (LOCAL_HOSTS.has(url.hostname)) return route.continue();
+        outbound.push(url.host);
+        return route.abort("blockedbyclient");
+      });
+      const scan = (response: Response) => {
+        if (!SCANNED.test(response.headers()["content-type"] ?? "")) return;
+        reads.push(
+          response.text().then(
+            (body) => {
+              leaks.push(...leaksIn(response.url(), body).map((l) => `${l} in ${response.url()}`));
+            },
+            // A redirect, or a page navigated away from, has no body to read.
+            () => undefined,
+          ),
+        );
+      };
+      context.on("response", scan);
+      await use(undefined);
+      context.off("response", scan);
+      await Promise.all(reads);
+      expect(outbound, "requests that left this machine").toEqual([]);
+      expect(leaks, "private roster fields in an answer").toEqual([]);
+    },
+    { auto: true },
+  ],
+});
+
+export { expect };

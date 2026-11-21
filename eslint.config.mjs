@@ -67,6 +67,8 @@ export default defineConfig(
       "next-env.d.ts",
       "fixtures/**",
       "coverage/**",
+      "test-results/**",
+      "playwright-report/**",
       ".claude/worktrees/**",
     ],
   },
@@ -181,7 +183,7 @@ export default defineConfig(
     rules: { "max-lines": "off" },
   },
   {
-    files: ["scripts/**/*.mjs", "*.config.mjs"],
+    files: ["scripts/**/*.mjs", "e2e/**/*.mjs", "*.config.mjs"],
     languageOptions: { globals: { process: "readonly", console: "readonly" } },
   },
 );
