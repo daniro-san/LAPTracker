@@ -46,6 +46,12 @@ Read by `/code-review` and by `/pr-review` (through `.claude/pr-review.md`) on e
 - [ ] Session replay: text under `/w` and `/admin` is masked by the layout's `ph-mask`; per-member values such as bars also need `ph-no-capture` (issue 549, D142).
 - [ ] Every route behind `requireWorkspace` answers a request without a usable session with `401 signed_out` (D99); errors are codes only.
 
+## Performance, copy and people (CONTRIBUTING.md § Working rules, DESIGN.md § Validation)
+
+- [ ] Does the change make the night read, Raid prep, member cards right after a read, or the status bar while a read runs any staler? Does a read of a table that grows forever take a window or an index (D149)?
+- [ ] A cut or changed user-facing string that a decision quotes carries a dated amendment to that decision.
+- [ ] Nothing ranks people, counts missing data against anyone, or acts on its own (D75).
+
 ## Tests
 
 - [ ] Tests that assert the wrong thing or pass vacuously (e.g. a detector that never sees a positive case, a mock that makes the assertion trivially true).

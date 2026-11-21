@@ -17,13 +17,13 @@
   - It reads `session_id` and `stop_hook_active` from the payload and counts consecutive blocks in `$TMPDIR/laptracker-stop-check-<session>`. When the third stop in a row still fails (two fix rounds), it exits 0 with a "stop and report" message. Before, it blocked without end.
 - `lefthook.yml`: a new pre-commit job, `branch`, refuses a commit on `dev` or `main`.
 - `.claude/settings.json`
-  - Deny: pushes to `main` and `dev` in every form tested (see Verified); force pushes with the flag anywhere; `gh pr create` with base `main`; `gh api … base=main`, `pulls/*/merge` and `dispatches`; `gh workflow run tick*`.
+  - Deny: pushes to `main` and `dev` in every form tested, force included (see Verified); `gh pr create` with base `main`; `gh api … base=main`, `pulls/*/merge` and `dispatches`; `gh workflow run tick*`.
   - Deny `curl` to `*api/quota*` and to prod `/api/tick` and `/api/snapshot`.
   - Deny `Read` of `.env`, `.env.local`, `.env.*.local`, `.env.development*`, `.env.preview*` and `.env.production*` anywhere (`//**/`). `.env.example` stays readable.
-  - Deny `pnpm dlx`, `pnpm exec node`, `pnpm node`, `pnpm db:seed`, `pnpm db:migrate`, `pnpm discord:register`, `drizzle-kit push`, and `rm -fr`.
+  - Deny `pnpm dlx`, `pnpm exec node`, `pnpm node`, `pnpm db:seed`, `pnpm discord:register`, `drizzle-kit push`, and `rm -fr`.
   - `curl` allows are narrowed to `http://localhost:*`, `http://127.0.0.1:*` and `https://laptracker-inky.vercel.app/*`, so `localhost.evil.tld` no longer matches.
   - `gh api` allows: `repos/daniro-san/LAPTracker/*` and the run-approve call.
-  - `gh pr` allows: `create`, `view`, `diff`, `checks`, `list` and `comment`. `merge` now prompts.
+  - `gh pr` allows: `create`, `view`, `diff`, `checks`, `list`, `comment`, and `merge` with `--squash` or `--merge`.
   - `gh workflow` allows: `list`, `view` and `run release-prepare.yml`.
   - Also allowed: `gh issue view` / `list` and `git push origin HEAD:refs/heads/*`.
 - `REVIEW.md`
@@ -39,6 +39,17 @@
 - `.claude/rules/private.md` (new)
   - Path-scoped to `lib/private/**`, `app/?private?/**`, `lib/repo/me.ts`, `lib/repo/workspace-rosters.ts` and `lib/push-tick.ts`.
   - A per-field table, "where they may go" (the D142 page only for members), and "where they must never go": logs, `run_logs`, `app_errors`, Discord, AI and translation, shared caches, copies and exports, analytics, replay masking, fixtures.
+- **Rules moved out of the orchestrator's local memory** (owner, 2026-11-21). They are written generically, with no real people, ids or private details:
+  - `CONTRIBUTING.md` § Working rules (new): closing issues, review depth by risk, review findings as input, visible value first and "fix a red `dev` first", perf guardrails, copy and decision quotes, public-repo invented data, feature flags, local processes by PID, worktree installs, the new-alliance guide screenshots.
+  - `CONTRIBUTING.md`, other sections: patch-note shape in release step 1; CI once per PR (#444); the memory line.
+  - `docs/DESIGN.md` § Validation (new): people first (D75), design freedom, three checks before a design change (personas, PostHog usage, product), a product persona in every panel, the officer panel in generic terms, real data local only, the UX review widths.
+  - `REVIEW.md`: a perf / copy / people section.
+  - `CLAUDE.md`: never read the game client or its traffic (game terms §6), plus a one-line pointer to the two new sections.
+- **Settings changes after the coordinator's review.**
+  - Force pushes are denied only toward `dev` and `main`, through the target patterns: `* main`, `:main`, `:refs/heads/main`, `+main`, ` refs/heads/main`, the same for `dev`, plus `--all` and `--mirror`.
+  - `pnpm db:migrate` is allowed again (QA runs local migrations; production migrates in the Vercel build).
+  - `gh pr merge * --squash*` and `gh pr merge * --merge*` are allowed.
+- **CONTRIBUTING release steps.** Step 2: CI runs once per PR, not on pushes to `dev`. Step 4: the release PR's `check` waits for approval because a workflow opened it; approve, then merge.
 - `docs/IMPLEMENTATION_PLAN.md` §11.4 (owner's explicit permission, 2026-11-21, for this one edit): the permissions bullet no longer allows `git push origin main`. It now says there is no push or commit to `main` or `dev`, PRs go into `dev`, and `main` changes only through the release-prepare PR. The edit is marked "(corrected 2026-11-21, owner)". Nothing else in the plan changed.
 - `docs/decisions/README.md`: the next number is the highest `D*` on the latest `origin/dev` plus one. There are no reserved ranges. A rebase collision renumbers yours.
 - `CONTRIBUTING.md`
@@ -52,7 +63,7 @@
 - **`app/?private?/**` instead of `app/(private)/**`.** picomatch 4.0.7 reads `(private)` as a regex group: it does not match `app/(private)/w/[slug]/page.tsx` and does match `app/private/x.ts`. minimatch 10.2.6 reads it literally. `?private?` matches the real paths in both.
 - **`.env.example` stays readable.** The task said `Read(./.env*)`, but CONTRIBUTING tells agents to add every new variable to the template. The denies list the secret names instead and use `//**/` so they cover the main checkout from a worktree too (`./` resolves against the cwd).
 - **The stop hook counts rounds per session in `$TMPDIR`.** That is the only way to honour "stop after two fix rounds" with a hook that blocks. The count resets when a check passes or a stop arrives with `stop_hook_active: false`.
-- **`gh pr merge` now prompts for every agent.** The orchestrator merges, so it needs its own allow in local settings or bypass mode. A project allow would let every build agent merge, including the release PR.
+- **Force-push denies name the target, not the flag.** The suggested `*--force* *main*` would also deny `--force-with-lease … HEAD:refs/heads/fix/main-menu`. The plain `main`/`dev` patterns already catch every force form, because `*` absorbs the flags, so only `+main`, ` refs/heads/main`, `--all` and `--mirror` were added.
 - **`pnpm exec` stays allowed.** Agents run `pnpm exec prettier` and `pnpm exec eslint`. Only `pnpm exec node` is denied.
 
 ## Deviations
@@ -79,7 +90,12 @@
 - **Permission rules**, simulated with `*` = any characters and the whole command anchored:
   - Denied: `git push origin main`, `HEAD:main`, `HEAD:refs/heads/main`, `--force origin main`, `main --force`, `-u origin main`; the same forms for `dev`; `--force-with-lease … HEAD:dev`; `gh pr create --base main`, `… --base main` after other flags, `-B main`; `gh api … -f base=main`; `gh api …/pulls/12/merge -X PUT`; `gh workflow run tick.yml`; curl to `/api/quota` (local) and prod `/api/tick`; `pnpm exec node`; `pnpm db:seed`; `rm -fr`.
   - Allowed: `git push origin HEAD:refs/heads/chore/harness-gaps`, `…/fix/main-menu`, `…/feat/dev-tools`, `… --follow-tags`; `git push -u origin HEAD`; `gh pr create --base dev`; the run-approve call; `gh workflow run release-prepare.yml`; curl to `localhost:3000` and the prod site; `pnpm check`, `pnpm exec prettier`, `pnpm db:local:seed`, `pnpm vitest related`; `gh issue view`.
-  - Prompt: `curl http://localhost.evil.tld`, `curl https://laptracker-inky.vercel.app.evil.tld/`, `gh pr merge`.
+  - Prompt: `curl http://localhost.evil.tld`, `curl https://laptracker-inky.vercel.app.evil.tld/`.
+- Second pass, after the coordinator's changes:
+  - Not denied: `git push -q --force-with-lease origin HEAD:refs/heads/fix/x`, `--force … chore/harness-gaps`, `-f … fix/x`, `--force-with-lease … fix/main-menu` and `… feat/dev-tools`, `+HEAD:refs/heads/fix/x`.
+  - Denied: `--force origin main`, `-f origin main`, `--force-with-lease … HEAD:main`, `… HEAD:refs/heads/main`, `main --force`, `+main`, `+HEAD:main`, `--force … refs/heads/main`; the same forms for `dev`; `--force --all`; `--mirror`.
+  - Allowed: `pnpm db:migrate`, `gh pr merge N --squash --delete-branch`, `gh pr merge N --merge`.
+  - Still denied: `gh api …/pulls/12/merge -X PUT`.
 - **Glob test** (picomatch 4.0.7, minimatch 10.2.6): `app/?private?/**` matches `app/(private)/w/[slug]/page.tsx` and `app/(private)/api/w/[slug]/me/route.ts`, and does not match `app/private/x.ts`.
 - **Commands.** `pnpm vitest related --run lib/queries/blocked-keys.ts`: 36 files, 201 tests passed. `.claude/settings.json` parses. `node_modules/next/dist/docs/` exists in next 16.4.5, and `next.config.ts` keeps `agentRules: false`.
 - **`pnpm check`**, run before and after the review fixes: exit 0 both times. 295 test files and 1,527 tests passed (2 files and 4 tests skipped); prettier, eslint, tsc, check-drift ("No schema changes") and i18n (17 languages current) were clean. The later CLAUDE.md, plan and handoff edits are in `.prettierignore` and run no code.
@@ -104,7 +120,6 @@
 
 - **`docs/IMPLEMENTATION_PLAN.md` §11.4, the parts not about branches.** The permissions line still lists plain `curl` and `gh api` as allowed, and its `pnpm check` line leaves out `check-drift` and `i18n-check`. The owner's permission covered only the push and branch wording, so these were left as they are.
 - **CLAUDE.md vs D115 on `app_errors`.** CLAUDE.md says the private fields never go to `app_errors`. D115 says `app_errors.detail` keeps message, stack and cause "because a message may be built from private data". This change kept the stricter CLAUDE.md rule. The owner should decide which holds.
-- **CONTRIBUTING release step 2** says to wait for a green `check` on the last push to `dev`. Since #444, CI runs on `pull_request` and `workflow_dispatch` only.
 - **docs/decisions/README.md** says entries are append-only, but D76, D99, D142 and D143 carry dated amendments in place. The README should say which way is current.
 - **`docs/SESSION_PLAYBOOK.md`** lines 161, 167 and 170 hold an old copy of the rules. CLAUDE.md now says it wins.
 
@@ -130,6 +145,6 @@ What was missing from the task prompt? The path-scoped rule matcher is not docum
 - Scope `api-routes.md` to `app/(private)/api/**` too.
 - Optionally add a PreToolUse hook that refuses Bash commands naming secret `.env` files, plus a `SubagentStop` gate for worktree agents.
 - When a pr-review version with `--learn` is installed, run it and add matching proposals under `## Learned review rules` in `.claude/pr-review.md`.
-- Update the "decision-number-ranges" memory entry: the repo now says there are no reserved ranges.
+- Orchestrator: mark the memory notes moved into the repo as "now in the repo", and fix the stale ones (see the report table).
 
 PR: (added by the orchestrator)
