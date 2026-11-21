@@ -141,4 +141,4 @@
 - Measured: repeat views of `/alliances`, `/players`, `/players?q=` and `/players/[uid]` are 0 statements; `/` and `/events/[id]` are 10.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/537
