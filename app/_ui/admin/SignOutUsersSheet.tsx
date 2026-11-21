@@ -63,15 +63,17 @@ function PersonList(props: {
   return (
     <div className="grid gap-2">
       {props.people.length > SEARCH_FROM && (
-        <input
-          type="search"
-          aria-label={s.search}
-          placeholder={s.search}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoComplete="off"
-          className={`${FIELD} text-base`}
-        />
+        // A label that stays on screen, not a placeholder (issue 585).
+        <label className="block">
+          <span className="block text-sm font-semibold">{s.search}</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoComplete="off"
+            className={`${FIELD} mt-1 text-base`}
+          />
+        </label>
       )}
       {shown.length === 0 && <p className="text-body-sm text-ink/70">{s.noMatch}</p>}
       {shown.map((p) => (

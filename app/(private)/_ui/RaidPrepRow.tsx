@@ -93,8 +93,11 @@ function MessageBox(props: { text: string; head: string; name: string; words: Ro
         {/* Each tile's "Message" is named for screen readers: "Message for Ana" (panel review, issue 585). */}
         <span className="sr-only">{` ${fill(props.words["roll.prep.messageTo"], { name: isolate(props.name) })}`}</span>
       </summary>
-      <p className="text-body-sm text-ink/80">{props.head}</p>
-      <textarea readOnly value={props.text} rows={3} className={`${FIELD} mt-1 text-[16px]`} />
+      {/* The heading is the box's visible label (issue 585). */}
+      <label className="block">
+        <span className="block text-body-sm text-ink/80">{props.head}</span>
+        <textarea readOnly value={props.text} rows={3} className={`${FIELD} mt-1 text-[16px]`} />
+      </label>
       <button type="button" onClick={() => void copy()} className={`${chip()} mt-1`}>
         {props.words[copied ? "roll.prep.copied" : "roll.prep.copy"]}
       </button>

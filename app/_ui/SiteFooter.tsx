@@ -33,10 +33,10 @@ export function SiteFooter({
           {copy.site.signInFooter}
         </a>
       </p>
-      <p className="mt-1 ml-auto max-w-[60ch] text-right text-xs text-ink/65">
+      <p className="mt-1 ml-auto max-w-[60ch] text-right text-xs text-ink/70">
         {copy.site.disclaimerShort}
       </p>
-      <details className="ml-auto max-w-[60ch] text-right text-xs text-ink/65">
+      <details className="ml-auto max-w-[60ch] text-right text-xs text-ink/70">
         <summary className="text-button ml-auto flex min-h-11 w-fit min-w-11 items-center justify-end underline underline-offset-2">
           {copy.site.disclaimerMore}
         </summary>
@@ -44,7 +44,7 @@ export function SiteFooter({
       </details>
       {/* Only where the analytics question exists: production with POSTHOG_KEY (D77, D115). */}
       {choices && analyticsKey(process.env) && <AnalyticsChoices label={copy.consent.choices} />}
-      <p className="mt-1 text-right text-xs text-ink/65 tabular-nums">
+      <p className="mt-1 text-right text-xs text-ink/70 tabular-nums">
         {process.env.BUILD_VERSION}
       </p>
       {ornament === "granny" ? (

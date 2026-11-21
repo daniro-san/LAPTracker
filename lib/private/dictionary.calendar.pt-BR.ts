@@ -18,6 +18,8 @@ export const calendarPt: CalendarWords = {
   "calendar.yours": "{time} sua hora",
   "calendar.nextDay": "+1 d",
   "calendar.prevDay": "−1 d",
+  "calendar.started": "Começou",
+  "calendar.ended": "Encerrado",
   "calendar.nothing": "Nada planejado.",
   "calendar.add": "Adicionar um evento",
   "calendar.edit": "Editar",

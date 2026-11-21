@@ -10,7 +10,7 @@ export function NoData({ label }: { label: string }) {
   return (
     <span
       title={label}
-      className="inline-flex min-w-[2ch] items-center justify-center align-[-0.125em] text-ink/60"
+      className="inline-flex min-w-[2ch] items-center justify-center align-[-0.125em] text-ink/70"
     >
       <svg
         aria-hidden="true"

@@ -3,17 +3,11 @@
 // The Calendar tab's week, day by day (issue 300): every entry with its server time (ST) and the officer's
 // own time, its tags, Edit and Delete; "Add an event" opens the same sheet empty. The page opens at the top,
 // with "Add an event" and "Today ↓" in its head row (owner, issue 412 UX pass); only an address that names a
-// day (#d-<day>) or an Undo line scrolls. Entries already started are greyed. The page reads again when it
-// comes back into view (owner rule, issue 293: freshness without realtime).
+// day (#d-<day>) or an Undo line scrolls. An entry whose time has come carries "Started", then "Ended", at
+// full contrast (issue 585; it was greyed). The page reads again when it comes back into view (owner rule,
+// issue 293: freshness without realtime).
 import { useRouter } from "next/navigation";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
@@ -25,6 +19,7 @@ import type { Feature } from "@/lib/workspace-features";
 import type { AgendaDay, AgendaItem, CalendarSheetWords } from "./calendar-data";
 import { HeadRow } from "./CalendarHead";
 import { DeleteArea, EntryUndoLine, type DeletedEntry } from "./DeleteArea";
+import { Ended } from "./Ended";
 import { EntryForm, type FormProps } from "./EntryForm";
 import { Times } from "./YourTime";
 
@@ -42,16 +37,6 @@ export function useFreshOnReturn() {
 
 /** The features turned off for the workspace (D126): their links are left out of the week. */
 const Off = createContext<readonly Feature[]>([]);
-
-let loadedAt: number | null = null;
-const subscribe = () => () => {};
-/** When the page loaded in the browser; null on the server and during hydration (no mismatch). */
-const useLoadedAt = () =>
-  useSyncExternalStore(
-    subscribe,
-    () => (loadedAt ??= Date.now()),
-    () => null,
-  );
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
@@ -137,17 +122,28 @@ function Item(props: {
   onDone: () => void;
 }) {
   const { item, words } = props;
-  const now = useLoadedAt();
-  const past = now !== null && item.at !== null && item.at < now;
   return (
-    <li className={`flex items-start gap-3 border-t border-rule py-3 ${past ? "opacity-60" : ""}`}>
+    <li className="flex items-start gap-3 border-t border-rule py-3">
       <div className="min-w-0 flex-1">
         {item.st && item.at !== null && (
           <p className="text-body-sm">
             <Times st={item.st} at={item.at} day={item.day} words={words} />
           </p>
         )}
-        <p className="font-semibold">{item.title}</p>
+        <p>
+          {item.at === null ? (
+            <span className="font-semibold">{item.title}</span>
+          ) : (
+            <Ended
+              at={item.at}
+              end={item.end}
+              words={{ started: words["calendar.started"], ended: words["calendar.ended"] }}
+              bold
+            >
+              {item.title}
+            </Ended>
+          )}
+        </p>
         <Roles item={item} words={words} slug={props.slug} />
         {item.notes && <p className="text-body-sm whitespace-pre-line text-ink/85">{item.notes}</p>}
         <EntryLinks item={item} words={words} slug={props.slug} />

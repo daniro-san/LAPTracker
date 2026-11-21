@@ -37,7 +37,14 @@ beforeAll(async () => {
   await add({ kind: "other", day: "2026-11-21", minute: 600, title: "Rally", forMembers: true });
   const view = await boardView(db, member, TODAY);
   html = renderToStaticMarkup(
-    createElement(Week, { t, language: "en", today: TODAY, entries: view.entries, notices: [] }),
+    createElement(Week, {
+      t,
+      language: "en",
+      today: TODAY,
+      entries: view.entries,
+      notices: [],
+      now: NOW.getTime(),
+    }),
   );
 });
 

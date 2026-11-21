@@ -170,12 +170,12 @@ export function SearchBar(props: {
   return (
     // `data-sticky-search` gives the page its scroll-padding-top (globals.css, issue 585).
     <div data-sticky-search className="sticky top-0 z-[5] mt-2 flex items-end gap-2 bg-paper py-2">
+      {/* A label that stays on screen, not a placeholder (issue 585). */}
       <label className="min-w-0 flex-1">
-        <span className="sr-only">{words["roll.search"]}</span>
+        <span className="block text-body-sm font-semibold">{words["roll.search"]}</span>
         <input
           type="search"
           autoComplete="off"
-          placeholder={words["roll.search"]}
           value={props.q}
           onChange={(e) => props.onQ(e.target.value)}
           className={FIELD}

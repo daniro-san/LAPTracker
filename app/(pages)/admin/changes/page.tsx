@@ -139,10 +139,10 @@ function Release({ note, open, clock }: { note: PatchNote; open: boolean; clock:
 
 export default async function ChangesPage() {
   // Session first (issue 218): locked, the PIN card.
-  if (!(await isAdmin())) return <AdminShell title={t.title} />;
+  if (!(await isAdmin())) return <AdminShell section="/admin/changes" title={t.title} />;
   const clock = await requestServerClock();
   return (
-    <AdminShell title={t.title}>
+    <AdminShell section="/admin/changes" title={t.title}>
       <Todo />
       <AdminSection id="releases" title={t.releases.title} help={t.releases.help}>
         <ul className="flex flex-col gap-3">

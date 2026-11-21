@@ -66,7 +66,7 @@ describe("the member card's squads (D117)", () => {
     // 20:00 UTC is 18:00 on the server's clock (UTC−2).
     expect(html).toContain("seen Mon, Nov 16 18:00 ST");
     // How old the sighting is when the card is made (the page is made at 12:00 UTC on the 17th).
-    expect(html).toMatch(/ · 16\sh ago/);
+    expect(html).toMatch(/ · (<span[^>]*>)?16\sh ago/);
     expect(html).toContain('class="font-semibold text-rarity-ur">UR<');
     expect(html).toContain('class="font-semibold text-rarity-sr">SR<');
     expect(html).toContain('src="/img/hero/10005"');

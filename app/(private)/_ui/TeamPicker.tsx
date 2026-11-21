@@ -136,12 +136,12 @@ function TopBar(props: {
         )}
       </div>
       {s.line && <RefusalLine text={s.line} className="text-body-sm font-semibold" />}
+      {/* A label that stays on screen, not a placeholder (issue 585). */}
       <label className="mt-2 block">
-        <span className="sr-only">{words["roll.search"]}</span>
+        <span className="block text-body-sm font-semibold">{words["roll.search"]}</span>
         <input
           type="search"
           autoComplete="off"
-          placeholder={words["roll.search"]}
           value={props.q}
           onChange={(e) => props.onQ(e.target.value)}
           className={FIELD}

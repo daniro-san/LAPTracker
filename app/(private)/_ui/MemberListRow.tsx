@@ -48,24 +48,21 @@ const rowButton = (props: RowProps) => ({
 
 /** One width with or without a game frame, so the names line up. */
 const Photo = ({ row }: { row: ListRow }) => (
-  <span className="flex w-[51px] shrink-0 justify-center">
+  <span className="flex w-[51px] shrink-0 justify-center self-start">
     <PlayerAvatar uid={row.uid} photo={row.photo} />
   </span>
 );
 
-/** The status and its evidence on one line, under the numbers too (the full text is in the sheet); what a
- * filter or the search shows has its own line, never cut. In the table's name cell the status wraps: a
- * cell grows to its text, so a cut line would widen the table instead. */
-function Lines(props: RowProps & { wrap?: boolean }) {
+/** The status and its evidence, under the numbers too, and what a filter or the search shows: each wraps and is
+ * never cut (issue 585: a cut reason hid the part an officer needs). */
+function Lines(props: RowProps) {
   const { row } = props;
   const extra = [props.was, props.toAsk, props.theirTime].filter((x) => x !== null);
   return (
     <>
       {row.statusLine && (
         // ph-no-capture (issue 549): "No daily quests on {day}" and the other reasons never reach replay.
-        <span
-          className={`ph-no-capture ${props.wrap ? "text-pretty" : "truncate"} text-body-sm ${STATUS_TONE[row.status]}`}
-        >
+        <span className={`ph-no-capture text-pretty text-body-sm ${STATUS_TONE[row.status]}`}>
           {row.statusLine}
         </span>
       )}
@@ -88,7 +85,7 @@ export function MemberListRow(props: RowProps) {
           <span translate="no" className="shrink-0 text-body-sm text-ink/70">
             {row.rankShort}
           </span>
-          <span translate="no" className="min-w-0 flex-1 truncate font-semibold">
+          <span translate="no" className="min-w-0 flex-1 font-semibold break-words">
             {row.name}
           </span>
           <span
@@ -124,7 +121,7 @@ export function MemberCell(props: RowProps) {
             {row.name}
           </span>
         </span>
-        <Lines {...props} wrap />
+        <Lines {...props} />
       </span>
     </button>
   );

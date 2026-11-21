@@ -5,7 +5,7 @@ import { fill, isolate } from "../copy";
 import type { Conflict } from "./calendar";
 import type { EntryRow } from "./calendar-model";
 import { ELIXIR_MINUTES } from "./calendar-model";
-import { hhmm, weekDays } from "./calendar-time";
+import { addDays, hhmm, weekDays, zonedInstant } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { CalendarKey } from "./dictionary.calendar";
 
@@ -65,6 +65,17 @@ export function stOf(kind: string, minute: number, t: WorkspaceDictionary): stri
   return kind === "elixir"
     ? fill(t["calendar.stRange"], { from: hhmm(minute), to: hhmm(minute + ELIXIR_MINUTES) })
     : fill(t["calendar.st"], { time: hhmm(minute) });
+}
+
+/**
+ * When an event is surely over (epoch ms), for "Ended" (issue 585): an Elixir Scramble window's own end;
+ * any other entry has only a start, so the end of its server day. Between the start and this it is
+ * "Started".
+ */
+export function endOf(kind: string, day: string, minute: number | null, zone: string): number {
+  return kind === "elixir" && minute !== null
+    ? zonedInstant(day, minute + ELIXIR_MINUTES, zone)
+    : zonedInstant(addDays(day, 1), 0, zone);
 }
 
 const UNITS = [

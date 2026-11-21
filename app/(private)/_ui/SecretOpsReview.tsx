@@ -46,7 +46,7 @@ function EntryCard(props: {
   const kind = row.entry?.kind ?? null;
   const at = row.entry?.at;
   return (
-    <li className={`border border-rule px-3 py-3 ${entry.dropped ? "opacity-60" : ""}`}>
+    <li className={`border border-rule px-3 py-3 ${entry.dropped ? "border-dashed" : ""}`}>
       <p className="text-body-sm">
         {w[kind ? KIND_WORD[kind] : "shots.entry.unknown"]}
         {at && ` · ${fillIn(w["shots.at"], { at })}`}

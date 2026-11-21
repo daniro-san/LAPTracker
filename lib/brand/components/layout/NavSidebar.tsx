@@ -39,7 +39,7 @@ export function NavSidebar({
                 <span
                   aria-disabled="true"
                   aria-label={`${entry.label} (${soon})`}
-                  className={`${box} text-ink/55`}
+                  className={`${box} text-ink/70`}
                 >
                   {inside}
                 </span>

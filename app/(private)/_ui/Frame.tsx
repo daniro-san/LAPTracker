@@ -68,7 +68,7 @@ export async function Frame({
    * `on`: the features on for the workspace, so a turned-off destination is left out (D126). */
   tabs?: {
     slug: string;
-    current: TabId;
+    current: TabId | null;
     view?: DeskView;
     waiting: number;
     on: ReadonlySet<Feature>;
@@ -161,8 +161,9 @@ export function SignedInFrame({
   access: WorkspaceAccess;
   language: WorkspaceLanguage;
   t: WorkspaceDictionary;
-  /** The open destination, or one of its views (its destination is open, and the view marked). */
-  current: TabId | DeskView;
+  /** The open destination, or one of its views (its destination is open, and the view marked); null on a
+   * page that is none of them (Alliance settings, Start here), so no tab claims to be the page (issue 585). */
+  current: TabId | DeskView | null;
   waiting: number;
   /** Laid out for the wider widths (D122); see `Frame`. */
   wide?: boolean;
@@ -171,8 +172,8 @@ export function SignedInFrame({
   keyShown?: boolean;
   children: ReactNode;
 }) {
-  const view = at in VIEW_TAB ? (at as DeskView) : undefined;
-  const current = view ? VIEW_TAB[view] : (at as TabId);
+  const view = at !== null && at in VIEW_TAB ? (at as DeskView) : undefined;
+  const current = view ? VIEW_TAB[view] : (at as TabId | null);
   const { alliance } = access;
   const person = analyticsPerson(getEnv(), {
     userId: access.user.id,

@@ -19,6 +19,8 @@ export const calendarEn = {
   "calendar.yours": "{time} your time",
   "calendar.nextDay": "+1 d",
   "calendar.prevDay": "−1 d",
+  "calendar.started": "Started",
+  "calendar.ended": "Ended",
   "calendar.nothing": "Nothing planned.",
   "calendar.add": "Add an event",
   "calendar.edit": "Edit",

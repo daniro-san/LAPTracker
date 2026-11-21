@@ -70,7 +70,7 @@ export interface NavEntry {
  */
 export function sidebarEntries(
   items: readonly NavItem[],
-  current: string,
+  current: string | null,
   view?: string,
 ): NavEntry[] {
   return items.flatMap((item) => {

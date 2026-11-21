@@ -7,6 +7,7 @@ const item = (key: string, iso: string, day: string): NextItem => ({
   title: key,
   st: "",
   at: Date.parse(iso),
+  end: Date.parse(iso),
   day,
   href: "",
 });

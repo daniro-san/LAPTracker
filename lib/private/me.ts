@@ -10,7 +10,8 @@ import { heroNames } from "../repo/hero-catalog";
 import { mightBeforeEvent, ownDays, ownMarks, ownSeats, ownTeam } from "../repo/me";
 import { squadPairs } from "../repo/squads";
 import type { MeAccess } from "./access";
-import { addDays, dayIn, mondayOf } from "./calendar-time";
+import { addDays, dayIn, mondayOf, zonedInstant } from "./calendar-time";
+import { endOf } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import {
   neededLines,
@@ -18,6 +19,7 @@ import {
   seriesOf,
   weekCard,
   PROGRESS_DAYS,
+  type NeededLine,
   type Series,
 } from "./me-parts";
 import { cardFormats } from "./member-card";
@@ -35,7 +37,7 @@ export type MeView =
       progress: { might: Series | null; kills: Series | null; kvk: string | null };
       week: DaysCard | null;
       squads: SquadsCard;
-      needed: string[];
+      needed: NeededLine[];
     };
 
 /** The member's own page in `language`; `today` is the server day. */
@@ -74,6 +76,10 @@ export async function meView(
     },
     week: weekCard(days, today, t, d),
     squads: { ...squadsCardOf(pairs, heroes, t, f), none: t["me.squads.none"] },
-    needed: neededLines({ team, seats, marks }, week, t, d.date),
+    // An event with no time of its own starts and ends with its day, so it is only ever "Ended".
+    needed: neededLines({ team, seats, marks }, week, t, d.date, (kind, day, minute) => {
+      const end = endOf(kind, day, minute, zone);
+      return { at: minute === null ? end : zonedInstant(day, minute, zone), end };
+    }),
   };
 }
