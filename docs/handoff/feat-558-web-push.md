@@ -69,4 +69,4 @@ Issue 558, scope confirmed by the owner on 2026-11-21: all four uses, built toge
 - The roll call open/close windows (`reminderPhase` in `lib/private/push-roll-calls.ts`) are the build's assumption; if the owner defines roll call deadlines later, change them there.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/570
