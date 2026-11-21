@@ -1,18 +1,26 @@
 // /admin's Alliances table (issue 485, D144), re-exported as `copy.admin.workspaces.alliances`. English only (D48).
 export const alliancesAdminCopy = {
   title: "Alliances",
-  help: "What each workspace uses and spends, from our own tables. Counts and times only. Today is the UTC day: the tracker quota and the daily limits reset at 00:00 UTC. The ones that need a look come first: a key that cannot be used, errors, a daily limit used up. Tap one to open its workspace below.",
+  help: "What each workspace uses and spends, from our own tables. Counts and times only. Today is the UTC day: the tracker quota and the daily limits reset at 00:00 UTC. Page errors are those of the last 24 hours on the workspace's own pages and requests, from this release on, at most one a second, so they are a lower bound; errors of the nightly reads are on App errors. The ones that need a look come first: a key that cannot be used, errors, a daily limit used up. Tap one to open its workspace below.",
   caption: "Each workspace's use and spend",
   none: "No workspace yet.",
   attention: "Needs a look",
+  /** The "Needs a look" chip's first reason. */
+  reason: {
+    key: "Key: {state}",
+    errors: "Page errors: {n}",
+    failed: "Failed Discord posts: {n}",
+    cap: "Daily limit used up",
+    quota: "No tracker quota left today",
+  },
   head: {
     alliance: "Alliance",
     calls: "Tracker calls",
     key: "Key",
     limits: "Daily limits",
     posts: "Discord posts",
-    errors: "Errors 24 h",
-    seen: "Officers seen",
+    errors: "Page errors",
+    seen: "Last on the desk",
     changed: "Features",
   },
   /** The workspace's own reads (squads, Raid Shield check) on the quota day and the 7 quota days to it. */
@@ -31,6 +39,8 @@ export const alliancesAdminCopy = {
     own: "its own key",
     site: "the site's key",
     noKey: "no key",
+    /** No WORKSPACE_KEYS_SECRET: no saved key is used (D124). */
+    off: "keys are off on this site",
     /** Why a key is paused (D124). */
     invalid: "the tracker refused it",
     out_of_quota: "no quota left today",
@@ -42,17 +52,13 @@ export const alliancesAdminCopy = {
   usedNoCap: "{used} · no cap",
   usedUp: "used up",
   posts: "{n} today",
-  errors: "{n}",
+  postsFailed: "{n} failed",
   seenNever: "none on record",
-  changed: "{n} changed",
+  /** Under the alliance in the table (from 640): officers last on the desk. */
+  seenLine: "On the desk: {seen}",
+  changed: "{n} changed by you",
   changedNone: "defaults",
-  allianceOff: "{n} off by the alliance",
-  /** The card's labels below 640. */
-  card: {
-    posts: "Discord posts",
-    errors: "Errors in 24 h",
-    seen: "Officers last on the desk",
-  },
+  allianceOff: "{n} turned off by the alliance",
   /** Each daily allowance's name beside its use (D126). */
   allowance: { ai: "Writing help", translate: "Translations" },
 };

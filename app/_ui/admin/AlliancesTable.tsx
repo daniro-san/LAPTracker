@@ -1,5 +1,6 @@
 // /admin's Alliances table (issue 485, D144): one card per workspace below 640, a table from 640 whose
-// columns appear by width (ResponsiveTable, D122). Each row opens its workspace's own section below
+// columns appear by width (ResponsiveTable, D122); the table puts "Last on the desk" under the alliance, so its
+// 7 columns fit /admin's 960 px. Each row opens its workspace's own section below
 // (`#w-<slug>` in the Workspaces card). Rows are built in alliances-view.ts. English only (D48).
 import type { ReactNode } from "react";
 
@@ -7,7 +8,7 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { Chip } from "@/lib/brand/components/Chip";
 import { type Column, ResponsiveTable } from "@/lib/brand/components/layout/ResponsiveTable";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
-import { copy } from "@/lib/copy";
+import { copy, fill } from "@/lib/copy";
 import { ALLOWANCES } from "@/lib/workspace-features";
 
 import type { AllianceRow } from "./alliances-view";
@@ -16,10 +17,11 @@ import { AdminSection } from "./parts";
 const t = copy.admin.workspaces.alliances;
 const NOTE = "block text-body-sm text-ink/70";
 
-const Attention = ({ row }: { row: AllianceRow }) =>
+/** The card says "Needs a look · <reason>"; the table's narrow first column, the reason only. */
+const Attention = ({ row, short = false }: { row: AllianceRow; short?: boolean }) =>
   row.attention.length > 0 && (
     <Chip tone="seal" icon={<DroppedStitch />}>
-      {t.attention}
+      {short ? row.reason : `${t.attention} · ${row.reason}`}
     </Chip>
   );
 
@@ -53,9 +55,7 @@ const Calls = ({ row }: { row: AllianceRow }) => (
 
 const Key = ({ row }: { row: AllianceRow }) => (
   <>
-    <span className={`block font-medium ${row.key.state === "ok" ? "" : "text-seal"}`}>
-      {row.key.text}
-    </span>
+    <span className={`block font-medium ${row.key.look ? "text-seal" : ""}`}>{row.key.text}</span>
     {row.key.note && <span className={NOTE}>{row.key.note}</span>}
   </>
 );
@@ -64,8 +64,11 @@ const Limits = ({ row }: { row: AllianceRow }) => (
   <>
     {ALLOWANCES.map((a) => (
       <span key={a} className={`block ${row.allowances[a].usedUp ? "text-seal" : ""}`}>
-        {t.allowance[a]}: {row.allowances[a].text}
-        {row.allowances[a].usedUp && ` · ${t.usedUp}`}
+        {t.allowance[a]}:{" "}
+        <span className="sm:whitespace-nowrap">
+          {row.allowances[a].text}
+          {row.allowances[a].usedUp && ` · ${t.usedUp}`}
+        </span>
       </span>
     ))}
   </>
@@ -82,7 +85,8 @@ const COLUMNS: Column<AllianceRow>[] = [
     cell: (r) => (
       <>
         <Name row={r} />
-        <Attention row={r} />
+        <span className={NOTE}>{fill(t.seenLine, { seen: r.seen })}</span>
+        <Attention row={r} short />
       </>
     ),
   },
@@ -91,7 +95,6 @@ const COLUMNS: Column<AllianceRow>[] = [
   { key: "limits", head: t.head.limits, cell: (r) => <Limits row={r} /> },
   { key: "errors", head: t.head.errors, cell: (r) => <Errors row={r} />, numeric: true },
   { key: "posts", head: t.head.posts, cell: (r) => r.posts, priority: "lg", numeric: true },
-  { key: "seen", head: t.head.seen, cell: (r) => r.seen, priority: "lg" },
   { key: "changed", head: t.head.changed, cell: (r) => r.changed, priority: "lg" },
 ];
 
@@ -127,11 +130,11 @@ function Card({ row }: { row: AllianceRow }) {
         <Fact label={t.head.limits}>
           <Limits row={row} />
         </Fact>
-        <Fact label={t.card.errors}>
+        <Fact label={t.head.errors}>
           <Errors row={row} />
         </Fact>
-        <Fact label={t.card.posts}>{row.posts}</Fact>
-        <Fact label={t.card.seen}>{row.seen}</Fact>
+        <Fact label={t.head.posts}>{row.posts}</Fact>
+        <Fact label={t.head.seen}>{row.seen}</Fact>
         <Fact label={t.head.changed}>{row.changed}</Fact>
       </dl>
     </a>

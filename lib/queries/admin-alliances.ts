@@ -15,6 +15,8 @@ export interface AllianceUsage {
   /** Webhook posts that went through since 00:00 UTC: notices, garrison plans, thanks, and the shield
    * summary (one a day at most: its message is edited in place, `posted_at` the newest post or edit). */
   postsToday: number;
+  /** Notice, garrison and thanks posts that failed since 00:00 UTC (a webhook Discord refused, or no answer). */
+  postsFailed: number;
   /** app_errors rows under the workspace's address in the 24 h before `now`. */
   errors24h: number;
   /** The newest desk request of an officer's session still stored; null when none is. */
@@ -22,6 +24,17 @@ export interface AllianceUsage {
 }
 
 const HOUR_MS = 3_600_000;
+
+/** One row of the statement: Postgres sends a count (bigint) as a string. */
+interface UsageRow extends Record<string, unknown> {
+  id: number;
+  calls_today: string | number;
+  calls_7d: string | number;
+  posts: string | number;
+  failed: string | number;
+  errors: string | number;
+  seen: Date | string | null;
+}
 
 /**
  * Every workspace's usage, by workspace id. `day` is the quota day's daily read (`quotaDayRead`), the key of
@@ -35,14 +48,7 @@ export async function allianceUsage(
 ): Promise<Map<number, AllianceUsage>> {
   const dayStart = new Date(`${usageDay(now)}T00:00:00Z`).toISOString();
   const since = new Date(now.getTime() - 24 * HOUR_MS).toISOString();
-  const result = await db.execute<{
-    id: number;
-    calls_today: string | number;
-    calls_7d: string | number;
-    posts: string | number;
-    errors: string | number;
-    seen: Date | string | null;
-  }>(sql`
+  const result = await db.execute<UsageRow>(sql`
     with calls as (
       select union_id, sum(n) filter (where day = ${day}::date) as today, sum(n) as week
       from (
@@ -55,17 +61,21 @@ export async function allianceUsage(
       group by union_id
     ),
     posts as (
-      select workspace_id, count(*) as n from (
-        select workspace_id from notice_publishes
-        where status = 'posted' and published_at >= ${dayStart}
+      select workspace_id,
+        count(*) filter (where status = 'posted') as n,
+        count(*) filter (where status = 'failed') as failed
+      from (
+        select workspace_id, status from notice_publishes
+        where published_at >= ${dayStart}
         union all
-        select workspace_id from garrison_plans
-        where post_status = 'posted' and posted_at >= ${dayStart}
+        -- A failed garrison post keeps its last try's time in posted_at, as a posted one does.
+        select workspace_id, post_status from garrison_plans
+        where posted_at >= ${dayStart}
         union all
-        select workspace_id from thanks_shares
-        where target = 'discord' and status = 'posted' and shared_at >= ${dayStart}
+        select workspace_id, status from thanks_shares
+        where target = 'discord' and shared_at >= ${dayStart}
         union all
-        select w.id from shield_checks s join workspaces w on w.union_id = s.union_id
+        select w.id, 'posted' from shield_checks s join workspaces w on w.union_id = s.union_id
         where s.posted_at >= ${dayStart}
       ) p
       group by workspace_id
@@ -84,6 +94,7 @@ export async function allianceUsage(
       coalesce(calls.today, 0) as calls_today,
       coalesce(calls.week, 0) as calls_7d,
       coalesce(posts.n, 0) as posts,
+      coalesce(posts.failed, 0) as failed,
       coalesce(errors.n, 0) as errors,
       seen.at as seen
     from workspaces w
@@ -98,6 +109,7 @@ export async function allianceUsage(
         callsToday: Number(r.calls_today),
         calls7d: Number(r.calls_7d),
         postsToday: Number(r.posts),
+        postsFailed: Number(r.failed),
         errors24h: Number(r.errors),
         officerSeenAt: r.seen === null ? null : new Date(r.seen),
       },

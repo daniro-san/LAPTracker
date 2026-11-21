@@ -42,6 +42,7 @@ const view = (over: Partial<FeaturesView> = {}): FeaturesView => ({
   allianceOff: [],
   on: 0,
   caps: { ai: 20, translate: null },
+  defaultOff: [],
   defaultCaps: { ai: 20, translate: 20 },
   changedCaps: [],
   used: { ai: 0, translate: 0 },
@@ -54,7 +55,14 @@ const row = (w: AdminWorkspace, v = view(), errors24h = 0) =>
     alliance: "AMB",
     features,
     view: v,
-    usage: { callsToday: 40, calls7d: 300, postsToday: 2, errors24h, officerSeenAt: null },
+    usage: {
+      callsToday: 40,
+      calls7d: 300,
+      postsToday: 2,
+      postsFailed: 0,
+      errors24h,
+      officerSeenAt: null,
+    },
     current: FP,
     now: NOW,
     ago: () => "",
@@ -64,12 +72,17 @@ describe("keyState (D124, as the squads read sees it)", () => {
   it("reads a key under another master key as re-enter, a refused one as paused, a usable one as ok", () => {
     expect(keyState(key("ok", NOW, "fp-old"), true, FP, NOW)).toMatchObject({
       state: "reenter",
-      bad: true,
+      look: "key",
     });
     expect(keyState(key("invalid"), true, FP, NOW)).toMatchObject({
       state: "paused",
       note: "the tracker refused it",
-      bad: true,
+      look: "key",
+    });
+    // Out of quota today mends itself at 00:00 UTC: it ranks with a used-up daily limit.
+    expect(keyState(key("out_of_quota"), true, FP, NOW)).toMatchObject({
+      state: "paused",
+      look: "cap",
     });
     // Out of quota yesterday: usable again after 00:00 UTC.
     const yesterday = new Date("2026-11-19T23:50:00Z");
@@ -83,10 +96,21 @@ describe("keyState (D124, as the squads read sees it)", () => {
     expect(keyState(workspace({ unionId: OWN_ALLIANCE_ID }), true, FP, NOW)).toMatchObject({
       state: "none",
       which: "site",
-      bad: false,
+      look: null,
     });
-    expect(keyState(workspace(), true, FP, NOW)).toMatchObject({ bad: true });
-    expect(keyState(workspace(), false, FP, NOW)).toMatchObject({ bad: false });
+    expect(keyState(workspace(), true, FP, NOW)).toMatchObject({ look: "key" });
+    expect(keyState(workspace(), false, FP, NOW)).toMatchObject({ look: null });
+  });
+
+  it("with the keys off, follows squadsKey: the own alliance on the site's key, a saved key unused and not a reason", () => {
+    const own = { ...key("ok"), unionId: OWN_ALLIANCE_ID };
+    expect(keyState(own, true, null, NOW)).toMatchObject({ which: "site", look: null });
+    expect(keyState(key("ok"), true, null, NOW)).toMatchObject({
+      state: "none",
+      note: "keys are off on this site",
+      which: "none",
+      look: null,
+    });
   });
 });
 
@@ -97,11 +121,12 @@ describe("allianceRow (issue 485)", () => {
     expect(r.allowances.ai).toEqual({ text: "20 of 20", usedUp: true });
     expect(r.allowances.translate).toEqual({ text: "7 · no cap", usedUp: false });
     expect(r.attention).toEqual(["cap"]);
+    expect(r.reason).toBe("Daily limit used up");
   });
 
   it("counts the owner's changes from the defaults and the features the alliance turned off", () => {
     const v = view({ changed: ["ocr", "squads"], changedCaps: ["ai"], allianceOff: ["thefts"] });
-    expect(row(workspace(), v).changed).toBe("3 changed · 1 off by the alliance");
+    expect(row(workspace(), v).changed).toBe("3 changed by you · 1 turned off by the alliance");
     expect(row(workspace()).changed).toBe("defaults");
   });
 });
@@ -115,6 +140,12 @@ describe("byAttention", () => {
       row(workspace({ id: 3, slug: "c-errors" }), view(), 2),
       row({ ...key("invalid"), id: 4, slug: "d-key" }),
     ];
+    expect(rows.map((r) => r.reason)).toEqual([
+      "",
+      "Daily limit used up",
+      "Page errors: 2",
+      "Key: paused",
+    ]);
     expect(rows.sort(byAttention).map((r) => r.slug)).toEqual([
       "d-key",
       "c-errors",

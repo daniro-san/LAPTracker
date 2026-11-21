@@ -124,7 +124,7 @@ function WorkspaceList({
         <li
           key={w.id}
           id={`w-${w.slug}`}
-          className="scroll-mt-4 border-b border-rule pb-4 last:border-0"
+          className="scroll-mt-20 border-b border-rule pb-4 last:border-0"
         >
           <p className="font-semibold">
             /w/{w.slug} · <bdi>{w.alliance}</bdi>

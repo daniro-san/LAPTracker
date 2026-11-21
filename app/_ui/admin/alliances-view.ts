@@ -23,15 +23,19 @@ const t = copy.admin.workspaces.alliances;
 const n = (x: number) => x.toLocaleString("en");
 
 export type KeyState = "ok" | "paused" | "reenter" | "none";
+type Look = "key" | "errors" | "cap";
 
 export interface AllianceRow {
   id: number;
   slug: string;
   alliance: string;
   /** Why it comes first, in order: the key, errors, a daily limit used up. Empty: nothing to look at. */
-  attention: ("key" | "errors" | "cap")[];
+  attention: Look[];
+  /** The first reason in words, for the "Needs a look" chip; empty when there is none. */
+  reason: string;
   calls: { today: string; week: string; planned: string };
-  key: { state: KeyState; text: string; note: string };
+  /** `look`: whether the key is a reason to look (the cell is then in red). */
+  key: { state: KeyState; text: string; note: string; look: Look | null };
   allowances: Record<Allowance, { text: string; usedUp: boolean }>;
   posts: string;
   errors: number;
@@ -42,33 +46,69 @@ export interface AllianceRow {
 /**
  * The key as the squads read sees it (D124), without opening it: sealed under another master key or marked
  * `reenter` → re-enter; usable now → ok; refused or out of quota → paused; none saved → none (the own
- * alliance then reads on the site's key). `wanted`: the squads read is on but has no key it can use.
+ * alliance then reads on the site's key), wanted when the squads read is on but has no key it can use.
+ * `look`: a key an officer must enter again is a key reason; out of quota today mends itself at 00:00 UTC,
+ * so it ranks with a used-up daily limit (product panel, 2026-11-21). With the keys off (no
+ * WORKSPACE_KEYS_SECRET: `current` null) no saved key is used, as `squadsKey` rules: the own alliance reads
+ * on the site's key and the others are not read, which is the site's setting, not the workspace's to mend.
  */
 export function keyState(
   w: AdminWorkspace,
   squadsOn: boolean,
   current: string | null,
   now: Date,
-): AllianceRow["key"] & { which: "own" | "site" | "none"; bad: boolean } {
+): AllianceRow["key"] & { which: "own" | "site" | "none"; look: "key" | "cap" | null } {
   const k = w.trackerKey;
-  if (k.set) {
-    const which = "own" as const;
-    if (k.masterFp !== current || k.status === "reenter")
-      return { state: "reenter", text: t.key.reenter, note: t.key.own, which, bad: true };
-    if (keyUsable(k.status, k.statusAt, now))
-      return { state: "ok", text: t.key.ok, note: t.key.own, which, bad: false };
-    const why = k.status === "invalid" || k.status === "out_of_quota" ? t.key[k.status] : "";
-    return { state: "paused", text: t.key.paused, note: why, which, bad: true };
-  }
+  if (k.set && current) return savedKey(k, current, now);
   if (w.unionId === OWN_ALLIANCE_ID)
-    return { state: "none", text: t.key.none, note: t.key.site, which: "site", bad: false };
+    return { state: "none", text: t.key.none, note: t.key.site, which: "site", look: null };
+  if (!current)
+    return { state: "none", text: t.key.none, note: t.key.off, which: "none", look: null };
   return {
     state: "none",
     text: t.key.none,
     note: squadsOn ? t.key.wanted : t.key.noKey,
     which: "none",
-    bad: squadsOn,
+    look: squadsOn ? "key" : null,
   };
+}
+
+/** A saved key while the keys are on: re-enter, ok or paused (refused, or out of quota today). */
+function savedKey(
+  k: AdminWorkspace["trackerKey"],
+  current: string,
+  now: Date,
+): ReturnType<typeof keyState> {
+  const which = "own" as const;
+  if (k.masterFp !== current || k.status === "reenter")
+    return { state: "reenter", text: t.key.reenter, note: t.key.own, which, look: "key" };
+  if (keyUsable(k.status, k.statusAt, now))
+    return { state: "ok", text: t.key.ok, note: t.key.own, which, look: null };
+  const empty = k.status === "out_of_quota";
+  const why = k.status === "invalid" || k.status === "out_of_quota" ? t.key[k.status] : "";
+  return { state: "paused", text: t.key.paused, note: why, which, look: empty ? "cap" : "key" };
+}
+
+/** The reasons in rank order, and the first one in words. */
+function attentionOf(
+  key: ReturnType<typeof keyState>,
+  u: Pick<AllianceUsage, "errors24h" | "postsFailed">,
+  capUsedUp: boolean,
+): { attention: Look[]; reason: string } {
+  const attention: Look[] = [];
+  if (key.look === "key") attention.push("key");
+  if (u.errors24h > 0 || u.postsFailed > 0) attention.push("errors");
+  if (capUsedUp || key.look === "cap") attention.push("cap");
+  const reason = {
+    key: fill(t.reason.key, { state: key.text }),
+    errors:
+      u.errors24h > 0
+        ? fill(t.reason.errors, { n: u.errors24h })
+        : fill(t.reason.failed, { n: u.postsFailed }),
+    cap: capUsedUp ? t.reason.cap : t.reason.quota,
+  };
+  const first = attention[0];
+  return { attention, reason: first ? reason[first] : "" };
 }
 
 /** "12 of 50", "12 · no cap"; used up at a cap above 0 that today's use reached. */
@@ -90,7 +130,13 @@ export function allianceRow(input: {
   ago: (at: Date) => string;
 }): AllianceRow {
   const { w, features, view, now } = input;
-  const u = input.usage ?? { callsToday: 0, calls7d: 0, postsToday: 0, errors24h: 0 };
+  const u = input.usage ?? {
+    callsToday: 0,
+    calls7d: 0,
+    postsToday: 0,
+    postsFailed: 0,
+    errors24h: 0,
+  };
   const on = resolveFeatures(settingsFor(features, w), features.paused).on;
   const key = keyState(w, on.has("squads"), input.current, now);
   const members = features.members.get(w.unionId) ?? ESTIMATE_MEMBERS;
@@ -103,19 +149,22 @@ export function allianceRow(input: {
     id: w.id,
     slug: w.slug,
     alliance: input.alliance,
-    attention: [
-      ...(key.bad ? ["key" as const] : []),
-      ...(u.errors24h > 0 ? ["errors" as const] : []),
-      ...(ALLOWANCES.some((a) => allowances[a].usedUp) ? ["cap" as const] : []),
-    ],
+    ...attentionOf(
+      key,
+      u,
+      ALLOWANCES.some((a) => allowances[a].usedUp),
+    ),
     calls: {
       today: calls,
       week: fill(t.calls.week, { n: n(u.calls7d) }),
       planned: fill(t.calls.planned, { n: n(trackerEstimate(on, members).daily) }),
     },
-    key: { state: key.state, text: key.text, note: key.note },
+    key: { state: key.state, text: key.text, note: key.note, look: key.look },
     allowances,
-    posts: fill(t.posts, { n: n(u.postsToday) }),
+    posts: [
+      fill(t.posts, { n: n(u.postsToday) }),
+      ...(u.postsFailed > 0 ? [fill(t.postsFailed, { n: n(u.postsFailed) })] : []),
+    ].join(" · "),
     errors: u.errors24h,
     seen: input.usage?.officerSeenAt ? input.ago(input.usage.officerSeenAt) : t.seenNever,
     changed: [

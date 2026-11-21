@@ -73,7 +73,7 @@ describe("allianceUsage (issue 485, D144)", () => {
     expect(usage.get(b)).toMatchObject({ callsToday: 5, calls7d: 5 });
   });
 
-  it("counts the webhook posts that went through since 00:00 UTC: notices, garrison plans, thanks and the shield summary", async () => {
+  it("counts the webhook posts that went through and those that failed since 00:00 UTC: notices, garrison plans, thanks and the shield summary", async () => {
     const [notice] = await db
       .insert(notices)
       .values({ workspaceId: a, createdAt: NOW, updatedAt: NOW })
@@ -110,8 +110,8 @@ describe("allianceUsage (issue 485, D144)", () => {
     await db.insert(shieldChecks).values({ day: DAY, unionId: 202, postedAt: ago(4) });
 
     const usage = await allianceUsage(db, DAY, NOW);
-    expect(usage.get(a)?.postsToday).toBe(3);
-    expect(usage.get(b)?.postsToday).toBe(1);
+    expect(usage.get(a)).toMatchObject({ postsToday: 3, postsFailed: 1 });
+    expect(usage.get(b)).toMatchObject({ postsToday: 1, postsFailed: 0 });
   });
 
   it("counts the errors under each workspace's address in the last 24 h", async () => {
