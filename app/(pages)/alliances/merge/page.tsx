@@ -14,13 +14,14 @@ import { FLOW_PATH } from "@/app/_ui/FlowPicker";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { MergePicker } from "@/app/_ui/MergePicker";
 import { MergeResultView } from "@/app/_ui/MergeSimulator";
+import { sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
-import { homeEvent, listEvents, mergePage } from "@/lib/queries";
+import { homeEvent, mergePage } from "@/lib/queries";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -34,7 +35,7 @@ const load = cache((a: number | null, b: number | null) =>
   withPageDb(async (db) => {
     // One read of the event list, shared by the header and the turnout figures. The war turnout line is
     // read and shown only under its own flag (D91), which is read while the rosters are.
-    const eventsRead = listEvents(db);
+    const eventsRead = sharedEvents();
     const turnout = isOn("war-turnout");
     const [page, events] = await Promise.all([
       mergePage(db, a !== null && b !== null ? [a, b] : null, undefined, eventsRead, turnout),

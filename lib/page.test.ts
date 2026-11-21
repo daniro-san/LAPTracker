@@ -2,6 +2,7 @@
 // `cache` and a list of end-of-scope tasks standing in for `after`.
 import { describe, expect, it, vi } from "vitest";
 
+import { DATA_UNAVAILABLE } from "./data-unavailable";
 import type { Db } from "./db";
 import { scopedDb } from "./page";
 
@@ -57,5 +58,20 @@ describe("withPageDb (D141, 2026-11-21)", () => {
     );
     await expect(withPageDb(async (db) => db)).rejects.toThrow("outside a request scope");
     expect(open).not.toHaveBeenCalled();
+  });
+});
+
+describe("a page whose database does not answer (D143)", () => {
+  it("throws the digest the error page reads as data unavailable, and leaves a query error as it is", async () => {
+    const s = scope();
+    // What Drizzle throws when the Neon driver's WebSocket does not open, and a bad query's error.
+    const refused = new Error("Failed query: select 1", { cause: new Event("error") });
+    const bad = Object.assign(new Error("column does not exist"), { code: "42703" });
+
+    await expect(s.withPageDb(() => Promise.reject(refused))).rejects.toMatchObject({
+      digest: DATA_UNAVAILABLE,
+      cause: refused,
+    });
+    await expect(s.withPageDb(() => Promise.reject(bad))).rejects.toBe(bad);
   });
 });

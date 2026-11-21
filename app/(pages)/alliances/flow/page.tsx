@@ -13,12 +13,13 @@ import { FlowPicker } from "@/app/_ui/FlowPicker";
 import { FlowView } from "@/app/_ui/FlowView";
 import { dayDate } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
-import { flowPage, homeEvent, listEvents } from "@/lib/queries";
+import { flowPage, homeEvent } from "@/lib/queries";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -35,7 +36,7 @@ const load = cache((from: string | null, to: string | null) =>
   withPageDb(async (db) => {
     const [page, events] = await Promise.all([
       flowPage(db, new Date(), from !== null && to !== null ? { from, to } : null),
-      listEvents(db),
+      sharedEvents(),
     ]);
     return {
       page,

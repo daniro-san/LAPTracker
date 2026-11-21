@@ -47,6 +47,8 @@ export function POST(request: Request): Promise<Response> {
         ...(postPublic !== undefined && { postPublic }),
       },
     );
+    // INVARIANT cache.write-invalidates-reads (D143): the new round is in the public event list.
+    ctx.publicCache.invalidate();
     return Response.json({ event_id: event.id }, { status: 201 });
   });
 }

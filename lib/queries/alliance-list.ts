@@ -89,11 +89,6 @@ export async function allianceList(db: Db, page: number): Promise<AllianceList> 
   };
 }
 
-/** How many alliances the newest board lists: the ledger's link. */
-export async function boardCount(db: Db): Promise<number> {
-  return (await allianceList(db, 1)).total;
-}
-
 /** The alliances an event read (its Before's copy): a list row links to the alliance's page in it. */
 export async function eventAllianceIds(db: Db, eventId: number): Promise<number[]> {
   const [row] = await db

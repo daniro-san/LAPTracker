@@ -6,6 +6,7 @@
 import { secretsOf, type AppContext } from "./app-context";
 import { RUN_DEADLINE_MS } from "./compute";
 import { autoRetryDailyRead, runDailyRead, type DailyReadSummary } from "./daily-read";
+import { databaseDown } from "./data-unavailable";
 import type { Db } from "./db";
 import {
   createNotifier,
@@ -16,7 +17,13 @@ import {
 import { dailyReadMessage } from "./notify-daily";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
-import { claimQuotaCheck, duePhases, dueSample, findOrCreateEvent } from "./repo/events";
+import {
+  claimQuotaCheck,
+  duePhases,
+  dueSample,
+  findOrCreateEvent,
+  type NewEvent,
+} from "./repo/events";
 import { pruneEndedPictures } from "./repo/notice-picture-cleanup";
 import { clearOldPlayerRaw } from "./repo/player-reads";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
@@ -78,20 +85,52 @@ async function dailyRead(
   // D133: the day's ranks board and tracked set first (no quota), then the set and the
   // workspaces' alliances.
   const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };
-  const { set, targets } = await dayTargets(keys, db, due.day);
+  const { set, targets } = await invalidateOnThrow(ctx, () => dayTargets(keys, db, due.day));
+  // INVARIANT cache.write-invalidates-reads (D143): the day's board and set, then the read and its retry,
+  // are on the public pages at their first view after the write. In the tick's body, not in `after`.
+  if (set?.created) ctx.publicCache.invalidate();
   const change = set && (await trackedChangeMessage(db, set, origin));
   if (change) await createNotifier(ctx.env, ctx.fetch).admin(change);
-  const first = await runDailyRead(deps, db, due.day, targets);
+  const first = await readThenInvalidate(ctx, () => runDailyRead(deps, db, due.day, targets));
   // D125: once a day, after the day's first read, the workspaces whose 14 days ended are deleted; D132:
   // and the player reads' raw bodies older than 90 days are cleared.
   if (first) await purgeWorkspaces(db, ctx.now());
-  const summary = first ?? (await autoRetryDailyRead(deps, db, due.day, targets));
+  const summary =
+    first ?? (await readThenInvalidate(ctx, () => autoRetryDailyRead(deps, db, due.day, targets)));
   if (!summary) return null;
   if (summary.status !== "complete") {
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());
     await createNotifier(ctx.env, ctx.fetch).admin(dailyReadMessage(summary, at, origin));
   }
   return { kind: "daily-read", summary };
+}
+
+/** A daily read, then the public pages' shared reads dropped when it ran (null: another caller had the day),
+ * or when it threw part way, since its rows may be partly written. Not when the database is down: the kept
+ * pages are then all the public site has (D143). */
+async function readThenInvalidate<T>(ctx: AppContext, read: () => Promise<T | null>) {
+  let ran = true;
+  try {
+    const result = await read();
+    ran = result !== null;
+    return result;
+  } catch (error) {
+    ran = !databaseDown(error);
+    throw error;
+  } finally {
+    if (ran) ctx.publicCache.invalidate();
+  }
+}
+
+/** `write`, and when it throws part way (its rows may be partly written) the shared reads dropped; not when
+ * the database is down, when the kept pages are all the public site has (D143). */
+async function invalidateOnThrow<T>(ctx: AppContext, write: () => Promise<T>): Promise<T> {
+  try {
+    return await write();
+  } catch (error) {
+    if (!databaseDown(error)) ctx.publicCache.invalidate();
+    throw error;
+  }
 }
 
 /**
@@ -136,10 +175,17 @@ async function sample(
   return { kind: "sample", slotAt, outcome };
 }
 
+/** findOrCreateEvent; a row it creates is in every public page's event list (D143). */
+async function eventRow(ctx: AppContext, db: Db, event: NewEvent) {
+  const row = await findOrCreateEvent(db, event);
+  if (row.created) ctx.publicCache.invalidate();
+  return row;
+}
+
 export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<TickOutcome> {
   const now = ctx.now();
   // (1) The coming scheduled event gets its row a day ahead, with its times fixed from the env then.
-  for (const event of eventsToCreate(now, ctx.env)) await findOrCreateEvent(db, event);
+  for (const event of eventsToCreate(now, ctx.env)) await eventRow(ctx, db, event);
 
   // (2) At most one phase per tick: the earliest open window without a snapshot row.
   const [due] = await duePhases(db, now, ctx.env.SNAPSHOT_WINDOW_MIN * 60_000);
@@ -166,7 +212,7 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
 
   // (3) The Friday check, claimed on the coming scheduled event's row so it runs once.
   if (quotaCheckDue(now, ctx.env)) {
-    const event = await findOrCreateEvent(db, nextEvent(now, ctx.env));
+    const event = await eventRow(ctx, db, nextEvent(now, ctx.env));
     if (await claimQuotaCheck(db, event.id, now)) {
       const report = await quotaReport(ctx, db, { always: true });
       // The weekly cleanup of notice pictures (D119): deletes the warned ones, warns the next. The count only.

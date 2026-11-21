@@ -35,7 +35,9 @@ export function ErrorPage({
             <p className="text-label font-semibold tracking-[0.04em] text-seal tabular-nums">
               {code}
             </p>
-            <h1 className="mt-2 font-display text-display-xl font-semibold">{title}</h1>
+            <h1 className="mt-2 font-display text-display-lg font-semibold sm:text-display-xl">
+              {title}
+            </h1>
             <p className="mt-4 max-w-[40ch] text-body">{body}</p>
             <div className="mt-8 flex flex-wrap items-center gap-4">{actions}</div>
           </div>

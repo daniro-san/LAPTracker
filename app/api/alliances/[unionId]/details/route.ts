@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { clientIp } from "@/lib/auth";
+import { databaseDown } from "@/lib/data-unavailable";
 import { LOOKUP_IP_LIMIT, LOOKUP_IP_WINDOW_MS, lookupAlliance } from "@/lib/lookup";
 import { recordFailure } from "@/lib/repo/auth-attempts";
 import { errorResponse, isSameOriginJson, withContext } from "@/lib/route";
@@ -29,7 +30,17 @@ export function POST(
     const key = `lookup:ip:${clientIp(request.headers)}`;
     if ((await recordFailure(db, key, LOOKUP_IP_WINDOW_MS, ctx.now())) > LOOKUP_IP_LIMIT)
       return errorResponse(429, "rate_limited");
-    const code = await lookupAlliance(ctx, db, id.data);
+    // INVARIANT cache.write-invalidates-reads (D143): the roster it stored is on the alliance's page at once
+    // ("failed" too, and a throw: the roster may be stored when only the claim's close failed); not when
+    // the database is down, when the kept pages are all the public site has.
+    let code: Awaited<ReturnType<typeof lookupAlliance>>;
+    try {
+      code = await lookupAlliance(ctx, db, id.data);
+    } catch (error) {
+      if (!databaseDown(error)) ctx.publicCache.invalidate();
+      throw error;
+    }
+    if (code === "done" || code === "failed") ctx.publicCache.invalidate();
     if (code === "unknown") return errorResponse(404, "not_found");
     return Response.json({ code }, { status: code === "done" ? 200 : 409 });
   });

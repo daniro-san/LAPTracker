@@ -393,6 +393,11 @@ export const zhCN = {
       retry: "重试",
       back: "返回账本",
     },
+    unavailable: {
+      code: "503",
+      title: "数据暂时不可用。",
+      body: "账本现在读不了。没有丢失任何东西。过几分钟再试。",
+    },
   },
   empty: {
     kettle: "还没有记录。水壶已经烧上了。",

@@ -412,6 +412,11 @@ export const itIT = {
       retry: "Riprova",
       back: "Torna al registro",
     },
+    unavailable: {
+      code: "503",
+      title: "Dati momentaneamente non disponibili.",
+      body: "Il registro non si può leggere in questo momento. Non si è perso nulla. Riprova tra qualche minuto.",
+    },
   },
   empty: {
     kettle: "Ancora niente di annotato. Il bollitore è sul fuoco.",

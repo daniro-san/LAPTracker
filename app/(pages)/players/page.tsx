@@ -4,6 +4,7 @@ import { allianceLabel } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerSearch } from "@/app/_ui/PlayerSearch";
+import { sharedEvents, sharedPlayerSearch } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
@@ -11,9 +12,8 @@ import { GrannyEmpty } from "@/lib/brand/components/Mascot";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, isolate } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import { withPageDb } from "@/lib/page";
-import { homeEvent, listEvents } from "@/lib/queries";
-import { searchPlayers, SEARCH_LIMIT } from "@/lib/queries/players";
+import { homeEvent } from "@/lib/queries";
+import { SEARCH_LIMIT } from "@/lib/queries/players";
 
 const MAX_QUERY = 64;
 
@@ -29,11 +29,10 @@ export default async function PlayersPage({
 }) {
   const { q: raw } = await searchParams;
   const q = (Array.isArray(raw) ? raw[0] : raw)?.trim().slice(0, MAX_QUERY) ?? "";
-  const [{ events, matches }, clock, copy] = await Promise.all([
-    withPageDb(async (db) => ({
-      events: await listEvents(db),
-      matches: await searchPlayers(db, q),
-    })),
+  const [events, matches, clock, copy] = await Promise.all([
+    sharedEvents(),
+    // ILIKE: every case of one text finds the same players, so they share one entry.
+    q === "" ? [] : sharedPlayerSearch(q.toLowerCase()),
     requestClock(),
     requestCopy(),
   ]);

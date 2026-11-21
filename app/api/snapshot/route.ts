@@ -34,6 +34,8 @@ export function POST(request: Request): Promise<Response> {
       const now = ctx.now();
       const done = await scheduledEventDone(db, currentEvent(now, ctx.env).eventAtUtc);
       event = await findOrCreateEvent(db, targetEvent(now, ctx.env, done));
+      // INVARIANT cache.write-invalidates-reads (D143): a new row is in the public event list.
+      if (event.created) ctx.publicCache.invalidate();
     } else {
       event = await getEventInfo(db, q.event);
       if (!event?.manual) return errorResponse(404, "event_not_found");
