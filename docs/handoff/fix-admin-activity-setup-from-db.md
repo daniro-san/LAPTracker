@@ -133,4 +133,4 @@ The code runs `?version=2`. **Publish version 2 before this branch deploys.** Un
 - Action counts on /admin are exact. Only people counts follow the 5 rule and its rounding.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/560
