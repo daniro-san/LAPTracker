@@ -48,7 +48,11 @@
   - The added `NOTICE.md` holds the source, the pin, the author, the licences, "unmodified", how to re-sync, and the full MIT text. Upstream licenses `SKILL.md` and `references/` under CC-BY-4.0 and the scripts under the repository's MIT License.
   - `.prettierignore` skips the upstream files, so they stay identical to the pin. `NOTICE.md` is still checked.
 
+- `.specs/README.md` and one paragraph in CONTRIBUTING.md carry the same rule: "`.specs/` is committed. It must hold invented names only, and never any private roster field, real player data, screenshot of real data, secret or webhook." The skill does not create a README of its own. `.gitignore` is unchanged.
+
 ## Decisions
+
+- `.specs/` is committed (orchestrator, 2026-11-21). The specs are the frozen criteria that QA and later agents check against. `tlc-spec-lean` writes them there at the repo root.
 
 - No D-number. This is contributor tooling, not product behaviour.
 - The task asked for a new `needs-decision` label. I created it, and then the orchestrator decided to keep the existing `decision` label instead, because existing issues already use it. No issue or PR used `needs-decision`, so it was deleted from GitHub.
@@ -88,8 +92,7 @@
 ## Open issues
 
 - The issue forms show on GitHub only after this reaches `main` through a release.
-- `tlc-spec-lean` writes its artifacts to `.specs/` at the repo root. The repo has no rule yet on whether `.specs/` is committed. It is public, so a spec may not hold real names or private fields.
-- `selftest.py` has not been run here. After reading it, the owner or the orchestrator can run `python3 .claude/skills/tlc-spec-lean/scripts/selftest.py` to prove the gates on this machine. It works only in temp directories.
+- `selftest.py` has not been run here. The orchestrator reviews the scripts and runs it separately: `python3 .claude/skills/tlc-spec-lean/scripts/selftest.py` to prove the gates on this machine. It works only in temp directories.
 
 ## Next
 
