@@ -1,0 +1,82 @@
+name: Improvement
+description: A change to something that already works — clearer, faster, cheaper or easier to use.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write it so someone without our context can build and check it. The repo is public: invented names only, no screenshots of the game or of Discord.
+        Size M or L: run `tlc-spec-lean` on this issue before building, and build against its frozen criteria. Labels: `ready` when nothing waits on the owner, `needs-decision` when the owner must choose first.
+  - type: textarea
+    id: today
+    attributes:
+      label: What happens today
+      description: The current behaviour, on which screen or route, with numbers where you have them (page height, query count, time).
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and who it's for
+      description: Why today's behaviour costs someone something. Name the users (officers, members, the public, the owner).
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: One per line, each one checkable on its own. EARS style — When (a trigger), While (a state), If (an unwanted condition), Where (a flag), or a plain "shall" for something always true.
+      placeholder: |
+        - [ ] When an officer opens the member card, the system shall show the last read's time in the header.
+        - [ ] If the database is down, the page shall say so instead of showing an empty list.
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What this issue does not do, so nobody builds it by accident.
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Data and privacy
+      description: Private roster fields are x, y, online, last_online_at, joined_at, daily_*, active and avatar_url (CLAUDE.md, D71).
+      value: |
+        Fields touched:
+        Private roster field involved: none / which, and on which page
+        Reaches logs, caches, analytics or Discord: no / which
+    validations:
+      required: true
+  - type: textarea
+    id: verify
+    attributes:
+      label: How to verify
+      value: |
+        Tests:
+        QA flows:
+        Widths: 360 / 768 / 1280
+        Themes: light and dark
+        DB cost (when relevant):
+  - type: textarea
+    id: design
+    attributes:
+      label: Design validation
+      description: Only when this changes how something is presented or used. Per DESIGN.md § Validation, all three must agree before building — the persona panel (officers first), real usage in PostHog for the screens touched, and the product-strategy persona.
+  - type: textarea
+    id: done-when
+    attributes:
+      label: Done when
+      placeholder: Every criterion above is ticked in a PR merged into dev, with QA at 360 px.
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      description: M and L go through `tlc-spec-lean` before building.
+      options:
+        - S — this template is enough
+        - M — run tlc-spec-lean first
+        - L — run tlc-spec-lean first
+    validations:
+      required: true
