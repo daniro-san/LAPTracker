@@ -131,8 +131,8 @@ lib/live.ts         pure: the live section's arithmetic: standings, kills per re
                     when the page looks again (D69).
 lib/event-cache.ts  the event page's shared cache (D79): one event's database rows for every viewer, tagged by event id
                     (Next's unstable_cache and revalidateTag); reached only through AppContext.eventCache.
-lib/public-cache.ts the public pages' shared reads (D143): event list, alliance list, player, search, history, banner
-                    rows, shared until the next write (tag `reads`); reached only through AppContext.publicCache, read by
+lib/public-cache.ts the public pages' shared reads (D143): event list, event page, alliance list, player, search,
+                    history, banner rows, shared until the next write (tag `reads`); reached only through AppContext.publicCache, read by
                     app/_ui/public-reads.ts. lib/data-unavailable.ts: a page whose database does not answer (D143).
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
 lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx

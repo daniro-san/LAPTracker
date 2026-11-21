@@ -1,5 +1,6 @@
 // The event page's data, loaded once per request for both the page and its <title> (React `cache`).
-// What depends only on the database for one event goes through the shared event cache (issue 327).
+// What depends only on the database for one event is shared: its reads under `reads` (D143), its live
+// section's rows in the event cache (issue 327).
 import type { Metadata } from "next";
 import { cache } from "react";
 
@@ -18,13 +19,15 @@ import {
 import { eventProgressOf, progressRows } from "@/lib/queries/live";
 
 import { requestClock, requestCopy } from "./locale";
-import { sharedEvents } from "./public-reads";
+import { sharedEvents, sharedRead } from "./public-reads";
 
-// The turnout so far is read only while the event has no End: a live event's entry. Like every shared-cache
-// loader here, its read opens its own connection (withOwnDb): Next can run it in the background after the
-// request's connection is closed, and a viewer of another request can be the one waiting for it.
+// Like every shared-cache loader here, a shared read opens its own connection (withOwnDb): Next can run it
+// in the background after the request's connection is closed, and a viewer of another request can be the
+// one waiting for it.
 // War turnout and kill share vs might share are read only while their flags are on (D91); the flags are
-// read per request, while the event is, and never stored in the event cache.
+// read per request, while the event list is, and are part of the shared entry's key.
+// The event's reads (detail, names, ranks, roster changes, movers, turnout, kill share) are one entry of the
+// public cache (D143, issue 538), shared until the next write: every run that claimed a row invalidates it.
 export const loadEventPage = cache(async (id: number | null) => {
   const sections = Promise.all([isOn("war-turnout"), isOn("kill-vs-might")]).then(
     ([turnout, carried]) => ({ turnout, carried }),
@@ -34,10 +37,7 @@ export const loadEventPage = cache(async (id: number | null) => {
       db,
       id,
       getAppContext().env.SNAPSHOT_WINDOW_MIN,
-      (eventId, load) =>
-        getAppContext().eventCache.read(eventId, "turnout-so-far", LIVE_MAX_AGE_S, () =>
-          withOwnDb(load),
-        ),
+      (key, load) => sharedRead("event-page", key, load),
       sections,
       sharedEvents,
     ),

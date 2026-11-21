@@ -15,3 +15,5 @@ Why: while an event runs, every viewer's page refreshes once per sample slot (`L
 **Amendment (2026-11-21, issue 521, D141): `withOwnDb`.** `withPageDb` now shares one Pool per request, closed in `after`. Each cached read keeps its own connection through `withOwnDb` (`lib/page.ts`), for the same reason as above. See D141.
 
 **Amendment (2026-11-21, issue 521, D143).** The public pages' other shared reads (event list, alliances, players, history, banner) use a second cache, `lib/public-cache.ts`, tag `reads`. A run invalidates both.
+
+**Amendment (2026-11-21, issue 538, D143).** The `turnout-so-far` entry is gone: the war turnout, also "so far", is part of the event page's shared entry under `reads` (D143), bounded by the next run's invalidation or 1 h instead of 60 s. `progress` and `progress-done` stay here. This cache's in-flight map is now on `globalThis`, an invalidation drops the event's in-flight reads, and a read that ran across an invalidation is not kept (as `lib/public-cache.ts`).

@@ -140,3 +140,5 @@ Page views, admin presses, deploys (`pnpm db:migrate` in the build) and a status
 - **Tests.** `lib/page.test.ts`: two reads of one scope share one `openDb` and close it once, after the scope; a read that throws still leaves one close; a scope that cannot register the close opens nothing. `frameReadStatus`'s failed-connection test now asserts the connection was tried.
 
 **Amendment (2026-11-21, issue 521, perf Batch 4).** The public pages' reads are shared until the next write, and a page whose database does not answer says "Data temporarily unavailable": D143.
+
+**Amendment (2026-11-21, issue 538).** The event-cache loader `turnout-so-far` named in Batch 3 is gone; the event page's reads are one D143 shared entry, read through `withOwnDb`, which now opens at most 3 connections.

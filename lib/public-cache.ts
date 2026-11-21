@@ -15,7 +15,7 @@ export interface PublicCache {
    */
   read<T>(
     name: string,
-    key: readonly (string | number | null)[],
+    key: readonly (string | number | boolean | null)[],
     load: () => Promise<T>,
   ): Promise<T>;
   /** Forgets every value. Only inside a route handler or server action (Next's rule for `revalidateTag`). */
@@ -78,7 +78,11 @@ const state = ((
 const { inFlight } = state;
 
 export const nextPublicCache: PublicCache = {
-  read<T>(name: string, key: readonly (string | number | null)[], load: () => Promise<T>) {
+  read<T>(
+    name: string,
+    key: readonly (string | number | boolean | null)[],
+    load: () => Promise<T>,
+  ) {
     const id = JSON.stringify([name, ...key]);
     const pending = inFlight.get(id) as Promise<T> | undefined;
     if (pending) return pending;
