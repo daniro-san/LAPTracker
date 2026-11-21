@@ -8,7 +8,7 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { playerHistory, playerReads } from "../schema-squads";
 import type { HistoryInput } from "../sources/types";
 import { playerAnswer } from "../squads.test-helpers";
-import { clearOldPlayerRaw, storePlayerRead } from "./player-reads";
+import { clearOldPlayerRaw, gameLanguages, storePlayerRead } from "./player-reads";
 
 const NOW = new Date("2026-11-20T02:00:00Z");
 const DAY = 86_400_000;
@@ -33,6 +33,21 @@ const row = (hoursAgo: number): HistoryInput => ({
 });
 
 describe("player reads (D132)", () => {
+  it("gives the newest game language of the members asked for, within the window only (D140)", async () => {
+    const at = (days: number) => new Date(NOW.getTime() - days * DAY);
+    await db.insert(playerReads).values([
+      { unionId: 900001, uid: 7, readAt: at(3), language: "pt" },
+      { unionId: 900001, uid: 7, readAt: at(1), language: "fr" },
+      { unionId: 900001, uid: 7, readAt: at(0), language: null },
+      // Older than the window, a member not asked for, and another workspace's read.
+      { unionId: 900001, uid: 8, readAt: at(30), language: "pt" },
+      { unionId: 900001, uid: 9, readAt: at(1), language: "en" },
+      { unionId: 900002, uid: 7, readAt: NOW, language: "en" },
+    ]);
+    expect(await gameLanguages(db, 900001, [7, 8], at(14))).toEqual(new Map([[7, "fr"]]));
+    expect(await gameLanguages(db, 900001, [], at(14))).toEqual(new Map());
+  });
+
   it("adds each history row once per alliance and member, however the reads overlap", async () => {
     const read = (hours: number[]) => playerAnswer(7, [], null, { history: hours.map(row) });
     expect(await storePlayerRead(db, 900001, read([12, 8, 4]), NOW)).toBe(3);

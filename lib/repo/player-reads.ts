@@ -1,7 +1,8 @@
 // player_reads and player_history (D132, issue 490): every /v1/players answer of the squads read, kept for
-// the alliance whose workspace read it. Writes and the 90-day clean-up only: no query here returns
-// raw_json, and nothing reads x, y, online, last_online_at or avatar_url out of it (D71, D22).
-import { and, isNotNull, lt } from "drizzle-orm";
+// the alliance whose workspace read it. Writes, the 90-day clean-up and each member's newest game language
+// (D140): no query here returns raw_json, and nothing reads x, y, online, last_online_at or avatar_url out
+// of it (D71, D22).
+import { and, desc, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { playerHistory, playerReads } from "../schema-squads";
@@ -99,4 +100,33 @@ export async function clearOldPlayerRaw(db: Db, now: Date): Promise<number> {
     .where(and(lt(playerReads.readAt, before), isNotNull(playerReads.rawJson)))
     .returning({ id: playerReads.id });
   return cleared.length;
+}
+
+/**
+ * Each of `uids`' game language from the newest read of `unionId`'s own workspace since `since` that has
+ * one (D132), by uid: one row per member (`DISTINCT ON`), on the members asked for and a bounded window
+ * only, never the whole history (#521). Only that alliance's rows: a player read by another workspace is
+ * not seen here (D71).
+ */
+export async function gameLanguages(
+  db: Db,
+  unionId: number,
+  uids: readonly number[],
+  since: Date,
+): Promise<Map<number, string>> {
+  if (uids.length === 0) return new Map();
+  const p = playerReads;
+  const rows = await db
+    .selectDistinctOn([p.uid], { uid: p.uid, language: p.language })
+    .from(p)
+    .where(
+      and(
+        eq(p.unionId, unionId),
+        inArray(p.uid, [...uids]),
+        gte(p.readAt, since),
+        isNotNull(p.language),
+      ),
+    )
+    .orderBy(p.uid, desc(p.readAt));
+  return new Map(rows.map((r) => [r.uid, r.language as string]));
 }

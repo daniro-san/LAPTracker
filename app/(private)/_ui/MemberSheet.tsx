@@ -22,7 +22,10 @@ import { sheetWords } from "./sheet-words";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { useMinute } from "./YourTime";
 
-async function readCard(slug: string, uid: number): Promise<CardData | typeof SIGNED_OUT | null> {
+export async function readCard(
+  slug: string,
+  uid: number,
+): Promise<CardData | typeof SIGNED_OUT | null> {
   try {
     const res = await fetch(`/api/w/${slug}/members/${uid}`, { cache: "no-store" });
     if (res.status === 401) return SIGNED_OUT;

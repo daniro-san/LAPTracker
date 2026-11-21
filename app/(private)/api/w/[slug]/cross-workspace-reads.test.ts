@@ -1,7 +1,8 @@
 // Issue 471: what the desk's pages read for Alpha's officer when the address names Bravo's records (a notice,
-// its history, posts and reviews, a draft, a roll call, a garrison plan, a member card), and Home's activity
-// pages, and the Insights page's read (issue 489). Each finds nothing of Bravo's. The pages call these reads
-// after requireWorkspace, with the id from the address. Invented names only.
+// its history, posts and reviews, a draft, a roll call, a garrison plan, a member card), Home's activity
+// pages, the Insights page's read (issue 489) and Follow-up's ready messages (D140). Each finds nothing of
+// Bravo's. The pages call these reads after requireWorkspace, with the id from the address. Invented names
+// only.
 import { randomUUID } from "node:crypto";
 
 import { eq } from "drizzle-orm";
@@ -12,6 +13,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb } from "@/lib/db.test-helpers";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { followUpView } from "@/lib/private/follow-up";
 import { garrisonView } from "@/lib/private/garrison";
 import { draftView } from "@/lib/private/import-view";
 import { insightsView } from "@/lib/private/insights";
@@ -116,6 +118,36 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     });
     expect(view.rows.has(202)).toBe(false);
     expect(view.night).toMatchObject({ read: 1, on: 0 });
+  });
+
+  it("write Alpha's Follow-up messages from Alpha's own reads only, never Bravo's (D140)", async () => {
+    // Alpha's member 101 gave 400 Alliance Help coins on the four days before the seeded read: the tip.
+    for (const day of ["2026-11-14", "2026-11-15", "2026-11-16", "2026-11-17"]) {
+      const at = new Date(`${day}T23:37:00Z`);
+      await db.insert(dailyReads).values({ day, startedAt: at, status: "complete" });
+      await db.insert(dailyRosters).values({
+        readDay: day,
+        unionId: ALPHA,
+        memberCount: 1,
+        sourceUpdatedAt: at,
+        isFresh: true,
+        memberUids: [101],
+        memberNames: ["Ana Example"],
+        memberPower: [1000],
+        memberKills: [10],
+        rawJson: { members: [{ uid: 101, nick_name: "Ana Example", daily_honor: 400 }] },
+      });
+    }
+    // Alpha's own read of 101 says English (seeded); Bravo's workspace read the same player later, in
+    // French, and its own member 202.
+    const later = new Date(SEED_AT.getTime() + 3_600_000);
+    await db.insert(playerReads).values([
+      { unionId: BRAVO, uid: 101, readAt: later, language: "fr" },
+      { unionId: BRAVO, uid: 202, readAt: later, language: "fr" },
+    ]);
+    // The next week, so the seeded "Talked" of 101 no longer takes them off the list.
+    const view = await followUpView(db, a, new Date("2026-11-25T12:00:00Z"), ZONE);
+    expect(view.items.map((i) => [i.member.uid, i.tip, i.language])).toEqual([[101, true, "en"]]);
   });
 
   it("Home's activity pages carry Alpha's lines only", async () => {

@@ -1,18 +1,27 @@
 // /w/[slug]/follow-up (issue 340, D104): the leadership's weekly worklist. The members to look at this
-// week under "Check in" and "New", alphabetical in each, with a warm line for each reason and how many
-// facts are still to ask; each row has one-tap "Talked to them", "Add a note" and a link to Members. Then
-// the thefts whose follow-up is still open, each linked to its entry in the thefts log. People first (D75):
+// week under "Check in", "New" and "A tip to share" (D140), alphabetical in each, with a warm line for each
+// reason and every fact still to ask by name; each row has one-tap "Talked to them", "Add a note" and a
+// link to Members, and a tap on the person opens their panel (a sheet, beside the list from 1024, D122):
+// why, a ready message in their language, what to fill in, how it went and the last notes. Then the
+// thefts whose follow-up is still open, each linked to its entry in the thefts log. People first (D75):
 // notes for the officers, nothing is sent, no ranking, a warm line when nobody is on it.
 import { fill, isolate } from "@/lib/copy";
-import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
+import { getEnv } from "@/lib/env";
+import {
+  WORKSPACE_LANGUAGES,
+  type WorkspaceDictionary,
+  type WorkspaceKey,
+  type WorkspaceLanguage,
+} from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
-import { followUpView, type FollowUpView } from "@/lib/private/follow-up";
-import type { WorkItem } from "@/lib/private/follow-up-rules";
+import { followUpView, type FollowUpItem, type FollowUpView } from "@/lib/private/follow-up";
 import { cardFormats } from "@/lib/private/member-card";
 import type { Reason } from "@/lib/private/members";
 import { reasonText, type Formats } from "@/lib/private/members-sheet";
+import { readyMessage, readyWords } from "@/lib/private/ready-message";
 import type { AttackerGroup } from "@/lib/private/theft-groups";
 
+import { editorWords } from "../../../_ui/facts-form";
 import { followUpWords } from "../../../_ui/follow-up-words";
 import { FollowUpList, type FollowUpGroup, type FollowUpRow } from "../../../_ui/FollowUpList";
 import { SignedInFrame } from "../../../_ui/Frame";
@@ -33,18 +42,44 @@ function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
   return counted(t, `followup.reason.${r.kind}`, r.days, f.language);
 }
 
+/**
+ * The ready message (D140) in each language the officer can pick, the member's first (else the
+ * officer's).
+ */
+function messageOf(item: FollowUpItem, officer: WorkspaceLanguage) {
+  const { member, checkIn, toAsk, tip } = item;
+  const input = {
+    name: member.name,
+    isNew: member.isNew,
+    reasons: checkIn ? member.reasons.map((r) => r.kind) : [],
+    tip,
+    toAsk,
+  };
+  const texts = Object.fromEntries(
+    WORKSPACE_LANGUAGES.map((l) => [l, readyMessage(readyWords(l), input)]),
+  ) as Record<WorkspaceLanguage, string>;
+  return { language: item.language ?? officer, texts };
+}
+
 /** A member on the list as the browser shows it. */
-function rowOf({ member, checkIn, toAsk }: WorkItem, t: WorkspaceDictionary, f: Formats) {
+function rowOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats, officer: WorkspaceLanguage) {
+  const { member, checkIn, toAsk, tip } = item;
   const reasons = checkIn ? member.reasons.map((r) => reasonLine(r, t, f)) : [];
-  const ask = toAsk.length > 0 ? [counted(t, "followup.ask", toAsk.length, f.language)] : [];
+  // Every fact still to ask, by name (issue 460): never only a count.
   const list = toAsk.map((field) => t[`facts.${field}`]).join(", ");
+  const lines = [
+    ...reasons,
+    ...(toAsk.length > 0 ? [fill(t["followup.toAsk"], { list })] : []),
+    ...(tip ? [t["followup.reason.coins"]] : []),
+  ];
   return {
     uid: member.uid,
     name: member.name,
     rank: member.rank,
     tag: member.officerStatus === "help" ? t["status.help"] : null,
-    lines: [...reasons, ...ask],
-    detail: [...reasons, ...(toAsk.length > 0 ? [fill(t["followup.toAsk"], { list })] : [])],
+    lines,
+    ask: toAsk.map((field) => ({ field, label: t[`facts.${field}`] })),
+    message: messageOf(item, officer),
     versions: {
       away: member.facts.away?.version ?? 0,
       status: member.facts.status?.version ?? 0,
@@ -52,19 +87,29 @@ function rowOf({ member, checkIn, toAsk }: WorkItem, t: WorkspaceDictionary, f: 
   } satisfies FollowUpRow;
 }
 
-/** "Check in · n" then "New · n", each alphabetical (the items come by name); empty groups left out. */
-function groupsOf(items: WorkItem[], t: WorkspaceDictionary, f: Formats): FollowUpGroup[] {
+/**
+ * "Check in · n", "New · n", then "A tip to share · n" (D140), each alphabetical (the items come by name);
+ * a member is in the first group that holds them, empty groups left out.
+ */
+function groupsOf(
+  items: FollowUpItem[],
+  t: WorkspaceDictionary,
+  f: Formats,
+  officer: WorkspaceLanguage,
+): FollowUpGroup[] {
   const checkIn = items.filter((i) => i.checkIn);
-  const fresh = items.filter((i) => !i.checkIn);
+  const fresh = items.filter((i) => !i.checkIn && i.toAsk.length > 0);
+  const tip = items.filter((i) => !i.checkIn && i.toAsk.length === 0);
   return [
     { id: "checkin", key: "followup.group.checkin" as const, items: checkIn },
     { id: "new", key: "followup.group.new" as const, items: fresh },
+    { id: "tip", key: "followup.group.tip" as const, items: tip },
   ]
     .filter((g) => g.items.length > 0)
     .map((g) => ({
       id: g.id,
       title: fill(t[g.key], { n: g.items.length }),
-      rows: g.items.map((i) => rowOf(i, t, f)),
+      rows: g.items.map((i) => rowOf(i, t, f, officer)),
     }));
 }
 
@@ -117,7 +162,13 @@ function Thefts(props: { slug: string; thefts: AttackerGroup[]; t: WorkspaceDict
   );
 }
 
-export default async function FollowUpPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function FollowUpPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const page = await openRollCall<FollowUpView>(
     params,
     "follow-up",
@@ -130,7 +181,16 @@ export default async function FollowUpPage({ params }: { params: Promise<{ slug:
   );
   const { access, slug, t, language, today, data } = page;
   const f = cardFormats(language, page.zone, page.now);
-  const groups = groupsOf(data.items, t, f);
+  const groups = groupsOf(data.items, t, f, language);
+  const open = (await searchParams).m;
+  const editor = {
+    slug,
+    words: editorWords(t),
+    shots: featureOn(access, "ocr"),
+    language,
+    serverZone: getEnv().SERVER_TZ,
+    used: data.zones,
+  };
   return (
     <SignedInFrame
       access={access}
@@ -140,6 +200,8 @@ export default async function FollowUpPage({ params }: { params: Promise<{ slug:
       waiting={page.waiting}
     >
       <h1 className="font-display text-display-lg">{t["tab.review"]}</h1>
+      {/* What to do, in one sentence (issue 460), then the D104 promise. */}
+      <p className="mt-1 font-semibold">{t["followup.todo"]}</p>
       <p className="mt-1 text-body-sm text-ink/80">{t["followup.help"]}</p>
       <p className="mt-3 font-semibold">
         {fill(t["followup.week"], { range: weekRange(data.week, language) })}
@@ -165,8 +227,10 @@ export default async function FollowUpPage({ params }: { params: Promise<{ slug:
         today={today}
         language={language}
         words={followUpWords(t)}
+        editor={editor}
+        initialOpen={typeof open === "string" ? open : null}
+        foot={<Thefts slug={slug} thefts={data.thefts} t={t} />}
       />
-      <Thefts slug={slug} thefts={data.thefts} t={t} />
     </SignedInFrame>
   );
 }

@@ -34,11 +34,22 @@ export interface FieldsProps {
 
 const INPUT = FIELD;
 
+/**
+ * The open editor's field (`data-fact`) gets the focus: its first control. Follow-up's facts still to ask
+ * open the editor at their field (D140), called after the editor's sheet took its own first focus.
+ */
+export function focusField(field: FactField) {
+  document
+    .querySelector(`[data-fact="${field}"]`)
+    ?.querySelector<HTMLElement>("input, select, textarea, button")
+    ?.focus();
+}
+
 function Row(props: FieldsProps & { field: FactField; hint?: string | null; children: ReactNode }) {
   const { field, words, stored, fromMessage } = props;
   const source = stored[field]?.value != null ? (stored[field]?.source ?? null) : null;
   return (
-    <div className="border-t border-rule py-3">
+    <div data-fact={field} className="border-t border-rule py-3">
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span id={`fact-${field}`} className="font-semibold">
           {words[`facts.${field}`]}
