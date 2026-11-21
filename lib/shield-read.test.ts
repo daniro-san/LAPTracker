@@ -68,11 +68,16 @@ async function dayRead(uids: number[], name = (u: number) => `Wren${u}`) {
 
 /**
  * Every member answers; odd uids are seen with an 8-hour shield. `step`: how far the clock moves per call;
- * `remaining`: the quota before the first call; `gone`: Discord answers an edit with 404.
+ * `remaining`: the quota before the first call; `gone`: Discord answers an edit with 404; `forum`: the
+ * leaders' channel is a forum, where Discord answers a post without `thread_name` with 400.
  */
-function deps(now: Date, opts: { step?: number; remaining?: number; gone?: boolean } = {}) {
+function deps(
+  now: Date,
+  opts: { step?: number; remaining?: number; gone?: boolean; forum?: boolean } = {},
+) {
   const calls: number[] = [];
-  const posts: { method: string; url: string; content: string }[] = [];
+  const posts: { method: string; url: string; content: string; threadName?: string | undefined }[] =
+    [];
   let remaining = opts.remaining ?? 900;
   const d: SquadsDeps & {
     calls: number[];
@@ -90,15 +95,18 @@ function deps(now: Date, opts: { step?: number; remaining?: number; gone?: boole
       ...TEST_ENV,
       SAMPLE_EVERY_MIN: 15,
       WORKSPACE_DISCORD_WEBHOOKS: {
-        ogs: { leaders: { url: HOOK, name: "leaders", forum: false } },
+        ogs: { leaders: { url: HOOK, name: "leaders", forum: opts.forum ?? false } },
       },
     },
     paceMs: 0,
     fetch: async (url, init) => {
       const href = String(url);
       if (!href.startsWith(HOOK)) return Response.json({});
-      const body = JSON.parse(String(init?.body)) as { content: string };
-      posts.push({ method: String(init?.method), url: href, content: body.content });
+      const body = JSON.parse(String(init?.body)) as { content: string; thread_name?: string };
+      const method = String(init?.method);
+      posts.push({ method, url: href, content: body.content, threadName: body.thread_name });
+      if (opts.forum && method === "POST" && !body.thread_name)
+        return new Response(null, { status: 400 });
       if (opts.gone && init?.method === "PATCH") return new Response(null, { status: 404 });
       return Response.json({ id: "900" });
     },
@@ -186,6 +194,23 @@ describe("the Raid Shield check's reads (D137)", () => {
     expect(d.posts[1]?.method).toBe("PATCH");
     expect(d.posts[1]?.url).toBe(`${HOOK}/messages/900`);
     expect(d.posts[1]?.content).toContain("Not seen this morning: Wren2, Wren4");
+  });
+
+  it("opens a titled post in a forum leaders' channel and edits it inside that post", async () => {
+    await dayRead(range(4));
+    await db.insert(shieldSettings).values({ workspaceId: ws, discord: true, updatedAt: FRI });
+    const d = deps(FRI, { forum: true });
+    await tick(d);
+    expect(d.posts[0]).toMatchObject({ method: "POST", threadName: "Raid Shield check" });
+    d.at = SAT;
+    await tick(d);
+    expect(d.posts[1]).toMatchObject({
+      method: "PATCH",
+      url: `${HOOK}/messages/900?thread_id=900`,
+      threadName: undefined,
+    });
+    const [check] = await db.select().from(shieldChecks);
+    expect(check?.messageId).toBe("900");
   });
 
   it("starts no batch that could end after 00:00 ST on Friday", async () => {
