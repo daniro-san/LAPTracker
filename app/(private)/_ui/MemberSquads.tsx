@@ -7,7 +7,8 @@
 // each with its picture in a rarity frame, rarity, level, the game's five stars and its Hall of Honor
 // level. Screen readers get the same heroes as a list in slot order instead. A slot the
 // tracker sent no hero for is a neutral empty slot ("1 slot empty", D75), never a warning. Troop counts are
-// never shown (owner, issue 461). The strongest squad sits in the soft drawn frame with "Strongest".
+// never shown (owner, issue 461). Every squad sits in its own soft drawn frame, 12 px apart, so each reads as
+// one unit (owner, 2026-11-21); the strongest one is tinted plum and tagged "Strongest".
 import { HeroPicture } from "@/app/_ui/Pictures";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
@@ -59,7 +60,7 @@ export function MemberSquads({ squads }: { squads: SquadsCard }) {
         <>
           {squads.summary && <p className="mt-1 text-body-sm">{squads.summary}</p>}
           <p className="text-[12px] text-ink/70">{squads.help}</p>
-          <ul className="mt-1">
+          <ul className="mt-3 space-y-3">
             {squads.squads.map((s) => (
               <Squad key={s.squad} s={s} w={squads} />
             ))}
@@ -95,11 +96,7 @@ function Squad({ s, w }: { s: SquadCard; w: Words }) {
     .filter((n): n is string => n !== null)
     .join(" · ");
   return (
-    <li
-      className={
-        s.strongest ? "drawn-frame-soft my-2 bg-plum/5 px-2 py-2" : "border-t border-rule py-2"
-      }
-    >
+    <li className={`drawn-frame-soft px-2 py-2 ${s.strongest ? "bg-plum/5" : ""}`}>
       <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
         <span className="flex flex-wrap items-baseline gap-x-2">
           <span className="font-semibold">{s.title}</span>
