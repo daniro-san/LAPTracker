@@ -81,4 +81,4 @@ What the line says (invented data):
 - The same numbers on the public alliance page (issue 466's "Later") would need a public read model and D143's shared cache: the desk line reads `MembersView.reads`, which is private (D71) and must not go into the public cache. A precomputed per-day aggregate stored at the nightly read would serve both pages.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/557
