@@ -70,9 +70,10 @@ export const de = {
     liveStandings: "Zwischenstand",
     liveStandingsDone: "Bei der letzten Messung",
     liveDuring: "Während des Events",
-    liveStandingsHelp: "Änderung seit Beginn, die meisten Kills zuerst",
+    liveStandingsHelp:
+      "Änderung seit Beginn, die meisten Kills zuerst. Kills, die die Mitglieder gewonnen haben, ohne das, was Beigetretene mitgebracht haben",
     livePulse: "Server-Puls",
-    livePulseHelp: "Von {n} Allianzen gewonnene Kills in jeweils {min} Minuten",
+    livePulseHelp: "Von den Mitgliedern von {n} Allianzen gewonnene Kills in jeweils {min} Minuten",
     liveBusiest: "Aktivste {span} Minuten bisher: {from}–{to} · {share} aller Kills",
     liveBusiestDone: "Aktivste {span} Minuten: {from}–{to} · {share} aller Kills",
     liveNoUpdate: "Kein Update vom Spiel",
@@ -124,7 +125,7 @@ export const de = {
     fewGainers: "wenige Zuwächser",
     carried: "Kills-Anteil gegen Might-Anteil",
     carriedHelp:
-      "Der Anteil jeder Allianz an den von Beginn bis Ende gewonnenen Kills, neben ihrem Anteil am Might bei Beginn. Verteidiger und Support-Spieler sammeln keine Kills.",
+      "Der Anteil jeder Allianz an den Kills, die ihre Mitglieder in beiden Listen von Beginn bis Ende gewonnen haben, neben ihrem Anteil am Might bei Beginn. Verteidiger und Support-Spieler sammeln keine Kills.",
     carriedTotal: "Alle {n} Allianzen: {kills} Kills gewonnen, {might} Might bei Beginn",
     carriedMightMark: "Might-Anteil bei Beginn",
     carriedKillsMark: "Kills-Anteil gewonnen",
@@ -370,6 +371,14 @@ export const de = {
     rank: "Rang",
     rounded: "Gerundet",
     members: "Inklusive Mitgliederwechsel",
+    membersTap: "Inklusive Mitgliederwechsel: * antippen für die Aufteilung",
+  },
+  split: {
+    open: "Inklusive Mitgliederwechsel: Aufteilung zeigen",
+    total: "Gesamt",
+    joined: "Mitgebracht von {n} beigetretenen",
+    left: "Weg mit {n} ausgetretenen",
+    without: "Ohne sie",
   },
   members: {
     search: "Mitgliedsname",

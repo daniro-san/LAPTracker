@@ -55,7 +55,7 @@ async function eventReads(db: Db, id: number, sections: Sections) {
     allianceNames(db, unionIds),
     eventRanks(db, id),
     before && after
-      ? rosterChanges(db, { before: before.id, after: after.id })
+      ? rosterChanges(db, id, { before: before.id, after: after.id })
       : Promise.resolve(new Map<number, RosterChange>()),
     memberMovers(db, detail.snapshots),
     turnoutRead,

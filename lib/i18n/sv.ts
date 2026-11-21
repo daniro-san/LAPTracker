@@ -70,9 +70,10 @@ export const sv = {
     liveStandings: "Ställningen hittills",
     liveStandingsDone: "Vid senaste avläsningen",
     liveDuring: "Under eventet",
-    liveStandingsHelp: "Förändring sedan Början, flest Kills först",
+    liveStandingsHelp:
+      "Förändring sedan Början, flest Kills först. Kills som medlemmarna fick, utan det nya medlemmar tog med sig",
     livePulse: "Serverpuls",
-    livePulseHelp: "Kills som {n} allianser fått under varje {min} minuter",
+    livePulseHelp: "Kills som medlemmarna i {n} allianser fått under varje {min} minuter",
     liveBusiest: "Mest aktiva {span} minuterna hittills: {from}–{to} · {share} av Kills",
     liveBusiestDone: "Mest aktiva {span} minuterna: {from}–{to} · {share} av Kills",
     liveNoUpdate: "Ingen uppdatering från spelet",
@@ -122,7 +123,7 @@ export const sv = {
       "Inget av de två eventen har {min}-minuters avläsningar, så deras pulser kan inte jämföras",
     carried: "Kills-andel mot Might-andel",
     carriedHelp:
-      "Varje allians andel av Kills, bredvid dess andel av Might. Kills från Början till Slut, Might vid Början. Försvarare och supportspelare får inga Kills.",
+      "Varje allians andel av Kills, bredvid dess andel av Might. Kills som medlemmarna i båda listorna fick från Början till Slut, Might vid Början. Försvarare och supportspelare får inga Kills.",
     carriedTotal: "Alla {n} allianser: {kills} Kills vunna, {might} Might vid Början",
     carriedMightMark: "Might-andel vid Början",
     carriedKillsMark: "Kills-andel vunnen",
@@ -311,6 +312,14 @@ export const sv = {
     rank: "Placering",
     rounded: "Avrundat",
     members: "Inkluderar medlemsbyten",
+    membersTap: "Inkluderar medlemsbyten: tryck på * för fördelningen",
+  },
+  split: {
+    open: "Inkluderar medlemsbyten: visa fördelningen",
+    total: "Totalt",
+    joined: "Kom med {n} som gick med",
+    left: "Försvann med {n} som lämnade",
+    without: "Utan dem",
   },
   members: {
     search: "Medlemsnamn",

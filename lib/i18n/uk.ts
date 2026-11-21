@@ -70,9 +70,10 @@ export const uk = {
     liveStandings: "Таблиця наразі",
     liveStandingsDone: "На останньому знімку",
     liveDuring: "Під час події",
-    liveStandingsHelp: "Зміна від «Початку», спершу більше Kills",
+    liveStandingsHelp:
+      "Зміна від «Початку», спершу більше Kills. Kills, набрані учасниками, без того, що принесли ті, хто прийшов",
     livePulse: "Пульс сервера",
-    livePulseHelp: "Набрані Kills альянсами ({n}) за кожні {min} хв",
+    livePulseHelp: "Набрані Kills учасниками альянсів ({n}) за кожні {min} хв",
     liveBusiest: "Найжвавіші {span} хв поки що: {from}–{to} · {share} від усіх Kills",
     liveBusiestDone: "Найжвавіші {span} хв: {from}–{to} · {share} від усіх Kills",
     liveNoUpdate: "Оновлень від гри немає",
@@ -122,7 +123,7 @@ export const uk = {
     fewGainers: "мало приростів",
     carried: "Частка Kills проти частки Might",
     carriedHelp:
-      "Частка кожного альянсу в набраних Kills поруч із його часткою в Might. Kills від «Початку» до «Кінця», Might на «Початку». Захисники і гравці підтримки не набирають Kills.",
+      "Частка кожного альянсу в Kills, набраних від «Початку» до «Кінця» учасниками з обох списків, поруч із його часткою в Might на «Початку». Захисники і гравці підтримки не набирають Kills.",
     carriedTotal: "Усі альянси ({n}): набрано {kills} Kills, {might} Might на «Початку»",
     carriedMightMark: "Частка Might на «Початку»",
     carriedKillsMark: "Частка набраних Kills",
@@ -366,6 +367,14 @@ export const uk = {
     rank: "Місце",
     rounded: "Округлено",
     members: "З урахуванням змін складу",
+    membersTap: "З урахуванням змін складу: торкніться *, щоб побачити розподіл",
+  },
+  split: {
+    open: "З урахуванням змін складу: показати розподіл",
+    total: "Усього",
+    joined: "Принесли ті, хто прийшов ({n})",
+    left: "Забрали ті, хто пішов ({n})",
+    without: "Без них",
   },
   members: {
     search: "Ім’я учасника",

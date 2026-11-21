@@ -70,6 +70,21 @@ describe("runDailyRead (D60)", () => {
     ]);
   });
 
+  it("stores no roster for a read that holds another alliance: an error row (D69 amendment)", async () => {
+    const [ok = 0, bad = 0] = IDS;
+    const read = (id: number) => roster(id, ago(T0, minutes(1)));
+    await runDailyRead(deps(fakeV1(read)), db, "2026-11-09", ours([ok, bad]));
+    // The next day, bad's answer carries ok's tag, name and members under bad's id.
+    const v1 = fakeV1((id) => (id === bad ? { ...read(ok), unionId: bad } : read(id)));
+
+    const summary = await runDailyRead(deps(v1), db, "2026-11-10", ours([ok, bad]));
+
+    expect(summary?.failed.map((f) => [f.unionId, f.error])).toEqual([
+      [bad, "v1 wrong alliance (tag)"],
+    ]);
+    expect(summary?.callsUsed).toBe(3);
+  });
+
   it("keeps each member's frame as the player's current one, unless a newer read already set it (D65)", async () => {
     const [id = 0] = IDS;
     const read = async (day: string, at: Date, frameId: number) => {

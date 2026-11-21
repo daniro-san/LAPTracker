@@ -10,6 +10,7 @@ import type { Dictionary } from "@/lib/copy";
 
 import { EmptyState } from "./EmptyState";
 import { Delta, Num, Rank } from "./Num";
+import { SplitMark, type MetricSplit } from "./SplitMark";
 
 export interface StatMetric {
   label: string;
@@ -24,6 +25,9 @@ export interface StatMetric {
   note?: string;
   /** The change fell while members left: it carries the `*` mark the legend explains. */
   memberMark?: boolean;
+  /** Members who joined or left moved the change: a tappable `*` opens its split (D69 amendment,
+   * 2026-11-21). Set in place of `memberMark`. */
+  split?: MetricSplit;
   /** Shown only in the row's Details panel, beside the before → after values. */
   detailNote?: string | undefined;
   /** The time these figures are from, shown where the change would be: a card whose After failed keeps
@@ -59,11 +63,11 @@ export const LABEL = `text-label font-semibold uppercase tracking-[0.04em] ${MUT
 
 /** `shared`: the row's Details control sits on this metric's line below 640 px (see MoreBar), so the
  * metric takes one of the card's two columns; otherwise it spans both. */
-function MetricCell({ m, shared }: { m: StatMetric; shared: boolean }) {
+function MetricCell({ m, shared, lead }: { m: StatMetric; shared: boolean; lead: ReactNode }) {
   const base = m.base ?? m.from ?? null;
   return (
     <div
-      className={`grid grid-cols-[5rem_minmax(0,1fr)] items-baseline gap-x-2 sm:col-span-1 sm:block sm:text-right ${shared ? "" : "col-span-2"}`}
+      className={`grid grid-cols-[5rem_minmax(0,1fr)] items-baseline gap-x-2 sm:relative sm:col-span-1 sm:block sm:text-right ${shared ? "" : "col-span-2"}`}
     >
       {/* sr-only at ≥ 640 px, where the column header shows it: a screen reader still hears it (07c S4). */}
       <span className={`${LABEL} sm:sr-only`}>{m.label}</span>
@@ -82,6 +86,17 @@ function MetricCell({ m, shared }: { m: StatMetric; shared: boolean }) {
           !m.noChange && (
             <span className="text-sm tabular-nums sm:block">
               <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
+              {m.split && m.delta !== null && (
+                <SplitMark
+                  total={m.delta}
+                  split={m.split}
+                  name={
+                    <>
+                      {m.label}, {lead}
+                    </>
+                  }
+                />
+              )}
             </span>
           )
         )}
@@ -235,7 +250,12 @@ export function StatTable({
           >
             <Lead row={row} />
             {row.metrics.map((m, i) => (
-              <MetricCell key={i} m={m} shared={i === row.metrics.length - 1 && more} />
+              <MetricCell
+                key={i}
+                m={m}
+                shared={i === row.metrics.length - 1 && more}
+                lead={row.lead}
+              />
             ))}
             <MoreBar row={row} copy={copy} inline />
           </li>

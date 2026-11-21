@@ -261,8 +261,9 @@ export interface CarriedInput {
   key: number;
   /** Alliance might at Start. */
   might: number | null;
-  killsBefore: number | null;
-  killsAfter: number | null;
+  /** The kills gained by its members in both the Start and End rosters (D69 amendment, 2026-11-21): a member
+   * who joined brings no lifetime kills into the share. */
+  gained: number | null;
 }
 
 export interface CarriedShare {
@@ -277,15 +278,15 @@ export interface CarriedShare {
 
 /**
  * Each alliance's share of the kills gained (D83) next to its share of the might at Start (#280). Only
- * alliances with all three totals count, so the shares are of the same set; the caller decides that the
- * totals are usable (INVARIANT freshness.no-stale-delta). A fall in an alliance's kills total is not a
- * gain. Empty when the set has no might or no kills gained.
+ * alliances with both figures count, so the shares are of the same set; the caller decides that the
+ * rosters are usable (INVARIANT freshness.no-stale-delta). A fall is not a gain. Empty when the set has no
+ * might or no kills gained.
  */
 export function carriedShares(rows: readonly CarriedInput[]): CarriedShare[] {
   const counted = rows.flatMap((r) =>
-    r.might === null || r.killsBefore === null || r.killsAfter === null
+    r.might === null || r.gained === null
       ? []
-      : [{ key: r.key, might: r.might, gained: Math.max(0, r.killsAfter - r.killsBefore) }],
+      : [{ key: r.key, might: r.might, gained: Math.max(0, r.gained) }],
   );
   const might = counted.reduce((t, r) => t + r.might, 0);
   const gained = counted.reduce((t, r) => t + r.gained, 0);

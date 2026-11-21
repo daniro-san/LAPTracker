@@ -70,9 +70,10 @@ export const fr = {
     liveStandings: "Classement pour l’instant",
     liveStandingsDone: "Au dernier relevé",
     liveDuring: "Pendant l’événement",
-    liveStandingsHelp: "Évolution depuis Début, plus de Kills gagnés d’abord",
+    liveStandingsHelp:
+      "Évolution depuis Début, plus de Kills gagnés d’abord. Kills gagnés par les membres, sans ce qu’ont apporté ceux qui sont arrivés",
     livePulse: "Rythme serveur",
-    livePulseHelp: "Kills gagnés par {n} alliances, par tranches de {min} minutes",
+    livePulseHelp: "Kills gagnés par les membres de {n} alliances, par tranches de {min} minutes",
     liveBusiest: "{span} minutes les plus actives pour l’instant, {from}–{to} · {share} des Kills",
     liveBusiestDone: "{span} minutes les plus actives, {from}–{to} · {share} des Kills",
     liveNoUpdate: "Aucune mise à jour du jeu",
@@ -125,7 +126,7 @@ export const fr = {
     fewGainers: "gagnants rares",
     carried: "Part des Kills contre part du Might",
     carriedHelp:
-      "Part de chaque alliance dans les Kills gagnés de Début à Fin, à côté de sa part du Might au Début. Les défenseurs et les joueurs de soutien ne gagnent pas de Kills.",
+      "Part de chaque alliance dans les Kills gagnés de Début à Fin par ses membres présents dans les deux listes, à côté de sa part du Might au Début. Les défenseurs et les joueurs de soutien ne gagnent pas de Kills.",
     carriedTotal: "Toutes les {n} alliances : {kills} Kills gagnés, {might} de Might au Début",
     carriedMightMark: "Part du Might au Début",
     carriedKillsMark: "Part des Kills gagnés",
@@ -372,6 +373,14 @@ export const fr = {
     rank: "Rang",
     rounded: "Arrondi",
     members: "Inclut les changements de membres",
+    membersTap: "Inclut les changements de membres : touchez * pour le détail",
+  },
+  split: {
+    open: "Inclut les changements de membres : voir le détail",
+    total: "Total",
+    joined: "Apporté par {n} arrivés",
+    left: "Emporté par {n} partis",
+    without: "Sans eux",
   },
   members: {
     search: "Nom du membre",

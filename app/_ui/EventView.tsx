@@ -259,7 +259,11 @@ export async function EventView({
           clock={clock}
           copy={copy}
         />
-        <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} copy={copy} />
+        <Legend
+          memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark || m.split))}
+          split={rows.some((r) => r.metrics.some((m) => m.split))}
+          copy={copy}
+        />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
         {progress && <LiveSections {...liveProps} progress={progress} placement="above" />}
         <StatTable

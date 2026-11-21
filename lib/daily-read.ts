@@ -8,6 +8,7 @@
 import { TRACKED_COUNT } from "../config/alliances";
 import { dailyReadQuota } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
+import { checkIdentity } from "./collector-identity";
 import { logRosterCheck } from "./collector-log";
 import { failedList, FRESH_MAX_AGE_MS } from "./collector-rows";
 import { isFresh, RUN_STALE_AFTER_MS } from "./compute";
@@ -21,6 +22,7 @@ import {
   dailyRosterStates,
   finishDailyRead,
   getDailyRead,
+  lastMemberUids,
   reclaimDailyRead,
   storeDailyRoster,
   type DailyReadStatus,
@@ -65,6 +67,8 @@ interface Read {
   /** The alliances read on a workspace's own key (D124, D133); the others on LAP_API_KEY. */
   keys: Map<number, OpenKey>;
   tags: Map<number, string | null>;
+  /** What the identity check compares a read with (D69 amendment, 2026-11-21); no board in a daily read. */
+  identity: Parameters<typeof checkIdentity>[0];
 }
 
 /** INVARIANT calls.max-upstream: every /v1 attempt, quota check and retries included. */
@@ -109,6 +113,8 @@ async function readOne(read: Read, db: Db, id: number): Promise<void> {
       key && { apiKey: key.apiKey },
     );
     if (read.abort !== null) return;
+    // A 200 holding another alliance is this alliance's failed read: its error row, no roster stored.
+    checkIdentity(read.identity, id, a);
     await logFetch(read, started, call, { cached: a.cached, quota: a.quota?.remaining ?? null });
     await logRosterCheck(read.log, a);
     const row = dataRow(a, now());
@@ -302,6 +308,7 @@ async function readDay(
     frames: [],
     keys,
     tags: new Map(ids.map((id) => [id, labels.get(id)?.tag ?? null])),
+    identity: { board: null, labels, rosters: await lastMemberUids(db, ids) },
   };
   const error = await withDeadline(read, readRosters(read, db, attempt.toRead));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });

@@ -70,9 +70,10 @@ export const ptBR = {
     liveStandings: "Classificação até agora",
     liveStandingsDone: "Na última leitura",
     liveDuring: "Durante o evento",
-    liveStandingsHelp: "Mudança desde o Início, mais kills ganhos primeiro",
+    liveStandingsHelp:
+      "Mudança desde o Início, mais kills ganhos primeiro. Kills que os membros ganharam, sem o que os que entraram trouxeram",
     livePulse: "Pulso geral",
-    livePulseHelp: "kills ganhos por {n} alianças a cada {min} minutos",
+    livePulseHelp: "kills ganhos pelos membros de {n} alianças a cada {min} minutos",
     liveBusiest: "Os {span} minutos mais movimentados até agora: {from}–{to} · {share} dos kills",
     liveBusiestDone: "Os {span} minutos mais movimentados: {from}–{to} · {share} dos kills",
     liveNoUpdate: "Sem atualização do jogo",
@@ -121,7 +122,7 @@ export const ptBR = {
     fewGainers: "poucos ganhadores",
     carried: "Fatia de kills vs fatia de might",
     carriedHelp:
-      "A fatia de cada aliança nos kills, ao lado da fatia do Might. Kills do Início ao Fim, Might no Início. Defensores e jogadores de suporte não ganham kills.",
+      "A fatia de cada aliança nos kills, ao lado da fatia do Might. Kills que os membros presentes nas duas listas ganharam do Início ao Fim, Might no Início. Defensores e jogadores de suporte não ganham kills.",
     carriedTotal: "Todas as {n} alianças: {kills} kills ganhos, {might} de might no Início",
     carriedMightMark: "Fatia do might no Início",
     carriedKillsMark: "Fatia dos kills ganhos",
@@ -367,6 +368,14 @@ export const ptBR = {
     rank: "Posição",
     rounded: "Arredondado",
     members: "Inclui mudanças de membros",
+    membersTap: "Inclui mudanças de membros: toque no * para ver a divisão",
+  },
+  split: {
+    open: "Inclui mudanças de membros: ver a divisão",
+    total: "Total",
+    joined: "Trazido por {n} que entraram",
+    left: "Levado por {n} que saíram",
+    without: "Sem eles",
   },
   members: {
     search: "Nome do membro",

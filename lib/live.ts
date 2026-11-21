@@ -16,10 +16,19 @@ export const BUSIEST_MIN_INTERVALS = 4;
 /** A slot's sample that is still missing this long after the slot is called overdue. */
 export const OVERDUE_MS = 3 * MINUTE;
 
+/**
+ * One alliance in one reading. Kills are compared over the members only (D69 amendment, 2026-11-21), so a
+ * member who joins mid-event does not bring their lifetime kills into the event: `gained`, the kills its
+ * members gained since their first reading of the event in the alliance (the Start, or later for one who
+ * joined); `step`, the kills gained by the members also in the alliance's previous reading. Absent when the
+ * row has no members: the totals are compared then.
+ */
+export type Reading = Measured & { gained?: number; step?: number };
+
 /** One reading: its time and every alliance that was read (a failed alliance is absent). */
 export interface Slice {
   at: Date;
-  alliances: ReadonlyMap<number, Measured>;
+  alliances: ReadonlyMap<number, Reading>;
 }
 
 export interface Standing {
@@ -29,7 +38,8 @@ export interface Standing {
   at: Date | null;
   start: Measured;
   latest: Measured;
-  /** Latest usable sample minus Start; null when no sample of the alliance is usable, or the Start is stale. */
+  /** Latest usable sample minus Start (kills: its members' `gained`); null when no sample of the alliance is
+   * usable, or the Start is stale. */
   change: { power: number; kills: number } | null;
 }
 
@@ -47,12 +57,13 @@ export function standings(start: Slice, samples: readonly Slice[]): Standing[] {
       const usable = samples.findLast((s) => s.alliances.get(unionId)?.isFresh);
       const slice = usable ?? newest;
       const to = slice?.alliances.get(unionId);
+      const d = to ? delta(from, to) : null;
       return {
         unionId,
         at: slice?.at ?? null,
         start: from,
         latest: to ?? from,
-        change: to ? delta(from, to) : null,
+        change: d && to ? { power: d.power, kills: to.gained ?? d.kills } : null,
       };
     })
     .sort(
@@ -84,10 +95,26 @@ const missing = (from: number, to: number): PulseSlot => ({
   state: "missing",
 });
 
+/** One interval's kills over the alliances read fresh in both readings, by their members' `step`. */
+function compared(prev: Slice, cur: Slice) {
+  let [kills, alliances, changed] = [0, 0, false];
+  for (const [unionId, was] of prev.alliances) {
+    const now = cur.alliances.get(unionId);
+    const d = delta(was, now ?? { ...was, isFresh: false });
+    if (!d) continue;
+    const gained = now?.step ?? d.kills;
+    kills += gained;
+    alliances += 1;
+    changed ||= gained !== 0 || d.power !== 0;
+  }
+  return { kills, alliances, changed };
+}
+
 /**
  * Kills gained per reading interval across the alliances, between consecutive readings of each alliance
- * (`readings`: the Start, then the samples in time order). An alliance that is stale in either reading is
- * left out of that interval. A gap of two or more cadences (a reading is missing) gives `missing` intervals.
+ * (`readings`: the Start, then the samples in time order), by the members in both (`step`): one who joins,
+ * leaves or is missing from one reading neither adds nor takes kills. An alliance that is stale in either
+ * reading is left out of that interval. A gap of two or more cadences (a reading is missing) gives `missing` intervals.
  */
 export function serverPulse(readings: readonly Slice[], everyMs: number): PulseSlot[] {
   const slots: PulseSlot[] = [];
@@ -103,14 +130,7 @@ export function serverPulse(readings: readonly Slice[], everyMs: number): PulseS
       for (let k = 0; k < gaps; k++) slots.push(missing(edge(k), edge(k + 1)));
       continue;
     }
-    let [kills, alliances, changed] = [0, 0, false];
-    for (const [unionId, was] of prev.alliances) {
-      const d = delta(was, cur.alliances.get(unionId) ?? { ...was, isFresh: false });
-      if (!d) continue;
-      kills += d.kills;
-      alliances += 1;
-      changed ||= d.kills !== 0 || d.power !== 0;
-    }
+    const { kills, alliances, changed } = compared(prev, cur);
     slots.push(
       alliances === 0
         ? missing(from, to)

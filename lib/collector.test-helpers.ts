@@ -23,6 +23,8 @@ export const BOARD_EXTRA: number[] = [67_120_101, 67_120_102, 67_120_103];
 export const LABELS = new Map(
   [...IDS, ...BOARD_EXTRA].map((id) => [id, { tag: `T${id % 1000}`, name: `Alliance ${id}` }]),
 );
+/** Each id's newest daily roster: the uids `roster` gives its members. */
+export const ROSTER_UIDS = new Map(IDS.map((id) => [id, [1, 2, 3].map((i) => id * 10 + i)]));
 export const minutes = (n: number) => n * 60_000;
 export const ago = (now: Date, ms: number) => new Date(now.getTime() - ms);
 
@@ -130,7 +132,7 @@ export function makeDeps(
   allianceIds = IDS,
 ) {
   const clock = { now: T0 };
-  const repo = createMemoryRepo([{ id: EVENT_ID, allianceIds }], IDS, LABELS);
+  const repo = createMemoryRepo([{ id: EVENT_ID, allianceIds }], IDS, LABELS, ROSTER_UIDS);
   const deps: Deps = { v1, internal, repo, logger: silentLogger, now: () => clock.now };
   return { deps, repo, clock };
 }
