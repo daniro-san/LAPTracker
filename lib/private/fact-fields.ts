@@ -1,7 +1,10 @@
 // Member facts (issue #297, D80): the fields officers record about a member of their own alliance, where
 // each value came from, and how two edits of one field made at the same time combine. Pure: the card's
 // editor (a client component) imports it too.
-import { dayIn } from "./calendar-time";
+import type { AwayNote } from "../member-away";
+
+// Who is away on a day is shared with the tick's Raid prep fill (D137): lib/member-away.ts.
+export { awayOn, awayUntil, type AwayNote } from "../member-away";
 
 export const FACT_FIELDS = [
   "squadMight",
@@ -23,16 +26,6 @@ export type FactSource = (typeof FACT_SOURCES)[number];
 /** Statuses an officer sets (D75); Fine and Check in stay computed. */
 export const OFFICER_STATUSES = ["break", "help"] as const;
 export type OfficerStatus = (typeof OFFICER_STATUSES)[number];
-
-/**
- * An away note; `until` is the last server day away (YYYY-MM-DD), or null when nobody knows. `from` is the
- * first day away (issue 298); a note without it runs from the day it was written.
- */
-export interface AwayNote {
-  text: string;
-  from?: string | null;
-  until: string | null;
-}
 
 export interface FactValues {
   /** Main (first) squad might. */
@@ -118,42 +111,3 @@ const rank = (code: string) => {
   const i = (LANGUAGES as readonly string[]).indexOf(code);
   return i < 0 ? LANGUAGES.length : i;
 };
-
-/**
- * The last day of an away note that runs on server day `day` (YYYY-MM-DD): its first day, when it has one,
- * is not after `day`, and its last day is not before it. Null otherwise.
- */
-export const awayUntil = (away: AwayNote | null | undefined, day: string): string | null =>
-  away?.until && away.until >= day && (!away.from || away.from <= day) ? away.until : null;
-
-/** The server day (SERVER_TZ `zone`) a fact version was written; null when not known. */
-const savedDay = (fact: Pick<Fact, "at"> | undefined, zone: string) =>
-  fact?.at ? dayIn(zone, Date.parse(fact.at)) : null;
-
-/**
- * Whether a member is left out on server day `day` (roll calls, caravan suggestions): an away note that
- * runs that day, or On a break (an officer's status). Neither reaches into the past (D103): a note with
- * no first day runs from the day it was saved, and a break counts from the day it was set.
- * `until` is the note's last day, else null.
- */
-export function awayOn(
-  facts: Pick<MemberFacts, "status" | "away"> | undefined,
-  day: string,
-  zone: string,
-): { until: string | null } | null {
-  const until = noteUntil(facts?.away, day, zone);
-  if (until !== null) return { until };
-  return onBreak(facts?.status, day, zone) ? { until: null } : null;
-}
-
-/** The away note's last day when it runs on `day`; a note with no first day runs from its save. */
-function noteUntil(away: Fact<"away"> | undefined, day: string, zone: string) {
-  const note = away?.value;
-  return note ? awayUntil({ ...note, from: note.from ?? savedDay(away, zone) }, day) : null;
-}
-
-/** An officer's On a break, from the day it was set. */
-function onBreak(status: Fact<"status"> | undefined, day: string, zone: string) {
-  const since = savedDay(status, zone);
-  return status?.value === "break" && (since === null || since <= day);
-}

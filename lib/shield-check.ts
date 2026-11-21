@@ -1,5 +1,6 @@
-// The Raid Shield check's rules (issue 474, D137), pure: no IO, `now` passed in. When its two reads run,
-// what one tracker reading of a member says, and how late a shield it saw may end.
+// The Raid Shield check's rules (issue 474, D137), pure: no IO, `now` passed in. When its two reads run and
+// what one tracker reading of a member says. It never says how long a seen shield lasts: `shield_type` 0
+// was seen for an 8 h and a 24 h shield (owner, 2026-11-21).
 //
 // The raid starts at the server reset (00:00 ST) on the night before KvK, and KvK starts at 12:00 ST on
 // Saturday; nobody keeps a shield after that (owner, 2026-11-20). So: one read of the whole alliance from
@@ -26,8 +27,6 @@ export const MORNING_MIN = 10 * 60;
 export const MORNING_MAX = 11 * 60;
 /** KvK starts at 12:00 ST on Saturday: no shield read after it. */
 export const KVK_MINUTE = 12 * 60;
-/** The Rechargeable Shield (`shield_type` 0 while `shielding` is 1) lasts 8 hours (owner's test). */
-export const RECHARGEABLE_MS = 8 * 3_600_000;
 /** The most calls one morning read makes, retries included: the squads read's cap (D132). */
 export const SHIELD_CALLS_MAX = 120;
 
@@ -93,21 +92,6 @@ export function suggestionOf(r: ShieldReading | null): ShieldSuggestion {
   if (!r || r.shielding === null) return "unknown";
   return r.shielding === 1 ? "on" : "not_seen";
 }
-
-/**
- * The latest the seen shield can end: the map scan's time plus 8 hours for the Rechargeable Shield (type 0
- * while shielding). Null for any other kind (12 h, 24 h, 3 d are not mapped yet) or no shield.
- */
-export function shieldEndsBy(r: ShieldReading | null): Date | null {
-  if (!r || r.shielding !== 1 || r.shieldType !== 0 || !r.mapAt) return null;
-  return new Date(r.mapAt.getTime() + RECHARGEABLE_MS);
-}
-
-/** True when the seen 8-hour shield ends, at the latest, before KvK starts: "may end before KvK". */
-export const mayEndBeforeKvk = (r: ShieldReading | null, kvkAt: Date) => {
-  const end = shieldEndsBy(r);
-  return end !== null && end < kvkAt;
-};
 
 /**
  * Where each read's answers fall, for the check of Friday `day`: the night from 23:00 ST to 00:00 ST, the

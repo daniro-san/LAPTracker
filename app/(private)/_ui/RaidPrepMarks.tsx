@@ -5,7 +5,10 @@
 // the tracker's", which marks ✓ Shield up for those the tracker saw with a shield and nobody marked yet.
 // Everything else is the roll call's own: the grid of tiles with "Marked (n)" for those with both marks
 // set (RollCallGrid.tsx), tiles keep their order, "the rest" is "no problem seen" for the Shield, away
-// members are apart (RollCallMarks.tsx). Not set never counts (D75).
+// members are apart (RollCallMarks.tsx). Not set never counts (D75). After each reading the tick marks ✓
+// for those seen with a shield, as the tracker's (D137, 2026-11-21): the notice above the rows asks an
+// officer to check them, and "Checked" or a tap on the row checks them.
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
@@ -15,15 +18,15 @@ import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
 
 import { AwaySheet, type AwayWho } from "./AwaySheet";
-import type { CalendarSheetWords } from "./calendar-data";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import type { PrepHeadView, PrepRowView } from "./prep-data";
 import { RaidPrepRow } from "./RaidPrepRow";
+import { sendRoll } from "./roll-call-client";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
 import { RollGrid, useGrid } from "./RollCallGrid";
 import { AwayGroup, Intro, SearchBar, useOrder } from "./RollCallMarks";
 import { RestBar, useRest } from "./RollCallRest";
-import { RefusalLine } from "./SignedOut";
+import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 import { useMarks } from "./use-marks";
 
 function TrackerBar(props: {
@@ -79,12 +82,15 @@ const trackerNotes = (head: PrepHeadView, words: RollSheetWords) =>
   head.lines.length === 0 ? [] : [...(head.hint ? [head.hint] : []), words["roll.prep.acceptHelp"]];
 
 /**
- * The order the page opens with (D103: not set first, never moved by a tap): among the not-set rows, the
- * tracker's hints first (not seen yet, then may end before KvK, then no reading, then seen).
+ * The order the page opens with (D103: never moved by a tap): the tracker's morning ✗ first, the members to
+ * remind before KvK (D137, 2026-11-21); then not set, the tracker's hints first (not seen yet, then no
+ * reading, then seen); then the rest marked.
  */
+const keyOf = (row: MarkRowView, p: PrepRowView | undefined) =>
+  row.mark === "no" && p?.fromTracker ? -1 : (row.mark === null ? 0 : 10) + (p?.rank ?? 2);
 const ordered = (rows: MarkRowView[], prep: Record<number, PrepRowView>) =>
   rows
-    .map((row, i) => ({ row, i, key: (row.mark === null ? 0 : 10) + (prep[row.uid]?.rank ?? 2) }))
+    .map((row, i) => ({ row, i, key: keyOf(row, prep[row.uid]) }))
     .sort((a, b) => a.key - b.key || a.i - b.i)
     .map((x) => x.row);
 
@@ -102,12 +108,70 @@ interface TileProps {
   head: PrepHeadView;
   words: RollSheetWords;
   marks: MarkWords;
-  times: CalendarSheetWords;
+}
+
+/** The Shield ✓ is still the tick's: nobody wrote the member's Shield mark since the page was read. */
+const byTracker = (m: Marks, row: MarkRowView, p: TileProps) =>
+  !!p.prep[row.uid]?.fromTracker && m.shown(row.uid).version === row.version;
+
+/**
+ * The tick's ✓ marks nobody has checked yet (D137, 2026-11-21): an officer's tap on the row, either part,
+ * checks it.
+ */
+const toCheck = (rows: MarkRowView[], m: Marks, w: Marks, p: TileProps) =>
+  rows.filter(
+    (row) =>
+      byTracker(m, row, p) &&
+      p.prep[row.uid]?.fromTracker?.unchecked &&
+      w.shown(row.uid).version === (p.prep[row.uid]?.wall.version ?? 0),
+  ).length;
+
+/** "n marks came from the tracker's reading at 23:31 ST. …" and "Checked". */
+function TrackerCheck(props: {
+  n: number;
+  head: PrepHeadView;
+  words: RollSheetWords;
+  slug: string;
+  occasion: Occasion;
+}) {
+  const { head, words } = props;
+  const router = useRouter();
+  // The time it checked up to: a later fill's newer marks bring the notice back on an open page.
+  const [done, setDone] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  if (props.n === 0 || !head.check || done === head.check.at) return null;
+  const { st, at } = head.check;
+  const checked = async () => {
+    setBusy(true);
+    const body = { action: "check", occasion: props.occasion, seen: at };
+    const { status } = await sendRoll(props.slug, body);
+    setBusy(false);
+    if (status !== 200) return setFailed(status === 401 ? SIGNED_OUT : words["roll.failed"]);
+    setDone(at);
+    router.refresh();
+  };
+  const text = props.n === 1 ? words["roll.prep.check.one"] : words["roll.prep.check"];
+  return (
+    <section role="status" className="drawn-card mt-3 px-3 py-2">
+      <p className="text-body-sm font-semibold">{fill(text, { n: props.n, time: st })}</p>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => void checked()}
+        className={`${chip()} mt-2`}
+      >
+        {words["roll.prep.checked"]}
+      </button>
+      {failed && <RefusalLine text={failed} className="mt-2 text-seal" />}
+    </section>
+  );
 }
 
 /** One member's tile with both parts' marks (`m` the Shield's, `w` the wall's). */
 const tileOf = (m: Marks, w: Marks, p: TileProps) =>
   function PrepTile(row: MarkRowView) {
+    const tracker = byTracker(m, row, p);
     return (
       <RaidPrepRow
         key={row.uid}
@@ -115,12 +179,13 @@ const tileOf = (m: Marks, w: Marks, p: TileProps) =>
         prep={p.prep[row.uid]}
         shield={m.shown(row.uid).mark}
         wall={w.shown(row.uid).mark}
+        fromTracker={tracker}
         note={m.notes[row.uid] || w.notes[row.uid]}
         when={p.head.when}
         words={p.words}
         marks={p.marks}
-        times={p.times}
-        onShield={(v) => m.tap(row.uid, v)}
+        // A tap on the tracker's mark makes the tapped one the officer's own, never a clear (D137, 2026-11-21).
+        onShield={(v) => m.tap(row.uid, v, tracker)}
         onWall={(v) => w.tap(row.uid, v)}
       />
     );
@@ -163,6 +228,13 @@ export function RaidPrepMarks(
         shield
         undo={r.undoable && !r.fresh ? () => void r.undo() : null}
         more={trackerNotes(props.head, words)}
+      />
+      <TrackerCheck
+        n={toCheck(asked, m, w, props)}
+        head={props.head}
+        words={words}
+        slug={props.slug}
+        occasion={props.occasion}
       />
       <TrackerBar head={props.head} notSet={notSet} words={words} m={m} />
       <SearchBar q={q} words={words} onQ={setQ} onAway={() => setAway("pick")} />

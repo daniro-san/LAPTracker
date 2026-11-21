@@ -74,6 +74,8 @@ function attacks(ours: number): Step[] {
         { body: { action: "mark", occasion, uid: 202, mark: "yes", version: 0, part: "wall" } },
       ],
       ["roll-call", { body: { action: "accept", occasion, uids: [202] } }],
+      // D137 (2026-11-21): "Checked" on the tracker's marks.
+      ["roll-call", { body: { action: "check", occasion, seen: Date.now() } }],
     ]),
     ["roll-call", { body: { action: "delete", id: call0, requestId: id() } }],
     ["roll-call", { body: { action: "archive", id: call0, on: true } }],

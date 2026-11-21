@@ -82,7 +82,12 @@ export function staleSaid(
   const word = (m: Mark) =>
     part === "wall" && m !== "assumed" ? t[`roll.prep.wall.${m}`] : markWord(m, kind, t);
   return fill(t[mark ? "roll.conflict" : "roll.conflict.cleared"], {
-    name: newest?.by ? isolate(newest.by) : t["calendar.conflict.someone"],
+    // D137 (2026-11-21): the tick's fill writes with no officer, as the tracker; Accept on its officer's name.
+    name: newest?.by
+      ? isolate(newest.by)
+      : newest?.tracker
+        ? t["roll.prep.trackerName"]
+        : t["calendar.conflict.someone"],
     mark: mark ? word(mark) : "",
     ago: agoText(newest?.at.toISOString() ?? null, now, language, t["calendar.conflict.justNow"]),
   });

@@ -145,6 +145,11 @@ export interface ServerEvents {
   };
   /** A desk write that went through (lib/private/desk-action.ts): which feature, which action. */
   ws_action: { feature: DeskFeature; action: DeskAction };
+  /**
+   * D137 (2026-11-21): the tick's fill of a Raid prep roll call from the Raid Shield check's reading, once
+   * per fill that wrote marks: how many, never who.
+   */
+  ws_roll_call_marked: { how: "tracker"; marks: number };
 }
 export type ServerEvent = {
   [E in keyof ServerEvents]: {
@@ -157,7 +162,7 @@ export type ServerEvent = {
       // workspace it changed, and a global pause none.
       { person: string; where: EventWorkspace } | { person?: undefined; where?: EventWorkspace }
     : // `$exception` under /w/[slug] or /api/w/[slug]; `$ai_generation` for a workspace's request;
-      // `discord_command_used` from a workspace's Discord server.
+      // `discord_command_used` from a workspace's Discord server; `ws_roll_call_marked` the filled one's.
       { where?: EventWorkspace });
 }[keyof ServerEvents];
 
@@ -201,6 +206,8 @@ function ownProperties(e: ServerEvent): Wire {
     }
     case "discord_command_used":
       return { ...base, command: e.properties.command };
+    case "ws_roll_call_marked":
+      return { ...base, how: e.properties.how, marks: e.properties.marks };
     case "ws_action":
       // The owner's /admin changes (D126) carry no person: the server's fixed id, `area` admin.
       if (!e.person) {

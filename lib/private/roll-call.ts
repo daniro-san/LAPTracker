@@ -6,6 +6,7 @@
 // changed since. Only members of the workspace's own alliance are marked or picked.
 import type { Db } from "../db";
 import {
+  callsOfWeeks,
   findAdded,
   findCall,
   insertCall,
@@ -260,8 +261,16 @@ export async function addCall(
   requestId: string,
 ): Promise<{ ok: true; id: number }> {
   const ws = access.workspaceId;
+  // D137 (2026-11-21): one Raid prep a week, so an add opens the one the tracker's fill already made.
+  const sameWeek = async () =>
+    input.kind === "shield"
+      ? ((await callsOfWeeks(db, ws, [mondayOf(input.day)])).find((c) => c.kind === "shield") ??
+        null)
+      : null;
   const existing = async () =>
-    (await findCall(db, ws, { requestId })) ?? (await findAdded(db, ws, input.kind, input.day));
+    (await findCall(db, ws, { requestId })) ??
+    (await findAdded(db, ws, input.kind, input.day)) ??
+    (await sameWeek());
   const found = await existing();
   if (found) return { ok: true, id: found.id };
   const id =

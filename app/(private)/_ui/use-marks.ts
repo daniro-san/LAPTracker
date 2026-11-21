@@ -42,9 +42,10 @@ export function useMarks(slug: string, occasion: Occasion, rows: Rows, failed: s
   const base = (uid: number) =>
     Math.max(byUid.get(uid)?.version ?? 0, confirmed.current.get(uid) ?? 0);
 
-  const tap = (uid: number, tapped: "yes" | "no") => {
+  /** `keep`: D137's ✓ on the tracker's own ✓ makes it the officer's (it stays ✓) instead of clearing it. */
+  const tap = (uid: number, tapped: "yes" | "no", keep = false) => {
     const before = shown(uid);
-    const mark = toggled(before.mark, tapped);
+    const mark = keep ? tapped : toggled(before.mark, tapped);
     put(uid, { mark, version: before.version });
     setError(null);
     const run = async () => {
