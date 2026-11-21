@@ -52,6 +52,13 @@ Findings F1, F2, F23, F24 and F36 of the #585 phase 1 review, before Friday's Ra
 - The quota line in Features also changed ("on the day of the Raid Shield check (Friday night, ST)"), after the panel flagged it as a vocabulary leftover. D134 quotes the old words; D137's amendment records the change.
 - The panel asked for PT "confirme que o seu escudo está ligado" in the one message. I wrote the plural "confirmem que o escudo está ligado" instead, so it agrees with the message's other plural verbs ("tirem", "tragam").
 - `RaidPrepHead.tsx` is a new file. `RaidPrepMarks.tsx` went past the 300-line lint limit, so the summary card and the copy row moved there.
+- **After the `/pr-review` of PR 590** (no MUST):
+  - The copied names and the one message escape typed names with `escapeDiscord`, so `@everyone`, `@here`, mentions and markdown ping or format nothing. The helper moved from `lib/notify.ts` to the pure `lib/discord-format.ts` so the browser can use it; `notify.ts` re-exports it.
+  - The summary line shows "posted" or "deleted" from the check's own row for any week. The other states show only for the check still ahead of KvK, so a past week with no message shows no line, never "failed".
+  - The accept button has singular forms. The notification setting's help uses "night check / morning check".
+  - The page reads the webhook state beside the roll call's read.
+  - The reminder list moved to `prep-message.ts` (`toRemind`) so it is testable. Its rule is unchanged.
+  - New tests in `prep-message.test.ts`, `raid-prep.test.ts` and a new `roll-call-view.test.ts`. `roll-call.test.ts` was already at its line limit.
 
 ## Verified
 

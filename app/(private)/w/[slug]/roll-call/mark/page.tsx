@@ -40,10 +40,13 @@ async function readMark(
   lang: string,
   zone: string,
 ) {
-  const call = await callView(db, access, occasion, lang, zone);
+  // The channels are read beside the roll call: the summary posts only through a saved Raid Shield channel
+  // the master key opens (D147).
+  const [call, hooks] = await Promise.all([
+    callView(db, access, occasion, lang, zone),
+    webhookViews(db, access, getEnv()),
+  ]);
   if (call?.opened.kind !== "shield") return call && { ...call, prep: null };
-  // The summary posts only through a saved Raid Shield channel the master key opens (D147).
-  const hooks = await webhookViews(db, access, getEnv());
   const shieldChannel = hooks.some((h) => h.channel === "shield" && h.state === "set");
   const prep = await prepView(db, access, call.opened, { zone, now: new Date(), shieldChannel });
   return { ...call, prep };

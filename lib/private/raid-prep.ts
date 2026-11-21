@@ -94,10 +94,12 @@ export interface PrepView {
 }
 
 /**
- * posted: the summary is in Discord, last posted or edited at `at`. off: the switch is off. unset: no Raid
- * Shield channel can take it (D147). waiting: no reading yet, or one so new that its tick is still posting.
- * failed: a reading is older than a tick and nothing was posted. gone: Discord said it was deleted, so it is
- * not posted again for this check (D137).
+ * What the check's own row records first, for any week: posted (last posted or edited at `at`) or gone
+ * (Discord said it was deleted, so it is not posted again for this check, D137). Then, only for the check
+ * still ahead of KvK (a past week has no state to infer, review of PR 590): off (the switch is off), unset
+ * (no Raid Shield channel can take it, D147), waiting (no reading yet, or one so new that its tick is still
+ * posting) or failed (a reading older than a tick and nothing posted). A past week with nothing recorded
+ * shows nothing.
  */
 export type SummaryState =
   { state: "posted"; at: number } | { state: "off" | "unset" | "waiting" | "failed" | "gone" };
@@ -109,16 +111,17 @@ const POST_WITHIN_MS = 5 * 60_000;
 const newestOf = (reads: { night: ReadCount | null; morning: ReadCount | null }) =>
   reads.morning?.at ?? reads.night?.at ?? null;
 
-function summaryOf(
-  check: ShieldCheckRow | null,
-  on: { discord: boolean; channel: boolean },
+export function summaryOf(
+  check: Pick<ShieldCheckRow, "messageId" | "messageHash" | "postedAt"> | null,
+  on: { discord: boolean; channel: boolean; current: boolean },
   reads: { night: ReadCount | null; morning: ReadCount | null },
   now: number,
-): SummaryState {
-  if (!on.discord) return { state: "off" };
-  if (!on.channel) return { state: "unset" };
+): SummaryState | null {
   if (check?.messageHash === "gone") return { state: "gone" };
   if (check?.messageId && check.postedAt) return { state: "posted", at: check.postedAt.getTime() };
+  if (!on.current) return null;
+  if (!on.discord) return { state: "off" };
+  if (!on.channel) return { state: "unset" };
   const newest = newestOf(reads);
   return newest !== null && now - newest > POST_WITHIN_MS
     ? { state: "failed" }
@@ -243,7 +246,9 @@ export async function prepView(
   const uids = new Set(roster.map((m) => m.uid));
   const reset = kvkAt.getTime() - 12 * 3_600_000;
   const counts = { night: countOf(uids, reads.night), morning: countOf(uids, reads.morning) };
-  const on = { discord: !!settings?.discord, channel: !!clock.shieldChannel };
+  // Only the check still ahead of KvK has a state to infer from today's settings (review of PR 590).
+  const current = clock.now.getTime() < kvkAt.getTime();
+  const on = { discord: !!settings?.discord, channel: !!clock.shieldChannel, current };
   return {
     friday,
     tracker,

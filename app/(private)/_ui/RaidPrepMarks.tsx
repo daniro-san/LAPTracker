@@ -22,6 +22,7 @@ import type { Occasion } from "@/lib/private/roll-call";
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import type { PrepHeadView, PrepRowView } from "./prep-data";
+import { toRemind } from "./prep-message";
 import { prepNotes, RemindBar, TrackerBar } from "./RaidPrepHead";
 import { RaidPrepRow } from "./RaidPrepRow";
 import { sendRoll } from "./roll-call-client";
@@ -145,18 +146,6 @@ const tileOf = (m: Marks, w: Marks, p: TileProps & { showWall: boolean }) =>
     );
   };
 
-/**
- * Still to remind (issue 585): the Shield ✗, or not set and not seen with a shield by the tracker (those it
- * saw are what "Mark ✓ the n seen with a shield" is for), away members left out, in the page's order.
- */
-const toRemind = (asked: MarkRowView[], m: Marks, prep: Record<number, PrepRowView>) =>
-  asked
-    .filter((row) => {
-      const mark = m.shown(row.uid).mark;
-      return mark === "no" || (mark === null && prep[row.uid]?.tracker?.on !== true);
-    })
-    .map((row) => row.name);
-
 type PageProps = TileProps & {
   slug: string;
   occasion: Occasion;
@@ -189,7 +178,12 @@ function usePrep(props: PageProps) {
     rest,
     // "Mark ✓ the n seen with a shield" covers every one of them: one button, not two (issue 585).
     offerRest: !rest.every((row) => seen.has(row.uid)),
-    remind: toRemind(asked, m, prep),
+    // The asked rows only: away members are never reminded.
+    remind: toRemind(
+      asked,
+      (uid) => m.shown(uid).mark,
+      (uid) => prep[uid]?.tracker?.on === true,
+    ),
     // The chips count the Shield only, as "n of m marked" does: the wall part is optional (issue 585).
     g: useGrid(asked, (uid) => m.shown(uid).mark),
   };

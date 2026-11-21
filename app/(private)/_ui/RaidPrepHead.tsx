@@ -12,7 +12,7 @@ import { fill } from "@/lib/copy";
 import { PREP_MESSAGE } from "@/lib/private/dictionary.raidprep";
 
 import type { PrepHeadView } from "./prep-data";
-import { remindAll } from "./prep-message";
+import { remindAll, remindNames } from "./prep-message";
 import type { MarkRowView, RollSheetWords } from "./roll-call-data";
 import type { useMarks } from "./use-marks";
 
@@ -64,7 +64,9 @@ export function TrackerBar(props: {
           onClick={() => void accept()}
           className={`${chip()} mt-2`}
         >
-          {fill(words["roll.prep.accept"], { n: acceptable.length })}
+          {acceptable.length === 1
+            ? words["roll.prep.accept.one"]
+            : fill(words["roll.prep.accept"], { n: acceptable.length })}
         </button>
       )}
       {done && (
@@ -117,7 +119,7 @@ export function RemindBar(props: {
   const copy = async (what: "names" | "message") => {
     const text =
       what === "names"
-        ? props.names.join(", ")
+        ? remindNames(props.names)
         : remindAll(officersMessage(props.language), props.names, props.when);
     try {
       await navigator.clipboard.writeText(text);

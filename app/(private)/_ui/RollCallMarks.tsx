@@ -5,7 +5,7 @@
 // opened with and those already marked fold under "Marked (n)", so nothing moves under the thumb. Not set
 // is where everyone starts and is counted only as "not set" (D75). Away members are listed apart and never asked.
 // The bar at the bottom fills "the rest" with the kind's own answer (RollCallRest.tsx). "Add away dates"
-// sets a member's away dates (D80, D103; it read "Someone is away" until issue 585).
+// sets a member's away dates (D80, D103).
 import { useState } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
