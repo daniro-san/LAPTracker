@@ -11,6 +11,7 @@ import { forgetPerson } from "@/lib/analytics/events";
 
 import { AskSheet } from "./AskSheet";
 import { forgetAllKept } from "./notice-keep";
+import { dropDevice } from "./push-client";
 
 export function SignOutButton({
   slug,
@@ -28,10 +29,12 @@ export function SignOutButton({
     // D115: events after sign-out belong to no one.
     forgetPerson();
     try {
+      // D148: this device's notifications for this workspace end with the session.
+      const endpoint = await dropDevice(slug);
       await fetch(`/api/w/${slug}/logout`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: "{}",
+        body: JSON.stringify(endpoint ? { endpoint } : {}),
       });
     } finally {
       router.refresh();

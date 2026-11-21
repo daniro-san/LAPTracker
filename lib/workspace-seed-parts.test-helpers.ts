@@ -19,6 +19,7 @@ import {
   noticeReviews,
   notices,
 } from "./schema-notices";
+import { pushMarks, pushSubscriptions } from "./schema-push";
 import { workspaceDataEvents } from "./schema-retention";
 import { shieldChecks, shieldQueue, shieldSettings } from "./schema-shield";
 import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "./schema-squads";
@@ -251,4 +252,23 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
   await db
     .insert(workspaceDiscord)
     .values({ workspaceId: ws, botSeenAt: SEED_AT, commands: [], commandsAt: SEED_AT });
+  await seedPush(db, ws, officer);
+}
+
+/** D148: an officer's sealed device (never downloaded, like the webhook) and a trigger's mark. */
+async function seedPush(db: Db, ws: number, officer: number) {
+  await db.insert(pushSubscriptions).values({
+    workspaceId: ws,
+    workspaceUserId: officer,
+    endpointHash: `hash-${ws}`,
+    ciphertext: KEY_MARKER,
+    nonce: "NONCE-MARKER",
+    masterFp: "fp-marker",
+    uses: ["shield"],
+    language: "en",
+    createdAt: SEED_AT,
+  });
+  await db
+    .insert(pushMarks)
+    .values({ workspaceId: ws, key: `night:${DAY}`, value: "failed", sentAt: SEED_AT });
 }

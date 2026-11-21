@@ -8,12 +8,15 @@ import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 
 import { LANGUAGE_CHOICES as CHOICES } from "./languages";
+import { followLanguage } from "./push-client";
 
 export function LanguageSwitch({ current, label }: { current: WorkspaceLanguage; label: string }) {
   const router = useRouter();
   const pick = (id: WorkspaceLanguage) => {
     if (id !== current) track("ws_language_switched", { language: id });
     document.cookie = `${WORKSPACE_LANG_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
+    // D148: this device's notifications follow the desk's language.
+    if (id !== current) void followLanguage(id);
     router.refresh();
   };
   return (

@@ -12,6 +12,7 @@ import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
+import { deletePersonDevices } from "../repo/push";
 import {
   findWorkspaceBySlug,
   findWorkspaceUser,
@@ -151,6 +152,8 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
   }
   const refusal = await refusalFor(db, workspace, member, deps.now);
   if (refusal.why) {
+    // D148: whoever left the server, lost the role or was blocked gets no more notifications from here.
+    await deletePersonDevices(db, workspace.id, member.userId);
     privateLog("w.no_access", { workspace: workspace.id });
     return out(`/w/${workspace.slug}/no-access?why=${refusal.why}`);
   }
@@ -239,6 +242,8 @@ export async function admit(
 ): Promise<{ cookie: string | null; home: string }> {
   // Only people who get in are stored: a refused account leaves no row.
   const userId = await recordSignIn(db, workspace.id, member.userId, member.displayName, o.now);
+  // D148: notifications are for officers; one who is a member now has none left here.
+  if (tier === "member") await deletePersonDevices(db, workspace.id, member.userId);
   const ids = { slug: workspace.slug, workspaceId: workspace.id, workspaceUserId: userId, tier };
   const cookie = await renewOrCreate(db, o.token, ids, o.now, endsBy);
   privateLog(cookie ? "w.sign_in" : "w.renewed", {

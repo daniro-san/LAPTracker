@@ -17,6 +17,7 @@ export default defineConfig({
     "./lib/schema-invites.ts",
     "./lib/schema-alliances.ts",
     "./lib/schema-shield.ts",
+    "./lib/schema-push.ts",
   ],
   out: "./drizzle",
 });

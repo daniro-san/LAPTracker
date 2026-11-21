@@ -39,6 +39,7 @@ import {
   noticeReviews,
   notices,
 } from "../schema-notices";
+import { pushMarks, pushSubscriptions } from "../schema-push";
 import { workspaceDataEvents, type DataAction } from "../schema-retention";
 import { shieldChecks, shieldQueue, shieldSettings } from "../schema-shield";
 import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "../schema-squads";
@@ -120,6 +121,9 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: null, table: shieldSettings, scope: "workspace" },
   { file: null, table: shieldChecks, scope: "union" },
   { file: null, table: shieldQueue, scope: "union" },
+  // D148: officers' devices for notifications, sealed like the webhooks, and what each trigger last sent.
+  { file: null, table: pushSubscriptions, scope: "workspace" },
+  { file: null, table: pushMarks, scope: "workspace" },
 ];
 
 /** Never downloaded from any table, whatever the list says (CLAUDE.md, D71, D22). */

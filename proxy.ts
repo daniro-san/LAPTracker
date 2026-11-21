@@ -15,6 +15,9 @@ export function pageCsp(nonce: string, dev: boolean): string {
     "img-src 'self' data: blob:",
     "font-src 'self'",
     `connect-src 'self'${dev ? " ws:" : ""}`,
+    // D148: the desk's service worker, /sw.js, for notifications. Without it, worker-src falls back to
+    // script-src, where 'strict-dynamic' drops 'self'.
+    "worker-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -135,6 +135,15 @@ export const envSchema = z.object({
   WORKSPACE_KEYS_SECRET: optional(
     z.string().regex(/^[A-Za-z0-9+/]{43}=$/, "expected 32 bytes, base64 (openssl rand -base64 32)"),
   ),
+  // Browser notifications for officers (D148): the site's VAPID key pair from `pnpm push:keys` (base64url:
+  // the 65-byte public point, the 32-byte private scalar, a secret) and the contact push services may write
+  // to. Optional: without all three (and WORKSPACE_KEYS_SECRET, which seals the subscriptions) the desk
+  // shows no Notifications card and nothing is sent.
+  VAPID_PUBLIC_KEY: optional(z.string().regex(/^B[A-Za-z0-9_-]{86}$/, "expected pnpm push:keys")),
+  VAPID_PRIVATE_KEY: optional(z.string().regex(/^[A-Za-z0-9_-]{43}$/, "expected pnpm push:keys")),
+  VAPID_SUBJECT: optional(
+    z.string().regex(/^(mailto:\S+@\S+|https:\/\/\S+)$/, "expected mailto:… or https://…"),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -47,6 +47,7 @@ import { HomeMembers } from "../../_ui/HomeMembers";
 import { HomeNext } from "../../_ui/HomeNext";
 import { KeyCard } from "../../_ui/KeyCard";
 import { toMatchLine } from "../../_ui/member-lifecycle-data";
+import { NotificationsHint } from "../../_ui/NotificationsHint";
 import { PicturesDueCard } from "../../_ui/PicturesDue";
 import { nextQuery, refuse } from "../../_ui/refuse";
 import { sharedLines } from "../../_ui/share-lines";
@@ -174,7 +175,7 @@ function Home(props: {
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
   return (
     <section aria-labelledby="home">
-      <PageHead id="home" title={t["home.title"]} />
+      <PageHead id="home" title={t["home.title"]} meta={<NotificationsHint slug={slug} t={t} />} />
       {/* What became of a share from the phone (D110): first, where the person lands. */}
       {props.shared && (
         <div role="status" className="mb-4 border-l-4 border-plum pl-3">

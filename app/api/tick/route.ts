@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
+import { schedulePushTick } from "@/lib/push-tick";
 import { finishTick, startTick } from "@/lib/repo/ticks";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { runResponse } from "@/lib/run-response";
@@ -38,6 +39,8 @@ export function POST(request: Request): Promise<Response> {
     // After the answer, so cron-job.org's 30 s timeout never waits for it. The claim makes it safe beside
     // POST /api/squads-read (tick.yml, or by hand): one batch at a time per alliance.
     scheduleSquadsBatch(ctx, origin);
+    // D148: officers' notifications on a tick that opened the database anyway (counts only, after the answer).
+    schedulePushTick(ctx, tick);
     switch (tick.kind) {
       case "idle":
         return new Response(null, { status: 204 });

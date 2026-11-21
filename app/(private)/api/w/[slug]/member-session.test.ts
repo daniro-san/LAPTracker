@@ -72,6 +72,9 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   },
   "pending/route.ts": { POST: { body: { action: "delete", uid: -1, requestId: ID } } },
   "profile/route.ts": { GET: {}, POST: { body: { action: "unlink" } } },
+  "push/route.ts": {
+    POST: { body: { action: "unsubscribe", endpoint: "https://fcm.googleapis.com/fcm/send/x" } },
+  },
   "raid-prep/route.ts": {
     POST: { body: { morningMinute: 600, discord: false, language: "en" } },
   },
