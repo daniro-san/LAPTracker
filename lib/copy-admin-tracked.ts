@@ -2,6 +2,7 @@
 // takes the admin copy from here, with the card's words added, because lib/copy.ts and lib/copy-admin.ts are
 // at the 300-line limit.
 import { adminCopy as base } from "./copy-admin";
+import { changesAdminCopy } from "./copy-admin-changes";
 
 export const trackedAdminCopy = {
   title: "Tracked alliances",
@@ -34,5 +35,5 @@ export const trackedAdminCopy = {
   noLookup: "No lookup today.",
 } as const;
 
-/** The admin area's text with the Tracked alliances card: `copy.admin` in lib/copy.ts. */
-export const adminCopy = { ...base, tracked: trackedAdminCopy };
+/** The admin area's text with the Tracked alliances card and the patch notes: `copy.admin` in lib/copy.ts. */
+export const adminCopy = { ...base, tracked: trackedAdminCopy, changes: changesAdminCopy };

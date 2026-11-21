@@ -61,10 +61,11 @@ Production is Vercel (branch `main`), the database is Neon, and the scheduler is
 
 **How to cut a release.**
 
-1. Wait until the last push to `dev` has a green `check` (Actions → ci).
-2. GitHub → Actions → **Prepare release** → **Run workflow**, pick `patch` (fixes), `minor` (features) or `major` (breaking), run it. It opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes, and prints the PR link in the run summary. It stops with a message if `dev` has nothing new or a release PR is already open.
-3. Open the PR, read the notes, wait for `check` to be green, then **Merge** with **Create a merge commit** (the only method `main` allows).
-4. About 10 seconds later, `release-publish` creates the tag `vX.Y.Z` and the GitHub Release (Actions → release-publish; Releases page). Vercel deploys `main` and runs the migrations by itself.
+1. Before running release-prepare, add the release's entry to lib/patch-notes.ts (shown on /admin/changes), and update its `ownerTodo` list.
+2. Wait until the last push to `dev` has a green `check` (Actions → ci).
+3. GitHub → Actions → **Prepare release** → **Run workflow**, pick `patch` (fixes), `minor` (features) or `major` (breaking), run it. It opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes, and prints the PR link in the run summary. It stops with a message if `dev` has nothing new or a release PR is already open.
+4. Open the PR, read the notes, wait for `check` to be green, then **Merge** with **Create a merge commit** (the only method `main` allows).
+5. About 10 seconds later, `release-publish` creates the tag `vX.Y.Z` and the GitHub Release (Actions → release-publish; Releases page). Vercel deploys `main` and runs the migrations by itself.
 
 The next version is the latest `v*` tag plus the bump, so `package.json` is never edited. If the PR is wrong, close it and run Prepare release again. If the tag or release does not appear, run `gh release create vX.Y.Z --target main --generate-notes`. Why it works this way: [D29](docs/decisions/D29-releases-prepare-release-opens-the-pr.md).
 
