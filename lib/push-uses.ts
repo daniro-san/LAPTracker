@@ -2,13 +2,17 @@
 // failed after its retry, and a member's "This is me" claim to approve. The roll call reminders are in
 // lib/push-tick.ts. Each is claimed once per trigger in `push_marks` (INVARIANT push.once-per-trigger) and
 // sent only to the officers of the workspace concerned. Counts and a link only (lock screens).
+import { layOut } from "./calendar-layout";
+import { addDays, mondayOf } from "./calendar-time";
 import { fill, type PushWords } from "./copy-push";
 import type { DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
 import type { Env } from "./env";
 import { notifyOfficers, pushConfig, type Notice, type PushDeps } from "./push";
+import { calendarRows } from "./repo/calendar";
 import { linksToReview } from "./repo/player-links";
 import { claimPushMark, workspacesOfUnions } from "./repo/push";
+import { callsOfWeeks } from "./repo/roll-call";
 import { getShieldCheck, shieldReadings } from "./repo/shield-checks";
 import { getSquadRead } from "./repo/squads";
 import { anyRoster } from "./repo/workspace-any-roster";
@@ -21,12 +25,24 @@ export type UseDeps = PushDeps & {
   env: PushDeps["env"] & Pick<Env, "SERVER_TZ">;
 };
 
-/** The Monday of the week holding `day`: the Roll call page of that week (Raid prep). */
-const mondayOf = (day: string) => {
-  const t = Date.parse(`${day}T00:00:00Z`);
-  const back = (new Date(t).getUTCDay() + 6) % 7;
-  return new Date(t - back * 86_400_000).toISOString().slice(0, 10);
-};
+/**
+ * The Raid prep roll call of the week holding Friday `day`: the week's KvK Calendar entry, else the one the
+ * tracker's fill added (D137), else the week's Roll call page.
+ */
+async function raidPrepUrl(db: Db, ws: { id: number; slug: string }, day: string) {
+  const monday = mondayOf(day);
+  const sunday = addDays(monday, 6);
+  const cal = await calendarRows(db, ws.id, monday, monday, sunday);
+  const kvks = cal.entries.filter((e) => e.kind === "kvk");
+  const [kvk] = layOut(kvks, cal.rows, monday, sunday);
+  if (kvk) return `/w/${ws.slug}/roll-call/mark?entry=${kvk.entry.id}&week=${kvk.week}`;
+  const own = (await callsOfWeeks(db, ws.id, [monday])).find(
+    (c) => c.kind === "shield" && !c.archivedAt && c.day >= monday && c.day <= sunday,
+  );
+  return own
+    ? `/w/${ws.slug}/roll-call/mark?id=${own.id}`
+    : `/w/${ws.slug}/roll-call?week=${monday}`;
+}
 
 /** Whether the read of `pass` is over for now: Friday's squads burst not running, Saturday's done or stopped. */
 async function passOver(db: Db, q: { day: string; unionId: number }, pass: ShieldPass) {
@@ -56,13 +72,14 @@ export async function pushShield(
   const n = read.notSeen.length;
   const mark = { workspaceId: target.workspaceId, key: `shield:${day}`, value: `${pass}:${n}` };
   if (!(await claimPushMark(db, mark, deps.now()))) return;
+  const url = await raidPrepUrl(db, { id: target.workspaceId, slug: target.slug }, day);
   await notifyOfficers(deps, db, target.workspaceId, "shield", (words) => ({
     title: words.shieldTitle,
     body: fill(n > 0 ? words.shieldSome : words.shieldNone, {
       read: pass === "night" ? words.fri : words.sat,
       n,
     }),
-    url: `/w/${target.slug}/roll-call?week=${mondayOf(day)}`,
+    url,
     tag: `shield-${day}`,
   }));
 }
