@@ -106,4 +106,4 @@
 - `followUpView` items carry `tip` and `language`, and the view carries `zones` for the facts editor.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/523
