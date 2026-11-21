@@ -102,8 +102,8 @@ export interface AnalyticsEvents {
   ws_board_section_viewed: { board_section: BoardSection };
   /** Alliance settings' Check found the bot in the alliance's Discord server for the first time (D129). */
   ws_bot_installed: NoProperties;
-  /** A notice channel's webhook saved in Alliance settings (D129): which channel only, never the URL. */
-  ws_webhook_set: { channel: "leaders" | "members" };
+  /** A channel's webhook saved in Alliance settings (D129, D147): which channel only, never the URL. */
+  ws_webhook_set: { channel: "leaders" | "members" | "shield" };
   /** "Request a Desk" sent (D130): the rank claimed and whether the newest roster has the name; never the name. */
   ws_access_requested: { claimed_role: "r5" | "r4"; roster_match: "found" | "not_found" };
   /** The owner made an invite link on /admin, for an alliance or by approving its request (D130). */

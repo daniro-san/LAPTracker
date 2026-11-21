@@ -3,9 +3,9 @@
 // The member card's "Squads (from the tracker)" (issue 413, D117; issue 461, D136): every squad the
 // tracker saw, in squad order, with its might, when it was seen (server time, then the viewer's own clock
 // after hydration) and what changed since the row before. Each squad's 5 heroes are drawn as the game's
-// lineup: the API's order is the slot order (top centre, middle right, middle left, centre, bottom right),
+// lineup at every width: slots 1–2 the front row on top, slots 3–5 the back row below (owner, 2026-11-21),
 // each with its picture in a rarity frame, rarity, level, the game's five stars and its Hall of Honor
-// level. Below 360 px, and always for screen readers, the same heroes are a list in slot order. A slot the
+// level. Screen readers get the same heroes as a list in slot order instead. A slot the
 // tracker sent no hero for is a neutral empty slot ("1 slot empty", D75), never a warning. Troop counts are
 // never shown (owner, issue 461). The strongest squad sits in the soft drawn frame with "Strongest".
 import { HeroPicture } from "@/app/_ui/Pictures";
@@ -36,15 +36,15 @@ const STAR_COLOUR = {
 } as const;
 
 /**
- * Where each slot sits in a 3-column grid of 5 half-height rows, each hero two rows tall: the game's
- * lineup, staggered so it takes 2.5 hero heights instead of 4.
+ * Where each slot sits in a 6-column grid, each hero two columns wide: the front row (slots 1–2) centred on
+ * row 1, the back row (slots 3–5) on row 2. The same at every width.
  */
 const SLOT_PLACE = [
   "col-start-2 row-start-1",
-  "col-start-3 row-start-2",
+  "col-start-4 row-start-1",
   "col-start-1 row-start-2",
-  "col-start-2 row-start-3",
-  "col-start-3 row-start-4",
+  "col-start-3 row-start-2",
+  "col-start-5 row-start-2",
 ] as const;
 
 type Words = Pick<SquadsCard, "slotWord" | "emptySlot" | "strongestTag" | "clock">;
@@ -111,35 +111,26 @@ function Squad({ s, w }: { s: SquadCard; w: Words }) {
       </p>
       <Seen s={s} w={w} />
       {change && <p className="text-[12px] text-ink/70 tabular-nums">{change}</p>}
-      {/* The lineup from 360 px; screen readers get the list below instead. */}
-      <div
-        aria-hidden="true"
-        className="mt-2 hidden auto-rows-[3.5rem] grid-cols-3 gap-x-2 min-[360px]:grid"
-      >
+      {/* The lineup; screen readers get the list below instead. */}
+      <div aria-hidden="true" className="mt-2 grid grid-cols-6 gap-x-2 gap-y-2">
         {s.slots.map((h, i) => (
-          <div key={i} className={`row-span-2 flex min-w-0 flex-col items-center ${SLOT_PLACE[i]}`}>
+          <div key={i} className={`col-span-2 flex min-w-0 flex-col items-center ${SLOT_PLACE[i]}`}>
             {h ? <LineupHero h={h} /> : <EmptySlot word={w.emptySlot} />}
           </div>
         ))}
       </div>
-      {/* Slot order as a list: shown below 360 px, read aloud at every width. */}
-      <ol className="mt-2 grid gap-y-2 min-[360px]:sr-only">
+      {/* Slot order as a list, read aloud: "Slot 1: …". */}
+      <ol className="sr-only">
         {s.slots.map((h, i) => (
-          <li key={i} className="flex min-w-0 items-center gap-2">
-            <span className="sr-only">{fill(w.slotWord, { n: i + 1 })}:</span>
+          <li key={i}>
+            {fill(w.slotWord, { n: i + 1 })}:{" "}
             {h ? (
               <>
-                <HeroPicture id={h.id} known={h.known} frame={rarityOf(h)?.frame} />
-                <span className="min-w-0 flex-1 text-body-sm leading-tight">
-                  <span translate="no" className="block break-words">
-                    {h.name}
-                  </span>
-                  <HeroFacts h={h} />
-                  <Stars icons={h.stars} label={h.starsLabel} />
-                </span>
+                <span translate="no">{h.name}</span> <HeroFacts h={h} />
+                <Stars icons={h.stars} label={h.starsLabel} />
               </>
             ) : (
-              <span className="text-body-sm text-ink/70">{w.emptySlot}</span>
+              w.emptySlot
             )}
           </li>
         ))}

@@ -1,7 +1,8 @@
 // The Raid Shield check's two reads (D137) against a real Postgres (PGlite) with a stubbed /v1/players and
 // a stubbed Discord webhook: Friday's burst is that day's squads read and ends with everyone read once;
 // Saturday's morning read reads everyone once more, from the alliance's own time, never past its cap; nothing
-// runs at any other time; the leaders' message is posted once and then edited, only when turned on.
+// runs at any other time; the summary is posted once to the Raid Shield channel and then edited, only when
+// turned on (D147).
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { OWN_ALLIANCE_ID, TRACKED_COUNT } from "../config/alliances";
@@ -13,6 +14,7 @@ import { dailyReads, dailyRosters } from "./schema";
 import { shieldChecks, shieldQueue, shieldSettings } from "./schema-shield";
 import { playerReads, squadQueue, squadReads } from "./schema-squads";
 import { postShieldSummary, type PostDeps } from "./shield-post";
+import { HOOK_SECRET, saveHook } from "./shield-post.test-helpers";
 import type { ShieldTarget } from "./shield-read";
 import { shieldTick } from "./shield-tick";
 import { squadsReserve } from "./squads";
@@ -41,6 +43,7 @@ beforeEach(async () => {
     leaderRoleIds: ["2"],
   });
   ws = (await db.query.workspaces.findFirst())?.id ?? 0;
+  await saveHook(db, ws, { channel: "shield", url: HOOK });
 });
 
 const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
@@ -69,7 +72,7 @@ async function dayRead(uids: number[], name = (u: number) => `Wren${u}`) {
 /**
  * Every member answers; odd uids are seen with an 8-hour shield. `step`: how far the clock moves per call;
  * `remaining`: the quota before the first call; `gone`: Discord answers an edit with 404; `forum`: the
- * leaders' channel is a forum, where Discord answers a post without `thread_name` with 400.
+ * channel is a forum, where Discord answers a post without `thread_name` with 400.
  */
 function deps(
   now: Date,
@@ -84,20 +87,14 @@ function deps(
     posts: typeof posts;
     at: Date;
     origin: string;
-    env: SquadsDeps["env"] & { WORKSPACE_DISCORD_WEBHOOKS?: Record<string, unknown> };
   } = {
     calls,
     posts,
     at: now,
     origin: "https://laptracker.test",
     now: () => d.at,
-    env: {
-      ...TEST_ENV,
-      SAMPLE_EVERY_MIN: 15,
-      WORKSPACE_DISCORD_WEBHOOKS: {
-        ogs: { leaders: { url: HOOK, name: "leaders", forum: opts.forum ?? false } },
-      },
-    },
+    // The workspace's saved Raid Shield channel (beforeEach) opens with this key (D147).
+    env: { ...TEST_ENV, SAMPLE_EVERY_MIN: 15, WORKSPACE_KEYS_SECRET: HOOK_SECRET },
     paceMs: 0,
     fetch: async (url, init) => {
       const href = String(url);
@@ -196,9 +193,10 @@ describe("the Raid Shield check's reads (D137)", () => {
     expect(d.posts[1]?.content).toContain("Not seen this morning: Wren2, Wren4");
   });
 
-  it("opens a titled post in a forum leaders' channel and edits it inside that post", async () => {
+  it("opens a titled post in a forum Raid Shield channel and edits it inside that post", async () => {
     await dayRead(range(4));
     await db.insert(shieldSettings).values({ workspaceId: ws, discord: true, updatedAt: FRI });
+    await saveHook(db, ws, { channel: "shield", url: HOOK, forum: true });
     const d = deps(FRI, { forum: true });
     await tick(d);
     expect(d.posts[0]).toMatchObject({ method: "POST", threadName: "Raid Shield check" });

@@ -24,14 +24,14 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
-    text: 'At the next shield window (Friday 2026-11-27, 23:30 server time), check that the Raid Shield summary appears in the leaders\' forum as a post titled "Raid Shield check".',
+    text: "Set the Raid Shield channel (Alliance settings → Discord) before Friday 23:30 ST; without it no summary is posted.",
   },
   {
     text: 'For the OGs alliance, Discord: on its desk, Alliance settings → Discord, tap Check, save both webhooks and send a test message. When /admin shows both channels as "set", delete WORKSPACE_DISCORD_WEBHOOKS in Vercel.',
     issue: 527,
   },
   {
-    text: "For the OGs alliance, Raid prep: check once that the Raid Shield check is allowed on /admin and turned on in Alliance settings → Features. Optional: turn on the leaders' channel message and check Saturday's time (10:00 by default).",
+    text: "For the OGs alliance, Raid prep: check once that the Raid Shield check is allowed on /admin and turned on in Alliance settings → Features. Optional: turn on the Raid Shield summary (it needs the Raid Shield channel) and check Saturday's time (10:00 by default).",
     issue: 527,
   },
   {
@@ -98,6 +98,21 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.37.0",
+    date: "2026-11-21",
+    title: "The Raid Shield summary gets its own channel, and squads show 2 in front and 3 behind",
+    changes: [
+      'Alliance settings → Discord has a third card, "Raid Shield channel". The Raid Shield summary posts only there. If no Raid Shield channel is set up, no summary is posted; it never goes to the leaders\' channel.',
+      "A summary posted before this change is not edited again. The next shield window posts a fresh one in the Raid Shield channel.",
+      "Member card squads: the 2 front heroes (the tanks) sit on top and the 3 back heroes below, the same on a phone and on a computer. The old staggered shape is gone.",
+    ],
+    needsYou: [
+      'Before Friday 23:30 server time: in the OGs alliance\'s Alliance settings → Discord → Raid Shield channel, paste the webhook of #laptracker-ledger, then tap "Send a test message".',
+      "Open one of your squads on the member card and check that the 2 heroes on top are your front row (tanks). If not, tell Claude which positions are swapped.",
+    ],
+    prs: [563, 564],
+  },
   {
     version: "v5.36.0",
     date: "2026-11-21",

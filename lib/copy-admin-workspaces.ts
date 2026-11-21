@@ -98,7 +98,7 @@ export const workspacesAdminCopy = {
    * Alliance settings; /admin sees only whether each is done, never a webhook.
    */
   discord: {
-    line: "Discord: {bot} · commands: {commands} · leaders' webhook: {leaders} · members' webhook: {members}",
+    line: "Discord: {bot} · commands: {commands} · leaders' webhook: {leaders} · members' webhook: {members} · Raid Shield webhook: {shield}",
     botSeen: "bot in server",
     botUnseen: "bot not checked",
     noCommands: "not registered",
@@ -106,6 +106,8 @@ export const workspacesAdminCopy = {
     set: "set",
     site: "env",
     unset: "not set",
+    /** D147: without its own channel the Raid Shield summary is not posted anywhere. */
+    shieldUnset: "not set (no summary posted)",
   },
   /** "Delete this workspace" (D125): the same 14 days as an officer's, and its officers can cancel. */
   deletion: {

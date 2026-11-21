@@ -53,3 +53,14 @@ Why: the owner, 2026-11-19: the member card is one long column of label/value ro
 - Applied: "Honor N" only above 0; each sighting's age; "their time now" once.
 - Facts from the real reads: the history rows reach back 6–13 days (40 rows a read) and named only this alliance for all six, so "Came from" rests mainly on our daily rosters of other alliances; squad numbers have gaps (squads 1 and 4 seen; 1 and 3 seen), shown as the game numbers them.
 - Decided by the owner (2026-11-20, relayed by the orchestrator): "Troops" stays, in Info and in "Still to ask": it is the troop tier fact (T1–T12, D80) on the owner's own list of facts to ask, not a troop count. "none" stays beside the no-data mark (D127). Map position goes behind "Show map position" on Info.
+
+**Amendment 2026-11-21 (owner): the lineup is 2 in front and 3 behind.** This replaces "The lineup" and "Below 360 px and for screen readers" above.
+
+- The game shows 2 heroes in front on top (the tanks) and 3 behind below (damage and support). D136's staggered shape (top centre, middle right, middle left, centre, bottom right) was wrong. On a phone it also looked different from what the owner expected from desktop.
+- **Slot mapping:** API slots 1–2 (`heroes[0]`, `heroes[1]`) are the front row, left to right; slots 3–5 (`heroes[2..4]`) are the back row, left to right.
+  - Evidence: no hero field gives a position or row. `heroSchema` in `lib/sources/v1-player.ts` reads only `id, lv, star, q, awaken, honor`. `fixtures/` holds no recorded `/v1/players` body, and `hero_catalog` keeps only id and name, with no role. So the API order decides.
+  - The split at 2 is an assumption for the owner to confirm on a real squad, for example one with a known tank in slot 1 or 2.
+- **One layout at every width.** The lineup is a 6-column grid. Each hero is two columns wide and has a fixed row and column: front at columns 2–3 and 4–5 of row 1, back at columns 1–2, 3–4 and 5–6 of row 2. No breakpoint changes it, so the phone is the desktop layout drawn smaller. Rows take their content's height, so a hero whose facts wrap never runs into the one below.
+- **No row labels** (owner, 2026-11-21).
+- **The list below 360 px is gone.** The 2-and-3 grid fits 320 px with the 40 px portrait (measured: no overlap, no sideways scroll at 320, 360, 390, 640 and 1280). Screen readers still get the heroes as a list in slot order ("Slot 1: …"), and the lineup stays `aria-hidden`.
+- Unchanged: an empty slot is still the last slot(s), shown as a dashed "Empty slot" in its place (the back row's right end for 4 heroes).

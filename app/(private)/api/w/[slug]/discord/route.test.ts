@@ -156,6 +156,7 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
       channels: [
         { channel: "leaders", state: "none", name: null },
         { channel: "members", state: "set", name: "town-square" },
+        { channel: "shield", state: "none", name: null },
       ],
     });
     expect(text).not.toContain("ours-test");

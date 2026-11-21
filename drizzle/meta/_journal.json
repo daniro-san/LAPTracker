@@ -442,6 +442,13 @@
       "when": 1795243367537,
       "tag": "0062_app_errors_workspace",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795271830259,
+      "tag": "0063_shield_channel",
+      "breakpoints": true
     }
   ]
 }

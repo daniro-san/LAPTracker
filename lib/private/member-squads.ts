@@ -98,7 +98,7 @@ export interface SquadCard {
   change: string | null;
   /** "Heroes changed" when the row before had other heroes, levels or stars; else null. */
   heroesChanged: string | null;
-  /** The 5 slots in the game's order (top centre, middle right, middle left, centre, bottom right). */
+  /** The 5 slots in the API's order: 1–2 the front row, 3–5 the back row (owner, 2026-11-21; D136). */
   slots: (HeroCard | null)[];
   /** "1 slot empty", plain information (D75); null when all 5 are filled. */
   empty: string | null;

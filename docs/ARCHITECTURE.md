@@ -52,9 +52,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     messages), notice-history.ts (pure: saves from notice_edits, the text before, a version's
                     fields), notice-publish.ts ("Publish to Discord": channel by audience, the once-per-request
                     claim, the posts through AppContext.fetch); its table in lib/repo/notice-publishes.ts.
-                    D129: discord-webhooks.ts (the two notice channels: the workspace's own webhooks, checked
-                    with Discord, sealed like D124's key and opened only there; WORKSPACE_DISCORD_WEBHOOKS as the
-                    fallback), discord-setup.ts (the bot's install link and Check); tables in lib/schema-discord.ts,
+                    D129: discord-webhooks.ts (the two notice channels and D147's Raid Shield channel: the
+                    workspace's own webhooks, checked with Discord, sealed like D124's key and opened only there
+                    and in lib/shield-post.ts; WORKSPACE_DISCORD_WEBHOOKS as the notice channels' fallback),
+                    discord-setup.ts (the bot's install link and Check); tables in lib/schema-discord.ts,
                     read and written in lib/repo/workspace-discord.ts.
                     D130, a new alliance's way in (pages /w/invite and /w/request, handlers under api/w/invite and
                     api/w/request): invite.ts (the link's cookie, who may use it, the page's view), invite-sign-in.ts

@@ -1,8 +1,9 @@
 // Each workspace's own Discord set-up (D129, issue 451), apart from lib/schema.ts for its size; drizzle.config.ts
 // lists this file too. `workspace_discord`: whether the bot was seen in the workspace's server and which message
 // commands are registered there. `workspace_webhooks`: the leaders' and members' channels for "Publish to
-// Discord", each webhook URL stored only encrypted (AES-256-GCM under WORKSPACE_KEYS_SECRET, as D124's key),
-// with the channel name officers gave. No read model, route, page or log selects `ciphertext` or `nonce`.
+// Discord" and the Raid Shield summary's own channel (D147), each webhook URL stored only encrypted
+// (AES-256-GCM under WORKSPACE_KEYS_SECRET, as D124's key), with the channel name officers gave. No read
+// model, route, page or log selects `ciphertext` or `nonce`.
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -19,7 +20,7 @@ import { workspaces, workspaceUsers } from "./schema";
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
 
-export const WEBHOOK_CHANNELS = ["leaders", "members"] as const;
+export const WEBHOOK_CHANNELS = ["leaders", "members", "shield"] as const;
 export type WebhookChannel = (typeof WEBHOOK_CHANNELS)[number];
 
 /** One row per workspace once its officers checked the bot, or the owner registered its commands. */
@@ -59,6 +60,9 @@ export const workspaceWebhooks = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.workspaceId, t.channel] }),
-    check("workspace_webhooks_channel_check", sql`${t.channel} in ('leaders', 'members')`),
+    check(
+      "workspace_webhooks_channel_check",
+      sql`${t.channel} in ('leaders', 'members', 'shield')`,
+    ),
   ],
 );
