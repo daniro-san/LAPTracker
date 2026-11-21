@@ -138,4 +138,4 @@ Findings F4, F5, F6, F16, F18, F27 and F48 of the #585 review, on the desk, the 
 - Light yarn is #6c4e0d. Check any new yarn-on-tint text against the 15 % plum tint (4.71:1).
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/597
