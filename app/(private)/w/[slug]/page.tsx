@@ -256,7 +256,7 @@ export default async function WorkspacePage({
     if (!access.ok) return { access, ...NONE };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
-    const [items, placed, view, names, activity, reviews, notes] = await Promise.all([
+    const [items, placed, view, names, activity, reviews, notes, nudge] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
@@ -264,9 +264,9 @@ export default async function WorkspacePage({
       activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
       featureOn(access, "notices") ? reviewsForMe(db, access) : [],
       cards(db, access, now, zone),
+      thanksNudge(db, access, today),
     ]);
     const desk = { names, activity, now, ...notes };
-    const nudge = await thanksNudge(db, access, today);
     const unmatched = toMatch(pending, view.readAt).length;
     return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };
   });
