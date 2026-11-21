@@ -1,11 +1,14 @@
-# Uptime check (#521): every 6 h, GET pages that read the database. A failed run makes GitHub email the
-# owner, as for any failed scheduled run. Runs at :10 after the D141 heartbeat ticks (00/06/12/18 UTC),
-# while the database is already awake, so it adds no Neon compute. Two tries a minute apart before failing.
+# Uptime check (#521) and the no-tick watcher (D45, D141): every 3 h, GET pages that read the database,
+# then POST /api/tick/watch. A failed run makes GitHub email the owner, as for any failed scheduled run.
+# Runs at :10 after the heartbeat ticks (00/03/…/21 UTC). By then the database has usually suspended again
+# (about 5 min after the heartbeat's last query), so the run wakes it once; the probes and the watcher share
+# that wake. The watcher compares against the heartbeat slot, not the run's start, so a late or skipped run
+# raises no false alert. Two tries a minute apart before the probes fail.
 name: uptime
 
 on:
   schedule:
-    - cron: "10 0,6,12,18 * * *"
+    - cron: "10 0,3,6,9,12,15,18,21 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -13,7 +16,8 @@ permissions: {}
 jobs:
   uptime:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Two probe rounds of up to 3 × 30 s, the 60 s pause, then the watcher's 30 s.
+    timeout-minutes: 8
     steps:
       - name: Get the pages
         env:
@@ -32,3 +36,15 @@ jobs:
           echo "Retrying in 60 s"
           sleep 60
           check
+      # Runs even when a probe failed, so a stopped scheduler is still reported. The alert is claimed once
+      # per hour (D45), so a manual re-run never posts it twice.
+      - name: Watch the ticks
+        if: ${{ !cancelled() }}
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          code=$(curl -sS --max-time 30 -X POST -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/tick/watch") || { echo "/api/tick/watch -> curl failed"; exit 1; }
+          echo "/api/tick/watch -> HTTP $code"
+          case "$code" in 2??) ;; *) exit 1 ;; esac

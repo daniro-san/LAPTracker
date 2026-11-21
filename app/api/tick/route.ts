@@ -27,7 +27,7 @@ export function POST(request: Request): Promise<Response> {
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
     // INVARIANT tick.clock-first (D141): the database wakes only when something can be due, so an idle tick
-    // writes no heartbeat; one every 6 h always does (heartbeatSlot), for the watcher.
+    // writes no heartbeat; one every 3 h always does (heartbeatSlot), for the watcher.
     if (!(await tickMayBeDue(ctx, db))) return new Response(null, { status: 204 });
     // INVARIANT tick.heartbeat-after-auth: a 401 is not a heartbeat (D45); the row goes in before
     // the work, so a killed function still leaves one, with no finished_at.

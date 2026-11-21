@@ -33,6 +33,7 @@ import {
   serverDay,
   slotOf,
 } from "./schedule";
+import { heartbeatBoundary } from "./tick-gate";
 import { dayTargets, trackedChangeMessage } from "./tracked";
 
 export type TickOutcome =
@@ -199,17 +200,18 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
   return (await dailyRead(ctx, db, now, origin)) ?? { kind: "idle" };
 }
 
-/** No tick for longer than this means the scheduler stopped (D45); also the alert's repeat gap. */
+/** The silence alert's repeat gap (D45). */
 export const TICK_SILENCE_MS = 60 * 60_000;
 
 /**
- * The watcher's check (POST /api/tick/watch, D45): when the newest tick started more than
- * TICK_SILENCE_MS ago, or none was ever recorded, one admin alert per silent hour. No quota.
+ * The watcher's check (POST /api/tick/watch, D45, D141): when the newest tick started before the newest
+ * heartbeat slot it can judge (`heartbeatBoundary`), or none was ever recorded, one admin alert per silent
+ * hour. No quota.
  */
 export async function watchTicks(ctx: AppContext, db: Db): Promise<boolean> {
   const now = ctx.now();
   const last = await latestTickAt(db);
-  if (last && now.getTime() - last.getTime() <= TICK_SILENCE_MS) return false;
+  if (last && last >= heartbeatBoundary(now)) return false;
   // INVARIANT tick.silence-alert-hourly: the claim decides which call posts, once per hour.
   if (!(await claimAlert(db, TICK_SILENCE_ALERT, now, TICK_SILENCE_MS))) return false;
   const at = last && {
