@@ -144,6 +144,21 @@ header .drawn-frame-soft:focus-visible {
   outline-color: var(--wax-paper);
   outline-offset: 3px;
 }
+/* A filled primary button's text is paper, so its own colour would draw the ring paper on paper. */
+.ink-button:focus-visible {
+  outline-color: var(--plum);
+}
+/* The least width of a figure column in the ledger's rows (StatTable, the player's Across events): none below
+   768 px, where a change may put its percent on a second line; from 768 px room for most compact changes
+   and their percent on one line (issue 473). The same for every row, so the columns line up. */
+:root {
+  --fig-min: 0px;
+}
+@media (min-width: 48rem) {
+  :root {
+    --fig-min: 6.75rem;
+  }
+}
 body {
   overflow-wrap: break-word;
 }

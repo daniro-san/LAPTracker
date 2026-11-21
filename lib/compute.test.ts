@@ -178,6 +178,7 @@ describe("changeDifference", () => {
     expect(changeDifference(100, 130)).toEqual({ delta: 30, ratio: 1.3 });
     expect(changeDifference(-100, -40)).toEqual({ delta: 60, ratio: 0.4 });
     expect(changeDifference(-60, 40)).toEqual({ delta: 100, ratio: null });
+    expect(changeDifference(2, 1_500_000)).toEqual({ delta: 1_499_998, ratio: null });
     expect(changeDifference(0, 5)).toEqual({ delta: 5, ratio: null });
     expect(changeDifference(null, 5)).toBeNull();
     expect(changeDifference(5, undefined)).toBeNull();

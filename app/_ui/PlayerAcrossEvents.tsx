@@ -22,10 +22,10 @@ import { FreshDots, SideHead } from "./Status";
 
 const SHOWN = 12;
 const MUTED = "text-ink/70";
-/** ≥ 640 px: event · line head · Might · Kills · Level · Details, shared by the header and every row. A
- * figure column is never narrower than its change, which stays on one line (issue 473). */
+/** ≥ 640 px: event · line head · Might · Kills · Level · Details, shared by the header and every row. From
+ * 768 px a figure column is at least 6.75rem (`--fig-min`), so most changes stay on one line (issue 473). */
 const GRID = {
-  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(min-content,1fr)) 6.75rem",
+  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(var(--fig-min),1fr)) 6.75rem",
 } as CSSProperties;
 
 type Stat = "power" | "kills" | "lv";
@@ -69,7 +69,11 @@ function rankPairs(r: PlayerEventRow, prev: PlayerEventRow | undefined) {
 function Line({ head, cells }: { head: ReactNode; cells: ReactNode[] }) {
   return (
     <>
-      <span className={`text-xs tabular-nums sm:col-start-2 ${MUTED}`}>{head}</span>
+      {/* Below 640 px the head shares the card with three figures: it wraps at 7.5rem, so a time with its
+          day never squeezes them (issue 473). */}
+      <span className={`max-w-[7.5rem] text-xs tabular-nums sm:col-start-2 sm:max-w-none ${MUTED}`}>
+        {head}
+      </span>
       {cells.map((c, i) => (
         <span key={i} className="text-right tabular-nums">
           {c}
@@ -110,7 +114,7 @@ function RowLead({
           <Rank n={rank.after} move={rank.move} />
           {/* What the rank is of: the player's place in that alliance's roster (issue 473). */}
           {rank.after !== null && r.tag !== null && (
-            <span className={`block text-xs ${MUTED}`}>
+            <span className={`block whitespace-nowrap text-xs ${MUTED}`}>
               {fill(copy.ledger.rankIn, { tag: r.tag })}
             </span>
           )}

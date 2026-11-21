@@ -94,7 +94,7 @@ function sinceLast(
 ): ComparisonRow {
   if (!previous) return r;
   const shown = r.after && !r.after.failed ? r.after : r.before;
-  const label = fill(copy.ledger.since, { date: clock.day(previous.at) });
+  const label = fill(copy.ledger.sinceLast, { date: clock.day(previous.at) });
   const fresh = shown?.isFresh === true && !shown.failed;
   return { ...r, metrics: withSinceLast(r.metrics, previous.rows.get(r.unionId), fresh, label) };
 }

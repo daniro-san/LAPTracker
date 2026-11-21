@@ -206,8 +206,10 @@ export function comparisonRows(
   );
 }
 
-/** A change since the previous event at least this big (of the earlier figure) shows its own line. */
+/** A change since the previous event at least this big (of the earlier figure) shows its own line; for
+ * Members, also at least BIG_MEMBERS people, so 2 of 8 leaving does not light up a row (D75). */
 export const BIG_STEP = 0.25;
+export const BIG_MEMBERS = 5;
 
 /**
  * The ledger row's "since Nov 7" line (issue 473): the change since the previous event's reference reading,
@@ -225,7 +227,10 @@ export function withSinceLast(
   const was = [previous.power, previous.kills, previous.members];
   const big = (i: number) => {
     const [now, then] = [metrics[i]?.value ?? null, was[i] ?? null];
-    return now !== null && then !== null && then > 0 && Math.abs(now - then) / then >= BIG_STEP;
+    if (now === null || then === null || then <= 0) return false;
+    return (
+      Math.abs(now - then) / then >= BIG_STEP && (i !== 2 || Math.abs(now - then) >= BIG_MEMBERS)
+    );
   };
   if (!big(0) && !big(2)) return metrics;
   return metrics.map((m, i) => {

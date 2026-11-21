@@ -131,7 +131,7 @@ describe("withSinceLast", () => {
   });
 
   it("adds nothing for a small change, a stale row or an alliance the previous event did not read", () => {
-    const close = { power: 2_100_000, kills: 400, members: 1 };
+    const close = { power: 2_100_000, kills: 400, members: 4 };
     expect(withSinceLast(now, close, true, "since").some((m) => m.vs)).toBe(false);
     expect(withSinceLast(now, { ...close, members: 93 }, false, "since")).toBe(now);
     expect(withSinceLast(now, undefined, true, "since")).toBe(now);

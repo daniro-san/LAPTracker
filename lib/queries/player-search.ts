@@ -31,8 +31,8 @@ export interface PlayerMatch extends Photo {
 const literal = (q: string) => q.replace(/[\\%_]/g, "\\$&");
 const likePattern = (q: string) => `%${literal(q)}%`;
 
-/** Players whose current or any earlier name contains `q` (ILIKE, §3.8): those with a name that starts with
- * `q` first (issue 473), then most recently seen first; at most 50. */
+/** Players whose current or any earlier name contains `q` (ILIKE, §3.8): an exact name first, then a name
+ * that starts with `q` (issue 473), then most recently seen, then the shortest name; at most 50. */
 export async function searchPlayers(db: Db, q: string): Promise<PlayerMatch[]> {
   const text = q.trim();
   if (text === "") return [];
@@ -46,8 +46,10 @@ export async function searchPlayers(db: Db, q: string): Promise<PlayerMatch[]> {
     .where(and(ilike(memberSnapshots.name, likePattern(text)), publicEvent))
     .groupBy(memberSnapshots.uid)
     .orderBy(
+      desc(sql`bool_or(${memberSnapshots.name} ilike ${literal(text)})`),
       desc(sql`bool_or(${memberSnapshots.name} ilike ${`${literal(text)}%`})`),
       desc(lastSeen),
+      asc(sql`min(length(${memberSnapshots.name}))`),
       asc(memberSnapshots.uid),
     )
     .limit(SEARCH_LIMIT);

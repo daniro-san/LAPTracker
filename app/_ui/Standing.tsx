@@ -30,7 +30,8 @@ const growthArrow = (g: number) => (g > 0 ? "▲" : g < 0 ? "▼" : "=");
 function lead(row: StandingRow, s: Figures, clock: Clock, locale: string, copy: Dictionary) {
   const from = clock.day(day(s.days[0]));
   const to = clock.day(day(s.days.at(-1)));
-  const rank = fill(copy.standing.lead, {
+  const same = row.ranks[0] === row.rank;
+  const rank = fill(same ? copy.standing.leadSame : copy.standing.lead, {
     label: labelOf(row),
     rank: `#${row.rank}`,
     before: `#${row.ranks[0]}`,
@@ -40,6 +41,7 @@ function lead(row: StandingRow, s: Figures, clock: Clock, locale: string, copy: 
   const growth =
     row.growth !== null && s.serverGrowth !== null
       ? fill(copy.standing.leadGrowth, {
+          from,
           growth: percentText(row.growth, locale),
           server: percentText(s.serverGrowth, locale),
         })

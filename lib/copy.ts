@@ -70,6 +70,8 @@ export const en = {
     left: "left",
     was: "was {name}",
     since: "since {date}",
+    /** The ledger's line under a big change since the previous event (issue 473): `since last event (Oct 24)`. */
+    sinceLast: "since last event ({date})",
     acrossEvents: "Across events",
     toTop: "Back to top",
     showAll: "All events ({n})",
@@ -111,7 +113,9 @@ export const en = {
     second: "Second event",
     swap: "Swap the events",
     /** Under the title: what each line's numbers are. */
-    lead: "Each line is the change during that event, from Start to End. The last line is the second event's change minus the first's.",
+    lead: "Each line is the change during that event, from Start to End. The last line is the second event's change minus the first's, and, when both went the same way, how many times the first it was.",
+    /** Under the difference: the second change as a multiple of the first (`1.1×`), both the same way. */
+    ratio: "{ratio} the first",
     allAlliances: "All alliances",
     /** Under the totals: how many alliances they cover. */
     counted: "{n} of {total} alliances, those with usable data in both events",
@@ -251,7 +255,7 @@ export const en = {
     placeholder: "Player name",
     submit: "Search",
     seen: "Seen",
-    limit: "First {n}",
+    limit: "First {n}. Type more of the name to narrow it.",
     noMatch: "No player with that name. Check the spelling, or type part of the name.",
     /** Above the results: how many players matched. */
     results: "Results: {n}",

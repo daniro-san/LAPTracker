@@ -112,13 +112,19 @@ function Lead({ row }: { row: StatRow }) {
           {row.icon}
         </span>
       )}
-      <div className="min-w-0 name-fit">
+      <div className="min-w-0">
         {row.href ? (
-          <TextLink stretch href={row.href} className="font-subhead text-display-sm leading-tight">
+          <TextLink
+            stretch
+            href={row.href}
+            className="block name-fit font-subhead text-display-sm leading-tight"
+          >
             {row.lead}
           </TextLink>
         ) : (
-          <span className="font-subhead text-display-sm leading-tight">{row.lead}</span>
+          <span className="block name-fit font-subhead text-display-sm leading-tight">
+            {row.lead}
+          </span>
         )}
         {row.sub && <div className={`text-sm ${MUTED}`}>{row.sub}</div>}
       </div>
@@ -194,11 +200,13 @@ export function StatTable({
   copy: Dictionary;
 }) {
   if (rows.length === 0) return <EmptyState>{empty ?? copy.empty.kettle}</EmptyState>;
-  // At ≥ 640 px a fifth, fixed column holds the Details control, so the header and every row align. A
-  // figure column is never narrower than its change, which stays on one line (issue 473); the name gives way.
+  // At ≥ 640 px a fifth, fixed column holds the Details control, so the header and every row align. Every
+  // row has the same tracks (each row is its own grid): the lead at least 10rem, so the name keeps room
+  // after the rank and the picture; from 768 px a figure column at least 6.75rem, so most compact changes
+  // keep their percent on one line; otherwise the percent goes under the change (issue 473).
   const more = rows.some((r) => r.summary || r.detail);
   const grid = {
-    "--cols": `minmax(6rem,2.4fr) repeat(${columns.length}, minmax(min-content,1fr))${more ? " 6.75rem" : ""}`,
+    "--cols": `minmax(10rem,2.4fr) repeat(${columns.length}, minmax(var(--fig-min),1fr))${more ? " 6.75rem" : ""}`,
   } as CSSProperties;
   return (
     <div>

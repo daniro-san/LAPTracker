@@ -19,7 +19,7 @@ export function EventLead({
     <>
       {clock.weekday(eventAt)}
       {dataAt && (
-        <span className="ml-2 whitespace-nowrap font-body text-sm font-normal text-ink/70">
+        <span className="ml-2 font-body text-sm font-normal text-ink/70">
           {withDay || clock.day(dataAt) !== clock.day(eventAt)
             ? clock.at(dataAt)
             : clock.time(dataAt)}

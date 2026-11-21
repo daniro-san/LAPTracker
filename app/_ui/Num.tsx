@@ -4,6 +4,8 @@
 // "Exact numbers" switch shows one or the other for the whole page with CSS only (globals.css). Every
 // change carries three channels (DESIGN.md): colour, an arrow and the signed number.
 
+import { fill } from "@/lib/copy";
+
 import { compact, exact, MEMBER_MARK, percent, percentText, ratioText, signOf } from "./format";
 import { useCopy, useLocale } from "./LocaleProvider";
 
@@ -43,6 +45,9 @@ export function MemberMark() {
   );
 }
 
+/** Where the percent goes for `stack`: under the change below 640 px (true) or 768 px ("md"). */
+const STACK = { md: "block md:inline", true: "block sm:inline", false: "" } as const;
+
 /** `▲ +20.1M (+0.5%)`; `—` when there is no delta (a stale or missing side, or only one snapshot). */
 export function Delta({
   delta,
@@ -63,35 +68,43 @@ export function Delta({
   const locale = useLocale();
   if (delta === null) return <span className={MUTED}>—</span>;
   const pct = percent(delta, base);
+  const shown = pct !== null && delta !== 0;
   return (
     <span className={`font-medium ${tone(delta)}`}>
-      {/* Only the change itself stays on one line; a note may wrap under it (07c S10). */}
-      <span className="whitespace-nowrap">
-        <span aria-hidden="true">{arrow(delta)} </span>
-        {delta !== 0 && signOf(delta)}
-        <Num n={Math.abs(delta)} />
-        {pct !== null && delta !== 0 && (
-          <span
-            suppressHydrationWarning
-            className={stack === "md" ? "block md:inline" : stack ? "block sm:inline" : undefined}
-          >
+      {/* The change and its percent are each one unbroken piece, and the `*` stays with the last one; a
+          column too narrow for both puts the percent on the next line instead of running into the next
+          column (issue 473). A note may wrap under it (07c S10). */}
+      <span>
+        <span className="whitespace-nowrap">
+          <span aria-hidden="true">{arrow(delta)} </span>
+          {delta !== 0 && signOf(delta)}
+          <Num n={Math.abs(delta)} />
+          {!shown && memberMark && <MemberMark />}
+        </span>
+        {shown && (
+          <>
             {" "}
-            ({percentText(pct, locale)})
-          </span>
+            <span
+              suppressHydrationWarning
+              className={`whitespace-nowrap ${STACK[String(stack) as keyof typeof STACK]}`}
+            >
+              ({percentText(pct, locale)}){memberMark && <MemberMark />}
+            </span>
+          </>
         )}
-        {memberMark && <MemberMark />}
       </span>
       {note && <span className="font-normal"> · {note}</span>}
     </span>
   );
 }
 
-/** `3.1×`: one change as a multiple of another (the compare page's difference line), muted. */
+/** `3.1× the first`: one change as a multiple of another (the compare page's difference line), muted. */
 export function Ratio({ ratio }: { ratio: number }) {
   const locale = useLocale();
+  const copy = useCopy();
   return (
-    <span className={`whitespace-nowrap ${MUTED}`} suppressHydrationWarning>
-      {ratioText(ratio, locale)}
+    <span className={MUTED} suppressHydrationWarning>
+      {fill(copy.compare.ratio, { ratio: ratioText(ratio, locale) })}
     </span>
   );
 }

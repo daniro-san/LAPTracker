@@ -8,9 +8,12 @@ export const standingCopy = {
   /** The first sentence, in time order (issue 473). `{label}` is the alliance, `{before}` its rank on the
    * period's first day and `{rank}` on its newest (`#4`), `{from}` and `{to}` those days. */
   lead: "By might, {label} went from {before} on {from} to {rank} on {to}.",
-  /** After the lead; `{growth}` and `{server}` are signed percents. */
+  /** The same when the rank did not move (panel, issue 473: "went from #1 to #1"). */
+  leadSame: "By might, {label} stayed {rank} from {from} to {to}.",
+  /** After the lead; `{growth}` and `{server}` are signed percents, `{from}` the period's first day (the lead
+   * now ends on the newest day, so "since then" would point at the wrong one). */
   leadGrowth:
-    "Its might changed {growth} since then. The tracked alliances' total changed {server}.",
+    "Its might changed {growth} since {from}. The tracked alliances' total changed {server}.",
   /** The first row of the list: the tracked alliances together. */
   server: "Tracked alliances",
   /** Beside each row's might: its change since the period's first day, `{growth}` a signed percent. */

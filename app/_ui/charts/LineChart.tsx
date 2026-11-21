@@ -27,8 +27,8 @@ const WIDE_EVENT = 40;
 /** The chart's height in px (Tailwind h-32 and h-16) and the least gap between two value labels (text-xs). */
 const HEIGHT = { regular: 128, small: 64 };
 const LABEL_GAP = 16;
-/** The peak's date is written under it only this far (in chart %) from both ends, clear of their dates. */
-const PEAK_CLEAR = 20;
+/** The peak's date is left out this close (in chart %) to either end, where it is the first or last date. */
+const PEAK_CLEAR = 5;
 
 /** Time across, value up; the value range is padded around the data when it is under MIN_SPAN of the top. */
 function shapes(points: ChartPoint[], first: ChartPoint, last: ChartPoint) {
@@ -99,8 +99,9 @@ function EventMarks({ bands, x }: { bands: { from: Date; to: Date }[]; x: (d: Da
 }
 
 /**
- * The highest reading's date under it (issue 473), when it is not near the first or the last reading,
- * whose dates are written already. The newest of equal highs.
+ * The highest reading's date under it (issue 473), on its own line under the first and last dates so the
+ * three never meet, kept inside the chart's width. Not at either end, whose date is written already. The
+ * newest of equal highs.
  */
 function PeakDate({
   points,
@@ -117,12 +118,14 @@ function PeakDate({
   const left = peak ? x(peak.at) : 0;
   if (!peak || left < PEAK_CLEAR || left > BOX - PEAK_CLEAR) return null;
   return (
-    <span
-      className="absolute top-0 -translate-x-1/2 whitespace-nowrap"
-      style={{ left: `${left}%` }}
-    >
-      ↑ {when(peak.at)}
-    </span>
+    <div aria-hidden="true" className={`relative h-4 ${MUTED}`}>
+      <span
+        className="absolute top-0 -translate-x-1/2 whitespace-nowrap"
+        style={{ left: `clamp(2.5rem, ${left}%, calc(100% - 2.5rem))` }}
+      >
+        ↑ {when(peak.at)}
+      </span>
+    </div>
   );
 }
 
@@ -201,11 +204,11 @@ export function LineChart({
             />
           </svg>
         </div>
-        <div aria-hidden="true" className={`relative mt-1 flex justify-between ${MUTED}`}>
+        <div aria-hidden="true" className={`mt-1 flex justify-between ${MUTED}`}>
           <span>{when(first.at)}</span>
-          <PeakDate points={points} hi={hi} x={x} when={when} />
           <span>{when(last.at)}</span>
         </div>
+        <PeakDate points={points} hi={hi} x={x} when={when} />
       </div>
       {/* A fixed width, so the charts of one card line up whatever their labels. */}
       <div aria-hidden="true" className={`relative w-14 shrink-0 text-right ${MUTED}`}>
