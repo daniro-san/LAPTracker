@@ -11,8 +11,9 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 
 import type { ReadStatus, StatusLine } from "@/lib/private/read-status";
+import { batchMayRun } from "@/lib/tick-batch";
 
-import { batchMayRun, nextWake } from "./read-status-wake";
+import { nextWake } from "./read-status-wake";
 
 const POLL_MS = 30_000;
 

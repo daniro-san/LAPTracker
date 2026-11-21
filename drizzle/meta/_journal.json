@@ -421,6 +421,13 @@
       "when": 1795216151026,
       "tag": "0059_shield_message_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795223084258,
+      "tag": "0060_roster_member_uids_gin",
+      "breakpoints": true
     }
   ]
 }
