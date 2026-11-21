@@ -29,7 +29,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { featureOn, thanksSwitches } from "@/lib/private/features";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
-import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
+import { membersWithProgress, type MembersView } from "@/lib/private/members";
 import { reviewsForMe } from "@/lib/private/notice-reviews";
 import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
@@ -268,7 +268,7 @@ export default async function WorkspacePage({
     const [items, placed, view, names, activity, reviews, notes, nudge] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
-      progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
+      membersWithProgress(db, access, now, zone),
       onDeskNow(db, access, now),
       activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
       featureOn(access, "notices") ? reviewsForMe(db, access) : [],

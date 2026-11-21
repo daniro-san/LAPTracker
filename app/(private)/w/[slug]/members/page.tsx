@@ -25,7 +25,7 @@ import { toReviewCount } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import {
   membersView,
-  progressHistory,
+  membersWithProgress,
   withListExtras,
   type ListSource,
   type MembersView,
@@ -100,7 +100,7 @@ async function readPage(
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
   const [view, channels] = await Promise.all([
-    progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
+    membersWithProgress(db, access, now, zone),
     channelNames(db, access, getEnv()),
   ]);
   return {
