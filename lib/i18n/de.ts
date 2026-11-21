@@ -412,6 +412,11 @@ export const de = {
       retry: "Nochmal",
       back: "Zurück zur Chronik",
     },
+    unavailable: {
+      code: "503",
+      title: "Daten vorübergehend nicht verfügbar.",
+      body: "Die Chronik lässt sich gerade nicht lesen. Nichts ist verloren. Versuch es in ein paar Minuten noch einmal.",
+    },
   },
   empty: {
     kettle: "Noch nichts eingetragen. Der Kessel steht schon auf dem Herd.",

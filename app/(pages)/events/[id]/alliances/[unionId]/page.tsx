@@ -23,6 +23,7 @@ import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
 import { Delta, Num, Rank } from "@/app/_ui/Num";
 import { AllianceBadge } from "@/app/_ui/Pictures";
 import { previewImage } from "@/app/_ui/preview";
+import { sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { AllianceStanding } from "@/app/_ui/Standing";
@@ -40,7 +41,6 @@ import {
   eventRanks,
   getAllianceDetail,
   homeEvent,
-  listEvents,
   memberMovers,
 } from "@/lib/queries";
 
@@ -139,7 +139,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
     const detail = await getAllianceDetail(db, eventId, unionId);
     if (!detail) return null;
     const [events, history, names, ranks, statement] = await Promise.all([
-      listEvents(db),
+      sharedEvents(),
       allianceHistory(db, unionId),
       allianceNames(db, [unionId]),
       eventRanks(db, eventId),

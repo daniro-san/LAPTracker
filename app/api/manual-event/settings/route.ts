@@ -31,6 +31,8 @@ export function POST(request: Request): Promise<Response> {
     if (result === "admin-cannot-post") return errorResponse(409, "admin_cannot_post");
     // Visibility decides whether the event's progress is public (`publicEvent`).
     ctx.eventCache.invalidate(id);
+    // INVARIANT cache.write-invalidates-reads (D143): visibility puts the round in or out of the event list.
+    ctx.publicCache.invalidate();
     return Response.json({ event_id: id });
   });
 }

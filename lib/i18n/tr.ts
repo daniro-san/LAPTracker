@@ -410,6 +410,11 @@ export const tr = {
       retry: "Tekrar dene",
       back: "Deftere dön",
     },
+    unavailable: {
+      code: "503",
+      title: "Veriler şimdilik kullanılamıyor.",
+      body: "Defter şu an okunamıyor. Hiçbir şey kaybolmadı. Birkaç dakika sonra tekrar dene.",
+    },
   },
   empty: {
     kettle: "Henüz bir şey yazılmadı. Çaydanlık ocakta.",

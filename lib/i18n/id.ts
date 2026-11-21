@@ -411,6 +411,11 @@ export const idID = {
       retry: "Coba lagi",
       back: "Kembali ke buku",
     },
+    unavailable: {
+      code: "503",
+      title: "Data sementara tidak tersedia.",
+      body: "Buku tidak bisa dibaca sekarang. Tidak ada yang hilang. Coba lagi dalam beberapa menit.",
+    },
   },
   empty: {
     kettle: "Belum ada yang dicatat. Ketel sudah di atas kompor.",

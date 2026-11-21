@@ -5,6 +5,7 @@ import { ago, fakeInternal, fakeV1, minutes, roster, T0 } from "./collector.test
 import type { Db } from "./db";
 import { parseEnv } from "./env";
 import type { EventCache } from "./event-cache";
+import { decode, encode, type PublicCache } from "./public-cache";
 import type { WakeCache } from "./wake-cache";
 
 export const TEST_PIN = "482913";
@@ -64,6 +65,29 @@ export function memoryEventCache(): EventCache {
   };
 }
 
+/** Next's public cache (lib/public-cache.ts) in memory: values go through its JSON text as there, a null is
+ * not kept, and nothing expires. */
+export function memoryPublicCache(): PublicCache {
+  const values = new Map<string, Promise<unknown>>();
+  return {
+    read<T>(name: string, key: readonly (string | number | null)[], load: () => Promise<T>) {
+      const id = JSON.stringify([name, ...key]);
+      const kept = values.get(id) as Promise<T> | undefined;
+      if (kept) return kept;
+      const read = load().then((v) => decode<T>(encode(v)));
+      values.set(id, read);
+      void read.then(
+        (v) => v === null && values.get(id) === read && values.delete(id),
+        () => values.delete(id),
+      );
+      return read;
+    },
+    invalidate() {
+      values.clear();
+    },
+  };
+}
+
 /** Next's wake cache (lib/wake-cache.ts) in memory: a fact is kept once it holds; nothing expires. */
 export function memoryWakeCache(): WakeCache {
   const held = new Set<string>();
@@ -108,6 +132,7 @@ export function testContext(db: Db, env = TEST_ENV) {
     },
     openDb: () => ({ db, close: async () => {} }),
     eventCache: memoryEventCache(),
+    publicCache: memoryPublicCache(),
     wakeCache: memoryWakeCache(),
     ai: null,
   };

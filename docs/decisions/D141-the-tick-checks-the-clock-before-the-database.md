@@ -138,3 +138,5 @@ Page views, admin presses, deploys (`pnpm db:migrate` in the build) and a status
   - A request's reads share 3 connections. A page that starts more reads at once queues them; /admin, the widest, takes 84 ms locally against 63 ms with 10 connections and 232 ms before. No page code runs a transaction, so nothing can wait on itself.
   - When a client disconnects mid-stream, `after` runs at once and ends the Pool while reads may still be going. Those reads fail ("Cannot use a pool after calling end"); nobody is there to see the page.
 - **Tests.** `lib/page.test.ts`: two reads of one scope share one `openDb` and close it once, after the scope; a read that throws still leaves one close; a scope that cannot register the close opens nothing. `frameReadStatus`'s failed-connection test now asserts the connection was tried.
+
+**Amendment (2026-11-21, issue 521, perf Batch 4).** The public pages' reads are shared until the next write, and a page whose database does not answer says "Data temporarily unavailable": D143.

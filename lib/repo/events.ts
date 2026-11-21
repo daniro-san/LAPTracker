@@ -62,19 +62,24 @@ export interface NewEvent {
 
 /**
  * The scheduled event at `eventAtUtc`, created on first use with no alliances (the BEFORE run copies
- * them). Insert-or-nothing then select, so two concurrent ticks end up with the same row.
+ * them). Insert-or-nothing then select, so two concurrent ticks end up with the same row. `created`: this
+ * call's insert made it (the public pages' shared reads then need dropping, D143).
  */
-export async function findOrCreateEvent(db: Db, event: NewEvent): Promise<EventInfo> {
-  await db
+export async function findOrCreateEvent(
+  db: Db,
+  event: NewEvent,
+): Promise<EventInfo & { created: boolean }> {
+  const inserted = await db
     .insert(events)
     .values({ ...event, allianceIds: [] })
-    .onConflictDoNothing({ target: events.eventAtUtc });
+    .onConflictDoNothing({ target: events.eventAtUtc })
+    .returning({ id: events.id });
   const [row] = await db
     .select(infoColumns)
     .from(events)
     .where(eq(events.eventAtUtc, event.eventAtUtc));
   if (!row) throw new Error("event row missing after insert");
-  return row;
+  return { ...row, created: inserted.length > 0 };
 }
 
 export async function getEventInfo(db: Db, eventId: number): Promise<EventInfo | null> {

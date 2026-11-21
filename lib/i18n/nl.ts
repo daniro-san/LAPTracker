@@ -410,6 +410,11 @@ export const nl = {
       retry: "Opnieuw",
       back: "Terug naar het logboek",
     },
+    unavailable: {
+      code: "503",
+      title: "Gegevens tijdelijk niet beschikbaar.",
+      body: "Het logboek kan nu niet worden gelezen. Er is niets verloren gegaan. Probeer het over een paar minuten nog eens.",
+    },
   },
   empty: {
     kettle: "Nog niets genoteerd. De ketel staat al op.",

@@ -15,7 +15,19 @@ const UPSTREAM_ROW_ERROR = /^(http 5\d\d|TimeoutError|AbortError)$/;
 
 export type UpstreamStatus = { down: false } | { down: true; lastFreshAt: Date | null };
 
-export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStatus> {
+/**
+ * What the status is computed from, with no `now` in it, so it can be shared between requests (D143): the
+ * newest public snapshot's start and state, whether its attempt failed upstream (null while it runs: that
+ * depends on `now`), and the newest fresh alliance row's time, read only when the status can be down.
+ */
+export interface UpstreamRows {
+  startedAt: Date;
+  status: string;
+  failed: boolean | null;
+  lastFreshAt: Date | null;
+}
+
+export async function upstreamRows(db: Db): Promise<UpstreamRows | null> {
   const [latest] = await db
     .select({
       id: snapshots.id,
@@ -28,10 +40,10 @@ export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStat
     .where(and(publicEvent, phaseSnapshot))
     .orderBy(desc(snapshots.startedAt))
     .limit(1);
-  if (!latest || now.getTime() - latest.startedAt.getTime() > UPSTREAM_DOWN_WINDOW_MS) {
-    return { down: false };
-  }
-  if (!(await attemptFailedUpstream(db, latest, now))) return { down: false };
+  if (!latest) return null;
+  const failed = latest.status === "running" ? null : await attemptFailedUpstream(db, latest);
+  const base = { startedAt: latest.startedAt, status: latest.status, failed };
+  if (failed === false) return { ...base, lastFreshAt: null };
   const [fresh] = await db
     .select({ at: max(allianceSnapshots.sourceUpdatedAt) })
     .from(allianceSnapshots)
@@ -45,16 +57,27 @@ export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStat
         isNull(allianceSnapshots.error),
       ),
     );
-  return { down: true, lastFreshAt: fresh?.at ?? null };
+  return { ...base, lastFreshAt: fresh?.at ?? null };
+}
+
+/** The status at `now`, from the rows: per request, so a cached row never freezes "down". */
+export function upstreamStatusOf(rows: UpstreamRows | null, now: Date): UpstreamStatus {
+  if (!rows || now.getTime() - rows.startedAt.getTime() > UPSTREAM_DOWN_WINDOW_MS) {
+    return { down: false };
+  }
+  // Never closed: the function was killed, which the 100 s deadline (D25) exists to prevent.
+  const failed = rows.failed ?? runAbandoned(rows, now);
+  return failed ? { down: true, lastFreshAt: rows.lastFreshAt } : { down: false };
+}
+
+export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStatus> {
+  return upstreamStatusOf(await upstreamRows(db), now);
 }
 
 async function attemptFailedUpstream(
   db: Db,
-  s: { id: number; status: string; startedAt: Date; error: string | null },
-  now: Date,
+  s: { id: number; status: string; error: string | null },
 ): Promise<boolean> {
-  // Never closed: the function was killed, which the 100 s deadline (D25) exists to prevent.
-  if (s.status === "running") return runAbandoned(s, now);
   if (s.status === "complete") return false;
   if (s.error === "deadline") return true;
   const rows = await db

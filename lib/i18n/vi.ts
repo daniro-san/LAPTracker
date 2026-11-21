@@ -405,6 +405,11 @@ export const vi = {
       retry: "Thử lại",
       back: "Về sổ",
     },
+    unavailable: {
+      code: "503",
+      title: "Tạm thời không đọc được dữ liệu.",
+      body: "Hiện không đọc được sổ. Không mất gì cả. Thử lại sau vài phút.",
+    },
   },
   empty: {
     kettle: "Chưa ghi gì cả. Ấm nước đang đun.",

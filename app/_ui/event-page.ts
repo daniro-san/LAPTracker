@@ -18,6 +18,7 @@ import {
 import { eventProgressOf, progressRows } from "@/lib/queries/live";
 
 import { requestClock, requestCopy } from "./locale";
+import { sharedEvents } from "./public-reads";
 
 // The turnout so far is read only while the event has no End: a live event's entry. Like every shared-cache
 // loader here, its read opens its own connection (withOwnDb): Next can run it in the background after the
@@ -38,6 +39,7 @@ export const loadEventPage = cache(async (id: number | null) => {
           withOwnDb(load),
         ),
       sections,
+      sharedEvents,
     ),
   );
 });

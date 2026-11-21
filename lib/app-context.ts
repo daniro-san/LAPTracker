@@ -5,6 +5,7 @@ import { captureServer, type EventWorkspace } from "./analytics/server";
 import { openDb, type Db, type PoolSize } from "./db";
 import { getEnv, type Env } from "./env";
 import { nextEventCache, type EventCache } from "./event-cache";
+import { nextPublicCache, type PublicCache } from "./public-cache";
 import { internal, v1 } from "./sources";
 import type { InternalSource, V1Source } from "./sources/types";
 import { nextWakeCache, type WakeCache } from "./wake-cache";
@@ -16,10 +17,12 @@ export interface AppContext {
   internal: InternalSource;
   /** For Discord webhooks. */
   fetch: typeof fetch;
-  /** `size` for a Pool kept for a whole request (lib/page.ts); the driver's defaults otherwise. */
+  /** `size` for a page's Pools (lib/page.ts); the driver's defaults otherwise. */
   openDb: (size?: PoolSize) => { db: Db; close: () => Promise<void> };
   /** The event page's shared cache; a write that changes an event invalidates it (issue 327). */
   eventCache: EventCache;
+  /** The public pages' shared reads (D143); every write to a table they read invalidates it. */
+  publicCache: PublicCache;
   /** What the tick knows without the database between calls (D141). */
   wakeCache: WakeCache;
   /**
@@ -57,6 +60,7 @@ export function getAppContext(): AppContext {
     fetch: send,
     openDb: (size) => openDb(undefined, size),
     eventCache: nextEventCache,
+    publicCache: nextPublicCache,
     wakeCache: nextWakeCache,
     ai: groqKey ? (where) => groqChat(groqKey, send, undefined, observeAi(env, send, where)) : null,
   };

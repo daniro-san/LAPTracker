@@ -2,8 +2,14 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { decode, encode } from "../public-cache";
 import { allianceSnapshots, events, snapshots } from "../schema";
-import { getUpstreamStatus } from "./upstream-status";
+import {
+  getUpstreamStatus,
+  upstreamRows,
+  upstreamStatusOf,
+  type UpstreamRows,
+} from "./upstream-status";
 
 const NOW = new Date("2026-11-05T20:00:00Z");
 const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60_000);
@@ -103,5 +109,18 @@ describe("getUpstreamStatus (D27)", () => {
     await truncateAll(db);
     await addRun(25 * 60, { status: "partial", error: "deadline" });
     expect(await getUpstreamStatus(db, NOW)).toEqual({ down: false });
+  });
+});
+
+describe("the banner's rows in the shared cache (D143)", () => {
+  it("turns down from `now` alone on a kept row: a run that never closed, then 24 hours later not", async () => {
+    await addRun(1, { status: "running" }, [{ updatedAt: ago(600) }]);
+    // As the public cache keeps it: JSON text, read back once per view.
+    const kept = decode<UpstreamRows | null>(encode(await upstreamRows(db)));
+    const at = (minutes: number) => new Date(NOW.getTime() + minutes * 60_000);
+
+    expect(upstreamStatusOf(kept, NOW)).toEqual({ down: false });
+    expect(upstreamStatusOf(kept, at(60))).toEqual({ down: true, lastFreshAt: ago(600) });
+    expect(upstreamStatusOf(kept, at(25 * 60))).toEqual({ down: false });
   });
 });

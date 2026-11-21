@@ -13,6 +13,7 @@ import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
 import { PlayerProgress } from "@/app/_ui/PlayerProgress";
 import { previewImage } from "@/app/_ui/preview";
+import { sharedEvents, sharedRead } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
@@ -21,14 +22,7 @@ import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import { withPageDb } from "@/lib/page";
-import {
-  homeEvent,
-  listEvents,
-  playerHistory,
-  playerProgress,
-  type PlayerHistory,
-} from "@/lib/queries";
+import { homeEvent, playerHistory, playerProgress, type PlayerHistory } from "@/lib/queries";
 
 function Timelines({
   history,
@@ -119,15 +113,18 @@ function Summary({
   );
 }
 
-/** Shared by the page and its <title> within one request. */
-const loadPlayer = cache((uid: number) =>
-  withPageDb(async (db) => {
-    const history = await playerHistory(db, uid);
-    if (!history) return null;
-    const [events, progress] = await Promise.all([listEvents(db), playerProgress(db, uid)]);
-    return { history, events, progress };
-  }),
-);
+/** Shared by the page and its <title> within one request, and with every viewer until the next write (D143).
+ * An unknown uid is not kept (lib/public-cache.ts). */
+const loadPlayer = cache(async (uid: number) => {
+  const [player, events] = await Promise.all([
+    sharedRead("player", [uid], async (db) => {
+      const history = await playerHistory(db, uid);
+      return history && { history, progress: await playerProgress(db, uid) };
+    }),
+    sharedEvents(),
+  ]);
+  return player && { ...player, events };
+});
 
 type Params = Promise<{ uid: string }>;
 

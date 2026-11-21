@@ -408,6 +408,11 @@ export const ptBR = {
       retry: "Tentar de novo",
       back: "Voltar ao registro",
     },
+    unavailable: {
+      code: "503",
+      title: "Dados temporariamente indisponíveis.",
+      body: "O registro não pode ser lido agora. Nada foi perdido. Tente de novo em alguns minutos.",
+    },
   },
   empty: {
     kettle: "Nada registrado ainda. A chaleira já está no fogo.",
