@@ -113,15 +113,13 @@ function usePushDevice(props: Props) {
     setUses(next);
     if (phase !== "on") return;
     setNote(null);
+    // The switches wait for this save, so two quick flips never overlap.
+    setBusy(true);
     const sub = await currentSubscription(slug).catch(() => null);
-    if (!sub) return setPhase("off");
-    const res = await post({
-      action: "uses",
-      endpoint: sub.endpoint,
-      uses: next,
-      language: props.language,
-    });
-    if (res?.status === 404) return setPhase("off");
+    const body = { action: "uses", endpoint: sub?.endpoint, uses: next, language: props.language };
+    const res = sub ? await post(body) : null;
+    setBusy(false);
+    if (!sub || res?.status === 404) return setPhase("off");
     if (!res?.ok) return setUses(uses);
     setNote(t["push.saved"]);
     track(on ? "ws_push_enabled" : "ws_push_disabled", { use });
@@ -139,9 +137,11 @@ export function PushSettings(props: Props) {
       </h2>
       <p className="mt-1">{t["push.lead"]}</p>
       <p className="mt-1 text-body-sm text-ink/70">{t["push.private"]}</p>
+      {/* The device's state and its button first, so ticked switches never read as "on" (QA). */}
+      <PushActions phase={phase} busy={busy} onEnable={enable} onDisable={disable} t={t} />
       {(phase === "checking" || phase === "off" || phase === "on") && (
         <fieldset className="mt-3 flex flex-col gap-1" disabled={busy || phase === "checking"}>
-          <legend className="sr-only">{t["push.head"]}</legend>
+          <legend className="mb-1 font-medium">{t["push.about"]}</legend>
           {view.offered.map((use) => (
             <CheckField
               key={use}
@@ -153,7 +153,6 @@ export function PushSettings(props: Props) {
           ))}
         </fieldset>
       )}
-      <PushActions phase={phase} busy={busy} onEnable={enable} onDisable={disable} t={t} />
       {note && note !== t["push.saved"] && <RefusalLine text={note} className="mt-2 text-seal" />}
       {note === t["push.saved"] && (
         <p role="status" className="mt-2 text-body-sm font-semibold text-plum">
@@ -195,7 +194,9 @@ function PushActions(props: {
   const on = phase === "on";
   return (
     <div className="mt-3 flex flex-wrap items-center gap-3">
-      <p className="font-medium">{t[on ? "push.on" : "push.off"]}</p>
+      <p role="status" className="font-medium">
+        {t[on ? "push.on" : "push.off"]}
+      </p>
       <Button
         variant={on ? "secondary" : "primary"}
         disabled={props.busy}

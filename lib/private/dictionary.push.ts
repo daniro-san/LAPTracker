@@ -11,7 +11,8 @@ export const pushEn = {
     "After Friday’s and Saturday’s reads: how many members were not seen with a shield yet.",
   "push.use.night_read": "Night roster read failed",
   "push.use.night_read.help":
-    "When tonight’s roster read fails, also on its retry. Nothing to do then: off unless you want to know.",
+    "When tonight’s roster read and its retry both fail. Nothing to do then: off unless you want to know.",
+  "push.about": "Notify this device about:",
   "push.use.claim": "“This is me” to approve",
   "push.use.claim.help": "When a member asks to link their player.",
   "push.use.roll_call": "Roll call reminders",
@@ -52,7 +53,8 @@ export const pushPt: Record<keyof typeof pushEn, string> = {
     "Depois das leituras de sexta e de sábado: quantos membros ainda estão sem escudo visto.",
   "push.use.night_read": "Leitura noturna da lista falhou",
   "push.use.night_read.help":
-    "Quando a leitura da lista desta noite falha, também na nova tentativa. Não há nada a fazer: desligado, a não ser que você queira saber.",
+    "Quando a leitura da lista desta noite e a nova tentativa falham. Não há nada a fazer: desligado, a não ser que você queira saber.",
+  "push.about": "Notificar este aparelho sobre:",
   "push.use.claim": "“Este sou eu” para aprovar",
   "push.use.claim.help": "Quando um membro indica qual jogador é.",
   "push.use.roll_call": "Lembretes de chamada",
@@ -93,7 +95,8 @@ export const pushFr: Record<keyof typeof pushEn, string> = {
     "Après les lectures de vendredi et de samedi : combien de membres n’ont pas encore de bouclier vu.",
   "push.use.night_read": "Échec de la lecture de nuit",
   "push.use.night_read.help":
-    "Quand la lecture de la liste de ce soir échoue, aussi lors de sa nouvelle tentative. Rien à faire alors : désactivé, sauf si vous voulez le savoir.",
+    "Quand la lecture de la liste de ce soir et sa nouvelle tentative échouent. Rien à faire alors : désactivé, sauf si vous voulez le savoir.",
+  "push.about": "Notifier cet appareil pour :",
   "push.use.claim": "« C’est moi » à approuver",
   "push.use.claim.help": "Quand un membre choisit son joueur.",
   "push.use.roll_call": "Rappels d’appel",
