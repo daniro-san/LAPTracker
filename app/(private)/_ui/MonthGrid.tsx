@@ -28,7 +28,7 @@ export function MonthGrid({
           </span>
         ))}
         {/* A day's link is named by the day in words, then the entries it shows, so every word seen is in
-            its name (WCAG 2.5.3, issue 585). A day of another month is muted ink, never faded. */}
+            its name (WCAG 2.5.3, issue 585). A day of another month is muted ink in a dashed frame, never faded. */}
         {cells.map((c) => (
           <a
             key={c.day}
@@ -36,7 +36,7 @@ export function MonthGrid({
             aria-current={c.today ? "date" : undefined}
             className={`flex min-h-20 min-w-0 flex-col gap-0.5 border p-1 ${
               c.today ? "border-plum border-2" : "border-rule"
-            } ${c.inMonth ? "" : "text-ink/70"}`}
+            } ${c.inMonth ? "" : "border-dashed text-ink/70"}`}
           >
             <span className="sr-only">{c.said}</span>
             <span

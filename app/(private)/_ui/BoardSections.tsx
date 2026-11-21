@@ -6,7 +6,7 @@ import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { BOARD_DAYS, type BoardEntry, type BoardNotice } from "@/lib/private/board";
 import { addDays, zonedInstant } from "@/lib/private/calendar-time";
-import { calendarDates, stOf, titleOf } from "@/lib/private/calendar-words";
+import { calendarDates, endOf, stOf, titleOf } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
 import type { StartHereText } from "@/lib/private/start-here";
@@ -26,7 +26,7 @@ function Entry(props: {
   language: WorkspaceLanguage;
   zone: string;
   notices: Map<number, string>;
-  /** When the server rendered the page (epoch ms), for "Ended" (issue 585) until the browser's clock. */
+  /** When the server rendered the page (epoch ms), for "Started" and "Ended" (issue 585). */
   now: number;
 }) {
   const { item, t, zone } = props;
@@ -49,8 +49,19 @@ function Entry(props: {
       )}
       <div className={item.minute === null ? "col-span-2" : "min-w-0"}>
         <p>
-          <span className="font-semibold">{titleOf(entry, t)}</span>
-          {at !== null && <Ended at={at} word={t["calendar.ended"]} since={props.now} />}
+          {at === null ? (
+            <span className="font-semibold">{titleOf(entry, t)}</span>
+          ) : (
+            <Ended
+              at={at}
+              end={endOf(entry.kind, item.day, item.minute, zone)}
+              words={{ started: t["calendar.started"], ended: t["calendar.ended"] }}
+              since={props.now}
+              bold
+            >
+              {titleOf(entry, t)}
+            </Ended>
+          )}
         </p>
         <EntryMore item={item} t={t} title={title} />
       </div>
@@ -113,7 +124,7 @@ export function Week(props: {
         <p className="mt-3">{t["board.week.none"]}</p>
       ) : (
         <>
-          <p className="mt-1 text-body-sm text-ink/75">{t["board.times"]}</p>
+          <p className="mt-2 text-body-sm text-ink/75">{t["board.times"]}</p>
           {days.map(({ day, items }) => (
             <div key={day} id={`day-${day}`} className="drawn-card mt-4 scroll-mt-16 px-4 pt-3">
               <h2 className="font-subhead text-display-sm">

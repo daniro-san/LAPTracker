@@ -4,7 +4,7 @@
 import { fill, isolate } from "@/lib/copy";
 import { DUEL_DAYS, type Field, type Kind, type Placed } from "@/lib/private/calendar-model";
 import { addDays, hhmm, mondayOf, weekdayIndex, zonedInstant } from "@/lib/private/calendar-time";
-import { calendarDates, stOf, titleOf } from "@/lib/private/calendar-words";
+import { calendarDates, endOf, stOf, titleOf } from "@/lib/private/calendar-words";
 import type { Suggestion } from "@/lib/private/caravan-suggest";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
@@ -52,6 +52,8 @@ export interface AgendaItem {
   st: string | null;
   /** The instant it starts, for "your time" in the browser. */
   at: number | null;
+  /** When it is surely over, for "Ended" (`endOf`). */
+  end: number;
   roles: string | null;
   notes: string | null;
   link: string | null;
@@ -159,6 +161,7 @@ export function agendaItem(p: Placed, ctx: CalendarCtx): AgendaItem {
     title: titleOf(e, t),
     st: minute === null ? null : stOf(e.kind, minute, t),
     at: minute === null ? null : zonedInstant(p.day, minute, zone),
+    end: endOf(e.kind, p.day, minute, zone),
     roles: rolesLine(p, t),
     notes: e.notes,
     link: e.link,
@@ -180,6 +183,7 @@ export function nextItems(placed: Placed[], slug: string, ctx: CalendarCtx): Nex
         title: item.title,
         st: item.st as string,
         at: item.at as number,
+        end: item.end,
         day: item.day,
         href: `/w/${slug}/calendar?week=${mondayOf(item.day)}#d-${item.day}`,
       },
@@ -213,11 +217,13 @@ export function agendaWeek(placed: Placed[], monday: string, today: string, ctx:
   return { days, theme: items.find((x) => x.form.kind === "duel" && x.week === monday) ?? null };
 }
 
-/** A month cell's label: what tells entries apart comes first, so a cut keeps the level or team. */
+/** A month cell's label: what tells entries apart comes first, so a cut keeps the level or team. An entry
+ * with no variant leaves it out (it printed "null", and screen readers read the label since issue 585). */
 function cellLabel(e: Placed["entry"], t: WorkspaceDictionary): string {
-  if (e.kind === "cheese") return `${e.variant} · Lv.${e.level} Cheese Trap`;
+  const lead = e.variant ? `${e.variant} · ` : "";
+  if (e.kind === "cheese") return `${lead}Lv.${e.level} Cheese Trap`;
   if (e.kind === "undead") return `Lv.${e.level} Undead Siege`;
-  if (e.kind === "elixir") return `${e.variant} · Elixir Scramble`;
+  if (e.kind === "elixir") return `${lead}Elixir Scramble`;
   return titleOf(e, t);
 }
 

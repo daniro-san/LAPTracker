@@ -90,6 +90,13 @@ html:has([data-sticky-search]) {
   scroll-padding-top: 5.75rem;
 }
 
+/* The Members list's sticky block (search label and field, Filters, the chips, the column labels; about
+   161 px at 360): going back with Shift+Tab, a focused row scrolls clear of it, never under it (WCAG 2.4.11,
+   issue 585). */
+html:has([data-members-sticky]) {
+  scroll-padding-top: 11rem;
+}
+
 /* Scrollbars (DESIGN.md "Workspace components"): the page's, a sheet's, a pane's and a sticky margin
    column's (D122) are thin, a muted ink thumb on
    no track, in light and dark (--ink flips). Never hidden: on a desktop the bar is how a sheet shows it

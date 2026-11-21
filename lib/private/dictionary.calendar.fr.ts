@@ -19,6 +19,7 @@ export const calendarFr: CalendarWords = {
   "calendar.yours": "{time} votre heure",
   "calendar.nextDay": "+1 j",
   "calendar.prevDay": "−1 j",
+  "calendar.started": "Commencé",
   "calendar.ended": "Terminé",
   "calendar.nothing": "Rien de prévu.",
   "calendar.add": "Ajouter un événement",

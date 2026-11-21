@@ -3,8 +3,8 @@
 // Home's "Today and tomorrow" (panel PD-1): the Calendar's entries that start today and tomorrow on the
 // officer's own clock, each with its server time and "your time", linking to that day in the Calendar.
 // The server renders them by server time; after hydration the browser's zone and minute take over
-// (YourTime.tsx), so server and browser HTML never differ. An entry whose time has passed carries "Ended"
-// at full contrast (issue 585; it was faded before).
+// (YourTime.tsx), so server and browser HTML never differ. An entry whose time has come carries "Started",
+// then "Ended", at full contrast (issue 585; it was faded before).
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import { Ended } from "./Ended";
@@ -23,6 +23,7 @@ export function HomeNext(props: {
   const minute = useMinute();
   const now = minute === null ? props.renderedAt : minute * 60_000;
   const days = todayAndTomorrow(props.items, zone, now);
+  const tag = { started: props.words["calendar.started"], ended: props.words["calendar.ended"] };
   if (days.today.length === 0 && days.tomorrow.length === 0)
     return <p className="mt-2 text-body-sm text-ink/75">{props.heads.none}</p>;
   return (
@@ -43,12 +44,9 @@ export function HomeNext(props: {
                         <Times st={x.st} at={x.at} day={x.day} words={props.words} />
                       </span>
                       <span>
-                        <span className="font-semibold">{x.title}</span>
-                        <Ended
-                          at={x.at}
-                          word={props.words["calendar.ended"]}
-                          since={props.renderedAt}
-                        />
+                        <Ended at={x.at} end={x.end} words={tag} since={props.renderedAt} bold>
+                          {x.title}
+                        </Ended>
                       </span>
                     </a>
                   </li>

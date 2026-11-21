@@ -37,13 +37,13 @@ function Row({ row, noData }: { row: DaysRow; noData: string }) {
       {row.last ? (
         // A member's own page (D142): this week and last week each on a line of its own, under the label.
         <>
-          <p className="text-body-sm">{row.label}</p>
+          <p className="text-body-sm font-semibold">{row.label}</p>
           <p className="text-body-sm text-ink/70 tabular-nums">{withNoData(row.average, noData)}</p>
           <p className="text-body-sm text-ink/70 tabular-nums">{row.last}</p>
         </>
       ) : (
         <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-body-sm">
-          <span>{row.label}</span>
+          <span className="font-semibold">{row.label}</span>
           <span className="text-body-sm text-ink/70 tabular-nums">
             {withNoData(row.average, noData)}
           </span>

@@ -48,7 +48,7 @@ const rowButton = (props: RowProps) => ({
 
 /** One width with or without a game frame, so the names line up. */
 const Photo = ({ row }: { row: ListRow }) => (
-  <span className="flex w-[51px] shrink-0 justify-center">
+  <span className="flex w-[51px] shrink-0 justify-center self-start">
     <PlayerAvatar uid={row.uid} photo={row.photo} />
   </span>
 );

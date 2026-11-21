@@ -159,24 +159,24 @@ export interface Needed {
   }[];
 }
 
-/** A line of the member's week and when its event starts (epoch ms; null for the week's Elixir team). */
+/** A line of the member's week, and when its event starts and is surely over (epoch ms; null for the
+ * week's Elixir team). */
 export interface NeededLine {
   line: string;
-  at: number | null;
+  when: { at: number; end: number } | null;
 }
 
 /**
  * The member's week in plain lines, the soonest first: Elixir team, caravan seats, roll call marks. A mark
- * says an officer set it, so "Shield up" reads as what was recorded, not as an order (issue 585). `at` is
- * when the event starts, so the page can say "Ended": `instant` turns a day and its time into one; an
- * event with no time counts as the end of its day.
+ * reads "your mark: “Shield up”", a record and not an order (issue 585). `timeOf` gives each event's start
+ * and end from its kind, day and time, so the page can say "Started" and "Ended".
  */
 export function neededLines(
   n: Needed,
   week: string,
   t: WorkspaceDictionary,
   date: (day: string) => string,
-  instant: (day: string, minute: number | null) => number,
+  timeOf: (kind: string, day: string, minute: number | null) => { at: number; end: number },
 ): NeededLine[] {
   const seats = n.seats.map((s) => {
     const day = s.movedTo ?? addDays(week, weekdayIndex(s.planned));
@@ -184,7 +184,7 @@ export function neededLines(
     return {
       day,
       line: fill(t[`me.caravan.${seat}`], { day: date(day) }),
-      at: instant(day, s.minute),
+      when: timeOf("caravan", day, s.minute),
     };
   });
   const marks = n.marks.map((m) => {
@@ -200,14 +200,14 @@ export function neededLines(
         day: date(m.day),
         mark: wall ? wallWord : markWord(mark, kind, t),
       }),
-      at: instant(m.day, m.minute),
+      when: timeOf(m.kind, m.day, m.minute),
     };
   });
-  const team = n.team ? [{ line: fill(t["me.elixir"], { team: n.team }), at: null }] : [];
+  const team = n.team ? [{ line: fill(t["me.elixir"], { team: n.team }), when: null }] : [];
   return [
     ...team,
     ...[...seats, ...marks]
       .sort((a, b) => a.day.localeCompare(b.day))
-      .map(({ line, at }) => ({ line, at })),
+      .map(({ line, when }) => ({ line, when })),
   ];
 }

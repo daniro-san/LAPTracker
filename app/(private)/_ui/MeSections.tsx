@@ -121,10 +121,19 @@ export function MeNeeded({
     <p className="py-2 text-body-sm">{t["me.needed.none"]}</p>
   ) : (
     <ul>
-      {view.needed.map(({ line, at }) => (
+      {view.needed.map(({ line, when }) => (
         <li key={line} className="border-t border-rule py-2 text-body-sm first:border-t-0">
-          {line}
-          {at !== null && <Ended at={at} word={t["calendar.ended"]} since={since} />}
+          {when ? (
+            <Ended
+              {...when}
+              words={{ started: t["calendar.started"], ended: t["calendar.ended"] }}
+              since={since}
+            >
+              {line}
+            </Ended>
+          ) : (
+            line
+          )}
         </li>
       ))}
     </ul>

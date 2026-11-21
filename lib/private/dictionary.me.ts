@@ -52,7 +52,7 @@ export const meEn = {
   "me.caravan.coach": "Alliance Caravan, {day}: you are the Coachman.",
   "me.caravan.vip": "Alliance Caravan, {day}: you ride as VIP.",
   "me.caravan.guardian": "Alliance Caravan, {day}: you are the Guardian.",
-  "me.mark": "{title}, {day}: an officer marked you as “{mark}”",
+  "me.mark": "{title}, {day} · your mark: “{mark}”",
   "me.review.line": "{discord} says they are {player}",
   "me.review.lead":
     "Asked to see their own page. Approve only when you know it is them: anyone can change their Discord nickname.",
@@ -147,7 +147,7 @@ export const mePt: MeWords = {
   "me.caravan.coach": "Alliance Caravan, {day}: você é o Coachman.",
   "me.caravan.vip": "Alliance Caravan, {day}: você vai como VIP.",
   "me.caravan.guardian": "Alliance Caravan, {day}: você é o Guardian.",
-  "me.mark": "{title}, {day}: um oficial marcou você como “{mark}”",
+  "me.mark": "{title}, {day} · sua marca: “{mark}”",
   "me.review.line": "{discord} diz que é {player}",
   "me.review.lead":
     "Pediu para ver a própria página. Aprove só quando souber que é a pessoa: qualquer um pode mudar o apelido no Discord.",
@@ -220,7 +220,7 @@ export const meFr: MeWords = {
   "me.caravan.coach": "Alliance Caravan, {day} : vous êtes le Coachman.",
   "me.caravan.vip": "Alliance Caravan, {day} : vous voyagez en VIP.",
   "me.caravan.guardian": "Alliance Caravan, {day} : vous êtes le Guardian.",
-  "me.mark": "{title}, {day} : un officier vous a marqué « {mark} »",
+  "me.mark": "{title}, {day} · votre marque : « {mark} »",
   "me.review.line": "{discord} dit être {player}",
   "me.review.lead":
     "Demande à voir sa propre page. N’approuvez que si vous savez que c’est bien la personne : chacun peut changer son surnom Discord.",

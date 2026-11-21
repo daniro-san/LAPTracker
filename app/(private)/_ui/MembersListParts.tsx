@@ -33,7 +33,11 @@ export function StickyBar(props: {
   ] as const;
   return (
     // Out to the page's margins up to 1023; inside the list's column beside the pane from 1024 (D122).
-    <div className="sticky top-0 z-[5] -mx-4 mt-4 border-b border-rule bg-paper px-4 py-2 md:-mx-6 md:px-6 lg:mx-0 lg:px-0">
+    // `data-members-sticky` gives the page its scroll-padding-top (globals.css, issue 585).
+    <div
+      data-members-sticky
+      className="sticky top-0 z-[5] -mx-4 mt-4 border-b border-rule bg-paper px-4 py-2 md:-mx-6 md:px-6 lg:mx-0 lg:px-0"
+    >
       {/* A label that stays on screen; the placeholder is only the hint (issue 585). */}
       <label htmlFor="members-search" className="block text-body-sm font-semibold">
         {t["members.search.aria"]}

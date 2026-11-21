@@ -11,6 +11,7 @@ import { mightBeforeEvent, ownDays, ownMarks, ownSeats, ownTeam } from "../repo/
 import { squadPairs } from "../repo/squads";
 import type { MeAccess } from "./access";
 import { addDays, dayIn, mondayOf, zonedInstant } from "./calendar-time";
+import { endOf } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import {
   neededLines,
@@ -75,9 +76,10 @@ export async function meView(
     },
     week: weekCard(days, today, t, d),
     squads: { ...squadsCardOf(pairs, heroes, t, f), none: t["me.squads.none"] },
-    // An event with no time of its own counts as the end of its day (the next day at 00:00).
-    needed: neededLines({ team, seats, marks }, week, t, d.date, (day, minute) =>
-      minute === null ? zonedInstant(addDays(day, 1), 0, zone) : zonedInstant(day, minute, zone),
-    ),
+    // An event with no time of its own starts and ends with its day, so it is only ever "Ended".
+    needed: neededLines({ team, seats, marks }, week, t, d.date, (kind, day, minute) => {
+      const end = endOf(kind, day, minute, zone);
+      return { at: minute === null ? end : zonedInstant(day, minute, zone), end };
+    }),
   };
 }

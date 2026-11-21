@@ -3,8 +3,9 @@
 // The Calendar tab's week, day by day (issue 300): every entry with its server time (ST) and the officer's
 // own time, its tags, Edit and Delete; "Add an event" opens the same sheet empty. The page opens at the top,
 // with "Add an event" and "Today ↓" in its head row (owner, issue 412 UX pass); only an address that names a
-// day (#d-<day>) or an Undo line scrolls. An entry already started carries "Ended" at full contrast (issue 585; it was greyed). The page reads again when it
-// comes back into view (owner rule, issue 293: freshness without realtime).
+// day (#d-<day>) or an Undo line scrolls. An entry whose time has come carries "Started", then "Ended", at
+// full contrast (issue 585; it was greyed). The page reads again when it comes back into view (owner rule,
+// issue 293: freshness without realtime).
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
@@ -130,8 +131,18 @@ function Item(props: {
           </p>
         )}
         <p>
-          <span className="font-semibold">{item.title}</span>
-          {item.at !== null && <Ended at={item.at} word={words["calendar.ended"]} />}
+          {item.at === null ? (
+            <span className="font-semibold">{item.title}</span>
+          ) : (
+            <Ended
+              at={item.at}
+              end={item.end}
+              words={{ started: words["calendar.started"], ended: words["calendar.ended"] }}
+              bold
+            >
+              {item.title}
+            </Ended>
+          )}
         </p>
         <Roles item={item} words={words} slug={props.slug} />
         {item.notes && <p className="text-body-sm whitespace-pre-line text-ink/85">{item.notes}</p>}

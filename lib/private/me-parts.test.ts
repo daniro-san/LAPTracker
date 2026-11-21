@@ -66,7 +66,8 @@ describe("a member's own week (D142)", () => {
     expect(recoveryLine(days, { day: "2026-11-04", power: 1000 }, t, f.date)).toBeNull();
   });
 
-  it("lists their team, seat and marks, the soonest first, each mark as an officer's, with its start", () => {
+  it("lists their team, seat and marks, the soonest first, each mark as a record with its times", () => {
+    const asked: string[] = [];
     const lines = neededLines(
       {
         team: "B",
@@ -85,18 +86,17 @@ describe("a member's own week (D142)", () => {
       "2026-11-02",
       t,
       (d) => d,
-      (day, minute) => Date.parse(`${day}T00:00:00Z`) + (minute ?? 1440) * 60_000,
+      (kind, day, minute) => {
+        asked.push(`${kind} ${day} ${minute}`);
+        return { at: 1, end: 2 };
+      },
     );
-    expect(lines.map((l) => [l.line, l.at === null ? null : new Date(l.at).toISOString()])).toEqual(
-      [
-        ["Elixir Scramble this week: Team B", null],
-        [
-          "Raid prep, 2026-11-02: an officer marked you as “Squads off the wall”",
-          "2026-11-03T00:00:00.000Z",
-        ],
-        ["Alliance Caravan, 2026-11-05: you are the Coachman.", "2026-11-05T14:00:00.000Z"],
-      ],
-    );
+    expect(lines).toEqual([
+      { line: "Elixir Scramble this week: Team B", when: null },
+      { line: "Raid prep, 2026-11-02 · your mark: “Squads off the wall”", when: { at: 1, end: 2 } },
+      { line: "Alliance Caravan, 2026-11-05: you are the Coachman.", when: { at: 1, end: 2 } },
+    ]);
+    expect(asked).toEqual(["caravan 2026-11-05 840", "shield 2026-11-02 null"]);
   });
 });
 

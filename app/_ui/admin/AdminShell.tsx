@@ -105,7 +105,7 @@ async function Unlocked({
             href={n.href}
             prefetch={false}
             aria-current={n.href === section ? "page" : undefined}
-            className="flex min-h-11 items-center px-3 text-sm font-medium aria-[current=page]:font-bold aria-[current=page]:shadow-[inset_0_-3px_0_var(--color-plum)]"
+            className="flex min-h-11 items-center px-3 text-sm font-medium aria-[current=page]:font-bold aria-[current=page]:no-underline aria-[current=page]:shadow-[inset_0_-3px_0_var(--color-plum)]"
           >
             {n.label}
           </TextLink>

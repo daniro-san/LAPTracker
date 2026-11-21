@@ -83,11 +83,22 @@ function Seen({ s, w }: { s: SquadCard; w: Words }) {
     const mark = shift > 0 ? w.clock.nextDay : shift < 0 ? w.clock.prevDay : "";
     mine = `${fill(w.clock.yours, { time })}${mark ? ` (${mark})` : ""}`;
   }
+  // At 14 px the line wraps: it breaks only at a " · ", never inside "3 days ago" (issue 585).
   return (
     <p className="text-body-sm text-ink/70 tabular-nums">
       {s.seen}
-      {mine && ` · ${mine}`}
-      {s.age && ` · ${s.age}`}
+      {mine && (
+        <>
+          {" · "}
+          <span className="whitespace-nowrap">{mine}</span>
+        </>
+      )}
+      {s.age && (
+        <>
+          {" · "}
+          <span className="whitespace-nowrap">{s.age}</span>
+        </>
+      )}
     </p>
   );
 }
@@ -174,7 +185,7 @@ function EmptySlot({ word }: { word: string }) {
   return (
     <>
       <span className="size-10 rounded-[3px] border border-dashed border-ink/40" />
-      <span className="mt-0.5 text-center text-[12px] leading-4 text-ink/70">{word}</span>
+      <span className="mt-0.5 text-center text-[12px] leading-5 text-ink/70">{word}</span>
     </>
   );
 }

@@ -10,6 +10,8 @@ export interface NextItem {
   st: string;
   /** The instant it starts. */
   at: number;
+  /** When it is surely over, for "Ended" (`endOf`). */
+  end: number;
   /** Its server day, for "your time" and the Calendar's anchor. */
   day: string;
   /** The Calendar's week with this day open. */
