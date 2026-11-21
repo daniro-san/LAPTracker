@@ -1,6 +1,7 @@
-// /admin's Activity section (D145, issue 484): each workspace's last 7 days and its setup steps, from PostHog.
-// An async server component the page streams inside Suspense, so PostHog never holds up /admin. No key,
-// PostHog down or no workspace answered: nothing at all, not even the frame. English only (D48).
+// /admin's Activity section (D145, issue 484): each workspace's last 7 days from PostHog, and its setup steps
+// from our own tables (D145, amended 2026-11-21). An async server component the page streams inside Suspense,
+// so PostHog never holds up /admin. No key, PostHog down or no workspace answered: nothing at all, not even
+// the frame. English only (D48).
 import { LABEL } from "@/app/_ui/StatTable";
 import { getAppContext } from "@/lib/app-context";
 import { copy, fill } from "@/lib/copy";
@@ -8,28 +9,44 @@ import { getEnv } from "@/lib/env";
 import {
   ACTIVITY_TOTALS,
   allianceActivity,
-  SETUP_STEPS,
+  PEOPLE_TOTALS,
+  type ActivityTotal,
   type AllianceActivity,
 } from "@/lib/queries/admin-activity";
+import { SETUP_STEPS, type AllianceUsage, type StepTime } from "@/lib/queries/admin-alliances";
 
 import { AdminSection } from "./parts";
 
 const t = copy.admin.workspaces.alliances.activity;
 const DAY_MS = 86_400_000;
 
-const total = (n: number | null) =>
-  n === null ? t.under : fill(t.atLeast, { n: n.toLocaleString("en") });
+/** People: "at least n" or "under 5". Actions: the count as it is. */
+const total = (k: ActivityTotal, n: number | null) =>
+  n === null
+    ? t.under
+    : PEOPLE_TOTALS.includes(k)
+      ? fill(t.atLeast, { n: n.toLocaleString("en") })
+      : n.toLocaleString("en");
 
-/** The step's UTC date, with "day 2" after the invite made the workspace when that is known; "not yet". */
-function stepText(at: Date | null, created: Date | null): string {
-  if (!at) return t.notYet;
+/** The step's UTC date, with "day 2" counted from Created; "done" when no table keeps when; "not yet". */
+function stepText(at: StepTime, created: StepTime): string {
+  if (at === null) return t.notYet;
+  if (at === "done") return t.done;
   const date = at.toISOString().slice(0, 10);
-  if (!created) return date;
+  if (!(created instanceof Date)) return date;
   const n = Math.max(0, Math.floor((at.getTime() - created.getTime()) / DAY_MS));
   return `${date} · ${fill(t.day, { n })}`;
 }
 
-function Card({ row, alliance }: { row: AllianceActivity; alliance: string }) {
+function Card({
+  row,
+  alliance,
+  setup,
+}: {
+  row: AllianceActivity;
+  alliance: string;
+  setup: AllianceUsage["setup"];
+}) {
   return (
     <li className="min-w-0 border border-rule p-3">
       {/* The alliance opens its workspace below, as the Alliances table's rows do (D144). */}
@@ -47,7 +64,7 @@ function Card({ row, alliance }: { row: AllianceActivity; alliance: string }) {
             <dd
               className={`text-body-sm tabular-nums ${row.totals[k] === null ? "text-ink/70" : ""}`}
             >
-              {total(row.totals[k])}
+              {total(k, row.totals[k])}
             </dd>
           </div>
         ))}
@@ -57,8 +74,8 @@ function Card({ row, alliance }: { row: AllianceActivity; alliance: string }) {
         {SETUP_STEPS.map((k) => (
           <li key={k} className="flex flex-wrap justify-between gap-x-3 border-t border-rule pt-1">
             <span>{t.steps[k]}</span>
-            <span className={`tabular-nums ${row.steps[k] ? "" : "text-ink/70"}`}>
-              {stepText(row.steps[k], row.steps.created)}
+            <span className={`tabular-nums ${setup[k] ? "" : "text-ink/70"}`}>
+              {stepText(setup[k], setup.created)}
             </span>
           </li>
         ))}
@@ -70,7 +87,7 @@ function Card({ row, alliance }: { row: AllianceActivity; alliance: string }) {
 export async function Activity({
   workspaces,
 }: {
-  workspaces: { slug: string; alliance: string }[];
+  workspaces: { slug: string; alliance: string; setup: AllianceUsage["setup"] }[];
 }) {
   const rows = await allianceActivity(
     getEnv(),
@@ -78,13 +95,14 @@ export async function Activity({
     workspaces.map((w) => w.slug),
   );
   if (rows.length === 0) return null;
-  const label = (slug: string) => workspaces.find((w) => w.slug === slug)?.alliance ?? "";
+  const bySlug = new Map(workspaces.map((w) => [w.slug, w]));
   return (
     <AdminSection id="activity" title={t.title} help={t.help}>
       <ul className="grid gap-3 sm:grid-cols-2">
-        {rows.map((r) => (
-          <Card key={r.slug} row={r} alliance={label(r.slug)} />
-        ))}
+        {rows.map((r) => {
+          const w = bySlug.get(r.slug);
+          return w && <Card key={r.slug} row={r} alliance={w.alliance} setup={w.setup} />;
+        })}
       </ul>
     </AdminSection>
   );

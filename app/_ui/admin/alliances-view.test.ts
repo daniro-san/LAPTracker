@@ -62,6 +62,13 @@ const row = (w: AdminWorkspace, v = view(), errors24h = 0) =>
       postsFailed: 0,
       errors24h,
       officerSeenAt: null,
+      setup: {
+        created: NOW,
+        key_saved: null,
+        webhook: null,
+        first_roll_call: null,
+        first_notice: null,
+      },
     },
     current: FP,
     now: NOW,
