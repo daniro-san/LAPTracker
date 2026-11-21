@@ -35,6 +35,7 @@ export function featuresView(all: AdminFeatures, w: AdminWorkspace): FeaturesVie
     allianceOff: settings.allianceOff,
     on: on.size,
     caps: settings.caps,
+    defaultOff: row?.defaults.off ?? settings.off,
     defaultCaps: row?.defaults.caps ?? settings.caps,
     changedCaps: ALLOWANCES.filter((a) => row && a in row.stored.caps),
     used,

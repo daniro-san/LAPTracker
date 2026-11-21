@@ -30,6 +30,13 @@ describe("custom events (D77)", () => {
     track("ws_review_requested", { scope: "notice", to: "Ana" as string });
     // @ts-expect-error no member value rides on a mark
     track("ws_roll_call_marked", { how: "tap", uid: 4242 });
+    // Issue 486: the key's state and the owner's switch, never the key or the workspace.
+    track("ws_key_saved", { state: "ok" });
+    // @ts-expect-error the key itself is not a state
+    track("ws_key_saved", { state: "lap_0123" as string });
+    track("admin_feature_changed", { feature: "ai_cap", on: false });
+    // @ts-expect-error no workspace rides on the owner's change
+    track("admin_feature_changed", { feature: "notices", on: true, workspace: "ogs" });
   });
 });
 

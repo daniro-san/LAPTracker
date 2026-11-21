@@ -144,6 +144,8 @@ describe("the invite link (D130)", () => {
       allowlistAddedBy: "invite",
       allowlistExpiresAt: null,
     });
+    // Issue 486: the route counts the workspace made on her pseudonymous id.
+    expect(done).toMatchObject({ userId: her?.id });
     const access = await requireWorkspace(
       db,
       "wack",
