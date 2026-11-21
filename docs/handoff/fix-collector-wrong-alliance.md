@@ -126,4 +126,4 @@ delete from alliance_snapshots where id in (
 - Three kills definitions can show for one alliance (review note 8): the ledger "Without them" (stayed + joiners' gains after joining, End), "At the last reading" (same basis, last sample) and Who carried (stayed members only, positive gains). Each is documented; readers may still ask why they differ.
 - After each deploy the event cache starts cold (review note 12): the fight clock's first load runs `memberGains` for up to 12 events (about 66 ms each on event 263).
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/587
