@@ -92,4 +92,4 @@ Real user feedback from KvK Saturday, 2026-11-21. The alliance's R5 opened Raid 
 - Raid prep words added for this fix go in `dictionary.raidprep-glance.ts`. `dictionary.raidprep.ts` is at the line limit.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/599
