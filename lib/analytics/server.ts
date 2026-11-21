@@ -49,6 +49,8 @@ export const DESK_FEATURES = [
   "member_link",
   // Issue 486: the invite's "finish" made the workspace (the setup funnel's first step).
   "workspace",
+  // D148: Alliance settings → Notifications (a device turned on, its uses changed, turned off).
+  "push",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 

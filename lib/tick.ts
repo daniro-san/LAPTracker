@@ -49,7 +49,8 @@ export type TickOutcome =
   | { kind: "sample"; slotAt: Date; outcome: RunOutcome }
   | { kind: "quota-check"; eventId: number; remaining: number | null; picturesPruned: number }
   | { kind: "rehearsal"; slotAt: Date; result: RehearsalResult }
-  | { kind: "daily-read"; summary: DailyReadSummary };
+  /** retried: the tick's automatic retry (D72), the day's last attempt; its failures notify officers (D148). */
+  | { kind: "daily-read"; summary: DailyReadSummary; retried: boolean };
 
 /** A scheduled slot that may not run is skipped once, with one admin note (plan §3.1). */
 async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promise<TickOutcome> {
@@ -102,7 +103,7 @@ async function dailyRead(
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());
     await createNotifier(ctx.env, ctx.fetch).admin(dailyReadMessage(summary, at, origin));
   }
-  return { kind: "daily-read", summary };
+  return { kind: "daily-read", summary, retried: first === null };
 }
 
 /** A daily read, then the public pages' shared reads dropped when it ran (null: another caller had the day),

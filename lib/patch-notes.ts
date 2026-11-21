@@ -24,6 +24,10 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
+    text: "Browser notifications: add VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (Sensitive) and VAPID_SUBJECT in Vercel (Production), or ask Claude to do it, then redeploy. Then test on a real iPhone (Home Screen icon) and on Android Chrome.",
+    issue: 558,
+  },
+  {
     text: "Set the Raid Shield channel (Alliance settings → Discord) before Friday 23:30 ST; without it no summary is posted.",
   },
   {
@@ -98,6 +102,22 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.39.0",
+    date: "2026-11-21",
+    title: "Browser notifications for officers",
+    changes: [
+      'Officers can get notifications on their phone or computer: Alliance settings → Notifications → "Enable on this device". Each device and each use has its own switch.',
+      'Four uses: the Raid Shield count after each shield reading (again only if it changes), a "This is me" claim waiting for approval, Calendar roll call reminders, and a failed night read (off by default).',
+      "Notifications show counts and a link only, never a member's name, because they appear on lock screens.",
+      "On iPhone and iPad they work only after adding the desk to the Home Screen and opening it from that icon; the card explains how.",
+      "Nothing changes until the VAPID keys are set in Vercel: the card stays hidden until then.",
+    ],
+    needsYou: [
+      "Set the VAPID keys in Vercel (or ask Claude to), redeploy, then test on a real iPhone and on Android.",
+    ],
+    prs: [570],
+  },
   {
     version: "v5.38.0",
     date: "2026-11-21",

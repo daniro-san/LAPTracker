@@ -1,7 +1,8 @@
 // /w/[slug]/settings: Alliance settings (D124, issue 438). The alliance's own tracker key: its state, last 4
 // characters and quota left, and Save and test, Replace and Remove, with today's squads read (D132). Then
 // Features (D134): what the alliance turns on, of what the site's owner allows, with the tracker calls it
-// spends. Then the Raid Shield check's own settings while it is on (D137). Then Discord (D129): add the bot,
+// spends. Then the Raid Shield check's own settings while it is on (D137). Then Notifications, this officer's
+// own device, only when the site has push keys (D148). Then Discord (D129): add the bot,
 // Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
@@ -22,6 +23,7 @@ import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
+import { pushView } from "@/lib/private/push-settings";
 import { serverClock } from "@/lib/private/read-status";
 import { RENEW_MS } from "@/lib/private/session";
 import { MORNING_CHOICES, shieldSettingsView } from "@/lib/private/shield-settings";
@@ -33,6 +35,7 @@ import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
+import { PushSettings } from "../../../_ui/PushSettings";
 import { RaidPrepSettings } from "../../../_ui/RaidPrepSettings";
 import { refuse } from "../../../_ui/refuse";
 import { TrackerKeyForm } from "../../../_ui/TrackerKeyForm";
@@ -92,7 +95,7 @@ async function readSettings(
   ctx: { env: Env; now: Date; language: WorkspaceLanguage },
 ) {
   const { env, now } = ctx;
-  const [view, waiting, bot, channels, squads, features, shield] = await Promise.all([
+  const [view, waiting, bot, channels, squads, features, shield, push] = await Promise.all([
     trackerKeyView(db, access, env, now),
     toReviewCount(db, access, now),
     botView(db, access, env),
@@ -102,8 +105,9 @@ async function readSettings(
     ),
     allianceFeaturesView(db, access),
     shieldSettingsView(db, access, ctx.language),
+    pushView(db, access, env),
   ]);
-  return { view, waiting, bot, channels, squads, features, shield };
+  return { view, waiting, bot, channels, squads, features, shield, push };
 }
 
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -123,7 +127,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
     if (!access.ok) refuse(slug, access.reason, `/w/${slug}/settings`);
     notFound();
   }
-  const { view, waiting, bot, channels, squads, features, shield } = page;
+  const { view, waiting, bot, channels, squads, features, shield, push } = page;
   return (
     <SignedInFrame
       access={access}
@@ -161,6 +165,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           t={t}
         />
       )}
+      {push && <PushSettings slug={slug} view={push} language={language} t={t} />}
       <DiscordSection
         slug={slug}
         bot={bot}

@@ -161,6 +161,17 @@ lib/shield-read.ts  the Raid Shield check (D137): Friday 23:30–00:00 ST, the s
                     marks (the tick's night and morning checks and "Accept the tracker's", D137 2026-11-21):
                     lib/raid-prep-fill.ts, outside lib/private so the tick can run it; the pure helpers it
                     shares with lib/private: lib/calendar-time.ts, lib/calendar-layout.ts, lib/member-away.ts.
+lib/web-push.ts     the Web Push protocol on node:crypto (D148): VAPID's JWT, aes128gcm encryption, one POST per device
+                    with a 5 s timeout, only to the browsers' push services (`PUSH_HOSTS`). No dependency.
+lib/push.ts         officers' notifications (D148): `pushConfig` (the VAPID keys and WORKSPACE_KEYS_SECRET, else no
+                    push at all), devices sealed and opened, `notifyOfficers` (a workspace's officers whose sign-in
+                    has not ended, on devices on for the use; 404/410 deletes), `pushLater` (after the answer).
+                    The words in lib/copy-push.ts; tables in lib/schema-push.ts, read and written in
+                    lib/repo/push.ts. lib/push-uses.ts: the Raid Shield count (from lib/shield-tick.ts), the night
+                    read that failed after its retry and a member's "This is me" (from the me route).
+                    lib/push-tick.ts: the tick's `after` (the night read, the Calendar roll calls' reminders,
+                    read through lib/private/push-roll-calls.ts). The card and its route: lib/private/push-settings.ts,
+                    app/(private)/_ui/PushSettings.tsx, /api/w/[slug]/push; the service worker public/sw.js.
 lib/workspace-commands.ts which message commands each workspace's server has (D129): only those turned on,
                     registered by lib/app-commands.ts and recorded per workspace; used by /admin, Alliance
                     settings and a switch change on /admin (`changesCommands`: which changes re-register).
@@ -228,7 +239,7 @@ lib/app-commands.ts the app's Discord message commands (D96, D101) and registerA
 - `lib/screenshot` imports nothing from the project.
 - `lib/ai` imports nothing from the project: a request carries only the officer's text (D81).
 - Nothing in `lib/` imports from `app/`.
-- Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71).
+- Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). One exception (D148): `lib/push-tick.ts` imports `lib/private/push-roll-calls.ts` and nothing else of it, for the roll call reminders' counts. `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71).
 
 No DI container, no base classes, no event bus, no generic repository. `Deps` is the collector's injection boundary. Routes get theirs from `getAppContext()` in `lib/app-context.ts`, the one module route tests replace (`vi.mock`); a Next `route.ts` may export only handlers and segment config, so it cannot take arguments.
 

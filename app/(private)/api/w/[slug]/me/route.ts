@@ -1,7 +1,8 @@
 // /api/w/[slug]/me (D142): a member's own "This is me" on the members' board. POST (same origin, JSON)
 // claims a player of the alliance's newest roster, or drops the member's own link. The door is the board's
 // (requireBoard), so a member's session gets in; the only row written is the session's own user. The
-// answer is the link's state or an error code. Nothing here is logged or counted.
+// answer is the link's state or an error code. Nothing here is logged or counted. A claim that waits for an
+// officer notifies the officers who turned that on (D148), after the answer.
 import { z } from "zod";
 
 import { requireBoard } from "@/lib/private/access";
@@ -9,6 +10,8 @@ import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { claimPlayer, dropOwnLink } from "@/lib/private/me-link";
 import { SLUG } from "@/lib/private/sign-in";
+import { pushConfig, pushLater } from "@/lib/push";
+import { pushClaim } from "@/lib/push-uses";
 import { withContext } from "@/lib/route";
 
 const ROUTE = "/api/w/[slug]/me";
@@ -43,6 +46,11 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
     const result = await claimPlayer(db, board, input.uid, ctx.now());
     if (result === "not_in_alliance") return privateError(400, result);
     if (typeof result === "string") return privateError(409, result);
+    // D148: a claim that waits for an officer notifies the officers, after the answer (a count, no name).
+    if (result.state === "pending" && pushConfig(ctx.env)) {
+      const ws = { id: board.workspaceId, slug: board.slug };
+      pushLater(ctx, (later) => pushClaim(ctx, later, ws, board.userId));
+    }
     return Response.json(result, { headers: NO_STORE });
   });
 }
