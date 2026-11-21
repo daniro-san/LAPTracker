@@ -34,7 +34,7 @@ export interface AdminWorkspace {
   deletion: { askedAt: Date; byOwner: boolean; by: string | null; purgeAfter: Date } | null;
   /**
    * D129: whether the bot was seen in the server, the commands registered there (null: never) and which
-   * notice channels have a webhook saved by the workspace. Never a webhook.
+   * channels (notices and D147's Raid Shield) have a webhook saved by the workspace. Never a webhook.
    */
   discord: { botSeen: boolean; commands: string[] | null; webhooks: string[] };
 }

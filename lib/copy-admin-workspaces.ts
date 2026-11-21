@@ -98,7 +98,7 @@ export const workspacesAdminCopy = {
    * Alliance settings; /admin sees only whether each is done, never a webhook.
    */
   discord: {
-    line: "Discord: {bot} · commands: {commands} · leaders' webhook: {leaders} · members' webhook: {members}",
+    line: "Discord: {bot} · commands: {commands} · leaders' webhook: {leaders} · members' webhook: {members} · Raid Shield webhook: {shield}",
     botSeen: "bot in server",
     botUnseen: "bot not checked",
     noCommands: "not registered",

@@ -1,7 +1,7 @@
 "use client";
 
 // Alliance settings → Discord, step 3 (D129, issue 451): the leaders' and members' channels that "Publish to
-// Discord" posts to. Each takes a webhook URL (a password field: it is sent once and never comes back), the
+// Discord" posts to, and the Raid Shield summary's own channel (D147). Each takes a webhook URL (a password field: it is sent once and never comes back), the
 // channel's name and whether it is a forum. The server checks the webhook with Discord before saving. Then
 // "Send a test message", Replace and Remove. One request id per open form (D100).
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ import { AskSheet } from "./AskSheet";
 import { postDiscord, type Note, NoteLine } from "./discord-send";
 import { newRequestId } from "./request-id";
 
-export type ChannelKind = "leaders" | "members";
+export type ChannelKind = "leaders" | "members" | "shield";
 export interface ChannelProps {
   channel: ChannelKind;
   state: "set" | "reenter" | "site" | "none";
@@ -37,7 +37,8 @@ const REFUSALS: Record<string, keyof WorkspaceDictionary> = {
 function stateLine(c: ChannelProps, t: WorkspaceDictionary) {
   if (c.state === "set") return fill(t["discord.hook.set"], { name: c.name ?? "" });
   if (c.state === "site") return fill(t["discord.hook.site"], { name: c.name ?? "" });
-  return t[c.state === "reenter" ? "discord.hook.reenter" : "discord.hook.none"];
+  if (c.state === "reenter") return t["discord.hook.reenter"];
+  return t[c.channel === "shield" ? "discord.hook.noneShield" : "discord.hook.none"];
 }
 
 /** The webhook form: URL, channel name, forum, then Check and save (and Cancel when one is set). */
@@ -164,7 +165,13 @@ function HookActions(props: {
             yes ? void props.onRemove().then(() => setAsking(false)) : setAsking(false)
           }
         >
-          <p className="mt-2">{t["discord.hook.removeMore"]}</p>
+          <p className="mt-2">
+            {
+              t[
+                c.channel === "shield" ? "discord.hook.removeMoreShield" : "discord.hook.removeMore"
+              ]
+            }
+          </p>
         </AskSheet>
       )}
     </div>
@@ -219,6 +226,9 @@ function ChannelCard(props: {
   return (
     <div className="drawn-frame-soft px-3 py-3">
       <h4 className="font-semibold">{t[`discord.channel.${c.channel}`]}</h4>
+      {c.channel === "shield" && (
+        <p className="mb-1 text-body-sm text-ink/75">{t["discord.channel.shieldHelp"]}</p>
+      )}
       <p className={c.state === "reenter" ? "font-semibold text-seal" : "text-ink/80"}>
         <bdi>{stateLine(c, t)}</bdi>
       </p>

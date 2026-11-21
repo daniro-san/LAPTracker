@@ -70,16 +70,21 @@ export async function updateMorning(
   return rows.length > 0;
 }
 
-/** The leaders' channel message to edit next time, and the text's hash (or `gone`). */
+/** The summary message to edit next time, the text's hash (or `gone`), and the webhook's sha256 (D147). */
 export async function keepMessage(
   db: Db,
   q: Day,
-  message: { id: string; hash: string },
+  message: { id: string; hash: string; hook: string },
   now: Date,
 ): Promise<void> {
   await db
     .update(shieldChecks)
-    .set({ messageId: message.id, messageHash: message.hash, postedAt: now })
+    .set({
+      messageId: message.id,
+      messageHash: message.hash,
+      messageHook: message.hook,
+      postedAt: now,
+    })
     .where(one(q));
 }
 

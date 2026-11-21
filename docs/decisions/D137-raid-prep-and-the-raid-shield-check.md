@@ -78,3 +78,5 @@ The tracker sees shields at its map scan: a shield turned on since may not show 
 - `lib/private/raid-prep.test.ts`: the row hints, "Accept the tracker's" writing ✓ only for those seen and keeping an officer's mark, the wall mark apart from the Shield mark and refused on another kind.
 - `lib/private/shield-status.test.ts`: the status bar's line under way on Friday, done, under way on Saturday, and none while off or after 12:00 ST.
 - The issue 471 suite: Alpha's wall mark and Accept on Bravo's roll calls are refused; Alpha's Raid prep never shows Bravo's readings. The member-session suite has the new route's fixture. `lib/private/features.test.ts`: the estimate.
+
+**Amendment (2026-11-21, owner, D147):** the summary goes to the workspace's own Raid Shield channel when one is saved in Alliance settings → Discord, else to the leaders' channel as above. A message is edited only through the webhook that posted it; a channel changed since posts fresh. The switch now reads "Post the summary to Discord". See D147.

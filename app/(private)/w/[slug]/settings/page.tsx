@@ -1,7 +1,8 @@
 // /w/[slug]/settings: Alliance settings (D124, issue 438). The alliance's own tracker key: its state, last 4
 // characters and quota left, and Save and test, Replace and Remove, with today's squads read (D132). Then
 // Features (D134): what the alliance turns on, of what the site's owner allows, with the tracker calls it
-// spends. Then the Raid Shield check's own settings while it is on (D137). Then Discord (D129): add the bot, Check, and the two notice channels' webhooks. Then the
+// spends. Then the Raid Shield check's own settings while it is on (D137). Then Discord (D129): add the bot,
+// Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page.
@@ -55,9 +56,18 @@ function squadsLine(
   return `${today} · ${fill(t["squads.todayNext"], { at: serverClock(timeZone, s.nextAt) })}`;
 }
 
-/** The leaders' channel can take the Raid Shield check's message (D129, D137). */
-const canPost = (channels: Awaited<ReturnType<typeof webhookViews>>) =>
-  channels.some((c) => c.channel === "leaders" && (c.state === "set" || c.state === "site"));
+/**
+ * The Raid Shield check's message has a channel (D137, D147): the Raid Shield channel once one is saved,
+ * else the leaders' channel. A saved Raid Shield webhook that must be pasted again posts nothing, and the
+ * switch says so.
+ */
+function summaryChannel(channels: Awaited<ReturnType<typeof webhookViews>>) {
+  const state = (c: string) => channels.find((v) => v.channel === c)?.state ?? "none";
+  const shield = state("shield");
+  if (shield === "reenter") return "reenter";
+  const target = shield === "none" ? state("leaders") : shield;
+  return target === "set" || target === "site" ? "ok" : "none";
+}
 
 /** The key card's state, last 4, quota left and "checked …" line, in the officer's words. */
 function keyForm(
@@ -150,7 +160,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           slug={slug}
           view={shield}
           choices={MORNING_CHOICES}
-          leaders={canPost(channels)}
+          channel={summaryChannel(channels)}
           t={t}
         />
       )}
