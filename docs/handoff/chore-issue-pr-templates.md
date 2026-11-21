@@ -79,4 +79,4 @@
 - `ready` exists on GitHub. An agent picking up an issue labelled `decision` waits for the owner.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/596
