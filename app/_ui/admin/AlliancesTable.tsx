@@ -2,7 +2,7 @@
 // columns appear by width (ResponsiveTable, D122); the table puts "Last on the desk" under the alliance, so its
 // 7 columns fit /admin's 960 px. Each row opens its workspace's own section below
 // (`#w-<slug>` in the Workspaces card). Rows are built in alliances-view.ts. English only (D48).
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { LABEL } from "@/app/_ui/StatTable";
 import { Chip } from "@/lib/brand/components/Chip";
@@ -11,6 +11,7 @@ import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
 import { ALLOWANCES } from "@/lib/workspace-features";
 
+import { Activity } from "./Activity";
 import type { AllianceRow } from "./alliances-view";
 import { AdminSection } from "./parts";
 
@@ -143,18 +144,24 @@ function Card({ row }: { row: AllianceRow }) {
 
 export function Alliances({ rows }: { rows: AllianceRow[] }) {
   return (
-    <AdminSection id="alliances" title={t.title} help={t.help}>
-      {rows.length === 0 ? (
-        <p className="text-ink/70">{t.none}</p>
-      ) : (
-        <ResponsiveTable
-          caption={t.caption}
-          columns={COLUMNS}
-          rows={rows}
-          rowKey={(r) => String(r.id)}
-          card={(r) => <Card row={r} />}
-        />
-      )}
-    </AdminSection>
+    <>
+      <AdminSection id="alliances" title={t.title} help={t.help}>
+        {rows.length === 0 ? (
+          <p className="text-ink/70">{t.none}</p>
+        ) : (
+          <ResponsiveTable
+            caption={t.caption}
+            columns={COLUMNS}
+            rows={rows}
+            rowKey={(r) => String(r.id)}
+            card={(r) => <Card row={r} />}
+          />
+        )}
+      </AdminSection>
+      {/* D145: PostHog's totals, streamed so they never hold up the page; nothing when PostHog has none. */}
+      <Suspense fallback={null}>
+        <Activity workspaces={rows.map((r) => ({ slug: r.slug, alliance: r.alliance }))} />
+      </Suspense>
+    </>
   );
 }

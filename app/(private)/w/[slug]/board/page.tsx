@@ -19,6 +19,7 @@ import { serverDay } from "@/lib/schedule";
 
 import { AnalyticsPerson } from "../../../_ui/AnalyticsPerson";
 import { BoardAccount } from "../../../_ui/BoardAccount";
+import { ReachLine } from "../../../_ui/BoardReach";
 import { LINK, Notices, StartHere, Week } from "../../../_ui/BoardSections";
 import { BoardSectionsSeen } from "../../../_ui/BoardSectionsSeen";
 import { BoardThanks } from "../../../_ui/BoardThanks";
@@ -155,6 +156,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
         guildId={access.guildId}
         edit={access.officer ? `/w/${slug}/start-here` : null}
       />
+      {env.POSTHOG_QUERY_API_KEY && <ReachLine t={t} />}
     </Frame>
   );
 }

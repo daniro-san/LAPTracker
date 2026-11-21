@@ -61,4 +61,30 @@ export const alliancesAdminCopy = {
   allianceOff: "{n} turned off by the alliance",
   /** Each daily allowance's name beside its use (D126). */
   allowance: { ai: "Writing help", translate: "Translations" },
+  /** The Activity section (D145, issue 484): PostHog's totals per workspace. */
+  activity: {
+    title: "Activity",
+    help: "The last 7 days from PostHog, totals only, never who. Each is a minimum (PostHog misses some visits); under 5 is not shown. Setup: when each step first happened, and its day counted from Created (the invite's finish). Refreshed every 15 minutes.",
+    totals: {
+      officers_active: "Officers active",
+      board_visitors: "Board visitors",
+      notices_written: "Notices written",
+      roll_call_marks: "Roll call marks",
+      thanks_shared: "Thanks shared",
+      screenshots_read: "Screenshots read",
+    },
+    atLeast: "at least {n}",
+    under: "under 5",
+    setup: "Setup",
+    steps: {
+      created: "Created",
+      key_saved: "Key saved",
+      webhook: "Webhook set",
+      first_roll_call: "First roll call marked",
+      first_notice: "First notice published",
+    },
+    /** Days after the invite made the workspace; the date when that is not known. */
+    day: "day {n}",
+    notYet: "not yet",
+  },
 };

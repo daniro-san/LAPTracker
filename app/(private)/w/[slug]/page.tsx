@@ -8,6 +8,7 @@
 // beside them (recent activity with who is on the desk now, then members this week) in the margin column.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
@@ -36,6 +37,7 @@ import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { thanksNudge } from "@/lib/private/thanks";
 import { serverDay } from "@/lib/schedule";
 
+import { BoardReach } from "../../_ui/BoardReach";
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { OnDesk, RecentActivity } from "../../_ui/DeskActivity";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
@@ -222,6 +224,12 @@ function Home(props: {
               nudge={props.nudge}
               switches={{ ...thanksSwitches(props.access), channel: props.desk.channel }}
             />
+            {/* D145: the board's reach from PostHog, streamed; nothing while the board is off. */}
+            {featureOn(props.access, "board") && (
+              <Suspense fallback={null}>
+                <BoardReach access={props.access} t={t} language={language} />
+              </Suspense>
+            )}
           </>
         }
       />

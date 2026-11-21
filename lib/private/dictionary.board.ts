@@ -47,6 +47,13 @@ export const boardEn = {
   "board.preview.back": "Back to the Officers’ Desk",
   "board.preview.edit": "Edit Start here",
   "board.seeMembers": "See what members see",
+  // D145: the board's reach on Home, from PostHog, and the board's line that says officers see totals only.
+  "board.reach.head": "Board reach",
+  "board.reach.visitors": "At least {n} members opened the board in the last 7 days.",
+  "board.reach.note":
+    "Totals only, never who. Some visits are never counted, so the real number can be higher.",
+  "board.reach.members":
+    "Your officers see totals only: how many members open this board, never who.",
   "starthere.title": "Start here",
   "starthere.lead":
     "Members read this on their board, in their own language first. Write the languages you can.",
@@ -110,6 +117,12 @@ export const boardPt: BoardWords = {
   "board.preview.back": "Voltar à Mesa dos oficiais",
   "board.preview.edit": "Editar Comece aqui",
   "board.seeMembers": "Ver o que os membros veem",
+  "board.reach.head": "Alcance do mural",
+  "board.reach.visitors": "Pelo menos {n} membros abriram o mural nos últimos 7 dias.",
+  "board.reach.note":
+    "Só totais, nunca quem. Algumas visitas nunca são contadas, então o número real pode ser maior.",
+  "board.reach.members":
+    "Seus oficiais veem só totais: quantos membros abrem este mural, nunca quem.",
   "starthere.title": "Comece aqui",
   "starthere.lead":
     "Os membros leem isto no mural deles, primeiro no próprio idioma. Escreva nos idiomas que puder.",
@@ -171,6 +184,12 @@ export const boardFr: BoardWords = {
   "board.preview.back": "Retour au Bureau des officiers",
   "board.preview.edit": "Modifier Pour commencer",
   "board.seeMembers": "Voir ce que voient les membres",
+  "board.reach.head": "Portée du tableau",
+  "board.reach.visitors": "Au moins {n} membres ont ouvert le tableau ces 7 derniers jours.",
+  "board.reach.note":
+    "Des totaux seulement, jamais qui. Certaines visites ne sont jamais comptées : le vrai chiffre peut être plus élevé.",
+  "board.reach.members":
+    "Vos officiers ne voient que des totaux : combien de membres ouvrent ce tableau, jamais qui.",
   "starthere.title": "Pour commencer",
   "starthere.lead":
     "Les membres le lisent sur leur tableau, d’abord dans leur langue. Écrivez dans les langues que vous pouvez.",
