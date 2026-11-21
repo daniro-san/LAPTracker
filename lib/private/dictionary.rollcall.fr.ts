@@ -36,7 +36,7 @@ export const rollFr: RollWords = {
   "roll.legend": "Touchez ✓ ou ✗. Touchez à nouveau pour effacer.",
   "roll.legend.shield": "Aucun problème vu : pas vérifié un par un.",
   "roll.order":
-    "Les membres sans marque d’abord, les absents à la fin. Les lignes restent en place pendant que vous marquez.",
+    "Les membres sans marque d’abord, les absents à la fin ; ceux déjà marqués sont rangés sous « Marqués ». Rien ne bouge pendant que vous marquez. Touchez un filtre pour trier à nouveau.",
   "roll.progress": "{n} sur {total} marqués",
   "roll.left": "{n} sans marque",
   "roll.rest.assumed": "Marquer les {n} autres comme aucun problème vu",
@@ -135,4 +135,13 @@ export const rollFr: RollWords = {
   "roll.archived.none": "Aucun appel archivé. Archivez-en un depuis sa page une fois terminé.",
   "roll.archived.week.one": "1 appel archivé cette semaine ›",
   "roll.archived.week.other": "{n} appels archivés cette semaine ›",
+  "roll.grid.aria": "Qui afficher",
+  "roll.grid.todo": "À marquer",
+  "roll.grid.yes": "{n} marqués ✓",
+  "roll.grid.no": "{n} marqués ✗",
+  "roll.grid.all": "Tous",
+  "roll.grid.marked": "Marqués ({n})",
+  "roll.grid.more": "Afficher {n} de plus",
+  "roll.grid.none.todo": "Plus personne à marquer.",
+  "roll.grid.none": "Personne ici.",
 };
