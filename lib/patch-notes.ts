@@ -43,14 +43,6 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 527,
   },
   {
-    text: "PostHog: check that POSTHOG_QUERY_API_KEY has the Endpoint: Read scope. When /admin shows Activity with numbers, close #484.",
-    issue: 484,
-  },
-  {
-    text: 'Decide: should /admin Activity show the four action counts (notices, roll call marks, thanks, screenshots) exactly, with 0 as "none", instead of hiding totals under 5? It is a one-line change.',
-    issue: 484,
-  },
-  {
     text: "PostHog → Error tracking → Alerts: connect the admin Discord channel as a destination (paste its webhook there yourself), then ask Claude to send the error alert to it.",
     issue: 527,
   },
@@ -89,6 +81,16 @@ export const ownerTodo: OwnerTodo[] = [
     done: true,
   },
   {
+    text: "PostHog query key: the Endpoint: Read scope is added, and /admin Activity shows numbers.",
+    issue: 484,
+    done: true,
+  },
+  {
+    text: '/admin Activity: action counts (notices, roll call marks, thanks, screenshots) are now shown exactly; people counts keep "under 5".',
+    issue: 484,
+    done: true,
+  },
+  {
     text: "Neon compute capped at 0.5 CU with scale to zero on, and the site's functions moved to iad1, next to the database.",
     issue: 527,
     done: true,
@@ -96,6 +98,19 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.36.0",
+    date: "2026-11-21",
+    title: "The alliance's week in one line, patch notes, and real setup dates",
+    changes: [
+      "Officers' Desk: Home and Members show the alliance's week in one line: how many members reached the 1,000 Alliance Help coins, the median of daily quest points, and the week's donations. Alliance totals only, no names (#466).",
+      'Days with no read are named ("no read on Tue") and never count as 0.',
+      "/admin has this Patch notes page, with your to-do list on top. Every release adds its entry here.",
+      '/admin Activity: the setup steps (created, key saved, webhook set, first roll call marked, first notice published) now come from the site\'s own records, so OGs shows its real dates instead of "not yet".',
+      '/admin Activity: notices, roll call marks, thanks and screenshots are shown as exact numbers. Officers active and board visitors keep "under 5" for privacy.',
+    ],
+    prs: [557, 559, 560],
+  },
   {
     version: "v5.35.0",
     date: "2026-11-21",

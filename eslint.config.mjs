@@ -146,6 +146,11 @@ export default defineConfig(
     rules: { "max-lines": "off" },
   },
   {
+    // The release log is data that grows by one entry per release (/admin/changes), like a translation file.
+    files: ["lib/patch-notes.ts"],
+    rules: { "max-lines": "off" },
+  },
+  {
     files: ["scripts/**/*.mjs", "*.config.mjs"],
     languageOptions: { globals: { process: "readonly", console: "readonly" } },
   },
