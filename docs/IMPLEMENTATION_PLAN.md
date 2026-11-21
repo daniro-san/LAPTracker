@@ -554,14 +554,38 @@ Dependency rule: `app → lib/{collector,queries,repo}`; `lib/collector → lib/
 
 ### 11.4 Deterministic gates
 
-- `pnpm check` = `prettier --check && eslint && tsc --noEmit && vitest run`. Everything below calls this.
-- Pre-commit (lefthook): prettier + eslint on staged files, `gitleaks git --pre-commit --staged` (gitleaks 8.x syntax; `protect` is gone) with a custom `lap_` rule in `.gitleaks.toml`. The secrets scan is the reason the hook exists — public repo. No pre-push hook: CI and the Stop hook already run `check`.
-- `.github/workflows/ci.yml`: `pnpm/action-setup` (pinned SHA, version from `packageManager`) → `actions/setup-node` with `node-version-file: .nvmrc` and `cache: pnpm` → `pnpm install --frozen-lockfile && pnpm check` on push and PR.
+_(Corrected 2026-11-21, owner: this section now matches the repo's settings and hooks. `.claude/settings.json` and CONTRIBUTING.md "Enforcement layers" are the source of truth.)_
+
+- `pnpm check` = `prettier --check . && eslint . && tsc --noEmit && vitest run && tsx scripts/check-drift.ts && tsx scripts/i18n-check.ts`. Everything below calls this.
+- Branches: no push or commit to `main` or `dev`. Work goes on a branch whose PR goes into `dev`; `main` changes only by merging the release PR the `release-prepare` workflow opens from `dev`. The guard is GitHub's rulesets on `dev` and `main` (PR and `check` required, no force push or deletion, no bypass actors); the client-side layers below catch mistakes.
+- Pre-commit (lefthook): a branch job that refuses a commit on `dev` or `main`; prettier + eslint on staged files; `gitleaks git --pre-commit --staged` (gitleaks 8.x syntax; `protect` is gone) with a custom `lap_` rule in `.gitleaks.toml`. The secrets scan is the reason the hook exists — public repo. No pre-push hook: CI and the Stop hook already run `check`.
+- `.github/workflows/ci.yml`: `pnpm/action-setup` (pinned SHA, version from `packageManager`) → `actions/setup-node` with `node-version-file: .nvmrc` and `cache: pnpm` → `pnpm install --frozen-lockfile && pnpm check`, once per PR and on `workflow_dispatch`, not on push (#444). A PR that touches only `docs/**` or `*.md` runs `prettier --check` only.
 - Claude Code hooks in `.claude/settings.json` (committed, so they run in cloud sessions too):
-  - `PostToolUse` on `Edit|Write` → `eslint --fix` on the changed file (fast; errors go straight back to the agent). `tsc` runs in the Stop hook, not per edit, unless it proves fast enough.
-  - `Stop` → `pnpm check`; blocks the turn from ending while it fails (bounded by Claude Code's block cap).
   - `SessionStart` → `scripts/install_pkgs.sh` (`pnpm install --frozen-lockfile` when the lockfile hash changed; cloud-aware).
-  - Permissions: allow `pnpm *`, `git commit`, `git push origin main`, `curl`, `gh api`, `gh workflow *`; deny `rm -rf *`, `git push --force*`, `git reset --hard*`, `pnpm drizzle-kit drop*`.
+  - `PreToolUse` on `Bash` → `scripts/hooks/pr-base-guard.sh`: a `gh pr create` invocation without `--base dev` is refused; a commit message or grep that only mentions it is not.
+  - `PostToolUse` on `Edit|Write` → `eslint --fix` on the changed file (fast; errors go straight back to the agent). `tsc` runs in the Stop hook, not per edit, unless it proves fast enough.
+  - `Stop` → `pnpm check`. It blocks the turn while the check fails, or while the tree has changes and `node_modules` is missing. After two failed fix rounds in a row it lets the turn end with a `systemMessage` to the user. Claude Code's own cap is 8 continuations.
+- Permissions:
+  - **Allow:**
+    - `pnpm *` and `git commit *`;
+    - `curl` to `http://localhost:*`, `http://127.0.0.1:*` and `https://laptracker-inky.vercel.app/*`;
+    - `gh api` reads under `repos/daniro-san/LAPTracker/*` (plain, `--paginate`, `-X GET`), plus the `actions/runs/*/approve` POST;
+    - `gh issue view|list`;
+    - `gh workflow list|view` and `gh workflow run release-prepare.yml`;
+    - `git push -u origin HEAD`, and `git push origin HEAD:refs/heads/*` with or without `--force-with-lease`;
+    - `gh pr create *` (the PreToolUse hook enforces `--base dev`), `gh pr view|diff|checks|list|comment|edit|ready|close`, and `gh pr merge` with `--squash` or `--merge`;
+    - `gh release *`.
+  - **Deny:**
+    - pushes to `main` or `dev` (target patterns, force included; `--all`, `--mirror`). There is no generic force-push deny: feature branches may force-push after a rebase;
+    - PRs into `main` (`gh pr create|edit` with base `main`, `gh api … base=main`);
+    - `gh pr merge --admin`;
+    - `gh api` writes (`-X`/`--method` PUT, PATCH, DELETE; POST to pulls, merges, git, contents, releases, branches, rulesets, hooks; `dispatches`; GraphQL mutations);
+    - `git commit -n` / `--no-verify`, `core.hooksPath` and `LEFTHOOK=0`;
+    - `gh workflow run tick*`;
+    - `curl` to `/api/quota` and to production `/api/tick` and `/api/snapshot`;
+    - `Read` of secret `.env*` files (`.env.example` stays readable);
+    - `pnpm dlx`, `pnpm exec node`, `pnpm node`, `db:seed` and `discord:register` (as `pnpm …`, `pnpm run …`, `npm run …`, or the script run by `tsx` or `node`), `drizzle-kit push` and `drop`;
+    - `rm -rf` / `rm -fr`, and `git reset --hard`.
 
 ### 11.5 The harness in `.claude/` — the minimum that pays per session
 

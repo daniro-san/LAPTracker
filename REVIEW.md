@@ -1,6 +1,6 @@
 # Review checklist
 
-Read by `/code-review` on every change that touches `lib/` or `app/api/`. Review against docs/IMPLEMENTATION_PLAN.md, not against taste. Report only findings that affect correctness, the quota guarantees or stated requirements, as: file:line, what the plan requires, what the code does, severity (blocker / should-fix / note), a one- or two-sentence fix. Put everything else under Notes.
+Read by `/code-review` and by `/pr-review` (through `.claude/pr-review.md`) on every change that touches `lib/` or `app/`, including `lib/private` and `app/(private)`. Review against the issue the PR closes, docs/decisions/ and docs/IMPLEMENTATION_PLAN.md, not against taste. Check correctness, privacy and regressions first. Skip findings about style only (formatting, naming taste, comment wording): prettier and eslint own those. Report only findings that affect correctness, privacy, the quota guarantees or stated requirements, as: file:line, what the plan or decision requires, what the code does, severity (blocker / should-fix / note), a one- or two-sentence fix. Put everything else under Notes.
 
 ## Freshness and deltas (plan §3.7)
 
@@ -32,11 +32,27 @@ Read by `/code-review` on every change that touches `lib/` or `app/api/`. Review
 
 ## Blocked roster keys (plan §12.1)
 
-- [ ] No query in `lib/queries`, route, page, `run_logs` line or Discord message reads or returns `BLOCKED_ROSTER_KEYS` (`x`, `y`, `online`, `last_online_at`, `joined_at`, `daily_honor`, `daily_tech`, `avatar_url`). They live only in `raw_json`; the one exception is `lib/private`, for its own alliance's workspace (D71). D76 allows `daily_tech`, `daily_honor` and `active` as alliance aggregates on public pages and per member on `/admin` for the own alliance, but `BLOCKED_ROSTER_KEYS` stays as it is until the change that serves them.
+- [ ] No query in `lib/queries`, route, page, `run_logs` line or Discord message reads or returns `BLOCKED_ROSTER_KEYS` (`x`, `y`, `online`, `last_online_at`, `joined_at`, `daily_honor`, `daily_tech`, `avatar_url`, `active`; the list in `lib/queries/blocked-keys.ts` is the source of truth). They live only in `raw_json`; the exceptions are `lib/private`, for its own alliance's workspace (D71, D142), and D76: `daily_tech`, `daily_honor` and `active` as alliance aggregates on public pages and per member on `/admin` for the own alliance. A key leaves `BLOCKED_ROSTER_KEYS` only in a change that serves it on purpose and says so (D76).
 - [ ] `lib/queries/blocked-keys.test.ts` still scans every read-model file, and the route test for `GET /api/events/[id]` runs `findBlockedKeys` on the real response body.
 - [ ] Player pages expose only name, uid, alliance tag, power, kills, lv and event dates.
+
+## Workspace privacy (D71, D75, D142; checklist in `.claude/rules/private.md`)
+
+- [ ] `lib/private` is imported only where the `import-x/no-restricted-paths` zones in `eslint.config.mjs` allow (`app/(private)`, and `lib/push-tick.ts` → `push-roll-calls.ts` for counts only, D148).
+- [ ] Every page or handler under `app/(private)/w/[slug]` and `app/(private)/api/w/[slug]` that returns a blocked key calls `requireWorkspace` first. The one member exception is D142: the member's own `daily_tech`, `daily_honor` and `active`, only on their own page `/w/[slug]/board/me`, behind `requireBoard` and an approved player link, rendered per request with `Cache-Control: private, no-store`.
+- [ ] Every read is filtered to the workspace's own alliance (or the member's own uid); no query can return another alliance's or another member's private rows.
+- [ ] No blocked key reaches a log line, `run_logs`, `app_errors`, a Discord message, an AI or translation request, an analytics event or property, or a shared cache (D143 caches hold public reads only; desk and private data never enter them). Analytics events and properties carry no member names (D115).
+- [ ] Copies and exports leave out `x`, `y`, `online` and `last_online_at`. `avatar_url` is never returned at all.
+- [ ] Session replay: text under `/w` and `/admin` is masked by the layout's `ph-mask`; per-member values such as bars also need `ph-no-capture` (issue 549, D142).
+- [ ] Every route behind `requireWorkspace` answers a request without a usable session with `401 signed_out` (D99); errors are codes only.
+
+## Performance, copy and people (CONTRIBUTING.md § Working rules, DESIGN.md § Validation)
+
+- [ ] Does the change make the night read, Raid prep, member cards right after a read, or the status bar while a read runs any staler? Does a read of a table that grows forever take a window or an index (D149)?
+- [ ] A cut or changed user-facing string that a decision quotes carries a dated amendment to that decision.
+- [ ] Nothing ranks people, counts missing data against anyone, or acts on its own (D75).
 
 ## Tests
 
 - [ ] Tests that assert the wrong thing or pass vacuously (e.g. a detector that never sees a positive case, a mock that makes the assertion trivially true).
-- [ ] A change to `lib/compute.ts`, `lib/collector.ts` or `lib/sources/*` ships with a test.
+- [ ] A change to `lib/compute.ts`, `lib/collector.ts`, `lib/budget.ts` or `lib/sources/*` ships with a test.

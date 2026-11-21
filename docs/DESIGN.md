@@ -486,6 +486,26 @@ Short, dry, grandmotherly. Written in English; the public pages also read in 17 
 - A dark mode that is a different design; a component that exists only once and only here.
 - A page's own grid, max-width or breakpoint classes for its frame; a margin column on the left; a row of equal KPI tiles; content stretched to the edge of a wide screen (D122).
 
+## Validation (owner, 2026-11-16 to 2026-11-21)
+
+- **People first (D75).** Every workspace feature makes the day easier for leadership and members; nothing punishes people. Thanks come first. Missing data is "no data", never 0, never flagged and never in a comparison. No ranking of people and no automatic consequences. Real signals reach the leadership as check-in reasons with their evidence, and the leadership decides. Check every screen, string and persona test against this.
+- **Design freedom.** Designer and frontend personas may rethink a layout, or add a reusable component to this system, instead of patching a page.
+- **Three checks before a design change is built.** A change to how something is presented or used is built only when all three agree, and the PR records the evidence:
+  - the user personas, officer panel first;
+  - real usage in PostHog, read only: pageviews, events and drop-offs for the screens touched;
+  - a product-strategy persona.
+- **Every persona panel includes a product-strategy persona.** It proposes changes and new uses of the data, not only critique.
+- **The officer panel.** Experienced players of this kind of game, aged 20s to 50s, from several countries, some native English readers and some not. They are not novices, but they lack our context about the platform. Don't over-simplify, and don't leave things implicit. Every flow is clear; where it can't be, add in-place help (a hint, a short guide, a GIF or a video). Check reading level, contrast and text size for older eyes.
+- **Panels see real public data, locally, and never private fields.** A persona panel is an AI request, so the CLAUDE.md roster-fields rule applies. Panels may see real public data (names, might, kills, what the public pages show) on the local machine. They never get `x`, `y`, `online`, `last_online_at`, `joined_at`, `daily_*`, `active` or `avatar_url`, not even locally (`.claude/rules/private.md`). Nothing a panel sees is committed, published, logged or posted, and the raw files are deleted afterwards.
+- **UX review before the owner.** Every chart or visualization PR gets a designer review of the real app and the Discord render, and its fixes land before the owner reads the PR. It covers:
+  - phones at 360, 390 and 412 in WebKit and Chrome;
+  - tablets in portrait at 600 to 820, and in landscape at 1024 and 1180 (iPad in WebKit);
+  - 1280;
+  - light and dark;
+  - a long-word language.
+
+  It checks overflow, 44 px targets, contrast, truncation, and the one sentence a reader should take away in 3 seconds. A problem at a phone width blocks the PR; one that shows only at 640 px or wider is secondary. Lead with the answer and keep controls compact.
+
 ## Enforcement
 
 - `lib/brand/tokens.css` is the only place a colour literal appears: a test greps `app/` and `lib/brand/components/` for `#[0-9a-f]{3,6}` and `rgb(` and fails on any hit.
