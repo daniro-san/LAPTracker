@@ -66,6 +66,24 @@ html:has(dialog:modal) {
   overflow: hidden;
 }
 
+/* A roll call's sticky "the rest" bar (RollCallRest.tsx) is on the page: a control that gets the focus
+   scrolls clear of it and of the bottom tabs, never under them (WCAG 2.4.11, issue 585). Below 768 the bar
+   sits on the tabs; from 768 the tabs are a rail and the bar is at the window's foot. */
+html:has([data-rest-bar]) {
+  scroll-padding-bottom: calc(8.5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 48rem) {
+  html:has([data-rest-bar]) {
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* A roll call's sticky search row (RollCallMarks.tsx, about 62 px): going back with Shift+Tab, a focused
+   control scrolls clear of it, never under it (WCAG 2.4.11, issue 585). */
+html:has([data-sticky-search]) {
+  scroll-padding-top: 4.5rem;
+}
+
 /* Scrollbars (DESIGN.md "Workspace components"): the page's, a sheet's, a pane's and a sticky margin
    column's (D122) are thin, a muted ink thumb on
    no track, in light and dark (--ink flips). Never hidden: on a desktop the bar is how a sheet shows it

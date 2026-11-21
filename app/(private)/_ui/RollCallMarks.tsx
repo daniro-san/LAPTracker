@@ -4,8 +4,8 @@
 // mark in words and a ✓ / ✗ pair 44 px tall; the same button again clears. Tiles keep the order the page
 // opened with and those already marked fold under "Marked (n)", so nothing moves under the thumb. Not set
 // is where everyone starts and is counted only as "not set" (D75). Away members are listed apart and never asked.
-// The bar at the bottom fills "the rest" with the kind's own answer (RollCallRest.tsx). "Someone is away"
-// sets a member's away dates (D80, D103).
+// The bar at the bottom fills "the rest" with the kind's own answer (RollCallRest.tsx). "Add away dates"
+// sets a member's away dates (D80, D103; it read "Someone is away" until issue 585).
 import { useState } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
@@ -168,7 +168,8 @@ export function SearchBar(props: {
 }) {
   const { words } = props;
   return (
-    <div className="sticky top-0 z-[5] mt-2 flex items-end gap-2 bg-paper py-2">
+    // `data-sticky-search` gives the page its scroll-padding-top (globals.css, issue 585).
+    <div data-sticky-search className="sticky top-0 z-[5] mt-2 flex items-end gap-2 bg-paper py-2">
       <label className="min-w-0 flex-1">
         <span className="sr-only">{words["roll.search"]}</span>
         <input
@@ -217,7 +218,7 @@ export function RollCallMarks(props: {
   const asked = all.filter((row) => row.away === null);
   const awayRows = all.filter((row) => row.away !== null);
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
-  const g = useGrid(asked, (uid) => [m.shown(uid).mark]);
+  const g = useGrid(asked, (uid) => m.shown(uid).mark);
   const needle = fold(q.trim());
   const found = needle === "" ? null : (row: MarkRowView) => fold(row.name).includes(needle);
   return (

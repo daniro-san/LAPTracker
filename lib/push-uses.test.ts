@@ -109,8 +109,8 @@ describe("the officers' notifications (D148)", () => {
     await pushShield(deps(), db, run);
     const got = push.received(alpha.device);
     expect(got.map((n) => n.body)).toEqual([
-      "Friday’s read: 1 not seen with a shield yet. Tap to review in Raid prep.",
-      "Friday’s read: 2 not seen with a shield yet. Tap to review in Raid prep.",
+      "Night check: 1 not seen with a shield yet. Tap to review in Raid prep.",
+      "Night check: 2 not seen with a shield yet. Tap to review in Raid prep.",
     ]);
     expect(got[0]?.url).toBe("/w/alpha/roll-call?week=2026-11-16");
     expect(push.received(bravo.device)).toEqual([]);

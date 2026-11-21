@@ -143,6 +143,8 @@ export interface TeamRowView {
   /** One short line: "12:00 their time · within 08–23 · Active · Squad 48.2M"; under "No time zone recorded"
    * the clock part is left out. */
   why: string;
+  /** "Away that day" for a picked member away on the team's day (issue 585), else null. */
+  away: string | null;
 }
 
 const groupOf = (r: TeamRow): TeamGroup => {
@@ -171,6 +173,7 @@ export function teamRows(
       group: groupOf(r),
       other: r.other === null ? null : fill(t["roll.team.inOther"], { team: r.other }),
       why,
+      away: r.away ? t["roll.team.awayThatDay"] : null,
     };
   });
 }

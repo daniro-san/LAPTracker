@@ -8,7 +8,9 @@ import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
+import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
+import { webhookViews } from "@/lib/private/discord-webhooks";
 import { prepView } from "@/lib/private/raid-prep";
 import type { Occasion } from "@/lib/private/roll-call";
 import { callView } from "@/lib/private/roll-call-view";
@@ -39,11 +41,12 @@ async function readMark(
   zone: string,
 ) {
   const call = await callView(db, access, occasion, lang, zone);
-  const prep =
-    call?.opened.kind === "shield"
-      ? await prepView(db, access, call.opened, { zone, now: new Date() })
-      : null;
-  return call && { ...call, prep };
+  if (call?.opened.kind !== "shield") return call && { ...call, prep: null };
+  // The summary posts only through a saved Raid Shield channel the master key opens (D147).
+  const hooks = await webhookViews(db, access, getEnv());
+  const shieldChannel = hooks.some((h) => h.channel === "shield" && h.state === "set");
+  const prep = await prepView(db, access, call.opened, { zone, now: new Date(), shieldChannel });
+  return { ...call, prep };
 }
 
 type Page = Awaited<ReturnType<typeof openRollCall<Awaited<ReturnType<typeof readMark>>>>>;
@@ -96,7 +99,15 @@ export default async function MarkPage({
   const words = rollWords(t);
   const title = callTitle(o, t);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="mark" waiting={page.waiting}>
+    // Raid prep is laid out for the wide frame: four columns of tiles at 1280 (issue 585, D122).
+    <SignedInFrame
+      access={access}
+      language={language}
+      t={t}
+      current="mark"
+      waiting={page.waiting}
+      wide={view.prep !== null}
+    >
       <RollCallHead
         t={t}
         times={calendarWords(t)}

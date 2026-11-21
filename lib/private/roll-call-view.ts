@@ -206,9 +206,14 @@ export interface TeamRow {
   theirMinute: number | null;
   activeThisWeek: boolean;
   squad: number | null;
+  /** Away on the team's day (D103's rule): only a picked member can be, the suggestions leave them out. */
+  away: boolean;
 }
 
-/** An Elixir Scramble team: its members first, then everyone else not away that day, suggested first. */
+/**
+ * An Elixir Scramble team: its members first, each flagged when away that day (issue 585), then everyone
+ * else not away that day, suggested first.
+ */
 export async function teamView(
   db: Db,
   access: WorkspaceAccess,
@@ -248,6 +253,7 @@ export async function teamView(
       theirMinute: zone === null ? null : clock(zone, hour),
       active: weekQuestPoints(reads, m.uid),
       squad: f?.squadMight?.value ?? null,
+      away: awayOn(f, opened.day, serverZone) !== null,
     };
   };
   const pickedUids = new Set(mine.map((t) => t.uid));

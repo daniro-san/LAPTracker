@@ -11,7 +11,13 @@
 import type { Db } from "../db";
 import { fridayOf, trackerMarks } from "../raid-prep-fill";
 import { checkTrackerMarks, newestMarks, type MarkRow } from "../repo/roll-call";
-import { shieldReadings, shieldSettingsOf, type StoredReading } from "../repo/shield-checks";
+import {
+  getShieldCheck,
+  shieldReadings,
+  shieldSettingsOf,
+  type ShieldCheckRow,
+  type StoredReading,
+} from "../repo/shield-checks";
 import {
   kvkStart,
   morningMinuteOf,
@@ -83,6 +89,40 @@ export interface PrepView {
   rows: Map<number, PrepRow>;
   /** The newest unchecked tracker mark's time (epoch ms): the notice's "reading at" and Checked's `seen`. */
   toCheckAt: number | null;
+  /** The check's Discord summary (D137, D147, issue 585); null while the check is off. */
+  summary: SummaryState | null;
+}
+
+/**
+ * posted: the summary is in Discord, last posted or edited at `at`. off: the switch is off. unset: no Raid
+ * Shield channel can take it (D147). waiting: no reading yet, or one so new that its tick is still posting.
+ * failed: a reading is older than a tick and nothing was posted. gone: Discord said it was deleted, so it is
+ * not posted again for this check (D137).
+ */
+export type SummaryState =
+  { state: "posted"; at: number } | { state: "off" | "unset" | "waiting" | "failed" | "gone" };
+
+/** A read and its summary share one tick (at most 180 s, D137): past this, a reading with no post failed. */
+const POST_WITHIN_MS = 5 * 60_000;
+
+/** The newest answer of either read (epoch ms), null before any. */
+const newestOf = (reads: { night: ReadCount | null; morning: ReadCount | null }) =>
+  reads.morning?.at ?? reads.night?.at ?? null;
+
+function summaryOf(
+  check: ShieldCheckRow | null,
+  on: { discord: boolean; channel: boolean },
+  reads: { night: ReadCount | null; morning: ReadCount | null },
+  now: number,
+): SummaryState {
+  if (!on.discord) return { state: "off" };
+  if (!on.channel) return { state: "unset" };
+  if (check?.messageHash === "gone") return { state: "gone" };
+  if (check?.messageId && check.postedAt) return { state: "posted", at: check.postedAt.getTime() };
+  const newest = newestOf(reads);
+  return newest !== null && now - newest > POST_WITHIN_MS
+    ? { state: "failed" }
+    : { state: "waiting" };
 }
 
 /** The officers' recorded languages first, then the game's from either read, else English. */
@@ -157,17 +197,20 @@ async function readingsOf(db: Db, access: WorkspaceAccess, friday: string, zone:
   return { night, morning };
 }
 
-/** Raid prep's part of a Raid Shield roll call's page: the tracker's hints, the wall marks, the counts. */
+/**
+ * Raid prep's part of a Raid Shield roll call's page: the tracker's hints, the wall marks, the counts and
+ * the Discord summary's state. `shieldChannel`: a Raid Shield channel the summary can post to is saved.
+ */
 export async function prepView(
   db: Db,
   access: WorkspaceAccess,
   opened: Opened,
-  clock: { zone: string; now: Date },
+  clock: { zone: string; now: Date; shieldChannel?: boolean },
 ): Promise<PrepView> {
   const friday = fridayOf(opened.day);
   const tracker = featureOn(access, "shield_check");
   const ids = opened.call ? [opened.call.id] : [];
-  const [roster, facts, main, wall, settings, reads] = await Promise.all([
+  const [roster, facts, main, wall, settings, reads, check] = await Promise.all([
     rosterOf(db, access),
     factsOf(db, access),
     newestMarks(db, ids),
@@ -176,6 +219,7 @@ export async function prepView(
     tracker
       ? readingsOf(db, access, friday, clock.zone)
       : Promise.resolve({ night: [], morning: [] }),
+    getShieldCheck(db, { day: friday, unionId: access.unionId }),
   ]);
   const kvkAt = kvkStart(friday, { SERVER_TZ: clock.zone });
   const nightOf = new Map(reads.night.map((r) => [r.uid, r]));
@@ -198,16 +242,18 @@ export async function prepView(
     .map(([uid]) => mainOf.get(uid)?.at.getTime() ?? 0);
   const uids = new Set(roster.map((m) => m.uid));
   const reset = kvkAt.getTime() - 12 * 3_600_000;
+  const counts = { night: countOf(uids, reads.night), morning: countOf(uids, reads.morning) };
+  const on = { discord: !!settings?.discord, channel: !!clock.shieldChannel };
   return {
     friday,
     tracker,
     morningMinute: morningMinuteOf(settings?.morningMinute),
-    night: countOf(uids, reads.night),
-    morning: countOf(uids, reads.morning),
+    ...counts,
     members: roster.length,
     when: clock.now.getTime() < reset ? "reset" : "kvk",
     rows,
     toCheckAt: toCheck.length > 0 ? Math.max(...toCheck) : null,
+    summary: tracker ? summaryOf(check, on, counts, clock.now.getTime()) : null,
   };
 }
 

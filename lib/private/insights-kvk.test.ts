@@ -201,7 +201,7 @@ describe("Raid Shield history (issue 489)", () => {
     const f = { t: WORKSPACE_DICTIONARIES.en, language: "en" } as const;
     const words = shieldWords(weeks, f);
     expect(words.headline).toBe(
-      "Last raid, Fri, Nov 20: 92% seen with a shield in the morning (Friday night: 40%).",
+      "Last raid, Sat, Nov 21: 92% seen with a shield at the morning check (night check: 40%).",
     );
     expect(words.weeks[0]?.rows.map((r) => [r.label, r.value, r.note])).toEqual([
       ["Night check", "40%", "16 seen of 40 read"],
@@ -214,7 +214,7 @@ describe("Raid Shield history (issue 489)", () => {
     ]);
     expect(words.weeks[2]?.rows).toEqual([]);
     expect(shieldWords(weeks.slice(2), f).headline).toBe(
-      "No Raid Shield check has a reading in the last 8 weeks. This fills in after the next Friday night.",
+      "No Raid Shield check has a reading in the last 8 weeks. This fills in after the next night check, on Friday from 23:30 ST.",
     );
 
     // A morning check still running is under way, with no share yet, even before its first answer.
@@ -227,7 +227,7 @@ describe("Raid Shield history (issue 489)", () => {
     );
     const live = shieldWords(running, f);
     expect(live.headline).toBe(
-      "Last raid, Fri, Nov 20: the morning check is under way (Friday night: 40%).",
+      "Last raid, Sat, Nov 21: the morning check is under way (night check: 40%).",
     );
     expect(live.weeks[0]?.rows[1]).toMatchObject({ value: "under way", share: null });
   });

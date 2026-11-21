@@ -41,7 +41,8 @@ function Counts({ parts }: { parts: string[] }) {
   );
 }
 
-function Card({ c, words }: { c: RollCard; words: CalendarSheetWords }) {
+/** A card's link to its marking page reads "Mark ›" here, on a page titled Roll call (issue 585). */
+function Card({ c, words, mark }: { c: RollCard; words: CalendarSheetWords; mark: string }) {
   return (
     <li className="drawn-card mt-4 px-4 py-3">
       <p className="text-body-sm">
@@ -68,7 +69,7 @@ function Card({ c, words }: { c: RollCard; words: CalendarSheetWords }) {
           </a>
         )}
         <a href={c.markHref} className={LINK}>
-          {words["calendar.rollCall"]}
+          {mark}
         </a>
       </p>
     </li>
@@ -197,7 +198,7 @@ export default async function RollCallPage({
       ) : (
         <ul>
           {cards.map((c) => (
-            <Card key={c.key} c={c} words={times} />
+            <Card key={c.key} c={c} words={times} mark={t["roll.open"]} />
           ))}
         </ul>
       )}
