@@ -10,7 +10,7 @@ import { withNoData } from "./NoData";
 export function MemberLastDays({ days }: { days: DaysCard }) {
   return (
     <section className="mt-3">
-      <h3 className="text-body-sm font-semibold">{days.head}</h3>
+      {days.head && <h3 className="text-body-sm font-semibold">{days.head}</h3>}
       {/* The days once, over the three rows; each bar also says its own date to screen readers. */}
       <ol
         aria-hidden="true"
@@ -34,12 +34,21 @@ export function MemberLastDays({ days }: { days: DaysCard }) {
 function Row({ row, noData }: { row: DaysRow; noData: string }) {
   return (
     <div className="mt-2 border-t border-rule pt-1.5">
-      <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-body-sm">
-        <span>{row.label}</span>
-        <span className="text-[12px] text-ink/70 tabular-nums">
-          {withNoData(row.average, noData)}
-        </span>
-      </p>
+      {row.last ? (
+        // A member's own page (D142): this week and last week each on a line of its own, under the label.
+        <>
+          <p className="text-body-sm">{row.label}</p>
+          <p className="text-[12px] text-ink/70 tabular-nums">{withNoData(row.average, noData)}</p>
+          <p className="text-[12px] text-ink/70 tabular-nums">{row.last}</p>
+        </>
+      ) : (
+        <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-body-sm">
+          <span>{row.label}</span>
+          <span className="text-[12px] text-ink/70 tabular-nums">
+            {withNoData(row.average, noData)}
+          </span>
+        </p>
+      )}
       <ol className="mt-1 grid grid-cols-7 gap-0.5 text-center">
         {row.bars.map((b, i) => (
           <li key={i} aria-label={b.said} className="min-w-0">
