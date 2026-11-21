@@ -17,10 +17,15 @@ export const ACTIVITY_TOTALS = [
 ] as const;
 export type ActivityTotal = (typeof ACTIVITY_TOTALS)[number];
 
-/** The setup steps, in order (issue 484): when each first happened, or null. */
+/**
+ * The setup steps, in order: #486's setup funnel (feat-486), all server `ws_action` events. `created` is the
+ * invite's finish (null for a workspace made before the event existed, or on /admin); when each first
+ * happened, or null.
+ */
 export const SETUP_STEPS = [
+  "created",
   "key_saved",
-  "bot_installed",
+  "webhook",
   "first_roll_call",
   "first_notice",
 ] as const;
@@ -29,8 +34,6 @@ export type SetupStep = (typeof SETUP_STEPS)[number];
 export interface AllianceActivity {
   slug: string;
   totals: Record<ActivityTotal, number | null>;
-  /** When the invite made the workspace; null for one made before the event existed, or on /admin. */
-  created: Date | null;
   steps: Record<SetupStep, Date | null>;
 }
 
@@ -49,7 +52,6 @@ export async function allianceActivity(
         totals: Object.fromEntries(
           ACTIVITY_TOTALS.map((k) => [k, shownTotal(row[k])]),
         ) as AllianceActivity["totals"],
-        created: firstTime(row.created),
         steps: Object.fromEntries(
           SETUP_STEPS.map((k) => [k, firstTime(row[k])]),
         ) as AllianceActivity["steps"],

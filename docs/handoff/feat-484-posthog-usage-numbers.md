@@ -25,7 +25,7 @@
     - roll call marks;
     - thanks shared;
     - screenshots read.
-  - Setup: key saved → bot installed → first roll call → first notice. Each step is its UTC date, with "· day n" after the invite made the workspace when that is known, or "not yet".
+  - Setup, #486's funnel: created → key saved → webhook set → first roll call marked → first notice published. Each step is its UTC date, with "· day n" after Created when that is known, or "not yet".
 
   The data is one `lap_alliance_usage` call per workspace, kept 15 min.
 - The desk: **Board reach** on Home (`app/(private)/_ui/BoardReach.tsx`, `lib/private/board-reach.ts`). It is a margin note after "Members this week", shown only while the board is on, and streamed inside Suspense. It holds:
@@ -46,7 +46,7 @@
 - **Totals rounded down to a multiple of 5 (adversarial SHOULD).** Without rounding, an hourly change from "at least 5" to "at least 6" tells officers that one member opened the board in that hour. A rounded total is still true as "at least".
 - **"The last 7 days", rolling, not the calendar week.** Under the 5 rule, a calendar week would show nothing on a Monday morning.
 - **On /admin, under 5 reads "under 5".** On the desk it is not drawn. On /admin a missing card means PostHog did not answer, so "under 5" keeps the two apart. The setup steps are a workspace's milestones, not counts of people, so the 5 rule does not apply to them.
-- **"Bot installed" is `ws_bot_installed` or the invite's finish** (`workspace` / `create`). feat-486 found that `ws_bot_installed` never fires for invited alliances, because the invite marks the bot seen. So an invited alliance reads "day 0".
+- **The setup steps are #486's setup funnel** (coordinator, 2026-11-21): created → key saved → webhook → first roll call marked → first notice published. All five are server `ws_action` events, so a closed tab or an ad blocker cannot lose them. The first build had a "bot installed" step. `ws_bot_installed` never fires for invited alliances, so it is gone.
 - **`tier` comes from `persons` in the HogQL.** A board load's first `$pageview` is sent before `identify` (`person_profiles: "identified_only"`). The event-time `person.properties.tier` would miss those visits.
 - **The board line shows only while the key is set.** With no key, officers see nothing, so the line would describe nothing.
 - **The minimum and the rounding are applied in the app, not in the HogQL.** That keeps them tested, and lets /admin tell "under 5" from "no answer".
@@ -107,14 +107,14 @@ SELECT
     AND properties.feature = 'workspace' AND properties.action = 'create') AS created,
   minIf(timestamp, event = 'ws_action'
     AND properties.feature = 'tracker_key' AND properties.action = 'save') AS key_saved,
-  minIf(timestamp, event = 'ws_bot_installed' OR (event = 'ws_action'
-    AND properties.feature = 'workspace' AND properties.action = 'create')) AS bot_installed,
+  minIf(timestamp, event = 'ws_action'
+    AND properties.feature = 'discord' AND properties.action = 'save') AS webhook,
   minIf(timestamp, event = 'ws_action'
     AND properties.feature = 'roll_call' AND properties.action = 'mark') AS first_roll_call,
   minIf(timestamp, event = 'ws_action'
-    AND properties.feature = 'notice' AND properties.action = 'add') AS first_notice
+    AND properties.feature = 'notice_publish' AND properties.action = 'publish') AS first_notice
 FROM events
-WHERE event IN ('ws_action', '$pageview', 'ws_bot_installed')
+WHERE event IN ('ws_action', '$pageview')
   AND properties.workspace = {variables.workspace}
   AND timestamp >= now() - INTERVAL 180 DAY
   AND (event != '$pageview' OR timestamp >= now() - INTERVAL 7 DAY)
@@ -125,11 +125,21 @@ The response the code expects:
 ```json
 {
   "columns": ["officers_active", "board_visitors", "notices_written", "roll_call_marks", "thanks_shared", "screenshots_read",
-              "created", "key_saved", "bot_installed", "first_roll_call", "first_notice"],
+              "created", "key_saved", "webhook", "first_roll_call", "first_notice"],
   "results": [[4, 41, 6, 120, 1, 9,
-               "2026-11-10T09:00:00Z", "2026-11-10T09:30:00Z", "2026-11-10T09:00:00Z", "2026-11-12T18:00:00Z", "1970-01-01T00:00:00Z"]]
+               "2026-11-10T09:00:00Z", "2026-11-10T09:30:00Z", "2026-11-11T08:00:00Z", "2026-11-12T18:00:00Z", "1970-01-01T00:00:00Z"]]
 }
 ```
+
+The five setup steps are #486's setup funnel (`docs/handoff/feat-486-onboarding-analytics.md`), all server `ws_action` events:
+
+1. `created`: `workspace` / `create`;
+2. `key_saved`: `tracker_key` / `save`;
+3. `webhook`: `discord` / `save`;
+4. `first_roll_call`: `roll_call` / `mark`;
+5. `first_notice`: `notice_publish` / `publish`.
+
+`ws_bot_installed` is not a step: it never fires for invited alliances, because the invite's finish marks the bot seen (`lib/private/invite-steps.ts`).
 
 - The six counts are whole numbers.
 - The five times are ISO date-time strings. `minIf` with no match gives 1970-01-01, and the code reads anything before 2000 (or null) as "not yet".

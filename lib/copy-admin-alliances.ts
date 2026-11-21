@@ -64,7 +64,7 @@ export const alliancesAdminCopy = {
   /** The Activity section (D145, issue 484): PostHog's totals per workspace. */
   activity: {
     title: "Activity",
-    help: "The last 7 days from PostHog, totals only, never who. Each is a minimum (PostHog misses some visits); under 5 is not shown. Setup: when each step first happened, and the day after the invite. Refreshed every 15 minutes.",
+    help: "The last 7 days from PostHog, totals only, never who. Each is a minimum (PostHog misses some visits); under 5 is not shown. Setup: when each step first happened, and its day counted from Created (the invite's finish). Refreshed every 15 minutes.",
     totals: {
       officers_active: "Officers active",
       board_visitors: "Board visitors",
@@ -77,10 +77,11 @@ export const alliancesAdminCopy = {
     under: "under 5",
     setup: "Setup",
     steps: {
+      created: "Created",
       key_saved: "Key saved",
-      bot_installed: "Bot installed",
-      first_roll_call: "First roll call",
-      first_notice: "First notice",
+      webhook: "Webhook set",
+      first_roll_call: "First roll call marked",
+      first_notice: "First notice published",
     },
     /** Days after the invite made the workspace; the date when that is not known. */
     day: "day {n}",

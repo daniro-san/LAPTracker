@@ -58,7 +58,7 @@ function Card({ row, alliance }: { row: AllianceActivity; alliance: string }) {
           <li key={k} className="flex flex-wrap justify-between gap-x-3 border-t border-rule pt-1">
             <span>{t.steps[k]}</span>
             <span className={`tabular-nums ${row.steps[k] ? "" : "text-ink/70"}`}>
-              {stepText(row.steps[k], row.created)}
+              {stepText(row.steps[k], row.steps.created)}
             </span>
           </li>
         ))}

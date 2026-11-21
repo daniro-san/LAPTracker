@@ -36,13 +36,14 @@ Why: the owner (issue 484, 2026-11-20) wants usage numbers inside the app from P
   - roll call marks (`roll_call` / `mark` and `rest`);
   - thanks shared (`thanks` / `share`);
   - screenshots read (`screenshot` / `add` and `read_text`).
-- Setup, from the last 180 days. Each step is the UTC date it first happened, with "· day n" after the invite made the workspace (`workspace` / `create`, feat-486) when that is known. A step not reached reads "not yet". The steps are:
-  1. key saved (`tracker_key` / `save`);
-  2. bot installed (`ws_bot_installed`, or the invite's finish, which marks the bot seen, so an invited alliance reads "day 0");
-  3. first roll call (`roll_call` / `mark`);
-  4. first notice (`notice` / `add`).
+- Setup, from the last 180 days: #486's setup funnel (feat-486, PR #542). Each step is the UTC date it first happened, with "· day n" after Created when that is known. A step not reached reads "not yet". The steps are all server `ws_action` events:
+  1. created (`workspace` / `create`, the invite's finish);
+  2. key saved (`tracker_key` / `save`);
+  3. webhook set (`discord` / `save`);
+  4. first roll call marked (`roll_call` / `mark`);
+  5. first notice published (`notice_publish` / `publish`).
 
-  These are a workspace's own milestones, not counts of people, so the minimum of 5 does not apply to them.
+  `ws_bot_installed` is not a step: it never fires for invited alliances, because the invite's finish marks the bot seen (`lib/private/invite-steps.ts`). These are a workspace's own milestones, not counts of people, so the minimum of 5 does not apply to them.
 
 - One Endpoint call per workspace, in parallel. A workspace PostHog did not answer for is left out; with none, there is no section.
 - It does not join the Alliances table: seven more columns would not fit /admin's 960 px.
