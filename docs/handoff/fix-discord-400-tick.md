@@ -53,4 +53,4 @@
 - Discord rule for every webhook writer: a forum channel's first post needs `thread_name`, and an edit of a message inside a forum post needs `?thread_id=` (for the first message, its own id). Both leaders and members channels of workspace 1 are forums.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/555
