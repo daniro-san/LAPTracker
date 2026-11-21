@@ -252,7 +252,7 @@ export function FollowUpPanel(props: PanelProps) {
         <h3 id="follow-up-why-h" className={HEAD}>
           {words["followup.why"]}
         </h3>
-        <ul className="text-body-sm">
+        <ul className="ph-no-capture text-body-sm">
           {row.lines.map((line) => (
             <li key={line}>{line}</li>
           ))}

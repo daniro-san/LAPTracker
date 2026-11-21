@@ -207,7 +207,8 @@ function Overview({ card }: { card: CardData }) {
   return (
     <>
       {card.statusLines.length > 0 && (
-        <ul className="mt-3 text-body-sm">
+        // ph-no-capture (issue 549): "No daily quests on {day}" and the other reasons never reach replay.
+        <ul className="ph-no-capture mt-3 text-body-sm">
           {card.statusLines.map((line) => (
             <li key={line}>{line}</li>
           ))}

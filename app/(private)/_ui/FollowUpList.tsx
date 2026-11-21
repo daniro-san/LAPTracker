@@ -87,7 +87,8 @@ function Row(props: {
           {row.tag && <span className="ml-2 text-[12px] font-semibold text-yarn">{row.tag}</span>}
         </span>
         {row.lines.map((line) => (
-          <span key={line} className="block text-body-sm">
+          // ph-no-capture (issue 549): the reasons and the coins tip never reach session replay.
+          <span key={line} className="ph-no-capture block text-body-sm">
             {line}
           </span>
         ))}

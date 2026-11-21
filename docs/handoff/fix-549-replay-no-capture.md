@@ -13,12 +13,17 @@ The class `ph-no-capture` is now on every desk element that shows a per-member v
   - the Members page (`MembersThanks.tsx`), on the `<ol>`.
 - **Caravan role suggestions** (`RosterPicker.tsx`): the top 3 are ordered by the week's quest points (`lib/private/caravan-suggest.ts`), so the `<ul>` is blocked.
 - **Roll-call team picker** (`TeamPicker.tsx`): the open groups (day, no time zone, night, other) are ordered by the week's quest points (`teamOrder`, `lib/private/roll-call-rules.ts`), so their `<ul>` is blocked. The "picked" group is not blocked.
+- **Status and reason lines** (orchestrator's decision, 2026-11-21): "No daily quests on {day}", "No donations on {day}", "no new donations or activity for {n} days" and the follow-up coins tip. Each place gets one class on an existing element:
+  - the Members list row's `statusLine` span (`MemberListRow.tsx`);
+  - the officer card's `statusLines` `<ul>` (`MemberCards.tsx`);
+  - each reason line's span on the follow-up list (`FollowUpList.tsx`);
+  - the follow-up sheet's "Why" `<ul>` (`FollowUpSheet.tsx`).
 - **Test:** `app/(private)/_ui/MemberCards.test.ts` renders the officer card and asserts that every bar `height:` style and the day numbers are inside the `ph-no-capture` box, and that no bar height is outside it.
 
 ## Decisions
 
 - **The PostHog config was not changed.** `lib/analytics/posthog.ts` never sets `blockClass`, so posthog-js 1.444.4 keeps its default `blockClass: "ph-no-capture"`. This was checked in `node_modules/posthog-js/dist/posthog-recorder.js` and `lazy-recorder.js`. Our config only adds `blockSelector`, and rrweb blocks a node when it matches either one.
-- **What "per-member daily figure" covers:** a number, a bar, or an order that comes from those three fields for one member. Status lines that only say "No daily quests on Wed", or a day count, are thresholded yes/no signals, not values, so they are left as they are. See Open issues.
+- **What "per-member daily figure" covers:** a number, a bar, or an order that comes from those three fields for one member. Status lines such as "No daily quests on Wed" or a day count are thresholded yes/no signals, not values. They are blocked as well, by the orchestrator's decision.
 - **/admin:** nothing to wrap. No /admin page reads these fields (`/admin/members` was removed on 2026-11-17, D76 amendment).
 
 ## Deviations
@@ -31,7 +36,8 @@ The class `ph-no-capture` is now on every desk element that shows a per-member v
 - **New test:** passes. With the class renamed on the card, it fails (mutation check).
 - **Adversarial subagent** (grep and trace of every read of the three fields to the DOM). It ran from this session, and its result came back to this session, not to the orchestrator.
   - Applied: 1 MUST (Members thanks box) and 3 SHOULDs (table cell width, caravan suggestions, roll-call picker).
-  - Not applied: 2 NICEs (see Open issues).
+  - Its NICE on status lines was applied afterwards, by the orchestrator's decision.
+  - Not applied: its NICE on the insights bands (see Open issues).
   - Confirmed with no leak:
     - "Copy for spreadsheet" (clipboard only);
     - the RSC payload (rrweb records script text as a placeholder);
@@ -47,7 +53,6 @@ The class `ph-no-capture` is now on every desk element that shows a per-member v
 
 ## Open issues
 
-- **Status and reason lines** still reach replay as masked text: "No daily quests on {day}", "No donations on {day}", "no new donations or activity for {n} days", and the follow-up coins tip. The places are `MemberListRow.tsx` `statusLine`, `MemberCards.tsx` `statusLines`, `FollowUpList.tsx` and `FollowUpSheet.tsx`. The masked text keeps word shapes and the day count's length. If the owner wants these out too, add `ph-no-capture` to those elements.
 - **Insights effort bands:** with 4 to 7 counted members, a band can hold one member. Its median and bar width are then that member's own average. Fixing this means a minimum band size in `lib/private/insights-rules.ts` `bandsOf`, which is a logic change and is not done here.
 - **Replay of the roll-call picker** now shows its open groups as empty boxes. Taps on them still show as clicks, but not on which member.
 

@@ -62,8 +62,9 @@ function Lines(props: RowProps & { wrap?: boolean }) {
   return (
     <>
       {row.statusLine && (
+        // ph-no-capture (issue 549): "No daily quests on {day}" and the other reasons never reach replay.
         <span
-          className={`${props.wrap ? "text-pretty" : "truncate"} text-body-sm ${STATUS_TONE[row.status]}`}
+          className={`ph-no-capture ${props.wrap ? "text-pretty" : "truncate"} text-body-sm ${STATUS_TONE[row.status]}`}
         >
           {row.statusLine}
         </span>
