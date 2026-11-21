@@ -110,4 +110,4 @@
 - `lib/event-cache.ts` already has the `globalThis` state, in-flight drop and generation guard: do not redo them.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/540
