@@ -1,18 +1,22 @@
 // The "To review" list on Home (issue 299): the workspace's drafts waiting for an officer, shared by all of
 // them, and the door in, "Send screenshots". Each draft says what was read and how many rows need a person.
 // Above them, "2 new members to match" when a roster read could not match new members added by hand, and
-// each notice review request the officer may answer (D113), linked to its notice.
+// each notice review request the officer may answer (D113), linked to its notice, and each member's "This is
+// me" waiting for an officer (D142), with Approve and Reject.
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { linkWords } from "@/lib/private/dictionary.me";
 import { MAX_PICTURES } from "@/lib/private/import";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 import { STATUS_BAR } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
 import type { ReviewItem } from "@/lib/private/import-view";
 import { draftCounts, kindLabel } from "@/lib/private/import-words";
+import type { LinkReview } from "@/lib/private/me-link";
 import type { reviewsForMe } from "@/lib/private/notice-reviews";
 
 import { LANGUAGE_NAME } from "./languages";
+import { LinkReviews } from "./MemberLinks";
 import { SendScreenshots, type TypeChoice } from "./SendScreenshots";
 
 const KINDS: ImportKind[] = [
@@ -124,10 +128,12 @@ export function ToReview(props: {
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** "Mon 16 Nov 18:54 server time", per item. */
   when: (at: Date) => string;
+  /** Members' "This is me" links waiting for an officer (D142). */
+  links: LinkReview[];
 }) {
   const { slug, items, t, language } = props;
-  // Screenshot drafts and the notice reviews for this officer (D113).
-  const waiting = items.length + props.reviews.length;
+  // Screenshot drafts, the notice reviews for this officer (D113) and the links to approve (D142).
+  const waiting = items.length + props.reviews.length + props.links.length;
   return (
     <section aria-labelledby="to-review" className="drawn-card mt-4 px-4 py-4 first:mt-0">
       <h2 id="to-review" className="font-subhead text-display-sm">
@@ -136,6 +142,7 @@ export function ToReview(props: {
       </h2>
       {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
       <NoticeReviewLinks slug={slug} t={t} reviews={props.reviews} />
+      <LinkReviews slug={slug} reviews={props.links} words={linkWords(t)} />
       {props.toMatch && (
         <p className="mt-1">
           <a

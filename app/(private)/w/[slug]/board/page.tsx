@@ -7,7 +7,6 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { analyticsPerson } from "@/lib/analytics/person";
-import { fill, isolate } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireBoard, type BoardAccess, type CookieReader } from "@/lib/private/access";
@@ -19,31 +18,14 @@ import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { AnalyticsPerson } from "../../../_ui/AnalyticsPerson";
+import { BoardAccount } from "../../../_ui/BoardAccount";
 import { LINK, Notices, StartHere, Week } from "../../../_ui/BoardSections";
 import { BoardSectionsSeen } from "../../../_ui/BoardSectionsSeen";
 import { BoardThanks } from "../../../_ui/BoardThanks";
 import { DeletionNotice, Frame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
-import { SignOutButton } from "../../../_ui/SignOutButton";
 
 export const metadata: Metadata = { title: "Members’ board" };
-
-/** "Signed in as … · Sign out"; an officer's preview names no officer, and reads as a member's would. */
-function Account(props: { officer: boolean; name: string; slug: string; t: WorkspaceDictionary }) {
-  const { t } = props;
-  if (props.officer) return <span className="min-w-0 truncate py-2">{t["board.previewing"]}</span>;
-  return (
-    <>
-      <span className="min-w-0 truncate">
-        {fill(t["shell.signedIn"], { name: isolate(props.name) })}
-      </span>
-      <SignOutButton
-        slug={props.slug}
-        words={{ label: t["shell.signOut"], ask: t["shell.signOutAsk"], stay: t["shell.stay"] }}
-      />
-    </>
-  );
-}
 
 /** A strip that stays on screen while scrolling, so a preview is never taken for the member view. */
 /**
@@ -119,7 +101,9 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
   }
   const { language, t } = await workspaceWords();
   const { alliance } = access;
-  const account = <Account officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />;
+  const account = (
+    <BoardAccount officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />
+  );
   const frame = {
     language,
     t,
@@ -149,6 +133,11 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
         </a>
       </p>
       {access.officer && <p className="text-body-sm text-ink/75">{t["board.preview.only"]}</p>}
+      <p>
+        <a href={`/w/${slug}/board/me`} className={LINK}>
+          {t["me.open"]}
+        </a>
+      </p>
       <BoardThanks
         thanks={view.thanks}
         t={t}

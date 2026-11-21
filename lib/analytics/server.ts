@@ -45,6 +45,8 @@ export const DESK_FEATURES = [
   "features",
   // D137: Alliance settings → Raid Shield check (the morning read's time and the leaders' message).
   "raid_prep",
+  // D142: a member's "This is me" approved or removed by an officer.
+  "member_link",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 

@@ -363,37 +363,31 @@ export const workspaceUsers = pgTable(
     lastLoginAt: tstz("last_login_at"),
     /** The name the officer chose in the profile sheet; null shows display_name (from Discord). */
     chosenName: text("chosen_name"),
-    /** "This is me": the officer's player in the workspace's own alliance; null when not linked. */
+    /** "This is me": the person's player in the workspace's own alliance; null when not linked. */
     playerUid: big("player_uid"),
-  },
-  (t) => [unique("workspace_users_workspace_discord_unique").on(t.workspaceId, t.discordUserId)],
-);
-
-/** Signed-in sessions (D71): only the token's sha256 is stored; each belongs to one workspace, 24 h. */
-export const workspaceSessions = pgTable(
-  "workspace_sessions",
-  {
-    tokenHash: text("token_hash").primaryKey(),
-    workspaceId: integer("workspace_id")
-      .notNull()
-      .references(() => workspaces.id, { onDelete: "cascade" }),
-    workspaceUserId: integer("workspace_user_id")
-      .notNull()
-      .references(() => workspaceUsers.id, { onDelete: "cascade" }),
-    createdAt: tstz("created_at").notNull(),
-    expiresAt: tstz("expires_at").notNull(),
-    /** When Discord last confirmed the role (D99): at sign-in and at each renewal. */
-    checkedAt: tstz("checked_at").notNull().defaultNow(),
-    /** "officer": the desk (D71). "member": the members' board only (D105). */
-    tier: text("tier").$type<"officer" | "member">().notNull().default("officer"),
-    /** The last request this session made on the desk, kept to the minute (D108): "On the desk now". */
-    seenAt: tstz("seen_at"),
+    /**
+     * D142: an officer's own link, or one an officer approved, is `approved`; every member's link is
+     * `pending` until an officer approves it. Null exactly when `player_uid` is.
+     */
+    playerLink: text("player_link", { enum: ["approved", "pending"] }),
+    playerLinkedAt: tstz("player_linked_at"),
   },
   (t) => [
-    index("workspace_sessions_workspace_idx").on(t.workspaceId),
-    check("workspace_sessions_tier_check", sql`${t.tier} in ('officer', 'member')`),
+    unique("workspace_users_workspace_discord_unique").on(t.workspaceId, t.discordUserId),
+    // D142: one approved link per player in a workspace (one player per user is the row itself). Pending
+    // claims reserve nothing, so a false claim never locks the real player out.
+    uniqueIndex("workspace_users_player_unique")
+      .on(t.workspaceId, t.playerUid)
+      .where(sql`${t.playerLink} = 'approved'`),
+    check(
+      "workspace_users_player_link_check",
+      sql`(${t.playerUid} is null) = (${t.playerLink} is null) and (${t.playerLink} is null or ${t.playerLink} in ('approved', 'pending'))`,
+    ),
   ],
 );
+
+// Signed-in sessions (D71, D105), in their own file for size (D142).
+export { workspaceSessions } from "./schema-sessions";
 
 // The workspace calendar (issue 300), in its own file for size.
 export * from "./schema-calendar";

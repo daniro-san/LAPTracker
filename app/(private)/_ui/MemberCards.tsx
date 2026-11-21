@@ -18,6 +18,7 @@ import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
 import { CardTabs, panelId, tabId, useCardTab } from "./MemberCardTabs";
 import { MemberLastDays } from "./MemberLastDays";
+import { CardLink } from "./MemberLinks";
 import { MemberSquads } from "./MemberSquads";
 import { withNoData } from "./NoData";
 
@@ -161,8 +162,11 @@ export function Facts({
   );
 }
 
-/** Status, the stat strip, their time and languages, and where they came from: the same on every tab. */
-function Header({ card, zoneNow }: { card: CardData; zoneNow: string | null }) {
+/**
+ * Status, the stat strip, their time and languages, where they came from and who on Discord is linked to
+ * them (D142): the same on every tab.
+ */
+function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | null; slug: string }) {
   return (
     <div className="px-3 pb-3">
       {card.statusLabel && (
@@ -194,6 +198,7 @@ function Header({ card, zoneNow }: { card: CardData; zoneNow: string | null }) {
           {line}
         </p>
       ))}
+      {card.link && <CardLink slug={slug} link={card.link} words={card.link.words} />}
     </div>
   );
 }
@@ -297,7 +302,7 @@ export function MemberCard(props: CardProps) {
   const [tab, setTab] = useCardTab();
   return (
     <>
-      <Header card={card} zoneNow={props.zoneNow} />
+      <Header card={card} zoneNow={props.zoneNow} slug={props.editor.slug} />
       <CardTabs card={card} active={tab} onPick={setTab} />
       <div
         id={panelId(card.uid)}

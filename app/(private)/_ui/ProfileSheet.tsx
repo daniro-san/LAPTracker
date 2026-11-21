@@ -186,7 +186,9 @@ function Settings(props: {
     setBusy(false);
     if (r === SIGNED_OUT) return setNote({ at, text: SIGNED_OUT });
     if (typeof r === "string") {
-      setNote({ at, text: t[r === "invalid_name" ? "profile.invalid" : "profile.failed"] });
+      const key =
+        r === "invalid_name" ? "profile.invalid" : r === "taken" ? "me.taken" : "profile.failed";
+      setNote({ at, text: t[key] });
       return;
     }
     setMe(r);
