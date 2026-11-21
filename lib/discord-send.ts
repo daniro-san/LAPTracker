@@ -79,15 +79,18 @@ export async function sendOrEdit(
 
 /**
  * Edits `messageId` only, never posting again (D137): "ok", "gone" when Discord says the message was
- * deleted (404), or "failed" (anything else; a later edit may work).
+ * deleted (404), or "failed" (anything else; a later edit may work). `threadId`: the forum post or thread
+ * the message is in, which Discord needs to find it there.
  */
 export async function editOnly(
   fetchFn: typeof fetch,
   webhook: string,
   body: object,
   messageId: string,
+  threadId?: string | null,
 ): Promise<"ok" | "gone" | "failed"> {
-  const url = `${webhook}/messages/${encodeURIComponent(messageId)}`;
+  const thread = threadId ? `?thread_id=${encodeURIComponent(threadId)}` : "";
+  const url = `${webhook}/messages/${encodeURIComponent(messageId)}${thread}`;
   const res = await call(fetchFn, "PATCH", url, body);
   if (res?.ok) return "ok";
   return res?.status === 404 ? "gone" : "failed";
