@@ -99,6 +99,21 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.37.0",
+    date: "2026-11-21",
+    title: "The Raid Shield summary gets its own channel, and squads show 2 in front and 3 behind",
+    changes: [
+      'Alliance settings → Discord has a third card, "Raid Shield channel". The Raid Shield summary posts only there. If no Raid Shield channel is set up, no summary is posted; it never goes to the leaders\' channel.',
+      "A summary posted before this change is not edited again. The next shield window posts a fresh one in the Raid Shield channel.",
+      "Member card squads: the 2 front heroes (the tanks) sit on top and the 3 back heroes below, the same on a phone and on a computer. The old staggered shape is gone.",
+    ],
+    needsYou: [
+      'Before Friday 23:30 server time: in the OGs alliance\'s Alliance settings → Discord → Raid Shield channel, paste the webhook of #laptracker-ledger, then tap "Send a test message".',
+      "Open one of your squads on the member card and check that the 2 heroes on top are your front row (tanks). If not, tell Claude which positions are swapped.",
+    ],
+    prs: [563, 564],
+  },
+  {
     version: "v5.36.0",
     date: "2026-11-21",
     title: "The alliance's week in one line, patch notes, and real setup dates",
