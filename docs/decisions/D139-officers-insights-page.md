@@ -133,3 +133,5 @@ The issue's "74 of 98 at the coin cap" left out the members with no coin count. 
   - Code: `lib/private/insights-shield.ts` (pure: the Fridays, the windows, the weeks); `shieldWords` in `lib/private/insights-more-words.ts`; `ShieldCard` in `app/(private)/_ui/InsightsMore.tsx`. `Bars` gains `bare`, so a row with no share draws no empty track.
   - Copy: `insights.shield.*` in `dictionary.insights-more.ts` (EN, PT-BR, FR).
   - Tests: `lib/private/insights-kvk.test.ts` covers the Fridays, a check with no reading, a partial reading and a running morning. `lib/private/insights.test.ts` (PGlite) covers each week's counts over Friday's roster, a night-only week, a week with no check, another alliance's reading left out, and no card while the check is off.
+
+**Amendment (2026-11-21, issue 585):** the Raid Shield card is titled "Raid Shield check", each week is dated by its raid's Saturday ("Last raid, Sat, Nov 21: 89% seen with a shield at the morning check (night check: 29%)."), and its explanation is two sentences. See D137's amendment of that date.

@@ -8,7 +8,7 @@ export const pushEn = {
     "Get a notification on this phone or computer when something needs an officer. Each officer turns it on for their own devices.",
   "push.use.shield": "Raid Shield check",
   "push.use.shield.help":
-    "After Friday’s and Saturday’s reads: how many members were not seen with a shield yet.",
+    "After the night check and the morning check: how many members were not seen with a shield yet.",
   "push.use.night_read": "Night roster read failed",
   "push.use.night_read.help":
     "When tonight’s roster read and its retry both fail. Nothing to do then: off unless you want to know.",
@@ -50,7 +50,7 @@ export const pushPt: Record<keyof typeof pushEn, string> = {
     "Receba uma notificação neste celular ou computador quando algo precisar de um oficial. Cada oficial ativa nos próprios aparelhos.",
   "push.use.shield": "Conferência do Escudo de raid",
   "push.use.shield.help":
-    "Depois das leituras de sexta e de sábado: quantos membros ainda estão sem escudo visto.",
+    "Depois da conferência da noite e da conferência da manhã: quantos membros ainda estão sem escudo visto.",
   "push.use.night_read": "Leitura noturna da lista falhou",
   "push.use.night_read.help":
     "Quando a leitura da lista desta noite e a nova tentativa falham. Não há nada a fazer: desligado, a não ser que você queira saber.",
@@ -92,7 +92,7 @@ export const pushFr: Record<keyof typeof pushEn, string> = {
     "Recevez une notification sur ce téléphone ou cet ordinateur quand quelque chose attend un officier. Chaque officier l’active sur ses propres appareils.",
   "push.use.shield": "Vérification du Bouclier de raid",
   "push.use.shield.help":
-    "Après les lectures de vendredi et de samedi : combien de membres n’ont pas encore de bouclier vu.",
+    "Après la vérification du soir et la vérification du matin : combien de membres n’ont pas encore de bouclier vu.",
   "push.use.night_read": "Échec de la lecture de nuit",
   "push.use.night_read.help":
     "Quand la lecture de la liste de ce soir et sa nouvelle tentative échouent. Rien à faire alors : désactivé, sauf si vous voulez le savoir.",

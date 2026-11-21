@@ -64,3 +64,5 @@ Why: officers mark the KvK shield, the Undead Siege, plunders and the Elixir Scr
 - **Raid prep's bar names its part and the left-out:** "Shield: 61 not set · 16 not seen yet, left out" above "Mark the other 45 as no problem seen" (persona review: the three counts read as different numbers).
 - **The legend is the summary of "How this works"**, and Raid prep's two tracker explanations ("The tracker sees a shield at its map scan …", "Marks ✓ Shield up for everyone …") moved inside it; the tracker card keeps its read lines and "Accept the tracker's (n)". So a 360 phone's first screen reaches the tiles (persona review).
 - **No new query.** A tap is still one POST to the roll call route, with the version it saw (409 as above); nothing polls. The bulk writes still read the page again once, as before.
+
+**Amendment (2026-11-21, issue 585):** "the rest" reads "Mark the other 57 as “Took part”", "Someone is away" reads "Add away dates", the Roll call list's link reads "Mark ›", the sticky bar is one line below 640, and a picked Elixir Scramble member away that day shows "Away that day". See D137's amendment of that date.

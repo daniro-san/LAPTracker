@@ -17,6 +17,7 @@ export interface ShieldPostWords {
   hint: string;
   more: string;
   link: string;
+  /** The read lines' names: the night check and the morning check, as the desk says (issue 585). */
   fri: string;
   sat: string;
 }
@@ -31,8 +32,8 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
     hint: "The tracker sees shields at its map scan: a shield turned on since may not show yet.",
     more: "and {n} more",
     link: "[Raid prep ↗](<{url}>)",
-    fri: "Fri",
-    sat: "Sat",
+    fri: "Night check",
+    sat: "Morning check",
   },
   "pt-BR": {
     title: "**Conferência do Escudo de raid**",
@@ -43,8 +44,8 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
     hint: "O tracker vê o escudo na varredura do mapa: um escudo ligado depois pode não aparecer ainda.",
     more: "e mais {n}",
     link: "[Preparação do raid ↗](<{url}>)",
-    fri: "Sex",
-    sat: "Sáb",
+    fri: "Conferência da noite",
+    sat: "Conferência da manhã",
   },
   fr: {
     title: "**Vérification du Bouclier de raid**",
@@ -55,7 +56,7 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
     hint: "Le tracker voit les boucliers lors de son scan de la carte : un bouclier activé depuis peut ne pas encore apparaître.",
     more: "et {n} de plus",
     link: "[Préparation du raid ↗](<{url}>)",
-    fri: "ven.",
-    sat: "sam.",
+    fri: "Vérification du soir",
+    sat: "Vérification du matin",
   },
 };

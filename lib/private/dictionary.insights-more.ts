@@ -59,21 +59,21 @@ export const insightsMoreEn = {
   "insights.squads.noTime": "The tracker sent no time",
   "insights.squads.power": "Strongest squad’s might, in four equal groups (middle value)",
   "insights.squads.band": "{low} – {high}",
-  "insights.shield.head": "Raid Shield history",
+  "insights.shield.head": "Raid Shield check",
   "insights.shield.headline":
-    "Last raid, {date}: {morning} seen with a shield in the morning (Friday night: {night}).",
+    "Last raid, {date}: {morning} seen with a shield at the morning check (night check: {night}).",
   "insights.shield.headlineMorning":
-    "Last raid, {date}: {morning} seen with a shield in the morning; no reading on Friday night.",
+    "Last raid, {date}: {morning} seen with a shield at the morning check; no reading at the night check.",
   "insights.shield.headlineNight":
-    "Last raid, {date}: {night} seen with a shield on Friday night; no morning reading.",
+    "Last raid, {date}: {night} seen with a shield at the night check; no reading at the morning check.",
   "insights.shield.headlineRunning":
-    "Last raid, {date}: the morning check is under way (Friday night: {night}).",
+    "Last raid, {date}: the morning check is under way (night check: {night}).",
   "insights.shield.headlineRunningNoNight": "Last raid, {date}: the morning check is under way.",
   "insights.shield.none":
-    "No Raid Shield check has a reading in the last {n} weeks. This fills in after the next Friday night.",
+    "No Raid Shield check has a reading in the last {n} weeks. This fills in after the next night check, on Friday from 23:30 ST.",
   "insights.shield.thanks": "Thank you to everyone who turned on a shield.",
   "insights.shield.lead":
-    "From the tracker’s map scans at the night check (Friday night, 23:00–00:00 ST) and the morning check (Saturday morning, before KvK at 12:00 ST). Seen at the map scan; a shield turned on later may not show. The night check runs before the reset on map scans 1 to 7 hours old, so most shields turned on for the raid show only in the morning. Members with no reading are left out, and a week with no check shows no reading.",
+    "The night check reads every member on Friday from 23:30 ST (readings from 23:00 to 00:00 ST count), the morning check on Saturday before KvK at 12:00 ST. The tracker sees a shield at its map scan, every 1 to 7 hours, so a shield turned on late may not show; members with no reading are left out.",
   "insights.shield.weeks": "Week by week, the newest first",
   "insights.shield.night": "Night check",
   "insights.shield.morning": "Morning check",
@@ -143,25 +143,25 @@ export const insightsMorePt: MoreWords = {
   "insights.squads.noTime": "O tracker não mandou a hora",
   "insights.squads.power": "Poder do esquadrão mais forte, em quatro grupos iguais (valor do meio)",
   "insights.squads.band": "{low} – {high}",
-  "insights.shield.head": "Histórico do Escudo de raid",
+  "insights.shield.head": "Conferência do Escudo de raid",
   "insights.shield.headline":
-    "Último raid, {date}: {morning} vistos com escudo de manhã (sexta à noite: {night}).",
+    "Último raid, {date}: {morning} vistos com escudo na conferência da manhã (conferência da noite: {night}).",
   "insights.shield.headlineMorning":
-    "Último raid, {date}: {morning} vistos com escudo de manhã; sem leitura na sexta à noite.",
+    "Último raid, {date}: {morning} vistos com escudo na conferência da manhã; sem leitura na conferência da noite.",
   "insights.shield.headlineNight":
-    "Último raid, {date}: {night} vistos com escudo na sexta à noite; sem leitura de manhã.",
+    "Último raid, {date}: {night} vistos com escudo na conferência da noite; sem leitura na conferência da manhã.",
   "insights.shield.headlineRunning":
-    "Último raid, {date}: a checagem da manhã está em andamento (sexta à noite: {night}).",
+    "Último raid, {date}: a conferência da manhã está em andamento (conferência da noite: {night}).",
   "insights.shield.headlineRunningNoNight":
-    "Último raid, {date}: a checagem da manhã está em andamento.",
+    "Último raid, {date}: a conferência da manhã está em andamento.",
   "insights.shield.none":
-    "Nenhuma conferência do Escudo de raid tem leitura nas últimas {n} semanas. Aparece depois da próxima sexta à noite.",
+    "Nenhuma Conferência do Escudo de raid tem leitura nas últimas {n} semanas. Aparece depois da próxima conferência da noite, na sexta a partir das 23:30 ST.",
   "insights.shield.thanks": "Obrigado a todos que ligaram o escudo.",
   "insights.shield.lead":
-    "Das varreduras do mapa do tracker na checagem da noite (sexta à noite, 23:00–00:00 ST) e na da manhã (sábado de manhã, antes da KvK às 12:00 ST). Visto na varredura do mapa; um escudo ligado depois pode não aparecer. A checagem da noite roda antes do reset, com varreduras do mapa de 1 a 7 horas atrás, então a maioria dos escudos ligados para o raid só aparece de manhã. Membros sem leitura ficam de fora, e uma semana sem checagem aparece sem leitura.",
+    "A conferência da noite lê todos os membros na sexta a partir das 23:30 ST (contam as leituras das 23:00 às 00:00 ST), e a da manhã no sábado, antes do KvK às 12:00 ST. O tracker vê o escudo na varredura do mapa, a cada 1 a 7 horas, então um escudo ligado tarde pode não aparecer; membros sem leitura ficam de fora.",
   "insights.shield.weeks": "Semana a semana, a mais recente primeiro",
-  "insights.shield.night": "Checagem da noite",
-  "insights.shield.morning": "Checagem da manhã",
+  "insights.shield.night": "Conferência da noite",
+  "insights.shield.morning": "Conferência da manhã",
   "insights.shield.of": "{seen} vistos de {read} lidos",
   "insights.shield.notRead": "{n} sem leitura",
   "insights.shield.noReading": "sem leitura",
@@ -228,22 +228,22 @@ export const insightsMoreFr: MoreWords = {
   "insights.squads.power":
     "Puissance de l’escouade la plus forte, en quatre groupes égaux (valeur du milieu)",
   "insights.squads.band": "{low} – {high}",
-  "insights.shield.head": "Historique du Bouclier de raid",
+  "insights.shield.head": "Vérification du Bouclier de raid",
   "insights.shield.headline":
-    "Dernier raid, {date} : {morning} vus avec un bouclier le matin (vendredi soir : {night}).",
+    "Dernier raid, {date} : {morning} vus avec un bouclier à la vérification du matin (vérification du soir : {night}).",
   "insights.shield.headlineMorning":
-    "Dernier raid, {date} : {morning} vus avec un bouclier le matin ; pas de lecture le vendredi soir.",
+    "Dernier raid, {date} : {morning} vus avec un bouclier à la vérification du matin ; pas de lecture à la vérification du soir.",
   "insights.shield.headlineNight":
-    "Dernier raid, {date} : {night} vus avec un bouclier le vendredi soir ; pas de lecture le matin.",
+    "Dernier raid, {date} : {night} vus avec un bouclier à la vérification du soir ; pas de lecture à la vérification du matin.",
   "insights.shield.headlineRunning":
-    "Dernier raid, {date} : la vérification du matin est en cours (vendredi soir : {night}).",
+    "Dernier raid, {date} : la vérification du matin est en cours (vérification du soir : {night}).",
   "insights.shield.headlineRunningNoNight":
     "Dernier raid, {date} : la vérification du matin est en cours.",
   "insights.shield.none":
-    "Aucune vérification du Bouclier de raid n’a de lecture ces {n} dernières semaines. Elle se remplira après le prochain vendredi soir.",
+    "Aucune vérification du Bouclier de raid n’a de lecture ces {n} dernières semaines. Elle se remplira après la prochaine vérification du soir, le vendredi à partir de 23:30 ST.",
   "insights.shield.thanks": "Merci à tous ceux qui ont activé un bouclier.",
   "insights.shield.lead":
-    "D’après les scans de la carte du tracker à la vérification du soir (vendredi soir, 23:00–00:00 ST) et à celle du matin (samedi matin, avant la KvK à 12:00 ST). Vu lors du scan de la carte ; un bouclier activé plus tard peut ne pas apparaître. La vérification du soir a lieu avant la réinitialisation, sur des scans de la carte vieux de 1 à 7 heures : la plupart des boucliers activés pour le raid n’apparaissent que le matin. Les membres sans lecture sont laissés de côté, et une semaine sans vérification s’affiche sans lecture.",
+    "La vérification du soir lit chaque membre le vendredi à partir de 23:30 ST (les lectures de 23:00 à 00:00 ST comptent), celle du matin le samedi avant le KvK à 12:00 ST. Le tracker voit un bouclier lors de son scan de la carte, toutes les 1 à 7 heures : un bouclier activé tard peut ne pas apparaître ; les membres sans lecture sont laissés de côté.",
   "insights.shield.weeks": "Semaine par semaine, la plus récente d’abord",
   "insights.shield.night": "Vérification du soir",
   "insights.shield.morning": "Vérification du matin",

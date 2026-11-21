@@ -5,11 +5,12 @@
 // then the other team's members (not pickable). One tap picks or takes off; "Add the first n suggested"
 // fills the free places in that order. The counter and that button stay at the top. What is picked comes
 // from the page's rows plus the changes still in flight, so a read again (coming back to the page) shows
-// other officers' picks. The order stays as the page opened.
+// other officers' picks. The order stays as the page opened. A picked member away that day says so.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip, FIELD } from "@/lib/brand/components/controls";
+import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
@@ -48,6 +49,12 @@ function TeamRow(props: {
         <p translate="no" className="truncate font-semibold">
           <bdi>{row.name}</bdi>
         </p>
+        {/* A picked member away on the team's day needs a look (issue 585). */}
+        {row.away && (
+          <p>
+            <Tag tone="attention">{row.away}</Tag>
+          </p>
+        )}
         {line && <p className="text-body-sm text-ink/75">{line}</p>}
       </div>
       <button

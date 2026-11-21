@@ -3,6 +3,7 @@
 // lines that say what each rests on. The only names are the help list and the per-member list, both in
 // name order (D75); the Raid Shield history is counts only.
 import { fill } from "../copy";
+import { addDays } from "./calendar-time";
 import { calendarDates } from "./calendar-words";
 import type { WorkspaceKey } from "./dictionary";
 import { NONE } from "./fact-text";
@@ -206,8 +207,10 @@ export function shieldWords(weeks: ShieldWeek[], f: Formats): ShieldWords {
       ].join(" · "),
     };
   };
+  // A week is dated by its raid, Saturday 00:00 ST: the morning check is Saturday's (issue 585).
+  const raidDay = (friday: string) => dates.short(addDays(friday, 1));
   const last = weeks.find((w) => w.night || w.morning);
-  const date = last ? dates.short(last.friday) : "";
+  const date = last ? raidDay(last.friday) : "";
   const night = last?.night ? share(last.night) : null;
   let headline = fill(t["insights.shield.none"], { n: SHIELD_WEEKS });
   if (last?.morning?.running)
@@ -222,7 +225,7 @@ export function shieldWords(weeks: ShieldWeek[], f: Formats): ShieldWords {
   return {
     headline,
     weeks: weeks.map((w) => ({
-      label: dates.short(w.friday),
+      label: raidDay(w.friday),
       rows:
         w.night || w.morning
           ? [row(t["insights.shield.night"], w.night), row(t["insights.shield.morning"], w.morning)]

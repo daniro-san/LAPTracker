@@ -1,11 +1,12 @@
 "use client";
 
-// One member's tile on Raid prep (issue 474, D137; a grid tile since issue 412): the name, the tracker's
-// line with the map scan's time on both clocks, the Shield pair and the Squads off the wall pair (each
-// ✓ / ✗, 44 px, the same button again clears), and the ready private message in the member's language with only the parts not yet ✓. The
-// tracker's line is a hint (D75): "not seen yet" is never shown as a ✗. A ✓ the tick wrote from the
-// tracker's reading says "from the tracker" under it (D137, 2026-11-21).
-import { useState } from "react";
+// One member's tile on Raid prep (issue 474, D137; a grid tile since issue 412, compact since issue 585):
+// the name and the Shield's word beside its ✓ / ✗ pair (44 px, the same button again clears), the tracker's
+// checkpoints on one line at their map scans' server time, the Squads off the wall pair only when the page
+// shows it or the member has a wall mark, and one footer line: the ready private message in the member's
+// language with only the parts not yet ✓. The tracker's line is a hint (D75). A mark the tick wrote from
+// the tracker's reading says "from the tracker" beside it (D137, 2026-11-21).
+import { Fragment, useState, type ReactNode } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { fill, isolate } from "@/lib/copy";
@@ -18,28 +19,28 @@ import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
 import { tileClass } from "./RollCallGrid";
 import { MarkLine } from "./RollCallMarks";
 
+/** One part's words beside its ✓ / ✗ pair: the top line (the name, or the part's label), then its mark. */
 function Pair(props: {
-  label: string;
+  top: ReactNode;
   name: string;
   mark: Mark | null;
   words: { yes: string; no: string; assumed?: string };
   button: string;
   notSet: string;
-  /** "from the tracker", under the mark the tick wrote. */
+  /** "from the tracker", beside the mark the tick wrote. */
   source?: string | null;
   onTap: (tapped: "yes" | "no") => void;
 }) {
-  // Every mark shows its word, "no problem seen" too (it has no button of its own), as RollCallMarks does;
-  // "Not set" while there is none, so the tile keeps its height. The label, the word and the buttons are the
-  // tile's three rows (subgrid), so a label that wraps keeps both pairs' buttons level.
   return (
-    <div className="row-span-3 grid min-w-0 grid-rows-subgrid">
-      <p className="text-body-sm text-ink/80">{props.label}</p>
-      <div className="min-w-0">
-        <MarkLine mark={props.mark} words={props.words} notSet={props.notSet} />
-        {props.source && <p className="truncate text-label text-ink/75">{props.source}</p>}
+    <div className="flex items-start gap-2">
+      <div className="min-w-0 flex-1">
+        {props.top}
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+          <MarkLine mark={props.mark} words={props.words} notSet={props.notSet} />
+          {props.source && <span className="text-label text-ink/75">{props.source}</span>}
+        </div>
       </div>
-      <div className="mt-0.5 grid grid-cols-2 gap-2">
+      <div className="grid shrink-0 grid-cols-2 gap-2">
         {(["yes", "no"] as const).map((v) => (
           <button
             key={v}
@@ -47,7 +48,7 @@ function Pair(props: {
             aria-pressed={props.mark === v}
             aria-label={fill(props.button, { word: props.words[v], name: isolate(props.name) })}
             onClick={() => props.onTap(v)}
-            className={`${chip(props.mark === v)} min-h-11 justify-center text-[22px]`}
+            className={`${chip(props.mark === v)} min-h-11 min-w-11 justify-center text-[22px]`}
           >
             <span aria-hidden="true">{v === "yes" ? "✓" : "✗"}</span>
           </button>
@@ -57,23 +58,25 @@ function Pair(props: {
   );
 }
 
-/** The tracker's checkpoints that happened, one short line each: "Night · 22:33 ST: shield seen". */
-function TrackerLines({ tr }: { tr: PrepTrackerView }) {
+/**
+ * The tracker's checkpoints that happened, on one line: "Night 22:33: seen · Morning 07:15: not seen".
+ * "Not seen" is in yarn, and bold only while the Shield is not marked yet (panel review, issue 585).
+ */
+function TrackerLine({ tr, marked }: { tr: PrepTrackerView; marked: boolean }) {
+  const notSeen = marked ? "text-yarn" : "font-semibold text-yarn";
   return (
-    <>
-      {tr.checks.map((c) => (
-        <p
-          key={c.text}
-          className={`text-body-sm ${c.on ? "text-ink/80" : "font-semibold text-yarn"}`}
-        >
-          {c.text}
-        </p>
+    <p className="mt-0.5 text-body-sm">
+      {tr.checks.map((c, i) => (
+        <Fragment key={c.text}>
+          {i > 0 && <span className="text-ink/80"> · </span>}
+          <span className={`whitespace-nowrap ${c.on ? "text-ink/80" : notSeen}`}>{c.text}</span>
+        </Fragment>
       ))}
-    </>
+    </p>
   );
 }
 
-function MessageBox(props: { text: string; head: string; words: RollSheetWords }) {
+function MessageBox(props: { text: string; head: string; name: string; words: RollSheetWords }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -84,9 +87,11 @@ function MessageBox(props: { text: string; head: string; words: RollSheetWords }
     }
   };
   return (
-    <details className="mt-1" onToggle={() => setCopied(false)}>
+    <details onToggle={() => setCopied(false)}>
       <summary className="flex min-h-11 cursor-pointer items-center text-body-sm font-semibold text-plum underline underline-offset-4">
         {props.words["roll.prep.message"]}
+        {/* Each tile's "Message" is named for screen readers: "Message for Ana" (panel review, issue 585). */}
+        <span className="sr-only">{` ${fill(props.words["roll.prep.messageTo"], { name: isolate(props.name) })}`}</span>
       </summary>
       <p className="text-body-sm text-ink/80">{props.head}</p>
       <textarea readOnly value={props.text} rows={3} className={`${FIELD} mt-1 text-[16px]`} />
@@ -113,11 +118,45 @@ function messageOf(
   return { text, head };
 }
 
+/** The optional Squads off the wall pair, under a hairline (issue 585: only when needed). */
+function WallPart(props: {
+  name: string;
+  mark: Mark | null;
+  words: RollSheetWords;
+  onTap: (tapped: "yes" | "no") => void;
+}) {
+  const { words } = props;
+  return (
+    <div className="mt-1 border-t border-rule pt-1">
+      <Pair
+        top={<p className="truncate text-body-sm text-ink/80">{words["roll.prep.wall"]}</p>}
+        name={props.name}
+        mark={props.mark}
+        words={{ yes: words["roll.prep.wall.yes"], no: words["roll.prep.wall.no"] }}
+        button={words["roll.button"]}
+        notSet={words["roll.notSet"]}
+        onTap={props.onTap}
+      />
+    </div>
+  );
+}
+
+/** The Shield's words: the morning check's ✗ is a reading, "No shield seen · from the tracker" (D137). */
+const trackerWords = (fromTracker: boolean, marks: MarkWords, words: RollSheetWords) =>
+  fromTracker
+    ? {
+        words: { ...marks, no: words["roll.prep.noShieldSeen"] },
+        source: words["roll.prep.fromTracker"],
+      }
+    : { words: marks, source: null };
+
 export function RaidPrepRow(props: {
   row: MarkRowView;
   prep: PrepRowView | undefined;
   shield: Mark | null;
   wall: Mark | null;
+  /** The page shows the Squads off the wall pair; a member with a wall mark shows it anyway. */
+  showWall: boolean;
   /** The Shield ✓ is still the tick's (no officer wrote it since): "from the tracker". */
   fromTracker: boolean;
   note: string | undefined;
@@ -135,42 +174,30 @@ export function RaidPrepRow(props: {
   };
   const message = messageOf(prep, row.name, props.when, done, words);
   return (
-    <li className={tileClass(props.shield !== null && props.wall !== null)}>
-      <p translate="no" className="truncate font-semibold">
-        <bdi>{row.name}</bdi>
-      </p>
-      {prep?.tracker && <TrackerLines tr={prep.tracker} />}
+    // Tinted once the Shield is marked: the counted part, as the chips and "Marked (n)" (issue 585).
+    <li className={tileClass(props.shield !== null)}>
+      <Pair
+        top={
+          <p translate="no" className="truncate font-semibold">
+            <bdi>{row.name}</bdi>
+          </p>
+        }
+        name={row.name}
+        mark={props.shield}
+        {...trackerWords(props.fromTracker, props.marks, words)}
+        button={words["roll.button"]}
+        notSet={words["roll.notSet"]}
+        onTap={props.onShield}
+      />
+      {prep?.tracker && <TrackerLine tr={prep.tracker} marked={props.shield !== null} />}
       {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
-      <div className="mt-1 grid grid-cols-2 gap-x-3">
-        <Pair
-          label={words["roll.prep.shield"]}
-          name={row.name}
-          mark={props.shield}
-          // The morning check's ✗ is a reading: "No shield seen" (D137, 2026-11-21).
-          words={
-            props.fromTracker
-              ? { ...props.marks, no: words["roll.prep.noShieldSeen"] }
-              : props.marks
-          }
-          button={words["roll.button"]}
-          notSet={words["roll.notSet"]}
-          source={props.fromTracker ? words["roll.prep.fromTracker"] : null}
-          onTap={props.onShield}
-        />
-        <Pair
-          label={words["roll.prep.wall"]}
-          name={row.name}
-          mark={props.wall}
-          words={{ yes: words["roll.prep.wall.yes"], no: words["roll.prep.wall.no"] }}
-          button={words["roll.button"]}
-          notSet={words["roll.notSet"]}
-          onTap={props.onWall}
-        />
-      </div>
+      {(props.showWall || props.wall !== null) && (
+        <WallPart name={row.name} mark={props.wall} words={words} onTap={props.onWall} />
+      )}
       {done.shield && done.wall ? (
         <p className="mt-1 text-body-sm text-ink/75">{words["roll.prep.allSet"]}</p>
       ) : (
-        <MessageBox text={message.text} head={message.head} words={words} />
+        <MessageBox text={message.text} head={message.head} name={row.name} words={words} />
       )}
     </li>
   );
