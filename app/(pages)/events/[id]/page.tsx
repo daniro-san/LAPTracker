@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { eventTitle, loadEventPage } from "@/app/_ui/event-page";
 import { EventView } from "@/app/_ui/EventView";
+import { notFoundTitle } from "@/app/_ui/locale";
 
 const idOf = (raw: string) => (/^\d{1,9}$/.test(raw) ? Number(raw) : null);
 
@@ -13,7 +14,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const id = idOf((await params).id);
-  return id === null ? {} : eventTitle(await loadEventPage(id));
+  const loaded = id === null ? null : await loadEventPage(id);
+  return loaded?.page ? eventTitle(loaded) : notFoundTitle();
 }
 
 export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {

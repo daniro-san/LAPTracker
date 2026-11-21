@@ -48,4 +48,29 @@ describe("AcrossEvents", () => {
     expect(heads).toEqual([l.event, l.might, l.kills, l.members]);
     expect(html).not.toContain(l.level);
   });
+
+  it("gives both times their day when the End falls on the day after the Start (issue 473)", async () => {
+    // A manual round: Start Nov 5, 20:01 and End Nov 6, 10:39 server time (UTC−2).
+    const [start, end] = [new Date("2026-11-05T22:01:00Z"), new Date("2026-11-06T12:39:00Z")];
+    const late: HistoryRow = {
+      ...row,
+      eventAtUtc: start,
+      updatedAt: end,
+      inEvent: {
+        fromAt: start,
+        fromPower: 900,
+        fromKills: 40,
+        power: 100,
+        kills: 10,
+        members: 0,
+        left: 0,
+      },
+    };
+    const { prelude } = await prerender(
+      await AcrossEvents({ unionId: 7, history: [late], clock: makeClock("en", "Etc/GMT+2") }),
+    );
+    const html = await new Response(prelude).text();
+    expect(html).toContain("Nov 6, 10:39 server time");
+    expect(html).toContain("since Nov 5, 20:01");
+  });
 });

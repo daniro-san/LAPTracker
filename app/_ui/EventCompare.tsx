@@ -12,14 +12,14 @@ import type { AllianceComparison, AllianceEventFigures, EventComparison } from "
 import { compareHref } from "./ComparePicker";
 import { DetailTable } from "./DetailLines";
 import { joinedText, leftText, allianceLabel, type Clock } from "./format";
-import { Delta, Num, Rank } from "./Num";
+import { Delta, Num, Rank, Ratio } from "./Num";
 import { AllianceBadge } from "./Pictures";
 import { LABEL, MoreBar } from "./StatTable";
 import { FreshDots, type FreshState } from "./Status";
 
 export const MUTED = "text-ink/70";
 export const NAME =
-  "text-link text-link-stretch min-w-0 break-words font-subhead text-display-sm leading-tight";
+  "text-link text-link-stretch min-w-0 name-fit font-subhead text-display-sm leading-tight";
 type Event = EventComparison["a"];
 
 /** ≥ 640 px: name · line head · one column per figure, shared by the header and every row. */
@@ -155,11 +155,26 @@ function allianceCells(f: AllianceEventFigures | null): ReactNode[] {
   ];
 }
 
+/** One difference: the second change minus the first, then `3.1×` when both went the same way (issue
+ * 473). No percent: a percent of a change read as nonsense ("−314.2%"). */
+export function Difference({ d }: { d: { delta: number; ratio: number | null } }) {
+  return (
+    <>
+      <Delta delta={d.delta} base={null} />
+      {d.ratio !== null && (
+        <span className="block">
+          <Ratio ratio={d.ratio} />
+        </span>
+      )}
+    </>
+  );
+}
+
 /** The difference line's cells: the second event's change minus the first's, `—` when either is missing. */
 export function differenceCells(pairs: [number | null | undefined, number | null | undefined][]) {
   return pairs.map(([first, second], i) => {
     const d = changeDifference(first, second);
-    return d ? <Delta key={i} delta={d.delta} base={d.base} stack /> : dash(String(i));
+    return d ? <Difference key={i} d={d} /> : dash(String(i));
   });
 }
 
@@ -251,7 +266,7 @@ export function AllianceCompareCard({
               {label}
             </Link>
           ) : (
-            <span className="min-w-0 break-words font-subhead text-display-sm leading-tight">
+            <span className="min-w-0 name-fit font-subhead text-display-sm leading-tight">
               {label}
             </span>
           )}

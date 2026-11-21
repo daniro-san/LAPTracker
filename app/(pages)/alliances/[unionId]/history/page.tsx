@@ -15,7 +15,7 @@ import { AllianceHead } from "@/app/_ui/AllianceHead";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { EmptyState } from "@/app/_ui/EmptyState";
 import { allianceLabel } from "@/app/_ui/format";
-import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
+import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { HISTORY_FILTERS, matchesFilter, type HistoryFilter } from "@/app/_ui/member-history";
 import { HistoryCardView } from "@/app/_ui/MemberHistory";
 import { previewImage } from "@/app/_ui/preview";
@@ -30,6 +30,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { allianceStatement, homeEvent, memberHistory, memberHistoryIndex } from "@/lib/queries";
 import { allianceOnBoard, detailsState, type BoardAlliance } from "@/lib/queries/alliance-list";
+import { countsOf } from "@/lib/queries/member-history";
 
 type Params = Promise<{ unionId: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -52,7 +53,12 @@ async function historyPage(
       name,
       badgeId,
       older,
-      entries: cards.map(({ at, event, since }) => ({ at, event, since })),
+      entries: cards.map((c) => ({
+        at: c.at,
+        event: c.event,
+        since: c.since,
+        counts: countsOf(c),
+      })),
     };
   }
   return memberHistoryIndex(db, unionId, { before });
@@ -154,7 +160,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const inputs = await inputsOf(params, searchParams);
   const data = inputs && (await load(inputs.unionId, inputs.before, inputs.show));
-  if (!data?.history) return {};
+  if (!data?.history) return notFoundTitle();
   const copy = await requestCopy();
   const { tag, name, unionId, badgeId } = data.history;
   const label = allianceLabel(tag ?? String(unionId), name);

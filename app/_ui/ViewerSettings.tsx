@@ -47,8 +47,34 @@ function writeCookie(name: string, value: string | null) {
       : `${name}=${encodeURIComponent(value)}; path=/; max-age=${YEAR}; samesite=lax`;
 }
 
-/** "America/Sao_Paulo" → "Sao Paulo": the zone's own city name, enough to confirm it. */
-const city = (zone: string) => (zone.split("/").pop() ?? zone).replaceAll("_", " ");
+/** The zones whose city name the IANA id writes without its accents, as CLDR's English names spell them
+ * (Intl has no city names; issue 473). */
+const ACCENTED: Record<string, string> = {
+  "Africa/Lome": "Lomé",
+  "Africa/Sao_Tome": "São Tomé",
+  "America/Araguaina": "Araguaína",
+  "America/Asuncion": "Asunción",
+  "America/Bahia_Banderas": "Bahía de Banderas",
+  "America/Belem": "Belém",
+  "America/Bogota": "Bogotá",
+  "America/Cancun": "Cancún",
+  "America/Ciudad_Juarez": "Ciudad Juárez",
+  "America/Cuiaba": "Cuiabá",
+  "America/Curacao": "Curaçao",
+  "America/Eirunepe": "Eirunepé",
+  "America/Maceio": "Maceió",
+  "America/Mazatlan": "Mazatlán",
+  "America/Merida": "Mérida",
+  "America/Santarem": "Santarém",
+  "America/Sao_Paulo": "São Paulo",
+  "America/St_Barthelemy": "St. Barthélemy",
+  "Atlantic/Reykjavik": "Reykjavík",
+  "Pacific/Noumea": "Nouméa",
+};
+
+/** "America/Sao_Paulo" → "São Paulo": the zone's own city name, enough to confirm it. */
+const city = (zone: string) =>
+  ACCENTED[zone] ?? (zone.split("/").pop() ?? zone).replaceAll("_", " ");
 
 function Group({
   legend,
@@ -202,7 +228,7 @@ export function ViewerSettings({ publicPage = true }: { publicPage?: boolean }) 
       className="group relative"
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
-      <summary className="drawn-frame-soft tint-button grid size-11 place-items-center rounded-xs group-open:bg-paper/20 [&::-webkit-details-marker]:hidden">
+      <summary className="drawn-frame-soft tint-button grid size-11 place-items-center rounded-xs group-open:bg-wax-paper/20 [&::-webkit-details-marker]:hidden">
         <Gear />
         <span className="sr-only">{copy.site.settings}</span>
       </summary>

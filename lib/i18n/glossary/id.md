@@ -28,7 +28,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | grandma                               | nenek                               | the voice in empty states and errors                                                                                       |
 | Member history                        | Riwayat anggota                     | `history.title` — the page title and its link on the event page                                                            |
 | Daily progress                        | Progres harian                      | `ledger.progress` — the player page's section heading                                                                      |
-| Middle member                         | Anggota tengah                      | `ledger.progressMedian` — the alliance's median member                                                                     |
+| Typical member                        | Anggota khas                        | `ledger.progressMedian` — the alliance's median member                                                                     |
 | English                               | id                                  | Key and use                                                                                                                |
 | -------------------------             | -----------------------------       | --------------------------------------------------------------------                                                       |
 | Server 325 · Event Ledger             | Server 325 · Buku Event             | `site.ledger` — the page title                                                                                             |
@@ -87,7 +87,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | grandma                               | nenek                               | the voice in empty states and errors                                                                                       |
 | Member history                        | Riwayat anggota                     | `history.title` — the page title and its link on the event page                                                            |
 | Daily progress                        | Progres harian                      | `ledger.progress` — the player page's section heading                                                                      |
-| Middle member                         | Anggota tengah                      | `ledger.progressMedian` — the alliance's median member                                                                     |
+| Typical member                        | Anggota khas                        | `ledger.progressMedian` — the alliance's median member                                                                     |
 | English                               | id                                  | Key and use                                                                                                                |
 | -------------------------             | -----------------------------       | --------------------------------------------------------------------                                                       |
 | Server 325 · Event Ledger             | Server 325 · Buku Event             | `site.ledger` — the page title                                                                                             |
@@ -148,7 +148,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | grandma                               | nenek                               | the voice in empty states and errors                                                                                       |
 | Member history                        | Riwayat anggota                     | `history.title` — the page title and its link on the event page                                                            |
 | Daily progress                        | Progres harian                      | `ledger.progress` — the player page's section heading                                                                      |
-| Middle member                         | Anggota tengah                      | `ledger.progressMedian` — the alliance's median member                                                                     |
+| Typical member                        | Anggota khas                        | `ledger.progressMedian` — the alliance's median member                                                                     |
 | English                               | id                                  | Key and use                                                                                                                |
 | -------------------------             | -----------------------------       | --------------------------------------------------------------------                                                       |
 | Server 325 · Event Ledger             | Server 325 · Buku Event             | `site.ledger` — the page title                                                                                             |
@@ -213,7 +213,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | grandma                               | nenek                               | the voice in empty states and errors                                                                                       |
 | Member history                        | Riwayat anggota                     | `history.title` — the page title and its link on the event page                                                            |
 | Daily progress                        | Progres harian                      | `ledger.progress` — the player page's section heading                                                                      |
-| Middle member                         | Anggota tengah                      | `ledger.progressMedian` — the alliance's median member                                                                     |
+| Typical member                        | Anggota khas                        | `ledger.progressMedian` — the alliance's median member                                                                     |
 | English                               | id                                  | Key and use                                                                                                                |
 | -------------------------             | -----------------------------       | --------------------------------------------------------------------                                                       |
 | Server 325 · Event Ledger             | Server 325 · Buku Event             | `site.ledger` — the page title                                                                                             |
@@ -272,7 +272,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | grandma                               | nenek                               | the voice in empty states and errors                                                                                       |
 | Member history                        | Riwayat anggota                     | `history.title` — the page title and its link on the event page                                                            |
 | Daily progress                        | Progres harian                      | `ledger.progress` — the player page's section heading                                                                      |
-| Middle member                         | Anggota tengah                      | `ledger.progressMedian` — the alliance's median member                                                                     |
+| Typical member                        | Anggota khas                        | `ledger.progressMedian` — the alliance's median member                                                                     |
 | English                               | id                                  | Key and use                                                                                                                |
 | -------------------------             | -----------------------------       | --------------------------------------------------------------------                                                       |
 | Server 325 · Event Ledger             | Server 325 · Buku Event             | `site.ledger` — the page title                                                                                             |
@@ -333,7 +333,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | grandma                               | nenek                               | the voice in empty states and errors                                                                                       |
 | Member history                        | Riwayat anggota                     | `history.title` — the page title and its link on the event page                                                            |
 | Daily progress                        | Progres harian                      | `ledger.progress` — the player page's section heading                                                                      |
-| Middle member                         | Anggota tengah                      | `ledger.progressMedian` — the alliance's median member                                                                     |
+| Typical member                        | Anggota khas                        | `ledger.progressMedian` — the alliance's median member                                                                     |
 | English                               | id                                  | Key and use                                                                                                                |
 | -------------------------             | -----------------------------       | --------------------------------------------------------------------                                                       |
 | Server 325 · Event Ledger             | Server 325 · Buku Event             | `site.ledger` — the page title                                                                                             |

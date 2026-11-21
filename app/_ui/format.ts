@@ -114,6 +114,15 @@ export interface ClockView {
  * UTC is that date in every zone from UTC−11 to UTC+11, which covers the server and the admins. */
 export const dayDate = (day: string): Date => new Date(`${day}T12:00:00Z`);
 
+/** Two times on different days of the viewer's clock: a Start and an End across midnight show the day on
+ * both (issue 473). */
+export const onTwoDays = (clock: Clock, a: Date | null | undefined, b: Date | null | undefined) =>
+  !!a && !!b && clock.day(a) !== clock.day(b);
+
+/** `20:01`, or `Nov 5, 20:01` with its day. */
+export const hhmmOn = (clock: Clock, d: Date, withDay: boolean) =>
+  withDay ? `${clock.day(d)}, ${clock.hhmm(d)}` : clock.hhmm(d);
+
 /** Dates and times for one request: the viewer's locale, the server's clock or the viewer's own
  * (DESIGN.md). */
 export interface Clock {

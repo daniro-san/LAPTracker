@@ -2,13 +2,10 @@
 import Link from "next/link";
 
 import { ErrorPage, primaryAction } from "@/app/_ui/ErrorPage";
-import { requestCopy } from "@/app/_ui/locale";
+import { notFoundTitle, requestCopy } from "@/app/_ui/locale";
 import { YarnLeftBehind } from "@/lib/brand/components/Vignettes";
 
-export async function generateMetadata() {
-  const copy = await requestCopy();
-  return { title: `${copy.errors.notFound.title} · ${copy.site.name}` };
-}
+export const generateMetadata = notFoundTitle;
 
 export default async function NotFound() {
   const copy = await requestCopy();

@@ -16,7 +16,7 @@ import { LABEL, MoreBar } from "./StatTable";
 
 const MUTED = "text-ink/70";
 
-/** `You: +4.1% since Nov 9. Middle member of [OGs]: +3.2%.` */
+/** `You: +4.1% since Nov 9. Typical [OGs] member: +3.2%.` */
 export function summaryText(p: Progress, clock: Clock, locale: string, copy: Dictionary) {
   const s = p.summary;
   if (!s) return null;
@@ -28,7 +28,7 @@ export function summaryText(p: Progress, clock: Clock, locale: string, copy: Dic
     /\.\.$/,
     ".",
   );
-  // No tag to name the alliance by: the sentence would read "Middle member of : …", so it is left out.
+  // No tag to name the alliance by: the sentence would read "Typical  member: …", so it is left out.
   const median =
     s.alliance?.tag &&
     fill(copy.ledger.progressMedian, {

@@ -120,3 +120,10 @@ export const requestServerClock = cache(async () => {
     date: parseDateFormat(jar.get(DATE_COOKIE)?.value),
   });
 });
+
+/** The 404 page's <title>, for a page that answers "not found" itself (an unknown player, event or
+ * alliance): without it the tab kept the bare site name (issue 473). */
+export const notFoundTitle = async () => {
+  const copy = await requestCopy();
+  return { title: `${copy.errors.notFound.title} · ${copy.site.name}` };
+};
