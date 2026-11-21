@@ -103,6 +103,18 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.41.0",
+    date: "2026-11-21",
+    title: "Desk pages read less of the database as data grows",
+    changes: [
+      "An audit of every read of a table that grows forever, measured on one invented year of data (10 alliances).",
+      "The Officers' Desk Home and Members pages now spend about half the database time per view (42.8 → 21.0 ms), and that time no longer grows as members' history grows.",
+      "/admin reads each roll call's first mark from a new index instead of reading every mark.",
+      "Every number on every page stays the same; an old-versus-new check compared them on the same data.",
+    ],
+    prs: [576],
+  },
+  {
     version: "v5.40.0",
     date: "2026-11-21",
     title: "Member cards close and stay closed on a phone",
