@@ -1,7 +1,8 @@
 // POST /api/w/[slug]/roll-call — the Roll call tab's writes (issue 298, D103): add a roll call by hand
 // (with the add sheet's request id, D100), mark one member (with the version the officer saw), mark "the
 // rest", undo that, pick or drop Elixir Scramble team members, delete a roll call or take the officer's own
-// delete back within 60 s (its request id, D120), and archive or unarchive one. Same origin and JSON only (D71), zod-
+// delete back within 60 s (its request id, D120), archive or unarchive one, and Raid prep's "Accept the
+// tracker's" and "Checked" (D137). Same origin and JSON only (D71), zod-
 // parsed, a session of this workspace (401 signed_out, D99). A mark another officer changed since answers
 // 409 with the newer mark in the officer's words. The lib calls run in `privately`; nothing is logged.
 import { z } from "zod";
@@ -20,7 +21,7 @@ import {
   privateError,
   requestCookies,
 } from "@/lib/private/http";
-import { acceptTracker } from "@/lib/private/raid-prep";
+import { acceptTracker, checkTracker } from "@/lib/private/raid-prep";
 import {
   addCall,
   archiveCall,
@@ -64,6 +65,14 @@ const body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("rest"), occasion, uids }).strict(),
   // D137: Raid prep's "Accept the tracker's".
   z.object({ action: z.literal("accept"), occasion, uids }).strict(),
+  // D137 (2026-11-21): Raid prep's "Checked": the tracker marks up to `seen` (epoch ms) are checked.
+  z
+    .object({
+      action: z.literal("check"),
+      occasion,
+      seen: z.number().int().positive().max(8.64e15),
+    })
+    .strict(),
   z
     .object({
       action: z.literal("undo"),
@@ -140,6 +149,10 @@ async function run(input: Body, c: Ctx): Promise<Response> {
     case "team": {
       const done = await privately("roll_call.team", () => setTeam(db, access, input, now));
       return done.ok ? ok(done) : privateError(STATUS[done.code], done.code);
+    }
+    case "check": {
+      const done = await privately("roll_call.check", () => checkTracker(db, access, input, now));
+      return done.ok ? ok() : privateError(STATUS[done.code], done.code);
     }
     default: {
       const done = await privately(`roll_call.${input.action}`, () => {

@@ -67,8 +67,7 @@ function Marks(props: { view: NonNullable<Page["data"]>; page: Page; occasion: O
     <RaidPrepMarks
       {...common}
       prep={prepRows(view.prep, t, page.zone)}
-      head={prepHead(view.prep, t)}
-      times={calendarWords(t)}
+      head={prepHead(view.prep, t, page.zone)}
     />
   );
 }

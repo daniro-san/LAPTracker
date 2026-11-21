@@ -26,6 +26,10 @@ export interface MarkRow {
   /** The officer's chosen name, else their Discord name; null when unknown. */
   by: string | null;
   at: Date;
+  /** Written by the tick from the Raid Shield check's reading (D137, 2026-11-21), not by an officer. */
+  tracker: boolean;
+  /** An officer wrote it (`written_by` set): a tap, or "Accept the tracker's" for a tracker mark. */
+  officer: boolean;
 }
 
 const markColumns = {
@@ -35,6 +39,8 @@ const markColumns = {
   mark: rollCallMarks.mark,
   by: sql<string | null>`coalesce(${workspaceUsers.chosenName}, ${workspaceUsers.displayName})`,
   at: rollCallMarks.writtenAt,
+  tracker: rollCallMarks.byTracker,
+  officer: sql<boolean>`${rollCallMarks.writtenBy} is not null`,
 };
 
 export async function findCall(
@@ -196,6 +202,26 @@ export async function insertMarks(
     .values(rows)
     .onConflictDoNothing()
     .returning({ uid: rollCallMarks.uid, version: rollCallMarks.version });
+}
+
+/**
+ * Raid prep's "Checked" (D137, 2026-11-21): the tracker marks up to `seen` (the newest one the officer
+ * saw) are checked. It never moves back, so an older page cannot undo a newer press. False: no such live
+ * roll call in the workspace.
+ */
+export async function checkTrackerMarks(
+  db: Db,
+  workspaceId: number,
+  callId: number,
+  seen: Date,
+): Promise<boolean> {
+  const at = seen.toISOString();
+  const rows = await db
+    .update(rollCalls)
+    .set({ trackerCheckedAt: sql`greatest(${rollCalls.trackerCheckedAt}, ${at}::timestamptz)` })
+    .where(and(eq(rollCalls.workspaceId, workspaceId), eq(rollCalls.id, callId), live))
+    .returning({ id: rollCalls.id });
+  return rows.length > 0;
 }
 
 /** The members of these Elixir Scramble teams. */

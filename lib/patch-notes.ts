@@ -99,6 +99,20 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.38.0",
+    date: "2026-11-21",
+    title: "Raid prep marks itself from the tracker's night and morning checks",
+    changes: [
+      'Raid prep no longer claims a shield length. The tracker reports the same shield type for an 8 h and a 24 h shield, so a row now says only "shield seen" and when the map was scanned. The "May end before KvK" tag is gone.',
+      "After Friday night's shield reading (before the server reset), the tracker marks ✓ for every member it saw with a shield.",
+      'After Saturday morning\'s reading, it marks ✓ for members still seen with a shield and ✗ "No shield seen" for the rest. Nothing is erased: each row keeps a small history, for example "Night · 22:33 ST: shield seen" and "Morning · 07:15 ST: no shield seen".',
+      'Marks the tracker wrote say "from the tracker". A notice at the top asks an officer to check them; "Checked" hides it. Members with a morning ✗ are listed first, and their ready message asks for the shield.',
+      "An officer's own ✓ or ✗ always wins: the tracker never writes over it. Away members are skipped, and nothing is posted to Discord from this step.",
+      "If the week's Raid prep roll call doesn't exist yet, the first reading creates it.",
+    ],
+    prs: [567],
+  },
+  {
     version: "v5.37.0",
     date: "2026-11-21",
     title: "The Raid Shield summary gets its own channel, and squads show 2 in front and 3 behind",

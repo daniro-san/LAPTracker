@@ -3,22 +3,20 @@
 // One member's tile on Raid prep (issue 474, D137; a grid tile since issue 412): the name, the tracker's
 // line with the map scan's time on both clocks, the Shield pair and the Squads off the wall pair (each
 // ✓ / ✗, 44 px, the same button again clears), and the ready private message in the member's language with only the parts not yet ✓. The
-// tracker's line is a hint (D75): "not seen yet" is never shown as a ✗.
+// tracker's line is a hint (D75): "not seen yet" is never shown as a ✗. A ✓ the tick wrote from the
+// tracker's reading says "from the tracker" under it (D137, 2026-11-21).
 import { useState } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
-import { Tag } from "@/lib/brand/components/Tag";
 import { fill, isolate } from "@/lib/copy";
 import { PREP_MESSAGE } from "@/lib/private/dictionary.raidprep";
 import type { Mark } from "@/lib/private/roll-call-rules";
 
-import type { CalendarSheetWords } from "./calendar-data";
 import type { PrepRowView, PrepTrackerView } from "./prep-data";
 import { prepMessage, shieldDone } from "./prep-message";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
 import { tileClass } from "./RollCallGrid";
 import { MarkLine } from "./RollCallMarks";
-import { Times } from "./YourTime";
 
 function Pair(props: {
   label: string;
@@ -27,6 +25,8 @@ function Pair(props: {
   words: { yes: string; no: string; assumed?: string };
   button: string;
   notSet: string;
+  /** "from the tracker", under the mark the tick wrote. */
+  source?: string | null;
   onTap: (tapped: "yes" | "no") => void;
 }) {
   // Every mark shows its word, "no problem seen" too (it has no button of its own), as RollCallMarks does;
@@ -35,7 +35,10 @@ function Pair(props: {
   return (
     <div className="row-span-3 grid min-w-0 grid-rows-subgrid">
       <p className="text-body-sm text-ink/80">{props.label}</p>
-      <MarkLine mark={props.mark} words={props.words} notSet={props.notSet} />
+      <div className="min-w-0">
+        <MarkLine mark={props.mark} words={props.words} notSet={props.notSet} />
+        {props.source && <p className="truncate text-label text-ink/75">{props.source}</p>}
+      </div>
       <div className="mt-0.5 grid grid-cols-2 gap-2">
         {(["yes", "no"] as const).map((v) => (
           <button
@@ -54,21 +57,18 @@ function Pair(props: {
   );
 }
 
-function TrackerLines({ tr, times }: { tr: PrepTrackerView; times: CalendarSheetWords }) {
+/** The tracker's checkpoints that happened, one short line each: "Night · 22:33 ST: shield seen". */
+function TrackerLines({ tr }: { tr: PrepTrackerView }) {
   return (
     <>
-      <p className="text-body-sm">
-        <span className={tr.on ? "text-ink/80" : "font-semibold text-yarn"}>{tr.text}</span>
-        {tr.map && (
-          <>
-            {" · "}
-            <Times st={tr.map.st} at={tr.map.at} day={tr.map.day} words={times} />
-          </>
-        )}
-      </p>
-      {tr.detail && <p className="text-body-sm text-ink/75">{tr.detail}</p>}
-      {tr.lost && <p className="text-body-sm font-semibold text-yarn">{tr.lost}</p>}
-      {tr.mayEnd && <Tag tone="attention">{tr.mayEnd}</Tag>}
+      {tr.checks.map((c) => (
+        <p
+          key={c.text}
+          className={`text-body-sm ${c.on ? "text-ink/80" : "font-semibold text-yarn"}`}
+        >
+          {c.text}
+        </p>
+      ))}
     </>
   );
 }
@@ -118,11 +118,12 @@ export function RaidPrepRow(props: {
   prep: PrepRowView | undefined;
   shield: Mark | null;
   wall: Mark | null;
+  /** The Shield ✓ is still the tick's (no officer wrote it since): "from the tracker". */
+  fromTracker: boolean;
   note: string | undefined;
   when: "reset" | "kvk";
   words: RollSheetWords;
   marks: MarkWords;
-  times: CalendarSheetWords;
   onShield: (tapped: "yes" | "no") => void;
   onWall: (tapped: "yes" | "no") => void;
 }) {
@@ -138,16 +139,22 @@ export function RaidPrepRow(props: {
       <p translate="no" className="truncate font-semibold">
         <bdi>{row.name}</bdi>
       </p>
-      {prep?.tracker && <TrackerLines tr={prep.tracker} times={props.times} />}
+      {prep?.tracker && <TrackerLines tr={prep.tracker} />}
       {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
       <div className="mt-1 grid grid-cols-2 gap-x-3">
         <Pair
           label={words["roll.prep.shield"]}
           name={row.name}
           mark={props.shield}
-          words={props.marks}
+          // The morning check's ✗ is a reading: "No shield seen" (D137, 2026-11-21).
+          words={
+            props.fromTracker
+              ? { ...props.marks, no: words["roll.prep.noShieldSeen"] }
+              : props.marks
+          }
           button={words["roll.button"]}
           notSet={words["roll.notSet"]}
+          source={props.fromTracker ? words["roll.prep.fromTracker"] : null}
           onTap={props.onShield}
         />
         <Pair

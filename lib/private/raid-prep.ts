@@ -4,21 +4,22 @@
 // API cannot say where squads are). The readings are the Raid Shield check's two reads of the alliance's
 // own members (`player_reads`, D132), only while `shield_check` is on (D134). They are attack-relevant:
 // nothing here is logged, cached or sent anywhere but this workspace's pages. People first (D75): "not
-// seen yet" and "may end before KvK" are hints, never a ✗, and "Accept the tracker's" writes only ✓.
+// seen yet" is a hint; the tracker's marks (lib/raid-prep-fill.ts) are ✓, and ✗ only from the morning
+// check, a dated reading the owner approved (D137, 2026-11-21), and never over an officer's mark. Each row
+// shows the night and morning checkpoints that happened. A seen shield's length is never shown:
+// `shield_type` 0 was seen for an 8 h and a 24 h shield (D137, 2026-11-21).
 import type { Db } from "../db";
-import { insertMarks, newestMarks, type MarkRow } from "../repo/roll-call";
+import { fridayOf, trackerMarks } from "../raid-prep-fill";
+import { checkTrackerMarks, newestMarks, type MarkRow } from "../repo/roll-call";
 import { shieldReadings, shieldSettingsOf, type StoredReading } from "../repo/shield-checks";
 import {
   kvkStart,
-  mayEndBeforeKvk,
   morningMinuteOf,
   passWindows,
-  shieldEndsBy,
   suggestionOf,
   type ShieldSuggestion,
 } from "../shield-check";
 import type { WorkspaceAccess } from "./access";
-import { addDays, mondayOf } from "./calendar-time";
 import { awayOn, type MemberFacts } from "./fact-fields";
 import { featureOn } from "./features";
 import { factsOf } from "./member-facts";
@@ -32,26 +33,32 @@ import {
   type Written,
 } from "./roll-call";
 
-/** The Friday whose night the roll call of `day` prepares: that week's (Monday + 4). */
-export const fridayOf = (day: string) => addDays(mondayOf(day), 4);
+export { fridayOf };
 
 /** The languages Raid prep's message is written in; any other is English. */
 export type MessageLanguage = "en" | "pt-BR" | "fr";
 
+/** One of the tracker's two checkpoints of a member (D137, 2026-11-21): its map scan's time (epoch ms). */
+export interface Checkpoint {
+  pass: "night" | "morning";
+  at: number;
+  on: boolean;
+}
+
 export interface TrackerHint {
   suggestion: ShieldSuggestion;
-  /** The map scan's time of the newest reading (epoch ms), shown on every row. */
-  mapAt: number | null;
-  /** The 8-hour shield's latest end; null for other kinds. */
-  endsBy: number | null;
-  mayEndBeforeKvk: boolean;
-  /** Seen on Friday night, not seen by the morning read: the two map scan times. */
-  lost: { night: number; morning: number } | null;
+  /** The night check, then the morning check: only those that happened, each with its map scan's time. */
+  checkpoints: Checkpoint[];
 }
 
 export interface PrepRow {
   tracker: TrackerHint | null;
   wall: { mark: string | null; version: number };
+  /**
+   * The Shield mark is the tick's, from the tracker's reading (D137, 2026-11-21); `unchecked` while no
+   * officer pressed "Checked" since it was written or tapped the row.
+   */
+  fromTracker: { unchecked: boolean } | null;
   /** The member's language for the message: their recorded one, else the game's, else English. */
   language: MessageLanguage;
 }
@@ -74,33 +81,24 @@ export interface PrepView {
   /** "before the reset" until Saturday 00:00 ST, then "before KvK". */
   when: "reset" | "kvk";
   rows: Map<number, PrepRow>;
+  /** The newest unchecked tracker mark's time (epoch ms): the notice's "reading at" and Checked's `seen`. */
+  toCheckAt: number | null;
 }
-
-const ms = (d: Date | null) => (d ? d.getTime() : null);
 
 /** The officers' recorded languages first, then the game's from either read, else English. */
 const languageOf = (facts: MemberFacts | undefined, game: (string | null)[]): MessageLanguage =>
   messageLanguage([...(facts?.languages?.value ?? []), ...game]) ?? "en";
 
-function hintOf(
-  night: StoredReading | null,
-  morning: StoredReading | null,
-  kvkAt: Date,
-): TrackerHint {
-  const newest = morning ?? night;
-  const lost =
-    night && morning && suggestionOf(night) === "on" && suggestionOf(morning) === "not_seen"
-      ? {
-          night: ms(night.mapAt ?? night.readAt) as number,
-          morning: ms(morning.mapAt ?? morning.readAt) as number,
-        }
-      : null;
+/** A checkpoint from a reading that said something; a missing field is no checkpoint (D75). */
+const checkpointOf = (pass: Checkpoint["pass"], r: StoredReading | null): Checkpoint[] =>
+  r && suggestionOf(r) !== "unknown"
+    ? [{ pass, at: (r.mapAt ?? r.readAt).getTime(), on: suggestionOf(r) === "on" }]
+    : [];
+
+function hintOf(night: StoredReading | null, morning: StoredReading | null): TrackerHint {
   return {
-    suggestion: suggestionOf(newest),
-    mapAt: ms(newest?.mapAt ?? null),
-    endsBy: ms(shieldEndsBy(newest)),
-    mayEndBeforeKvk: mayEndBeforeKvk(newest, kvkAt),
-    lost,
+    suggestion: suggestionOf(morning ?? night),
+    checkpoints: [...checkpointOf("night", night), ...checkpointOf("morning", morning)],
   };
 }
 
@@ -114,17 +112,37 @@ const countOf = (uids: Set<number>, readings: StoredReading[]): ReadCount | null
   };
 };
 
-/** One member's row: the tracker's hint (null while the check is off: `kvkAt` null), the wall mark. */
+/**
+ * Whether the tick's ✓ is still to check: written after the last "Checked" (`checkedAt`), and no wall
+ * tap on the row since (an officer's tap on the row counts as checking it).
+ */
+const unchecked = (main: MarkRow, wall: MarkRow | undefined, checkedAt: Date | null) =>
+  // A tracker mark "Accept the tracker's" wrote was checked by the officer who pressed it.
+  !main.officer && (checkedAt === null || main.at > checkedAt) && !(wall && wall.at > main.at);
+
+/** The row's Shield mark when the tick wrote it, and whether it is still to check. */
+const fromTrackerOf = (marks: {
+  main: MarkRow | undefined;
+  wall: MarkRow | undefined;
+  checkedAt: Date | null;
+}) =>
+  marks.main?.tracker && marks.main.mark !== null
+    ? { unchecked: unchecked(marks.main, marks.wall, marks.checkedAt) }
+    : null;
+
+/** One member's row: the tracker's hint (null while the check is off), the wall mark, the tick's ✓. */
 function prepRow(
   read: { night: StoredReading | null; morning: StoredReading | null },
-  wall: MarkRow | undefined,
+  marks: { main: MarkRow | undefined; wall: MarkRow | undefined; checkedAt: Date | null },
   facts: MemberFacts | undefined,
-  kvkAt: Date | null,
+  tracker: boolean,
 ): PrepRow {
   const seen = read.morning ?? read.night;
+  const { wall } = marks;
   return {
-    tracker: kvkAt && seen ? hintOf(read.night, read.morning, kvkAt) : null,
+    tracker: tracker && seen ? hintOf(read.night, read.morning) : null,
     wall: { mark: wall?.mark ?? null, version: wall?.version ?? 0 },
+    fromTracker: fromTrackerOf(marks),
     language: languageOf(facts, [read.morning?.language ?? null, read.night?.language ?? null]),
   };
 }
@@ -148,10 +166,12 @@ export async function prepView(
 ): Promise<PrepView> {
   const friday = fridayOf(opened.day);
   const tracker = featureOn(access, "shield_check");
-  const [roster, facts, wall, settings, reads] = await Promise.all([
+  const ids = opened.call ? [opened.call.id] : [];
+  const [roster, facts, main, wall, settings, reads] = await Promise.all([
     rosterOf(db, access),
     factsOf(db, access),
-    opened.call ? newestMarks(db, [opened.call.id], "wall") : Promise.resolve([] as MarkRow[]),
+    newestMarks(db, ids),
+    newestMarks(db, ids, "wall"),
     shieldSettingsOf(db, access.workspaceId),
     tracker
       ? readingsOf(db, access, friday, clock.zone)
@@ -160,13 +180,22 @@ export async function prepView(
   const kvkAt = kvkStart(friday, { SERVER_TZ: clock.zone });
   const nightOf = new Map(reads.night.map((r) => [r.uid, r]));
   const morningOf = new Map(reads.morning.map((r) => [r.uid, r]));
+  const mainOf = new Map(main.map((m) => [m.uid, m]));
   const wallOf = new Map(wall.map((m) => [m.uid, m]));
+  const checkedAt = opened.call?.trackerCheckedAt ?? null;
   const rows = new Map(
     roster.map((m) => {
       const read = { night: nightOf.get(m.uid) ?? null, morning: morningOf.get(m.uid) ?? null };
-      return [m.uid, prepRow(read, wallOf.get(m.uid), facts.get(m.uid), tracker ? kvkAt : null)];
+      const marks = { main: mainOf.get(m.uid), wall: wallOf.get(m.uid), checkedAt };
+      return [m.uid, prepRow(read, marks, facts.get(m.uid), tracker)];
     }),
   );
+  const toCheck = [...rows]
+    // The page lists away members apart, so their marks are not counted here either.
+    .filter(
+      ([uid, r]) => r.fromTracker?.unchecked && !awayOn(facts.get(uid), opened.day, clock.zone),
+    )
+    .map(([uid]) => mainOf.get(uid)?.at.getTime() ?? 0);
   const uids = new Set(roster.map((m) => m.uid));
   const reset = kvkAt.getTime() - 12 * 3_600_000;
   return {
@@ -178,13 +207,15 @@ export async function prepView(
     members: roster.length,
     when: clock.now.getTime() < reset ? "reset" : "kvk",
     rows,
+    toCheckAt: toCheck.length > 0 ? Math.max(...toCheck) : null,
   };
 }
 
 /**
  * "Accept the tracker's": every member in `uids` whom the newest reading saw shielded, not away that day
- * and with no Shield mark yet, gets ✓ Shield up. "Not seen yet" and "no reading" stay not set: a hint is
- * never a ✗ (D75). A member someone marked meanwhile keeps that mark.
+ * and with no Shield mark yet, gets ✓ Shield up as the tracker's mark, on the officer's name
+ * (lib/raid-prep-fill.ts, the tick's fill's code path): the morning check still updates it. "Not seen yet" and "no reading" stay not set: a hint is never a ✗ (D75). A member
+ * someone marked meanwhile keeps that mark.
  */
 export async function acceptTracker(
   db: Db,
@@ -196,27 +227,27 @@ export async function acceptTracker(
   const o = await openOccasion(db, access, input.occasion);
   if (!o) return { ok: false, code: "not_found" };
   if (o.kind !== "shield") return { ok: false, code: "invalid" };
-  const [roster, facts, reads] = await Promise.all([
-    rosterOf(db, access),
-    factsOf(db, access),
-    readingsOf(db, access, fridayOf(o.day), clock.zone),
-  ]);
-  const newest = new Map([...reads.night, ...reads.morning].map((r) => [r.uid, r]));
-  const asked = new Set(roster.map((m) => m.uid));
   const call = await ensureCall(db, access, o);
-  const marks = new Map((await newestMarks(db, [call.id])).map((m) => [m.uid, m]));
-  const rows = [...new Set(input.uids)]
-    .filter((uid) => asked.has(uid) && awayOn(facts.get(uid), o.day, clock.zone) === null)
-    .filter((uid) => suggestionOf(newest.get(uid) ?? null) === "on")
-    .filter((uid) => (marks.get(uid)?.mark ?? null) === null)
-    .map((uid) => ({
-      rollCallId: call.id,
-      uid,
-      part: "main" as const,
-      version: (marks.get(uid)?.version ?? 0) + 1,
-      mark: "yes",
-      writtenBy: access.user.id,
-      writtenAt: clock.now,
-    }));
-  return { ok: true, mark: "yes", written: await insertMarks(db, rows) };
+  const fill = { uids: input.uids, now: clock.now, zone: clock.zone, by: access.user.id };
+  const written = await trackerMarks(db, access, { id: call.id, day: o.day }, fill);
+  return { ok: true, mark: "yes", written };
+}
+
+/**
+ * "Checked" (D137, 2026-11-21): the tick's marks up to `seen` (the newest the officer's page showed) are
+ * checked, and the notice goes. Only on a Raid prep roll call of this workspace.
+ */
+export async function checkTracker(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { occasion: Occasion; seen: number },
+  now: Date,
+): Promise<{ ok: true } | { ok: false; code: "not_found" | "invalid" }> {
+  const o = await openOccasion(db, access, input.occasion);
+  if (!o?.call) return { ok: false, code: "not_found" };
+  if (o.kind !== "shield") return { ok: false, code: "invalid" };
+  // Never past now: a `seen` from the future would hide every later fill's notice (D75: never silent).
+  const seen = new Date(Math.min(input.seen, now.getTime()));
+  const done = await checkTrackerMarks(db, access.workspaceId, o.call.id, seen);
+  return done ? { ok: true } : { ok: false, code: "not_found" };
 }

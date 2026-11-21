@@ -1,15 +1,9 @@
 // The Raid Shield check's rules (D137): when each read runs on the server clock (UTC−2 here), and what a
-// reading says about a shield's end.
+// reading says: a shield seen or not, never its length.
 import { describe, expect, it } from "vitest";
 
 import { TEST_ENV } from "./app-context.test-helpers";
-import {
-  mayEndBeforeKvk,
-  morningMinuteOf,
-  shieldEndsBy,
-  shieldPassAt,
-  shieldWindowOpen,
-} from "./shield-check";
+import { morningMinuteOf, shieldPassAt, shieldWindowOpen, suggestionOf } from "./shield-check";
 
 const at = (iso: string) => new Date(iso);
 const pass = (iso: string, morning = 600) => shieldPassAt(at(iso), TEST_ENV, morning)?.pass ?? null;
@@ -35,19 +29,16 @@ describe("the Raid Shield check's rules (D137)", () => {
     expect(morningMinuteOf(null)).toBe(600);
   });
 
-  it("gives an 8-hour shield's latest end, only for shield_type 0 while shielding", () => {
+  it("says only that a shield was seen, whatever its shield_type (0 was seen for 8 h and 24 h)", () => {
     const seen = {
       shielding: 1,
       shieldType: 0,
       mapAt: at("2026-11-21T00:32:00Z"),
       readAt: at("2026-11-21T01:31:00Z"),
     };
-    expect(shieldEndsBy(seen)).toEqual(at("2026-11-21T08:32:00Z"));
-    expect(mayEndBeforeKvk(seen, at("2026-11-21T14:00:00Z"))).toBe(true);
-    expect(shieldEndsBy({ ...seen, shieldType: 1 })).toBeNull();
-    expect(shieldEndsBy({ ...seen, shielding: 0 })).toBeNull();
-    expect(
-      mayEndBeforeKvk({ ...seen, mapAt: at("2026-11-21T10:10:00Z") }, at("2026-11-21T14:00:00Z")),
-    ).toBe(false);
+    expect(suggestionOf(seen)).toBe("on");
+    expect(suggestionOf({ ...seen, shieldType: 2 })).toBe("on");
+    expect(suggestionOf({ ...seen, shielding: 0 })).toBe("not_seen");
+    expect(suggestionOf({ ...seen, shielding: null })).toBe("unknown");
   });
 });
