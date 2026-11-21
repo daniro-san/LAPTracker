@@ -41,6 +41,8 @@ export interface AllianceRow {
   errors: number;
   seen: string;
   changed: string;
+  /** The setup steps, for the Activity section under the table (D145). */
+  setup: AllianceUsage["setup"];
 }
 
 /**
@@ -136,6 +138,13 @@ export function allianceRow(input: {
     postsToday: 0,
     postsFailed: 0,
     errors24h: 0,
+    setup: {
+      created: null,
+      key_saved: null,
+      webhook: null,
+      first_roll_call: null,
+      first_notice: null,
+    },
   };
   const on = resolveFeatures(settingsFor(features, w), features.paused).on;
   const key = keyState(w, on.has("squads"), input.current, now);
@@ -171,6 +180,7 @@ export function allianceRow(input: {
       changed === 0 ? t.changedNone : fill(t.changed, { n: changed }),
       ...(view.allianceOff.length > 0 ? [fill(t.allianceOff, { n: view.allianceOff.length })] : []),
     ].join(" · "),
+    setup: u.setup,
   };
 }
 

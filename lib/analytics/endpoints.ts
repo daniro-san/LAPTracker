@@ -15,7 +15,7 @@ const TIMEOUT_MS = 3_000;
 /** Each Endpoint by its name in PostHog, pinned to a version so an edit there cannot change the answer's shape. */
 export const ENDPOINTS = {
   boardReach: { name: "lap_board_reach", version: 1 },
-  allianceUsage: { name: "lap_alliance_usage", version: 1 },
+  allianceUsage: { name: "lap_alliance_usage", version: 2 },
 } as const;
 export type Endpoint = (typeof ENDPOINTS)[keyof typeof ENDPOINTS];
 
@@ -82,11 +82,4 @@ export function shownTotal(cell: unknown): number | null {
   const n = typeof cell === "string" ? Number(cell) : cell;
   if (typeof n !== "number" || !Number.isInteger(n) || n < MIN_TOTAL) return null;
   return n - (n % MIN_TOTAL);
-}
-
-/** A first-time cell (`minIf`) as a date; null for none, including `minIf`'s 1970 for "never". */
-export function firstTime(cell: unknown): Date | null {
-  if (typeof cell !== "string" || cell === "") return null;
-  const at = new Date(cell);
-  return Number.isNaN(at.getTime()) || at.getUTCFullYear() < 2000 ? null : at;
 }
