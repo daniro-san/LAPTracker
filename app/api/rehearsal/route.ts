@@ -14,6 +14,9 @@ export function POST(request: Request): Promise<Response> {
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
     const result = await createRehearsal(db, ctx.now(), ctx.env);
+    // D141: the ticks must look for it in the database again. Also on "pending": a second press clears a
+    // kept "no rehearsal pending" that a tick stored while the first press was saved.
+    if (result.ok || result.reason === "pending") ctx.wakeCache.forget();
     if (!result.ok) return errorResponse(409, `rehearsal_${result.reason.replace("-", "_")}`);
     return Response.json(
       { event_id: result.eventId, before_at: result.beforeAt, after_at: result.afterAt },

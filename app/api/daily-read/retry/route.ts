@@ -28,6 +28,8 @@ export function POST(request: Request): Promise<Response> {
     const summary = await retryDailyRead(deps, db, ctx.env, targets);
     if (summary === "too-late") return errorResponse(409, "daily_read_too_late");
     if (!summary) return errorResponse(409, "daily_read_not_retryable");
+    // D141: a roster it brings gives the squads queue work again.
+    ctx.wakeCache.forget();
     return Response.json({
       day: summary.day,
       status: summary.status,

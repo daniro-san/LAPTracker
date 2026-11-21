@@ -74,6 +74,23 @@ describe("POST /api/rehearsal", () => {
     expect(await db.select().from(events).where(eq(events.isTest, true))).toHaveLength(1);
   });
 
+  it("forgets the ticks' kept facts on a press, and again on a second press refused as pending (D141)", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T12:00:00Z");
+    const keep = () => ctx.wakeCache.holds("no-rehearsal-pending", 60, async () => true);
+    /** True while the fact is still kept: a check that says false then cannot replace it. */
+    const kept = () => ctx.wakeCache.holds("no-rehearsal-pending", 60, async () => false);
+
+    await keep();
+    expect((await rehearse()).status).toBe(201);
+    expect(await kept()).toBe(false);
+    // A tick stored "no rehearsal pending" again while the press was saved: the second press clears it.
+    await keep();
+    expect((await rehearse()).status).toBe(409);
+    expect(await kept()).toBe(false);
+  });
+
   it("keeps REHEARSAL_KEEP rehearsals and deletes the oldest with all its rows", async () => {
     const { ctx, clock } = testContext(db, { ...TEST_ENV, REHEARSAL_KEEP: 2 });
     holder.ctx = ctx;

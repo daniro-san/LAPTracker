@@ -62,6 +62,8 @@ const body = z.discriminatedUnion("action", [
  * default); after the response, nothing when analytics is off.
  */
 function done(ctx: AppContext, action: DeskAction, where?: EventWorkspace): Response {
+  // D141: a switch may change the squads targets, so the ticks look at the queue again.
+  ctx.wakeCache.forget();
   const event: ServerEvent = {
     event: "ws_action",
     properties: { feature: "features", action },

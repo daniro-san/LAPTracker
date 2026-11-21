@@ -1,7 +1,7 @@
 // POST /api/tick — the scheduler's entry point (plan §3.1). cron-job.org calls it every 15 min, every day
 // (D30; tick.yml is a second path); it does at most one thing per call and answers 204 when nothing is
 // due. After its answer it also starts the next batch of the day's squads queue (D117, amendment
-// 2026-11-19; D132: on every tick).
+// 2026-11-19; D132: on every tick). D141: a tick with nothing that can be due answers 204 before any query.
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { runResponse } from "@/lib/run-response";
 import { scheduleSquadsBatch } from "@/lib/squads-tick";
 import { runTick } from "@/lib/tick";
+import { tickMayBeDue } from "@/lib/tick-gate";
 
 /**
  * The tick's own work (at most RUN_DEADLINE_MS, 100 s, plus its writes) and, after the answer, a squads
@@ -25,6 +26,9 @@ export function POST(request: Request): Promise<Response> {
     const auth = await authorize(request.headers, db, ctx, { cron: true, pin: false });
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
+    // INVARIANT tick.clock-first (D141): the database wakes only when something can be due, so an idle tick
+    // writes no heartbeat; one every 6 h always does (heartbeatSlot), for the watcher.
+    if (!(await tickMayBeDue(ctx, db))) return new Response(null, { status: 204 });
     // INVARIANT tick.heartbeat-after-auth: a 401 is not a heartbeat (D45); the row goes in before
     // the work, so a killed function still leaves one, with no finished_at.
     const heartbeat = await startTick(db, ctx.now());
