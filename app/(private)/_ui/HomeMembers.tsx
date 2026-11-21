@@ -12,6 +12,7 @@ import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
 import { serverDay } from "@/lib/schedule";
 
+import { AllianceWeekLine, allianceWeekParts } from "./AllianceWeekLine";
 import { LINK } from "./BoardText";
 import { shareThanksProps, type ShareThanksProps, type ThanksSwitches } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
@@ -96,6 +97,11 @@ export function HomeMembers(props: {
               share={shareThanksProps({ slug, t, language, view, today, switches: props.switches })}
             />
           )}
+          {/* Issue 466: the alliance's week after the thanks (D75: thanks first). */}
+          <AllianceWeekLine
+            parts={allianceWeekParts(view, t, f, today)}
+            className="max-w-sm py-2"
+          />
           {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114). */}
           {checkins === 0 ? (
             !sharing && <p className="py-2">{t["members.checkinNone"]}</p>
