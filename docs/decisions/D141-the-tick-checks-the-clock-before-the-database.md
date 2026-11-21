@@ -69,3 +69,18 @@ Page views, admin presses, deploys (`pnpm db:migrate` in the build) and a status
 - `app/api/rehearsal/route.test.ts` and `app/api/admin/workspaces/route.test.ts`: a press, a second press refused as pending, and a new workspace each forget the kept facts.
 - `app/api/tick/watch/route.test.ts`: the alert and the quiet case fall in the watcher's slot; outside it, no query.
 - `app/(private)/_ui/read-status-wake.test.ts`: the poll asks only in the 5 minutes after each cron-job.org or `tick.yml` tick.
+
+**Amendment (2026-11-21, issue 521, perf batch 2): a heartbeat every 3 hours, and the watcher runs inside `uptime.yml`.**
+
+- **Heartbeat.** `heartbeatSlot` is the first 15 minutes of 00, 03, 06, 09, 12, 15, 18 and 21 UTC (`HEARTBEAT_EVERY_H = 3`). The tick in that slot still writes the `tick_log` row that /admin's "last tick" shows.
+- **Watcher.** `watchSlot` is gone: `POST /api/tick/watch` reads the tick log on every call. It has one caller, `uptime.yml`, at :10 of the same eight hours, after its page probes. The probes and the watcher share that run's database wake. The run does wake the database: it has usually suspended by about :05, 5 minutes after the heartbeat's last query.
+- **The rule.** The watcher alerts when the newest tick started before `heartbeatBoundary(now)`, or no tick was ever recorded. `heartbeatBoundary(now)` is the latest 3-hour UTC boundary at least 10 minutes before `now`. The alert is still claimed once per hour. The rule compares the newest tick with the slot, not with the run's start. So:
+  - a run that GitHub starts up to about 3 h late still judges the slot it was meant for, and finds that slot's tick. No false alert.
+  - a run that GitHub skips makes no call and no alert. The next run judges its own slot.
+  - a run at 00:05 judges the 21:00 slot of the day before. A run at 00:10 judges 00:00. Epoch time divides into 3-hour blocks at 00:00 UTC, so the day boundary needs no special case.
+  - a manual run (`workflow_dispatch`) at any time judges the newest slot that is at least 10 minutes old.
+- **Detection.** A scheduler that stops right after a heartbeat is noticed at the next slot's run, :10 three hours later, plus GitHub's start delay. That is about 3 h 10 min plus the delay, not 6 h 45 min. A GitHub-wide outage of scheduled runs means no watcher. GitHub emails the owner when a run fails, also when the watch POST answers non-2xx.
+- **Cost.** Fixed wakes a day go from 12 (4 heartbeats, 4 uptime runs, 4 watcher reads at :30) to 16 (8 heartbeats, 8 uptime runs that also watch). That is about 20 more minutes of compute a day, for detection in about 3 h instead of 6 h 45 min. A `tick.yml` tick at :07 in a slot, when GitHub runs it on time, is one more wake, and the uptime run at :10 then shares it. Function calls: cron-job.org's watcher job (96 a day) goes away once the owner disables it. `uptime.yml` runs 8 times a day instead of 4.
+- **Owner step.** Disable the watcher job on cron-job.org as soon as the release is live. Until then it calls the route every 15 minutes, and each call now reads the tick log: about 4 extra wakes an hour. It applies the same slot rule, so it alerts only when a slot really had no tick.
+- **`uptime.yml`'s timeout** goes from 5 to 8 minutes. The worst case is two probe rounds of 3 × 30 s with the 60 s pause between them, then the watcher's 30 s, plus the runner's start.
+- **Tests.** `lib/tick-gate.test.ts`: the heartbeat opens at 03:05 and stays shut at 04:05. `app/api/tick/watch/route.test.ts`: an alert when the 12:00 heartbeat never came, and none on a re-run; no alert when a tick came in the slot, for a run on time, 50 minutes late or 3 h late; the 00:00 UTC slot across the day boundary.

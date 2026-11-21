@@ -20,8 +20,9 @@ describe("tickClockDue (D141)", () => {
   // REHEARSAL_AT fri 18:00 ST; daily read 23:30 ST (01:30 UTC).
   it("opens for each of the tick's windows and stays shut between them", () => {
     const due = (iso: string, env = TEST_ENV) => tickClockDue(at(iso), env);
-    expect(due("2026-11-18T15:07")).toBe(false); // Wednesday 13:07 ST: nothing
-    expect(due("2026-11-18T18:05")).toBe(true); // the 6-hourly heartbeat
+    expect(due("2026-11-18T16:07")).toBe(false); // Wednesday 14:07 ST: nothing
+    expect(due("2026-11-18T03:05")).toBe(true); // the 3-hourly heartbeat
+    expect(due("2026-11-18T04:05")).toBe(false);
     expect(due("2026-11-18T18:20")).toBe(false);
     expect(due("2026-11-19T01:40")).toBe(true); // Wednesday 23:40 ST: the daily read
     expect(due("2026-11-20T12:10")).toBe(true); // Friday 10:10 ST: the event's row, a day ahead
@@ -105,8 +106,8 @@ describe("squadsMayRun (D141)", () => {
 describe("tickMayBeDue (D141)", () => {
   it("asks nothing once no rehearsal is pending, and looks again after a press forgets", async () => {
     const { ctx, clock } = testContext(db);
-    // Wednesday 13:07 ST: no window, and the quota day's read (Tuesday's) never came.
-    clock.now = at("2026-11-18T15:07");
+    // Wednesday 14:07 ST: no window, and the quota day's read (Tuesday's) never came.
+    clock.now = at("2026-11-18T16:07");
     expect(await tickMayBeDue(ctx, db)).toBe(false);
     expect(await tickMayBeDue(ctx, noQueryDb)).toBe(false);
 

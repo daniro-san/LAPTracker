@@ -82,7 +82,7 @@ describe("POST /api/tick", () => {
   it("writes a heartbeat row with its start, end and outcome", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
-    clock.now = new Date("2026-11-04T12:00:00Z"); // the 6-hourly heartbeat slot (D141)
+    clock.now = new Date("2026-11-04T12:00:00Z"); // the 3-hourly heartbeat slot (D141)
 
     expect((await tick()).status).toBe(204);
 
@@ -94,12 +94,12 @@ describe("POST /api/tick", () => {
   it("asks the database nothing and starts no batch on a tick with nothing that can be due (D141)", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
-    clock.now = new Date("2026-11-04T15:00:00Z"); // Wednesday 13:00 ST
+    clock.now = new Date("2026-11-04T16:00:00Z"); // Wednesday 14:00 ST
     // The first idle tick keeps what only the database knows: no rehearsal pending, the queue settled.
     expect((await tick()).status).toBe(204);
     later.length = 0;
     ctx.openDb = () => ({ db: noQueryDb, close: async () => {} });
-    clock.now = new Date("2026-11-04T15:15:00Z");
+    clock.now = new Date("2026-11-04T16:15:00Z");
 
     expect((await tick()).status).toBe(204);
     expect(later).toEqual([]);

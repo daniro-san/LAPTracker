@@ -25,8 +25,8 @@ const DAY_MS = 86_400_000;
 
 /** The scheduled event's row is made in this first part of its day-ahead window (four ticks). */
 export const CREATE_SPAN_MS = 60 * MINUTE;
-/** The tick opens the database at least once every this many hours (00, 06, 12, 18 UTC), for D45's watcher. */
-export const HEARTBEAT_EVERY_H = 6;
+/** The tick opens the database at least once every this many hours (00, 03, … 21 UTC), for D45's watcher. */
+export const HEARTBEAT_EVERY_H = 3;
 /**
  * A kept "settled" or "no rehearsal pending" is checked again after this long, should a forget be missed.
  * The writes that change either fact forget them (the rehearsal press, the daily read's Retry, a tracker key,
@@ -35,18 +35,21 @@ export const HEARTBEAT_EVERY_H = 6;
 export const KEPT_MAX_AGE_S = 24 * 60 * 60;
 
 const windowMs = (cfg: ScheduleConfig) => cfg.SNAPSHOT_WINDOW_MIN * MINUTE;
+const HEARTBEAT_MS = HEARTBEAT_EVERY_H * 60 * MINUTE;
+/** The watcher judges a heartbeat slot only once this long after it began (uptime.yml runs at :10). */
+const WATCH_AFTER_MS = 10 * MINUTE;
 
-/** The 15-minute slot at the start of every HEARTBEAT_EVERY_H hours (UTC), plus `offsetMin`. */
-const inHeartbeatSlot = (now: Date, offsetMin: number) =>
-  now.getUTCHours() % HEARTBEAT_EVERY_H === 0 &&
-  now.getUTCMinutes() >= offsetMin &&
-  now.getUTCMinutes() < offsetMin + 15;
+/** The tick slot that always opens the database: the first 15 minutes of every HEARTBEAT_EVERY_H hours (UTC). */
+export const heartbeatSlot = (now: Date) =>
+  now.getUTCHours() % HEARTBEAT_EVERY_H === 0 && now.getUTCMinutes() < 15;
 
-/** The tick slot that always opens the database, so the heartbeat row (D45) is never older than 6 h. */
-export const heartbeatSlot = (now: Date) => inHeartbeatSlot(now, 0);
-
-/** The watcher's slot, half an hour after the heartbeat's: the only time it reads the tick log. */
-export const watchSlot = (now: Date) => inHeartbeatSlot(now, 30);
+/**
+ * The start of the newest heartbeat slot the watcher can judge: the latest 00/03/…/21 UTC boundary at least
+ * WATCH_AFTER_MS ago. A tick before it means that slot's heartbeat never came. A run GitHub starts late
+ * still judges the slot it was meant for, until the next slot is WATCH_AFTER_MS old.
+ */
+export const heartbeatBoundary = (now: Date) =>
+  new Date(Math.floor((now.getTime() - WATCH_AFTER_MS) / HEARTBEAT_MS) * HEARTBEAT_MS);
 
 /**
  * The tick's own work (lib/tick.ts) can be due by the clock alone: the scheduled event's row in the first
