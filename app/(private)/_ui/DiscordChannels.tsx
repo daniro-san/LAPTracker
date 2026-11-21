@@ -85,7 +85,7 @@ function HookForm(props: {
           {t["discord.hook.name"]}
         </label>
         <p id={id("name-help")} className="text-body-sm text-ink/70">
-          {t["discord.hook.nameHelp"]}
+          {t[c.channel === "shield" ? "discord.hook.nameHelpShield" : "discord.hook.nameHelp"]}
         </p>
         <input
           id={id("name")}
@@ -99,7 +99,7 @@ function HookForm(props: {
       </div>
       <CheckField
         label={t["discord.hook.forum"]}
-        help={t["discord.hook.forumHelp"]}
+        help={t[c.channel === "shield" ? "discord.hook.forumHelpShield" : "discord.hook.forumHelp"]}
         checked={forum}
         onChange={(e) => setForum(e.target.checked)}
       />

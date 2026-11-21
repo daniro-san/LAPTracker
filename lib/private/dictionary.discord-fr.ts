@@ -57,8 +57,11 @@ export const discordFr: typeof discordEn = {
   "discord.hook.name": "Nom du salon",
   "discord.hook.nameHelp":
     "Comme Discord l’affiche, sans le #. Exemple : annonces. Les officiers le voient avant de publier.",
+  "discord.hook.nameHelpShield": "Comme Discord l’affiche, sans le #. Exemple : bouclier-raid.",
   "discord.hook.forum": "C’est un salon forum",
   "discord.hook.forumHelp": "Chaque annonce ouvre alors sa propre publication dans le forum.",
+  "discord.hook.forumHelpShield":
+    "Le résumé de chaque semaine ouvre alors sa propre publication dans le forum.",
   "discord.hook.save": "Vérifier et enregistrer",
   "discord.hook.saving": "Vérification avec Discord…",
   "discord.hook.add": "Ajouter un webhook",

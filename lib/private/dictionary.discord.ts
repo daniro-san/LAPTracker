@@ -54,8 +54,10 @@ export const discordEn = {
   "discord.hook.name": "Channel name",
   "discord.hook.nameHelp":
     "As Discord shows it, without the #. Example: notices. Officers see it before posting.",
+  "discord.hook.nameHelpShield": "As Discord shows it, without the #. Example: raid-shield.",
   "discord.hook.forum": "This is a forum channel",
   "discord.hook.forumHelp": "Then each notice opens its own post in the forum.",
+  "discord.hook.forumHelpShield": "Then each week’s summary opens its own post in the forum.",
   "discord.hook.save": "Check and save",
   "discord.hook.saving": "Checking with Discord…",
   "discord.hook.add": "Add a webhook",
@@ -146,8 +148,11 @@ export const discordPt: typeof discordEn = {
   "discord.hook.name": "Nome do canal",
   "discord.hook.nameHelp":
     "Como o Discord mostra, sem o #. Exemplo: avisos. Os oficiais veem o nome antes de postar.",
+  "discord.hook.nameHelpShield": "Como o Discord mostra, sem o #. Exemplo: escudo-raid.",
   "discord.hook.forum": "Este é um canal de fórum",
   "discord.hook.forumHelp": "Assim cada aviso abre a sua própria postagem no fórum.",
+  "discord.hook.forumHelpShield":
+    "Assim o resumo de cada semana abre a sua própria postagem no fórum.",
   "discord.hook.save": "Conferir e salvar",
   "discord.hook.saving": "Conferindo com o Discord…",
   "discord.hook.add": "Adicionar um webhook",

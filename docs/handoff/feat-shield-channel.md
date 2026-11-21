@@ -91,7 +91,7 @@
 - A check posted before this deploy has `message_hook` null. It is edited as before, unless a Raid Shield channel is saved during that check: then it gets a fresh post there.
 - Follow-up, not done: the old message in the previous channel stays as it was (Friday's summary). The task said not to edit it.
 - Follow-up, not done: the French raid-prep copy says "salon des dirigeants", while the Discord section says "salon des chefs" for the same channel. This is pre-existing and unchanged here.
-- Follow-up, not done: the Raid Shield card's form reuses the notice wording. The forum help says "Then each notice opens its own post in the forum.", and the name help says "Example: notices. Officers see it before posting." Both should be about the summary on that card. The step heading "3. Channels for notices" is quoted in D129 and was left as it is. Its lead line now adds "The Raid Shield check’s summary can have a channel of its own."
+- Done after the panel (orchestrator's call): the Raid Shield card's name and forum help lines describe the summary ("Example: raid-shield.", "Then each week’s summary opens its own post in the forum.") in EN, PT and FR. The card's French copy says "salon des chefs" throughout. The step heading "3. Channels for notices" is quoted in D129 and was left as it is. Its lead line now adds "The Raid Shield check’s summary can have a channel of its own."
 - Follow-up, not done: the comments in `lib/shield-tick.ts`, `lib/shield-read.ts`, `lib/private/shield-settings.ts` and the raid-prep route still say "leaders' channel".
 
 ## Next
