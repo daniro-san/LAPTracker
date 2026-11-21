@@ -49,8 +49,9 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
       input.action === "rename"
         ? await renameOfficer(db, access, input.name)
         : input.action === "link"
-          ? await linkPlayer(db, access, input.uid)
+          ? await linkPlayer(db, access, input.uid, ctx.now())
           : await unlinkPlayer(db, access);
+    if (result === "taken") return privateError(409, result);
     if (typeof result === "string") return privateError(400, result);
     return counted(
       ctx,

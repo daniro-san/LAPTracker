@@ -137,6 +137,18 @@ function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; item
   );
 }
 
+/** "Mon 18:54 server time", for each item to review. */
+function serverWhen(t: WorkspaceDictionary, language: WorkspaceLanguage) {
+  const at = new Intl.DateTimeFormat(language, {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: getEnv().SERVER_TZ,
+  });
+  return (d: Date) => fill(t["time.server"], { time: at.format(d) });
+}
+
 function Home(props: {
   /** The workspace; its switches decide what the thanks sheet offers (D126). */
   access: WorkspaceAccess;
@@ -158,13 +170,6 @@ function Home(props: {
   const { t, language } = props;
   const slug = props.access.slug;
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
-  const at = new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: getEnv().SERVER_TZ,
-  });
   return (
     <section aria-labelledby="home">
       <PageHead id="home" title={t["home.title"]} />
@@ -196,7 +201,8 @@ function Home(props: {
                   : null
               }
               reviews={props.reviews}
-              when={(d) => fill(t["time.server"], { time: at.format(d) })}
+              when={serverWhen(t, language)}
+              links={props.desk.links}
             />
           </>
         }
@@ -287,8 +293,8 @@ export default async function WorkspacePage({
       </Frame>
     );
   }
-  // The Home tab's number: drafts and the notice reviews waiting for this officer (D113).
-  const frame = { access, language, t, waiting: items.length + reviews.length };
+  // The Home tab's number: drafts, the notice reviews for this officer (D113), the links to approve (D142).
+  const frame = { access, language, t, waiting: items.length + reviews.length + desk.links.length };
   return (
     <SignedInFrame {...frame} current="home" wide keyShown>
       <Home

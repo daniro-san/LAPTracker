@@ -11,3 +11,5 @@ The owner's first real sign-in on production asked for three things: the desk sh
 - **The theme reuses the public site's `theme` cookie.** The sheet offers Same as this device, Light and Dark. Light and Dark write `theme=light|dark` for a year; Same as this device removes the cookie. The root layout already renders `data-theme` from that cookie on the server, so one choice covers the desk and the public site with no flash.
 - **Nothing is logged.** The profile route (`GET`/`POST /api/w/[slug]/profile`) logs nothing and sends no PostHog event. Its writes are same-origin JSON only (D71). The sheet sits under the workspace's replay mask (D77).
 - **Retention** of `chosen_name` and `player_uid` follows D71's open retention question.
+
+- Amendment (2026-11-21, issue 487, D142): members use "This is me" too, on their own page on the members' board. An officer's link is `approved` at once; every member's link waits for an officer's Approve. One approved link per player in a workspace: a player another user holds is refused with `409 taken`.

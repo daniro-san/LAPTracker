@@ -24,6 +24,7 @@ import { factText, NONE } from "./fact-text";
 import { cardBase, lastTwo, TREND_FIELDS, type Progress, type TrendField } from "./fact-trend";
 import { followUpsOf } from "./follow-up";
 import { historyLine } from "./follow-up-rules";
+import { cardLink, type CardLink } from "./me-link";
 import { daysFormats, duelText, toAskLine, versionLines } from "./member-card-parts";
 import { daysCard, lastDays, LAST_DAYS, type DaysCard, type LastDays } from "./member-days";
 import { memberOrigin } from "./member-origin";
@@ -104,6 +105,8 @@ export interface CardData {
   followUps: { head: string; lines: string[] };
   /** The squads the tracker saw (D117); set by memberCard. */
   squads?: SquadsCard;
+  /** D142: who on Discord says they are this member, and whether an officer still has to approve it. */
+  link?: CardLink | null;
 }
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
@@ -346,9 +349,10 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const [squads, origin] = await Promise.all([
+  const [squads, origin, link] = await Promise.all([
     squadsCard(db, access, uid, at.t, f),
     memberOrigin(db, access, uid, at.zone, at.t, f.date),
+    cardLink(db, access, uid, at.t),
   ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
@@ -358,5 +362,5 @@ export async function memberCard(
     origin,
     history,
   });
-  return { ...card, squads };
+  return { ...card, squads, link };
 }
