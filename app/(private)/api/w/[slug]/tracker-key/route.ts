@@ -41,10 +41,11 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
-    // D141: a key decides the squads targets, so the ticks look at the queue again.
-    ctx.wakeCache.forget();
     if (input.action === "remove") {
       const view = await removeTrackerKey(db, access, ctx.env, input, now);
+      // D141: a key decides the squads targets, so the ticks look at the queue again. After the write: a
+      // tick in between could keep "settled" from before it.
+      ctx.wakeCache.forget();
       return counted(ctx, access, "tracker_key", "delete", answer(view));
     }
     const result = await saveTrackerKey(db, access, { env: ctx.env, v1: ctx.v1, now }, input);
@@ -52,6 +53,7 @@ export async function POST(
       const [status, code] = FAILED[result.code];
       return privateError(status, code);
     }
+    ctx.wakeCache.forget();
     return counted(ctx, access, "tracker_key", "save", answer(result.view));
   });
 }

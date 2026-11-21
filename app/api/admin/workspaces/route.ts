@@ -37,6 +37,8 @@ export function POST(request: Request): Promise<Response> {
       memberRoleIds: [...new Set(b.member_role_ids)],
     });
     if (result !== "ok") return errorResponse(409, result);
+    // D141: a new workspace can add a squads target, so the ticks look at the queue again.
+    ctx.wakeCache.forget();
     return Response.json({ ok: true });
   });
 }

@@ -59,6 +59,15 @@ describe("POST /api/admin/workspaces: member roles (D105, amended 2026-11-17)", 
   });
 });
 
+describe("POST /api/admin/workspaces: the ticks look at the squads queue again (D141)", () => {
+  it("forgets a kept 'squads settled' when a workspace is registered", async () => {
+    const { wakeCache } = holder.ctx as AppContext;
+    await wakeCache.holds("squads-settled:2026-11-19", 60, async () => true);
+    expect((await post(TEST_PIN, { ...base, member_role_ids: [] })).status).toBe(200);
+    expect(await wakeCache.holds("squads-settled:2026-11-19", 60, async () => false)).toBe(false);
+  });
+});
+
 describe("POST /api/admin/workspaces: one workspace per Discord server (D126)", () => {
   it("refuses a second alliance on a server already taken, in words and in the database", async () => {
     expect((await post(TEST_PIN, { ...base, member_role_ids: [] })).status).toBe(200);

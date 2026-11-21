@@ -12,8 +12,8 @@
   - `POST /api/tick` answers 204 before any query when nothing can be due. No heartbeat row and no squads batch are written then.
   - `POST /api/tick/watch` reads the tick log only at :30–:45 of 00/06/12/18 UTC.
   - `POST /api/squads-read` asks nothing when the queue cannot have work.
-- Forget hooks: `/api/rehearsal`, `/api/daily-read/retry`, `/api/w/[slug]/features`, `/api/w/[slug]/tracker-key`, `/api/admin/workspaces/features`.
-- Status bar (D135): the 30 s poll asks only in the first 5 minutes of each 15-minute tick slot (`batchMayRun`). Becoming visible still asks at once.
+- Forget hooks, each after its write: `/api/rehearsal` (also on 409 "pending"), `/api/admin/workspaces`, `/api/daily-read/retry`, `/api/w/[slug]/features`, `/api/w/[slug]/tracker-key`, `/api/admin/workspaces/features`.
+- Status bar (D135): the 30 s poll asks only in the 5 minutes after each cron-job.org or `tick.yml` tick (`batchMayRun`). Becoming visible still asks at once.
 - D141 and README. Dated amendments in D45, D132 and D135.
 - Tests: `lib/tick-gate.test.ts` (6 tests), plus additions in the tick, watch and read-status-wake tests. Shared helper: `noQueryDb` in `lib/db.test-helpers.ts`.
 
@@ -31,7 +31,7 @@
 
 ## Verified
 
-- `pnpm check` passes: prettier, eslint, tsc, vitest (265 files, 1393 tests passed, 4 skipped, after the rebase), drift, i18n.
+- `pnpm check` passes: prettier, eslint, tsc, vitest (265 files, 1395 tests passed, 4 skipped, after the review fixes), drift, i18n.
 - E2E on a local production build (`next build`, `next start` :3940), local Postgres 18 with 60 migrations and the bridge. The env made "now" (Fri 22:16 ST) idle, with no upstream reachable. Transactions were counted from `pg_stat_database`, with the psql baseline subtracted:
   - tick 1: 204, 3 queries (it loads the facts);
   - ticks 2 and 3: 204, **0 queries**;
