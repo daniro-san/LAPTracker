@@ -8,7 +8,6 @@ import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
-import { withPageDb } from "@/lib/page";
 import type {
   Carried,
   getEventDetail,
@@ -17,7 +16,6 @@ import type {
   RosterChange,
   TurnoutLists,
 } from "@/lib/queries";
-import { boardCount } from "@/lib/queries/alliance-list";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
@@ -40,6 +38,7 @@ import { allianceScope, memberScope } from "./mover-lists";
 import { Movers } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
+import { sharedAllianceList } from "./public-reads";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
@@ -148,7 +147,7 @@ async function TitleActions({
 
 /** Under the ledger: the way to every alliance on the server (D133); none before the first board. */
 async function AllAlliancesLink({ copy }: { copy: Dictionary }) {
-  const n = await withPageDb(boardCount);
+  const n = (await sharedAllianceList(1)).total;
   if (n === 0) return null;
   return (
     <p className="mt-2">

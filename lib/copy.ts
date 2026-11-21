@@ -10,6 +10,7 @@ import { adminCopy } from "./copy-admin-tracked";
 import { balanceCopy } from "./copy-balance";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
+import { errorsCopy } from "./copy-errors";
 import { flowCopy } from "./copy-flow";
 import { liveCopy } from "./copy-live";
 import { mergeCopy } from "./copy-merge";
@@ -249,21 +250,7 @@ export const en = {
     noMatch: "No player with that name. Check the spelling, or type part of the name.",
     pending: "Grandma is searching the ledger…",
   },
-  errors: {
-    notFound: {
-      code: "404",
-      title: "Grandma wandered off.",
-      body: "This page isn't in the ledger.",
-      back: "Back to the ledger",
-    },
-    server: {
-      code: "500",
-      title: "Something cracked.",
-      body: "Something broke on our side. Try again in a minute.",
-      retry: "Try again",
-      back: "Back to the ledger",
-    },
-  },
+  errors: errorsCopy,
   empty: {
     kettle: "Nothing recorded yet. The kettle is on.",
     manualNotRun: "This round has not been run yet. The admin starts it by hand.",

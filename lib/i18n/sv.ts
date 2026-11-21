@@ -352,6 +352,11 @@ export const sv = {
       retry: "Försök igen",
       back: "Tillbaka till loggen",
     },
+    unavailable: {
+      code: "503",
+      title: "Datan är tillfälligt otillgänglig.",
+      body: "Loggen går inte att läsa just nu. Inget är förlorat. Försök igen om några minuter.",
+    },
   },
   empty: {
     kettle: "Inget antecknat än. Kitteln står på.",

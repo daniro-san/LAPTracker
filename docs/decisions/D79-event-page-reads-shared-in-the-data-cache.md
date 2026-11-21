@@ -13,3 +13,5 @@ Why: while an event runs, every viewer's page refreshes once per sample slot (`L
 - **Not cached.** The rest of the event page's reads (8 statements per load for a live event, 11 for a finished one: the event list, the event detail, names, ranks, movers, roster changes, End turnout). They are the same for every viewer and could use the same cache later.
 
 **Amendment (2026-11-21, issue 521, D141): `withOwnDb`.** `withPageDb` now shares one Pool per request, closed in `after`. Each cached read keeps its own connection through `withOwnDb` (`lib/page.ts`), for the same reason as above. See D141.
+
+**Amendment (2026-11-21, issue 521, D143).** The public pages' other shared reads (event list, alliances, players, history, banner) use a second cache, `lib/public-cache.ts`, tag `reads`. A run invalidates both.

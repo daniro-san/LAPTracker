@@ -50,7 +50,13 @@ export {
   type ProgressSummary,
 } from "./player-progress";
 export { eventRanks, historyRanks, type Ranks } from "./ranks";
-export { getUpstreamStatus, type UpstreamStatus } from "./upstream-status";
+export {
+  getUpstreamStatus,
+  upstreamRows,
+  upstreamStatusOf,
+  type UpstreamRows,
+  type UpstreamStatus,
+} from "./upstream-status";
 export { rosterChanges, type RosterChange } from "./rosters";
 export {
   allianceMovers,

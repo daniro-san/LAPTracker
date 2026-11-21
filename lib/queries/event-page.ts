@@ -3,7 +3,7 @@
 // name history.
 import type { Db } from "../db";
 import { whoCarried } from "./carried";
-import { getEventDetail, homeEvent, listEvents } from "./events";
+import { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
 import { allianceMovers, memberMovers } from "./movers";
 import { allianceNames } from "./names";
 import { eventRanks } from "./ranks";
@@ -39,11 +39,22 @@ function warReads(db: Db, id: number, detail: Phases, shared: Shared, sections: 
   return [turnout, sections.carried ? whoCarried(db, detail, turnout) : null] as const;
 }
 
+/** The selector's events, the home event and the page's event: `eventId`, else the home event. */
+async function whichEvent(
+  listed: Promise<EventSummary[]>,
+  eventId: number | null,
+  windowMin: number,
+) {
+  const events = await listed;
+  const homeId = homeEvent(events, new Date(), windowMin)?.id ?? null;
+  return { events, homeId, id: eventId ?? homeId };
+}
+
 /**
  * `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. `shared` keeps
  * the turnout so far (no End yet) for every viewer; by default it reads every time. `windowMin` is
  * SNAPSHOT_WINDOW_MIN, for `homeEvent`. `sections`: which war sections are read; it may still be on its way,
- * so the flags are read while the event is.
+ * so the flags are read while the event is. `listed`: the event list (the page passes the shared one, D143).
  */
 export async function getEventPage(
   db: Db,
@@ -51,10 +62,9 @@ export async function getEventPage(
   windowMin: number,
   shared: Shared = (_id, load) => load(db),
   sections: Sections | PromiseLike<Sections> = { turnout: true, carried: true },
+  listed: () => Promise<EventSummary[]> = () => listEvents(db),
 ) {
-  const events = await listEvents(db);
-  const homeId = homeEvent(events, new Date(), windowMin)?.id ?? null;
-  const id = eventId ?? homeId;
+  const { events, homeId, id } = await whichEvent(listed(), eventId, windowMin);
   if (id === null) return { events, homeId, page: null };
   const detail = await getEventDetail(db, id);
   if (!detail) return { events, homeId, page: null };

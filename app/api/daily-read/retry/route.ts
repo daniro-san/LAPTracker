@@ -8,6 +8,7 @@ import { z } from "zod";
 import { secretsOf } from "@/lib/app-context";
 import { authorize } from "@/lib/auth";
 import { retryDailyRead } from "@/lib/daily-read";
+import { databaseDown } from "@/lib/data-unavailable";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { serverDay } from "@/lib/schedule";
 import { dayTargets } from "@/lib/tracked";
@@ -24,8 +25,18 @@ export function POST(request: Request): Promise<Response> {
     const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
     // D133: today's tracked set (read from the board if the tick has not yet) and the workspaces' alliances.
     const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };
-    const { targets } = await dayTargets(keys, db, serverDay(ctx.now(), ctx.env));
-    const summary = await retryDailyRead(deps, db, ctx.env, targets);
+    // INVARIANT cache.write-invalidates-reads (D143): the board, the set and the rosters it wrote, even
+    // part way, are on the public pages at their first view after the press; not when the database is
+    // down, when the kept pages are all the public site has.
+    let summary: Awaited<ReturnType<typeof retryDailyRead>>;
+    try {
+      const { targets } = await dayTargets(keys, db, serverDay(ctx.now(), ctx.env));
+      summary = await retryDailyRead(deps, db, ctx.env, targets);
+    } catch (error) {
+      if (!databaseDown(error)) ctx.publicCache.invalidate();
+      throw error;
+    }
+    ctx.publicCache.invalidate();
     if (summary === "too-late") return errorResponse(409, "daily_read_too_late");
     if (!summary) return errorResponse(409, "daily_read_not_retryable");
     // D141: a roster it brings gives the squads queue work again.

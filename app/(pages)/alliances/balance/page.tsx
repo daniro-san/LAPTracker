@@ -13,6 +13,7 @@ import { EmptyState } from "@/app/_ui/EmptyState";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { shareText } from "@/app/_ui/format";
 import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
+import { sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { greatestShareUp, parseBlocs, TOP_N, topShare } from "@/lib/balance";
@@ -20,7 +21,7 @@ import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
-import { homeEvent, listEvents, powerBalance } from "@/lib/queries";
+import { homeEvent, powerBalance } from "@/lib/queries";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -49,7 +50,7 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
     requestLocale(),
   ]);
   const [events, balance] = await withPageDb((db) =>
-    Promise.all([listEvents(db), powerBalance(db, new Date())]),
+    Promise.all([sharedEvents(), powerBalance(db, new Date())]),
   );
   const { alliances, trend } = balance;
   const homeId = homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null;

@@ -413,6 +413,11 @@ export const fr = {
       retry: "Réessayer",
       back: "Retour au registre",
     },
+    unavailable: {
+      code: "503",
+      title: "Données momentanément indisponibles.",
+      body: "Le registre ne peut pas être consulté pour l’instant. Rien n’est perdu. Réessayez dans quelques minutes.",
+    },
   },
   empty: {
     kettle: "Rien de noté pour l’instant. La bouilloire chauffe.",

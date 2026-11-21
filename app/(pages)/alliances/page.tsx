@@ -10,14 +10,13 @@ import { EmptyState } from "@/app/_ui/EmptyState";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { dayDate } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { sharedAllianceList, sharedEventAllianceIds, sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TRACKED_COUNT } from "@/config/alliances";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import { withPageDb } from "@/lib/page";
-import { homeEvent, listEvents } from "@/lib/queries";
-import { allianceList, eventAllianceIds } from "@/lib/queries/alliance-list";
+import { homeEvent } from "@/lib/queries";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -64,13 +63,9 @@ export default async function AlliancesPage({ searchParams }: { searchParams: Se
   const sp = await searchParams;
   const asked = typeof sp.page === "string" && /^\d{1,4}$/.test(sp.page) ? Number(sp.page) : 1;
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
-  const [events, list] = await withPageDb((db) =>
-    Promise.all([listEvents(db), allianceList(db, asked)]),
-  );
+  const [events, list] = await Promise.all([sharedEvents(), sharedAllianceList(asked)]);
   const homeId = homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null;
-  const inHome = new Set(
-    homeId === null ? [] : await withPageDb((db) => eventAllianceIds(db, homeId)),
-  );
+  const inHome = new Set(homeId === null ? [] : await sharedEventAllianceIds(homeId));
   const href = (unionId: number) => allianceHref(unionId, inHome, homeId);
   const a = copy.alliances;
   return (

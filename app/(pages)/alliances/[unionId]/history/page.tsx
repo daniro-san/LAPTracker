@@ -19,6 +19,7 @@ import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { HISTORY_FILTERS, matchesFilter, type HistoryFilter } from "@/app/_ui/member-history";
 import { HistoryCardView } from "@/app/_ui/MemberHistory";
 import { previewImage } from "@/app/_ui/preview";
+import { sharedEventAllianceIds, sharedEvents, sharedRead } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TextLink } from "@/lib/brand/components/TextLink";
@@ -26,19 +27,8 @@ import type { Dictionary } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import {
-  allianceStatement,
-  homeEvent,
-  listEvents,
-  memberHistory,
-  memberHistoryIndex,
-} from "@/lib/queries";
-import {
-  allianceOnBoard,
-  detailsState,
-  eventAllianceIds,
-  type BoardAlliance,
-} from "@/lib/queries/alliance-list";
+import { allianceStatement, homeEvent, memberHistory, memberHistoryIndex } from "@/lib/queries";
+import { allianceOnBoard, detailsState, type BoardAlliance } from "@/lib/queries/alliance-list";
 
 type Params = Promise<{ unionId: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -77,33 +67,50 @@ const noHistory = (unionId: number, b: BoardAlliance) => ({
   entries: [],
 });
 
-const load = cache((unionId: number, before: number | null, show: HistoryFilter | null) =>
-  withPageDb(async (db) => {
-    const now = new Date();
-    const env = getEnv();
-    const [history, events, board, details] = await Promise.all([
+/** Shared by the page and its <title> within one request. The history, the board line, the statement and the
+ * event list are shared with every viewer until the next write (D143); "Get today's details" is read per view:
+ * it depends on the clock, the day's claims and the workspaces' keys, which are never shared. */
+const load = cache(async (unionId: number, before: number | null, show: HistoryFilter | null) => {
+  const now = new Date();
+  const env = getEnv();
+  const read = async (db: Db) => {
+    const [history, board] = await Promise.all([
       historyPage(db, unionId, before === null ? null : new Date(before), show),
-      listEvents(db),
       allianceOnBoard(db, unionId),
-      detailsState(db, unionId, now, env),
     ]);
-    if (!history && !board) return null;
-    const homeId = homeEvent(events, now, env.SNAPSHOT_WINDOW_MIN)?.id ?? null;
-    const [statement, homeIds] = await Promise.all([
-      details.daily ? null : allianceStatement(db, unionId),
-      homeId === null ? ([] as number[]) : eventAllianceIds(db, homeId),
-    ]);
-    return {
-      history: history ?? (board && noHistory(unionId, board)),
-      events,
-      homeId,
-      inHome: homeIds.includes(unionId),
-      board,
-      details,
-      statement,
-    };
-  }),
-);
+    return history || board ? { history, board } : null;
+  };
+  const details = await withPageDb((db) => detailsState(db, unionId, now, env));
+  // Keyed by today's lookup too: "Get today's details" refreshes the page as soon as its answer comes, which
+  // on Vercel can be before the invalidation is applied (after the response).
+  const lookup = details.lookup?.at.getTime() ?? null;
+  const [rows, events] = await Promise.all([
+    // Only the first page is shared: an older page's `before` comes from the URL, so it would add an
+    // entry per made-up time.
+    before === null
+      ? sharedRead("alliance-history", [unionId, show, lookup], read)
+      : withPageDb(read),
+    sharedEvents(),
+  ]);
+  if (!rows) return null;
+  const { history, board } = rows;
+  const homeId = homeEvent(events, now, env.SNAPSHOT_WINDOW_MIN)?.id ?? null;
+  const [statement, homeIds] = await Promise.all([
+    details.daily
+      ? null
+      : sharedRead("statement", [unionId, lookup], (db) => allianceStatement(db, unionId)),
+    homeId === null ? ([] as number[]) : sharedEventAllianceIds(homeId),
+  ]);
+  return {
+    history: history ?? (board && noHistory(unionId, board)),
+    events,
+    homeId,
+    inHome: homeIds.includes(unionId),
+    board,
+    details,
+    statement,
+  };
+});
 
 /** The page's inputs, or null for a malformed id or cursor (a 404). */
 async function inputsOf(params: Params, searchParams: Search) {

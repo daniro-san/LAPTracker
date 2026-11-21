@@ -413,6 +413,11 @@ export const es = {
       retry: "Reintentar",
       back: "Volver al registro",
     },
+    unavailable: {
+      code: "503",
+      title: "Datos no disponibles por ahora.",
+      body: "El registro no se puede leer ahora mismo. No se ha perdido nada. Inténtalo de nuevo en unos minutos.",
+    },
   },
   empty: {
     kettle: "Aún no hay nada anotado. La tetera ya está al fuego.",

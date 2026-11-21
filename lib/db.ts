@@ -8,8 +8,13 @@ import * as schema from "./schema";
 
 export type Db = NeonDatabase<typeof schema>;
 
-/** A Pool's size and how long an idle connection stays open; the driver's defaults (10, 10 s) otherwise. */
-export type PoolSize = { max: number; idleTimeoutMillis: number };
+/** A Pool's size, how long an idle connection stays open and how long a query waits for a connection; the
+ * driver's defaults (10, 10 s, no limit) otherwise. */
+export type PoolSize = {
+  max?: number;
+  idleTimeoutMillis?: number;
+  connectionTimeoutMillis?: number;
+};
 
 export function openDb(
   url: string = getEnv().DATABASE_URL,

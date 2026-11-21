@@ -411,6 +411,11 @@ export const pl = {
       retry: "Spróbuj ponownie",
       back: "Wróć do księgi",
     },
+    unavailable: {
+      code: "503",
+      title: "Dane chwilowo niedostępne.",
+      body: "Księgi nie da się teraz odczytać. Nic nie przepadło. Spróbuj ponownie za kilka minut.",
+    },
   },
   empty: {
     kettle: "Jeszcze nic nie zapisano. Czajnik już stoi na gazie.",

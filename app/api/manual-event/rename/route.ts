@@ -25,6 +25,8 @@ export function POST(request: Request): Promise<Response> {
     if (result === "not-found") return errorResponse(404, "event_not_found");
     if (result === "no-snapshot") return errorResponse(409, "rename_before_run");
     ctx.eventCache.invalidate(parsed.data.event_id);
+    // INVARIANT cache.write-invalidates-reads (D143): the new name is in the public event list.
+    ctx.publicCache.invalidate();
     return Response.json({ event_id: parsed.data.event_id, name: parsed.data.name });
   });
 }

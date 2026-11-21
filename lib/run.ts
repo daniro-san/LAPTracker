@@ -149,7 +149,8 @@ interface Collected {
 
 /** The collector's run under its logger. The claim is watched, so the row it took (exactly ours, never
  * another run's) is final and the logger settled on every path before the caller notifies. A run that
- * claimed a row changed the event's readings, so the event's shared page data is dropped (issue 327). */
+ * claimed a row changed the event's readings, so the event's shared page data is dropped (issue 327), and
+ * the public pages' shared reads (D143). */
 async function collect(
   ctx: AppContext,
   db: Db,
@@ -189,7 +190,11 @@ async function collect(
     }
     await logger.shutdown();
     // INVARIANT cache.write-invalidates-event (D79): the row is final here, so the next page read sees it.
-    if (claimedId !== null) ctx.eventCache.invalidate(eventId);
+    // INVARIANT cache.write-invalidates-reads (D143): and the public pages' shared reads with it.
+    if (claimedId !== null) {
+      ctx.eventCache.invalidate(eventId);
+      ctx.publicCache.invalidate();
+    }
   }
   return { summary, refused, claimedAt, failedWrites: logger.stats().failedWrites };
 }
