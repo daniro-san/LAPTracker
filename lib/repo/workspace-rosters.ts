@@ -201,6 +201,69 @@ export async function scheduledEventKills(
   return { at: event.at, before: byUid(before.id), after: byUid(after.id) };
 }
 
+/** A scheduled event's Start and End might of one alliance's members; a null might stays null (D15). */
+export interface EventMight {
+  id: number;
+  at: Date;
+  /** When the End read started: end-of-day reads after it show the recovery. */
+  afterAt: Date;
+  before: Map<number, number | null>;
+  after: Map<number, number | null>;
+}
+
+/**
+ * The alliance's public scheduled events since `since` whose Start and End rows are both fresh and not
+ * failed, the newest first, with each member's might on both sides. One statement, bounded by the date:
+ * events by `events_event_at_utc_unique`, then each table by its own unique index (D149).
+ */
+export async function scheduledEventMight(
+  db: Db,
+  unionId: number,
+  since: Date,
+): Promise<EventMight[]> {
+  const rows = await db
+    .select({
+      eventId: events.id,
+      at: events.eventAtUtc,
+      phase: snapshots.phase,
+      startedAt: snapshots.startedAt,
+      uid: memberSnapshots.uid,
+      power: memberSnapshots.power,
+    })
+    .from(memberSnapshots)
+    .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .innerJoin(events, eq(events.id, snapshots.eventId))
+    .where(
+      and(
+        eq(allianceSnapshots.unionId, unionId),
+        eq(allianceSnapshots.isFresh, true),
+        isNull(allianceSnapshots.error),
+        eq(events.manual, false),
+        eq(events.isTest, false),
+        ne(events.visibility, "admin"),
+        gte(events.eventAtUtc, since),
+        inArray(snapshots.phase, ["before", "after"]),
+      ),
+    );
+  const byEvent = new Map<number, EventMight>();
+  for (const r of rows) {
+    const e = byEvent.get(r.eventId) ?? {
+      id: r.eventId,
+      at: r.at,
+      afterAt: r.startedAt,
+      before: new Map(),
+      after: new Map(),
+    };
+    if (r.phase === "after") e.afterAt = r.startedAt;
+    e[r.phase === "before" ? "before" : "after"].set(r.uid, r.power);
+    byEvent.set(r.eventId, e);
+  }
+  return [...byEvent.values()]
+    .filter((e) => e.before.size > 0 && e.after.size > 0)
+    .sort((a, b) => b.at.getTime() - a.at.getTime());
+}
+
 /** A member of the newest roster as "This is me" shows it: who, and enough to tell look-alike names apart. */
 export interface RosterEntry {
   uid: number;

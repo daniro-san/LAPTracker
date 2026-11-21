@@ -108,7 +108,9 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     The Insights page (D139, issue 489): insights.ts (its one read: end-of-day reads, first
                     seen days, break notes, other alliances' sightings and our history tags), insights-rules.ts
                     (pure: pulse, effort groups, Quiet contributors, joins and leaves, origins, tenure, newcomers),
-                    insights-words.ts (pure: the bars' rows and the "based on" lines), dictionary.insights.ts.
+                    insights-words.ts (pure: the bars' rows and the "based on" lines), dictionary.insights.ts;
+                    part 2: insights-kvk.ts and insights-squads.ts (pure: KvK cost and recovery, squads seen),
+                    insights-more-words.ts, insights-format.ts, dictionary.insights-more.ts.
                     Home's desk activity (D108): desk-activity.ts ("On the desk now" from officer sessions'
                     seen_at, and the recent-activity feed merged from the existing histories),
                     desk-activity-words.ts (its lines), dictionary.activity.ts (its words); reads in

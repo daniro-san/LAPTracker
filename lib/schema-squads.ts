@@ -63,7 +63,8 @@ export const memberSquads = pgTable(
     /** Our read that stored this row. */
     readAt: tstz("read_at").notNull(),
   },
-  (t) => [index("member_squads_member_idx").on(t.unionId, t.uid, t.squad)],
+  // A pair's newest row is the first entry backwards (D149): the card's reads and Insights' squads seen.
+  (t) => [index("member_squads_latest_idx").on(t.unionId, t.uid, t.squad, t.readAt, t.id)],
 );
 
 /**

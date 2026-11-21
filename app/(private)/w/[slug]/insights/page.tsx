@@ -10,9 +10,11 @@ import { getEnv } from "@/lib/env";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { thanksSwitches } from "@/lib/private/features";
 import { insightsView } from "@/lib/private/insights";
+import { kvkWords, squadsWords } from "@/lib/private/insights-more-words";
 import { insightsWords } from "@/lib/private/insights-words";
 
 import { SignedInFrame } from "../../../_ui/Frame";
+import { KvkCard, SquadsCard } from "../../../_ui/InsightsMore";
 import { EffortCard, FlowCard, PulseCard } from "../../../_ui/InsightsSections";
 import { ViewSwitch } from "../../../_ui/MembersHead";
 import { openRollCall } from "../../../_ui/roll-call-page";
@@ -53,6 +55,15 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
       {words.pulse && <PulseCard pulse={words.pulse} t={t} noData={noData} />}
       {words.effort && <EffortCard effort={words.effort} t={t} noData={noData} share={share} />}
       {words.flow && <FlowCard flow={words.flow} t={t} noData={noData} />}
+      <KvkCard
+        kvk={kvkWords(data.view.kvk, data.view.newest, { t, language })}
+        slug={slug}
+        t={t}
+        noData={noData}
+      />
+      {data.view.squads && (
+        <SquadsCard squads={squadsWords(data.view.squads, { t, language })} t={t} noData={noData} />
+      )}
     </>
   );
   return (
