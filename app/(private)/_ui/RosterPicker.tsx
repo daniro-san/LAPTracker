@@ -32,7 +32,8 @@ function Suggested({
       {suggested.length === 0 ? (
         <p className="mt-1 text-body-sm">{words["calendar.suggest.none"]}</p>
       ) : (
-        <ul className="mt-1">
+        // ph-no-capture (issue 549): the suggestions come in order of the week's quest points.
+        <ul className="ph-no-capture mt-1">
           {suggested.map((m) => (
             <li key={m.uid} className="border-t border-rule">
               <button

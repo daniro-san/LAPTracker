@@ -214,7 +214,11 @@ function Overview({ card }: { card: CardData }) {
         </ul>
       )}
       {card.days ? (
-        <MemberLastDays days={card.days} />
+        // ph-no-capture (issue 549): session replay records the bars as an empty box, so no bar height or
+        // daily number of the member reaches analytics.
+        <div className="ph-no-capture">
+          <MemberLastDays days={card.days} />
+        </div>
       ) : (
         <p className="mt-3 text-body-sm text-ink/75">{card.daysEarly}</p>
       )}

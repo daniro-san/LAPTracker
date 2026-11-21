@@ -76,7 +76,9 @@ export function HomeMembers(props: {
           {thanks.length > 0 && (
             <div className="max-w-sm py-2">
               <h3 className="text-body-sm font-semibold text-ink/75">{t[key]}</h3>
-              <ol>
+              {/* ph-no-capture (issue 549): each name's week of donations or quest points, in their order,
+                  never reaches session replay. */}
+              <ol className="ph-no-capture">
                 {thanks.map((x) => (
                   <li key={x.uid} className="flex justify-between gap-2">
                     <span translate="no" className="min-w-0 truncate font-semibold">
