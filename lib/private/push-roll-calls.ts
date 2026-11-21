@@ -9,7 +9,8 @@
 // took part, so they are open from A until A + 24 h. A reminder is due in the first 3 hours after it opens
 // ("open", when anyone is not set) and in its last 3 hours ("left", when anyone is still not set). Three
 // hours, because the tick opens the database at least once every 3 hours (D141's heartbeat), so every
-// window gets a tick.
+// window gets a tick. The "open" notification carries no number (it would always be the whole roster).
+// Raid prep is left out while the Raid Shield check is on: that check's own notification covers it.
 import type { Db } from "../db";
 import { officerOf } from "../repo/push";
 import { serverDay, type ScheduleConfig } from "../schedule";
@@ -66,8 +67,11 @@ export async function dueRollCalls(
   const items = (
     await Promise.all(weeks.map((w) => weekItems(db, access, w, cfg.SERVER_TZ)))
   ).flat();
+  // While the Raid Shield check is on, its own notification covers Raid prep: no second, different count.
+  const shieldCheck = featureOn(access, "shield_check");
   return items.flatMap((item): RollCallReminder[] => {
     if (!item.placed || !("entry" in item.occasion)) return [];
+    if (item.kind === "shield" && shieldCheck) return [];
     const at = zonedInstant(item.day, item.placed.minute ?? 0, cfg.SERVER_TZ);
     const phase = reminderPhase(item.kind, at, now.getTime());
     if (!phase || item.tally.notSet === 0) return [];

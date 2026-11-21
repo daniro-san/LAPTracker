@@ -23,9 +23,10 @@ export async function currentSubscription(slug: string): Promise<PushSubscriptio
   return (await reg?.pushManager.getSubscription()) ?? null;
 }
 
-/** sha256 of the endpoint, hex: how the server's row for this device is named. */
+/** sha256 of the endpoint as parsed, hex: how the server's row for this device is named (lib/push.ts). */
 export async function endpointHash(endpoint: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint));
+  const text = new TextEncoder().encode(new URL(endpoint).href);
+  const digest = await crypto.subtle.digest("SHA-256", text);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -54,6 +55,21 @@ export function subscriptionBody(sub: PushSubscription) {
     endpoint: sub.endpoint,
     keys: { p256dh: json.keys?.p256dh ?? "", auth: json.keys?.auth ?? "" },
   };
+}
+
+/**
+ * The desk's language switched (D148): this device's notifications follow, when it has them. The workspace
+ * is the page's own (/w/<slug>/…); nothing happens anywhere else, and a refusal changes nothing.
+ */
+export async function followLanguage(language: string): Promise<void> {
+  const slug = /^\/w\/([a-z0-9][a-z0-9-]*)/.exec(window.location.pathname)?.[1];
+  const sub = slug ? await currentSubscription(slug).catch(() => null) : null;
+  if (!slug || !sub) return;
+  await fetch(`/api/w/${slug}/push`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "language", endpoint: sub.endpoint, language }),
+  }).catch(() => null);
 }
 
 /** Sign-out on this device: its subscription ends here, and its endpoint goes to the server with the sign-out. */

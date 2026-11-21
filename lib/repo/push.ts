@@ -58,16 +58,15 @@ const device = (workspaceId: number, userId: number, endpointHash: string) =>
     eq(pushSubscriptions.endpointHash, endpointHash),
   );
 
-/** The uses and language of an officer's own device; false when it has no row (any more). */
-export async function setDeviceUses(
+/** The uses (when given) and language of an officer's own device; false when it has no row (any more). */
+export async function setDevice(
   db: Db,
   key: { workspaceId: number; userId: number; endpointHash: string },
-  uses: PushUse[],
-  language: PushLanguage,
+  patch: { uses?: PushUse[]; language: PushLanguage },
 ): Promise<boolean> {
   const done = await db
     .update(pushSubscriptions)
-    .set({ uses, language })
+    .set(patch)
     .where(device(key.workspaceId, key.userId, key.endpointHash))
     .returning({ id: pushSubscriptions.id });
   return done.length > 0;

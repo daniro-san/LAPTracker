@@ -156,6 +156,8 @@ export async function sendPush(
       },
       body: new Uint8Array(encryptPayload(sub, Buffer.from(payload, "utf8"))),
       signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      // A redirect could take the push off the allowed hosts: it is a failure instead.
+      redirect: "error",
     });
     if (res.status === 404 || res.status === 410) return "gone";
     return res.ok ? "ok" : "failed";

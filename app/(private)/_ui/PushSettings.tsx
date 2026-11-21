@@ -22,11 +22,20 @@ import {
 } from "./push-client";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
-type Phase = "checking" | "unsupported" | "blocked" | "off" | "on";
+type Phase = "checking" | "unsupported" | "iosTab" | "blocked" | "off" | "on";
+
+/** Safari on an iPhone or iPad outside the Home Screen app: push exists only in the app. */
+const iosTab = () => {
+  const apple =
+    /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+    (navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1);
+  return apple && !window.matchMedia("(display-mode: standalone)").matches;
+};
 
 /** This device's state: on (the server has its row), off, blocked by the browser, or unable. */
 async function deviceState(slug: string, view: PushView) {
-  if (!canPush()) return { phase: "unsupported" as const, uses: null };
+  if (!canPush())
+    return { phase: iosTab() ? ("iosTab" as const) : ("unsupported" as const), uses: null };
   if (Notification.permission === "denied") return { phase: "blocked" as const, uses: null };
   const sub = await currentSubscription(slug);
   const hash = sub ? await endpointHash(sub.endpoint) : null;
@@ -45,7 +54,8 @@ type Props = {
 function usePushDevice(props: Props) {
   const { slug, view, t } = props;
   const [phase, setPhase] = useState<Phase>("checking");
-  const [uses, setUses] = useState<PushUse[]>(view.offered);
+  // The night read's failure asks nothing of an officer: off until someone wants it.
+  const [uses, setUses] = useState<PushUse[]>(view.offered.filter((u) => u !== "night_read"));
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -129,7 +139,7 @@ export function PushSettings(props: Props) {
       </h2>
       <p className="mt-1">{t["push.lead"]}</p>
       <p className="mt-1 text-body-sm text-ink/70">{t["push.private"]}</p>
-      {phase !== "unsupported" && phase !== "blocked" && (
+      {(phase === "checking" || phase === "off" || phase === "on") && (
         <fieldset className="mt-3 flex flex-col gap-1" disabled={busy || phase === "checking"}>
           <legend className="sr-only">{t["push.head"]}</legend>
           {view.offered.map((use) => (
@@ -152,6 +162,7 @@ export function PushSettings(props: Props) {
       )}
       <ul className="mt-3 flex list-disc flex-col gap-1 pl-5 text-body-sm">
         <li>{t["push.ios"]}</li>
+        <li>{t["push.iosSignIn"]}</li>
         <li>{t["push.android"]}</li>
         <li>{t["push.session"]}</li>
       </ul>
@@ -169,10 +180,15 @@ function PushActions(props: {
 }) {
   const { phase, t } = props;
   if (phase === "checking") return null;
-  if (phase === "unsupported" || phase === "blocked") {
+  if (phase === "unsupported" || phase === "iosTab" || phase === "blocked") {
+    const said = {
+      unsupported: "push.unsupported",
+      iosTab: "push.iosTab",
+      blocked: "push.blocked",
+    } as const;
     return (
       <p role="status" className="mt-3 font-medium">
-        {t[phase === "blocked" ? "push.blocked" : "push.unsupported"]}
+        {t[said[phase]]}
       </p>
     );
   }

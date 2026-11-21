@@ -38,9 +38,14 @@ export function pushConfig(env: PushEnv): (Vapid & { secret: string }) | null {
   };
 }
 
-/** sha256 of an endpoint, hex: how a device's row is found without opening it. */
+/**
+ * sha256 of an endpoint, hex: how a device's row is found without opening it. The URL as parsed (host in
+ * lower case, no default port), so one device never gets two rows.
+ */
 export const endpointHash = (endpoint: string) =>
-  createHash("sha256").update(endpoint).digest("hex");
+  createHash("sha256")
+    .update(URL.canParse(endpoint) ? new URL(endpoint).href : endpoint)
+    .digest("hex");
 
 /** A subscription sealed for one workspace, as `push_subscriptions` stores it. */
 export function sealDevice(secret: string, workspaceId: number, sub: PushSubscriptionJson) {

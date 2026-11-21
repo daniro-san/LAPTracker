@@ -9,7 +9,7 @@ import type { Db } from "../db";
 import type { Env } from "../env";
 import { endpointHash, pushConfig, sealDevice } from "../push";
 import { recordFailure } from "../repo/auth-attempts";
-import { deleteDevice, officerDevices, saveDevice, setDeviceUses, trimDevices } from "../repo/push";
+import { deleteDevice, officerDevices, saveDevice, setDevice, trimDevices } from "../repo/push";
 import { PUSH_USES, type PushUse } from "../schema-push";
 import { pushHost } from "../web-push";
 import type { WorkspaceAccess } from "./access";
@@ -62,6 +62,8 @@ export const pushInput = z.discriminatedUnion("action", [
     .strict(),
   z.object({ action: z.literal("uses"), endpoint, uses, language }).strict(),
   z.object({ action: z.literal("unsubscribe"), endpoint }).strict(),
+  // The desk's language switched on this device: its notifications follow.
+  z.object({ action: z.literal("language"), endpoint, language }).strict(),
 ]);
 export type PushInput = z.infer<typeof pushInput>;
 
@@ -107,9 +109,10 @@ export async function savePush(
     await deleteDevice(db, { ...own, endpointHash: endpointHash(input.endpoint) });
     return { ok: true };
   }
-  if (input.action === "uses") {
+  if (input.action === "uses" || input.action === "language") {
     const key = { ...own, endpointHash: endpointHash(input.endpoint) };
-    const done = await setDeviceUses(db, key, picked(input.uses), input.language);
+    const uses = input.action === "uses" ? { uses: picked(input.uses) } : {};
+    const done = await setDevice(db, key, { ...uses, language: input.language });
     return done ? { ok: true } : { ok: false, code: "not_found" };
   }
   const sub = input.subscription;

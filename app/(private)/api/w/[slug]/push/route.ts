@@ -1,7 +1,7 @@
 // POST /api/w/[slug]/push — Alliance settings → Notifications (D148). Officers only: same origin, JSON, an
 // officer's session (401 signed_out, D99). {action: "subscribe", subscription, uses, language} turns this
 // device on; {action: "uses", endpoint, uses, language} changes what it is on for; {action: "unsubscribe",
-// endpoint} turns it off. Only the signed-in officer's own device rows are written. 403 turned_off without
+// endpoint} turns it off; {action: "language", endpoint, language} follows the desk's language switch. Only the signed-in officer's own device rows are written. 403 turned_off without
 // the site's push keys; 404 not_found for a device with no row; 429 rate_limited. Counted as `ws_action`
 // `push` / `add`, `save` or `delete`. The subscription is never logged or answered.
 import { requireWorkspace } from "@/lib/private/access";
@@ -18,7 +18,7 @@ import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
 const STATUS = { turned_off: 403, not_found: 404, rate_limited: 429 } as const;
-const ACTION = { subscribe: "add", uses: "save", unsubscribe: "delete" } as const;
+const ACTION = { subscribe: "add", uses: "save", language: "save", unsubscribe: "delete" } as const;
 
 export async function POST(
   request: Request,

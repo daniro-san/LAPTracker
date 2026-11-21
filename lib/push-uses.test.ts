@@ -17,6 +17,7 @@ import {
   sessionFor,
 } from "./push.test-helpers";
 import { calendarEntries, dailyReads, dailyRosters, workspaces, workspaceUsers } from "./schema";
+import { workspaceFeatures } from "./schema-features";
 import { PUSH_USES } from "./schema-push";
 import { playerReads } from "./schema-squads";
 import type { ShieldTarget } from "./shield-read";
@@ -154,7 +155,7 @@ describe("the officers' notifications (D148)", () => {
     countsOnly(got);
   });
 
-  it("roll call: “open” once when it opens, “left” once in its last hours, counts only", async () => {
+  it("roll call: “open” once when it opens (no number), “left” once about a day later, counts only", async () => {
     // An Undead Siege on Thursday 20:00 ST (22:00 UTC): open until Friday 20:00 ST.
     const [entry] = await db
       .insert(calendarEntries)
@@ -171,11 +172,28 @@ describe("the officers' notifications (D148)", () => {
     }
     const got = push.received(alpha.device);
     expect(got.map((n) => [n.title, n.body])).toEqual([
-      ["Roll call: Undead Siege", "2 to mark. Tap to open the roll call."],
+      ["Roll call: Undead Siege", "Open now. Tap to mark who took part."],
       ["Roll call: Undead Siege", "2 still not set. Tap to open the roll call."],
     ]);
     expect(got[0]?.url).toBe(`/w/alpha/roll-call/mark?entry=${entry?.id}&week=2026-11-16`);
     expect(push.received(bravo.device)).toEqual([]);
     countsOnly(got);
+  });
+
+  it("roll call: no Raid prep reminder while the Raid Shield check is on (its own notification covers it)", async () => {
+    // KvK on Saturday 12:00 ST: Raid prep opens Friday 12:00 ST (14:00 UTC).
+    await db
+      .insert(calendarEntries)
+      .values({ workspaceId: alpha.workspaceId, kind: "kvk", day: "2026-11-21", minute: 720 });
+    const on = { shield_check: true };
+    await db
+      .insert(workspaceFeatures)
+      .values({ workspaceId: alpha.workspaceId, switches: on, allianceSwitches: on });
+    clock.now = new Date("2026-11-20T14:30:00Z");
+    await rollCallReminders(deps(), db);
+    expect(push.received(alpha.device)).toEqual([]);
+    await db.delete(workspaceFeatures);
+    await rollCallReminders(deps(), db);
+    expect(push.received(alpha.device).map((n) => n.title)).toEqual(["Roll call: Raid prep"]);
   });
 });
