@@ -207,14 +207,19 @@ function Overview({ card }: { card: CardData }) {
   return (
     <>
       {card.statusLines.length > 0 && (
-        <ul className="mt-3 text-body-sm">
+        // ph-no-capture (issue 549): "No daily quests on {day}" and the other reasons never reach replay.
+        <ul className="ph-no-capture mt-3 text-body-sm">
           {card.statusLines.map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>
       )}
       {card.days ? (
-        <MemberLastDays days={card.days} />
+        // ph-no-capture (issue 549): session replay records the bars as an empty box, so no bar height or
+        // daily number of the member reaches analytics.
+        <div className="ph-no-capture">
+          <MemberLastDays days={card.days} />
+        </div>
       ) : (
         <p className="mt-3 text-body-sm text-ink/75">{card.daysEarly}</p>
       )}

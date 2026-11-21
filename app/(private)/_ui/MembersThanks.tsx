@@ -27,7 +27,9 @@ export function MembersThanks(props: {
         {rows.map((k) => (
           <div key={k} className="min-w-0 border-t border-rule pt-1">
             <h3 className="text-body-sm font-semibold text-ink/75">{t[`thanks.${k}`]}</h3>
-            <ol className="text-body-sm">
+            {/* ph-no-capture (issue 549): each name's week of donations or quest points, in their order,
+                never reaches session replay. */}
+            <ol className="ph-no-capture text-body-sm">
               {view.thanks[k].map((x) => (
                 <li key={x.uid} className="flex justify-between gap-2">
                   <span translate="no" className="min-w-0 truncate font-semibold">

@@ -189,7 +189,8 @@ export function TeamPicker(props: {
             <h2 id={`tg-${g}`} className="mt-3 text-body-sm font-semibold">
               {words[HEADING[g]]}
             </h2>
-            <ul>
+            {/* ph-no-capture (issue 549): the open groups come in order of the week's quest points. */}
+            <ul className={g === "picked" ? undefined : "ph-no-capture"}>
               {rows.map((r) => (
                 <TeamRow
                   key={r.uid}

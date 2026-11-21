@@ -166,7 +166,9 @@ function columnsOf(column: Column, t: ListWords): TableColumn<RowProps>[] {
       key: "donated",
       head: t["list.col.week"],
       cell: (p) => (
-        <span className="whitespace-nowrap">
+        // ph-no-capture (issue 549): the week's donations never reach session replay; block, so the
+        // replayed box is the cell's width, not the number's.
+        <span className="ph-no-capture block whitespace-nowrap">
           {withNoData(p.row.text.donated, t["nodata.mark"])}
         </span>
       ),

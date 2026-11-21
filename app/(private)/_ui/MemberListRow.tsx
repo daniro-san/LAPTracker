@@ -62,8 +62,9 @@ function Lines(props: RowProps & { wrap?: boolean }) {
   return (
     <>
       {row.statusLine && (
+        // ph-no-capture (issue 549): "No daily quests on {day}" and the other reasons never reach replay.
         <span
-          className={`${props.wrap ? "text-pretty" : "truncate"} text-body-sm ${STATUS_TONE[row.status]}`}
+          className={`ph-no-capture ${props.wrap ? "text-pretty" : "truncate"} text-body-sm ${STATUS_TONE[row.status]}`}
         >
           {row.statusLine}
         </span>
@@ -96,7 +97,8 @@ export function MemberListRow(props: RowProps) {
             <span className="sr-only">{`${t[`list.col.${props.column}`]} `}</span>
             {withNoData(row.text[props.column], t["nodata.mark"])}
           </span>
-          <span className="w-12 shrink-0 text-right text-body-sm text-ink/80 tabular-nums">
+          {/* ph-no-capture (issue 549): the week's donations never reach session replay. */}
+          <span className="ph-no-capture w-12 shrink-0 text-right text-body-sm text-ink/80 tabular-nums">
             <span className="sr-only">{`${t["list.col.donated"]} `}</span>
             {withNoData(row.text.donated, t["nodata.mark"])}
           </span>
