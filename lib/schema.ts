@@ -221,6 +221,9 @@ export const appErrors = pgTable(
     message: text("message").notNull(),
     /** D61: the error's name, message, stack start and cause, redacted; shown on /admin/errors only. */
     detail: jsonb("detail"),
+    /** Under /w/[slug] or /api/w/[slug]: the request's slug when it has a slug's shape (/admin's Alliances
+     * table counts errors by workspace, D144); null elsewhere. */
+    workspaceSlug: text("workspace_slug"),
   },
   (t) => [index("app_errors_at_idx").on(t.at)],
 );

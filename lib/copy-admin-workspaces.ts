@@ -1,8 +1,12 @@
 // /admin's Workspaces card (D71, D73), re-exported as `copy.admin.workspaces`. English only (D48).
+import { alliancesAdminCopy } from "./copy-admin-alliances";
+
 export const workspacesAdminCopy = {
   title: "Workspaces",
   help: "An alliance's private Officers' Desk at /w/<address>. Its leadership signs in with Discord: a leadership role in the alliance's server, or a place on the allowlist.",
   none: "No workspace yet.",
+  /** The Alliances table above the workspaces (D144). */
+  alliances: alliancesAdminCopy,
   alliance: "Alliance",
   guild: "Discord server id",
   roles: "Leadership role ids",

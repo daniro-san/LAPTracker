@@ -9,7 +9,7 @@ import { appErrorMessage, createNotifier } from "./notify";
 import { redact } from "./redact";
 import { allianceLabelOf } from "./repo/alliances";
 import { claimAppErrorAlert, insertAppError } from "./repo/app-errors";
-import { findWorkspaceBySlug } from "./repo/workspaces";
+import { findWorkspaceBySlug, WORKSPACE_SLUG } from "./repo/workspaces";
 
 const MESSAGE_CHARS = 500;
 const STACK_LINES = 12;
@@ -57,7 +57,8 @@ export interface AppErrorEntry {
   kind: string;
   digest: string | null;
   error: unknown;
-  /** Under /w/[slug] or /api/w/[slug]: the slug from the request, for PostHog only (issue 452). */
+  /** Under /w/[slug] or /api/w/[slug]: the slug from the request, for PostHog (issue 452) and the row's
+   * `workspace_slug` (D144). */
   slug?: string;
 }
 
@@ -106,6 +107,8 @@ export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Pro
       digest: entry.digest,
       message,
       detail,
+      // D144: the slug as the request named it, only in a slug's shape (it comes from the path).
+      workspaceSlug: slug && WORKSPACE_SLUG.test(slug) ? slug : null,
     });
     // At most one alert per hour while errors continue; the DB holds the last alert time, and the
     // claim decides which instance posts.
