@@ -122,4 +122,4 @@ Findings F1, F2, F23, F24 and F36 of the #585 phase 1 review, before Friday's Ra
 - F36's "Team :" (empty team letter) and F24's Discord counts were not in this batch.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/590
