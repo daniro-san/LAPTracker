@@ -32,11 +32,14 @@
 
 ## Decisions
 
-- **D140** records the page, the tip, the panel, the message and the persona panel. D138 is taken by #520, and D139 is likely to be taken by #489.
+- **D140** records the page, the tip, the panel, the message and the persona panel. D138 (#520) and D139 (#522) were merged first.
 - The tip is a group of its own ("A tip to share"), not a Check in reason. A member is in the first group that holds them.
 - **Assumption:** the tip uses the offline signal's 7-day grace (D127) for newcomers. The issue does not say.
 - **Assumption:** "5 of the last 7 days that have data" means the 7 server days of the card's "Last 7 days". A day with no read is left out, so a member needs 5 days with data below 1,000.
 - The message is built on the server in all three languages. The browser only picks one and copies it.
+
+- **Settled by the coordinator (2026-11-20):** keep the softened quiet line, keep the 7-day grace for the tip, wait for real data before sizing the tip group, and leave AI translation out.
+- **Rebased onto `origin/dev`** after #517, #520 and #522 merged. Two conflicts were resolved by keeping both sides: the decisions index (D138 and D139 before D140) and the header comment of `cross-workspace-reads.test.ts` (Insights and Follow-up both named). This change adds no migration.
 
 ## Deviations
 
@@ -50,7 +53,7 @@
 
 ## Verified
 
-- **`pnpm check` passes:** prettier, eslint, tsc, vitest (263 files, 1,379 tests pass, 4 skipped), drift, and i18n (17 languages).
+- **`pnpm check` passes:** prettier, eslint, tsc, vitest (265 files, 1,389 tests pass, 4 skipped, after the rebase), drift, and i18n (17 languages).
 - **New tests**, about one per behaviour:
   - `lib/private/ready-message.test.ts` (3): each reason and the tip have their line; every fact is named, in PT and FR; the language order.
   - `lib/private/follow-up-rules.test.ts` (+1): the tip with 5 days below 1,000; no tip when the extra days are days with no read.
