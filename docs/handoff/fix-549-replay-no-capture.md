@@ -66,4 +66,4 @@ The class `ph-no-capture` is now on every desk element that shows a per-member v
 - Any new desk element that shows a per-member `daily_tech`, `daily_honor` or `active` value, or orders members by one of them, must carry `ph-no-capture`. If the element is inline, give it a fixed width or make it `block`, so the replayed box does not give away the number's length.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/553
