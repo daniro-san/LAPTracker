@@ -1,8 +1,8 @@
 "use client";
 
 // Raid prep (issue 474, D137): the Raid Shield roll call with two marks per member, Shield and Squads off
-// the wall. Above the rows, the newest check's count ("Morning check 10:04 ST: 86 of 97 with a shield
-// seen"), the Discord summary's state, and "Mark ✓ the n seen with a shield", which marks ✓ Shield up for
+// the wall. Above the rows, the answer first ("Shields for this raid: 86 of 97 seen at the morning check
+// (10:04 ST)") and the Shield marks' counts that add up (issue 585, first glance), the Discord summary's state, and "Mark ✓ the n seen with a shield", which marks ✓ Shield up for
 // those the tracker saw with a shield and nobody marked yet. Then "Copy n names" and "Copy one message" for
 // the members whose Shield is not set or ✗, to paste into Discord, and the switch that shows the optional
 // Squads off the wall pair on every tile (issue 585). Everything else is the roll call's own: the grid of
@@ -201,9 +201,12 @@ export function RaidPrepMarks(props: PageProps) {
   const error = m.error ?? w.error;
   return (
     <>
+      {/* The answer first; its card holds "n of m marked" while the check is on (issue 585, first glance). */}
+      <TrackerBar page={props} notSet={notSet} counts={g.counts} m={m} />
       <Intro
         marked={asked.length - notSet.length}
         total={asked.length}
+        progress={props.head.answer === null}
         words={words}
         marks={marks}
         shield
@@ -217,7 +220,6 @@ export function RaidPrepMarks(props: PageProps) {
         slug={props.slug}
         occasion={props.occasion}
       />
-      <TrackerBar head={props.head} notSet={notSet} words={words} slug={props.slug} m={m} />
       <RemindBar
         names={remind}
         language={props.language}
@@ -234,6 +236,7 @@ export function RaidPrepMarks(props: PageProps) {
         g={g}
         found={found}
         cols="two"
+        caption={words["roll.prep.filterBy"]}
         words={words}
         tile={tileOf(m, w, { ...props, showWall })}
       />
