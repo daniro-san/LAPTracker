@@ -8,19 +8,11 @@ import { heroNames } from "../repo/hero-catalog";
 import { mightBeforeEvent, ownDays, ownMarks, ownSeats, ownTeam } from "../repo/me";
 import { squadPairs } from "../repo/squads";
 import type { MeAccess } from "./access";
-import { addDays, dayIn, mondayOf } from "./calendar-time";
+import { dayIn, mondayOf } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
-import {
-  neededLines,
-  recoveryLine,
-  seriesOf,
-  weekCard,
-  PROGRESS_DAYS,
-  type Series,
-} from "./me-parts";
+import { neededLines, recoveryLine, seriesOf, PROGRESS_DAYS, type Series } from "./me-parts";
 import { cardFormats } from "./member-card";
 import { daysFormats } from "./member-card-parts";
-import type { DaysCard } from "./member-days";
 import { squadsCardOf, type SquadsCard } from "./member-squads";
 
 const DAY_MS = 86_400_000;
@@ -31,7 +23,6 @@ export type MeView =
       left: false;
       name: string;
       progress: { might: Series | null; kills: Series | null; kvk: string | null };
-      week: DaysCard | null;
       squads: SquadsCard;
       needed: string[];
     };
@@ -45,7 +36,7 @@ export async function meView(
   const { now, zone, t } = at;
   const today = dayIn(zone, now.getTime());
   const week = mondayOf(today);
-  const days = await ownDays(db, me.unionId, me.uid, addDays(week, -7));
+  const days = await ownDays(db, me.unionId, me.uid);
   const newest = days.at(-1);
   const name = days.findLast((d) => d.name !== null)?.name ?? "";
   // INVARIANT me.left-closes: a member the newest roster does not list sees nothing more.
@@ -70,7 +61,6 @@ export async function meView(
       kills: seriesOf(days, "kills", t, d),
       kvk: recoveryLine(days, kvk, t, d.date),
     },
-    week: weekCard(days, today, t, d),
     squads: { ...squadsCardOf(pairs, heroes, t, f), none: t["me.squads.none"] },
     needed: neededLines({ team, seats, marks }, week, t, d.date),
   };

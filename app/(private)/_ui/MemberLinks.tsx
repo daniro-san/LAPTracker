@@ -18,14 +18,17 @@ import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 type Words = LinkWords;
 type Action = "approve" | "unlink";
+/** The claim as the officer saw it: the user and the player. */
+type Claim = { userId: number; uid: number };
 
-async function send(slug: string, action: Action, user: number): Promise<string> {
+async function send(slug: string, action: Action, claim: Claim): Promise<string> {
   const res = await fetch(`/api/w/${slug}/member-links`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ action, user }),
+    body: JSON.stringify({ action, user: claim.userId, uid: claim.uid }),
   }).catch(() => null);
-  if (res?.ok || res?.status === 404) return "ok";
+  if (res?.ok) return "ok";
+  if (res?.status === 404) return "changed";
   if (res?.status === 409) return "taken";
   return res?.status === 401 ? SIGNED_OUT : "failed";
 }
@@ -35,14 +38,16 @@ function useAnswer(slug: string, words: Words) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const answer = async (action: Action, user: number) => {
+  const answer = async (action: Action, claim: Claim) => {
     setBusy(true);
-    const r = await send(slug, action, user);
+    const r = await send(slug, action, claim);
     setBusy(false);
     if (r !== "ok") {
-      setError(
-        r === SIGNED_OUT ? SIGNED_OUT : words[r === "taken" ? "me.review.taken" : "me.failed"],
-      );
+      const key =
+        r === "taken" ? "me.review.taken" : r === "changed" ? "me.review.changed" : "me.failed";
+      setError(r === SIGNED_OUT ? SIGNED_OUT : words[key]);
+      // The claim changed since the page was read: read it again.
+      if (r === "changed") router.refresh();
       return false;
     }
     setError("");
@@ -74,7 +79,7 @@ export function LinkReviews(props: { slug: string; reviews: LinkReview[]; words:
             <button
               type="button"
               disabled={busy}
-              onClick={() => void answer("approve", r.userId)}
+              onClick={() => void answer("approve", r)}
               className={buttonClass("primary")}
             >
               {t["me.review.approve"]}
@@ -82,7 +87,7 @@ export function LinkReviews(props: { slug: string; reviews: LinkReview[]; words:
             <button
               type="button"
               disabled={busy}
-              onClick={() => void answer("unlink", r.userId)}
+              onClick={() => void answer("unlink", r)}
               className={buttonClass("secondary")}
             >
               {t["me.review.reject"]}
@@ -108,7 +113,7 @@ export function CardLink(props: { slug: string; link: CardLinkData; words: Words
   // The card is read once when it opens, so it keeps the outcome of its own answers.
   const [state, setState] = useState<CardLinkData["state"] | "removed">(link.state);
   const act = async (action: Action) => {
-    if (await answer(action, link.userId)) setState(action === "approve" ? "approved" : "removed");
+    if (await answer(action, link)) setState(action === "approve" ? "approved" : "removed");
   };
   const name = { name: isolate(link.discordName) };
   if (state === "removed")

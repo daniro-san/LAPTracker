@@ -3,9 +3,9 @@
 // People first (D75): the member's own numbers only, never a rank, a comparison with others or a score.
 // French puts a no-break space before : ; ! and ?.
 export const meEn = {
-  "me.open": "Your own page: your progress, this week and your squads",
+  "me.open": "Your own page: your progress, your squads and where you’re needed",
   "me.title": "Your page",
-  "me.lead": "Only your own numbers, from the alliance’s daily reads. Nobody else’s are here.",
+  "me.lead": "Only your own might, kills, squads and plans. Nobody else’s are here.",
   "me.back": "Back to the members’ board",
   "me.preview": "This is your own page as an officer: a member sees theirs the same way.",
   "me.link.head": "Which player are you?",
@@ -31,13 +31,6 @@ export const meEn = {
   "me.progress.early": "Your chart starts after two daily reads.",
   "me.kvk.back": "Back to {pct}% of your might before KvK ({date}).",
   "me.kvk.full": "Fully back: {pct}% of your might before KvK ({date}).",
-  "me.week.head": "This week",
-  "me.week.lead": "Monday to Sunday, server days. Next to it, your own last week.",
-  "me.week.this": "This week: {line}",
-  "me.week.last": "Last week: {line}",
-  "me.week.lastNone": "Last week: no data",
-  "me.week.later": "not read yet",
-  "me.week.early": "Your week shows after the first daily update.",
   "me.squads.none": "The tracker has not seen your squads yet.",
   "me.needed.head": "Where you’re needed",
   "me.needed.lead": "What your officers planned with you this week.",
@@ -53,6 +46,7 @@ export const meEn = {
   "me.review.match": "Hint: the Discord name matches this game name.",
   "me.review.noMatch": "Hint: the Discord name is not this game name.",
   "me.review.taken": "Someone else already has this player. Remove one of the two links first.",
+  "me.review.changed": "This claim changed since you opened the page. Look again.",
   "me.review.approve": "Approve",
   "me.review.reject": "Reject",
   "me.card.linked": "Linked to Discord: {name}",
@@ -75,6 +69,7 @@ const LINK_KEYS = [
   "me.review.approve",
   "me.review.reject",
   "me.review.taken",
+  "me.review.changed",
   "me.card.linked",
   "me.card.pending",
   "me.card.remove",
@@ -89,10 +84,9 @@ export const linkWords = (t: MeWords): LinkWords =>
   Object.fromEntries(LINK_KEYS.map((k) => [k, t[k]])) as LinkWords;
 
 export const mePt: MeWords = {
-  "me.open": "Sua página: seu progresso, esta semana e seus esquadrões",
+  "me.open": "Sua página: seu progresso, seus esquadrões e onde precisam de você",
   "me.title": "Sua página",
-  "me.lead":
-    "Só os seus números, das leituras diárias da aliança. Os de mais ninguém aparecem aqui.",
+  "me.lead": "Só o seu might, kills, esquadrões e planos. Os de mais ninguém aparecem aqui.",
   "me.back": "Voltar ao mural dos membros",
   "me.preview": "Esta é a sua página como oficial: um membro vê a dele do mesmo jeito.",
   "me.link.head": "Qual jogador é você?",
@@ -118,13 +112,6 @@ export const mePt: MeWords = {
   "me.progress.early": "Seu gráfico começa depois de duas leituras diárias.",
   "me.kvk.back": "De volta a {pct}% do seu might de antes do KvK ({date}).",
   "me.kvk.full": "Totalmente recuperado: {pct}% do seu might de antes do KvK ({date}).",
-  "me.week.head": "Esta semana",
-  "me.week.lead": "De segunda a domingo, em dias do servidor. Ao lado, a sua semana passada.",
-  "me.week.this": "Esta semana: {line}",
-  "me.week.last": "Semana passada: {line}",
-  "me.week.lastNone": "Semana passada: sem dados",
-  "me.week.later": "ainda não lido",
-  "me.week.early": "Sua semana aparece depois da primeira atualização diária.",
   "me.squads.none": "O tracker ainda não viu seus esquadrões.",
   "me.needed.head": "Onde precisam de você",
   "me.needed.lead": "O que seus oficiais planejaram com você esta semana.",
@@ -140,6 +127,7 @@ export const mePt: MeWords = {
   "me.review.match": "Dica: o nome no Discord é igual a este nome no jogo.",
   "me.review.noMatch": "Dica: o nome no Discord não é este nome no jogo.",
   "me.review.taken": "Outra pessoa já tem esse jogador. Remova um dos dois vínculos antes.",
+  "me.review.changed": "Este pedido mudou desde que você abriu a página. Confira de novo.",
   "me.review.approve": "Aprovar",
   "me.review.reject": "Recusar",
   "me.card.linked": "Vinculado ao Discord: {name}",
@@ -152,10 +140,10 @@ export const mePt: MeWords = {
 };
 
 export const meFr: MeWords = {
-  "me.open": "Votre page : votre progression, cette semaine et vos escouades",
+  "me.open": "Votre page : votre progression, vos escouades et là où on a besoin de vous",
   "me.title": "Votre page",
   "me.lead":
-    "Seulement vos propres chiffres, tirés des lectures quotidiennes de l’alliance. Ceux des autres n’y sont pas.",
+    "Seulement votre might, vos kills, vos escouades et vos plans. Ceux des autres n’y sont pas.",
   "me.back": "Retour au tableau des membres",
   "me.preview": "Voici votre propre page d’officier : un membre voit la sienne de la même façon.",
   "me.link.head": "Quel joueur êtes-vous ?",
@@ -182,14 +170,6 @@ export const meFr: MeWords = {
   "me.progress.early": "Votre graphique commence après deux lectures quotidiennes.",
   "me.kvk.back": "Votre might est revenu à {pct} % de celui d’avant le KvK ({date}).",
   "me.kvk.full": "Votre might a tout récupéré : {pct} % de celui d’avant le KvK ({date}).",
-  "me.week.head": "Cette semaine",
-  "me.week.lead":
-    "Du lundi au dimanche, en jours du serveur. À côté, votre propre semaine dernière.",
-  "me.week.this": "Cette semaine : {line}",
-  "me.week.last": "Semaine dernière : {line}",
-  "me.week.lastNone": "Semaine dernière : pas de données",
-  "me.week.later": "pas encore lu",
-  "me.week.early": "Votre semaine s’affiche après la première mise à jour quotidienne.",
   "me.squads.none": "Le tracker n’a pas encore vu vos escouades.",
   "me.needed.head": "Là où on a besoin de vous",
   "me.needed.lead": "Ce que vos officiers ont prévu avec vous cette semaine.",
@@ -205,6 +185,7 @@ export const meFr: MeWords = {
   "me.review.match": "Indice : le nom Discord correspond à ce nom en jeu.",
   "me.review.noMatch": "Indice : le nom Discord n’est pas ce nom en jeu.",
   "me.review.taken": "Quelqu’un d’autre a déjà ce joueur. Retirez d’abord l’un des deux liens.",
+  "me.review.changed": "Cette demande a changé depuis l’ouverture de la page. Regardez à nouveau.",
   "me.review.approve": "Approuver",
   "me.review.reject": "Refuser",
   "me.card.linked": "Lié à Discord : {name}",

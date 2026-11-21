@@ -93,8 +93,9 @@ export async function dropOwnLink(db: Db, board: BoardAccess): Promise<void> {
 
 /** A link an officer still has to look at (Home's "To review"). */
 export interface LinkReview {
-  /** The workspace user who holds it: what Approve and Reject name. */
+  /** The workspace user who holds it and the player claimed: what Approve and Reject name. */
   userId: number;
+  uid: number;
   discordName: string;
   /** "Wren Invented · R3", from the newest roster. */
   player: string;
@@ -112,6 +113,7 @@ export async function linkReviews(db: Db, access: WorkspaceAccess): Promise<Link
     const p = roster.get(l.uid);
     return {
       userId: l.userId,
+      uid: l.uid,
       discordName: l.discordName ?? "",
       player: p ? [p.name, p.rank].filter(Boolean).join(" · ") : String(l.uid),
       nameMatch: nameMatches(l.discordName, l.uid, players),
@@ -121,6 +123,7 @@ export async function linkReviews(db: Db, access: WorkspaceAccess): Promise<Link
 
 export interface CardLink {
   userId: number;
+  uid: number;
   discordName: string;
   state: LinkState;
   words: LinkWords;
@@ -137,19 +140,24 @@ export async function cardLink(
   if (!link) return null;
   return {
     userId: link.userId,
+    uid: link.uid,
     discordName: link.discordName ?? "",
     state: link.state,
     words: linkWords(t),
   };
 }
 
-/** An officer approves or confirms one user's link, or removes it (Reject, Remove). */
+/**
+ * An officer approves one user's claim, or removes a link (Reject, Remove), as the officer saw it: the
+ * user and the player. A claim that changed since finds nothing ("none").
+ */
 export async function decideLink(
   db: Db,
   access: WorkspaceAccess,
-  userId: number,
+  claim: { userId: number; uid: number },
   action: "approve" | "unlink",
 ): Promise<"ok" | "taken" | "none"> {
-  if (action === "approve") return approveLink(db, access.workspaceId, userId);
-  return (await clearLink(db, access.workspaceId, userId)) ? "ok" : "none";
+  const { userId, uid } = claim;
+  if (action === "approve") return approveLink(db, access.workspaceId, userId, uid);
+  return (await clearLink(db, access.workspaceId, userId, uid)) ? "ok" : "none";
 }

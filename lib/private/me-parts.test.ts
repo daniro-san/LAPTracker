@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { OwnDay } from "../repo/me";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { nameMatches } from "./me-link";
-import { neededLines, recoveryLine, seriesOf, weekCard } from "./me-parts";
+import { neededLines, recoveryLine, seriesOf } from "./me-parts";
 
 const t = WORKSPACE_DICTIONARIES.en;
 const f = {
@@ -14,35 +14,15 @@ const f = {
   dayOfMonth: (day: string) => String(Number(day.slice(8))),
 };
 
-const day = (d: string, active: unknown, power: number | null = 1000, listed = true): OwnDay => ({
+const day = (d: string, _: unknown, power: number | null = 1000, listed = true): OwnDay => ({
   day: d,
   listed,
   name: listed ? "Ana Invented" : null,
   power,
   kills: 5,
-  daily: listed ? { active, daily_honor: active, daily_tech: active } : null,
 });
 
-describe("a member's own week (D142)", () => {
-  it("says none, no data and not read yet apart, and puts their own last week beside it", () => {
-    // Today is Thursday 2026-11-05; the newest read is Wednesday's.
-    const days = [
-      day("2026-10-27", 300),
-      day("2026-10-28", 500),
-      day("2026-11-02", 600),
-      day("2026-11-03", null),
-      day("2026-11-04", 400),
-    ];
-    const card = weekCard(days, "2026-11-05", t, f);
-    const quests = card?.rows.find((r) => r.metric === "quests");
-    expect(quests?.bars.map((b) => b.value)).toEqual(["600", "none", "400", "", "", "", ""]);
-    expect(quests?.bars[3]?.said).toBe("2026-11-05: not read yet");
-    // The average counts the days with a number only (D75).
-    expect(quests?.average).toBe("This week: Average 500 · 2 days");
-    expect(quests?.last).toBe("Last week: Average 400 · 2 days");
-    expect(weekCard([], "2026-11-05", t, f)).toBeNull();
-  });
-
+describe("a member's own progress (D142)", () => {
   it("draws might over 30 days, and the recovery since KvK against their own might before it", () => {
     const days = [day("2026-10-01", 1, 500), day("2026-11-02", 1, 900), day("2026-11-04", 1, 920)];
     // The read of 2026-10-01 is outside the 30 days.

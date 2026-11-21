@@ -71,8 +71,16 @@ export async function setLink(
   return "ok";
 }
 
-/** Removes one user's link: the member's own, or an officer's Reject or Remove. False when there is none. */
-export async function clearLink(db: Db, workspaceId: number, userId: number): Promise<boolean> {
+/**
+ * Removes one user's link: the member's own, or an officer's Reject or Remove, which names the player the
+ * officer saw (`uid`) and so finds nothing once the user has claimed another. False when there is none.
+ */
+export async function clearLink(
+  db: Db,
+  workspaceId: number,
+  userId: number,
+  uid?: number,
+): Promise<boolean> {
   const done = await db
     .update(workspaceUsers)
     .set(none)
@@ -80,7 +88,7 @@ export async function clearLink(db: Db, workspaceId: number, userId: number): Pr
       and(
         eq(workspaceUsers.workspaceId, workspaceId),
         eq(workspaceUsers.id, userId),
-        isNotNull(workspaceUsers.playerUid),
+        uid === undefined ? isNotNull(workspaceUsers.playerUid) : eq(workspaceUsers.playerUid, uid),
       ),
     )
     .returning({ id: workspaceUsers.id });
@@ -88,15 +96,17 @@ export async function clearLink(db: Db, workspaceId: number, userId: number): Pr
 }
 
 /**
- * An officer's Approve: the user's pending link becomes approved. "taken" when
- * another user holds the player meanwhile; "none" when the user has no such link.
+ * An officer's Approve of the claim they saw: the user's pending link to `uid` becomes approved. "taken" when
+ * another user holds the player meanwhile; "none" when the user has no pending link to that player (they
+ * dropped it, or claimed another since).
  */
 export async function approveLink(
   db: Db,
   workspaceId: number,
   userId: number,
+  uid: number,
 ): Promise<"ok" | "taken" | "none"> {
-  const rows: { id: number; uid: number | null }[] = [];
+  const rows: { id: number }[] = [];
   const done = await opening(async () => {
     const r = await db
       .update(workspaceUsers)
@@ -105,15 +115,15 @@ export async function approveLink(
         and(
           eq(workspaceUsers.workspaceId, workspaceId),
           eq(workspaceUsers.id, userId),
+          eq(workspaceUsers.playerUid, uid),
           eq(workspaceUsers.playerLink, "pending"),
         ),
       )
-      .returning({ id: workspaceUsers.id, uid: workspaceUsers.playerUid });
+      .returning({ id: workspaceUsers.id });
     rows.push(...r);
     return r;
   });
-  const uid = rows[0]?.uid;
-  if (done === "ok" && uid != null) await dropOtherClaims(db, workspaceId, uid, userId);
+  if (done === "ok" && rows.length > 0) await dropOtherClaims(db, workspaceId, uid, userId);
   return done;
 }
 

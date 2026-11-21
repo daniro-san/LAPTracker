@@ -1,93 +1,17 @@
-// A member's own page (issue 487, D142), pure: their week against their own last week, their might and
-// kills over 30 days, their recovery since KvK, and the lines of where they are needed. People first (D75):
-// only their own numbers, never another member's, a rank or an average of others; a day with no read is
-// "no data" and never counts (D127); "none" is a read that lists them with nothing that day.
+// A member's own page (issue 487, D142), pure: their might and kills over 30 days, their recovery since KvK,
+// and the lines of where they are needed. People first (D75): only their own numbers, never another
+// member's, a rank or an average of others. Their daily quests, coins and donations are not shown: those
+// fields leave the database only after requireWorkspace (CLAUDE.md, D71) until the owner rules otherwise.
 import { fill } from "../copy";
 import type { OwnDay } from "../repo/me";
-import { addDays, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
+import { addDays, weekdayIndex } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
-import { NONE } from "./fact-text";
-import {
-  daysCard,
-  DAY_METRICS,
-  type DayCell,
-  type DayMetric,
-  type DaysCard,
-  type DaysFormats,
-} from "./member-days";
+import type { DaysFormats } from "./member-days";
 import type { Mark, RollKind } from "./roll-call-rules";
 import { callTitle, markWord } from "./roll-call-words";
 
-const FIELD = { quests: "active", coins: "daily_honor", donations: "daily_tech" } as const;
 /** The might and kills chart covers this many days up to the newest read. */
 export const PROGRESS_DAYS = 30;
-
-const numberOf = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
-
-/** A day's value: a number, "none" (listed, nothing sent), null (no read listing them) or "later". */
-function cellOf(days: readonly OwnDay[], day: string, metric: DayMetric): DayCell | "later" {
-  const newest = days.at(-1)?.day ?? "";
-  if (day > newest) return "later";
-  const d = days.find((r) => r.day === day);
-  if (!d?.listed || !d.daily) return null;
-  return numberOf(d.daily[FIELD[metric]]) ?? "none";
-}
-
-const averageOf = (cells: readonly (DayCell | "later")[]) => {
-  const numbers = cells.filter((c): c is number => typeof c === "number");
-  if (numbers.length === 0) return null;
-  return { v: Math.round(numbers.reduce((a, b) => a + b, 0) / numbers.length), n: numbers.length };
-};
-
-/**
- * This game week (Monday to Sunday, server days, holding `today`) as the card's day bars, each row with
- * the same row's average over the member's own last week beside it. Null before any read.
- */
-export function weekCard(
-  days: readonly OwnDay[],
-  today: string,
-  t: WorkspaceDictionary,
-  f: DaysFormats,
-): DaysCard | null {
-  if (days.length === 0) return null;
-  const week = weekDays(mondayOf(today));
-  const lastWeek = weekDays(addDays(mondayOf(today), -7));
-  const cells = (m: DayMetric, list: string[]) => list.map((day) => cellOf(days, day, m));
-  const rows = Object.fromEntries(
-    DAY_METRICS.map((m) => [m, cells(m, week).map((c) => (c === "later" ? null : c))]),
-  ) as Record<DayMetric, DayCell[]>;
-  const card = daysCard({ days: week, rows, might: null }, t, f);
-  return {
-    ...card,
-    head: t["me.week.head"],
-    rows: card.rows.map((row) => {
-      const later = cells(row.metric, week).map((c) => c === "later");
-      const last = averageOf(cells(row.metric, lastWeek));
-      const show = row.metric === "donations" ? f.compact : f.number;
-      const line = last
-        ? fill(t[last.n === 1 ? "card.days.average.one" : "card.days.average.other"], {
-            v: show(last.v),
-            n: last.n,
-          })
-        : null;
-      return {
-        ...row,
-        average:
-          row.average === NONE ? row.average : fill(t["me.week.this"], { line: row.average }),
-        last: line ? fill(t["me.week.last"], { line }) : t["me.week.lastNone"],
-        bars: row.bars.map((b, i) =>
-          later[i]
-            ? {
-                ...b,
-                value: "",
-                said: `${f.date(week[i] as string)}: ${t["me.week.later"]}`,
-              }
-            : b,
-        ),
-      };
-    }),
-  };
-}
 
 export interface Series {
   label: string;

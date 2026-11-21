@@ -9,7 +9,6 @@
   - left the alliance: a closed-page line and "This isn't me".
 - **The member's data** (`lib/private/me.ts`, `me-parts.ts`, `lib/repo/me.ts`, `MeSections.tsx`):
   - might and kills over 30 days as D68 line charts, and "Back to N% of your might before KvK";
-  - this game week's quests, coins and donations as the D136 day bars, each against their own last week;
   - squads with the D136 lineup and "seen" ages;
   - where they are needed: Elixir team, caravan seat and roll-call marks. This comes first on phones, in the margin column from 1024.
 - **Links** (`lib/repo/player-links.ts`, `lib/private/me-link.ts`):
@@ -18,7 +17,7 @@
   - every member's link waits for an officer's Approve; a pending claim reserves nothing, and an approval clears the other claims of that player.
 - **Routes:**
   - `POST /api/w/[slug]/me` (claim, drop), board door;
-  - `POST /api/w/[slug]/member-links` (approve, unlink, by workspace user id), officers only, `ws_action` `member_link`.
+  - `POST /api/w/[slug]/member-links` (approve, unlink), naming the claim the officer saw (workspace user id and player uid); a claim that changed since answers 404 and the page reads again. Officers only, `ws_action` `member_link`.
 - **Desk:**
   - Home "To review" lists pending links with the player's rank, a name hint ("Hint: the Discord name matches this game name." or "… is not this game name.") and Approve, Reject; they count in the Home tab number.
   - The member card header says "Linked to Discord: <name>" with Remove link (asks first), or Approve and Reject.
@@ -29,7 +28,7 @@
 
 ## Decisions
 
-- **D142** records the link states, the door (`meAccess` gives a branded `MeAccess` only for an approved link), what is shown and never shown, the amendment of D71, the query counts and the panel. D87 and D105 have dated amendments.
+- **D142** records the link states, the door (`meAccess` gives a branded `MeAccess` only for an approved link), what is shown and never shown, the query counts and the panel. D87 and D105 have dated amendments.
 - **No auto-approval** (orchestrator, 2026-11-21, on privacy grounds): every member's link waits for an officer's Approve, even when the Discord name is the game name. A member can edit their own server nickname, and the data behind the link is that player's own. The first build, and the persona panel, had an `auto` state; it is gone.
 - **Matching:** the D74 matcher's one match by current game name is now only a hint on the officer's review line.
 - **The door:** "Reads only through lib/private, after requireWorkspace" is read as the workspace door for members: `requireBoard` plus an approved link. A member's session never gets a `WorkspaceAccess`.
@@ -38,7 +37,7 @@
 ## Deviations
 
 - **Never shown on the board before, now on the member's own page:** caravan seats and roll-call marks (D105's list), for the member's own seat and marks only.
-- **CLAUDE.md is unchanged.** Its hard rule names `requireWorkspace` for `daily_*` and `active`; D142 adds this one page behind `requireBoard`. The owner may want the rule's wording to name D142.
+- **The member's own daily quests, coins and donations are not shown** (review of PR 534). CLAUDE.md's hard rule lets `daily_tech`, `daily_honor` and `active` leave the database only after `requireWorkspace`; the member's page is behind `requireBoard`. The repo read no longer touches raw_json, the "This week" card and its words are gone, and a test asserts the keys are absent from the member's read. CLAUDE.md is unchanged.
 - **Rebased** onto `origin/dev` after #532 merged; the migration was regenerated with `pnpm db:generate --name member_player_links` as 0061 and its two data steps re-added to the SQL (journal and snapshot by the tool).
 - **The issue's auto-accept is not built**: the orchestrator removed it (see Decisions).
 - **Panel real data:**
@@ -60,6 +59,7 @@
   - every page answers 200, with no sideways scroll and 44 px targets;
   - no blocked key and no other member's data on the member pages;
   - the two failures are Home's pre-existing hidden file input (1 px, `aria-hidden`), which is not a tap target.
+- **Review fixes (PR 534)**, checked by tests: an Approve or Remove of a claim that changed since finds nothing (the test fails when the uid condition is dropped); another workspace's officer approves and removes nobody here; the member's read holds no daily key or value.
 - **QA pass** (separate): pass.
   - Flows end to end, and 15 break attempts: another alliance's uid, a non-existent uid, a held player, a double claim, a member calling the officer route, another workspace's user, other slugs, no or forged origin, GET, bad bodies, and 6 races between a member's and an officer's claim of one player. All are refused as designed; each race left one link holding the player.
   - Fixed after QA: Remove of a user with no link now answers 404.
@@ -78,22 +78,23 @@
 
 ## Open issues
 
-- **Raw_json read per view:** the Me page reads raw_json for the member's three daily fields on the last 14 rows. Copying `active`, `daily_honor` and `daily_tech` into arrays at write time would remove that read.
+- **The member's own daily stats wait for the owner.** Showing their daily quest points, coins and donations against their own last week (the issue's item 2) needs the owner to change CLAUDE.md's hard rule and D71 for this page. The first build's card (`weekCard` and the "This week" words) is in commit `c885b7d7` for when that happens.
 - **Connections per render:** the per-request Pool opens several connections for parallel reads, measured 5–6 on the board and the Me page. That is the perf spec's Batch 3.
 - **Repeated claims:** a member can claim again right after a Reject; nothing limits it.
 - **The picker carries the newest roster** (name, rank, might) to a member without an approved link, as D87 does for officers. These are public fields.
 - **"Where you're needed" shows the whole week**, so a caravan seat earlier in the week still shows after its day.
 - **The board link says "Your own page"**, not the member's name. Naming them would need a read on the board.
+- **Left from the review of PR 534 (nice-to-haves, not done):** a limit on claims right after a Reject; hiding a caravan seat once its day has passed; naming the member on the board link; folding the parallel reads into one connection (Batch 3).
 
 ## Next
 
 - Model/effort: keep.
 - **Owner first**:
-  - decide whether CLAUDE.md's roster-field rule should name D142's exception.
+  - decide whether a member may see their own `daily_tech`, `daily_honor` and `active` on their page (a change to CLAUDE.md's hard rule and D71); until then the page leaves them out.
 - Plan change: none.
 
 <adjustments>
-- The member's daily fields are already read per member (`lib/repo/me.ts` `ownDays`). A write-time copy into arrays would serve this page, the member card and Insights alike.
+- If the owner allows the member's own daily fields: restore the "This week" card from `c885b7d7`, and copy `active`, `daily_honor` and `daily_tech` into arrays at write time rather than reading raw_json per view.
 - `meAccess(board)` is the only way to a member's own data; any new member-facing read should take `MeAccess`.
 </adjustments>
 

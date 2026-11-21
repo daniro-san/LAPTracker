@@ -134,9 +134,10 @@ beforeEach(async () => {
   await session("alpha", a, "Bobby", "member");
   await session("alpha", a, "Rook", "officer");
   await session("bravo", b, "Cy Invented", "member");
+  await session("bravo", b, "Vale Officer", "officer");
 });
 
-async function post(path: "me" | "member-links", who: string, body: object) {
+async function post(path: "me" | "member-links", who: string, body: object, slug = "alpha") {
   const mod = path === "me" ? await import("./route") : await import("../member-links/route");
   const headers = new Headers({
     origin: ORIGIN,
@@ -144,12 +145,12 @@ async function post(path: "me" | "member-links", who: string, body: object) {
     "content-type": "application/json",
     cookie: `${SESSION_COOKIE}=${tokens[who]}`,
   });
-  const request = new Request(`${ORIGIN}/api/w/alpha/${path}`, {
+  const request = new Request(`${ORIGIN}/api/w/${slug}/${path}`, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
   });
-  const res = await mod.POST(request, { params: Promise.resolve({ slug: "alpha" }) });
+  const res = await mod.POST(request, { params: Promise.resolve({ slug }) });
   return { status: res.status, body: (await res.json()) as Record<string, unknown> };
 }
 
@@ -164,7 +165,7 @@ async function shown(who: string) {
 /** A member claims `uid`; an officer approves it (D142: every member's link waits for an officer). */
 async function linked(who: string, uid: number) {
   await post("me", who, { action: "claim", uid });
-  await post("member-links", "alpha:Rook", { action: "approve", user: users[who] });
+  await post("member-links", "alpha:Rook", { action: "approve", user: users[who], uid });
 }
 
 describe("a member's own page (D142, issue 471)", () => {
@@ -175,14 +176,16 @@ describe("a member's own page (D142, issue 471)", () => {
       body: { state: "pending" },
     });
     expect(await shown("alpha:Ana Invented")).toBeNull();
-    const ana = { action: "approve", user: users["alpha:Ana Invented"] };
+    const ana = { action: "approve", user: users["alpha:Ana Invented"], uid: 101 };
     // A member cannot approve their own link: the officers' route answers a member's session as signed out.
     expect((await post("member-links", "alpha:Ana Invented", ana)).status).toBe(401);
     expect((await post("member-links", "alpha:Rook", ana)).status).toBe(200);
     const view = await shown("alpha:Ana Invented");
     const text = JSON.stringify(view);
     expect(view).toMatchObject({ left: false, name: "Ana Invented", needed: [] });
-    expect(text).toContain("501");
+    expect(text).toContain("Ana Invented");
+    // No daily quest points, coins or donations, not even the member's own (CLAUDE.md, D71, D142).
+    expect(text).not.toMatch(/active|daily_honor|daily_tech|dailyHonor|dailyTech|"501"|:501\b/);
     // Nobody else's name, numbers, squads or team; no map position.
     for (const other of ["Bo Invented", "909", "8,888", "8.89K", "Team A", "Cy Invented"])
       expect(text).not.toContain(other);
@@ -200,8 +203,9 @@ describe("a member's own page (D142, issue 471)", () => {
     await post("member-links", "alpha:Rook", {
       action: "approve",
       user: users["alpha:Ana Invented"],
+      uid: 101,
     });
-    const late = { action: "approve", user: users["alpha:Bobby"] };
+    const late = { action: "approve", user: users["alpha:Bobby"], uid: 101 };
     expect((await post("member-links", "alpha:Rook", late)).status).toBe(404);
     expect(await shown("alpha:Bobby")).toBeNull();
     expect(await shown("alpha:Ana Invented")).toMatchObject({ name: "Ana Invented" });
@@ -236,10 +240,36 @@ describe("a member's own page (D142, issue 471)", () => {
 
   it("lets an officer remove a link, which closes the page", async () => {
     await linked("alpha:Ana Invented", 101);
-    const ana = { action: "unlink", user: users["alpha:Ana Invented"] };
+    const ana = { action: "unlink", user: users["alpha:Ana Invented"], uid: 101 };
     expect((await post("member-links", "alpha:Rook", ana)).status).toBe(200);
     expect(await shown("alpha:Ana Invented")).toBeNull();
     // A second Remove finds no link.
     expect((await post("member-links", "alpha:Rook", ana)).status).toBe(404);
+  });
+
+  it("binds an Approve to the claim the officer saw", async () => {
+    await post("me", "alpha:Bobby", { action: "claim", uid: 102 });
+    // Bobby drops it and claims another player before the officer answers.
+    await post("me", "alpha:Bobby", { action: "drop" });
+    await post("me", "alpha:Bobby", { action: "claim", uid: 101 });
+    const stale = { action: "approve", user: users["alpha:Bobby"], uid: 102 };
+    expect((await post("member-links", "alpha:Rook", stale)).status).toBe(404);
+    expect((await post("member-links", "alpha:Rook", { ...stale, action: "unlink" })).status).toBe(
+      404,
+    );
+    expect(await shown("alpha:Bobby")).toBeNull();
+  });
+
+  it("lets no officer of another workspace approve or remove a user here by id", async () => {
+    await post("me", "alpha:Bobby", { action: "claim", uid: 102 });
+    const bobby = { user: users["alpha:Bobby"], uid: 102 };
+    for (const action of ["approve", "unlink"])
+      expect(
+        (await post("member-links", "bravo:Vale Officer", { action, ...bobby }, "bravo")).status,
+      ).toBe(404);
+    // Bobby's claim is still there, waiting for this workspace's officer.
+    expect((await post("member-links", "alpha:Rook", { action: "approve", ...bobby })).status).toBe(
+      200,
+    );
   });
 });

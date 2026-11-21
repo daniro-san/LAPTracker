@@ -69,8 +69,6 @@ export interface DaysRow {
   label: string;
   /** "Average 555 a day · 6 days"; "—" when no day has a number. */
   average: string;
-  /** A member's own page (D142): the same row's average over their own last week. */
-  last?: string;
   bars: DayBar[];
 }
 
