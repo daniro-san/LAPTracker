@@ -144,6 +144,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
         t={t}
         language={language}
         slug={slug}
+        alliance={alliance}
         officer={access.officer}
       />
       <Week {...{ t, language, today, now: now.getTime() }} {...view} />

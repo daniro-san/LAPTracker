@@ -6,8 +6,10 @@
 // card (none shared, or taken down) nothing renders at all. An officer's Take down sits under the card.
 import type { ReactNode } from "react";
 
+import { AllianceBadge } from "@/app/_ui/Pictures";
 import { Wax } from "@/lib/brand/components/Wax";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
+import type { BoardAccess } from "@/lib/private/access";
 import type { BoardView } from "@/lib/private/board";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { fill } from "@/lib/words";
@@ -57,6 +59,8 @@ export function BoardThanks(props: {
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   slug: string;
+  /** The alliance's label; its emblem shows through /img/badge/[id] (D22). */
+  alliance?: BoardAccess["alliance"];
   /** An officer's preview: Take down is there. */
   officer: boolean;
 }) {
@@ -89,17 +93,23 @@ export function BoardThanks(props: {
           {/* The ball of yarn rests in the corner, its thread running towards the signature. */}
           <div className="mt-3 flex items-end justify-between gap-3">
             <YarnCorner className="-mb-2 -ml-2 h-14 w-32 shrink-0 text-yarn" />
-            <p className="text-right font-display text-[1.125rem]">
-              {thanks.by ? (
-                <>
-                  {before}
-                  <bdi translate="no">{signedName(thanks.by)}</bdi>
-                  {after}
-                </>
-              ) : (
-                t["board.thanks.officers"]
+            <div className="flex items-center gap-2">
+              {/* The alliance's emblem, served by /img/badge/[id] (D22); nothing when none is known. */}
+              {props.alliance?.badgeId != null && (
+                <AllianceBadge badgeId={props.alliance.badgeId} size="md" />
               )}
-            </p>
+              <p className="text-right font-display text-[1.125rem]">
+                {thanks.by ? (
+                  <>
+                    {before}
+                    <bdi translate="no">{signedName(thanks.by)}</bdi>
+                    {after}
+                  </>
+                ) : (
+                  t["board.thanks.officers"]
+                )}
+              </p>
+            </div>
           </div>
         </div>
       </article>

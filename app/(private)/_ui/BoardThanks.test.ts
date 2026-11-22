@@ -133,4 +133,27 @@ describe("the thank-you card on the members' board (D114)", () => {
       expect(after.html).toBe("");
     }
   });
+
+  it("shows the alliance's emblem through /img/badge/[id] (D22), and none when it has none", () => {
+    const thanks = {
+      id: 1,
+      week: "2026-11-16",
+      texts: { en: "Thank you all." },
+      names: [],
+      by: "Rook",
+    };
+    const card = (badgeId: number | null) =>
+      renderToStaticMarkup(
+        createElement(BoardThanks, {
+          thanks,
+          t: WORKSPACE_DICTIONARIES.en,
+          language: "en",
+          slug: "ogs",
+          alliance: { tag: "OGS", name: "Old Gnomes", badgeId },
+          officer: false,
+        }),
+      );
+    expect(card(103)).toContain('src="/img/badge/103"');
+    expect(card(null)).not.toContain("/img/badge/");
+  });
 });
