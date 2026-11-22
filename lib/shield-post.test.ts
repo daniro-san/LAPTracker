@@ -1,6 +1,7 @@
 // Which channel the Raid Shield summary goes to (D147) against a real Postgres (PGlite) and a stubbed Discord:
 // only the workspace's own Raid Shield channel (a forum there too), never its leaders' channel; a channel
-// changed since the first post gets a fresh one. No real Discord call; invented names and tokens.
+// changed since the first post gets a fresh one; away members are a count, not a name (D137, 2026-11-22).
+// No real Discord call; invented names and tokens.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
@@ -8,7 +9,7 @@ import { TEST_ENV } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { saveWorkspace } from "./repo/workspaces";
-import { dailyReads, dailyRosters } from "./schema";
+import { dailyReads, dailyRosters, memberFacts } from "./schema";
 import { shieldChecks } from "./schema-shield";
 import { playerReads } from "./schema-squads";
 import { postShieldSummary, type PostDeps } from "./shield-post";
@@ -72,9 +73,11 @@ const save = (
 /** Discord as a stub: every post and edit, answered with message 900; a forum post needs a title. */
 function discord(forum = false) {
   const posts: { method: string; url: string; threadName?: string }[] = [];
+  const texts: string[] = [];
   const fetch: typeof globalThis.fetch = async (url, init) => {
-    const body = JSON.parse(String(init?.body)) as { thread_name?: string };
+    const body = JSON.parse(String(init?.body)) as { content: string; thread_name?: string };
     const method = String(init?.method);
+    texts.push(body.content);
     posts.push({
       method,
       url: String(url),
@@ -103,6 +106,7 @@ function discord(forum = false) {
   };
   return {
     posts,
+    texts,
     post,
     rename: (names: string[]) => db.update(dailyRosters).set({ memberNames: names }),
   };
@@ -153,5 +157,26 @@ describe("the Raid Shield summary's channel (D147)", () => {
       `POST ${hook("shield-moved")}?wait=true`,
       `PATCH ${hook("shield-moved")}/messages/900`,
     ]);
+  });
+});
+
+describe("the Raid Shield summary's names (D137, 2026-11-22)", () => {
+  it("leaves a member away on the raid's Saturday out of “Not seen yet” and counts them instead", async () => {
+    await save("shield");
+    await db.insert(memberFacts).values({
+      workspaceId: ws,
+      uid: 2,
+      field: "away",
+      version: 1,
+      value: { text: "Trip", from: "2026-11-19", until: "2026-11-23" },
+      source: "officer",
+      writtenAt: FRI,
+    });
+    const d = discord();
+    expect(await d.post(FRI, "night")).toBe(true);
+    const [text] = d.texts;
+    expect(text).toContain("Night check 23:45 ST: 0 of 2 with a shield seen");
+    expect(text).toContain("\nNot seen yet: Wren1 · 1 away, left out\n");
+    expect(text).not.toContain("Wren2");
   });
 });

@@ -2,10 +2,12 @@
 // night's read and edited in place by Saturday morning's, only through the workspace's own Raid Shield
 // channel (D147, owner's rule of 2026-11-21): without one, nothing is posted, never to the leaders' channel.
 // Only when the officers turned it on in Alliance settings, never to the members' channel or anywhere
-// public. Names only of members the tracker did not see shielded, as a hint (D75); nothing is logged but
-// counts, and the webhook URL never is.
+// public. Names only of members the tracker did not see shielded, as a hint (D75); away members are left
+// out of the names, as the desk's "Copy names" leaves them out, and shown as a count only (D137,
+// 2026-11-22). Nothing is logged but counts, and the webhook URL never is.
 import { createHash } from "node:crypto";
 
+import { addDays } from "./calendar-time";
 import {
   SHIELD_LANGUAGES,
   SHIELD_POST,
@@ -16,7 +18,9 @@ import type { Db } from "./db";
 import { discordClock } from "./discord-format";
 import { editOnly, sendOrEdit } from "./discord-send";
 import type { Env } from "./env";
+import { awayOn } from "./member-away";
 import { escapeDiscord } from "./notify";
+import { awayFacts } from "./raid-prep-fill";
 import {
   getShieldCheck,
   keepMessage,
@@ -74,23 +78,29 @@ async function summaryHook(db: Db, env: PostEnv, target: ShieldTarget): Promise<
   }
 }
 
-/** One read in numbers: who was seen shielded, who not yet, and the newest answer's time. */
+/**
+ * One read in numbers: who was seen shielded, who not yet (away members left out of the names, counted in
+ * `away`), and the newest answer's time.
+ */
 export interface ReadSummary {
   shielded: number;
   read: number;
   unread: number;
   notSeen: string[];
+  away: number;
   at: Date | null;
 }
 
 export function summarize(
   members: { uid: number; name: string }[],
   readings: StoredReading[],
+  away: ReadonlySet<number> = new Set(),
 ): ReadSummary {
   const byUid = new Map(readings.map((r) => [r.uid, r]));
   let shielded = 0;
   let read = 0;
   const notSeen: string[] = [];
+  let awayNotSeen = 0;
   let at: Date | null = null;
   for (const m of members) {
     const r = byUid.get(m.uid) ?? null;
@@ -99,10 +109,11 @@ export function summarize(
     read++;
     if (r && (!at || r.readAt > at)) at = r.readAt;
     if (s === "on") shielded++;
+    else if (away.has(m.uid)) awayNotSeen++;
     else notSeen.push(m.name);
   }
   notSeen.sort((a, b) => a.localeCompare(b));
-  return { shielded, read, unread: members.length - read, notSeen, at };
+  return { shielded, read, unread: members.length - read, notSeen, away: awayNotSeen, at };
 }
 
 const fill = (text: string, values: Record<string, string | number>) =>
@@ -121,7 +132,10 @@ const names = (w: ShieldPostWords, list: string[]) => {
   return rest > 0 ? `${shown} ${fill(w.more, { n: rest })}` : shown;
 };
 
-/** The message: the title, each read's line, who was not seen in the newest read, the hint, the link. */
+/**
+ * The message: the title, each read's line, who was not seen in the newest read (then how many away members
+ * were left out, a count only), the hint, the link.
+ */
 export function shieldMessage(
   w: ShieldPostWords,
   reads: { night: ReadSummary; morning: ReadSummary | null },
@@ -132,8 +146,10 @@ export function shieldMessage(
   if (reads.morning) lines.push(readLine(w, reads.morning, w.sat, zone));
   const newest = reads.morning ?? reads.night;
   const head = `${w.title}\n${lines.join("\n")}`;
-  const list = newest.notSeen.length
-    ? `\n${fill(reads.morning ? w.notSeenMorning : w.notSeen, { names: names(w, newest.notSeen) })}`
+  const away = newest.away ? fill(newest.away === 1 ? w.awayOne : w.away, { n: newest.away }) : "";
+  const shown = [names(w, newest.notSeen), away].filter(Boolean).join(" · ");
+  const list = shown
+    ? `\n${fill(reads.morning ? w.notSeenMorning : w.notSeen, { names: shown })}`
     : "";
   return `${head}${list}\n${w.hint}\n${fill(w.link, { url })}`;
 }
@@ -225,9 +241,18 @@ async function messageOf(
     uid: m.uid,
     name: m.name,
   }));
+  // Away on the raid's Saturday, by the roll call's rule (D103), as Raid prep's fill leaves them out.
+  const facts = await awayFacts(db, target.workspaceId as number);
+  const saturday = addDays(day, 1);
+  const away = new Set(
+    members
+      .filter((m) => awayOn(facts.get(m.uid), saturday, deps.env.SERVER_TZ) !== null)
+      .map((m) => m.uid),
+  );
   const night = summarize(
     members,
     await shieldReadings(db, target.unionId, windows.night.from, windows.night.to),
+    away,
   );
   // Until the morning read has an answer, the message keeps Friday's summary and names.
   const read =
@@ -235,6 +260,7 @@ async function messageOf(
       ? summarize(
           members,
           await shieldReadings(db, target.unionId, windows.morning.from, windows.morning.to),
+          away,
         )
       : null;
   const morning = read && read.read > 0 ? read : null;

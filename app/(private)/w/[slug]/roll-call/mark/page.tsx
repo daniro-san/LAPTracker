@@ -47,10 +47,14 @@ async function readMark(
     callView(db, access, occasion, lang, zone),
     webhookViews(db, access, getEnv()),
   ]);
-  if (call?.opened.kind !== "shield") return call && { ...call, prep: null };
+  if (!call) return null;
+  // The roster and facts callView read serve Raid prep too, and go no further than here.
+  const { loaded, ...view } = call;
+  if (view.opened.kind !== "shield") return { ...view, prep: null };
   const shieldChannel = hooks.some((h) => h.channel === "shield" && h.state === "set");
-  const prep = await prepView(db, access, call.opened, { zone, now: new Date(), shieldChannel });
-  return { ...call, prep };
+  const clock = { zone, now: new Date(), shieldChannel };
+  const prep = await prepView(db, access, view.opened, clock, loaded);
+  return { ...view, prep };
 }
 
 type Page = Awaited<ReturnType<typeof openRollCall<Awaited<ReturnType<typeof readMark>>>>>;

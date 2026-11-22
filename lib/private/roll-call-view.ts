@@ -159,6 +159,13 @@ export interface CallView {
   tally: Tally;
   /** An Elixir Scramble team's size; null for other kinds. */
   team: number | null;
+  /** The roster and member facts read for it, so Raid prep's part of the same page reads them once. */
+  loaded: Loaded;
+}
+
+export interface Loaded {
+  roster: Awaited<ReturnType<typeof rosterOf>>;
+  facts: Map<number, MemberFacts>;
 }
 
 /** One roll call's rows, in the order they keep while marking (callOrder). */
@@ -193,6 +200,7 @@ export async function callView(
     rows,
     tally: tally(rows, own),
     team: opened.kind === "elixir" ? team.length : null,
+    loaded: { roster, facts },
   };
 }
 
