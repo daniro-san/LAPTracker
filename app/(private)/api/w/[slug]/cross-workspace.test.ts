@@ -174,7 +174,8 @@ describe("Alpha's officer naming Bravo's records (issue 471)", () => {
       200,
     );
     await vi.waitFor(() => expect(eventWorkspaces(two)).toEqual(["ws_action:alpha"]));
-    // Nothing was posted to Discord, and no refusal was counted (D115).
+    // The one post is that write's own analytics batch: nothing went to Discord, and no refusal was
+    // counted (D115).
     expect(two.posts).toHaveLength(1);
   });
 

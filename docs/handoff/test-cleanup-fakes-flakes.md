@@ -6,11 +6,11 @@ Fake and weak tests (audit table rows 1–21). Each change was checked against t
 
 | # | file: test | Action | Reason | Break that proves it |
 |---|---|---|---|---|
-| 1 | `lib/run-notify-turnout.test.ts`: all 3 tests | rewritten | F1: `./queries` and `./event-image` were mocked, and the test asserted that `eventImage` got the lists the mock returned. Now PGlite with a seeded Start and End, the real queries and the real picture; it asserts the public message text. | Flag check removed in `endTurnout`: "has no turnout line while the war-turnout flag is off (D91)" fails. `g > 0` → `g >= 0` in `killsTurnout`: the other 2 tests fail. |
+| 1 | `lib/run-notify-turnout.test.ts`: all 3 tests | rewritten | F1: `./queries` was mocked, and the test asserted that `eventImage` got the lists the mock returned. Now PGlite with a seeded Start and End and the real queries. It asserts the public message text, and that the picture is attached and drawn with the turnout the real queries computed (OGs, 4 members, 2 gainers, 7 kills gained), or with none when no kills rose or war-turnout is off. Only `./event-image` is mocked, at its boundary: the real renderer is cut after 3 s, so under load it would drop the picture. | Flag check removed in `endTurnout`: "has no turnout line or picture block while the war-turnout flag is off (D91)" fails. `g > 0` → `g >= 0` in `killsTurnout`: the other 2 tests fail. `turnout: null` passed to `eventImage` (`lib/run-notify.ts:99`): "names the alliance … in the text and the picture" fails. |
 | 2 | `lib/sources/v1-options.test.ts`: "uses a call's own timeout and retry count…" | rewritten as 2 tests | F1: it asserted the `AbortSignal.timeout` spy got the 12,000 the test passed. Now a fetch that hangs until aborted ends at the call's own 50 ms. | `timeoutMs: TIMEOUT_MS` (ignore the option): the timeout test fails at 10 s. `maxRetries: MAX_RETRIES`: the retry test fails. |
 | 3 | `lib/private/notice-rules.test.ts`: "counts what a reader sees…" | fixed (line deleted, renamed) | F5: `NOTICE_LIMIT === 1000`. The 1,000 edge stays covered by `notice-formats.test.ts`. | `NOTICE_LIMIT = 1001`: `notice-formats.test.ts` "never splits an emoji at the cut" fails. |
 | 4 | `lib/private/roll-call-rules.test.ts`: "fills the rest per kind…" | rewritten ("offers each kind's rest button…") | F5/F4: the `REST` table. Raid's rest had no other test, so it now asserts the rest button each kind shows (`restWords`). | `raid: "no"` in `REST`: fails. |
-| 5 | `lib/private/roll-call-rules.test.ts`: "offers Raid Shield, Undead Siege and Cheese Trap by hand…" | deleted | F5: the `ADDED_KINDS` constant. Covered by `roll-call/route.test.ts` "refuses a new plunder" and "adds a Cheese Trap by hand". | `"plunder"` added to `ADDED_KINDS`: "refuses a new plunder (2026-11-17)" fails. |
+| 5 | `lib/private/roll-call-rules.test.ts`: "offers Raid Shield, Undead Siege and Cheese Trap by hand…" | deleted, replaced at the route | F5: the `ADDED_KINDS` constant. The route test never added a raid, so "adds a Cheese Trap by hand" became `it.each(["raid", "cheese"])` "lets an officer add a %s roll call by hand", which also checks the stored row's kind. A shield is added by hand in "deletes: the roll call leaves the week…"; "refuses a new plunder" covers plunders. | `"plunder"` added: "refuses a new plunder (2026-11-17)" fails. `"raid"` dropped: "lets an officer add a raid roll call by hand" fails. `"shield"` dropped: "deletes: the roll call leaves the week…" fails. |
 | 6 | `lib/private/calendar.test.ts`: "…theme_exists…" (last line) | fixed (line deleted) | F5: `DUEL_DAYS[0]`, `DUEL_DAYS[6]`, a fixed game table. No other test reads it. | none (constant only) |
 | 7 | `lib/private/members.test.ts`: "finds who gained no kills…" | fixed (line deleted) | F5: `KVK_REASON_ON === false`. The same test's `reasons` equal to `[]` already holds the switch's effect. | `KVK_REASON_ON = true`: the test fails. |
 | 8 | `lib/ai/groq.test.ts`: "sends the key, the first model, temperature 0.2…" | fixed | F5: `TEMPERATURE === 0.2`. The request body is now checked against the literal 0.2 (D81). | `TEMPERATURE = 0.3`: fails. |
@@ -45,10 +45,10 @@ PR #605's handoff list:
 - `lib/queries/roster-stays.test.ts:25`: PGlite now opens in `beforeAll`.
 - `lib/run-notify-turnout.test.ts` mocking `./queries`: removed (row 1).
 - The other mocks outside the allowed list:
-  - `./event-image` in `run-notify-turnout.test.ts`: removed (row 1).
+  - `./event-image` in `run-notify-turnout.test.ts`: kept at its boundary only, and the test now asserts the turnout the real code passed (row 1).
   - `./locale` in `app/_ui/AcrossEvents.test.ts`: replaced by a `next/headers` mock (an allowed seam) with an English `accept-language`, so the real language choice runs.
   - Kept, with the reason:
-    - `./event-image` in `lib/samples.test.ts`, `lib/samples-hardening.test.ts`, `app/_ui/event-page.test.ts`: the real picture is dropped after 3 s, so under load two runs of one event would give different messages. The renderer has its own test (`lib/event-image.test.ts`).
+    - `./event-image` in `lib/samples.test.ts`, `lib/samples-hardening.test.ts`, `app/_ui/event-page.test.ts` (and `lib/run-notify-turnout.test.ts`): the real picture is dropped after 3 s, so under load two runs of one event would give different messages. The renderer has its own test (`lib/event-image.test.ts`).
     - `@/lib/private/import-read` in `shots/read/route.test.ts` and `w/[slug]/share/route.test.ts`: `readUpload` is the OCR worker's boundary; the tests hold or fail it on purpose.
     - `@/lib/collector` in `app/api/snapshot/route.test.ts`: it wraps the real `runSnapshot` to crash it on purpose; the rules allow that.
     - `react` in `app/_ui/admin/useRunWatch.test.ts`: the suite has no DOM renderer to run a hook's effects; adding one is a new dependency.
@@ -72,14 +72,19 @@ Order-dependent tests (task 2). Reproduced on origin/dev with `pnpm vitest run -
 
 - Row 9: the audit's suggestion was a fake-timer test that a press answers within 20 s. It is not feasible, because the timeout lives in the real `/v1` adapter, which the lookup tests replace with `fakeV1`, and fake timers do not drive `AbortSignal.timeout`. Only the constant line was deleted.
 - Row 2 became two tests (retry count, timeout), one per stated behaviour.
+- Review round on PR #622 (/pr-review, "Approve with comments"):
+  - row 1 checks the picture's turnout again, through the `./event-image` boundary only;
+  - row 5 gained the raid route case;
+  - the `cross-workspace.test.ts` comment now says the one post is Alpha's own analytics batch.
 - `posthog.test.ts` was not in task 2's list; it failed in the same shuffled runs and is fixed the same way.
 
 ## Verified
 
 - Break runs: every row in the tables above that names a break was run; each failing test is named there. All break changes were undone; `git status` shows only test files and `lib/db.test-helpers.ts`.
-- `pnpm check`: exit 0. Prettier and ESLint are clean, and tsc passes. Vitest: 305 files passed and 2 skipped, 1594 tests passed and 4 skipped. "No schema changes, nothing to migrate". "i18n: 17 languages up to date with English".
-- Full suite, default order, 3 runs: 1594 passed | 4 skipped each; 46.82 s, 47.76 s, 47.18 s.
-- Full suite, shuffled (`--sequence.shuffle --sequence.seed=<n>`), 8 runs, all 1594 passed | 4 skipped:
+- `pnpm check` after the rebase on dev and the review fixes: exit 0. Prettier and ESLint are clean, and tsc passes. Vitest: 307 files passed and 2 skipped, 1626 tests passed and 4 skipped. "No schema changes, nothing to migrate". "i18n: 17 languages up to date with English".
+- Before the rebase (origin/dev 7154fa5d plus this change):
+  - full suite, default order, 3 runs: 1594 passed | 4 skipped each; 46.82 s, 47.76 s, 47.18 s;
+  - full suite, shuffled (`--sequence.shuffle --sequence.seed=<n>`), 8 runs, all 1594 passed | 4 skipped:
 
 | Seed | Duration |
 |---|---|
@@ -93,13 +98,20 @@ Order-dependent tests (task 2). Reproduced on origin/dev with `pnpm vitest run -
 | 9001 | 49.01 s |
 
   Seeds 2–6 had failed on origin/dev. The 63 s and 84 s runs were slow because other sessions were loading the machine.
-- Before, on origin/dev: 306 files passed and 2 skipped (308); 1596 tests passed and 4 skipped (1600); 49.91 s. After: 305 files passed and 2 skipped (307); 1594 tests passed and 4 skipped (1598); 46.8–47.8 s. Net −2 tests: `seed.test.ts` −2, `ADDED_KINDS` −1, `v1-options` +1.
+- After the rebase and the review fixes, shuffled with seeds 2 and 3: both 1626 passed | 4 skipped (53.37 s and 150.32 s; the second ran under load from other sessions).
+- Counts:
+  - Measured on origin/dev 7154fa5d: 1596 tests passed and 4 skipped, 49.91 s. With this change on that base: 1594 passed and 4 skipped, 46.8–47.8 s.
+  - On the rebased base (90c50485): 1627 passed. This is derived from the counts after the change, not run on that base.
+  - After the rebase and the review fixes: 307 files passed and 2 skipped (309); 1626 tests passed and 4 skipped (1630); 47.26 s.
+  - Net −1 test: `seed.test.ts` −2, `ADDED_KINDS` −1, `v1-options` +1, the raid route case +1.
 
 ## Open issues
 
 - Pre-existing, not changed: `AdminShell`'s `Unlocked`, `adminSession()` and the `/w/[slug]` pages read `new Date()` instead of the context's clock, so their tests must fake `Date`. A follow-up could pass `ctx.now()` through.
 - `.claude/rules/tests.md`'s mock list does not name the four kept mocks above (`./event-image`, `import-read`'s `readUpload`, the `react` hook stand-in; the `@/lib/collector` wrap is already allowed). The owner may add them with their reasons, or ask for them to go.
 - The other e2e and gap items of the audit (batches 4, 6–8) are untouched.
+
+What was missing from the task prompt? That fake timers cannot drive `AbortSignal.timeout`, which rules out the audit's fake-timer rewrites for rows 2 and 9. Also that a deleted constant test (`ADDED_KINDS`) can be the only check of a list member (`raid`), so each deletion needs a search for the behaviour, not just for the constant.
 
 ## Next
 

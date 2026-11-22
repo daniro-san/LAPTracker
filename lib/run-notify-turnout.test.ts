@@ -1,10 +1,11 @@
-// The End's public message carries the turnout line (#276), read from the event's Start and End rosters on
-// PGlite, while the war-turnout flag is on (D91). Invented names only.
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+// The End's public message and its picture carry the turnout (#276), read from the event's Start and End
+// rosters on PGlite, while the war-turnout flag is on (D91). Invented names only.
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PUBLIC_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
+import { eventImage } from "./event-image";
 import { notifyFinished } from "./run-notify";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "./schema";
 
@@ -13,11 +14,22 @@ const utc = (hhmm: string) => new Date(`2026-11-07T${hhmm}:00Z`);
 const FLAG_ON = { ...TEST_ENV, LOCAL_FLAGS: "war-turnout" };
 const LINE = "Most members with kills gained";
 
+// The picture's input is seen at its boundary: the real renderer is cut after 3 s, so under load it would
+// drop the picture and the test would vary. Its own drawing of the turnout is lib/event-image.test.ts's.
+vi.mock("./event-image", () => ({
+  eventImage: vi.fn(async () => new Uint8Array([137, 80, 78, 71])),
+}));
+/** The turnout the End's picture was drawn with. */
+const pictured = () => vi.mocked(eventImage).mock.calls.at(-1)?.[0].turnout;
+
 let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
 });
-beforeEach(() => truncateAll(db));
+beforeEach(async () => {
+  vi.mocked(eventImage).mockClear();
+  await truncateAll(db);
+});
 
 /** Saturday 2026-11-07's event with OGs' Start and End rosters: each member's kills, Start then End. */
 async function seedEvent(kills: [number, number][]) {
@@ -108,8 +120,8 @@ async function finishAfter(eventId: number, env: typeof TEST_ENV = FLAG_ON) {
   return posts.find((p) => p.url === PUBLIC_WEBHOOK);
 }
 
-describe("the End's turnout in the public message (#276)", () => {
-  it("names the alliance and the share of its members whose kills rose", async () => {
+describe("the End's turnout in the public message and its picture (#276)", () => {
+  it("names the alliance and the share of its members whose kills rose, in the text and the picture", async () => {
     // Two of four members gained kills between the Start and the End.
     const eventId = await seedEvent([
       [10, 15],
@@ -119,6 +131,10 @@ describe("the End's turnout in the public message (#276)", () => {
     ]);
     const sent = await finishAfter(eventId);
     expect(sent?.content).toContain(`${LINE}: [OGs] 50 %`);
+    expect(sent?.file).not.toBeNull();
+    expect(pictured()?.withKills).toEqual([
+      expect.objectContaining({ tag: "OGs", n: 4, gainers: 2, gained: 7 }),
+    ]);
   });
 
   it("has no turnout line when no member's kills rose", async () => {
@@ -129,9 +145,10 @@ describe("the End's turnout in the public message (#276)", () => {
     const sent = await finishAfter(eventId);
     expect(sent?.content).toContain("1/1 alliances");
     expect(sent?.content).not.toContain(LINE);
+    expect(pictured()).toBeNull();
   });
 
-  it("has no turnout line while the war-turnout flag is off (D91)", async () => {
+  it("has no turnout line or picture block while the war-turnout flag is off (D91)", async () => {
     const eventId = await seedEvent([
       [10, 15],
       [10, 12],
@@ -139,5 +156,7 @@ describe("the End's turnout in the public message (#276)", () => {
     const sent = await finishAfter(eventId, TEST_ENV);
     expect(sent?.content).toContain("1/1 alliances");
     expect(sent?.content).not.toContain(LINE);
+    expect(eventImage).toHaveBeenCalledOnce();
+    expect(pictured()).toBeNull();
   });
 });
