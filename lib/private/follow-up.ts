@@ -27,7 +27,7 @@ import type { FactSource } from "./fact-fields";
 import { featureOn } from "./features";
 import {
   coinsTip,
-  doneThisWeek,
+  notedThisWeek,
   liveRecords,
   resolvedBy,
   weekStart,
@@ -50,7 +50,7 @@ export interface FollowUpView {
   week: string[];
   items: FollowUpItem[];
   /** The members noted this week (#585): each one's newest record still counting, newest first. */
-  done: DoneItem[];
+  noted: NotedItem[];
   /** The time zones the members have, most used first, for the facts editor's picker. */
   zones: string[];
   /** Attackers in the thefts log whose follow-up is Open or Open again (D97). */
@@ -64,7 +64,7 @@ export const LANGUAGE_DAYS = 14;
 export type FollowUpItem = WorkItem & { language: WorkspaceLanguage | null };
 
 /** A member noted this week and the record that took them off the list. */
-export interface DoneItem {
+export interface NotedItem {
   member: MemberRow;
   record: WeekRecord;
 }
@@ -92,23 +92,23 @@ function weekLists<T extends Counted>(view: MembersView, rows: readonly T[]) {
   const items = worklist(view.members, resolvedBy(rows), tipsOf(view.members, view.reads));
   // Current members only: a member who left, or a former member (D107), is not in the view.
   const byUid = new Map(view.members.map((m) => [m.uid, m]));
-  const done = doneThisWeek(rows).flatMap((record) => {
+  const noted = notedThisWeek(rows).flatMap((record) => {
     const member = byUid.get(record.uid);
     return member ? [{ member, record }] : [];
   });
-  return { items, done };
+  return { items, noted };
 }
 
 /** Monday 00:00 server time of the game week that holds `now` (not the newest read's week). */
 const sinceMonday = (now: Date, zone: string) => weekStart(dayIn(zone, now.getTime()), zone);
 
 /** Follow-up's two numbers: the members to look at this week, and the members noted. */
-export type WeekCounts = { toLook: number; done: number };
+export type WeekCounts = { toLook: number; noted: number };
 
 /**
  * Follow-up's two numbers for Home and Members (#585), by the same rule, week and members view as the
- * Follow-up page; null while the Follow-up tab is off, with nothing read (D126). Reads uid, action and
- * time only.
+ * Follow-up page. Null, with nothing read, while the Follow-up tab is off (D126) and before the alliance's
+ * first daily update (the pages then say nothing about check-ins). Reads uid, action and time only.
  */
 export async function followUpCounts(
   db: Db,
@@ -117,10 +117,10 @@ export async function followUpCounts(
   now: Date,
   zone: string,
 ): Promise<WeekCounts | null> {
-  if (!featureOn(access, "follow_up")) return null;
+  if (!featureOn(access, "follow_up") || view.early) return null;
   const rows = await followedUpSince(db, access.workspaceId, sinceMonday(now, zone));
-  const { items, done } = weekLists(view, rows);
-  return { toLook: items.length, done: done.length };
+  const { items, noted } = weekLists(view, rows);
+  return { toLook: items.length, noted: noted.length };
 }
 
 /** The week's list as of `now`; `zone` is the server's (SERVER_TZ). */
@@ -136,7 +136,7 @@ export async function followUpView(
     notedSince(db, access.workspaceId, sinceMonday(now, zone)),
     theftsView(db, access, { now, zone }),
   ]);
-  const { items, done } = weekLists(members, rows);
+  const { items, noted } = weekLists(members, rows);
   // Only the members on the list, and only recent reads (#521).
   const since = new Date(now.getTime() - LANGUAGE_DAYS * DAY_MS);
   const game = await gameLanguages(
@@ -156,7 +156,7 @@ export async function followUpView(
         game.get(i.member.uid) ?? null,
       ]),
     })),
-    done,
+    noted,
     zones: members.zones,
     // Every attacker not yet resolved, whatever step they are at (D104, amended 2026-11-19).
     thefts: thefts.groups

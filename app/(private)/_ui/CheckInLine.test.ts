@@ -9,7 +9,8 @@ import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { cardFormats } from "@/lib/private/member-card";
 import type { MemberRow, MembersView } from "@/lib/private/members";
 
-import { checkInLink, HomeMembers } from "./HomeMembers";
+import { checkInLink } from "./CheckInLine";
+import { HomeMembers } from "./HomeMembers";
 
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ SERVER_TZ: "Etc/GMT+2" }) }));
 
@@ -59,11 +60,11 @@ const f = cardFormats("en", "Etc/GMT+2", new Date("2026-11-21T18:30:00Z")); // S
 
 describe("the check-in line on Home and Members (issue 585)", () => {
   it("gives Follow-up's numbers, linked to Follow-up, while its tab is on, and Members' own count while it is off", () => {
-    expect(checkInLink("ogs", view, { toLook: 12, done: 4 }, t, f)).toEqual({
+    expect(checkInLink("ogs", view, { toLook: 12, noted: 4 }, t, f)).toEqual({
       text: "Follow-up: 12 to look at · 4 noted this week",
       href: "/w/ogs/follow-up",
     });
-    expect(checkInLink("ogs", view, { toLook: 0, done: 0 }, t, f)).toBeNull();
+    expect(checkInLink("ogs", view, { toLook: 0, noted: 0 }, t, f)).toBeNull();
     // Tab off (D126): no link to a turned-off page.
     expect(checkInLink("ogs", view, null, t, f)).toEqual({
       text: "2 people to check in with or help",
@@ -85,7 +86,7 @@ describe("the check-in line on Home and Members (issue 585)", () => {
         view: early,
         nudge: false,
         switches: { board: false, writing: false, channel: null },
-        followUp: { toLook: 12, done: 4 },
+        followUp: { toLook: 12, noted: 4 },
       }),
     );
     expect(html).toContain(t["home.notYet"]);

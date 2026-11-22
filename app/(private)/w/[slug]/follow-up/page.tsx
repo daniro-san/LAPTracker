@@ -6,41 +6,22 @@
 // thefts whose follow-up is still open, each linked to its entry in the thefts log. People first (D75):
 // notes for the officers, nothing is sent, no ranking, a warm line when nobody is on it. Issue 585: the head
 // leads with the week's two numbers, and "Noted this week" says who an officer already noted, by whom.
-import { fill, isolate } from "@/lib/copy";
+import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import {
-  type WorkspaceDictionary,
-  type WorkspaceKey,
-  type WorkspaceLanguage,
-} from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
-import {
-  followUpView,
-  type DoneItem,
-  type FollowUpItem,
-  type FollowUpView,
-} from "@/lib/private/follow-up";
-import { notedLine, type FollowUpAction } from "@/lib/private/follow-up-rules";
+import { followUpView, type FollowUpItem, type FollowUpView } from "@/lib/private/follow-up";
 import { cardFormats } from "@/lib/private/member-card";
 import type { Reason } from "@/lib/private/members";
 import { reasonText, type Formats } from "@/lib/private/members-sheet";
 import { inputOf, readyTexts } from "@/lib/private/ready-message";
-import type { AttackerGroup } from "@/lib/private/theft-groups";
 
 import { editorWords } from "../../../_ui/facts-form";
 import { followUpWords } from "../../../_ui/follow-up-words";
 import { FollowUpList, type FollowUpGroup, type FollowUpRow } from "../../../_ui/FollowUpList";
+import { counted, FollowUpFoot, FollowUpHead } from "../../../_ui/FollowUpWeek";
 import { SignedInFrame } from "../../../_ui/Frame";
 import { openRollCall } from "../../../_ui/roll-call-page";
-
-const LINK =
-  "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
-
-/** The singular or plural form of a Follow-up phrase, by the language's own rule. */
-function counted(t: WorkspaceDictionary, key: string, n: number, language: string) {
-  const form = new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
-  return fill(t[`${key}.${form}` as WorkspaceKey], { n });
-}
 
 /** A reason in Follow-up's own words ("Quiet for 3 days. Worth a hello."); the held KvK one as Members says it. */
 function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
@@ -108,139 +89,6 @@ function groupsOf(
     }));
 }
 
-/** "16 – 22 Nov" in the officer's language. */
-function weekRange(week: string[], language: string) {
-  const at = (day: string | undefined) => new Date(`${day}T00:00:00Z`);
-  return new Intl.DateTimeFormat(language, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).formatRange(at(week[0]), at(week[6]));
-}
-
-/**
- * "Noted this week · n" (issue 585): each member an officer noted since Monday, newest first, the officer and
- * the day first ("Tomas, Thu, Nov 19: Talked to them"), the note under it, the name opening their card.
- * Always there once the alliance has a daily update, so the Monday rule is on the page on a Monday too.
- */
-function Noted(props: { slug: string; done: DoneItem[]; t: WorkspaceDictionary; f: Formats }) {
-  const { t, f, done } = props;
-  return (
-    <section
-      id="follow-up-noted"
-      className="drawn-card mt-4 scroll-mt-4 px-4 pt-3 pb-1"
-      aria-labelledby="follow-up-noted-h"
-    >
-      <h2 id="follow-up-noted-h" className="font-subhead text-display-sm">
-        {fill(t["followup.noted.head"], { n: done.length })}
-      </h2>
-      <p className="text-body-sm text-ink/80">{t["followup.rule"]}</p>
-      {done.length === 0 ? (
-        <p className="py-2">{t["followup.noted.none"]}</p>
-      ) : (
-        // ph-no-capture (issue 549): names, notes and officers never reach session replay.
-        <ul className="ph-no-capture mt-1">
-          {done.map(({ member, record }) => {
-            // A withdrawn record never counts (liveRecords), so a noted one is one of the four answers.
-            const row = { ...record, action: record.action as FollowUpAction };
-            const line = notedLine(row, t, f.date, f.date);
-            return (
-              <li key={member.uid} className="border-t border-rule pb-2">
-                <a
-                  href={`/w/${props.slug}/members?m=${member.uid}`}
-                  className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
-                >
-                  <bdi translate="no">{member.name}</bdi>
-                </a>
-                {member.rank && <span className="text-ink/75">{` · ${member.rank}`}</span>}
-                <p className="text-body-sm">{line}</p>
-                {record.note && <p className="text-body-sm text-ink/80">{record.note}</p>}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-function Thefts(props: { slug: string; thefts: AttackerGroup[]; t: WorkspaceDictionary }) {
-  const { t, thefts, slug } = props;
-  if (thefts.length === 0) return null;
-  return (
-    <section
-      id="follow-up-thefts"
-      className="drawn-card mt-6 scroll-mt-4 px-4 pt-3"
-      aria-labelledby="follow-up-thefts-h"
-    >
-      <h2 id="follow-up-thefts-h" className="font-subhead text-display-sm">
-        {fill(t["followup.thefts"], { n: thefts.length })}
-      </h2>
-      <ul className="mt-1">
-        {thefts.map((a) => (
-          <li key={a.key} className="border-t border-rule text-body-sm">
-            <a
-              href={`/w/${slug}/thefts#attacker-${encodeURIComponent(a.key)}`}
-              className="block min-h-11 py-3"
-            >
-              <span className="font-semibold text-plum underline underline-offset-4" translate="no">
-                {a.tag ? `[${isolate(a.tag)}] ` : ""}
-                <bdi>{a.name}</bdi>
-              </span>
-              {/* The step they are at; yarn while nothing is done yet (D104, amended 2026-11-19). */}
-              <span className={a.followUp.state === "open" ? "text-yarn" : undefined}>
-                {` · ${a.followUp.reopened ? t["thefts.state.reopened"] : t[`thefts.state.${a.followUp.state}`]}`}
-              </span>
-              {a.week > 0 && <span>{` · ${fill(t["thefts.week"], { n: a.week })}`}</span>}
-            </a>
-          </li>
-        ))}
-      </ul>
-      <a href={`/w/${slug}/thefts`} className={LINK}>
-        {t["followup.theftsLink"]}
-      </a>
-    </section>
-  );
-}
-
-/**
- * The title, then the week's two numbers (issue 585): who is left to look at and who was already noted, with
- * jumps to the noted and the thefts; then what to do (issue 460) and the D104 promise.
- */
-function Head(props: { data: FollowUpView; t: WorkspaceDictionary; language: WorkspaceLanguage }) {
-  const { data, t, language } = props;
-  return (
-    <>
-      <h1 className="font-display text-display-lg">{t["tab.review"]}</h1>
-      <p className="mt-1 font-semibold">
-        {fill(t["followup.week"], { range: weekRange(data.week, language) })}
-      </p>
-      {data.items.length === 0 ? (
-        <>
-          <p className="font-semibold">{t["followup.empty"]}</p>
-          {data.early && <p className="mt-1 text-body-sm text-ink/80">{t["followup.early"]}</p>}
-        </>
-      ) : (
-        <p className="font-semibold">{fill(t["followup.count"], { n: data.items.length })}</p>
-      )}
-      <div className="flex flex-wrap gap-x-4">
-        {data.done.length > 0 && (
-          <a href="#follow-up-noted" className={LINK}>
-            {counted(t, "followup.noted.jump", data.done.length, language)}
-          </a>
-        )}
-        {data.thefts.length > 0 && (
-          <a href="#follow-up-thefts" className={LINK}>
-            {counted(t, "followup.theftsJump", data.thefts.length, language)}
-          </a>
-        )}
-      </div>
-      <p className="mt-2 text-body-sm font-semibold">{t["followup.todo"]}</p>
-      <p className="mt-1 text-body-sm text-ink/80">{t["followup.help"]}</p>
-    </>
-  );
-}
-
 export default async function FollowUpPage({
   params,
   searchParams,
@@ -278,7 +126,7 @@ export default async function FollowUpPage({
       current="review"
       waiting={page.waiting}
     >
-      <Head data={data} t={t} language={language} />
+      <FollowUpHead data={data} t={t} language={language} />
       {/* Always mounted, so the saved line with Undo stays after the last member leaves. */}
       <FollowUpList
         slug={slug}
@@ -288,12 +136,7 @@ export default async function FollowUpPage({
         words={followUpWords(t)}
         editor={editor}
         initialOpen={typeof open === "string" ? open : null}
-        foot={
-          <>
-            {!data.early && <Noted slug={slug} done={data.done} t={t} f={f} />}
-            <Thefts slug={slug} thefts={data.thefts} t={t} />
-          </>
-        }
+        foot={<FollowUpFoot slug={slug} data={data} t={t} f={f} />}
       />
     </SignedInFrame>
   );

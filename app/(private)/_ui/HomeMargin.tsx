@@ -8,7 +8,6 @@ import type { ActivityPage } from "@/lib/private/desk-activity";
 import { activityView } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { featureOn, thanksSwitches } from "@/lib/private/features";
-import type { WeekCounts } from "@/lib/private/follow-up";
 import type { MembersView } from "@/lib/private/members";
 
 import { BoardReach } from "./BoardReach";
@@ -18,13 +17,12 @@ import { HomeMembers } from "./HomeMembers";
 
 /**
  * D108: the other officers on the desk now, and what officers did lately; D119: the notice pictures the
- * weekly cleanup deletes soon; D124: the alliance's own tracker key; issue 585: Follow-up's two numbers.
+ * weekly cleanup deletes soon; D124: the alliance's own tracker key; issue 585: Follow-up's two numbers (`cards`).
  */
 export type HomeDesk = {
   names: string[];
   activity: ActivityPage;
   now: Date;
-  followUp: WeekCounts | null;
 } & Awaited<ReturnType<typeof cards>>;
 
 export function HomeMargin(props: {

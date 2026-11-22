@@ -20,7 +20,6 @@ import { calendarDays } from "@/lib/private/calendar";
 import { ACTIVITY_FIRST, activityPage, onDeskNow } from "@/lib/private/desk-activity";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
-import { followUpCounts } from "@/lib/private/follow-up";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersWithProgress, type MembersView } from "@/lib/private/members";
@@ -232,18 +231,18 @@ export default async function WorkspacePage({
     if (!access.ok) return { access, ...NONE };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
+    const members = membersWithProgress(db, access, now, zone);
     const [items, placed, view, names, activity, reviews, notes, nudge] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
-      membersWithProgress(db, access, now, zone),
+      members,
       onDeskNow(db, access, now),
       activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
       featureOn(access, "notices") ? reviewsForMe(db, access) : [],
-      cards(db, access, now, zone),
+      cards(db, access, { now, zone }, members),
       thanksNudge(db, access, today),
     ]);
-    const followUp = await followUpCounts(db, access, view, now, zone);
-    const desk = { names, activity, now, followUp, ...notes };
+    const desk = { names, activity, now, ...notes };
     const unmatched = toMatch(pending, view.readAt).length;
     return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };
   });

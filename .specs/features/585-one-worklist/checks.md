@@ -1,12 +1,12 @@
 # One worklist (#585 batch 3) checks
 
 Build: `pnpm typecheck`; `pnpm lint`
-Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/HomeMembers.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
+Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
 Plan: `.specs/features/585-one-worklist/plan.md`
 
 profile: light
 
-12 checks in 1 slice built here (S1; S2-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
+14 checks in 1 slice built here (S1; S2-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
 
 ## Checks
 
@@ -31,7 +31,7 @@ Proof: run unit | ✓ lib/private/follow-up-rules.test.ts > Follow-up's week in 
 Proof: run unit | ✓ lib/private/follow-up-rules.test.ts > Follow-up's week in words (#585) > writes a noted row with the officer and the day first, and a break with its last day away
 
 **C7** - Home and Members link Follow-up's numbers to `/w/[slug]/follow-up` while the tab is on, and show "{n} people to check in with or help" linked to the Members group while it is off (AC 6, AC 7)
-Proof: run unit | ✓ app/(private)/_ui/HomeMembers.test.ts > the check-in line on Home and Members (issue 585) > gives Follow-up's numbers, linked to Follow-up, while its tab is on, and Members' own count while it is off
+Proof: run unit | ✓ app/(private)/_ui/CheckInLine.test.ts > the check-in line on Home and Members (issue 585) > gives Follow-up's numbers, linked to Follow-up, while its tab is on, and Members' own count while it is off
 
 **C8** - After "Talked to them", the member is under "Noted this week" with "Officer MSH · {today}: Talked to them", the rank, and a link to their own card (`?m=<their uid>`), also after a reload, and leaves it after Undo; the group is "Worth a hello · n" (AC 2, AC 3, AC 4, AC 10)
 Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "Follow-up: Talked to them"`
@@ -46,7 +46,13 @@ Proof: walk - `585-worklist/after2/followup--360-light-en-fold.png`, `after2/not
 Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, pt-BR and fr, and no empty value
 
 **C12** - Before the alliance's first daily update, Home says nothing about check-ins and has no Follow-up line, even with Follow-up's numbers given (AC 8; appended after the Verifier)
-Proof: run unit | ✓ app/(private)/_ui/HomeMembers.test.ts > the check-in line on Home and Members (issue 585) > says nothing about check-ins on Home before the alliance's first daily update
+Proof: run unit | ✓ app/(private)/_ui/CheckInLine.test.ts > the check-in line on Home and Members (issue 585) > says nothing about check-ins on Home before the alliance's first daily update
+
+**C13** - Before the alliance's first daily update, Follow-up still shows the Noted card with the Monday rule, so the head's "others already noted ↓" jump always has its card (AC 3; review of PR 640)
+Proof: run unit | ✓ app/(private)/_ui/FollowUpWeek.test.ts > Follow-up's week around the list (issue 585) > keeps the Noted card and the Monday rule before the first daily update, so the jump has its card
+
+**C14** - Before the alliance's first daily update, Home's and Members' counts read nothing and give no numbers (AC 8; review of PR 640)
+Proof: run unit | ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers before the alliance's first daily update
 
 ## Coverage
 

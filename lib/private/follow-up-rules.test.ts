@@ -47,13 +47,13 @@ describe("the Follow-up rules (issue 340, D104)", () => {
 describe("Follow-up's week in words (#585)", () => {
   it("says Follow-up's two numbers in one line for Home and Members, nothing when both are 0", () => {
     const en = WORKSPACE_DICTIONARIES.en;
-    const line = (toLook: number, done: number) => weekCountLine({ toLook, done }, en, "en");
+    const line = (toLook: number, noted: number) => weekCountLine({ toLook, noted }, en, "en");
     expect(line(12, 4)).toBe("Follow-up: 12 to look at · 4 noted this week");
     expect(line(12, 0)).toBe("Follow-up: 12 to look at");
     expect(line(0, 4)).toBe("Follow-up: nobody to look at · 4 noted this week");
     expect(line(0, 0)).toBeNull();
     const fr = WORKSPACE_DICTIONARIES.fr;
-    expect(weekCountLine({ toLook: 3, done: 1 }, fr, "fr")).toBe(
+    expect(weekCountLine({ toLook: 3, noted: 1 }, fr, "fr")).toBe(
       "À suivre : 3 sur la liste · 1 noté cette semaine",
     );
   });

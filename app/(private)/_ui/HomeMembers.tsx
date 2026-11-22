@@ -4,63 +4,18 @@
 // it is shared.
 // A margin note of Home's spread (D122): a card below 1024, unframed hairline rows beside the main column.
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
-import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { WeekCounts } from "@/lib/private/follow-up";
-import { weekCountLine } from "@/lib/private/follow-up-rules";
 import { cardFormats, progressText } from "@/lib/private/member-card";
 import type { MembersView } from "@/lib/private/members";
-import { needsAWord, whoOf } from "@/lib/private/members-list";
-import { plural, type Formats } from "@/lib/private/members-sheet";
 import { serverDay } from "@/lib/schedule";
 
 import { AllianceWeekLine, allianceWeekParts } from "./AllianceWeekLine";
 import { LINK } from "./BoardText";
+import { checkInLink } from "./CheckInLine";
 import { shareThanksProps, type ShareThanksProps, type ThanksSwitches } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
-
-/**
- * The check-in line Home and Members show, and where it leads: Follow-up's two numbers while its tab is on
- * (issue 585: one rule with the list), else Members' own count of its "Check in and Needs help" group (D126: no
- * link to a turned-off tab); null when there is nothing to say.
- */
-export function checkInLink(
-  slug: string,
-  view: MembersView,
-  followUp: WeekCounts | null,
-  t: WorkspaceDictionary,
-  f: Formats,
-): { text: string; href: string } | null {
-  if (followUp) {
-    const text = weekCountLine(followUp, t, f.language);
-    return text === null ? null : { text, href: `/w/${slug}/follow-up` };
-  }
-  const n = view.members.filter((m) => needsAWord(whoOf(m))).length;
-  if (n === 0) return null;
-  const text = fill(plural(t, "members.checkinCount", n, f), { n });
-  return { text, href: `/w/${slug}/members?order=rank#ml-heading` };
-}
-
-/** Members' head line: the check-in link, or "Everyone looks fine this week." (`none`). */
-export function CheckInLine(props: {
-  check: ReturnType<typeof checkInLink>;
-  none: string;
-  className: string;
-}) {
-  const { check } = props;
-  return (
-    <p className={props.className}>
-      {check === null ? (
-        props.none
-      ) : (
-        <a href={check.href} className={`${LINK} py-2`}>
-          {check.text}
-        </a>
-      )}
-    </p>
-  );
-}
 
 /** D109's progress in name order, its own block under the top lists, with "Share the thanks" (D114). */
 function SayThanks(props: {

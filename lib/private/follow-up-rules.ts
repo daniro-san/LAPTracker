@@ -93,7 +93,7 @@ export function resolvedBy(rows: readonly { uid: number; action: string }[]): Se
  * first), that member's newest one, newest first. The same records that take a member off the list
  * (`resolvedBy`), so a member is either to look at, noted, or neither.
  */
-export function doneThisWeek<T extends { uid: number; action: string; at: Date }>(
+export function notedThisWeek<T extends { uid: number; action: string; at: Date }>(
   rows: readonly T[],
 ): T[] {
   const byUid = new Map<number, T[]>();
@@ -108,18 +108,18 @@ export function doneThisWeek<T extends { uid: number; action: string; at: Date }
  * this week"; null when both are 0 (the pages then say everyone looks fine).
  */
 export function weekCountLine(
-  counts: { toLook: number; done: number },
+  counts: { toLook: number; noted: number },
   t: WorkspaceDictionary,
   language: string,
 ): string | null {
-  if (counts.toLook === 0 && counts.done === 0) return null;
+  if (counts.toLook === 0 && counts.noted === 0) return null;
   const head =
     counts.toLook === 0
       ? t["followup.week.nobody"]
       : fill(t["followup.week.toLook"], { n: counts.toLook });
-  if (counts.done === 0) return head;
-  const form = new Intl.PluralRules(language).select(counts.done) === "one" ? "one" : "other";
-  return `${head} · ${fill(t[`followup.week.noted.${form}`], { n: counts.done })}`;
+  if (counts.noted === 0) return head;
+  const form = new Intl.PluralRules(language).select(counts.noted) === "one" ? "one" : "other";
+  return `${head} · ${fill(t[`followup.week.noted.${form}`], { n: counts.noted })}`;
 }
 
 export interface HistoryRow {

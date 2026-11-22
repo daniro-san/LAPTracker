@@ -6,7 +6,7 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 
 - **Follow-up's head** leads with the week and its two numbers: "Week Nov 16 – 22", "12 to look at · everyone else is fine" (the owner's words, now semibold) and "4 others already noted this week ↓", a 44 px jump to the new card. D140's "what to do" line and D104's help line follow.
 - **"Check in · n" is "Worth a hello · n"** ("Vale um oi", "Un petit mot"). Under "12 to look at", "Check in · 1" was read as the answer by three of six officers.
-- **"Noted this week · n"**, after the to-do groups and before the thefts, shown once the alliance has a daily update.
+- **"Noted this week · n"**, after the to-do groups and before the thefts, always shown (before the first daily update too, since the review of PR 640).
   - It holds one row per current member with a record still counting since Monday 00:00 ST, newest first.
   - Each row has the name as a link to the member's card (`/w/[slug]/members?m=<uid>`), the rank, "Tomas · Thu, Nov 19: Talked to them" ("On a break until Wed, Nov 25" for a break), and the note on its own line.
   - Everything in the list is inside `ph-no-capture`.
@@ -15,10 +15,10 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 - **Home and Members** show "Follow-up: 12 to look at · 4 noted this week" as a link to Follow-up.
   - The numbers come from `followUpCounts`: the same `worklist`, tips, members view and week start (Monday 00:00 ST of today) as Follow-up. It reads only uid, action and time.
   - While the Follow-up tab is off (D126), nothing is read and the old line and link stay.
-  - The rendering is shared: `checkInLink` and `CheckInLine` in `HomeMembers.tsx`.
+  - The rendering is shared: `checkInLink` and `CheckInLine` in `CheckInLine.tsx`.
 - **Code:**
-  - `lib/private/follow-up.ts`: `weekLists`, `followUpCounts`, `WeekCounts`, and `done` on `FollowUpView`.
-  - `lib/private/follow-up-rules.ts`: `doneThisWeek`, `weekCountLine`, `notedLine`.
+  - `lib/private/follow-up.ts`: `weekLists`, `followUpCounts`, `WeekCounts`, and `noted` on `FollowUpView`.
+  - `lib/private/follow-up-rules.ts`: `notedThisWeek`, `weekCountLine`, `notedLine`.
   - `lib/repo/member-follow-ups.ts`: `notedSince`, with note, until and the officer's desk name, for the Follow-up page only. `followedUpSince` is unchanged.
   - Home's margin column moved to `app/(private)/_ui/HomeMargin.tsx` (a pure move, so the page stays under the lint size limits).
 - **Words:** 12 new keys in `dictionary.followup.ts` (EN, PT-BR, FR) and the group title in all three.
@@ -29,7 +29,7 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 - **Tests:**
   - `lib/private/follow-up-week.test.ts` (new, PGlite, 4 tests).
   - 2 tests in `lib/private/follow-up-rules.test.ts`.
-  - `app/(private)/_ui/HomeMembers.test.ts` (new, 1 test).
+  - `app/(private)/_ui/CheckInLine.test.ts` (new, 2 tests) and `app/(private)/_ui/FollowUpWeek.test.ts` (new, 1 test).
   - `e2e/desk-flows.spec.ts`: the Follow-up flow checks the Noted row and its card link, after a reload, and its absence after Undo.
   - `e2e/desk.spec.ts`: Home checks the Follow-up link.
 
@@ -70,7 +70,7 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 | HomeMembers "gives Follow-up's numbers … and Members' own count while it is off"      | the tab-off branch ignored                                            | fails  |
 | e2e Follow-up flow                                                                    | the Noted row drops the officer's name                                | fails (phone and wide) |
 
-  - A first break of `doneThisWeek`'s own member filter did **not** fail: `weekLists` filtered non-members a second time. The redundant filter was removed, so one rule holds it, and the test then failed when that rule was broken.
+  - A first break of the noted rule's own member filter (then `doneThisWeek`) did **not** fail: `weekLists` filtered non-members a second time. The redundant filter was removed, so one rule holds it, and the test then failed when that rule was broken.
 - **The Verifier** (an independent sub-agent, at cb4928d5): FAIL on proofs, no code bug. It found five gaps:
   - C11's i18n script never reads the desk dictionary;
   - the e2e card link matched any uid;
@@ -97,6 +97,25 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 | Home, first screen              | 0 right, 1 wrong, 5 can't tell             | 0 right, 1 wrong, 5 can't tell      | not changed in S1 (S4)       |
 
 - **Shots** (invented 585 seed, server clock Sat 21 Nov 16:30 ST) are in the orchestrator's scratchpad, `585-worklist/before/`, `after/` and `after2/`: 360 light and dark and 1280, EN. Follow-up at 360 went from 2,814 to 3,259 px, the new card's height. The first group starts at about y 530 (was 545).
+
+### Review of PR 640 (/pr-review: approve with comments), fixed
+
+- **The Noted card is shown before the first daily update too.**
+  - The page had it behind `!data.early`. In that state the head's jump could lead nowhere, and the Monday rule left the page, against D104's amendment.
+  - The head and the foot (Noted card, thefts) moved to `app/(private)/_ui/FollowUpWeek.tsx`; the foot always renders the card.
+  - New C13: `FollowUpWeek.test.ts`. Break: hide the card while early → it fails.
+- **Home's e2e count comes from the seed.**
+  - The count is now `newMembers("a").length`, from a new export of `e2e/fixtures/seed.ts` that uses the seed's own roster rule.
+  - The noted part stays optional: the card test, in this project and the other one running beside it, keeps a Talked on a member, so 0 or 1 is right at Home's moment.
+- **The counts' query runs beside the other reads.**
+  - Home's runs inside `cards()` (`home-cards.ts`); Members' runs in its `Promise.all`. Both chain on the members view.
+  - `followUpCounts` returns null without reading while the view is early.
+  - New C14 in `follow-up-week.test.ts`. Break: drop the early guard → it fails.
+- **`checkInLink` and `CheckInLine` moved to `app/(private)/_ui/CheckInLine.tsx`.** Their tests are now in `CheckInLine.test.ts`.
+- **D104's amendment** now says the card is always shown, that Home and Members match new members to the roster before counting (so a number can differ from Follow-up's for one page load), and that they read nothing before the first daily update.
+- **`done` is renamed `noted` in code:** `notedThisWeek`, `NotedItem`, `WeekCounts.noted`, `FollowUpView.noted`.
+- **GLOSSARY:** new entries for "noted" and "worth a hello".
+- **Breaks re-run after the rename:** the newest-record break still fails C1.
 
 ## Open issues
 
@@ -137,5 +156,10 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 - Reuse: `followUpCounts`/`weekLists` for any new count; `notedSince` for anything that shows notes; `checkInLink` for the line.
 - The 585 seed's follow-up rows do not write the away and status facts; a seed for S2 must write them as the app does, or the Members and Follow-up lists disagree for seed reasons.
 </adjustments>
+
+What was missing from the task prompt? Three things:
+- whether the six-officer panel could run as AI personas on invented data (it did) or needed the real officers;
+- that the 585 seed's follow-up rows skip the facts the app writes, which made Members and Follow-up disagree for seed reasons;
+- that `#585` in an `app/` comment trips the colour-literal guard (the repo writes "issue 585" there).
 
 https://github.com/daniro-san/LAPTracker/pull/640

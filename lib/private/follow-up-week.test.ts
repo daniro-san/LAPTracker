@@ -93,7 +93,7 @@ const input = (uid: number, extra: Partial<FollowUpInput> = {}): FollowUpInput =
 });
 
 const noted = async (access: WorkspaceAccess, now: Date) =>
-  (await followUpView(db, access, now, ZONE)).done.map((d) => [
+  (await followUpView(db, access, now, ZONE)).noted.map((d) => [
     d.member.uid,
     d.record.action,
     d.record.by,
@@ -119,7 +119,7 @@ describe("who was noted this week, and the two numbers Home and Members show (#5
       [103, "break", "Bo"],
       [102, "fine", "Ana"],
     ]);
-    const [first] = (await followUpView(db, ana, NOW, ZONE)).done;
+    const [first] = (await followUpView(db, ana, NOW, ZONE)).noted;
     expect([first?.record.note, first?.record.until]).toEqual(["Exams", "2026-11-24"]);
   });
 
@@ -137,7 +137,7 @@ describe("who was noted this week, and the two numbers Home and Members show (#5
     });
     expect(await noted(ana, NOW)).toEqual([[102, "fine", "Ana"]]);
     const view = await membersView(db, ana, NOW, ZONE);
-    expect(await followUpCounts(db, ana, view, NOW, ZONE)).toEqual({ toLook: 2, done: 1 });
+    expect(await followUpCounts(db, ana, view, NOW, ZONE)).toEqual({ toLook: 2, noted: 1 });
   });
 
   it("gives Home and Members Follow-up's own numbers from Monday 00:00 ST, before Monday's daily update", async () => {
@@ -151,8 +151,8 @@ describe("who was noted this week, and the two numbers Home and Members show (#5
     const view = await membersView(db, ana, monday, ZONE);
     expect(view.week[0]).toBe("2026-11-16");
     const counts = await followUpCounts(db, ana, view, monday, ZONE);
-    expect(counts).toEqual({ toLook: page.items.length, done: page.done.length });
-    expect(page.done.map((d) => d.member.uid)).toEqual([101]);
+    expect(counts).toEqual({ toLook: page.items.length, noted: page.noted.length });
+    expect(page.noted.map((d) => d.member.uid)).toEqual([101]);
     expect(page.items.map((i) => i.member.uid)).toEqual([103]);
   });
 
@@ -165,6 +165,12 @@ describe("who was noted this week, and the two numbers Home and Members show (#5
     });
     const ana = await signedIn("Ana");
     const view = await membersView(db, ana, NOW, ZONE);
+    expect(await followUpCounts(noQueryDb, ana, view, NOW, ZONE)).toBeNull();
+  });
+
+  it("reads nothing and gives no numbers before the alliance's first daily update", async () => {
+    const ana = await signedIn("Ana");
+    const view = { ...(await membersView(db, ana, NOW, ZONE)), early: true };
     expect(await followUpCounts(noQueryDb, ana, view, NOW, ZONE)).toBeNull();
   });
 });

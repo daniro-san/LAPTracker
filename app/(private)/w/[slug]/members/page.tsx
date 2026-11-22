@@ -44,10 +44,10 @@ import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { AllianceWeekLine, allianceWeekParts } from "../../../_ui/AllianceWeekLine";
+import { CheckInLine, checkInLink } from "../../../_ui/CheckInLine";
 import { editorWords, updatesWords } from "../../../_ui/facts-form";
 import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
-import { CheckInLine, checkInLink } from "../../../_ui/HomeMembers";
 import {
   dismissedRow,
   formerRow,
@@ -100,9 +100,12 @@ async function readPage(
   if (!access.ok) return { access, waiting: 0, ...REFUSED };
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
-  const [view, channels] = await Promise.all([
-    membersWithProgress(db, access, now, zone),
+  const members = membersWithProgress(db, access, now, zone);
+  const [view, channels, followUp] = await Promise.all([
+    members,
     channelNames(db, access, getEnv()),
+    // Issue 585: Follow-up's numbers for the head, as soon as the members view is in.
+    showFormer ? null : members.then((v) => followUpCounts(db, access, v, now, zone)),
   ]);
   return {
     access,
@@ -112,7 +115,7 @@ async function readPage(
     switches: { ...thanksSwitches(access), channel: channels.members },
     // The list's own read (photos and past names); the card route never runs it (issue 337).
     rows: showFormer ? [] : await withListExtras(db, access, view.members),
-    followUp: showFormer ? null : await followUpCounts(db, access, view, now, zone),
+    followUp,
     lifecycle: showFormer
       ? { former: await formerMembers(db, access, zone, view.facts), pending: [], dismissed: [] }
       : {
