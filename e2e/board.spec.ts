@@ -5,19 +5,18 @@ import {
   ALLIANCES,
   calendarOf,
   DAILY,
+  daysAgo,
   LINKED_MEMBER,
   rosterOf,
   seededAt,
   shown,
+  usDay,
 } from "./fixtures/seed";
 import { big, expect, noError, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const linked = A.names[LINKED_MEMBER] as string;
 const cal = calendarOf(seededAt());
-const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-const usDay = (day: string) =>
-  shown(day, "en-US", { weekday: "short", month: "short", day: "numeric" });
 
 test.beforeEach(async ({ context }) => {
   await signIn(context, "a", "member");
@@ -35,7 +34,7 @@ test("Me: the member's own page, with their own numbers only", async ({ page }) 
   await sees(needed, `In the game, you are ${linked}.`);
   const progress = page.getByRole("region", { name: "Your progress" });
   const [first, newest] = [rosterOf("a", LINKED_MEMBER, 0), rosterOf("a", LINKED_MEMBER)];
-  const since = usDay(iso(cal.today - 14 * 86_400_000));
+  const since = usDay(daysAgo(14));
   await sees(
     progress,
     `Might ${big(newest.might)} · +${big(newest.might - first.might)} since ${since}`,
@@ -69,7 +68,7 @@ test("a member's session opens the board, not the desk", async ({ page }) => {
   await noError(page);
   const days = page.getByRole("list", { name: "The next 7 days" });
   await expect(days.getByRole("listitem")).toHaveCount(7);
-  const today = shown(iso(cal.today), "en-US", { weekday: "long", month: "long", day: "numeric" });
+  const today = shown(daysAgo(0), "en-US", { weekday: "long", month: "long", day: "numeric" });
   await sees(days.getByRole("listitem").first(), `${today} · Today`);
   // The desk's Members list is not there: no member's might, no other member's name.
   await expect(page.getByRole("heading", { name: "Members", level: 1 })).toHaveCount(0);

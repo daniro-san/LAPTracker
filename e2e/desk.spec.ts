@@ -9,6 +9,7 @@ import {
   calendarOf,
   cheeseOf,
   DAILY,
+  daysAgo,
   JOINER,
   KVK_ENTRY,
   LEAVER,
@@ -17,12 +18,12 @@ import {
   rosterOf,
   seededAt,
   SENTINELS,
-  shown,
+  usDay,
   SHIELD_MARKED,
   WALL_ONLY,
   weekLine,
 } from "./fixtures/seed";
-import { big, expect, hydrated, noError, sees, signIn, test } from "./fixtures/test";
+import { big, deskFrame, expect, hydrated, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const desk = `/w/${A.slug}`;
@@ -36,20 +37,10 @@ const MARKED_BY = { phone: A.names[6], wide: A.names[7], iphone: A.names[8] } as
 /** A label that starts with `prefix` and a name, the name inside Unicode isolates (isolate(), <bdi>). */
 const labelled = (prefix: string, name: string) => new RegExp(`^${prefix}\\u2068?${name}\\u2069?`);
 const cal = calendarOf(seededAt());
-const DAY_MS = 86_400_000;
-const usDay = (day: string) =>
-  shown(day, "en-US", { weekday: "short", month: "short", day: "numeric" });
-const daysAgo = (n: number) => new Date(cal.today - n * DAY_MS).toISOString().slice(0, 10);
 
 test.beforeEach(async ({ context }) => {
   await signIn(context, "a", "officer");
 });
-
-/** The desk's frame for Lantern Keep: its tag and name, and no error screen. */
-async function deskFrame(page: Page) {
-  await expect(page.getByText(`${A.tag} · ${A.name}`)).toBeVisible();
-  await noError(page);
-}
 
 /** A tap on `target` that saves (POST /api/w/<slug>/roll-call), waited for before the page is left. */
 async function tapAndSave(page: Page, target: import("@playwright/test").Locator) {
@@ -62,7 +53,7 @@ async function tapAndSave(page: Page, target: import("@playwright/test").Locator
 test("Home shows the alliance, its activity and its week line", async ({ page }) => {
   await page.goto(desk);
   await expect(page.getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
-  await deskFrame(page);
+  await deskFrame(page, A);
   // Recent activity: other tests' roll call marks land here too, so only what none of them changes is
   // checked: the feed lists the officer's own actions (the seed's and the tests' writer is that officer).
   const activity = page.getByRole("region", { name: "Recent activity" }).first();
@@ -95,7 +86,7 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await page.clock.install();
   await page.goto(`${desk}/members`);
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
-  await deskFrame(page);
+  await deskFrame(page, A);
   await sees(page.locator("main"), `${ROSTER} of ${ROSTER} members`);
   const k = 3;
   const name = A.names[k] as string;
@@ -183,7 +174,7 @@ test("Roll call: a mark shows at once, is kept after a reload and in the list, t
 
   await page.goto(`${desk}/roll-call`);
   await expect(page.getByRole("heading", { level: 1, name: "Roll call" })).toBeVisible();
-  await deskFrame(page);
+  await deskFrame(page, A);
   await sees(listed, summary(0));
   await listed.getByRole("link", { name: "Mark ›" }).click();
 
@@ -224,7 +215,7 @@ test("Roll call: a mark shows at once, is kept after a reload and in the list, t
 async function seededRaidPrep(page: Page, week: string) {
   await page.goto(`${desk}/roll-call/mark?entry=${KVK_ENTRY}&week=${week}`);
   await expect(page.getByRole("heading", { level: 1, name: "Raid prep" })).toBeVisible();
-  await deskFrame(page);
+  await deskFrame(page, A);
 }
 
 test("Raid prep: To mark counts the members with no Shield mark", async ({ page }) => {

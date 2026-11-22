@@ -1,30 +1,29 @@
-// The desk flows that end or change something for good (issue 477): Sign out, Follow-up's "Talked to them",
-// a member fact edited on the card, and a feature switch. Each writes only rows no other test reads: its own
-// session (signOutToken), its own quiet member (idleOf) or fact member (factMemberOf) per project and repeat,
-// and the switch on a workspace of its own per repeat, phone only (switchWorkspaceOf). Not in the iphone
-// project (its testMatch is desk.spec): the seed holds these rows for phone and wide only.
+// The desk flows that end or change something (issue 477): Sign out, Follow-up's "Talked to them", a member
+// fact edited on the card, and a feature switch. Each writes only rows no other test reads: its own session
+// (signOutToken), its own quiet member (idleOf) or fact member (factMemberOf) per project and repeat, and the
+// switch on a workspace of its own per repeat, phone only (switchWorkspaceOf). Each puts back what it changed,
+// checked on screen, except the ended session, which cannot come back. Not in the iphone project (its
+// testMatch is desk.spec): the seed holds these rows for phone and wide only.
+import { randomUUID } from "node:crypto";
+
 import type { Page } from "@playwright/test";
 
+import { BASE_URL } from "./env";
 import {
   ALLIANCES,
-  calendarOf,
+  daysAgo,
   FACT_SEEDED,
   factMemberOf,
   IDLE_DAYS,
   idleOf,
-  seededAt,
-  shown,
   signOutToken,
   switchWorkspaceOf,
+  usDay,
 } from "./fixtures/seed";
-import { expect, hydrated, leaksIn, noError, sees, signIn, test } from "./fixtures/test";
+import { deskFrame, expect, hydrated, noError, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const B = ALLIANCES.b;
-const cal = calendarOf(seededAt());
-const DAY_MS = 86_400_000;
-const usDay = (day: string) =>
-  shown(day, "en-US", { weekday: "short", month: "short", day: "numeric" });
 /** A name inside Unicode isolates, as isolate() writes it into a label or a line. */
 const isolated = (name: string) => `\\u2068?${name}\\u2069?`;
 /** A button whose name starts with the member's name (a Members line, a Follow-up row). */
@@ -41,12 +40,6 @@ async function savedAndRefreshed(page: Page, path: string, action: () => Promise
   );
   await action();
   await (await refreshed).finished();
-}
-
-/** The desk's frame for an alliance: its tag and name, and no error screen. */
-async function deskFrame(page: Page, a: { tag: string; name: string }) {
-  await expect(page.getByText(`${a.tag} · ${a.name}`)).toBeVisible();
-  await noError(page);
 }
 
 /** The sign-in screen (D99), with none of Lantern Keep's members on it. */
@@ -72,19 +65,6 @@ test("Sign out: the sign-in screen shows, and Members then shows no member", asy
 
   const signOut = page.getByRole("button", { name: "Sign out" });
   await hydrated(signOut);
-  // The page never reads the logout answer's body, so Chromium never finishes that request and the guards
-  // cannot read it ("unreadable answer"). The test sends the request to the server itself, scans the
-  // server's answer as the guards would, and gives the page that answer as plain text (it ignores the body).
-  await page.route(`**/api/w/${A.slug}/logout`, async (route) => {
-    const answer = await route.fetch();
-    const body = await answer.text();
-    expect(leaksIn(answer.url(), body)).toEqual([]);
-    await route.fulfill({
-      response: answer,
-      body,
-      headers: { ...answer.headers(), "content-type": "text/plain" },
-    });
-  });
   await savedAndRefreshed(page, `/w/${A.slug}/members`, () => signOut.click());
   await signInScreen(page);
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toHaveCount(0);
@@ -109,8 +89,10 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   await sees(row, `Quiet for ${IDLE_DAYS} days. Worth a hello.`);
 
   const talked = row.getByRole("button", { name: "Talked to them" });
+  const path = `/w/${B.slug}/follow-up`;
+  const sent = page.waitForRequest((r) => r.url().endsWith(`/api${path}`));
   await hydrated(talked);
-  await savedAndRefreshed(page, `/w/${B.slug}/follow-up`, () => talked.click());
+  await savedAndRefreshed(page, path, () => talked.click());
   await expect(page.getByRole("status")).toContainText(
     new RegExp(`^Saved\\. ${isolated(name)} is off the list until Monday\\.$`),
   );
@@ -119,6 +101,18 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, B);
   await expect(named(page, "", name)).toHaveCount(0);
+
+  // Put back, so a later run on this slot finds the member on the list again. The page offers Undo only
+  // until it is left, so this is the Undo it sends, for the record the tap made; then checked on screen.
+  const { uid, requestId } = (await sent).postDataJSON() as { uid: number; requestId: string };
+  const undo = await page.request.post(`/api${path}`, {
+    headers: { origin: BASE_URL },
+    data: { uid, action: "undo", target: requestId, requestId: randomUUID() },
+  });
+  expect(undo.status()).toBe(200);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
+  await sees(row, `Quiet for ${IDLE_DAYS} days. Worth a hello.`);
 });
 
 test("Member facts: a Troops edit shows on the card, stays after a reload, and History keeps the earlier value", async ({
@@ -128,7 +122,7 @@ test("Member facts: a Troops edit shows on the card, stays after a reload, and H
   await signIn(context, "a", "officer");
   const name = A.names[factMemberOf(info.project.name, info.repeatEachIndex)] as string;
   const tier = FACT_SEEDED.tier + 1;
-  const earlier = `Troops: T${FACT_SEEDED.tier} · ${usDay(new Date(cal.today - FACT_SEEDED.daysAgo * DAY_MS).toISOString().slice(0, 10))}`;
+  const earlier = `Troops: T${FACT_SEEDED.tier} · ${usDay(daysAgo(FACT_SEEDED.daysAgo))}`;
   // Below 1024 px the card is a sheet (a dialog); from 1024 px a pane beside the list (D122).
   const card =
     (page.viewportSize()?.width ?? 0) < 1024
@@ -145,22 +139,32 @@ test("Member facts: a Troops edit shows on the card, stays after a reload, and H
   await card.getByRole("tab", { name: "Info" }).click();
   await sees(panel, `Troops T${FACT_SEEDED.tier}`);
 
-  await card.getByRole("button", { name: "Edit info" }).click();
-  const editor = page.getByRole("dialog", { name: new RegExp(`^Info: ${isolated(name)}$`) });
-  await editor.getByRole("combobox", { name: "Troops" }).selectOption(String(tier));
-  const save = editor.getByRole("button", { name: "Save" });
-  await savedAndRefreshed(page, `/w/${A.slug}/members`, () => save.click());
-  await expect(editor).toHaveCount(0);
-  await sees(panel, `Troops T${tier}`);
+  /** Edit info → Troops `to` → Save: the editor closes and Info shows it, then again after a reload. */
+  const saveTroops = async (to: number) => {
+    await card.getByRole("tab", { name: "Info" }).click();
+    await card.getByRole("button", { name: "Edit info" }).click();
+    const editor = page.getByRole("dialog", { name: new RegExp(`^Info: ${isolated(name)}$`) });
+    await editor.getByRole("combobox", { name: "Troops" }).selectOption(String(to));
+    const save = editor.getByRole("button", { name: "Save" });
+    await savedAndRefreshed(page, `/w/${A.slug}/members`, () => save.click());
+    await expect(editor).toHaveCount(0);
+    await sees(panel, `Troops T${to}`);
+    await page.reload();
+    await expect(card.getByRole("heading", { name, level: 2 })).toBeVisible();
+    await card.getByRole("tab", { name: "Info" }).click();
+    await sees(panel, `Troops T${to}`);
+  };
 
-  await page.reload();
-  await expect(card.getByRole("heading", { name, level: 2 })).toBeVisible();
-  await card.getByRole("tab", { name: "Info" }).click();
-  await sees(panel, `Troops T${tier}`);
+  await saveTroops(tier);
   await card.getByRole("tab", { name: "History" }).click();
   await expect(panel.getByRole("heading", { name: "Earlier values" })).toBeVisible();
   await sees(panel, earlier);
-  await expect(panel.getByText(`Troops: T${tier}`)).toHaveCount(0);
+
+  // Put back: T10 again, so a later run on this slot starts from the seeded value; T11 is now an earlier one.
+  await saveTroops(FACT_SEEDED.tier);
+  await card.getByRole("tab", { name: "History" }).click();
+  await sees(panel, `Troops: T${tier} · ${usDay(daysAgo(0))}`);
+  await sees(panel, earlier);
 });
 
 test("Features: Thefts turned off leaves the navigation, stays off after a reload, then turns on again", async ({

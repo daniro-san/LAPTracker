@@ -6,8 +6,8 @@
 //    pages and the members' board show none. A workspace's desk shows only its own alliance's: joined_at on its pages (the Members
 //    copy for a spreadsheet carries it; D71 keeps x, y, online and last_online_at out of copies), and the map
 //    position and last online only in an officer's member card (/api/w/<slug>/members/<uid>, read when the
-//    card opens). No answer carries the photo URL, and a private answer of one workspace never names the
-//    other's members.
+//    card opens). No answer carries the photo URL, and a private answer of one seeded workspace never names
+//    another's members.
 import {
   test as base,
   expect,
@@ -20,12 +20,11 @@ import {
 import { compactLarge } from "../../lib/compact";
 import { errorsCopy } from "../../lib/copy-errors";
 import { BASE_URL } from "../env";
-import { ALLIANCES, AVATAR_SENTINEL, SENTINELS, TOKENS, type Side } from "./seed";
+import { ALLIANCES, AVATAR_SENTINEL, SENTINELS, TOKENS, WORKSPACES, type Side } from "./seed";
 
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost"]);
 const HOST = new URL(BASE_URL).hostname;
 const SIDES = ["a", "b"] as const;
-const other = (side: Side): Side => (side === "a" ? "b" : "a");
 
 /**
  * A sentinel standing alone, not inside a longer number or word (a chunk name such as "x2088y"). A comma
@@ -92,10 +91,13 @@ export function leaksIn(url: string, body: string): string[] {
   return [...found, ...otherMembersIn(path, body)];
 }
 
-/** On one workspace's private path, the other workspace's member names found in `body`. */
+/** On one seeded workspace's private path, every other seeded workspace's member names found in `body`. */
 function otherMembersIn(path: string, body: string): string[] {
-  const privateOf = SIDES.find((s) => new RegExp(`^(/api)?/w/${slugOf(s)}(/|$)`).test(path));
-  return privateOf ? ALLIANCES[other(privateOf)].names.filter((name) => body.includes(name)) : [];
+  const own = WORKSPACES.find((w) => new RegExp(`^(/api)?/w/${w.slug}(/|$)`).test(path));
+  if (!own) return [];
+  return WORKSPACES.filter((w) => w !== own)
+    .flatMap((w) => w.names)
+    .filter((name) => body.includes(name));
 }
 
 const SCANNED = /text\/html|application\/json|text\/x-component/;
@@ -150,6 +152,12 @@ const ERROR_SCREENS = new RegExp(
 /** No error screen on the page: the app's error boundary, the not-found page, the database-down line. */
 export async function noError(page: Page) {
   await expect(page.getByText(ERROR_SCREENS)).toHaveCount(0);
+}
+
+/** The desk's frame for an alliance: its tag and name under the header, and no error screen. */
+export async function deskFrame(page: Page, a: { tag: string; name: string }) {
+  await expect(page.getByText(`${a.tag} · ${a.name}`)).toBeVisible();
+  await noError(page);
 }
 
 /**

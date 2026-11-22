@@ -68,25 +68,35 @@ export const KVK_ENTRY = 1;
 /** The projects (playwright.config.ts) and the repeats (--repeat-each) that each get a roll call of their own. */
 export const PROJECTS = ["phone", "wide", "iphone"];
 export const REPEATS = 3;
+/** The slot of a project and repeat (up to three repeats), for rows a test of each writes on its own. */
+const slotOf = (project: string, repeat: number) =>
+  Math.max(0, PROJECTS.indexOf(project)) * REPEATS + (repeat % REPEATS);
 /**
  * The weekly cheese entry a roll call test marks: one per project and repeat (up to three repeats), so each
  * run checks its exact counts while the others run. Lv.1 to Lv.9, on this week's days in turn.
  */
 export function cheeseOf(project: string, repeat: number) {
-  const n = Math.max(0, PROJECTS.indexOf(project)) * REPEATS + (repeat % REPEATS);
+  const n = slotOf(project, repeat);
   return { entry: 2 + n, level: 1 + n };
 }
 
+/** A filler alliance's two roster members (no raw_json, no sentinels). */
+export const fillerNames = (f: (typeof FILLERS)[number]) => [`${f.tag} one`, `${f.tag} two`];
+/**
+ * Every seeded workspace by its address, with its alliance's member names: a private answer of one never
+ * names another's members (the guards, e2e/fixtures/test.ts).
+ */
+export const WORKSPACES = [
+  { slug: ALLIANCES.a.slug, names: ALLIANCES.a.names as readonly string[] },
+  { slug: ALLIANCES.b.slug, names: ALLIANCES.b.names as readonly string[] },
+  ...FILLERS.map((f) => ({ slug: f.tag.toLowerCase(), names: fillerNames(f) })),
+];
 
 /** Session tokens: invented, local only; the database keeps their sha256 (lib/private/session.ts). */
 export const TOKENS = {
   a: { officer: "e2e-session-lnk-officer-token-000001", member: "e2e-session-lnk-member-token-000002" },
   b: { officer: "e2e-session-msh-officer-token-000003", member: "e2e-session-msh-member-token-000004" },
 } as const;
-
-/** The slot of a project and repeat (up to three repeats), for rows a test of each writes on its own. */
-const slotOf = (project: string, repeat: number) =>
-  Math.max(0, PROJECTS.indexOf(project)) * REPEATS + (repeat % REPEATS);
 
 /**
  * A Lantern Keep officer's session that the sign-out test ends: one per project and repeat, so the

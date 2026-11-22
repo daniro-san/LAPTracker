@@ -12,6 +12,7 @@ import {
   FACT_MEMBERS,
   FACT_SEEDED,
   FILLERS,
+  fillerNames,
   IDLE_DAYS,
   IDLE_UIDS,
   JOINER,
@@ -43,7 +44,7 @@ export function raidOf(now: Date, repeat: number) {
   const shift = (day: string) => iso(Date.parse(day) + 7 * (1 + (repeat % REPEATS)) * DAY_MS);
   return { day: shift(raid.day), week: shift(raid.week) };
 }
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 const q = (s: string | null) => (s === null ? "null" : `'${s.replace(/'/g, "''")}'`);
 const arr = (xs: (string | number)[]) =>
@@ -79,6 +80,11 @@ export const seededAt = () => new Date(Number(process.env.E2E_NOW ?? Date.now())
 /** A seeded day (YYYY-MM-DD) written as a page writes it, e.g. "Sat, Nov 14" (en-US) or "14 Nov" (en-GB). */
 export const shown = (day: string, locale: string, options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(Date.parse(day));
+/** A seeded day as the desk's cards write it: "Sat, Nov 14". */
+export const usDay = (day: string) =>
+  shown(day, "en-US", { weekday: "short", month: "short", day: "numeric" });
+/** The server day `n` days before the seed's today (YYYY-MM-DD). */
+export const daysAgo = (n: number) => iso(calendarOf(seededAt()).today - n * DAY_MS);
 /** The newest daily roster's day: yesterday, server time. */
 export const lastRosterDay = () => new Date(calendarOf(seededAt()).today - DAY_MS).toISOString().slice(0, 10);
 
@@ -197,7 +203,7 @@ function dailyReads(today: number, lastEvent: string): string[] {
     }
     for (const f of FILLERS)
       lines.push(
-        `insert into daily_rosters (read_day, union_id, tag, name, member_count, total_power, source_updated_at, is_fresh, member_uids, member_names, member_power, member_kills) values ('${day}', ${f.unionId}, '${f.tag}', ${q(f.name)}, 2, 30000000, '${day}T23:31:00-02:00', true, '{${f.unionId}1,${f.unionId}2}', '{"${f.tag} one","${f.tag} two"}', '{20000000,10000000}', '{500000,400000}');`,
+        `insert into daily_rosters (read_day, union_id, tag, name, member_count, total_power, source_updated_at, is_fresh, member_uids, member_names, member_power, member_kills) values ('${day}', ${f.unionId}, '${f.tag}', ${q(f.name)}, 2, 30000000, '${day}T23:31:00-02:00', true, '{${f.unionId}1,${f.unionId}2}', ${arr(fillerNames(f))}, '{20000000,10000000}', '{500000,400000}');`,
       );
   }
   return lines;
