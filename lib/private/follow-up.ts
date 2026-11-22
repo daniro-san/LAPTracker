@@ -7,7 +7,6 @@
 // since. Members of the workspace's own alliance only (D71). Nothing here is logged: notes are what
 // officers typed. D140: each item also carries the coins tip and the language its ready message is in.
 import type { Db } from "../db";
-import { factVersion } from "../repo/member-facts";
 import {
   factWriter,
   followedUpSince,
@@ -50,6 +49,8 @@ import { membersView, type MemberRow, type MembersView } from "./members";
 import { messageLanguage } from "./ready-message";
 import type { AttackerGroup } from "./theft-groups";
 import { theftsView } from "./thefts";
+
+export { undoFollowUp } from "./follow-up-undo";
 
 export interface FollowUpView {
   /** Before the alliance's first end-of-day read: nothing is computed, so nobody has a reason (D80). */
@@ -284,8 +285,6 @@ function factOf(
   return input.action === "help" ? { ...base, field: "status", value: "help" } : null;
 }
 
-const FIELD_OF = { break: "away", help: "status" } as const;
-
 type Stale = Extract<FollowUpResult, { code: "stale" }>;
 
 /** Writes the status fact: the version written, or the newer value another officer saved (with who). */
@@ -339,47 +338,6 @@ export async function recordFollowUp(
     note,
     until: input.action === "break" ? input.until : null,
     factVersion: written?.version ?? null,
-    writtenBy: access.user.id,
-    writtenAt: clock.now,
-    requestId: input.requestId,
-  });
-  return { ok: true };
-}
-
-/**
- * Undo (D104 amendment): when `target` is still the member's newest record counting, appends "withdrawn"
- * so the member is back on the list. A break or Needs help it wrote is put back to the value before, as a
- * new version, unless another officer changed that fact since (then the fact stays as they left it).
- */
-export async function undoFollowUp(
-  db: Db,
-  access: WorkspaceAccess,
-  input: { uid: number; target: string; requestId: string },
-  clock: { now: Date; zone: string },
-): Promise<FollowUpResult> {
-  if (await followUpRequested(db, access.workspaceId, input.requestId)) return { ok: true };
-  const live = liveRecords(await listMemberFollowUps(db, access.workspaceId, input.uid));
-  const last = live.at(-1);
-  if (!last || last.requestId !== input.target) return { ok: false, code: "not_found" };
-  if (last.factVersion !== null && (last.action === "break" || last.action === "help")) {
-    const where = [db, access.workspaceId, input.uid, FIELD_OF[last.action]] as const;
-    const newest = await factVersion(...where, "newest");
-    if (newest?.version === last.factVersion) {
-      const before =
-        last.factVersion > 1 ? await factVersion(...where, last.factVersion - 1) : null;
-      const back = {
-        field: FIELD_OF[last.action],
-        version: last.factVersion,
-        value: before?.value ?? null,
-        source: "officer",
-      } as FactChange;
-      await saveFacts(db, access, input.uid, [back], clock.now, clock.zone);
-    }
-  }
-  await insertMemberFollowUp(db, {
-    workspaceId: access.workspaceId,
-    uid: input.uid,
-    action: "withdrawn",
     writtenBy: access.user.id,
     writtenAt: clock.now,
     requestId: input.requestId,
