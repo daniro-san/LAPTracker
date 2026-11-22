@@ -4,7 +4,7 @@
 // been with us, newcomers' growth). Only end-of-day reads (D72) are counted: a day with no read is left
 // out, never 0 (D75). A null on a read that lists a member is "none that day" (D127). Nobody is ranked.
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
-import { COINS_MAX } from "./member-days";
+import { COINS_MAX, dayAverage, type DayAverage } from "./member-days";
 import { DAY_MS, gameWeek, isoDay } from "./member-week";
 
 /** This game week and the 4 before it. */
@@ -102,24 +102,22 @@ export function pulseView(reads: readonly RosterRead[]): PulseView | null {
 }
 
 /**
- * One member's averages over the reads among the last EFFORT_READS that list them. A null on such a read is
- * none that day and counts as 0 (D127), so one big day does not stand for a week; a day with no read is left
- * out (D75).
+ * One member's averages over the reads among the last EFFORT_READS that list them, by the member card's and
+ * Me's rule (`dayAverage`, owner 2026-11-22, #663): a null on such a read is none that day and counts as 0
+ * (D127), so one big day does not stand for a week; a day with no read is left out (D75).
  */
 export interface Effort {
   uid: number;
   name: string;
   might: number;
-  quests: number | null;
-  coins: number | null;
-  tech: number | null;
+  quests: DayAverage | null;
+  coins: DayAverage | null;
+  tech: DayAverage | null;
 }
 
 const EFFORT_FIELDS = { quests: "active", coins: "dailyHonor", tech: "dailyTech" } as const;
 export type EffortMetric = keyof typeof EFFORT_FIELDS;
 export const EFFORT_METRICS = Object.keys(EFFORT_FIELDS) as EffortMetric[];
-
-const mean = (v: number[]) => (v.length === 0 ? null : v.reduce((a, b) => a + b, 0) / v.length);
 
 /** Each member of the newest read with a might, minus `leftOut`, with their averages. */
 export function effortsOf(reads: readonly RosterRead[], leftOut: ReadonlySet<number>): Effort[] {
@@ -131,7 +129,7 @@ export function effortsOf(reads: readonly RosterRead[], leftOut: ReadonlySet<num
   return newest.members.flatMap((m) => {
     if (m.power === null || leftOut.has(m.uid)) return [];
     const seen = rows(m.uid);
-    const avg = (k: EffortMetric) => mean(seen.map((s) => s[EFFORT_FIELDS[k]] ?? 0));
+    const avg = (k: EffortMetric) => dayAverage(seen.map((s) => s[EFFORT_FIELDS[k]] ?? "none"));
     return [
       {
         uid: m.uid,
@@ -154,7 +152,7 @@ export interface Band {
 }
 
 const medianOf = (list: readonly Effort[], k: EffortMetric) =>
-  median(list.flatMap((e) => (e[k] === null ? [] : [e[k]])));
+  median(list.flatMap((e) => (e[k] === null ? [] : [e[k].value])));
 
 /** Four bands of might, the highest first; fewer than 4 members make no bands. */
 export function bandsOf(efforts: readonly Effort[]): Band[] {
@@ -191,9 +189,9 @@ export function quietOf(efforts: readonly Effort[]): Effort[] {
       (e) =>
         e.might < might.value &&
         e.quests !== null &&
-        e.quests > quests.value &&
+        e.quests.value > quests.value &&
         e.tech !== null &&
-        e.tech > tech.value,
+        e.tech.value > tech.value,
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 }
