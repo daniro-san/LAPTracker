@@ -17,4 +17,11 @@ describe("waitForDayChange", () => {
     );
     expect(waitForDayChange(at("2026-11-22T02:05:00Z"))).toBe(5 * 60_000);
   });
+
+  it("treats exactly 10 minutes before 02:00 UTC as clear, and one second later as near", () => {
+    expect(waitForDayChange(at("2026-11-22T01:50:00Z"))).toBe(0);
+    expect(waitForDayChange(at("2026-11-22T01:50:01Z"))).toBe(
+      at("2026-11-22T02:10:00Z") - at("2026-11-22T01:50:01Z"),
+    );
+  });
 });
