@@ -13,6 +13,9 @@ export interface ShieldPostWords {
   unread: string;
   notSeen: string;
   notSeenMorning: string;
+  /** How many away members were left out of the names: a count, never a name (D137, 2026-11-22). */
+  away: string;
+  awayOne: string;
   /** The reminder that a recent shield may not show yet. */
   hint: string;
   more: string;
@@ -29,6 +32,8 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
     unread: "{n} not read",
     notSeen: "Not seen yet: {names}",
     notSeenMorning: "Not seen this morning: {names}",
+    away: "{n} away, left out",
+    awayOne: "{n} away, left out",
     hint: "The tracker sees shields at its map scan: a shield turned on since may not show yet.",
     more: "and {n} more",
     link: "[Raid prep ↗](<{url}>)",
@@ -41,6 +46,8 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
     unread: "{n} sem leitura",
     notSeen: "Ainda sem escudo visto: {names}",
     notSeenMorning: "Sem escudo visto hoje de manhã: {names}",
+    away: "{n} ausentes, fora da lista",
+    awayOne: "{n} ausente, fora da lista",
     hint: "O tracker vê o escudo na varredura do mapa: um escudo ligado depois pode não aparecer ainda.",
     more: "e mais {n}",
     link: "[Preparação do raid ↗](<{url}>)",
@@ -53,6 +60,8 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
     unread: "{n} sans lecture",
     notSeen: "Pas encore vu : {names}",
     notSeenMorning: "Pas vu ce matin : {names}",
+    away: "{n} absents, hors de la liste",
+    awayOne: "{n} absent, hors de la liste",
     hint: "Le tracker voit les boucliers lors de son scan de la carte : un bouclier activé depuis peut ne pas encore apparaître.",
     more: "et {n} de plus",
     link: "[Préparation du raid ↗](<{url}>)",

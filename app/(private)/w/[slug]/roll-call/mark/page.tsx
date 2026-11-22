@@ -13,7 +13,7 @@ import type { WorkspaceAccess } from "@/lib/private/access";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { prepView } from "@/lib/private/raid-prep";
 import type { Occasion } from "@/lib/private/roll-call";
-import { callView } from "@/lib/private/roll-call-view";
+import { callRead } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
@@ -43,14 +43,18 @@ async function readMark(
 ) {
   // The channels are read beside the roll call: the summary posts only through a saved Raid Shield channel
   // the master key opens (D147).
-  const [call, hooks] = await Promise.all([
-    callView(db, access, occasion, lang, zone),
+  const [read, hooks] = await Promise.all([
+    callRead(db, access, occasion, lang, zone),
     webhookViews(db, access, getEnv()),
   ]);
-  if (call?.opened.kind !== "shield") return call && { ...call, prep: null };
+  if (!read) return null;
+  // The roster and facts the roll call read serve Raid prep too, and go no further than here.
+  const { view, loaded } = read;
+  if (view.opened.kind !== "shield") return { ...view, prep: null };
   const shieldChannel = hooks.some((h) => h.channel === "shield" && h.state === "set");
-  const prep = await prepView(db, access, call.opened, { zone, now: new Date(), shieldChannel });
-  return { ...call, prep };
+  const clock = { zone, now: new Date(), shieldChannel };
+  const prep = await prepView(db, access, view.opened, clock, loaded);
+  return { ...view, prep };
 }
 
 type Page = Awaited<ReturnType<typeof openRollCall<Awaited<ReturnType<typeof readMark>>>>>;

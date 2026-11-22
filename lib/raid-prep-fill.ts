@@ -38,8 +38,8 @@ export interface FillScope {
 
 export { fridayOf };
 
-/** Each member's away note and On a break, as the roll call reads them (D103). */
-async function awayFacts(db: Db, workspaceId: number): Promise<Map<number, AwayFacts>> {
+/** Each member's away note and On a break, as the roll call reads them (D103); the summary reads them too. */
+export async function awayFacts(db: Db, workspaceId: number): Promise<Map<number, AwayFacts>> {
   const facts = new Map<number, AwayFacts>();
   for (const r of await latestFacts(db, workspaceId)) {
     if (r.field !== "away" && r.field !== "status") continue;
