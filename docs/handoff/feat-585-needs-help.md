@@ -105,7 +105,7 @@ Part of #585 (F14). Size M: a rule change across Follow-up, Home, Members and th
 - **Verified after the review fixes:**
   - `pnpm check` green: 328 test files passed and 2 skipped; 1,720 tests passed and 4 skipped.
   - E2E on a fresh production build: `desk.spec.ts` and `desk-flows.spec.ts` 17 passed, 3 skipped (by design); the whole suite 47 passed, 3 skipped.
-  - `check_proofs.py` at the review commit: see `proofs.md`.
+  - `check_proofs.py`: 26 pass, 0 fail at `fff3a937` (C24 added).
   - The first e2e run failed on the guard's "unreadable answer"; reading the answer fixed it.
 
 ## Open issues
