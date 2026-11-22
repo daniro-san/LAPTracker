@@ -13,11 +13,12 @@
 
 ## Deviations
 
-- The enforcement table marks six rules "review only", not three: the three asked for, plus three softer ones.
+- The enforcement table marks six rules "review only" in five rows, not three: the three asked for, plus three softer ones (items 4 and 5 below share a row).
+- Review of the PR (orchestrator): the first dependency bullet keeps the closed list of cross-module edges from the old file, word for word, so "review only" points at a closed list.
 
 ## Verified
 
-- Path check and decision-number check over the new file; prettier; `pnpm check` (see the PR).
+- Path check and decision-number check over the new file; prettier; `pnpm check` exit 0.
 
 ## Open issues
 

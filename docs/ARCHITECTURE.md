@@ -31,7 +31,8 @@ Pure modules take the clock and every input as arguments: `lib/compute`, `lib/bu
 
 ## Dependency rule
 
-- `app` reaches the domain through `lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai, flags}`, plus the other `lib/` modules a page or handler calls for its own feature (the table below). Upstream only through `lib/run`, `lib/tick` or `lib/rehearsal`.
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai, flags}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/{app-errors, report-error, app-context} → lib/analytics/server` (route errors and `$ai_generation`, D115); `lib/report-error → lib/analytics/{sanitise, events}` (the exception's scrubbed message, D115 2026-11-21); `lib/{app-errors, run, run-notify, tick, push, app-context} → lib/report-error` (an error's redacted detail and a handled `$exception`; `lib/report-error` imports neither `lib/notify*` nor `lib/discord-*`, so `lib/private` reaches it through `lib/push` and `AppContext.report` within D71, D115 2026-11-21); `lib/analytics/sanitise → lib/redact` (the private-field redactor in the browser's scrubber); `lib/{redact, sources/shared} → lib/queries/blocked-keys` (the private keys and the photo host, which import nothing); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries, flags}` (queries: the public Discord message's numbers; flags: its war-turnout line, D91).
+- Upstream only through `lib/run`, `lib/tick` or `lib/rehearsal`. A page or handler also calls the `lib/` modules of its own feature (the Features table below); a new cross-module edge is added to the list above.
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
@@ -44,25 +45,26 @@ No DI container, no base classes, no event bus, no generic repository. `Deps` is
 
 ### How each rule is enforced
 
-| Rule                                                                                      | Enforced by                                                               |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `lib/compute`, `lib/budget`, `lib/screenshot`, `lib/ai` import nothing                    | ESLint `import-x/no-restricted-paths` zones (eslint.config.mjs, D34, D81) |
-| `lib/schedule` imports only the `Env` type                                                | ESLint zone                                                               |
-| Nothing in `lib/` or `config/` imports `app/`                                             | ESLint zone                                                               |
-| `app` does not import `lib/sources`                                                       | ESLint zone                                                               |
-| Pages, `app/_ui` and `app/(private)` do not import `lib/repo`                             | ESLint zone                                                               |
-| Only `app/(private)` imports `lib/private`; D148's one exception                          | ESLint allowlist zones                                                    |
-| `lib/private`, `lib/push`, `lib/report-error` import no `notify*`/`discord-*`             | ESLint zones (D71)                                                        |
-| Blocked roster keys stay out of read models and outside the desk                          | `lib/queries/blocked-keys.test.ts`, `lib/private/roster-fields.test.ts`   |
-| The upstream host only in `lib/env.ts`; `internal.ts` read-only                           | `lib/sources/no-upstream-literals.test.ts`                                |
-| Quota routes check a secret or PIN first                                                  | `app/api/quota-gate.test.ts`                                              |
-| Desk routes check the session first                                                       | `app/(private)/api/w/[slug]/member-session.test.ts`                       |
-| A write to a table a public page reads invalidates `publicCache`                          | `lib/public-cache.test.ts` (D143)                                         |
-| No colour literal; no page text outside the copy files                                    | ESLint `no-restricted-syntax`, `lib/copy.test.ts`                         |
-| `lib/compact` imports nothing from the project                                            | **review only** (its zone is missing)                                     |
-| `lib/logger` imports only `lib/repo` and `lib/redact`                                     | **review only**                                                           |
-| `lib/collector` reaches sources, repo, logger and notify only through `Deps`              | **review only**                                                           |
-| `app` imports only the `lib` modules the first bullet lists, and a handler holds no logic | **review only** (`.claude/rules/api-routes.md`)                           |
+| Rule                                                                                       | Enforced by                                                               |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `lib/compute`, `lib/budget`, `lib/screenshot`, `lib/ai` import nothing                     | ESLint `import-x/no-restricted-paths` zones (eslint.config.mjs, D34, D81) |
+| `lib/schedule` imports only the `Env` type                                                 | ESLint zone                                                               |
+| Nothing in `lib/` or `config/` imports `app/`                                              | ESLint zone                                                               |
+| `app` does not import `lib/sources`                                                        | ESLint zone                                                               |
+| Pages, `app/_ui` and `app/(private)` do not import `lib/repo`                              | ESLint zone                                                               |
+| Only `app/(private)` imports `lib/private`; D148's one exception                           | ESLint allowlist zones                                                    |
+| `lib/private`, `lib/push`, `lib/report-error` import no `notify*`/`discord-*`              | ESLint zones (D71)                                                        |
+| Blocked roster keys stay out of read models and outside the desk                           | `lib/queries/blocked-keys.test.ts`, `lib/private/roster-fields.test.ts`   |
+| The upstream host only in `lib/env.ts`; `internal.ts` read-only                            | `lib/sources/no-upstream-literals.test.ts`                                |
+| Quota routes check a secret or PIN first                                                   | `app/api/quota-gate.test.ts`                                              |
+| Desk routes check the session first                                                        | `app/(private)/api/w/[slug]/member-session.test.ts`                       |
+| A write to a table a public page reads invalidates `publicCache`                           | `lib/public-cache.test.ts` (D143)                                         |
+| No colour literal; no page text outside the copy files                                     | ESLint `no-restricted-syntax`, `lib/copy.test.ts`                         |
+| `lib/compact` imports nothing from the project                                             | **review only** (its zone is missing)                                     |
+| `lib/logger` imports only `lib/repo` and `lib/redact`                                      | **review only**                                                           |
+| `lib/collector` reaches sources, repo, logger and notify only through `Deps`               | **review only**                                                           |
+| `app` and `lib` import only the edges the first bullet lists, and a handler holds no logic | **review only** (`.claude/rules/api-routes.md`)                           |
+| `lib/redact` and `lib/queries/blocked-keys` import nothing from the project                | **review only**                                                           |
 
 ## Features
 
@@ -95,7 +97,7 @@ Paths are relative to the repo; `*` is a prefix. Pages are `app/(pages)/...` for
 
 ## Deps
 
-The collector's injection boundary (lib/collector.ts); names follow docs/GLOSSARY.md. The source of truth for the types is `lib/sources/types.ts` (the adapters' one output type, `AllianceSnapshotInput`, and their errors) and `lib/repo/index.ts` (`Repo`: `createRepo(db)` over Drizzle, `createMemoryRepo()` for tests and `snapshot:dry`).
+The collector's injection boundary (lib/collector.ts); names follow docs/GLOSSARY.md. The source of truth for the types is `lib/sources/types.ts` (the adapters' one output type, `AllianceSnapshotInput`, and their errors) and `lib/repo/index.ts` (`Repo`: `createRepo(db)` over Drizzle) and `lib/repo/memory.ts` (`createMemoryRepo()`, for tests and `snapshot:dry`).
 
 ```ts
 interface Deps {
