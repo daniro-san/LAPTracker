@@ -77,4 +77,4 @@ Issue #477, owner-approved 2026-11-21. Decision: D150.
 - A new private page that shows a roster field must be added to `allowedAt` in `e2e/fixtures/test.ts` with the D71 reason, or the scan fails it.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/600
