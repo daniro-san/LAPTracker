@@ -4,11 +4,14 @@
 // sentinels. Runs on the phone project only: none of it depends on the window.
 import { request, type APIRequestContext, type Page } from "@playwright/test";
 
+import { unzip } from "../lib/zip.test-helpers";
 import { BASE_URL } from "./env";
 import {
   ALLIANCES,
   calendarOf,
   KVK_ENTRY,
+  lastRosterDay,
+  LEAVER,
   LINKED,
   memberUid,
   seededAt,
@@ -184,6 +187,21 @@ test.describe("no answer carries a private roster field", () => {
       ],
     ],
     [
+      // Every public JSON answer under app/api that reads (GET). Left out: /api/quota and /api/quota/check
+      // (each spends an upstream call), and the POST routes (PIN, cron secret, or an upstream read: details).
+      "the public JSON answers",
+      null,
+      [
+        ["/api/events", `Saturday Event ${cal.events[1]}`],
+        ["/api/events/2", ALLIANCES.a.tag],
+        ...(["a", "b"] as const).map((side): [string, string] => [
+          // The newest daily read's card (its source_updated_at, as the seed writes it).
+          `/api/alliances/${ALLIANCES[side].unionId}/history?at=${new Date(`${lastRosterDay()}T23:31:00-02:00`).toISOString()}`,
+          ALLIANCES[side].names[0] as string,
+        ]),
+      ],
+    ],
+    [
       "a's desk",
       cookiesOf("a", "officer")[0] as string,
       [
@@ -195,6 +213,7 @@ test.describe("no answer carries a private roster field", () => {
         [`/w/${slug("a")}/insights`, officer],
         [`/w/${slug("a")}/follow-up`, officer],
         [`/w/${slug("a")}/calendar`, officer],
+        [`/w/${slug("a")}/settings`, officer],
         [`/api/w/${slug("a")}/activity?before=${Date.now()}`, officer],
       ],
     ],
@@ -233,6 +252,42 @@ test.describe("no answer carries a private roster field", () => {
     });
   }
 
+  // "Download our data" (D125): every file of the ZIP, scanned as the desk's own answer, so joined_at and
+  // the daily fields may be in it and x, y, online, last_online_at and the photo URL may not (D71, D22); no
+  // CSV has a column named after one of those, and no file names Moss Hollow's members or carries its
+  // sentinels.
+  test("the export ZIP", async () => {
+    const path = `/api/w/${slug("a")}/data-export`;
+    const ctx = await api(`${cookiesOf("a", "officer")[0]}; lap_ws_lang=en`);
+    const res = await ctx.post(path, { data: { requestId: crypto.randomUUID() } });
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("application/zip");
+    const files = unzip(await res.body());
+    await ctx.dispose();
+    // The real file: the README's title names the alliance, the people file its officer, and the former
+    // members' file the member who left at the last event.
+    expect(files.get("README.txt")?.toString("utf8")).toContain(ALLIANCES.a.name);
+    expect(files.get("people.csv")?.toString("utf8")).toContain("Officer LNK");
+    expect(files.get("former-members.csv")?.toString("utf8")).toContain(
+      ALLIANCES.a.names[LEAVER] as string,
+    );
+    const banned = new Set([...PRIVATE_KEYS].filter((k) => k !== "joined_at" && k !== "joinedAt"));
+    for (const [name, data] of files) {
+      const body = data.toString("utf8");
+      expect(leaksIn(`${BASE_URL}${path}`, body), name).toEqual([]);
+      if (!name.endsWith(".csv")) continue;
+      const header =
+        body
+          .replace(/^\uFEFF/, "")
+          .split("\r\n")[0]
+          ?.split(",") ?? [];
+      expect(
+        header.filter((column) => banned.has(column)),
+        name,
+      ).toEqual([]);
+    }
+  });
+
   // The positive controls: the scan, given these real answers as if a public page had sent them, finds every
   // sentinel D71 lets the own desk carry, so the passes above are not blind.
   test("the scan sees the own desk's fields where D71 allows them", async () => {
@@ -250,6 +305,39 @@ test.describe("no answer carries a private roster field", () => {
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/members`, membersBody)).toEqual([]);
     expect(leaksIn(`${BASE_URL}/`, membersBody)).toContain("a.joined_at");
     await ctx.dispose();
+    // D142: the member's own page, with their own daily quest points, which a public page may not show.
+    const board = await api(cookiesOf("a", "member")[0] as string);
+    const mePath = `/w/${slug("a")}/board/me`;
+    const meBody = await (await board.get(mePath)).text();
+    expect(leaksIn(`${BASE_URL}${mePath}`, meBody)).toEqual([]);
+    expect(leaksIn(`${BASE_URL}/`, meBody)).toContain("a.active");
+    await board.dispose();
+  });
+
+  // The daily fields, each by surface: a public page and the board's home show none; the member's own page
+  // and the desk show the own alliance's (D142, CLAUDE.md), never another's; an export keeps joined_at but
+  // not the map position (D71).
+  test("the scan sees the daily fields and the export's fields where no rule allows them", () => {
+    const [a, b] = [SENTINELS.a, SENTINELS.b];
+    const daily = `{"active":${a.active},"dailyTech":${a.tech},"dailyHonor":1000}`;
+    expect(leaksIn(`${BASE_URL}/`, daily)).toEqual(
+      expect.arrayContaining([
+        "a.active",
+        "a.daily_tech",
+        "daily_tech (as a key)",
+        "daily_honor (as a key)",
+      ]),
+    );
+    expect(leaksIn(`${BASE_URL}/api/events`, `donations 3,917`)).toContain("a.daily_tech");
+    expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board`, daily)).toContain("a.active");
+    expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board/me`, daily)).toEqual([]);
+    expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board/me`, `Average ${b.active}`)).toContain(
+      "b.active",
+    );
+    expect(leaksIn(`${BASE_URL}/w/${slug("a")}/settings`, daily)).toEqual([]);
+    const exported = `${BASE_URL}/api/w/${slug("a")}/data-export`;
+    expect(leaksIn(exported, `uid,joined\n1,${a.joined.slice(0, 10)}`)).toEqual([]);
+    expect(leaksIn(exported, `uid,map\n1,${a.x}`)).toEqual(["a.x"]);
   });
 
   // The scan's two weak spots the review found, each proved on its own: a private field's name as a key
