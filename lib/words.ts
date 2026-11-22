@@ -17,5 +17,16 @@ export function fill(template: string, vars: Readonly<Record<string, string | nu
 
 /** The singular or plural form for `n`, by the language's own rule ("0 champ" in French, "0 fields" in English). */
 export function plural<T>(n: number, forms: { one: T; other: T }, locale: string): T {
-  return new Intl.PluralRules(locale).select(n) === "one" ? forms.one : forms.other;
+  return rulesOf(locale).select(n) === "one" ? forms.one : forms.other;
+}
+
+/** One `Intl.PluralRules` per locale: a calendar month calls `plural` for each of its 42 cells. */
+const RULES = new Map<string, Intl.PluralRules>();
+function rulesOf(locale: string): Intl.PluralRules {
+  let rules = RULES.get(locale);
+  if (!rules) {
+    rules = new Intl.PluralRules(locale);
+    RULES.set(locale, rules);
+  }
+  return rules;
 }

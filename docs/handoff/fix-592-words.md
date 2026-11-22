@@ -27,7 +27,8 @@ Part of #592 (engineering review H3).
 - Three `n === 1` plural choices remain. They do not use `Intl.PluralRules`, so the lint does not catch them. Moving them to `plural` needs a language parameter that their callers do not have:
   - `lib/private/member-days.ts` `plural` (`averageLine`): `n` is always at least 1, and en, fr and pt-BR agree for integers of 1 or more, so the output is correct today.
   - `lib/shield-post.ts` (`awayOne` / `away`): `n` is always at least 1; correct today.
-  - `app/(private)/_ui/SecretOpsReview.tsx` (`shots.theftsSaved.one` / `.other`): with 0 saved, French and Portuguese get the plural form, where the language rule gives the singular.
+  - `app/(private)/_ui/SecretOpsReview.tsx` (`shots.theftsSaved.one` / `.other`): with 0 saved, French and Portuguese get the plural form, where the language rule gives the singular. Issue 705.
+- Review of the PR found more hand-written one/other choices the diff leaves: `lib/private/member-squads.ts`, the roll-call page, `RaidPrepHead.tsx`, `RaidPrepMarks.tsx`, `RollCallRest.tsx` and `SignOutUsersSheet.tsx`. Most only see 1 or more; issue 705 covers checking and moving them to `plural`.
 
 ## Verified
 - Copy output: no change found. The full suite passes with the new throwing `fill`, so no tested caller leaves a placeholder without a value. I checked each push and Raid prep Discord template against its call: every placeholder gets a value, so the old `""` never reached a user. `fill(w.kinds[kind], { team: variant ?? "" })` still gives `""` for a null team, as before. The only behaviour change is on a path no test or template reaches: a placeholder with no value in push or Discord now shows as `{x}` instead of `""`.

@@ -27,7 +27,7 @@ lib/i18n/           one translation file per public language (D48, D88).
 config/ drizzle/ scripts/ e2e/   alliance config, migrations, scripts and hooks, Playwright specs.
 ```
 
-Pure modules take the clock and every input as arguments: `lib/compute`, `lib/budget`, `lib/compact` (the one compact-number format, D78), `lib/words` (the one `fill` and `plural`, issue 592), `lib/schedule`.
+Pure modules take the clock and every input as arguments: `lib/compute`, `lib/budget`, `lib/compact` (the one compact-number format, D78), `lib/schedule`. `lib/words` (the one `fill` and `plural`, issue 592) is pure except that `fill` reads `NODE_ENV` for its missing-placeholder rule.
 
 ## Dependency rule
 
