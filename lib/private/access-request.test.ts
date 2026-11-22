@@ -92,6 +92,17 @@ describe("Request a Desk (D130)", () => {
     expect(await ask("Late", "203.0.113.22")).toEqual({ ok: false, code: "has_desk" });
   });
 
+  it("refuses an alliance neither the board nor a daily roster knows, and stores nothing (D133)", async () => {
+    const sent = await submitRequest(
+      db,
+      { union_id: 67199999, name: "Ilsa Marr", role: "r5" },
+      "203.0.113.20",
+      T0,
+    );
+    expect(sent).toEqual({ ok: false, code: "unknown_alliance" });
+    expect(await db.select().from(accessRequests)).toEqual([]);
+  });
+
   it("does not count an address's refused requests toward the site's daily limit", async () => {
     for (let i = 0; i < PER_IP_DAY + 3; i++) await ask(`Name ${i}`);
     expect(await currentCount(db, SITE_KEY, 24 * 60 * 60_000, T0)).toBe(PER_IP_DAY);
