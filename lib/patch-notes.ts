@@ -196,6 +196,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.62.0",
+    date: "2026-11-22",
+    title: "Clearer kills changes and right plurals",
+    changes: [
+      'Public pages: on an event\'s member list, a member whose kills were not read at the Start or the End now says so beside the "—" ("Start unknown", "End unknown"). While the list is sorted by "± Kills" it adds "counted as 0", which is why that member ranks first or low.',
+      'Desk in French and Portuguese: counts of 0 now take the singular, as those languages do ("0 vol enregistré" after a screenshot import).',
+      "Behind the scenes: one place for filling in sentences and choosing singular or plural, so a missing value shows as {x} instead of an empty word in Discord or a notification; stricter end-to-end tests (exact counts, a calendar add, delete and Undo flow).",
+    ],
+    prs: [708, 707, 704, 706, 709],
+  },
+  {
     version: "v5.61.0",
     date: "2026-11-22",
     title: "Home's counts open their people too",
