@@ -404,6 +404,9 @@ export const zhCN = {
     left: "离开",
     joinedReads: "在结束（{to}）的成员名单中，不在开始（{from}）的名单中。",
     leftReads: "在开始（{from}）的成员名单中，不在结束（{to}）的名单中。",
+    startUnknown: "开始未知",
+    endUnknown: "结束未知",
+    countedAsZero: "按 0 计算",
   },
   leadership: {
     title: "领导层",

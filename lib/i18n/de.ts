@@ -423,6 +423,9 @@ export const de = {
     left: "Ausgetreten",
     joinedReads: "In der Members-Liste bei Ende ({to}), nicht bei Beginn ({from}).",
     leftReads: "In der Members-Liste bei Beginn ({from}), nicht bei Ende ({to}).",
+    startUnknown: "Beginn unbekannt",
+    endUnknown: "Ende unbekannt",
+    countedAsZero: "als 0 gezählt",
   },
   leadership: {
     title: "Führung",

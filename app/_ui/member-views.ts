@@ -181,6 +181,13 @@ export function change(
 const killsOrder = (m: MemberView, canDelta: boolean) =>
   canDelta && m.before && m.after ? killsGain(m.before.kills, m.after.kills) : null;
 
+/** For a member in both rosters, the side whose kills are unknown (D15): the side the ± Kills order counts
+ * as 0. The row says so after its `—` (D15 amendment, #692). */
+export function killsUnknownAt(m: MemberView, canDelta: boolean): "start" | "end" | null {
+  if (!canDelta || !m.before || !m.after) return null;
+  return m.before.kills === null ? "start" : m.after.kills === null ? "end" : null;
+}
+
 function sortValue(m: MemberView, key: SortKey, canDelta: boolean): number | string {
   const now = m.after ?? m.before;
   const values: Record<SortKey, number | string | null | undefined> = {

@@ -418,6 +418,9 @@ export const ru = {
     left: "Ушли",
     joinedReads: "В списке участников на «Конце» ({to}), не на «Начале» ({from}).",
     leftReads: "В списке участников на «Начале» ({from}), не на «Конце» ({to}).",
+    startUnknown: "Начало неизвестно",
+    endUnknown: "Конец неизвестен",
+    countedAsZero: "учтено как 0",
   },
   leadership: {
     title: "Руководство",

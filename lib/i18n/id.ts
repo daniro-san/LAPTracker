@@ -423,6 +423,9 @@ export const idID = {
     left: "Keluar",
     joinedReads: "Di daftar anggota pada Akhir ({to}), bukan pada Awal ({from}).",
     leftReads: "Di daftar anggota pada Awal ({from}), bukan pada Akhir ({to}).",
+    startUnknown: "Awal tidak diketahui",
+    endUnknown: "Akhir tidak diketahui",
+    countedAsZero: "dihitung sebagai 0",
   },
   leadership: {
     title: "Pimpinan",

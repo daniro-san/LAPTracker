@@ -254,6 +254,11 @@ export const en = {
     /** Under the member list's Joined / Left chips while one is on: when the two member lists were read. */
     joinedReads: "In the member list at End ({to}), not at Start ({from}).",
     leftReads: "In the member list at Start ({from}), not at End ({to}).",
+    /** After a member's `—` kills change when one side's kills are unknown (D15 amendment, #692). */
+    startUnknown: "Start unknown",
+    endUnknown: "End unknown",
+    /** Added after it while the list is sorted by ± Kills, which counts the unknown figure as 0. */
+    countedAsZero: "counted as 0",
   },
   /** The alliance's R5 and titled R4 officers: a section on the alliance page, a mark in the member list. */
   leadership: {

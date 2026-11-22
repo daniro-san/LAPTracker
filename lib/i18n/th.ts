@@ -407,6 +407,9 @@ export const th = {
     left: "ออก",
     joinedReads: "อยู่ในรายชื่อสมาชิกตอนสิ้นสุด ({to}) ไม่อยู่ตอนเริ่ม ({from})",
     leftReads: "อยู่ในรายชื่อสมาชิกตอนเริ่ม ({from}) ไม่อยู่ตอนสิ้นสุด ({to})",
+    startUnknown: "ไม่ทราบตอนเริ่ม",
+    endUnknown: "ไม่ทราบตอนสิ้นสุด",
+    countedAsZero: "นับเป็น 0",
   },
   leadership: {
     title: "ผู้นำ",

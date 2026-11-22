@@ -423,6 +423,9 @@ export const pl = {
     left: "Odeszli",
     joinedReads: "Na liście członków na Końcu ({to}), nie na Początku ({from}).",
     leftReads: "Na liście członków na Początku ({from}), nie na Końcu ({to}).",
+    startUnknown: "Początek nieznany",
+    endUnknown: "Koniec nieznany",
+    countedAsZero: "liczone jako 0",
   },
   leadership: {
     title: "Dowództwo",

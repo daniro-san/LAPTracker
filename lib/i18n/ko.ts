@@ -411,6 +411,9 @@ export const ko = {
     left: "탈퇴",
     joinedReads: "종료 ({to}) 멤버 목록에는 있고, 시작 ({from})에는 없음.",
     leftReads: "시작 ({from}) 멤버 목록에는 있고, 종료 ({to})에는 없음.",
+    startUnknown: "시작 미상",
+    endUnknown: "종료 미상",
+    countedAsZero: "0으로 집계",
   },
   leadership: {
     title: "지도부",

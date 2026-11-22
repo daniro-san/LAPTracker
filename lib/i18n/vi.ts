@@ -418,6 +418,9 @@ export const vi = {
     joinedReads:
       "Có trong danh sách thành viên lúc Kết thúc ({to}), không có lúc Bắt đầu ({from}).",
     leftReads: "Có trong danh sách thành viên lúc Bắt đầu ({from}), không có lúc Kết thúc ({to}).",
+    startUnknown: "Bắt đầu chưa rõ",
+    endUnknown: "Kết thúc chưa rõ",
+    countedAsZero: "tính là 0",
   },
   leadership: {
     title: "Ban lãnh đạo",
