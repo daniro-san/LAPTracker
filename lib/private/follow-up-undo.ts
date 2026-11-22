@@ -31,6 +31,9 @@ async function putBack(
   const where = [db, access.workspaceId, record.uid, field] as const;
   const newest = await factVersion(...where, "newest");
   if (newest?.version !== record.factVersion) return;
+  // The record wrote this version only if both carry its save's clock.now (recordFollowUp passes one
+  // instant to both); a reused version keeps the earlier save's time. Two requests in the same millisecond
+  // could match by mistake.
   if (newest.writtenAt.getTime() !== record.at.getTime()) return;
   const before =
     record.factVersion > 1 ? await factVersion(...where, record.factVersion - 1) : null;
