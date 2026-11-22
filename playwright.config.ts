@@ -20,6 +20,8 @@ const start = `${clearCache} && NODE_OPTIONS='--import ./scripts/db-local-preloa
 
 export default defineConfig({
   testDir: "e2e",
+  // Browser specs only: e2e/*.test.ts are Vitest unit tests of the e2e helpers (e.g. the day-change wait).
+  testMatch: /\.spec\.ts$/,
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",
   forbidOnly: CI,
