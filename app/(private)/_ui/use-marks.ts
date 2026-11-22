@@ -7,7 +7,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { track } from "@/lib/analytics/events";
+import { track, type RollCallType } from "@/lib/analytics/events";
 import type { Occasion } from "@/lib/private/roll-call";
 import { toggled, type Mark } from "@/lib/private/roll-call-rules";
 
@@ -21,9 +21,12 @@ export interface Shown {
 }
 type Written = { uid: number; version: number }[];
 type Rows = Pick<MarkRowView, "uid" | "mark" | "version">[];
+/** The marking page's refusal line, and which roll call it is for analytics (issue 585). */
+type Marking = { failed: string; roll_call: RollCallType };
 
 /** `extra` `{ part: "wall" }`: Raid prep's second mark, squads off the wall (D137). */
-export function useMarks(slug: string, occasion: Occasion, rows: Rows, failed: string, extra = {}) {
+export function useMarks(slug: string, occasion: Occasion, rows: Rows, page: Marking, extra = {}) {
+  const { failed, roll_call } = page;
   const router = useRouter();
   const [local, setLocal] = useState<Record<number, Shown>>({});
   const [notes, setNotes] = useState<Record<number, string>>({});
@@ -54,7 +57,7 @@ export function useMarks(slug: string, occasion: Occasion, rows: Rows, failed: s
         slug,
         body,
       );
-      if (status === 200) track("ws_roll_call_marked", { how: "tap" });
+      if (status === 200) track("ws_roll_call_marked", { how: "tap", roll_call });
       if (status === 200 || status === 409) {
         const version = json.version ?? 0;
         confirmed.current.set(uid, version);
@@ -100,7 +103,7 @@ export function useMarks(slug: string, occasion: Occasion, rows: Rows, failed: s
     tap,
     rest: async (uids: number[]) => {
       const written = await bulk({ action: "rest", uids });
-      if (written) track("ws_roll_call_marked", { how: "rest" });
+      if (written) track("ws_roll_call_marked", { how: "rest", roll_call });
       return written;
     },
     /** D137: "Accept the tracker's" and other writes of many marks: the stored ones, or null. */

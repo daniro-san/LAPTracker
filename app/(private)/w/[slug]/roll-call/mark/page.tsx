@@ -10,8 +10,6 @@ import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
-import { addDays, hhmm, zonedInstant } from "@/lib/private/calendar-time";
-import { calendarDates } from "@/lib/private/calendar-words";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { prepView } from "@/lib/private/raid-prep";
 import type { Occasion } from "@/lib/private/roll-call";
@@ -27,6 +25,7 @@ import {
   markRows,
   markWords,
   occasionQuery,
+  raidHead,
   rollWords,
 } from "../../../../_ui/roll-call-data";
 import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
@@ -55,24 +54,6 @@ async function readMark(
 }
 
 type Page = Awaited<ReturnType<typeof openRollCall<Awaited<ReturnType<typeof readMark>>>>>;
-
-/**
- * Raid prep's day line names the raid it serves, not the day the roll call was added (issue 585, first
- * glance: "Wednesday, November 18" read as an old roll call): that week's KvK Saturday, the one its
- * Raid Shield check reads for, and the reset the raid starts at. A week whose KvK day has gone by says so.
- */
-function raidHead(friday: string, page: Page) {
-  const kvk = addDays(friday, 1);
-  const date = calendarDates(page.language).short(kvk);
-  if (kvk < page.today)
-    return { dayLabel: fill(page.t["roll.prep.raid.past"], { date }), st: null, at: null };
-  return {
-    dayLabel: fill(page.t["roll.prep.raid"], { date }),
-    st: fill(page.t["calendar.st"], { time: hhmm(0) }),
-    at: zonedInstant(kvk, 0, page.zone),
-    day: kvk,
-  };
-}
 
 /** The rows: Raid prep's two marks for a Raid Shield roll call (D137), else the roll call's one. */
 function Marks(props: { view: NonNullable<Page["data"]>; page: Page; occasion: Occasion }) {
@@ -119,7 +100,9 @@ export default async function MarkPage({
   const o = view.opened;
   const elixir = o.kind === "elixir" && o.placed !== null;
   const head = headerOf(o, { t, language, zone: page.zone });
-  const raid = view.prep && raidHead(view.prep.friday, page);
+  // Raid prep's day line names the raid it serves (issue 585); archive and delete still name its own day.
+  const raid =
+    view.prep && raidHead(view.prep.friday, { t, language, zone: page.zone, today: page.today });
   const words = rollWords(t);
   const title = callTitle(o, t);
   return (

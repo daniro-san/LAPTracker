@@ -215,7 +215,8 @@ export function RollCallMarks(props: {
 }) {
   const { words, marks } = props;
   useFreshOnReturn();
-  const m = useMarks(props.slug, props.occasion, props.rows, words["roll.failed"]);
+  const page = { failed: words["roll.failed"], roll_call: "other" } as const;
+  const m = useMarks(props.slug, props.occasion, props.rows, page);
   const r = useRest(m, marks, words);
   const all = useOrder(props.rows);
   const [q, setQ] = useState("");

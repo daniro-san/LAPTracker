@@ -12,13 +12,13 @@ export const calendarEn = {
   "calendar.next": "Next week",
   "calendar.thisWeek": "This week",
   "calendar.today": "today (ST)",
-  "calendar.legend":
-    "ST is server time, the game’s clock ({offset}). The other time is yours. +1 d means the next day.",
+  "calendar.legend": "ST is server time, the game’s clock ({offset}). The other time is yours.",
   "calendar.st": "{time} ST",
   "calendar.stRange": "{from}–{to} ST",
   "calendar.yours": "{time} your time",
-  "calendar.nextDay": "+1 d",
-  "calendar.prevDay": "−1 d",
+  // In words, not "+1 d": an officer who reads English as a second language found it cryptic (issue 585).
+  "calendar.nextDay": "the next day",
+  "calendar.prevDay": "the day before",
   "calendar.started": "Started",
   "calendar.ended": "Ended",
   "calendar.nothing": "Nothing planned.",

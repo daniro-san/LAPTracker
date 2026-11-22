@@ -65,7 +65,7 @@ export function setClockChoice(choice: ClockChoice) {
   for (const listener of clockListeners) listener();
 }
 
-/** "15:00 your time", with "(+1 d)" when that is the next day on the viewer's clock. */
+/** "15:00 your time", with "(the next day)" or "(the day before)" when the viewer's clock is on another day. */
 export function yourTime(at: number, day: string, zone: string, words: CalendarWords): string {
   const { time, shift } = clockIn(at, zone, day);
   const mark = shift > 0 ? words["calendar.nextDay"] : shift < 0 ? words["calendar.prevDay"] : "";

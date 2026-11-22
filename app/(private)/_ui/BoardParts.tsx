@@ -21,7 +21,7 @@ function zoneName(zone: string, at: number, language: string): string {
 
 /**
  * The viewer's clock for a time, in parts for the board's time column (D116): "15:00", "your time (BRT)",
- * and "+1 d" when that is another day on the viewer's clock.
+ * and "the next day" or "the day before" when that is another day on the viewer's clock.
  */
 export function ownClock(
   at: number,
