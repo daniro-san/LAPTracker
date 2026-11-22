@@ -72,4 +72,27 @@ describe("parseEnv", () => {
       ).not.toThrow();
     },
   );
+
+  it("parses a non-placeholder EDIT_PIN and CRON_SECRET in production", () => {
+    expect(() =>
+      parseEnv({ ...valid, NODE_ENV: "production", VERCEL_ENV: "production" }),
+    ).not.toThrow();
+  });
+
+  it("guards only a production deployment: both halves of the condition are needed", () => {
+    const placeholders = {
+      ...valid,
+      CRON_SECRET: "local-placeholder-cron-secret-0123456789",
+      EDIT_PIN: "000000",
+    };
+    // A production build on a preview or an unset deployment (`next start` locally).
+    expect(() => parseEnv({ ...placeholders, NODE_ENV: "production" })).not.toThrow();
+    expect(() =>
+      parseEnv({ ...placeholders, NODE_ENV: "production", VERCEL_ENV: "preview" }),
+    ).not.toThrow();
+    // The production deployment flag without a production build (`vercel dev`).
+    expect(() =>
+      parseEnv({ ...placeholders, NODE_ENV: "development", VERCEL_ENV: "production" }),
+    ).not.toThrow();
+  });
 });

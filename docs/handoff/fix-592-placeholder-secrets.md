@@ -3,7 +3,7 @@
 ## Built
 - `parseEnv` in `lib/env.ts` throws when `NODE_ENV` and `VERCEL_ENV` are both `production` and `EDIT_PIN` or `CRON_SECRET` equals its public placeholder from `.env.example`. The error names the variable, never the value.
 - The two strings are in one const, `PUBLIC_PLACEHOLDERS`, with a comment naming `.env.example`.
-- One parametrised test in `lib/env.test.ts`, one case per variable. Each case also checks that the same value passes on a preview and in development.
+- A parametrised test in `lib/env.test.ts`, one case per variable, that also checks the same value passes on a preview and in development. Two more cases: a valid value parses in production, and the placeholders pass unless both `NODE_ENV` and `VERCEL_ENV` are `production`.
 - Amendment to D03 dated 2026-11-22.
 
 ## Decisions
@@ -17,7 +17,8 @@
 
 ## Verified
 - `pnpm vitest related --run lib/env.ts lib/env.test.ts`: 154 files passed, 1 skipped.
-- `pnpm check`: see the PR.
+- `pnpm check`: passed (353 test files passed, 2 skipped; 1883 tests passed, 4 skipped). Two earlier full runs hit 10 s timeouts under machine load, in `cross-workspace.test.ts` among others, and that file passed alone.
+- Mutation: removing the `NODE_ENV` half of the condition fails the "guards only a production deployment" test; removing the `VERCEL_ENV` half fails the production refusal tests and the preview cases.
 
 ## Open issues
 - The placeholder strings must be kept in step with `.env.example` by hand. If the template changes, the guard stops matching.
