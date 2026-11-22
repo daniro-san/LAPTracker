@@ -114,4 +114,4 @@ Order-dependent tests (task 2). Reproduced on origin/dev with `pnpm vitest run -
 - To prove that fire-and-forget work sent nothing, send one counted action after the refusals and `vi.waitFor` its event, then assert it is the only one (`cross-workspace.test.ts`, `desk-action.test.ts`).
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/622
