@@ -36,6 +36,9 @@ describe("env guard", () => {
     ["Read", { file_path: "/home/dev/LAPTracker/.env.local" }],
     ["Grep", { pattern: "KEY", path: ".env.production" }],
     ["Glob", { pattern: "**/.e*" }],
+    ["Glob", { pattern: "**/.e?v.local" }],
+    ["Glob", { pattern: "*", path: "/home/dev/LAPTracker/.env" }],
+    ["Grep", { pattern: "KEY", glob: ".e*" }],
   ])("blocks an agent reading a secret env file: %s %j", (tool, input) => {
     const { status, stderr } = run(call(tool, input));
     expect(status).toBe(2);
@@ -57,6 +60,9 @@ describe("env guard", () => {
     ["Bash", { command: "grep -rn DATABASE_URL lib app" }],
     ["Bash", { command: "grep -rn --exclude='.env*' DATABASE_URL ." }],
     ["Glob", { pattern: "**/*.ts" }],
+    ["Bash", { command: 'git commit -m "docs: copy .env.example."' }],
+    ["Bash", { command: "grep -rn 'getAppContext().env' app" }],
+    ["Bash", { command: "git log --grep=dotenv" }],
   ])("lets the template, pnpm scripts and ordinary commands through: %s %j", (tool, input) => {
     expect(run(call(tool, input)).status).toBe(0);
   });

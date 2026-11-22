@@ -17,16 +17,18 @@ description: Record a new upstream API response into fixtures/ (spends LAP API q
 ## 2. Credentials, never printed
 
 - The key never passes through your shell. `pnpm fixture:record` (`scripts/record-fixture.ts`) takes `LAP_API_KEY` from the environment (a cloud environment variable) or, locally, from the local env file through `--env-file-if-exists` in package.json. Never open, grep or source that file; the env guard blocks it.
-- The local env file holds only a placeholder key unless the owner put the real one there for this run. A placeholder gets `401` (no quota spent). If the script says the key is not set, or a call returns `401 {"detail":"missing_api_key"}`, stop and ask the owner to provide the key.
+- The local env file holds only a placeholder key unless the owner puts the real one there or in the environment for this run. A placeholder key still makes a real upstream call, which returns `401`; whether a 401 counts against quota is unknown (`docs/handoff/00-prereqs.md`). If a call returns `401`, stop and tell the owner.
 - Never `echo`, `set -x`, `env` or paste the key. Never put it in a file under the repo.
 
-## 3. Call and save the raw body
+## 3. The owner runs the calls
+
+You never run `pnpm fixture:record`: `.claude/settings.json` denies it to agents, and the script refuses to start unless `FIXTURE_RECORD_CONFIRM=spend` is set. Write the command below with the exact call lines, give it to the owner with the cost from step 1, and ask him to run it in his own terminal from the repo root and paste back the output lines.
 
 ```bash
 # One line per call: <path under /v1> <output file>. The script sends the User-Agent and the key, waits up to
 # 60 s per call, prints "<path> -> <status> <seconds>s", and stops at the first 401, 403 or 429.
 # Deny by default: only an explicit /tmp path gets the raw body; every other path is neutralised.
-pnpm -s fixture:record <<'CALLS'
+FIXTURE_RECORD_CONFIRM=spend pnpm -s fixture:record <<'CALLS'
 quota            /tmp/quota-before.json
 alliances/<id>   fixtures/v1-ids/<id>.json
 quota            /tmp/quota-after.json

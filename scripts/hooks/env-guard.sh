@@ -7,9 +7,11 @@
 #
 # Read: Bash's and Monitor's command, Read's file_path, Grep's path and glob, Glob's pattern and path. Blocked,
 # case-insensitively:
-#   - a word starting with `.env` after a non-word character other than a backslash (so `process.env`,
-#     "environment" and the regex `process\.env` pass) that is not exactly `.env.example`;
-#   - in a shell command, the word dotenv;
+#   - a word starting with `.env` after a non-word character other than `\`, `)` or `]` (so `process.env`,
+#     "environment", the regex `process\.env` and `getAppContext().env` pass) that is not `.env.example`
+#     (trailing `.`, `!` or `?` ignored, so prose ending in `.env.example.` passes);
+#   - in a shell command, a dotenv load: `-r`/`--require`/`--import dotenv`, `dotenv/config`,
+#     `require('dotenv')`, `from 'dotenv'`, `dotenvx run`, or `dotenv` as the command (not a mere mention);
 #   - a glob word whose last part starts with `.` and matches an env file name (`.e*`, `.*`, `.[e]nv.local`);
 #   - in a shell command, a search that would print env files' lines without naming them: `grep -r` with no
 #     `--exclude` covering `.env*`, `rg` with -u, --no-ignore or --hidden, or `find` with -exec or a later
@@ -62,7 +64,7 @@ case "$tool" in Bash | Monitor) shell=1 ;; esac
 # The first env file name in the text, lowercased. A grep `--exclude=.env*` is not a read, so it is removed.
 env_file_name() {
   sed -E "s/--exclude(-dir)?=(\"[^\"]*\"|'[^']*'|[^[:space:]]*)//g" | tr '[:upper:]' '[:lower:]' |
-    grep -oE '(^|[^[:alnum:]_\\])\.env[^[:space:]"'"'"'`;|&<>(),:]*' | sed -E 's/^[^.]//' |
+    grep -oE '(^|[^])[:alnum:]_\\])\.env[^[:space:]"'"'"'`;|&<>(),:]*' | sed -E -e 's/^[^.]//' -e 's/[.!?]+$//' |
     grep -E '^\.env($|[^[:alnum:]_])' | grep -vxF '.env.example' | head -n 1
 }
 
@@ -104,7 +106,9 @@ wildcard_env_name() {
   done
 }
 
-dotenv_named() { grep -iqE '(^|[^[:alnum:]_])dotenv(x)?($|[^[:alnum:]_])'; }
+q="[\"']"
+DOTENV_LOAD="(^|[[:space:]])(-r|--require|--import)[[:space:]=]+$q?dotenv|dotenv/config|require[[:space:]]*\([[:space:]]*${q}dotenv|from[[:space:]]+${q}dotenv$q|import[[:space:]]+${q}dotenv|dotenvx[[:space:]]+run|(^|[;&|(][[:space:]]*|(npx|exec|dlx)[[:space:]]+)dotenv(-cli)?([[:space:]]|$)"
+dotenv_named() { grep -iqE "$DOTENV_LOAD"; }
 
 # Whether a path a search starts from contains the repo root's top level.
 reaches_root() {
