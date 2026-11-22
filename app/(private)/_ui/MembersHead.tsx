@@ -29,9 +29,9 @@ export function ViewSwitch({
     </a>
   );
   return (
-    // From 1280 the sidebar lists the views (D122), so this switch is hidden there. One row that scrolls
+    // From 768 the rail and the sidebar list the views (D122, issue 720), so this switch is hidden there. One row that scrolls
     // sideways inside itself when it does not fit (DESIGN.md "Nothing short wraps").
-    <nav aria-label={t["members.view.aria"]} className="mt-2 flex gap-2 overflow-x-auto xl:hidden">
+    <nav aria-label={t["members.view.aria"]} className="mt-2 flex gap-2 overflow-x-auto md:hidden">
       {link(open === "current", `/w/${slug}/members`, t["members.view.current"])}
       {link(open === "former", `/w/${slug}/members?view=former`, t["members.view.former"])}
       {insights && link(open === "insights", `/w/${slug}/insights`, t["members.view.insights"])}

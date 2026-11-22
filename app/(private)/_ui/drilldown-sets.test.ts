@@ -192,7 +192,7 @@ describe("drilldown on Raid prep and the Roll call list", () => {
     const [item] = await weekItems(db, page.access, "2026-11-16", ZONE);
     if (!item) throw new Error("no card");
     const card = rollCard(item, "ogs", "2026-11-21", { t, language: "en", zone: ZONE });
-    const link = card.counts?.find((c) => c.text.startsWith("Shield up"))?.href ?? "";
+    const link = card.counts?.find((c) => c.text.includes("Shield up"))?.href ?? "";
     const html = renderPrep(page, new URL(link, "http://desk.test").searchParams.get("filter"));
     expect(html).toMatch(/aria-pressed="true" aria-label="2 marked ✓"/);
     expect(tilesOf(html)).toEqual(["Aster Vale", "Briar Holt"]);
@@ -206,7 +206,7 @@ describe("drilldown on Raid prep and the Roll call list", () => {
     const mark = `/w/ogs/roll-call/mark?id=${"id" in occasion ? occasion.id : 0}`;
     expect(card.counts).toEqual([
       { text: "3 of 4 marked", href: null },
-      { text: "Shield up 1 · No problem seen 1", href: `${mark}&filter=yes` },
+      { text: "✓ Shield up 1 + No problem seen 1", href: `${mark}&filter=yes` },
       { text: "No shield 1", href: `${mark}&filter=no` },
       { text: "Not set 1", href: `${mark}&filter=todo` },
       { text: "Away 1", href: null },

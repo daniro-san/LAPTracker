@@ -82,12 +82,17 @@ export async function Frame({
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
   const bar = (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
-      <div className="min-w-0 flex-1">
+      {/* Its own width first (issue 720): when the name and the alliance do not fit beside "?" and
+          EN · PT · FR on one line each, those move under them, at the right, instead of the two lines
+          wrapping into four. */}
+      <div className="min-w-0 flex-auto">
         <p className="font-display text-display-sm">{title ?? t["app.name"]}</p>
         {subtitle && <p className="text-body-sm opacity-90">{subtitle}</p>}
       </div>
-      {tabs && <FirstUse t={t} seen={seen} />}
-      <LanguageSwitch current={language} label={t["lang.aria"]} />
+      <div className="ml-auto flex items-center gap-x-3">
+        {tabs && <FirstUse t={t} seen={seen} />}
+        <LanguageSwitch current={language} label={t["lang.aria"]} />
+      </div>
       {account && (
         <div className="flex min-w-0 basis-full flex-wrap items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
           {account}

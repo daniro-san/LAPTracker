@@ -173,10 +173,9 @@ function Home(props: {
           ))}
         </div>
       )}
+      {/* No sticky margin (issue 720): at 1024 it scrolled inside itself, beside the page's own scrollbar. */}
       <Spread
         even
-        stickyMargin
-        marginLabelledBy="home-activity home-members"
         main={
           <>
             <KeyCard slug={slug} t={t} state={props.desk.key} />
