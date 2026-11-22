@@ -1,8 +1,9 @@
 "use client";
 
 // A member's "This is me" link on the desk (D142). On Home's "To review": each pending link with Approve and
-// Reject, and the name hint (a nickname can be changed, so it proves nothing). On the member card: "Linked to Discord: <name>" with Remove link (asks first), or the pending
-// line with Approve and Reject. Each answer names the workspace user who holds the link, so it never reaches
+// Not them, the player linked to their card, the day it was asked and the name hint (a nickname can be
+// changed, so it proves nothing; issue 585). On the member card: "Linked to Discord: <name>" with Remove link (asks first), or the pending
+// line with Approve and Not them. Each answer names the workspace user who holds the link, so it never reaches
 // a later claim of the same player.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -57,21 +58,36 @@ function useAnswer(slug: string, words: Words) {
   return { busy, error, answer };
 }
 
-/** Home's "To review": the links an officer still has to look at. */
-export function LinkReviews(props: { slug: string; reviews: LinkReview[]; words: Words }) {
+/** Home's "To review": the links an officer still has to look at, each with the day it was asked. */
+export function LinkReviews(props: {
+  slug: string;
+  reviews: (LinkReview & { asked: string | null })[];
+  words: Words;
+}) {
   const { words: t } = props;
   const { busy, error, answer } = useAnswer(props.slug, t);
   if (props.reviews.length === 0) return null;
+  // The player is a link to their card inside the sentence, so the officer can check who it is.
+  const [before = "", after = ""] = t["me.review.line"].split("{player}");
   return (
     <ul className="mt-3 space-y-2">
       {props.reviews.map((r) => (
         <li key={r.userId} className="border border-rule px-3 py-2">
           <p className="font-semibold">
-            {fill(t["me.review.line"], {
-              discord: isolate(r.discordName),
-              player: isolate(r.player),
-            })}
+            {fill(before, { discord: isolate(r.discordName) })}
+            <a
+              href={`/w/${props.slug}/members?m=${r.uid}`}
+              className="inline-flex min-h-11 items-center text-plum underline underline-offset-4"
+            >
+              <bdi translate="no">{r.player}</bdi>
+            </a>
+            {fill(after, { discord: isolate(r.discordName) })}
           </p>
+          {r.asked && (
+            <p className="text-body-sm text-ink/75">
+              {fill(t["me.review.asked"], { day: r.asked })}
+            </p>
+          )}
           <p className="text-body-sm text-ink/75">
             {t[r.nameMatch ? "me.review.match" : "me.review.noMatch"]} {t["me.review.lead"]}
           </p>
@@ -90,7 +106,7 @@ export function LinkReviews(props: { slug: string; reviews: LinkReview[]; words:
               onClick={() => void answer("unlink", r)}
               className={buttonClass("secondary")}
             >
-              {t["me.review.reject"]}
+              {t["me.review.notThem"]}
             </button>
           </div>
         </li>
@@ -143,7 +159,7 @@ export function CardLink(props: { slug: string; link: CardLinkData; words: Words
           onClick={() => (pending ? void act("unlink") : setAsking(true))}
           className={chip()}
         >
-          {t[pending ? "me.review.reject" : "me.card.remove"]}
+          {t[pending ? "me.review.notThem" : "me.card.remove"]}
         </button>
       </p>
       {error && <RefusalLine text={error} className="font-semibold text-seal" />}

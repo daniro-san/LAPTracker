@@ -194,6 +194,7 @@ function Home(props: {
               }
               reviews={props.reviews}
               when={serverWhen(t, language)}
+              day={f.date}
               links={props.desk.links}
             />
           </>

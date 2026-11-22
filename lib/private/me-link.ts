@@ -93,7 +93,7 @@ export async function dropOwnLink(db: Db, board: BoardAccess): Promise<void> {
 
 /** A link an officer still has to look at (Home's "To review"). */
 export interface LinkReview {
-  /** The workspace user who holds it and the player claimed: what Approve and Reject name. */
+  /** The workspace user who holds it and the player claimed: what Approve and Not them name. */
   userId: number;
   uid: number;
   discordName: string;
@@ -101,6 +101,8 @@ export interface LinkReview {
   player: string;
   /** A hint only: the Discord name is this player's current game name (D74). It proves nothing. */
   nameMatch: boolean;
+  /** When the member asked (issue 585). */
+  at: Date | null;
 }
 
 /** The links waiting for an officer, with the player's name and rank and the name hint. */
@@ -117,6 +119,7 @@ export async function linkReviews(db: Db, access: WorkspaceAccess): Promise<Link
       discordName: l.discordName ?? "",
       player: p ? [p.name, p.rank].filter(Boolean).join(" · ") : String(l.uid),
       nameMatch: nameMatches(l.discordName, l.uid, players),
+      at: l.at,
     };
   });
 }
