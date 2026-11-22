@@ -12,6 +12,7 @@ import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { linkWords } from "@/lib/private/dictionary.me";
+import { toReviewCount } from "@/lib/private/import-view";
 import { cardLink, linkReviews } from "@/lib/private/me-link";
 import { cardFormats } from "@/lib/private/member-card";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
@@ -155,6 +156,12 @@ describe("a claim an officer can check on Home (issue 585)", () => {
       expect(html).toContain(">Not them</button>");
       expect(html).not.toContain("Reject");
     }
+  });
+
+  it("counts the claim in the Home tab's number on every desk page, as Home does", async () => {
+    const access = await claimed();
+    expect((await linkReviews(db, access)).length).toBe(1);
+    expect(await toReviewCount(db, access, NOW)).toBe(1);
   });
 });
 
