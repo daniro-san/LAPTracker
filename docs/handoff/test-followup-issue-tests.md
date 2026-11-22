@@ -47,8 +47,16 @@ Each row below names the deliberate code change that makes its test fail. Every 
 - Pre-existing, not changed: `callsHelp` says the Raid Shield check is "about 200 calls on Friday night per 100 members". D137 has two reads, Friday 23:30 ST and Saturday morning, and with the squads read on only the morning read is extra.
 - Pre-existing, not changed: the existing "stores only what differs from the defaults" test uses `toMatchObject({ switches: {}, caps: {} })`, which matches any object ("tighter asserts" was dropped by the triage).
 
+## What was missing from the task prompt?
+
+The task did not list #512's "avoid extra Discord calls when a default changes" or #507's "/admin signal" for a failed purge, so this PR could close only #526.
+
 ## Next
 
+- #512: avoid re-registering a server's Discord commands when a default change leaves its commands as they were.
+- #507: a line on /admin when the daily read's 90-day purge fails (today it only reaches the log and PostHog); confirm the Settings item is done; the partial index and the requeue are in the database-cost PR.
+- #516: the card's Follow-up action and Shield line, the short squad's empty slots, the `daily_rosters` index; History waits for the owner.
+- `callsHelp`'s Raid Shield calls text (two reads, D137).
 - Model/effort: keep. Each item was S and mechanical once the code was read.
 - The owner must do nothing first. The plan needs no change.
 
