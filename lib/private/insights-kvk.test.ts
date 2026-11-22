@@ -159,6 +159,16 @@ describe("KvK cost and recovery (issue 489)", () => {
     ]);
   });
 
+  it("when KvK night's daily read is missed, names the KvK's date the next day and waits for the next read", () => {
+    // Sunday 22, 14:00 ST: Saturday's 23:30 ST read never came, so the newest read is still Friday's.
+    const kvk = kvkOf(events, reads, ZONE, new Set(), new Date("2026-11-22T16:00:00Z"));
+
+    expect(kvk.waiting).toEqual({ day: "2026-11-21", today: false });
+    expect(kvkWords(kvk, "2026-11-20", f, "23:30").based[0]).toBe(
+      "The KvK of Sat, Nov 21 is recorded: its Start and End reads are in. Its cost and recovery show here after the next daily read at 23:30 ST.",
+    );
+  });
+
   it("after the 23:30 ST daily read, shows today's KvK and no longer says it waits", () => {
     const night = [...reads, nightRead("2026-11-21", [member(1, 60)])];
     const kvk = kvkOf(events, night, ZONE, new Set(), new Date("2026-11-22T01:45:00Z"));

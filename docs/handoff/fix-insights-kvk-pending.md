@@ -14,7 +14,7 @@ Branch `fix/insights-kvk-pending` from `origin/dev` (e996cb5e). Size S: a bug fi
   - `waiting`: the newest event whose Start and End are read but with no daily read after its End yet. It holds the event's server day, and `today` when that day is `now`'s server day.
   - `readsFrom`: the first read's day, when a KvK from before the page's reads has both reads. That KvK is still not shown.
   - The "inside the reads" boundary moved from SQL into `kvkOf`: events from the server day before the first read, the same boundary `since` used to set.
-- **The page reads events from one KvK week earlier** (`lib/private/insights.ts`: `since` is the first read's day minus 8, was minus 1). This lets `kvkOf` see the KvK just before the reads.
+- **The page reads events from one KvK week earlier** (`lib/private/insights.ts`: `since` is the first read's day minus 8, was minus 1). This lets `kvkOf` see the KvK just before the reads. Both offsets are defined once in `lib/private/insights-kvk.ts`: `KVK_SHOWN_FROM` (−1, used by `kvkOf`) and `KVK_READ_FROM` (`KVK_SHOWN_FROM - 7`, used by `insights.ts`).
 - **The card's top lines** (`kvkWords` in `lib/private/insights-more-words.ts`; `KvkWords.headline` became `based: string[]`):
   1. the waiting line, when a KvK waits;
   2. then the newest shown KvK's summary, as before;
@@ -34,6 +34,8 @@ Branch `fix/insights-kvk-pending` from `origin/dev` (e996cb5e). Size S: a bug fi
   - "on KvK day between the End and the 23:30 ST daily read, says today's KvK is recorded and waits for that read": last week's KvK still shows below it.
   - "after the 23:30 ST daily read, shows today's KvK and no longer says it waits".
   - "with the reads starting after the last KvK, says when they start instead of claiming no KvK happened": it also checks the unchanged "none" line.
+  - "when KvK night's daily read is missed, names the KvK's date the next day and waits for the next read" (the dated `insights.kvk.waiting` line, EN; the other tests are EN only too).
+  - `lib/private/insights.test.ts` (PGlite): "says the reads start after a KvK that came before them, and does not show that KvK". It fails with `readsFrom: null` when `KVK_READ_FROM` is set back to `KVK_SHOWN_FROM` (checked once).
   - The existing tests now read `.events`. The old assertion "the event waits" (`toEqual([])`) was replaced by the first new test. `insights.test.ts` (PGlite) reads `view.kvk.events`.
 
 ## Decisions
@@ -52,7 +54,7 @@ Branch `fix/insights-kvk-pending` from `origin/dev` (e996cb5e). Size S: a bug fi
 
 ## Verified
 
-- `pnpm check` passed: prettier, eslint, tsc, vitest (297 files passed, 2 skipped; 1555 tests passed, 4 skipped), drift, and i18n (17 languages up to date).
+- `pnpm check` passed: prettier, eslint, tsc, vitest (297 files passed, 2 skipped; 1557 tests passed, 4 skipped), drift, and i18n (17 languages up to date).
 - **First-glance test** (DESIGN.md § Validation).
   - Setup: the real `KvkCard`, rendered with `renderToStaticMarkup` and the app's compiled Tailwind CSS, with invented members. Screenshots at 360 × 780 from headless Chrome, light theme.
   - Screens shown:
@@ -94,7 +96,7 @@ Branch `fix/insights-kvk-pending` from `origin/dev` (e996cb5e). Size S: a bug fi
 <adjustments>
 - `kvkOf(events, reads, zone, away, now)` returns `{ events, waiting, readsFrom }`, and `insightsView().kvk` is that object. Read `.events` where the old array was used.
 - `kvkWords(kvk, newest, f, time)` returns `based: string[]` (no `headline`), and `KvkCard` takes non-null words.
-- The insights page reads KvK events from 8 days before its first daily read. Only events from the day before that read are shown.
+- The insights page reads KvK events from `KVK_READ_FROM` (8 days) before its first daily read. Only events from `KVK_SHOWN_FROM` (the day before that read) are shown. Change them only in `lib/private/insights-kvk.ts`.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/604

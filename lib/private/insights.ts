@@ -18,7 +18,7 @@ import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
 import { awayUntil } from "./fact-fields";
 import { featureOn } from "./features";
-import { kvkOf, type KvkView } from "./insights-kvk";
+import { KVK_READ_FROM, kvkOf, type KvkView } from "./insights-kvk";
 import {
   bandsOf,
   cameFrom,
@@ -241,9 +241,10 @@ export async function insightsView(
   const today = serverDay(now, { SERVER_TZ: zone });
   const away = awayOf(newest, facts, today);
   const fridays = featureOn(access, "shield_check") ? shieldFridays(today, now, zone) : null;
-  // Events from the day before the oldest read (their End read may sit on that read's day), and one KvK
-  // week before it, so the card can say the KvK just before the reads is not shown.
-  const since = new Date(Date.parse(`${addDays(reads[0]?.day ?? newest.day, -8)}T00:00:00Z`));
+  // One KvK week before the events shown, so the card can say the KvK just before the reads is not shown.
+  const since = new Date(
+    Date.parse(`${addDays(reads[0]?.day ?? newest.day, KVK_READ_FROM)}T00:00:00Z`),
+  );
   const [{ flow, labels }, events, sightings, passes] = await Promise.all([
     flowPart(db, access, reads, weeks, firstSeen, oldest, zone),
     scheduledEventMight(db, access.unionId, since),

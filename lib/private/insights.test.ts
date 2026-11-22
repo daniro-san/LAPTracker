@@ -196,6 +196,18 @@ describe("the Insights read (issue 489)", () => {
     expect(view.squads?.bands).toEqual([]);
   });
 
+  it("says the reads start after a KvK that came before them, and does not show that KvK", async () => {
+    const access = await officer();
+    // Our daily reads start on Tuesday 17; the KvK of Saturday 14 has both reads.
+    await roster("2026-11-17", OURS, [101, 102], true);
+    await roster("2026-11-18", OURS, [101, 102], true);
+    await kvk(new Date("2026-11-14T14:00:00Z"), OURS, { 101: [20_000_000, 15_000_000] });
+
+    const view = await insightsView(db, access, NOW, ZONE);
+
+    expect(view.kvk).toEqual({ events: [], waiting: null, readsFrom: "2026-11-17" });
+  });
+
   it("counts each week's Raid Shield checks over Friday's roster, and nothing while off", async () => {
     const access = await officer();
     await roster("2026-11-06", OURS, [101, 102, 103], true);

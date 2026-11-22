@@ -16,6 +16,13 @@ export const RECOVERY_READS = 7;
 export const HEAVY_LOSS = 0.25;
 /** …and still below this share of their might before it. */
 export const HELP_BELOW = 0.8;
+/** Events shown start this many days from the first read's day: an End read the day before may sit on it. */
+export const KVK_SHOWN_FROM = -1;
+/**
+ * The page reads events from this many days from the first read's day: one KvK week before the events shown,
+ * only so that `readsFrom` can say a KvK before the reads is not shown.
+ */
+export const KVK_READ_FROM = KVK_SHOWN_FROM - 7;
 
 export interface KvkMember {
   uid: number;
@@ -142,7 +149,7 @@ export interface KvkView {
 
 /**
  * The KvK card's data against the page's end-of-day reads; nothing with no read. `events` may start before
- * the reads: one before the day before the first read only sets `readsFrom`. `away`: members on a break,
+ * the reads (KVK_READ_FROM): one before KVK_SHOWN_FROM only sets `readsFrom`. `away`: members on a break,
  * left out of the help list.
  */
 export function kvkOf(
@@ -155,8 +162,7 @@ export function kvkOf(
   const first = reads[0];
   const newest = reads.at(-1);
   if (!first || !newest) return { events: [], waiting: null, readsFrom: null };
-  // From the day before the first read: an event's End read may sit on that read's day.
-  const from = addDays(first.day, -1);
+  const from = addDays(first.day, KVK_SHOWN_FROM);
   const inside = events
     .filter((e) => dayIn(zone, e.at.getTime()) >= from)
     .sort((a, b) => b.at.getTime() - a.at.getTime());
