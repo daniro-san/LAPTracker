@@ -59,8 +59,11 @@ export type TrackerKeyState =
  */
 export type RollCallType = "raid_prep" | "other";
 
-/** The desk pages whose counts open their members (#678: Insights; Raid prep and Roll call come with #691). */
-export type DrilldownSurface = "insights" | "raid_prep" | "roll_call";
+/**
+ * The desk pages whose counts open their members (#678: Insights; Raid prep and Roll call come with #691;
+ * Home and the read status bar with drilldown batch C).
+ */
+export type DrilldownSurface = "insights" | "raid_prep" | "roll_call" | "home" | "status_bar";
 
 /**
  * The Insights sets an officer can open (#678; `MemberSet.kind` in lib/private/insights-sets.ts), the
@@ -74,11 +77,20 @@ export type RaidPrepSet = "remind" | "accept";
 /** The chip a Roll call card's count opened its marking page on (#691): "To mark", ✗ or ✓. */
 export type RollCallSet = "todo" | "no" | "yes";
 
+/**
+ * Home's counts of people (drilldown batch C): a Recent activity "added n new members" fold opened, or
+ * "n already noted by officers" tapped (to Follow-up's "Noted this week").
+ */
+export type HomeSet = "new_members" | "noted";
+
 /** Each surface with its own closed list of kinds, so a kind never rides on another page's event. */
 type DrilldownOpened = { count_bucket: CountBucket } & (
   | { surface: Extract<DrilldownSurface, "insights">; kind: InsightsSet }
   | { surface: Extract<DrilldownSurface, "raid_prep">; kind: RaidPrepSet }
   | { surface: Extract<DrilldownSurface, "roll_call">; kind: RollCallSet }
+  | { surface: Extract<DrilldownSurface, "home">; kind: HomeSet }
+  /** The Raid Shield check's line: "Raid prep ›" tapped, its bucket the members seen with a shield. */
+  | { surface: Extract<DrilldownSurface, "status_bar">; kind: "shield" }
 );
 
 /** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */

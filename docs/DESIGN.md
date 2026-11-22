@@ -516,7 +516,7 @@ Short, dry, grandmotherly. Written in English; the public pages also read in 17 
 
 ## Enforcement
 
-- `lib/brand/tokens.css` is the only place a colour literal appears: a test greps `app/` and `lib/brand/components/` for `#[0-9a-f]{3,6}` and `rgb(` and fails on any hit.
+- `lib/brand/tokens.css` is the only place a colour literal appears. In `app/` and `lib/brand/components/`, ESLint (`no-restricted-syntax` in `eslint.config.mjs`) fails on `#[0-9a-f]{3,6}` or `rgb(` in a string or template literal, test files excepted; `lib/brand/tokens.test.ts` does the same for the stylesheets there, comments removed. A comment or an issue number in a test name is never a hit (issue 592).
 - Fonts load from `next/font/google`; no other `@font-face`. The one exception is the Discord event picture, which reads the TTFs in `lib/brand/fonts/` (D58).
 - Screenshots at 360 / 768 / 1024 / 1280 / 1440 in both modes for every page a session touches, attached to the PR (D122; was 360 / 390 / 1280).
 - The `frontend-design` skill, when available, is opened with this file as the brief.

@@ -52,6 +52,12 @@ const zones = [
   },
 ];
 const restrict = (extra) => ["error", { zones: [...zones, ...extra] }];
+// docs/DESIGN.md "Enforcement": a colour literal (#abc, #a1b2c3, rgb(, rgba() is written only in
+// lib/brand/tokens.css. Only string and template literals are checked (JSX attribute values and style
+// objects are string literals), so a comment or an issue number in a test name is never a hit.
+const COLOUR = String.raw`/#[0-9a-f]{3,6}\b|rgba?\(/i`;
+const COLOUR_MESSAGE =
+  "No colour literal in app/ or lib/brand/components/ (docs/DESIGN.md, Enforcement). Use a brand token: a Tailwind token class (text-ink, bg-paper, border-rule…), var(--token), or currentColor. A new colour goes in lib/brand/tokens.css.";
 const PRIVATE = ["app/(private)/**", "lib/private/**"];
 // D71: lib/private logs only through its own code-and-numbers wrapper and sends no Discord message.
 const NOTIFY_AND_DISCORD = readdirSync(`${import.meta.dirname}/lib`)
@@ -97,7 +103,8 @@ export default defineConfig(
           alphabetize: { order: "asc", caseInsensitive: true },
         },
       ],
-      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+      // 400, not 300 (D88 amendment 2026-11-22): data files are exempt below, and code splits by concept.
+      "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
       // Length binds on long-but-linear code (orchestrators, JSX); tangling is what hurts readers and
       // agents, and complexity + max-depth measure that. So length is loose, branching is tight.
       "max-lines-per-function": ["error", { max: 80, skipBlankLines: true, skipComments: true }],
@@ -181,6 +188,31 @@ export default defineConfig(
     // The release log is data that grows by one entry per release (/admin/changes), like a translation file.
     files: ["lib/patch-notes.ts"],
     rules: { "max-lines": "off" },
+  },
+  {
+    // Data, not logic, like a translation file (D88 amendment 2026-11-22): the desk dictionaries, the public
+    // copy, the schema, and the e2e seed, fixtures and specs. Every other rule still applies.
+    files: [
+      "lib/private/dictionary*.ts",
+      "lib/copy*.ts",
+      "lib/schema*.ts",
+      "e2e/fixtures/**/*.ts",
+      "e2e/*.spec.ts",
+    ],
+    ignores: ["**/*.test.ts"],
+    rules: { "max-lines": "off" },
+  },
+  {
+    // Tests never reach the page, and their names carry issue numbers ("#592"), so they are not checked.
+    files: ["app/**/*.{ts,tsx}", "lib/brand/components/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        { selector: `Literal[value=${COLOUR}]`, message: COLOUR_MESSAGE },
+        { selector: `TemplateElement[value.raw=${COLOUR}]`, message: COLOUR_MESSAGE },
+      ],
+    },
   },
   {
     files: ["scripts/**/*.mjs", "e2e/**/*.mjs", "*.config.mjs"],

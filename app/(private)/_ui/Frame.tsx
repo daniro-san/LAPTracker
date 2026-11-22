@@ -234,6 +234,7 @@ async function ReadStatusLine({
     label: t["status.label"],
     more: t["status.more"],
     settings: t["status.key.link"],
+    raidPrep: t["status.shield.link"],
   };
   return <ReadStatusBar slug={access.slug} initial={status} words={words} keyShown={keyShown} />;
 }

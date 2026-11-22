@@ -7,7 +7,6 @@
 // 2026-11-22). Nothing is logged but counts, and the webhook URL never is.
 import { createHash } from "node:crypto";
 
-import { addDays } from "./calendar-time";
 import {
   SHIELD_LANGUAGES,
   SHIELD_POST,
@@ -18,16 +17,14 @@ import type { Db } from "./db";
 import { discordClock } from "./discord-format";
 import { editOnly, sendOrEdit } from "./discord-send";
 import type { Env } from "./env";
-import { awayOn } from "./member-away";
 import { escapeDiscord } from "./notify";
-import { awayFacts } from "./raid-prep-fill";
+import { membersOfRaid } from "./raid-prep-fill";
 import {
   getShieldCheck,
   keepMessage,
   shieldReadings,
   type StoredReading,
 } from "./repo/shield-checks";
-import { anyRoster } from "./repo/workspace-any-roster";
 import { sealedWebhooks } from "./repo/workspace-discord";
 import { passWindows, suggestionOf, type ShieldPass } from "./shield-check";
 import type { ShieldTarget } from "./shield-read";
@@ -227,24 +224,6 @@ async function deliver(
   const hash = edited === "ok" ? m.hash : GONE;
   await keepMessage(db, m.q, { id: m.id, hash, hook: m.hook.key }, deps.now());
   return edited === "ok";
-}
-
-/**
- * The alliance's members and, of them, the uids away on the raid's Saturday (Friday `day` + 1), by the roll
- * call's rule (D103), as Raid prep's fill leaves them out. The summary and the officers' notification
- * (lib/push-uses.ts) both read them here, so their counts agree.
- */
-export async function membersOfRaid(db: Db, target: ShieldTarget, day: string, zone: string) {
-  const [roster, facts] = await Promise.all([
-    anyRoster(db, target.unionId),
-    awayFacts(db, target.workspaceId as number),
-  ]);
-  const members = (roster?.members ?? []).map((m) => ({ uid: m.uid, name: m.name }));
-  const saturday = addDays(day, 1);
-  const away = new Set(
-    members.filter((m) => awayOn(facts.get(m.uid), saturday, zone) !== null).map((m) => m.uid),
-  );
-  return { members, away };
 }
 
 /** The message's text from the stored readings of both reads. */

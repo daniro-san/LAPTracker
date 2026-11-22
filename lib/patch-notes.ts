@@ -45,6 +45,7 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "Decide #634: show the Raid Shield reading on the member card? Recommendation: only from Friday's night check until KvK starts, in server time.",
     issue: 634,
+    done: true,
   },
   {
     text: "Guide: after v5.47.0, retake the new-alliance guide's Alliance settings screenshots (the page now opens with an index and saves Features with a button), with names and channels blurred.",
@@ -194,6 +195,18 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.61.0",
+    date: "2026-11-22",
+    title: "Home's counts open their people too",
+    changes: [
+      'Home: "added 3 new members" in Recent activity opens those names in name order. "4 already noted by officers" is now its own link to Follow-up\'s "Noted this week".',
+      'Status bar: the Raid Shield line counts the same members as Raid prep, with members away on the raid\'s Saturday left out and said as "· 3 away", and a "Raid prep ›" button opens that week\'s Raid prep.',
+      "Public pages: a browser that asks only for a language the site does not have (Arabic, Persian or Hebrew, for example) gets the English page with English digits and dates, no longer that language's digits or calendar.",
+      "Behind the scenes: a wider privacy test (the data export, Alliance settings and the public data answers are checked for every private roster field), the Home badge counted in one place, a shorter architecture guide, and fewer brittle tests.",
+    ],
+    prs: [697, 700, 699, 701, 698, 695, 696],
+  },
   {
     version: "v5.60.0",
     date: "2026-11-22",

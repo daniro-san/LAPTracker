@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { factRows } from "./seed-facts";
 import { helpDays, needsHelpRows, selfReportRows } from "./seed-help";
 import {
+  ADDED_BY_HAND,
   ALLIANCES,
   AVATAR_SENTINEL,
   cheeseOf,
@@ -115,9 +116,9 @@ function rawMember(side: Side, m: Member, k: number, idle: boolean) {
     rank_code: k === 0 ? 105 : k < 3 ? 104 : 102,
     rank_label: k === 0 ? "R5" : k < 3 ? "R4" : "R2",
     // The game sends null, never 0, for none that day (D127).
-    active: idle ? null : DAILY.active,
+    active: idle ? null : s.active,
     daily_honor: DAILY.honor,
-    daily_tech: idle ? null : DAILY.tech,
+    daily_tech: idle ? null : s.tech,
     x: s.x,
     y: s.y,
     online: true,
@@ -201,8 +202,11 @@ export const boardOf = (n: number) => ({
   kills: 10_000_000 - n * 1_000_000,
 });
 
-/** Each roster member's daily figures (D146 and the member card): quest points, coins, donations. */
-export const DAILY = { active: 400, honor: 1000, tech: 3000 } as const;
+/**
+ * Each Lantern Keep roster member's daily figures (D146 and the member card): quest points and donations
+ * are its sentinels, coins sit at the cap. Moss Hollow's have its own sentinels.
+ */
+export const DAILY = { active: SENTINELS.a.active, honor: 1000, tech: SENTINELS.a.tech } as const;
 
 /**
  * The desk's week line (D146) on the day the suite runs: the newest read is yesterday's, and its game week
@@ -374,6 +378,8 @@ export function seedSql(now: Date): string {
     ...eventRows(cal.events),
     ...workspaceRows(),
     ...rollCallRows(cal),
+    // ADDED_BY_HAND, a minute before the seed and one second apart, each already matched to their member.
+    `insert into pending_members (workspace_id, name, name_key, created_by, created_at, matched_uid, matched_at) values ${ADDED_BY_HAND.map((name, i) => `(${ALLIANCES.a.id}, ${q(name)}, ${q(name.toLowerCase())}, 1, now() - interval '${60 - i} seconds', ${uidOf("a", ALLIANCES.a.names.indexOf(name))}, now())`).join(", ")};`,
     ...factRows(cal.today),
     ...needsHelpRows(cal.week),
     "select setval('events_id_seq', 100), setval('snapshots_id_seq', 100), setval('workspaces_id_seq', 100), setval('workspace_users_id_seq', 100), setval('calendar_entries_id_seq', 100), setval('roll_calls_id_seq', 100);",

@@ -2,8 +2,6 @@
 // (deleted records in their own files), the notices' pictures and a README; no private roster field, no
 // key, no session and no Discord id is in any byte of it. A member and another workspace are refused, and
 // a workspace gets 3 downloads a day.
-import { crc32, inflateRawSync } from "node:zlib";
-
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -22,6 +20,7 @@ import {
   seedRoster,
   seedWorkspace,
 } from "@/lib/workspace-data.test-helpers";
+import { unzip } from "@/lib/zip.test-helpers";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -88,30 +87,6 @@ const post = (token: string, requestId = ID(), lang = "en") =>
     }),
     { params: Promise.resolve({ slug: "nse" }) },
   );
-
-/** Every file of a ZIP, unpacked, each checked against its CRC-32. */
-function unzip(bytes: Uint8Array): Map<string, Buffer> {
-  const b = Buffer.from(bytes);
-  const end = b.length - 22;
-  const entries = b.readUInt16LE(end + 10);
-  let at = b.readUInt32LE(end + 16);
-  const files = new Map<string, Buffer>();
-  for (let i = 0; i < entries; i += 1) {
-    const method = b.readUInt16LE(at + 10);
-    const crc = b.readUInt32LE(at + 16);
-    const size = b.readUInt32LE(at + 20);
-    const nameLength = b.readUInt16LE(at + 28);
-    const local = b.readUInt32LE(at + 42);
-    const name = b.toString("utf8", at + 46, at + 46 + nameLength);
-    const start = local + 30 + b.readUInt16LE(local + 26) + b.readUInt16LE(local + 28);
-    const stored = b.subarray(start, start + size);
-    const data = method === 8 ? inflateRawSync(stored) : stored;
-    expect(crc32(data)).toBe(crc);
-    files.set(name, data);
-    at += 46 + nameLength + b.readUInt16LE(at + 30) + b.readUInt16LE(at + 32);
-  }
-  return files;
-}
 
 describe("POST /api/w/[slug]/data-export (D125)", () => {
   it("holds a file for every table, deleted records apart, the pictures, and no private field or key", async () => {

@@ -30,6 +30,10 @@ export const statusEn = {
   // D137: the Raid Shield check.
   "status.shield.running": "Checking Raid Shields · {read} of {members} · started {at} ST",
   "status.shield.done": "Raid Shield check {at} ST · {on} of {members} seen with a shield",
+  // Drilldown batch C: the members away on raid day are left out of both counts, as Raid prep leaves them out.
+  "status.shield.away.one": "{n} away",
+  "status.shield.away.other": "{n} away",
+  "status.shield.link": "Raid prep",
 };
 
 export const statusPt: typeof statusEn = {
@@ -65,6 +69,9 @@ export const statusPt: typeof statusEn = {
     "Conferindo os Escudos de raid · {read} de {members} · começou às {at} ST",
   "status.shield.done":
     "Conferência do Escudo de raid {at} ST · {on} de {members} com escudo visto",
+  "status.shield.away.one": "{n} ausente",
+  "status.shield.away.other": "{n} ausentes",
+  "status.shield.link": "Preparação do raid",
 };
 
 export const statusFr: typeof statusEn = {
@@ -101,4 +108,7 @@ export const statusFr: typeof statusEn = {
     "Vérification des Boucliers de raid · {read} sur {members} · commencée à {at} ST",
   "status.shield.done":
     "Vérification du Bouclier de raid {at} ST · {on} sur {members} avec un bouclier vu",
+  "status.shield.away.one": "{n} absent",
+  "status.shield.away.other": "{n} absents",
+  "status.shield.link": "Préparation du raid",
 };

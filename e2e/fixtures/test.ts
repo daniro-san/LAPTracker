@@ -2,12 +2,16 @@
 // 1. No request leaves this machine: any other host is aborted and fails the test.
 // 2. No private roster field reaches a page it may not (CLAUDE.md "Roster fields", D71): every HTML, JSON and
 //    RSC answer is searched for the seed's sentinels (e2e/fixtures/seed.ts) and for the private fields'
-//    names used as keys (`online` is a boolean with no sentinel value: its key is what can be seen). Public
-//    pages and the members' board show none. A workspace's desk shows only its own alliance's: joined_at on its pages (the Members
-//    copy for a spreadsheet carries it; D71 keeps x, y, online and last_online_at out of copies), and the map
-//    position and last online only in an officer's member card (/api/w/<slug>/members/<uid>, read when the
-//    card opens). No answer carries the photo URL, and a private answer of one seeded workspace never names
-//    another's members.
+//    names used as keys (`online` is a boolean with no sentinel value: its key is what can be seen, and so
+//    is `daily_honor`'s, whose seeded value is its cap). Public pages and the members' board show none.
+//    A workspace's desk shows only its own alliance's: joined_at, daily quest points, coins and donations on
+//    its pages (CLAUDE.md: the desk may; the Members copy for a spreadsheet carries joined_at; D71 keeps x, y,
+//    online and last_online_at out of copies; the export ZIP holds none of the fields, D125), and the map position and last online only in an
+//    officer's member card (/api/w/<slug>/members/<uid>, read when the card opens). The member's own page
+//    (/w/<slug>/board/me) shows their own quest points, coins and donations (D142). No answer carries the
+//    photo URL, and a private answer of one seeded workspace never names another's members. The D76
+//    exception (alliance aggregates of the daily fields on public pages) is for OWN_ALLIANCE_ID only, which
+//    the seed has no rows of, so no public answer here may carry them.
 import {
   test as base,
   expect,
@@ -32,8 +36,9 @@ const SIDES = ["a", "b"] as const;
  * such as `\t` in a JSON string (a tab-separated copy row).
  */
 const alone = (re: string) => new RegExp(`(?<!(?<!\\\\)[\\w.])${re}(?![\\w])`);
-/** A six-digit coordinate as sent or as printed with a thousands separator ("713,579", "713 579"). */
-const coordinate = (n: number) => alone(String(n).replace(/^(\d{3})/, "$1[,.\\s\\u00a0\\u202f]?"));
+/** A figure as sent or as printed with thousands separators ("713,579", "713 579", "3.917"). */
+const figure = (n: number) =>
+  alone(String(n).replace(/\B(?=(\d{3})+$)/g, "[,.\\s\\u00a0\\u202f]?"));
 /** Both alliances' last online fall on 29 February, which the card prints without the year (EN, PT, FR). */
 const FORMATTED_LAST_ONLINE = /\bFeb 29\b|\b29 Feb\b|\b29 de fev|\b29 févr/i;
 
@@ -43,17 +48,24 @@ const KEYS: [string, RegExp][] = [
   ["last_online_at", /\\?"(last_online_at|lastOnlineAt)\\?"\s*:/],
   ["joined_at", /\\?"(joined_at|joinedAt)\\?"\s*:/],
   ["avatar_url", /\\?"(avatar_url|avatarUrl)\\?"\s*:/],
+  ["daily_tech", /\\?"(daily_tech|dailyTech)\\?"\s*:/],
+  ["daily_honor", /\\?"(daily_honor|dailyHonor)\\?"\s*:/],
 ];
 
 function sentinelPatterns(side: Side): [string, RegExp][] {
   const s = SENTINELS[side];
   return [
-    ["x", coordinate(s.x)],
-    ["y", coordinate(s.y)],
+    ["x", figure(s.x)],
+    ["y", figure(s.y)],
     ["last_online_at", alone(s.lastOnline.slice(0, 4))],
     ["joined_at", alone(s.joined.slice(0, 4))],
+    ["active", figure(s.active)],
+    ["daily_tech", figure(s.tech)],
   ];
 }
+
+/** The daily fields: on the desk (CLAUDE.md), and on the member's own page (D142). */
+const DAILY_FIELDS = ["active", "daily_tech", "daily_honor"];
 
 const slugOf = (side: Side) => ALLIANCES[side].slug;
 
@@ -62,10 +74,16 @@ function allowedAt(path: string): { side: Side; fields: string[] } | null {
   for (const side of SIDES) {
     const slug = slugOf(side);
     if (new RegExp(`^/api/w/${slug}/members/\\d+$`).test(path)) {
-      return { side, fields: ["x", "y", "online", "last_online_at", "joined_at"] };
+      return { side, fields: ["x", "y", "online", "last_online_at", "joined_at", ...DAILY_FIELDS] };
     }
+    // D142: the member's own figures, for the link's uid only. Every member of an alliance has the same
+    // seeded figures, so whose they are is not told apart here; another alliance's still is.
+    if (path === `/w/${slug}/board/me`) return { side, fields: DAILY_FIELDS };
+    // The export ZIP's files (D125 "Never in it"): no private roster field at all, the desk's own included.
+    if (path === `/api/w/${slug}/data-export`) return { side, fields: [] };
+    // The desk's pages and answers.
     if (new RegExp(`^(/api)?/w/${slug}(/|$)`).test(path) && !path.startsWith(`/w/${slug}/board`)) {
-      return { side, fields: ["joined_at"] };
+      return { side, fields: ["joined_at", ...DAILY_FIELDS] };
     }
   }
   return null;

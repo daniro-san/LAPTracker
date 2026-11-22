@@ -6,10 +6,15 @@
 // opens every line in full. While a read runs it asks the route again every 30 s, only while the tab is
 // visible, and refreshes the page once when the read ends, so the cards show the new numbers. A finished
 // read's line goes 30 minutes after it ended. The pulse dot is still when the device asks for less motion.
+// The Raid Shield check's line has a bordered "Raid prep ›" beside the bar at every width, open or closed
+// (drilldown batch C: the closed line is the bar's toggle, and a link only inside the open bar went unseen).
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 
+import { countBucket } from "@/lib/analytics/count-bucket";
+import { track } from "@/lib/analytics/events";
+import { chip } from "@/lib/brand/components/controls";
 import type { ReadStatus, StatusLine } from "@/lib/private/read-status";
 import { batchMayRun } from "@/lib/tick-batch";
 
@@ -34,6 +39,8 @@ export interface StatusWords {
   more: string;
   /** "Open Alliance settings". */
   settings: string;
+  /** "Raid prep": the shield line's way to the week's Raid prep. */
+  raidPrep: string;
 }
 
 /**
@@ -120,6 +127,7 @@ export function ReadStatusBar({
   const more = (n: number) => (n > 0 ? words.more.replace("{n}", String(n)) : null);
   const narrow = more(lines.length - 1);
   const wide = more(lines.length - 2);
+  const raidPrep = lines.find((l) => l.raidPrep)?.raidPrep;
   const settings = (className: string) => (
     <Link
       href={`/w/${slug}/settings`}
@@ -136,6 +144,22 @@ export function ReadStatusBar({
       <Lines lines={lines} words={words} narrow={narrow} wide={wide} settings={settings} />
       {/* From 640 px the key's way to Alliance settings shows beside the closed bar too. */}
       {lines.some((l) => l.settings) && settings("hidden shrink-0 sm:inline-flex")}
+      {raidPrep && (
+        <Link
+          href={raidPrep.href}
+          onClick={() =>
+            track("ws_drilldown_opened", {
+              surface: "status_bar",
+              kind: "shield",
+              count_bucket: countBucket(raidPrep.on),
+            })
+          }
+          className={`${chip()} shrink-0 font-semibold text-plum`}
+        >
+          {words.raidPrep}
+          <span aria-hidden="true">›</span>
+        </Link>
+      )}
     </section>
   );
 }
