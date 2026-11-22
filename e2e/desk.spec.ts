@@ -26,7 +26,7 @@ import {
   WALL_ONLY,
   weekLine,
 } from "./fixtures/seed";
-import { big, deskFrame, expect, hydrated, sees, signIn, test } from "./fixtures/test";
+import { big, deskFrame, expect, hydrated, labelled, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const desk = `/w/${A.slug}`;
@@ -37,8 +37,6 @@ const MARKED_BY = { phone: A.names[6], wide: A.names[7], iphone: A.names[8] } as
   string,
   string
 >;
-/** A label that starts with `prefix` and a name, the name inside Unicode isolates (isolate(), <bdi>). */
-const labelled = (prefix: string, name: string) => new RegExp(`^${prefix}\\u2068?${name}\\u2069?`);
 const cal = calendarOf(seededAt());
 
 test.beforeEach(async ({ context }) => {
