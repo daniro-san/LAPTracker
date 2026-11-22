@@ -87,8 +87,9 @@ export function whoOf(m: MemberRow): Who[] {
 }
 
 /**
- * The members the list's "Check in and Needs help" group holds, and the one count Members and Home show
- * for it (ADV-9): Check in or Needs help, not on a break (a break has its own group at the end).
+ * The members the list's "Check in and Needs help" group holds (ADV-9): Check in or Needs help, not on a
+ * break (a break has its own group at the end). Home and Members count with it only while the Follow-up tab
+ * is off; while it is on they show Follow-up's own numbers (#585, `followUpCounts`).
  */
 export const needsAWord = (who: readonly Who[]) =>
   (who.includes("checkin") || who.includes("help")) && !who.includes("break");

@@ -8,7 +8,6 @@
 // beside them (recent activity with who is on the desk now, then members this week) in the margin column.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
@@ -18,15 +17,10 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { calendarDays } from "@/lib/private/calendar";
-import {
-  ACTIVITY_FIRST,
-  activityPage,
-  onDeskNow,
-  type ActivityPage,
-} from "@/lib/private/desk-activity";
-import { activityView } from "@/lib/private/desk-activity-words";
+import { ACTIVITY_FIRST, activityPage, onDeskNow } from "@/lib/private/desk-activity";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
-import { featureOn, thanksSwitches } from "@/lib/private/features";
+import { featureOn } from "@/lib/private/features";
+import { followUpCounts } from "@/lib/private/follow-up";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersWithProgress, type MembersView } from "@/lib/private/members";
@@ -37,13 +31,11 @@ import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { thanksNudge } from "@/lib/private/thanks";
 import { serverDay } from "@/lib/schedule";
 
-import { BoardReach } from "../../_ui/BoardReach";
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
-import { OnDesk, RecentActivity } from "../../_ui/DeskActivity";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
 import { cards } from "../../_ui/home-cards";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
-import { HomeMembers } from "../../_ui/HomeMembers";
+import { HomeMargin, type HomeDesk } from "../../_ui/HomeMargin";
 import { HomeNext } from "../../_ui/HomeNext";
 import { KeyCard } from "../../_ui/KeyCard";
 import { toMatchLine } from "../../_ui/member-lifecycle-data";
@@ -162,9 +154,7 @@ function Home(props: {
   view: MembersView;
   /** New members a roster read since their add could not match (D106, 2026-11-17). */
   toMatch: number;
-  /** D108: the other officers on the desk now, and what officers did lately; D119: the notice pictures
-   * the weekly cleanup deletes soon; D124: the alliance's own tracker key. */
-  desk: { names: string[]; activity: ActivityPage; now: Date } & Awaited<ReturnType<typeof cards>>;
+  desk: HomeDesk;
   shared: string[] | null;
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
@@ -209,30 +199,7 @@ function Home(props: {
             />
           </>
         }
-        margin={
-          <>
-            <RecentActivity
-              slug={slug}
-              first={activityView(props.desk.activity, t, language, props.desk.now)}
-              t={t}
-              lead={<OnDesk names={props.desk.names} t={t} language={language} />}
-            />
-            <HomeMembers
-              slug={slug}
-              t={t}
-              language={language}
-              view={props.view}
-              nudge={props.nudge}
-              switches={{ ...thanksSwitches(props.access), channel: props.desk.channel }}
-            />
-            {/* D145: the board's reach from PostHog, streamed; nothing while the board is off. */}
-            {featureOn(props.access, "board") && (
-              <Suspense fallback={null}>
-                <BoardReach access={props.access} t={t} language={language} />
-              </Suspense>
-            )}
-          </>
-        }
+        margin={<HomeMargin {...props} />}
       />
     </section>
   );
@@ -275,7 +242,8 @@ export default async function WorkspacePage({
       cards(db, access, now, zone),
       thanksNudge(db, access, today),
     ]);
-    const desk = { names, activity, now, ...notes };
+    const followUp = await followUpCounts(db, access, view, now, zone);
+    const desk = { names, activity, now, followUp, ...notes };
     const unmatched = toMatch(pending, view.readAt).length;
     return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };
   });

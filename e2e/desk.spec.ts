@@ -68,14 +68,18 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   );
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
-  // D114: on Sunday and Monday (server days), while the week is not thanked yet (the seed shares none), the
-  // thanks nudge takes the place of "Everyone looks fine"; on the other days that line shows.
-  const thanksDay = [0, 1].includes(new Date(cal.today).getUTCDay());
-  if (thanksDay) {
+  // #585: Follow-up's numbers, linked to Follow-up. The seed gives everyone quest points and coins at the
+  // cap (DAILY), so the list holds the joiner alone (new, every fact to ask). The card flow's Talked (kept)
+  // may or may not be in yet, so the noted part is optional here; its rule is in follow-up-week.test.ts.
+  const followUp = week.getByRole("link", {
+    name: /^Follow-up: 1 to look at( · 1 noted this week)?$/,
+  });
+  await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
+  // With someone to look at, "Everyone looks fine" never shows; on Sunday and Monday (server days), while
+  // the week is not thanked yet (the seed shares none), the thanks nudge shows too (D114).
+  await expect(week.getByText("Everyone looks fine this week.")).toHaveCount(0);
+  if ([0, 1].includes(new Date(cal.today).getUTCDay())) {
     await sees(week, "Time for the weekly appreciation post");
-    await expect(week.getByText("Everyone looks fine this week.")).toHaveCount(0);
-  } else {
-    await sees(week, "Everyone looks fine this week.");
   }
 });
 

@@ -1,21 +1,66 @@
 // Home's members box (panel PD-1), rendered on the server: who to thank and how many to check in with, as
-// Members shows them; "not yet" before the first end-of-day read, when nothing is computed (D75). Under the
-// week's progress, "Share the thanks" (D114), with a gentle line on Sunday and Monday until it is shared.
+// Follow-up counts them (issue 585); "not yet" before the first end-of-day read, when nothing is computed
+// (D75). Under the week's progress, "Share the thanks" (D114), with a gentle line on Sunday and Monday until
+// it is shared.
 // A margin note of Home's spread (D122): a card below 1024, unframed hairline rows beside the main column.
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import type { WeekCounts } from "@/lib/private/follow-up";
+import { weekCountLine } from "@/lib/private/follow-up-rules";
 import { cardFormats, progressText } from "@/lib/private/member-card";
 import type { MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
-import { plural } from "@/lib/private/members-sheet";
+import { plural, type Formats } from "@/lib/private/members-sheet";
 import { serverDay } from "@/lib/schedule";
 
 import { AllianceWeekLine, allianceWeekParts } from "./AllianceWeekLine";
 import { LINK } from "./BoardText";
 import { shareThanksProps, type ShareThanksProps, type ThanksSwitches } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
+
+/**
+ * The check-in line Home and Members show, and where it leads: Follow-up's two numbers while its tab is on
+ * (issue 585: one rule with the list), else Members' own count of its "Check in and Needs help" group (D126: no
+ * link to a turned-off tab); null when there is nothing to say.
+ */
+export function checkInLink(
+  slug: string,
+  view: MembersView,
+  followUp: WeekCounts | null,
+  t: WorkspaceDictionary,
+  f: Formats,
+): { text: string; href: string } | null {
+  if (followUp) {
+    const text = weekCountLine(followUp, t, f.language);
+    return text === null ? null : { text, href: `/w/${slug}/follow-up` };
+  }
+  const n = view.members.filter((m) => needsAWord(whoOf(m))).length;
+  if (n === 0) return null;
+  const text = fill(plural(t, "members.checkinCount", n, f), { n });
+  return { text, href: `/w/${slug}/members?order=rank#ml-heading` };
+}
+
+/** Members' head line: the check-in link, or "Everyone looks fine this week." (`none`). */
+export function CheckInLine(props: {
+  check: ReturnType<typeof checkInLink>;
+  none: string;
+  className: string;
+}) {
+  const { check } = props;
+  return (
+    <p className={props.className}>
+      {check === null ? (
+        props.none
+      ) : (
+        <a href={check.href} className={`${LINK} py-2`}>
+          {check.text}
+        </a>
+      )}
+    </p>
+  );
+}
 
 /** D109's progress in name order, its own block under the top lists, with "Share the thanks" (D114). */
 function SayThanks(props: {
@@ -55,6 +100,8 @@ export function HomeMembers(props: {
   nudge: boolean;
   /** D126: the thanks sheet's switches. */
   switches: ThanksSwitches;
+  /** Follow-up's two numbers (issue 585); null while the Follow-up tab is off (D126). */
+  followUp: WeekCounts | null;
 }) {
   const { slug, t, language, view, nudge } = props;
   const members = `/w/${slug}/members`;
@@ -65,7 +112,7 @@ export function HomeMembers(props: {
     view.thanks.donors.length > 0
       ? (["thanks.donors", view.thanks.donors] as const)
       : (["thanks.activity", view.thanks.activity] as const);
-  const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
+  const check = checkInLink(slug, view, props.followUp, t, f);
   const today = serverDay(now, getEnv());
   const sharing = view.thanks.progress.length > 0 || nudge;
   return (
@@ -103,12 +150,12 @@ export function HomeMembers(props: {
             className="max-w-sm py-2"
           />
           {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114). */}
-          {checkins === 0 ? (
+          {check === null ? (
             !sharing && <p className="py-2">{t["members.checkinNone"]}</p>
           ) : (
             <p>
-              <a href={`${members}?order=rank#ml-heading`} className={LINK}>
-                {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
+              <a href={check.href} className={LINK}>
+                {check.text}
               </a>
             </p>
           )}

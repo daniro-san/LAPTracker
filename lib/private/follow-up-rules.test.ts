@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { coinsTip, historyLine, weekStart } from "./follow-up-rules";
+import { coinsTip, historyLine, notedLine, weekCountLine, weekStart } from "./follow-up-rules";
 
 const dayOf = (at: Date) => at.toISOString().slice(0, 10);
 
@@ -41,5 +41,37 @@ describe("the Follow-up rules (issue 340, D104)", () => {
 
   it("gives the coins tip at exactly 5 days below 1,000 when the other 2 days have no read (D140)", () => {
     expect(coinsTip([null, 400, 999, "none", 400, null, 0])).toBe(true);
+  });
+});
+
+describe("Follow-up's week in words (#585)", () => {
+  it("says Follow-up's two numbers in one line for Home and Members, nothing when both are 0", () => {
+    const en = WORKSPACE_DICTIONARIES.en;
+    const line = (toLook: number, done: number) => weekCountLine({ toLook, done }, en, "en");
+    expect(line(12, 4)).toBe("Follow-up: 12 to look at · 4 noted this week");
+    expect(line(12, 0)).toBe("Follow-up: 12 to look at");
+    expect(line(0, 4)).toBe("Follow-up: nobody to look at · 4 noted this week");
+    expect(line(0, 0)).toBeNull();
+    const fr = WORKSPACE_DICTIONARIES.fr;
+    expect(weekCountLine({ toLook: 3, done: 1 }, fr, "fr")).toBe(
+      "À suivre : 3 sur la liste · 1 noté cette semaine",
+    );
+  });
+
+  it("writes a noted row with the officer and the day first, and a break with its last day away", () => {
+    const t = WORKSPACE_DICTIONARIES.en;
+    const date = (at: Date) => dayOf(at);
+    const day = (iso: string) => iso;
+    const at = new Date("2026-11-19T10:00:00Z");
+    const row = { action: "talked" as const, note: "Busy at work", until: null, at, by: "Tomas" };
+    expect(notedLine(row, t, date, day)).toBe("⁨Tomas⁩ · 2026-11-19: Talked to them");
+    expect(notedLine({ ...row, action: "help", by: "Kira" }, t, date, day)).toBe(
+      "⁨Kira⁩ · 2026-11-19: They need help",
+    );
+    expect(notedLine({ ...row, action: "fine" }, t, date, day)).toBe(
+      "⁨Tomas⁩ · 2026-11-19: All fine",
+    );
+    const away = { ...row, action: "break" as const, until: "2026-11-24", by: null };
+    expect(notedLine(away, t, date, day)).toBe("2026-11-19: On a break until 2026-11-24");
   });
 });

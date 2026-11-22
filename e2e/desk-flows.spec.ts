@@ -83,7 +83,12 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   await page.goto(`/w/${B.slug}/follow-up`);
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, B);
-  const checkIn = page.getByRole("region", { name: /^Check in · \d+$/ });
+  const checkIn = page.getByRole("region", { name: /^Worth a hello · \d+$/ });
+  // #585: who an officer noted this week, the officer's name first; other runs note their own members.
+  const notedRow = page
+    .getByRole("region", { name: /^Noted this week · \d+$/ })
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("link", { name }) });
   // D127's offline proxy, in Follow-up's words: no quest points and no donations on the last 3 reads.
   await sees(checkIn.getByRole("listitem").filter({ has: named(page, "", name) }), name);
   await sees(row, `Quiet for ${IDLE_DAYS} days. Worth a hello.`);
@@ -97,10 +102,18 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
     new RegExp(`^Saved\\. ${isolated(name)} is off the list until Monday\\.$`),
   );
   await expect(row).toHaveCount(0);
+  // "Officer MSH · Sat, Nov 21: Talked to them": the officer and the day first.
+  const by = new RegExp(`${isolated(`Officer ${B.tag}`)} · [^:]+: Talked to them`);
+  await expect(notedRow).toContainText(by);
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, B);
   await expect(named(page, "", name)).toHaveCount(0);
+  await expect(notedRow).toContainText(by);
+  await expect(notedRow.getByRole("link", { name })).toHaveAttribute(
+    "href",
+    new RegExp(`^/w/${B.slug}/members\\?m=\\d+$`),
+  );
 
   // Put back, so a later run on this slot finds the member on the list again. The page offers Undo only
   // until it is left, so this is the Undo it sends, for the record the tap made; then checked on screen.
@@ -113,6 +126,7 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await sees(row, `Quiet for ${IDLE_DAYS} days. Worth a hello.`);
+  await expect(notedRow).toHaveCount(0);
 });
 
 test("Member facts: a Troops edit shows on the card, stays after a reload, and History keeps the earlier value", async ({

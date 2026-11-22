@@ -170,6 +170,7 @@ One dated line for each change in what a number means, newest last. The first th
 - 2026-11-21: server `$exception` counts now include six caught `lib/private` failures (`kind` `w.read_status.failed`, `w.pending.match_failed`, `w.import.discord_failed`, `w.import.settle_failed`, `w.webhook.open_failed`, `w.invite.commands_failed`, all `handled: true`), and server frames resolve to our source in Error Tracking.
 - 2026-11-22 (issue 585, D134 amended): Alliance settings → Features saves on Save instead of on each tick. `ws_action` `features` still counts one per switch that went through, but a tick and an untick before Save now send nothing, so `turn_off` → `turn_on` pairs within minutes (mis-taps) should drop from this release; read a drop as the save model, not as less use.
 - 2026-11-22 (issue 516): `ws_action` `follow_up` carries `from` (`follow_up`, `card`) and `on_list`, since a member card's "Talked to them" records follow-ups too. Before this date every record came from the Follow-up tab and has no `from`: read it as `follow_up`. New browser event `ws_message_copied` (`where`, `to`): before it, no copy of a ready message was counted.
+- 2026-11-22 (issue 585, batch 3): Home's and Members' check-in line ("Follow-up: 12 to look at · 4 noted this week") links to Follow-up while its tab is on; before, it linked to the Members list's group. Follow-up page views reached from Home or Members may rise from this release; read a rise as the link, not as more follow-up work. No event changed.
 
 ## Not tracked, on purpose
 
