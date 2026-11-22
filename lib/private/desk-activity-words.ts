@@ -154,15 +154,16 @@ function noticeLine(
 }
 
 /**
- * The weekly thanks shared or taken down (D114), the tracker key saved or removed (D124), or the alliance's
- * data downloaded and its deletion asked or cancelled (D125).
+ * The weekly thanks shared or taken down (D114), the tracker key saved or removed (D124), the alliance's
+ * data downloaded and its deletion asked or cancelled (D125), or a post's own line changed (D156).
  */
 function plainLine(
   t: WorkspaceDictionary,
   who: string,
-  item: Extract<ActivityItem, { kind: "thanks" | "trackerKey" | "workspaceData" }>,
+  item: Extract<ActivityItem, { kind: "thanks" | "trackerKey" | "workspaceData" | "callout" }>,
 ): string {
   if (item.kind === "thanks") return fill(t[`activity.thanks.${item.target}`], { who });
+  if (item.kind === "callout") return fill(t[`activity.callout.${item.post}`], { who });
   if (item.kind === "workspaceData") return fill(t[`activity.data.${item.action}`], { who });
   return fill(t[`activity.key.${item.action}`], { who });
 }

@@ -17,6 +17,7 @@ import { removeEntry } from "./calendar-delete";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { garrisonView, saveEnemyMight, saveGarrison } from "./garrison";
 import { postGarrison } from "./garrison-post";
+import { saveCalloutFor } from "./post-callouts";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -227,5 +228,34 @@ describe("the garrison plan", () => {
     // Next week's enemy might is only carried over: nothing is posted until it is saved.
     expect(await post("2026-11-23", randomUUID())).toEqual({ ok: false, code: "not_saved" });
     expect(sent).toHaveLength(1);
+  });
+
+  it("opens the post with the alliance's own line above the title, pinging no one (D156)", async () => {
+    const callout = "Help each other @here <@42> discord.gg/abc";
+    expect((await saveCalloutFor(db, access, { post: "garrison", callout }, NOW)).ok).toBe(true);
+    const bodies: { content: string; allowed_mentions: unknown }[] = [];
+    const fetch = (async (_url: string, init: RequestInit) => {
+      bodies.push(JSON.parse(String(init.body)));
+      return Response.json({ id: "1" });
+    }) as typeof globalThis.fetch;
+    const leaders = { url: "https://discord.test/leaders", name: "leaders", forum: false };
+    const posted = await postGarrison(
+      db,
+      access,
+      { action: "post", entry, week: WEEK, channel: "leaders", requestId: randomUUID() },
+      {
+        fetch,
+        now: NOW,
+        channels: { members: null, leaders },
+        t: WORKSPACE_DICTIONARIES.en,
+        language: "en",
+      },
+    );
+    expect(posted.ok).toBe(true);
+    expect(bodies[0]?.allowed_mentions).toEqual({ parse: [] });
+    const [line, title] = String(bodies[0]?.content).split("\n");
+    expect(line?.replace(/[\u200b\\]/g, "")).toBe(callout);
+    expect(line).not.toMatch(/@here|<@4|discord\.gg/);
+    expect(title).toBe("**Garrison plan · Undead Siege · Lv.6 · Sat, Nov 21**");
   });
 });

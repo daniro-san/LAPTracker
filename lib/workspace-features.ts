@@ -19,7 +19,8 @@ export const FEATURE_GROUPS = {
     "board",
   ],
   ai: ["notice_translate", "notice_improve", "notice_fit", "thanks_draft", "ocr"],
-  discord: ["discord_send", "discord_translate_me", "discord_translate_everyone"],
+  // D156: the alliance's own line on our posts (#713).
+  discord: ["discord_send", "discord_translate_me", "discord_translate_everyone", "post_callouts"],
   data: ["squads", "shield_check", "notice_pictures", "export"],
 } as const;
 export type FeatureGroup = keyof typeof FEATURE_GROUPS;

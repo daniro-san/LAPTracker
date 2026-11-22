@@ -18,6 +18,7 @@ import { privateLog } from "./log";
 import { discordMessages } from "./notice-formats";
 import { postMessages, STUCK_MS, type Channels } from "./notice-publish";
 import { NOTICE_LANGUAGES, NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "./notice-rules";
+import { postCallout } from "./post-callouts";
 
 /** The most people one post names. */
 export const THANKS_PEOPLE = 40;
@@ -156,7 +157,9 @@ export async function shareThanks(
     return { ok: true, row: claim.row };
   }
   const sections = written(input.texts).map(([l, text]) => ({ name: deps.names[l], text }));
-  const messages = discordMessages(input.title, sections, !channel.forum);
+  // D156: the alliance's own line above our title, on Discord only (never on the board's card).
+  const lead = await postCallout(db, access, "thanks");
+  const messages = discordMessages(input.title, sections, !channel.forum, lead);
   const { sent } = await postMessages(deps.fetch, channel, input.title, messages);
   const done = sent === messages.length;
   await finishShare(db, claim.row.id, done ? "posted" : "failed");

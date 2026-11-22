@@ -64,3 +64,5 @@ Without it, OGs gets no Raid Shield summary.
   - a message from before this change is never edited, a changed Raid Shield webhook gets a fresh post, and later edits go through the new webhook.
 - `lib/shield-read.test.ts`: the tick's posting tests (#555's forum test included) post through a saved Raid Shield channel.
 - `app/(private)/api/w/[slug]/discord/route.test.ts`: the save's answer lists three channels.
+
+**Amendment 2026-11-22 (issue 713, D156).** The summary posted to the Raid Shield channel can open with the alliance's own line (D156); the channel rules here are unchanged.

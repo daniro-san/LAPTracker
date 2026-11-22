@@ -17,6 +17,7 @@ import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { gameNotice } from "./notice-formats";
 import { STUCK_MS } from "./notice-publish";
 import { NOTICE_LIMIT, noticeLength } from "./notice-rules";
+import { saveCalloutFor } from "./post-callouts";
 import { createSession } from "./session";
 import {
   draftThanks,
@@ -180,6 +181,22 @@ describe("sharing the thanks (D114)", () => {
     expect(content).not.toMatch(/@(everyone|here)|<@1/);
     const [row] = await db.select({ names: thanksShares.names }).from(thanksShares);
     expect(row?.names).toEqual(names);
+  });
+
+  it("opens the Discord post with the alliance's own line, shown literally, linking and pinging no one (D156)", async () => {
+    const saved = await saveCalloutFor(
+      db,
+      access,
+      { post: "thanks", callout: "# Thanks @everyone <@&9> https://x.test" },
+      NOW,
+    );
+    expect(saved.ok).toBe(true);
+    expect((await shareThanks(db, access, input(), deps())).ok).toBe(true);
+    expect(sent[0]?.body.allowed_mentions).toEqual({ parse: [] });
+    const [line, title] = String(sent[0]?.body.content).split("\n");
+    expect(line?.replace(/[\u200b\\]/g, "")).toBe("# Thanks @everyone <@&9> https://x.test");
+    expect(line).not.toMatch(/^#|@everyone|<@&|https:\/\//);
+    expect(title).toBe("**Weekly appreciation · Nov 16 – Nov 22**");
   });
 
   it("refuses the same week to the same place within 30 s, from another sheet", async () => {

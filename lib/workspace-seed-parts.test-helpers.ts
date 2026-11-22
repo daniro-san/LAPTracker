@@ -2,7 +2,7 @@
 // calls and thefts, imports, and the key and data requests. Invented names and values only.
 import type { Db } from "./db";
 import { memberFollowUps, rollCallMarks, rollCalls, rollCallTeam } from "./schema";
-import { workspaceDiscord, workspaceWebhooks } from "./schema-discord";
+import { workspaceDiscord, workspacePostTouches, workspaceWebhooks } from "./schema-discord";
 import { workspaceFeatures, workspaceUsage } from "./schema-features";
 import {
   allianceDuelPoints,
@@ -255,8 +255,20 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
   await seedPush(db, ws, officer);
 }
 
+/** D156: the alliance's own line on its weekly thanks. */
+async function seedCallout(db: Db, ws: number, officer: number) {
+  await db.insert(workspacePostTouches).values({
+    workspaceId: ws,
+    postKey: "thanks",
+    callout: "Thank you, family",
+    updatedBy: officer,
+    updatedAt: SEED_AT,
+  });
+}
+
 /** D148: an officer's sealed device (never downloaded, like the webhook) and a trigger's mark. */
 async function seedPush(db: Db, ws: number, officer: number) {
+  await seedCallout(db, ws, officer);
   await db.insert(pushSubscriptions).values({
     workspaceId: ws,
     workspaceUserId: officer,
