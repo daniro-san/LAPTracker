@@ -13,8 +13,9 @@ import { chip } from "@/lib/brand/components/controls";
 import { MasterDetail } from "@/lib/brand/components/layout/MasterDetail";
 import { fill, isolate } from "@/lib/copy";
 
+import { send } from "./follow-up-send";
 import type { FollowUpWords } from "./follow-up-words";
-import { FollowUpPanel, send, type FollowUpRow } from "./FollowUpSheet";
+import { FollowUpPanel, type FollowUpRow } from "./FollowUpSheet";
 import type { EditorContext } from "./MemberCards";
 import { shown, useOpenMember } from "./open-member";
 import { OPEN_ROW } from "./PendingMembers";

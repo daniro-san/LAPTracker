@@ -113,6 +113,16 @@ export const DESK_ACTIONS = [
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
+/** Where a Follow-up record was made (issue 516): the Follow-up tab or a member card. */
+export const DESK_FROM = ["follow_up", "card"] as const;
+export type DeskFrom = (typeof DESK_FROM)[number];
+
+/** A Follow-up record's or undo's place, and whether the member was on the week's list (issue 516). */
+export interface DeskPlace {
+  from: DeskFrom;
+  on_list: boolean;
+}
+
 /**
  * Which alliance an event came from (issue 452): the workspace's slug and its alliance's public tag (null
  * when the caller has no label for it, D133). Neither is personal data. No PostHog groups (a paid add-on).
@@ -160,7 +170,7 @@ export interface ServerEvents {
     command: "send_to_laptracker" | "translate_for_me" | "translate_for_everyone";
   };
   /** A desk write that went through (lib/private/desk-action.ts): which feature, which action. */
-  ws_action: { feature: DeskFeature; action: DeskAction };
+  ws_action: { feature: DeskFeature; action: DeskAction } & Partial<DeskPlace>;
   /**
    * D137 (2026-11-21): the tick's fill of a Raid prep roll call from the Raid Shield check's reading, once
    * per fill that wrote marks: how many, never who.
@@ -244,6 +254,9 @@ function ownProperties(e: ServerEvent): Wire {
         feature: e.properties.feature,
         action: e.properties.action,
         tier: "officer",
+        // Issue 516: Follow-up's records only, two closed values.
+        ...(e.properties.from && { from: e.properties.from }),
+        ...(e.properties.on_list !== undefined && { on_list: e.properties.on_list }),
       };
   }
 }

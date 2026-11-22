@@ -27,6 +27,15 @@ export const cardEn = {
   "card.history.versions": "Earlier values",
   "card.history.version": "{field}: {value} · {date}",
   "card.history.none": "Nothing recorded yet.",
+  // Issue 516: the Follow-up block on the Overview. "This week" only for a member on the list or followed up.
+  "card.followup.week": "This week: {line}",
+  "card.followup.none": "This week: no follow-up note yet.",
+  "card.followup.open": "Message to send",
+  "card.followup.saved": "Saved.",
+  "card.followup.savedList": "Saved. Off the Follow-up list until Monday.",
+  "card.followup.undone": "Undone.",
+  "card.followup.undoChanged": "Could not undo: the notes changed since.",
+  "card.followup.undoFailed": "Could not undo. Try again.",
 };
 
 type CardWords = Record<keyof typeof cardEn, string>;
@@ -57,6 +66,14 @@ export const cardPt: CardWords = {
   "card.history.versions": "Valores anteriores",
   "card.history.version": "{field}: {value} · {date}",
   "card.history.none": "Nada anotado ainda.",
+  "card.followup.week": "Esta semana: {line}",
+  "card.followup.none": "Esta semana: nenhuma nota de acompanhamento ainda.",
+  "card.followup.open": "Mensagem para enviar",
+  "card.followup.saved": "Salvo.",
+  "card.followup.savedList": "Salvo. Fora da lista de acompanhamento até segunda.",
+  "card.followup.undone": "Desfeito.",
+  "card.followup.undoChanged": "Não foi possível desfazer: as notas mudaram desde então.",
+  "card.followup.undoFailed": "Não foi possível desfazer. Tente de novo.",
 };
 
 export const cardFr: CardWords = {
@@ -85,6 +102,14 @@ export const cardFr: CardWords = {
   "card.history.versions": "Valeurs précédentes",
   "card.history.version": "{field} : {value} · {date}",
   "card.history.none": "Rien de noté pour l’instant.",
+  "card.followup.week": "Cette semaine : {line}",
+  "card.followup.none": "Cette semaine : pas encore de note de suivi.",
+  "card.followup.open": "Message à envoyer",
+  "card.followup.saved": "Enregistré.",
+  "card.followup.savedList": "Enregistré. Hors de la liste de suivi jusqu’à lundi.",
+  "card.followup.undone": "Annulé.",
+  "card.followup.undoChanged": "Impossible d’annuler : les notes ont changé depuis.",
+  "card.followup.undoFailed": "Impossible d’annuler. Réessayez.",
 };
 
 /** The card's four tabs, in their order; each one's name is `card.tab.<tab>`. */

@@ -26,7 +26,7 @@ import { addCall, openOccasion } from "@/lib/private/roll-call";
 import { callView } from "@/lib/private/roll-call-view";
 import { fillRaidPrep } from "@/lib/raid-prep-fill";
 import { quotaDayRead } from "@/lib/schedule";
-import { dailyReads, dailyRosters } from "@/lib/schema";
+import { dailyReads, dailyRosters, memberFollowUps } from "@/lib/schema";
 import { workspaceKeys } from "@/lib/schema-keys";
 import { rollCallMarks, rollCalls } from "@/lib/schema-rollcall";
 import { playerHistory, playerReads, squadQueue, squadReads } from "@/lib/schema-squads";
@@ -174,6 +174,27 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     // The next week, so the seeded "Talked" of 101 no longer takes them off the list.
     const view = await followUpView(db, a, new Date("2026-11-25T12:00:00Z"), ZONE);
     expect(view.items.map((i) => [i.member.uid, i.tip, i.language])).toEqual([[101, true, "en"]]);
+  });
+
+  it("give Alpha's member card Alpha's own follow-up and message only, never Bravo's (issue 516)", async () => {
+    // The next week, Bravo's officer notes a Talked with the same player and Bravo's workspace reads them
+    // in French; Alpha's own read (seeded) says English.
+    const next = new Date("2026-11-24T12:00:00Z");
+    await db.insert(memberFollowUps).values({
+      workspaceId: b.workspace.id,
+      uid: 101,
+      action: "talked",
+      note: "Bravo's private note",
+      writtenBy: b.officer,
+      writtenAt: next,
+      requestId: randomUUID(),
+    });
+    await db.insert(playerReads).values({ unionId: BRAVO, uid: 101, readAt: next, language: "fr" });
+    const now = new Date("2026-11-25T12:00:00Z");
+    const at = { now, zone: ZONE, language: "en" as const, t: WORKSPACE_DICTIONARIES.en };
+    const block = (await memberCard(db, a, 101, at))?.followUp;
+    expect(block).toMatchObject({ week: null, note: null, message: { language: "en" } });
+    expect(JSON.stringify(block)).not.toContain("Bravo");
   });
 
   it("Home's activity pages carry Alpha's lines only", async () => {

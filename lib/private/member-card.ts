@@ -3,7 +3,7 @@
 // read behind GET /api/w/[slug]/members/[uid]: one member of the workspace's own alliance, no photo read.
 // Issue 461 (D136): a header (status, the stat strip, languages, where they came from) over four tabs:
 // Overview (reasons, the last 7 days, might since, this week's Alliance Duel), Info (facts and details),
-// Squads (D117) and History (follow-up notes, earlier values).
+// Squads (D117) and History (follow-up notes, earlier values). Issue 516: the Follow-up block (card-follow-up.ts).
 import { compactLarge } from "../compact";
 import { fill } from "../copy";
 import type { Db } from "../db";
@@ -11,6 +11,7 @@ import { factHistory, type FactRow } from "../repo/member-facts";
 import { endOfDayReads } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
+import { cardFollowUp, type CardFollowUp } from "./card-follow-up";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { CardTab } from "./dictionary.card";
 import {
@@ -107,6 +108,8 @@ export interface CardData {
   squads?: SquadsCard;
   /** D142: who on Discord says they are this member, and whether an officer still has to approve it. */
   link?: CardLink | null;
+  /** Issue 516: this week's follow-up and the ready message; null while the Follow-up tab is off. */
+  followUp?: CardFollowUp | null;
 }
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
@@ -349,10 +352,11 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const [squads, origin, link] = await Promise.all([
+  const [squads, origin, link, followUp] = await Promise.all([
     squadsCard(db, access, uid, at.t, f),
     memberOrigin(db, access, uid, at.zone, at.t, f.date),
     cardLink(db, access, uid, at.t),
+    cardFollowUp(db, access, member, followUps, view.reads, at, f.date),
   ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
@@ -362,5 +366,5 @@ export async function memberCard(
     origin,
     history,
   });
-  return { ...card, squads, link };
+  return { ...card, squads, link, followUp };
 }
