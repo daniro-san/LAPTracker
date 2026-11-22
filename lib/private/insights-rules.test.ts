@@ -101,11 +101,11 @@ describe("effort at every might level (issue 489)", () => {
     const efforts = effortsOf(reads, new Set([8]));
     expect(efforts.find((e) => e.uid === 3)?.quests).toEqual({ value: 50, days: 2, none: 1 });
     const bands = bandsOf(efforts);
-    expect(bands.map((b) => [b.low, b.high, b.members])).toEqual([
-      [6_000_000, 7_000_000, 2],
-      [4_000_000, 5_000_000, 2],
-      [2_000_000, 3_000_000, 2],
-      [1_000_000, 1_000_000, 1],
+    expect(bands.map((b) => [b.low, b.high, b.uids])).toEqual([
+      [6_000_000, 7_000_000, [6, 7]],
+      [4_000_000, 5_000_000, [4, 5]],
+      [2_000_000, 3_000_000, [2, 3]],
+      [1_000_000, 1_000_000, [1]],
     ]);
     expect(bands[2]?.medians.quests).toEqual({ value: 400, of: 2 });
   });
@@ -159,13 +159,13 @@ describe("membership flow (issue 489)", () => {
       [6, "2026-10-10"],
     ]);
     expect(tenureOf([1, 4, 5, 6], firstSeen, "2026-08-01", "2026-11-18")).toEqual({
-      under: [2, 0, 1],
-      over: 0,
-      sinceStart: 1,
+      under: [[4, 5], [], [6]],
+      over: [],
+      sinceStart: [1],
       span: 109,
     });
     expect(newcomersOf(reads, firstSeen, "2026-08-01")).toEqual({
-      n: 2,
+      uids: [4, 5],
       counted: 2,
       grew: 1,
       median: { value: 0.1, of: 2 },

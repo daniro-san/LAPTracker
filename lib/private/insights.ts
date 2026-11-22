@@ -3,7 +3,7 @@
 // are left out of the effort comparison), and for the people who joined or left, the public daily rosters
 // of the other alliances we read and the alliance tags in our members' own /v1/players history rows (D132,
 // D136). While the Raid Shield check is on (D134), its weekly counts of the night and morning checks'
-// readings (D137), counts only. The members' recorded time zones, counted (owner, 2026-11-22). Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are never used; avatar_url is never read.
+// readings (D137), counts only. The members' recorded time zones, counted (owner, 2026-11-22). A count that stands for a set of members carries the set's uids, and the count is its length (#678). Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are never used; avatar_url is never read.
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
@@ -61,8 +61,8 @@ export interface InsightsView {
     to: string;
     reads: number;
     members: number;
-    /** Left out of the comparison (D75): new, on a break, no might in the newest read. */
-    leftOut: { fresh: number; away: number; noMight: number };
+    /** Left out of the comparison (D75): new, on a break, no might in the newest read (uids). */
+    leftOut: { fresh: number[]; away: number[]; noMight: number[] };
     bands: Band[];
     quiet: Effort[];
   } | null;
@@ -70,7 +70,8 @@ export interface InsightsView {
     /** The first day a change can be seen (the second read in the window). */
     from: string;
     reads: number;
-    weeks: { monday: string; joined: number; left: number }[];
+    /** Who joined and who left in each week (uids). */
+    weeks: { monday: string; joined: number[]; left: number[] }[];
     cameFrom: Place[];
     wentTo: Place[];
     /** Members first seen under 14, 30, 90 days ago, more, and since our first read (its day). */
@@ -89,6 +90,11 @@ export interface InsightsView {
   /** The newest daily update's members by their recorded time zone, counts only (owner, 2026-11-22). */
   zones: ZoneCounts;
   labels: Map<number, AllianceLabel>;
+  /**
+   * The name of everyone a set can hold (#678): the newest read's members (`current`) and the flow's
+   * joiners and leavers who are not in it.
+   */
+  people: Map<number, { name: string; current: boolean }>;
   /** The newest read's members, for the thanks sheet's "Add someone else". */
   roster: { uid: number; name: string }[];
 }
@@ -157,11 +163,11 @@ function effortPart(
     reads: recent.length,
     members: efforts.length,
     leftOut: {
-      fresh: fresh.size,
-      away: away.size,
-      noMight: newest.members.filter(
-        (m) => m.power === null && !away.has(m.uid) && !fresh.has(m.uid),
-      ).length,
+      fresh: [...fresh],
+      away: [...away],
+      noMight: newest.members
+        .filter((m) => m.power === null && !away.has(m.uid) && !fresh.has(m.uid))
+        .map((m) => m.uid),
     },
     bands: enough ? bandsOf(efforts) : [],
     quiet: enough ? quietOf(efforts) : [],
@@ -192,8 +198,8 @@ async function flowPart(
   const labels = await allianceLabels(db, [
     ...new Set([...came, ...went].map((p) => p.unionId).filter((id) => id > 0)),
   ]);
-  const inWeek = (list: { day: string }[], monday: string) =>
-    list.filter((m) => m.day >= monday && m.day < addDays(monday, 7)).length;
+  const inWeek = (list: { uid: number; day: string }[], monday: string) =>
+    list.filter((m) => m.day >= monday && m.day < addDays(monday, 7)).map((m) => m.uid);
   const flow: InsightsView["flow"] = {
     from,
     reads: reads.filter((r) => r.day >= from).length,
@@ -213,8 +219,20 @@ async function flowPart(
     firstRead: oldest,
     newcomers: newcomersOf(reads, firstSeen, oldest),
   };
-  return { flow, labels };
+  return { flow, labels, moves };
 }
+
+/**
+ * Everyone a set can name (#678): the flow's joiners and leavers, then the newest read's members, who are
+ * current whatever the flow saw of them (a later entry wins).
+ */
+const peopleOf = (newest: Reads[number], moves: ReturnType<typeof movesOf>) =>
+  new Map<number, { name: string; current: boolean }>([
+    ...[...moves.left, ...moves.joined].map(
+      (m) => [m.uid, { name: m.name, current: false }] as const,
+    ),
+    ...newest.members.map((m) => [m.uid, { name: m.name, current: true }] as const),
+  ]);
 
 /** The Insights page of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function insightsView(
@@ -241,6 +259,7 @@ export async function insightsView(
       shield: null,
       zones: { members: 0, zones: [] },
       labels: new Map(),
+      people: new Map(),
       roster: [],
     };
   const oldest = [...firstSeen.values()].reduce((a, b) => (b < a ? b : a), newest.day);
@@ -254,7 +273,7 @@ export async function insightsView(
   const since = new Date(
     Date.parse(`${addDays(reads[0]?.day ?? newest.day, KVK_READ_FROM)}T00:00:00Z`),
   );
-  const [{ flow, labels }, events, sightings, passes] = await Promise.all([
+  const [{ flow, labels, moves }, events, sightings, passes] = await Promise.all([
     flowPart(db, access, reads, weeks, firstSeen, oldest, zone),
     scheduledEventMight(db, access.unionId, since),
     squadsOn ? latestSquadSightings(db, access.unionId) : [],
@@ -293,6 +312,7 @@ export async function insightsView(
       facts,
     ),
     labels,
+    people: peopleOf(newest, moves),
     roster: newest.members.map((m) => ({ uid: m.uid, name: m.name })),
   };
 }

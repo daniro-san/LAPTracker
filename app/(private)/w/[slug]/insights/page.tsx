@@ -1,10 +1,10 @@
 // /w/[slug]/insights (issue 489): the officers' analysis of their own alliance, a view of Members. The
 // week's pulse, effort at every might level with "Quiet contributors", the membership flow, KvK cost and
-// recovery, squads seen, the Raid Shield history and the members' time zones (counts only), all from data
+// recovery, squads seen, the Raid Shield history and the members' time zones, all from data
 // already stored (0 upstream calls). The access check runs before anything is read (D71); a page turned
 // off for the alliance goes to Home (D126).
-// Nobody is ranked, the only names are a thanks list and a help list (D75, D114), and every section says
-// what it rests on.
+// Nobody is ranked: names show in a thanks list, a help list, and behind a tap on a count, the members it
+// counts in name order with nothing beside them (D75, D114, issue 678). Every section says what it rests on.
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { Spread } from "@/lib/brand/components/layout/Spread";
@@ -16,8 +16,10 @@ import { kvkWords, shieldWords, squadsWords } from "@/lib/private/insights-more-
 import { insightsWords } from "@/lib/private/insights-words";
 
 import { SignedInFrame } from "../../../_ui/Frame";
+import { EffortCard } from "../../../_ui/InsightsEffort";
 import { KvkCard, ShieldCard, SquadsCard } from "../../../_ui/InsightsMore";
-import { EffortCard, FlowCard, PulseCard } from "../../../_ui/InsightsSections";
+import { FlowCard, PulseCard } from "../../../_ui/InsightsSections";
+import { InsightsSetMemory } from "../../../_ui/InsightsSetMemory";
 import { ZonesCard } from "../../../_ui/InsightsZones";
 import { ViewSwitch } from "../../../_ui/MembersHead";
 import { openRollCall } from "../../../_ui/roll-call-page";
@@ -57,14 +59,13 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
   ) : (
     <>
       {words.pulse && <PulseCard pulse={words.pulse} t={t} noData={noData} />}
-      {words.effort && <EffortCard effort={words.effort} t={t} noData={noData} share={share} />}
-      {words.flow && <FlowCard flow={words.flow} t={t} noData={noData} />}
+      <InsightsSetMemory />
+      {words.effort && <EffortCard effort={words.effort} {...{ t, noData, share, slug }} />}
+      {words.flow && <FlowCard flow={words.flow} t={t} noData={noData} slug={slug} />}
       <KvkCard
         kvk={kvkWords(data.view.kvk, data.view.newest, { t, language }, getEnv().DAILY_ROSTER_AT)}
-        slug={slug}
-        t={t}
-        noData={noData}
         followUp={data.view.kvkFollowUp}
+        {...{ slug, t, noData }}
       />
       {data.view.squads && (
         <SquadsCard squads={squadsWords(data.view.squads, { t, language })} t={t} noData={noData} />
@@ -72,7 +73,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
       {data.view.shield && (
         <ShieldCard shield={shieldWords(data.view.shield, { t, language })} t={t} noData={noData} />
       )}
-      <ZonesCard counts={data.view.zones} now={data.now} {...{ today, slug, t, language }} />
+      <ZonesCard view={data.view} now={data.now} {...{ today, slug, t, language }} />
     </>
   );
   return (

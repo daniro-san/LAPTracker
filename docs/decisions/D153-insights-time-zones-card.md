@@ -54,3 +54,9 @@ With no time zone recorded, the card says "No time zone recorded yet for the 41 
 - `e2e/desk-insights.spec.ts`: the card on the seed (`ZONE_FACTS`: two members in Manila, one in São Paulo; no summer time) and the add link to Members.
 
 **Not done (follow-ups).** A note that a zone recorded as an offset ("ST +3") does not follow summer time. The date of a clock change. The word "night" beside night-time values. A region subtotal.
+
+**Amendment 2026-11-22 (owner's request, #678; D139 amended the same day): a row opens its members, and the links count with Members' own rules.**
+
+- **Names behind a tap.** "Names per zone behind a tap" (left for later above) is built in place, not as a `members?tz=` filter, so no zone reaches an address. Each group's row is a native `<details>` (44 px) whose count is plum with a ▾. It opens the group's members in name order, each a link to their card (`members?m=<uid>`). `zoneCountsOf` returns each zone's uids and a group's count is its list's length. "Counts only. There are no names and no uid." no longer holds for the rows. The rows stay `ph-no-capture`, and the legend is followed by "Tap a count to see who."
+- **One rule with Members.** "Not recorded yet" is counted with Members' own Missing-info rule (`factsToAsk`): a member counts as having a time zone exactly when `members?ask=timeZone` does not list them. Usual hours call `daytimeAt` (`lib/private/members-list.ts`), which Members' daytime and night filters call too. Both links are written by Members' `queryString` from the query the count used (`NOT_RECORDED`, `usualAt`), so the address and the count cannot drift apart.
+- **The note.** It now reads "Not counted in any group." ("Fora de todos os grupos.", "Hors de tout groupe."). The sentence "Members lists today's roster, so its count there can differ." was wrong: both pages count the newest daily update with the same facts, which `lib/private/insights-sets.test.ts` checks against Members' own list.

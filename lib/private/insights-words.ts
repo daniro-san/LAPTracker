@@ -1,23 +1,18 @@
 // The Insights page's words (issue 489), pure: each section's numbers as the rows its HTML bars draw (D68:
 // labels and numbers in HTML beside every bar) and the lines that say what the section rests on. A missing
-// number is "—" (NONE), drawn as the NoData mark; never 0.
+// number is "—" (NONE), drawn as the NoData mark; never 0. A count that stands for a set of members carries
+// that set (#678): its number is the length of the list the same function returned, and its names are in
+// name order with nothing beside them (D75).
 import { fill, isolate } from "../copy";
 import type { AllianceLabel } from "../repo/alliances";
 import { calendarDates } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import { NONE } from "./fact-text";
 import type { InsightsView } from "./insights";
-import { compact, counted, percent, whole, type Formats } from "./insights-format";
-import {
-  EFFORT_METRICS,
-  EFFORT_MIN_READS,
-  TENURE_DAYS,
-  type Median,
-  type Place,
-  type Pulse,
-  type Share,
-} from "./insights-rules";
-import { COINS_MAX } from "./member-days";
+import { effortWords } from "./insights-effort-words";
+import { compact, counted, percent, type Formats } from "./insights-format";
+import { TENURE_DAYS, type Median, type Place, type Pulse, type Share } from "./insights-rules";
+import { setOf, type MemberSet } from "./insights-sets";
 
 /** One bar: its label, the number beside it, its length (0–1, null: no bar) and a muted note. */
 export interface BarRow {
@@ -27,6 +22,8 @@ export interface BarRow {
   note?: string;
   /** The row to read first (this week). */
   current?: boolean;
+  /** The members the row counts, opened by a tap (#678). */
+  set?: MemberSet | null;
 }
 
 /** One day of this week: the bar and the number under it; "later" days are blank. */
@@ -48,6 +45,10 @@ export interface InsightsWords {
   pulse: { based: string[]; metrics: PulseMetricWords[] } | null;
   effort: {
     based: string[];
+    /** "Left out: 3 new, 4 on a break": each kind with members, and who (#678). */
+    leftOut: { label: string; set: MemberSet }[];
+    /** "Who is in each range": one row per range, its members behind a tap (#678). */
+    ranges: BarRow[];
     groups: { label: string; rows: BarRow[] }[];
     quiet: { uid: number; name: string }[];
   } | null;
@@ -158,56 +159,6 @@ function pulseWords(v: NonNullable<InsightsView["pulse"]>, f: Formats): Insights
   return { based, metrics };
 }
 
-function effortWords(e: NonNullable<InsightsView["effort"]>, f: Formats): InsightsWords["effort"] {
-  const { t, language } = f;
-  const dates = calendarDates(language);
-  const left = (
-    [
-      ["insights.effort.fresh", e.leftOut.fresh],
-      ["insights.effort.away", e.leftOut.away],
-      ["insights.effort.noMight", e.leftOut.noMight],
-    ] as const
-  ).filter(([, n]) => n > 0);
-  const based = [
-    counted(t, "insights.effort.based", e.reads, language, {
-      range:
-        e.from === e.to
-          ? dates.dayMonth(e.to)
-          : `${dates.dayMonth(e.from)} – ${dates.dayMonth(e.to)}`,
-      members: e.members,
-    }),
-    ...(e.reads < EFFORT_MIN_READS ? [fill(t["insights.effort.few"], { n: e.reads })] : []),
-    ...(left.length > 0
-      ? [
-          fill(t["insights.effort.leftOut"], {
-            list: left.map(([k, n]) => fill(t[k], { n })).join(", "),
-          }),
-        ]
-      : []),
-  ];
-  const groups = EFFORT_METRICS.map((k) => {
-    const top =
-      k === "coins" ? COINS_MAX : Math.max(0, ...e.bands.map((b) => b.medians[k]?.value ?? 0));
-    return {
-      label: t[`insights.effort.${k}`],
-      rows: e.bands.map((b) => {
-        const m = b.medians[k];
-        return {
-          label: fill(t["insights.effort.band"], {
-            low: compact(b.low, language),
-            high: compact(b.high, language),
-          }),
-          // Coins stop at 1,000: the plain number, never "1.00K".
-          value: m ? (k === "coins" ? whole(m.value, language) : compact(m.value, language)) : NONE,
-          share: m && top > 0 ? Math.min(1, m.value / top) : null,
-          note: fill(t["insights.effort.members"], { n: b.members }),
-        };
-      }),
-    };
-  });
-  return { based, groups, quiet: e.quiet.map((q) => ({ uid: q.uid, name: q.name })) };
-}
-
 /** "[TAG] Name", each part when known; "Not known" for id 0. */
 function placeLabel(p: Place, labels: Map<number, AllianceLabel>, t: WorkspaceDictionary) {
   if (p.unionId === 0) return t["insights.flow.unknown"];
@@ -235,21 +186,23 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   if (!flow) return null;
   const { t, language } = f;
   const dates = calendarDates(language);
-  const top = Math.max(1, ...flow.weeks.flatMap((w) => [w.joined, w.left]));
+  const top = Math.max(1, ...flow.weeks.flatMap((w) => [w.joined.length, w.left.length]));
   const last = flow.weeks.length - 1;
   const tenure = flow.tenure;
-  const members = tenure.under.reduce((a, b) => a + b, 0) + tenure.over + tenure.sinceStart;
-  const tenureRow = (label: string, n: number): BarRow => ({
+  const members =
+    tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
+  const tenureRow = (label: string, uids: number[], key: string): BarRow => ({
     label,
-    value: String(n),
-    share: members > 0 ? n / members : 0,
+    value: String(uids.length),
+    share: members > 0 ? uids.length / members : 0,
+    set: setOf("tenure", key, uids, v.people, language),
   });
   const nc = flow.newcomers;
   const newcomers =
-    !nc || nc.n === 0
+    !nc || nc.uids.length === 0
       ? [t["insights.newcomers.none"]]
       : [
-          counted(t, "insights.newcomers.count", nc.n, language),
+          counted(t, "insights.newcomers.count", nc.uids.length, language),
           nc.median
             ? fill(t["insights.newcomers.grew"], {
                 grew: nc.grew,
@@ -269,13 +222,15 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
           : fill(t["insights.pulse.week"], { date: dates.dayMonth(w.monday) }),
       joined: {
         label: t["insights.flow.joined"],
-        value: w.joined > 0 ? `+${w.joined}` : "0",
-        share: w.joined / top,
+        value: w.joined.length > 0 ? `+${w.joined.length}` : "0",
+        share: w.joined.length / top,
+        set: setOf("flow_week", `joined-${w.monday}`, w.joined, v.people, language),
       },
       left: {
         label: t["insights.flow.left"],
-        value: w.left > 0 ? `−${w.left}` : "0",
-        share: w.left / top,
+        value: w.left.length > 0 ? `−${w.left.length}` : "0",
+        share: w.left.length / top,
+        set: setOf("flow_week", `left-${w.monday}`, w.left, v.people, language),
       },
     })),
     came: placeRows(flow.cameFrom, v.labels, t),
@@ -284,15 +239,22 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
     tenure: [
       ...TENURE_DAYS.flatMap((_, i) =>
         (TENURE_DAYS[i - 1] ?? 0) < tenure.span
-          ? [tenureRow(t[`insights.tenure.${i}` as WorkspaceKey], tenure.under[i] ?? 0)]
+          ? [
+              tenureRow(
+                t[`insights.tenure.${i}` as WorkspaceKey],
+                tenure.under[i] ?? [],
+                `tenure-${i}`,
+              ),
+            ]
           : [],
       ),
       ...((TENURE_DAYS.at(-1) ?? 0) < tenure.span
-        ? [tenureRow(t["insights.tenure.over"], tenure.over)]
+        ? [tenureRow(t["insights.tenure.over"], tenure.over, "tenure-over")]
         : []),
       tenureRow(
         fill(t["insights.tenure.start"], { date: dates.dayMonth(flow.firstRead) }),
         tenure.sinceStart,
+        "tenure-start",
       ),
     ],
     newcomers,
@@ -308,7 +270,7 @@ export function insightsWords(
   const f = { t, language };
   return {
     pulse: v.pulse ? pulseWords(v.pulse, f) : null,
-    effort: v.effort ? effortWords(v.effort, f) : null,
+    effort: v.effort ? effortWords(v.effort, v.people, f) : null,
     flow: flowWords(v, f),
   };
 }

@@ -6,7 +6,18 @@
 // Intl as the clock, apart from the app's own code.
 import type { Page } from "@playwright/test";
 
-import { ALLIANCES, calendarOf, DAY_MS, LEAVER, seededAt, ZONE_FACTS } from "./fixtures/seed";
+import { compactLarge } from "../lib/compact";
+import {
+  ALLIANCES,
+  calendarOf,
+  DAY_MS,
+  LEAVER,
+  newMembers,
+  rosterOf,
+  seededAt,
+  uidOf,
+  ZONE_FACTS,
+} from "./fixtures/seed";
 import { deskFrame, expect, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
@@ -158,4 +169,72 @@ test("Time zones: the largest group and its reset, the groups west to east, and 
   const without = A.names.findIndex((_, k) => k !== LEAVER && !(k in ZONE_FACTS));
   await expect(memberLine(page, A.names[without] as string)).toBeVisible();
   await expect(memberLine(page, A.names[withZone] as string)).toHaveCount(0);
+});
+
+/**
+ * Lantern Keep's effort groups on the seed (D139): the newest daily update's members, the new one left out,
+ * by might in four equal groups, the highest first. No member is on a break in the seed.
+ */
+function effortGroups() {
+  const compared = A.names.flatMap((name, k) =>
+    k === LEAVER || newMembers("a").includes(name)
+      ? []
+      : [{ k, name, might: rosterOf("a", k).might }],
+  );
+  const s = [...compared].sort((a, b) => a.might - b.might);
+  return [0, 1, 2, 3]
+    .map((i) => s.slice(Math.floor((i * s.length) / 4), Math.floor(((i + 1) * s.length) / 4)))
+    .reverse();
+}
+
+test("Insights: a might group opens exactly its members, each to their card, and Back keeps it open (#678)", async ({
+  page,
+}) => {
+  const top = effortGroups()[0] ?? [];
+  const [low, high] = [top[0], top.at(-1)];
+  if (!low || !high) throw new Error("the seed makes no effort groups");
+  const label = `Might ${compactLarge(low.might, "en")} – ${compactLarge(high.might, "en")}`;
+  const count = `${top.length} members`;
+  const names = top.map((m) => m.name).sort((a, b) => a.localeCompare(b, "en"));
+  await page.goto(`${desk}/insights`);
+  await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
+  await deskFrame(page, A);
+  const effort = page.getByRole("region", { name: "Effort at every might level" });
+  await sees(effort, "Who is in each group");
+  await sees(effort, "Tap a count to see who.");
+  // The group's row is the tap target; its names are closed until it is tapped.
+  const row = effort.locator("summary").filter({ hasText: label });
+  await sees(row, count);
+  expect((await row.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  const list = effort.getByRole("list", { name: `${label}: ${count}` });
+  await expect(list).toBeHidden();
+  await row.click();
+  await expect(list).toBeVisible();
+  // Exactly the group's members, in name order, with nothing beside a name.
+  await expect(list.getByRole("link")).toHaveText(names);
+  const pick = top.find((m) => m.name === names[0]) as (typeof top)[number];
+  const link = list.getByRole("link", { name: pick.name });
+  expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  const uid = uidOf("a", pick.k);
+  // The card's own read, finished before going Back, so the leak guard can read its answer.
+  const details = page.waitForResponse((r) => r.url().endsWith(`/api/w/${A.slug}/members/${uid}`));
+  await link.click();
+  await expect(page).toHaveURL(`${desk}/members?m=${uid}`);
+  await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  const phone = (page.viewportSize()?.width ?? 0) < 1024;
+  const card = phone ? page.getByRole("dialog", { name: pick.name }) : page.locator("main");
+  await expect(card.getByRole("heading", { name: pick.name, level: 2 })).toBeVisible();
+  await (await details).finished();
+
+  // Back on Insights, the group is still open with the same names. On a phone the card is a sheet, and
+  // Back closes it first, as anywhere on Members (D122).
+  if (phone) {
+    await page.goBack();
+    await expect(card).toBeHidden();
+    await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  }
+  await page.goBack();
+  await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
+  await expect(list).toBeVisible();
+  await expect(list.getByRole("link")).toHaveText(names);
 });

@@ -2,11 +2,13 @@
 // reset, how many have a time zone, each group's row (its bar is a share of the members with a zone, D68) with
 // now, the reset and KvK on the group's own clock, and the members within their usual hours. A zone is its
 // offset at the instant shown ("UTC−3") and a time its zone's clock (`dateWords`). Not recorded is a count
-// with no bar, never in a share (D75). Counts only.
+// with no bar, never in a share (D75). Each group's row carries its members, its count that list's length
+// (#678); not recorded and usual hours link to Members' own filters (`NOT_RECORDED`, `usualAt`).
 import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import { dayIn, hhmm, offsetText } from "./calendar-time";
 import { counted, type Formats } from "./insights-format";
+import { setOf, type Who } from "./insights-sets";
 import type { BarRow } from "./insights-words";
 import {
   busiestHours,
@@ -49,7 +51,12 @@ export interface ZonesWords {
   } | null;
 }
 
-type ZoneFormats = Formats & { serverZone: string; today: string };
+type ZoneFormats = Formats & {
+  serverZone: string;
+  today: string;
+  /** Everyone a set can name (`InsightsView.people`). */
+  people: Map<number, Omit<Who, "uid">>;
+};
 
 /** "Paris, Zurich and 1 more": the group's IANA cities; a fixed-offset zone (Etc/…) names none. */
 function citiesOf(g: ZoneGroup, f: Formats): string | null {
@@ -100,8 +107,8 @@ const listOf = (items: string[], language: string) =>
 
 function headline(groups: ZoneGroup[], known: number, m: Moments, f: ZoneFormats): string {
   const { t, language } = f;
-  const top = Math.max(...groups.map((g) => g.n));
-  const largest = groups.filter((g) => g.n === top);
+  const top = Math.max(...groups.map((g) => g.uids.length));
+  const largest = groups.filter((g) => g.uids.length === top);
   const named = (g: ZoneGroup) => nameOf(g, f, "insights.zones.named");
   const first =
     known === 1
@@ -157,10 +164,11 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
         kvk: server.at(m.kvk),
         known,
       }),
-      rows: groups.map((g) => ({
+      rows: groups.map((g, i) => ({
         label: nameOf(g, f, "insights.zones.row"),
-        value: String(g.n),
-        share: g.n / known,
+        value: String(g.uids.length),
+        share: g.uids.length / known,
+        set: setOf("zone", `zone-${i}`, g.uids, f.people, language),
         times: fill(t["insights.zones.times"], {
           now: clockText(clockOf(g, m.now, f, false)),
           reset: clockText(clockOf(g, m.reset, f, false)),

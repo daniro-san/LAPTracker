@@ -58,6 +58,12 @@ export type TrackerKeyState =
  */
 export type RollCallType = "raid_prep" | "other";
 
+/**
+ * The Insights sets an officer can open (#678; `MemberSet.kind` in lib/private/insights-words.ts): the kind
+ * only, never which range, week or zone, its count or a name.
+ */
+export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone";
+
 /** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */
 export type BoardSection = "week" | "notices" | "start_here";
 
@@ -110,6 +116,8 @@ export interface AnalyticsEvents {
   ws_thanks_shared: { to: "game" | "discord" | "board" };
   /** A ready message copied (D140, issue 516): from a member card or Follow-up's panel, for the game or Discord. */
   ws_message_copied: { where: "card" | "follow_up"; to: "game" | "discord" };
+  /** An Insights count opened to its members' names (#678): which kind of set, once per kind per page view. */
+  ws_insights_set_opened: { set: InsightsSet };
   /** A members' board section came on screen, once per page load. */
   ws_board_section_viewed: { board_section: BoardSection };
   /** D154: a member sent their own info to their officers from their own page (no value, no field). */
@@ -165,6 +173,7 @@ export const ANALYTICS_EVENTS = [
   "ws_roll_call_marked",
   "ws_thanks_shared",
   "ws_message_copied",
+  "ws_insights_set_opened",
   "ws_board_section_viewed",
   "ws_self_report_sent",
   "ws_bot_installed",
