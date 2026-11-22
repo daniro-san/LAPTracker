@@ -103,6 +103,7 @@ export function fakeInternal(alliance: (id: number) => Outcome = () => new NotLi
     fetchRanks: async () => {
       const all = [...IDS, ...BOARD_EXTRA];
       return {
+        server: 325,
         pulledAt: ago(T0, minutes(240)),
         power: new Map(all.map((id, i) => [id, 5_000_000 - i * 1000])),
         kills: new Map(all.map((id) => [id, 700])),

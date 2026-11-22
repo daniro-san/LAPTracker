@@ -6,7 +6,7 @@ import type { AppContext } from "@/lib/app-context";
 import { TEST_PIN, testContext } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
-import { kvkOpponents } from "@/lib/schema-kvk";
+import { kvkOpponents, kvkSuggestions } from "@/lib/schema-kvk";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -90,5 +90,32 @@ describe("POST /api/admin/kvk-opponent (D152)", () => {
     expect(await (await save({ event_at: NEXT, result: null })).json()).toMatchObject({
       result: null,
     });
+  });
+
+  it("saves the typed tags when the board read fails, and Suggest tags answers 404 with no server", async () => {
+    const calls: number[] = [];
+    const ctx = holder.ctx;
+    if (!ctx) throw new Error("no context");
+    ctx.internal = {
+      ...ctx.internal,
+      fetchRanks: async (server) => {
+        calls.push(server);
+        throw new Error("fetch failed");
+      },
+    };
+    expect((await save({ event_at: NEXT, suggest: true })).status).toBe(404);
+    const res = await save({ event_at: NEXT, server: 326, tags: ["AAA", "BBB"] });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ server: 326, tags: ["AAA", "BBB"] });
+    expect(calls).toEqual([326]);
+    expect(await db.select().from(kvkSuggestions)).toMatchObject([{ status: "failed" }]);
+    // The press tries again; at the war it is refused with no call.
+    expect((await save({ event_at: NEXT, suggest: true })).status).toBe(200);
+    expect(calls).toEqual([326, 326]);
+    ctx.now = () => new Date(NEXT);
+    expect(await (await save({ event_at: NEXT, suggest: true })).json()).toEqual({
+      code: "war_started",
+    });
+    expect(calls).toHaveLength(2);
   });
 });

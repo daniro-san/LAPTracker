@@ -17,7 +17,7 @@ D152 makes the owner type up to 15 alliance tags of the opponent's server, copie
 
 1. The owner saves the opponent's server on /admin → `POST /api/admin/kvk-opponent` (exists) → `saveOpponent` (exists) → `suggestTags` (new, `lib/opponent-suggest.ts`) when that (event, server) has no suggestion row yet.
 2. The owner presses "Suggest tags" → the same route with `{event_at, suggest: true}` (new body) → `suggestTags`, which may also retry a failed row.
-3. `suggestTags` claims the (event, server) row in `kvk_suggestions` (new table) before the call, then makes one `internal.fetchRanks(server)` call, keeps the top 15 alliances by might whose tag is a valid opponent tag and that are not on our own newest board, and stores their tag, name and might.
+3. `suggestTags` claims the (event, server) row in `kvk_suggestions` (new table) before the call, then makes one `internal.fetchRanks(server)` call, checks that the answer's `sid` is S, keeps the top 15 alliances by might whose tag is a valid opponent tag, and stores their tag, name and might.
 4. /admin's KvK opponent card (exists) reads the row (`adminKvk`, exists) and shows the alliances as checked chips; the owner unchecks or adds tags and saves (exists).
 
 | Front       | What changes                                                                                                   |
@@ -51,9 +51,10 @@ D152 makes the owner type up to 15 alliance tags of the opponent's server, copie
 5. WHEN the owner presses "Suggest tags" and (E, S) is `failed`, or `running` and claimed more than 2 minutes ago, with fewer than 3 attempts THEN the system SHALL claim it again and make one call; with 3 attempts it SHALL make none (INVARIANT `suggest.attempt-cap`)
 6. IF the war at E has started, or the Start has stored a row for E's opponent THEN "Suggest tags" SHALL answer 409 (`war_started`, `opponent_read`) with no call, and a save SHALL make no call
 7. IF no server is saved for E THEN "Suggest tags" SHALL answer 404 `no_opponent` with no call
-8. The suggestion SHALL be the 15 alliances with the most might on S's board (a tie to the lower id), counting only alliances whose tag passes the route's tag rule and that are not on our own newest board
+8. The suggestion SHALL be the 15 alliances with the most might on S's board (a tie to the lower id), counting only alliances whose tag passes the route's tag rule
    - 20 alliances on the board → the top 15 by might; the 16th never appears
    - an alliance with no tag, or a tag with a space, is skipped and the next one takes its place
+     8a. IF the answer's `sid` is not S (or is missing), or no alliance can be suggested THEN the read SHALL be `failed`
 9. The row SHALL store only each alliance's tag, name and might, and the board's `pulled_at`: no union id, emblem, kills or member field
 10. The read SHALL spend no `LAP_API_KEY` call and SHALL NOT enter D152's reserves
 
@@ -82,11 +83,11 @@ D152 makes the owner type up to 15 alliance tags of the opponent's server, copie
 
 ## Assumptions
 
-| Assumption                         | Chosen default                                               | Rationale                                                                                   | Confirmed? |
-| ---------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ---------- |
-| "One successful read" with retries | up to 3 attempts per (event, server), only the press retries | a failure must leave a way to try again; 3 bounds the unofficial source                     | n          |
-| Alliances on our own board         | left out of the suggestion                                   | an alliance on our newest board is ours, never the opponent's; guards a board of our server | n          |
-| An alliance without a usable tag   | skipped, the next one by might takes its place               | it cannot be read by tag at the Start                                                       | n          |
+| Assumption                         | Chosen default                                               | Rationale                                                                             | Confirmed? |
+| ---------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ---------- |
+| "One successful read" with retries | up to 3 attempts per (event, server), only the press retries | a failure must leave a way to try again; 3 bounds the unofficial source               | n          |
+| A board of the wrong server        | the answer's `sid` must equal S, else `failed`               | the fixture's answer carries `sid`; an alliance that moved servers is still suggested | n          |
+| An alliance without a usable tag   | skipped, the next one by might takes its place               | it cannot be read by tag at the Start                                                 | n          |
 
 ## Validation
 

@@ -79,6 +79,8 @@ describe("internal.fetchRanks", () => {
     expect(board.power.get(67111155)).toBe(3_934_102_584);
     expect(board.kills.get(67111155)).toBe(34_213_081);
     expect(board.pulledAt.toISOString()).toBe("2026-11-04T16:41:48.809Z");
+    // D155: the server the answer says it is, checked against the server asked for.
+    expect(board.server).toBe(325);
     // D133: every alliance on either board, with its tag, name and emblem as the board shows them.
     expect(board.labels.size).toBeGreaterThanOrEqual(98);
     expect(board.labels.get(67111155)).toEqual({ tag: "OGs", name: "OldGrandmas", badgeId: 110 });
