@@ -18,6 +18,7 @@ import type { Mark } from "@/lib/private/roll-call-rules";
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
+import type { GridFilter } from "./roll-call-grid";
 import { RollGrid, tileClass, useGrid } from "./RollCallGrid";
 import { RestBar, useRest } from "./RollCallRest";
 import { RefusalLine } from "./SignedOut";
@@ -202,7 +203,7 @@ export function useOrder(rows: MarkRowView[]) {
     .filter((r): r is MarkRowView => r !== undefined);
 }
 
-export function RollCallMarks(props: {
+interface RollCallMarksProps {
   slug: string;
   occasion: Occasion;
   rows: MarkRowView[];
@@ -212,7 +213,11 @@ export function RollCallMarks(props: {
   language: string;
   /** Today's server day, the first day an away note gets when none is picked (D103). */
   today: string;
-}) {
+  /** The chip the page opens on (`?filter=`, the Roll call list's counts). */
+  filter: GridFilter;
+}
+
+export function RollCallMarks(props: RollCallMarksProps) {
   const { words, marks } = props;
   useFreshOnReturn();
   const page = { failed: words["roll.failed"], roll_call: "other" } as const;
@@ -224,7 +229,7 @@ export function RollCallMarks(props: {
   const asked = all.filter((row) => row.away === null);
   const awayRows = all.filter((row) => row.away !== null);
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
-  const g = useGrid(asked, (uid) => m.shown(uid).mark);
+  const g = useGrid(asked, (uid) => m.shown(uid).mark, props.filter);
   const needle = fold(q.trim());
   const found = needle === "" ? null : (row: MarkRowView) => fold(row.name).includes(needle);
   return (

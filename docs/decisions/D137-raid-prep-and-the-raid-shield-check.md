@@ -159,3 +159,11 @@ The tracker sees shields at its map scan: a shield turned on since may not show 
 - **Reads**: the check's two windows (`shieldReadings` over `passWindows`, the reads Raid prep makes), the week's Raid prep (`weekRaidPrep`, read only) and the member's newest Shield mark there (`newestMark`, one row by index, which D149 allows). No `shield_type`; nothing logged, cached or counted in analytics.
 - **Server time only** (Raid prep's tile rule): this amends D136's owner rule of 2026-11-20 for shields (see D136's amendment of the same day).
 - Tests: `lib/private/card-shield.test.ts` (the window's edges in server time, across midnight, the check off, each state, the languages) and the issue 471 suite (`cross-workspace-reads.test.ts`: Alpha's card never shows Bravo's reading of the same player).
+
+**Amendment 2026-11-22 (owner's drilldown request, "tap a count, see exactly those people"; spike panel and a 360 px persona check; branch `feat/drilldown-raid-prep`): "Show the n" beside the two counts of people.**
+
+- Beside "To remind: 21", a visible chip "Show the 21 ›" ("Mostrar os 21 ›", "Afficher les 21 ›"; "Show the 1 ›", "Mostrar o 1 ›", "Afficher le 1 ›"). A tap puts exactly those members in the grid, in the page's order, with no chip pressed and the line "The 21 to remind" ("Os 21 para lembrar", "Les 21 à relancer") above them. The set is taken once, as a chip's list is (D103): a mark meanwhile moves nobody. A chip tap goes back to that chip.
+- Beside "Mark ✓ the 5 seen with a shield", the same chip "Show the 5 ›", with the line "The 5 seen with a shield, not marked yet" ("Os 5 vistos com escudo, ainda sem marca", "Les 5 vus avec un bouclier, pas encore marqués"). The tiles show each member's checkpoints, the evidence, before the officer marks.
+- One rule per set: "To remind: n", "Copy n names", "Copy one message" and "Show the n ›" read one list (`toRemind`, which now returns the rows); the bulk button's n, its "Show the n ›" and the marks it writes read `toAccept` (moved out of the card into `prep-message.ts`).
+- "n not read yet" in the answer has no list. The persona check found that a grid cannot show the members it counts while it counts away members, who are not in the grid, and that a list of links to member cards leaves the page mid-marking. It stays a count.
+- Not counted in analytics, as the Copy chips are not.

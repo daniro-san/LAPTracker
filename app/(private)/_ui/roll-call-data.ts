@@ -17,8 +17,15 @@ import {
   type RollKind,
 } from "@/lib/private/roll-call-rules";
 import type { CallRow, TeamRow, WeekItem } from "@/lib/private/roll-call-view";
-import { callTitle, markWord, restWords, tallyParts } from "@/lib/private/roll-call-words";
+import {
+  callTitle,
+  markWord,
+  restWords,
+  tallyParts,
+  type TallySet,
+} from "@/lib/private/roll-call-words";
 
+import type { GridFilter } from "./roll-call-grid";
 import type { SHEET_KEYS } from "./sheet-words";
 
 export type RollSheetWords = RollWords &
@@ -54,8 +61,11 @@ export interface RollCard {
   st: string | null;
   at: number | null;
   day: string;
-  /** Each count on its own ("2 of 58 marked", "Shield up 1" …); null for a team nobody is on yet. */
-  counts: string[] | null;
+  /**
+   * Each count on its own ("2 of 58 marked", "Shield up 1" …), with the marking page on its chip for those
+   * a chip shows; null for a team nobody is on yet.
+   */
+  counts: RollCount[] | null;
   /** "Team A: 6/20" for an Elixir Scramble team. */
   team: string | null;
   /** An Elixir Scramble team's registration line. */
@@ -64,21 +74,53 @@ export interface RollCard {
   teamHref: string | null;
 }
 
+/** A card's count, and the marking page on the chip that shows exactly those members (null: none does). */
+export interface RollCount {
+  text: string;
+  href: string | null;
+}
+
+/** The chip each set is (roll-call-grid.ts `matches`): ✓ holds Shield up and "no problem seen". */
+const CHIP: Partial<Record<TallySet, GridFilter>> = {
+  yes: "yes",
+  assumed: "yes",
+  no: "no",
+  notSet: "todo",
+};
+
+/**
+ * Drilldown (2026-11-22): "Not set", ✓ and ✗ open the marking page on their chip ("To mark", ✓, ✗), when
+ * above zero; "n of m marked" and "Away" stay text. ✓'s two counts, side by side, are one link, as the ✓
+ * chip shows both.
+ */
+function countsOf(parts: ReturnType<typeof tallyParts>, markHref: string): RollCount[] {
+  const out: RollCount[] = [];
+  for (const p of parts) {
+    const chip = CHIP[p.set];
+    const href = chip && p.n > 0 ? `${markHref}&filter=${chip}` : null;
+    const last = out.at(-1);
+    if (href && last?.href === href) last.text = `${last.text} · ${p.text}`;
+    else out.push({ text: p.text, href });
+  }
+  return out;
+}
+
 /** A Raid prep card (a Raid Shield roll call) is dated by its raid, as its page is (issue 585). */
 export function rollCard(item: WeekItem, slug: string, today: string, ctx: Ctx): RollCard {
   const { t } = ctx;
   const query = occasionQuery(item.occasion);
   const team = item.team === null ? null : teamLine(item, today, t);
+  const markHref = `/w/${slug}/roll-call/mark?${query}`;
   return {
     key: item.key,
     title: callTitle(item, t),
     ...(item.kind === "shield"
       ? raidHead(fridayOf(item.day), { ...ctx, today })
       : { ...headerOf(item, ctx), day: item.day }),
-    counts: item.team === 0 ? null : tallyParts(item.tally, item.kind, t),
+    counts: item.team === 0 ? null : countsOf(tallyParts(item.tally, item.kind, t), markHref),
     team: team?.team ?? null,
     registration: team?.registration ?? null,
-    markHref: `/w/${slug}/roll-call/mark?${query}`,
+    markHref,
     teamHref: team && item.placed ? `/w/${slug}/roll-call/team?${query}` : null,
   };
 }

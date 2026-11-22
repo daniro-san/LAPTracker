@@ -3,7 +3,8 @@
 // Raid prep's head above the tiles (issue 474, D137; issue 585): the summary card (the answer from the
 // newest check, the Shield marks' counts, the Discord summary's state, "Mark ✓ the n seen with a shield"),
 // then "To remind: n", "Copy n names" and "Copy one message" for those still to remind, and the switch that shows the optional Squads off the wall pair on
-// every tile. Counts, times and names only; nothing here is sent anywhere by the page.
+// every tile. Beside each of the two counts of people, "Show the n ›" puts exactly them in the grid (drilldown,
+// 2026-11-22). Counts, times and names only; nothing here is sent anywhere by the page.
 import { useRef, useState } from "react";
 
 import { track } from "@/lib/analytics/events";
@@ -28,19 +29,45 @@ function marksLine(c: Record<"todo" | "yes" | "no" | "all", number>, words: Roll
   return fill(words[c.todo === 0 ? "roll.prep.marks.done" : "roll.prep.marks"], n);
 }
 
+/** Sets the grid's members: the set and the line above it ("The 21 to remind"). */
+export type ShowSet = (rows: readonly MarkRowView[], label: string) => void;
+
+/** "Show the 21 ›": a visible label, not a hidden tap on the count (drilldown panel review). */
+function ShowChip(props: {
+  rows: readonly MarkRowView[];
+  line: { one: string; other: string };
+  words: RollSheetWords;
+  onShow: ShowSet;
+}) {
+  const { words } = props;
+  const n = props.rows.length;
+  const said = (one: string, other: string) => (n === 1 ? one : fill(other, { n }));
+  return (
+    <button
+      type="button"
+      onClick={() => props.onShow(props.rows, said(props.line.one, props.line.other))}
+      className={chip()}
+    >
+      {said(words["roll.prep.show.one"], words["roll.prep.show"])}
+      <span aria-hidden="true">›</span>
+    </button>
+  );
+}
+
 /** The card at the top: the answer first, the Shield marks' counts, the summary's state, "Mark ✓ the n". */
 export function TrackerBar(props: {
   page: { head: PrepHeadView; words: RollSheetWords; slug: string };
-  notSet: MarkRowView[];
+  /** Who "Mark ✓ the n seen with a shield" marks (`toAccept`): its n, "Show the n ›" and its writes. */
+  accept: MarkRowView[];
   counts: Record<"todo" | "yes" | "no" | "all", number>;
   m: ReturnType<typeof useMarks>;
+  onShow: ShowSet;
 }) {
   const { head, words, slug } = props.page;
   const [done, setDone] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (head.answer === null) return null;
-  const seen = new Set(head.seen);
-  const acceptable = props.notSet.filter((row) => seen.has(row.uid)).map((row) => row.uid);
+  const acceptable = props.accept.map((row) => row.uid);
   const accept = async () => {
     setBusy(true);
     const written = await props.m.bulk({ action: "accept", uids: acceptable });
@@ -66,16 +93,22 @@ export function TrackerBar(props: {
         </p>
       )}
       {acceptable.length > 0 && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void accept()}
-          className={`${chip()} mt-2`}
-        >
-          {acceptable.length === 1
-            ? words["roll.prep.accept.one"]
-            : fill(words["roll.prep.accept"], { n: acceptable.length })}
-        </button>
+        <p className="mt-2 flex flex-wrap gap-2">
+          <button type="button" disabled={busy} onClick={() => void accept()} className={chip()}>
+            {acceptable.length === 1
+              ? words["roll.prep.accept.one"]
+              : fill(words["roll.prep.accept"], { n: acceptable.length })}
+          </button>
+          <ShowChip
+            rows={props.accept}
+            line={{
+              one: words["roll.prep.accept.shown.one"],
+              other: words["roll.prep.accept.shown"],
+            }}
+            words={words}
+            onShow={props.onShow}
+          />
+        </p>
       )}
       {done && (
         <p role="status" className="text-body-sm font-semibold text-plum">
@@ -114,21 +147,24 @@ function useCopied(key: string) {
  * optional Squads off the wall pair on every tile.
  */
 export function RemindBar(props: {
-  names: string[];
+  /** Still to remind (`toRemind`): the count, the copies and "Show the n ›" read this one list. */
+  rows: MarkRowView[];
   language: string;
   when: "reset" | "kvk";
   wall: boolean;
   onWall: () => void;
+  onShow: ShowSet;
   words: RollSheetWords;
 }) {
   const { words } = props;
-  const n = props.names.length;
-  const { copied, done } = useCopied(props.names.join("\n"));
+  const names = props.rows.map((row) => row.name);
+  const n = names.length;
+  const { copied, done } = useCopied(names.join("\n"));
   const copy = async (what: "names" | "message") => {
     const text =
       what === "names"
-        ? remindNames(props.names)
-        : remindAll(officersMessage(props.language), props.names, props.when);
+        ? remindNames(names)
+        : remindAll(officersMessage(props.language), names, props.when);
     try {
       await navigator.clipboard.writeText(text);
       done(what);
@@ -152,6 +188,15 @@ export function RemindBar(props: {
       </span>
       {n > 0 && (
         <>
+          <ShowChip
+            rows={props.rows}
+            line={{
+              one: words["roll.prep.remind.shown.one"],
+              other: words["roll.prep.remind.shown"],
+            }}
+            words={words}
+            onShow={props.onShow}
+          />
           <button type="button" onClick={() => void copy("names")} className={chip()}>
             {copied === "names" ? said.names : namesLabel}
           </button>

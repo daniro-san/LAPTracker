@@ -5,7 +5,8 @@
 // (10:04 ST)") and the Shield marks' counts that add up (issue 585, first glance), the Discord summary's state, and "Mark ✓ the n seen with a shield", which marks ✓ Shield up for
 // those the tracker saw with a shield and nobody marked yet. Then "Copy n names" and "Copy one message" for
 // the members whose Shield is not set or ✗, to paste into Discord, and the switch that shows the optional
-// Squads off the wall pair on every tile (issue 585). Everything else is the roll call's own: the grid of
+// Squads off the wall pair on every tile (issue 585). "Show the n ›" beside "Mark ✓ the n" and "To remind: n"
+// puts exactly those members in the grid, from the same list as the count (drilldown, 2026-11-22). Everything else is the roll call's own: the grid of
 // tiles counted by the Shield only, as "n of m marked" is (issue 585), with "Marked (n)" (RollCallGrid.tsx),
 // tiles keep their order, "the rest" is "no problem seen" for the Shield, away members are apart
 // (RollCallMarks.tsx). Not set never counts (D75). After each reading the tick marks the Shield as the
@@ -22,11 +23,12 @@ import type { Occasion } from "@/lib/private/roll-call";
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import type { PrepHeadView, PrepRowView } from "./prep-data";
-import { toRemind } from "./prep-message";
+import { toAccept, toRemind } from "./prep-message";
 import { prepNotes, RemindBar, TrackerBar } from "./RaidPrepHead";
 import { RaidPrepRow } from "./RaidPrepRow";
 import { sendRoll } from "./roll-call-client";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
+import type { GridFilter } from "./roll-call-grid";
 import { RollGrid, useGrid } from "./RollCallGrid";
 import { AwayGroup, Intro, SearchBar, useOrder } from "./RollCallMarks";
 import { RestBar, useRest } from "./RollCallRest";
@@ -152,6 +154,8 @@ type PageProps = TileProps & {
   rows: MarkRowView[];
   language: string;
   today: string;
+  /** The chip the page opens on (`?filter=`, the Roll call list's counts). */
+  filter: GridFilter;
 };
 
 /** Both parts' marks, "the rest", the order, and who is asked, away, not set and still to remind. */
@@ -169,6 +173,7 @@ function usePrep(props: PageProps) {
   const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false);
   const seen = new Set(props.head.seen);
   return {
+    accept: toAccept(notSet, props.head.seen),
     m,
     w,
     r,
@@ -186,14 +191,15 @@ function usePrep(props: PageProps) {
       (uid) => prep[uid]?.tracker?.on === true,
     ),
     // The chips count the Shield only, as "n of m marked" does: the wall part is optional (issue 585).
-    g: useGrid(asked, (uid) => m.shown(uid).mark),
+    g: useGrid(asked, (uid) => m.shown(uid).mark, props.filter),
   };
 }
 
 export function RaidPrepMarks(props: PageProps) {
   const { words, marks } = props;
   useFreshOnReturn();
-  const { m, w, r, all, asked, notSet, awayRows, rest, offerRest, remind, g } = usePrep(props);
+  const { m, w, r, all, asked, notSet, awayRows, rest, offerRest, remind, accept, g } =
+    usePrep(props);
   const [q, setQ] = useState("");
   const [away, setAway] = useState<AwayWho | null>(null);
   const [showWall, setShowWall] = useState(false);
@@ -203,7 +209,7 @@ export function RaidPrepMarks(props: PageProps) {
   return (
     <>
       {/* The answer first; its card holds "n of m marked" while the check is on (issue 585, first glance). */}
-      <TrackerBar page={props} notSet={notSet} counts={g.counts} m={m} />
+      <TrackerBar page={props} accept={accept} counts={g.counts} m={m} onShow={g.show} />
       <Intro
         marked={asked.length - notSet.length}
         total={asked.length}
@@ -222,11 +228,12 @@ export function RaidPrepMarks(props: PageProps) {
         occasion={props.occasion}
       />
       <RemindBar
-        names={remind}
+        rows={remind}
         language={props.language}
         when={props.head.when}
         wall={showWall}
         onWall={() => setShowWall((s) => !s)}
+        onShow={g.show}
         words={words}
       />
       <SearchBar q={q} words={words} onQ={setQ} onAway={() => setAway("pick")} />

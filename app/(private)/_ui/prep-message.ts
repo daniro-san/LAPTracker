@@ -31,19 +31,28 @@ export function prepMessage(
 /**
  * Still to remind (issue 585), in the rows' order: the Shield ✗, or not set and not seen with a shield by
  * the tracker. Those it saw did the job; "Mark ✓ the n seen with a shield" is for them. The caller passes the
- * members asked, so away members are never in it.
+ * members asked, so away members are never in it. "To remind: n", the names copied and the members "Show
+ * the n ›" puts in the grid are this one list.
  */
-export const toRemind = (
-  rows: { uid: number; name: string }[],
+export const toRemind = <R extends { uid: number }>(
+  rows: R[],
   markOf: (uid: number) => Mark | null,
   seenOn: (uid: number) => boolean,
 ) =>
-  rows
-    .filter((row) => {
-      const mark = markOf(row.uid);
-      return mark === "no" || (mark === null && !seenOn(row.uid));
-    })
-    .map((row) => row.name);
+  rows.filter((row) => {
+    const mark = markOf(row.uid);
+    return mark === "no" || (mark === null && !seenOn(row.uid));
+  });
+
+/**
+ * Who "Mark ✓ the n seen with a shield" marks (D137), in the rows' order: the asked members with no Shield
+ * mark that the newest reading saw with a shield. Its n, the members "Show the n ›" puts in the grid and
+ * the marks it writes are this one list.
+ */
+export const toAccept = <R extends { uid: number }>(notSet: R[], seen: readonly number[]) => {
+  const on = new Set(seen);
+  return notSet.filter((row) => on.has(row.uid));
+};
 
 /**
  * The names to paste into Discord: typed in game, so they show literally and ping nobody (`@everyone`,

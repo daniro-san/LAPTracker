@@ -50,21 +50,37 @@ export function callTitle(
   return t[`roll.kind.${o.kind}` as RollKey];
 }
 
+/** Which members a count stands for: the marked ones ("2 of 58 marked"), or one of the tally's sets. */
+export type TallySet = keyof Tally | "marked";
+
 /**
- * The counts, each its own unit (shown without a break inside): "2 of 58 marked", "Shield up 1",
- * "No shield 1", "No problem seen 0" only when above zero, "Not set 56", "Away 3" only when above zero.
- * "Not set" is always its own count, never part of the ✗ one (D75).
+ * The counts, each its own unit (shown without a break inside) with the set it counts and its number:
+ * "2 of 58 marked", "Shield up 1", "No problem seen 2" only when above zero (beside "Shield up": both are
+ * the ✓ chip, drilldown 2026-11-22), "No shield 1", "Not set 56", "Away 3" only when above zero. "Not set" is
+ * always its own count, never part of the ✗ one (D75).
  */
-export function tallyParts(tally: Tally, kind: RollKind, t: WorkspaceDictionary): string[] {
-  const part = (word: string, n: number) => fill(t["roll.count"], { word, n });
+export function tallyParts(
+  tally: Tally,
+  kind: RollKind,
+  t: WorkspaceDictionary,
+): { set: TallySet; n: number; text: string }[] {
+  const part = (set: keyof Tally, word: string) => ({
+    set,
+    n: tally[set],
+    text: fill(t["roll.count"], { word, n: tally[set] }),
+  });
   const marked = tally.yes + tally.no + tally.assumed;
   return [
-    fill(t["roll.progress"], { n: marked, total: marked + tally.notSet }),
-    part(markWord("yes", kind, t), tally.yes),
-    part(markWord("no", kind, t), tally.no),
-    ...(tally.assumed > 0 ? [part(t["roll.assumed"], tally.assumed)] : []),
-    part(t["roll.notSet"], tally.notSet),
-    ...(tally.away > 0 ? [part(t["roll.away"], tally.away)] : []),
+    {
+      set: "marked",
+      n: marked,
+      text: fill(t["roll.progress"], { n: marked, total: marked + tally.notSet }),
+    },
+    part("yes", markWord("yes", kind, t)),
+    ...(tally.assumed > 0 ? [part("assumed", t["roll.assumed"])] : []),
+    part("no", markWord("no", kind, t)),
+    part("notSet", t["roll.notSet"]),
+    ...(tally.away > 0 ? [part("away", t["roll.away"])] : []),
   ];
 }
 

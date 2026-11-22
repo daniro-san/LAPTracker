@@ -1,11 +1,12 @@
 // The roll call grid (issue 412, D103 amended): "To mark" lists the not set and folds the marked under
 // "Marked", a mark never moves a tile until a chip is tapped, a search looks through everyone, and Raid
 // prep's chips count the Shield only, as its "n of m marked" does (D137, issue 585). Not set is never ✗ (D75).
+// The page opens on the chip its address names, and a shown set holds exactly its members (drilldown).
 import { describe, expect, it } from "vitest";
 
 import type { Mark } from "@/lib/private/roll-call-rules";
 
-import { gridCounts, sections, takeSnap } from "./roll-call-grid";
+import { filterOf, gridCounts, sections, takeSet, takeSnap } from "./roll-call-grid";
 
 const rows = [1, 2, 3, 4].map((uid) => ({ uid, name: `Wren ${uid}` }));
 const uids = rows.map((r) => r.uid);
@@ -44,5 +45,23 @@ describe("the roll call grid", () => {
     const s = sections(team, takeSnap("todo", all, shield), shield, null);
     expect(s.list).toHaveLength(6);
     expect(s.marked).toHaveLength(92);
+  });
+
+  it("opens on the chip the address names, and on To mark for anything else, never on ✗ by default", () => {
+    expect(["todo", "yes", "no", "all"].map(filterOf)).toEqual(["todo", "yes", "no", "all"]);
+    for (const asked of [undefined, "", "NO", "remind", ["no", "yes"]]) {
+      expect(filterOf(asked)).toBe("todo");
+    }
+  });
+
+  it("shows exactly a set of members, and a mark meanwhile moves none of them (D103)", () => {
+    const marks: Record<number, Mark | null> = { 1: "no", 2: null, 3: "yes", 4: null };
+    const markOf = (uid: number) => marks[uid] ?? null;
+    const snap = takeSet(uids, [1, 4], "The 2 to remind");
+    marks[4] = "yes";
+    expect(sections(rows, snap, markOf, null)).toEqual({ list: [rows[0], rows[3]], marked: [] });
+    // A member new to the read is never in a shown set.
+    const more = [...rows, { uid: 5, name: "Wren 5" }];
+    expect(sections(more, snap, markOf, null).list.map((r) => r.uid)).toEqual([1, 4]);
   });
 });

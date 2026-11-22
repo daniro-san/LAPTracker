@@ -5,6 +5,8 @@
 // "Marked (n)", opened 40 at a time. The sections are taken when the page opens and when a chip is tapped
 // (roll-call-grid.ts), never by a mark, so a tile stays where it is while the officer marks. A search
 // looks through every member. Every roll call kind uses it; Raid prep's chips count the Shield only (D137).
+// It opens on the chip the address names (`?filter=`, else "To mark"), and `show` puts exactly one set of
+// members in it, with its line ("The 21 to remind"), until a chip is tapped.
 import { useState, type ReactNode } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
@@ -15,6 +17,7 @@ import {
   gridCounts,
   MARKED_PAGE,
   sections,
+  takeSet,
   takeSnap,
   type GridFilter,
   type MarkOf,
@@ -34,9 +37,13 @@ export function tileClass(done: boolean) {
   return `min-w-0 border border-rule px-2 pt-1.5 pb-2 ${done ? "bg-ink/[0.04]" : ""}`;
 }
 
-export function useGrid<T extends { uid: number }>(rows: T[], markOf: MarkOf) {
+export function useGrid<T extends { uid: number }>(
+  rows: T[],
+  markOf: MarkOf,
+  initial: GridFilter = "todo",
+) {
   const uids = rows.map((r) => r.uid);
-  const [snap, setSnap] = useState(() => takeSnap("todo", uids, markOf));
+  const [snap, setSnap] = useState(() => takeSnap(initial, uids, markOf));
   const [open, setOpen] = useState(false);
   const [limit, setLimit] = useState(MARKED_PAGE);
   return {
@@ -49,6 +56,17 @@ export function useGrid<T extends { uid: number }>(rows: T[], markOf: MarkOf) {
       setSnap(takeSnap(filter, uids, markOf));
       setOpen(false);
       setLimit(MARKED_PAGE);
+    },
+    /** Exactly these members, no chip pressed, under `label`; a chip tap goes back to the chips. */
+    show: (set: readonly { uid: number }[], label: string) => {
+      setSnap(
+        takeSet(
+          uids,
+          set.map((r) => r.uid),
+          label,
+        ),
+      );
+      setOpen(false);
     },
     toggle: () => setOpen((o) => !o),
     more: () => setLimit((l) => l + MARKED_PAGE),
@@ -173,6 +191,10 @@ export function RollGrid<T extends { uid: number }>(props: {
         <p className="mt-1 text-body-sm text-ink/80">{props.caption}</p>
       )}
       {!props.found && <Filters g={g} words={words} said={props.said} />}
+      {/* A shown set says which it is: no chip is pressed (drilldown panel review). */}
+      {!props.found && g.snap.label && (
+        <p className="mt-2 text-body-sm font-semibold">{g.snap.label}</p>
+      )}
       {/* With nobody left, the tiles marked meanwhile stay; the line says why (persona review). */}
       {!props.found && (list.length === 0 || (g.snap.filter === "todo" && g.counts.todo === 0)) && (
         <p className="py-3 text-ink/80">{words[empty]}</p>

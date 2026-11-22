@@ -1,6 +1,6 @@
 // The Officers' Desk for Lantern Keep's officer (issue 477): Home, Members (a card opens and stays closed once
 // closed, #573), a roll call mark that is kept, and Raid prep's "To mark", which counts the Shield mark only
-// (#590 F1). Expected figures are computed from the seed's rows (e2e/fixtures/seed.ts) and written with the
+// (#590 F1); the drilldowns are in desk-drilldown.spec.ts. Expected figures are computed from the seed's rows (e2e/fixtures/seed.ts) and written with the
 // pages' formatter (`big`); none depends on the day the suite runs, except the dates, which follow it.
 import type { Page } from "@playwright/test";
 
@@ -245,8 +245,9 @@ test("Roll call: a mark shows at once, is kept after a reload and in the list, t
   const name = MARKED_BY[info.project.name] as string;
   const cheese = cheeseOf(info.project.name, info.repeatEachIndex);
   const title = `Cheese Trap · Lv.${cheese.level}`;
+  // The card's counts, one per line at most ("Not set" and the counts above zero are chips since 2026-11-22).
   const summary = (marked: number) =>
-    `${marked} of ${ROSTER} marked · Took part ${marked} · Not this time 0 · Not set ${ROSTER - marked}`;
+    `${marked} of ${ROSTER} marked Took part ${marked} Not this time 0 Not set ${ROSTER - marked}`;
   // The roll call by its own title: the list's order follows the weekday.
   const listed = page
     .getByRole("listitem")
