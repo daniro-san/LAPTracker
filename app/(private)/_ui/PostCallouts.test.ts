@@ -30,7 +30,7 @@ describe("the lines on our posts in Alliance settings (D155)", () => {
   it("labels each field visibly, says where it goes and how long it is, and previews the post", () => {
     const html = render("Shields up, family");
     expect(html).toContain(
-      '<label for="callout-shield" class="font-medium">Raid Shield summary</label>',
+      '<label id="callout-shield-label" for="callout-shield" class="font-medium">Raid Shield summary</label>',
     );
     expect(html).toMatch(/<input id="callout-shield"[^>]*value="Shields up, family"/);
     expect(html).toContain("Goes above the summary in the Raid Shield channel.");

@@ -14,7 +14,7 @@ What is different when this ships: in Alliance settings an officer saves one lin
 
 1. officer types a line in Alliance settings → Your line on our posts → `POST /api/w/[slug]/callouts` (new) → `requireWorkspace` (exists), `post_callouts` on, rate limit → `workspace_post_touches` (new) upsert, only when the text changed
 2. a post is built (Raid Shield summary in the tick, weekly thanks and garrison post from the desk) → the post's callout is read only while `post_callouts` is on → `discordCallout` (new, pure) escapes it with `escapeDiscord` and breaks what `escapeDiscord` leaves live → it is the first line of the first message
-3. Home's recent activity reads the row's `updated_by` / `updated_at` (new small source): "Ana changed the Raid Shield callout", never the text
+3. Home's recent activity reads the row's `updated_by` / `updated_at` (new small source): "Ana changed the line on the Raid Shield summary", never the text
 
 | Front       | What changes                                                                                                                        |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,7 +58,7 @@ New: `workspace_post_touches(workspace_id → workspaces on delete cascade, post
 
 ### S3: Activity and data (P2)
 
-1. WHEN a line changes THEN Home's recent activity SHALL say "{who} changed the Raid Shield callout" / "… the weekly thanks callout" / "… the garrison post callout", without the text; a save of the same text SHALL add nothing
+1. WHEN a line changes THEN Home's recent activity SHALL say "{who} changed the line on the Raid Shield summary" / "… on the weekly thanks" / "… on the garrison post" (persona check: "line", not "callout"), without the text; a save of the same text SHALL add nothing
 2. "Download our data" SHALL include `post-callouts.csv`; the daily purge SHALL delete the rows with the workspace
 3. A save that went through SHALL count as `ws_action` `post_callout` / `save`
 
@@ -73,4 +73,4 @@ New: `workspace_post_touches(workspace_id → workspaces on delete cascade, post
 
 ## Validation
 
-Quick persona check at 360 px (invented names), recorded in the handoff and the PR: three officers (an R5 in a hurry, an officer reading English as a second language, an officer in her 50s), an adversarial reviewer (abuse, mentions, blame) and a designer.
+Quick persona check at 360 px (invented names) on the real card: three officers (an R5 in a hurry, an officer reading English as a second language, an officer in her 50s), an adversarial reviewer (abuse, mentions, blame) and a designer. Each answered its question right from the first screen. Adopted: the word "line", not "callout", on the card and on Home; notices left out; no links at all; the lead's "It stays on every post until you change it, so keep it about the whole alliance." (D75, adversarial). Follow-up: a history of every change. Record: D155 § Persona check.

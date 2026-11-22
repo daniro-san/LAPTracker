@@ -4,7 +4,7 @@
 export const calloutsEn = {
   "callouts.head": "Your line on our posts",
   "callouts.lead":
-    "Add one line of your own at the top of a post LAPTracker makes for you, such as “Let’s go, family!”. It is posted as you write it, never translated, and pings no one: @everyone, mentions and links do not work in it.",
+    "Add one line of your own at the top of a post LAPTracker makes for you, such as “Let’s go, family!”. It is posted as you write it, never translated, and pings no one: @everyone, mentions and links do not work in it. It stays on every post until you change it, so keep it about the whole alliance.",
   "callouts.post.shield": "Raid Shield summary",
   "callouts.post.thanks": "Weekly thanks",
   "callouts.post.garrison": "Garrison post",
@@ -27,7 +27,7 @@ export const calloutsEn = {
 export const calloutsPt: typeof calloutsEn = {
   "callouts.head": "Sua frase nos nossos posts",
   "callouts.lead":
-    "Adicione uma frase sua no topo de um post que o LAPTracker faz para vocês, como “Vamos lá, família!”. Ela sai como você escreveu, nunca é traduzida e não marca ninguém: @everyone, menções e links não funcionam nela.",
+    "Adicione uma frase sua no topo de um post que o LAPTracker faz para vocês, como “Vamos lá, família!”. Ela sai como você escreveu, nunca é traduzida e não marca ninguém: @everyone, menções e links não funcionam nela. Ela fica em todos os posts até você mudar, então fale da aliança toda.",
   "callouts.post.shield": "Resumo do Escudo de raid",
   "callouts.post.thanks": "Agradecimento da semana",
   "callouts.post.garrison": "Post da guarnição",
@@ -50,7 +50,7 @@ export const calloutsPt: typeof calloutsEn = {
 export const calloutsFr: typeof calloutsEn = {
   "callouts.head": "Votre phrase sur nos messages",
   "callouts.lead":
-    "Ajoutez une phrase à vous en haut d’un message que LAPTracker publie pour vous, comme « On y va, la famille ! ». Elle est publiée telle que vous l’écrivez, jamais traduite, et ne mentionne personne : @everyone, les mentions et les liens n’y marchent pas.",
+    "Ajoutez une phrase à vous en haut d’un message que LAPTracker publie pour vous, comme « On y va, la famille ! ». Elle est publiée telle que vous l’écrivez, jamais traduite, et ne mentionne personne : @everyone, les mentions et les liens n’y marchent pas. Elle reste sur chaque message jusqu’à ce que vous la changiez, alors parlez de toute l’alliance.",
   "callouts.post.shield": "Résumé du Bouclier de raid",
   "callouts.post.thanks": "Remerciements de la semaine",
   "callouts.post.garrison": "Message de garnison",

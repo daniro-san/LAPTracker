@@ -26,6 +26,7 @@ import {
   REPEATS,
   SENTINELS,
   SHIELD_MARKED,
+  SIEGE_ENTRY,
   signOutToken,
   slotOf,
   switchWorkspaceOf,
@@ -383,6 +384,17 @@ function rollCallRows(cal: ReturnType<typeof calendarOf>): string[] {
   ];
 }
 
+/** Each filler workspace's weekly Undead Siege Lv.6 on the raid's Saturday at 12:00 ST (SIEGE_ENTRY). */
+function siegeRows(cal: ReturnType<typeof calendarOf>): string[] {
+  const rows = Array.from({ length: REPEATS }, (_, r) => {
+    const w = switchWorkspaceOf(r);
+    return `(${SIEGE_ENTRY + r}, ${w.id}, 'undead', 6, '${cal.raid.day}', 720, true, false, ${5 + r})`;
+  });
+  return [
+    `insert into calendar_entries (id, workspace_id, kind, level, day, minute, weekly, for_members, created_by) values ${rows.join(", ")};`,
+  ];
+}
+
 /** The whole seed as one transaction, for psql. */
 export function seedSql(now: Date): string {
   const cal = calendarOf(now);
@@ -404,6 +416,7 @@ export function seedSql(now: Date): string {
     ...eventRows(cal.events),
     ...workspaceRows(),
     ...rollCallRows(cal),
+    ...siegeRows(cal),
     // ADDED_BY_HAND, a minute before the seed and one second apart, each already matched to their member.
     `insert into pending_members (workspace_id, name, name_key, created_by, created_at, matched_uid, matched_at) values ${ADDED_BY_HAND.map((name, i) => `(${ALLIANCES.a.id}, ${q(name)}, ${q(name.toLowerCase())}, 1, now() - interval '${60 - i} seconds', ${uidOf("a", ALLIANCES.a.names.indexOf(name))}, now())`).join(", ")};`,
     ...factRows(cal.today),

@@ -82,8 +82,8 @@ function CalloutField(props: {
   const over = length > CALLOUT_LIMIT;
   const line = value.replace(/\s+/g, " ").trim();
   return (
-    <div className="mt-4 border-t border-rule pt-3">
-      <label htmlFor={id} className="font-medium">
+    <div role="group" aria-labelledby={`${id}-label`} className="mt-4 border-t border-rule pt-3">
+      <label id={`${id}-label`} htmlFor={id} className="font-medium">
         {t[`callouts.post.${row.post}`]}
       </label>
       <p id={`${id}-where`} className="text-body-sm text-ink/75">
