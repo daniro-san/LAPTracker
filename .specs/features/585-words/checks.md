@@ -65,19 +65,6 @@ Proof: run unit | ✓ app/(private)/_ui/FollowUpWeek.test.ts > Follow-up's week 
 **C16** - On a fresh browser (first visit) the help is closed; a tap opens it and shows the owner's line; after a save and a reload it is closed with the tap cue in sight (AC 17)
 Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "Talked to them takes a quiet member off the list"`
 
-## Coverage
-
-| Set (size)                           | Member -> proof                                             | Unproven |
-| ------------------------------------ | ----------------------------------------------------------- | -------- |
-| date forms, AC 1-3 (4 used in lines) | `day` C1 · `long` C1 · `at` C1, C2 · `time` C1              | -        |
-| languages, AC 2 (3)                  | en C2 · pt-BR C2, C6 · fr C2                                | -        |
-| zones, AC 3, AC 7 (3)                | the server's C1 · a viewer's in winter C5 · in summer C5    | -        |
-| seen line, AC 11-12 (4)              | Me, other day C6 · Me, same day C6 · desk C6 · no zone C6   | -        |
-| sentence-ending lines, AC 5 (2)      | every caller traced C3 · a caller (KvK reason) C7           | -        |
-| server-time wording, AC 6 (3)        | en C4 · pt-BR C4 · fr C4                                    | -        |
-| daily-update word, AC 14 (3)         | en C10, C11, C12, C13, C17 · pt-BR C10 · fr C10             | -        |
-| help states, AC 17 (3)               | first visit C15, C16 · after a tap C16 · after a reload C16 | -        |
-
 ### S1b - one rule for a member's average
 
 Each proof below failed when its rule was broken on purpose (2026-11-22): "none" left out of `dayAverage` (C18 to C22 fail), a day with no daily update counted as "none" (C18, C19, C21 fail), the all-"none" line removed (C18, C20, C21 fail, printing "Average 0 · 7 days, of which 7 none"), and Insights alone treating "none" as no update (C18, C22 fail).
@@ -92,7 +79,7 @@ Proof: run unit | ✓ lib/private/member-days.test.ts > the member card's last 7
 Proof: run unit | ✓ lib/private/member-days.test.ts > the member card's last 7 days (issue 461) > says a week of only none days as none on all of them, never Average 0
 
 **C21** - On Me, 600, none, 400 then days to come reads "This week: Average 333 · 3 days, of which 1 none"; a Monday "none" alone "This week: None on 1 day"; a week whose only day has no daily update "This week: no average yet", beside "Last week: None on all 2 days" (AC 20, 21)
-Proof: run unit | ✓ lib/private/me-parts.test.ts > a member's own week (D142) > says none, no data and not read yet apart, and puts their own last week beside it
+Proof: run unit | ✓ lib/private/me-parts.test.ts > a member's own week (D142) > says none, no data and no daily update yet apart, and puts their own last week beside it
 
 **C22** - Insights' effort for a member with 100 and "none" on the reads that list them is 50 over 2 days with 1 "none"; the four groups and their medians are as before (AC 24)
 Proof: run unit | ✓ lib/private/insights-rules.test.ts > effort at every might level (issue 489) > averages the reads that list a member, none as 0, and makes four bands of might, the highest first
@@ -107,6 +94,8 @@ Proof: run unit | ✓ lib/private/insights-rules.test.ts > effort at every might
 | seen line, AC 11-12 (4)              | Me, other day C6 · Me, same day C6 · desk C6 · no zone C6                        | -        |
 | sentence-ending lines, AC 5 (2)      | every caller traced C3 · a caller (KvK reason) C7                                | -        |
 | server-time wording, AC 6 (3)        | en C4 · pt-BR C4 · fr C4                                                         | -        |
+| daily-update word, AC 14 (3)         | en C10, C11, C12, C13, C17 · pt-BR C10 · fr C10                                  | -        |
+| help states, AC 17 (3)               | first visit C15, C16 · after a tap C16 · after a reload C16                      | -        |
 | day states, AC 20-23 (4)             | number C18, C19 · none C18-C22 · no update C18, C21 · later C21                  | -        |
 | average lines, AC 20-21 (4)          | plain C21 · with none C18, C19, C21 · all none C18, C20, C21 · no listed day C21 | -        |
 | pages, AC 22 (3)                     | card C18 · Me C18 · Insights C18, C22                                            | -        |

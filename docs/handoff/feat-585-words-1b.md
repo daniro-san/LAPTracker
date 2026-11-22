@@ -34,7 +34,7 @@ Part of #585 (F19). Closes #663. The owner's decision on #663 (2026-11-22): "yes
 
 ## Deviations
 
-- Plan S1b criterion 2 said "Me's last week". The PGlite test uses Me's this week, because that week is the same seven days as the card's on a Sunday. Last week's line is covered by `me-parts.test.ts` (C21).
+- Plan S1b criterion 22 said "Me's last week". The PGlite test uses Me's this week, because that week is the same seven days as the card's on a Sunday. Last week's line is covered by `me-parts.test.ts` (C21).
 
 ## Verified
 
@@ -44,14 +44,14 @@ Part of #585 (F19). Closes #663. The owner's decision on #663 (2026-11-22): "yes
   - a no-update day counted as "none": C18, C19 and C21 failed;
   - the all-"none" line removed: C18, C20 and C21 failed, printing "Average 0 · 7 days, of which 7 none";
   - Insights alone treating "none" as no update: C18 and C22 failed.
-- `pnpm test:e2e` (local, `next build`, own cluster on 54396, ports 3496/3497/54397): 51 passed, 3 skipped. No e2e assertion changes: the e2e seed sends a number every day, so its average lines read as before.
+- `pnpm test:e2e` (local, `next build`, own cluster on 54396, ports 3496/3497/54397): 51 passed, 3 skipped. No e2e assertion changes: the members the e2e reads have a number every day (alliance B's idle members have "none" days, but no e2e assertion reads their averages), so its average lines read as before.
 - `pnpm check`: exit 0 (prettier, eslint, tsc, 1754 tests passed and 4 skipped, drift, i18n) after two fix rounds: prettier on three files, then the new test's complexity (its setup moved into two helpers).
 - `validate_checks.py`: 0 errors, 10 warnings (selector warnings like S1's).
 - `validate_plan.py` (installed ckl-delivery 2.0.5): 5 errors, the same 5 on dev's plan before this change. They are missing sections (Traceability, Observable, Flow, Relations, Impact) that a newer template asks for.
 
 ## Open issues
 
-- **Rebase with PR #669 (S2):** both PRs edit `.specs/features/585-words/checks.md` (the Run line, the count line and new sections after C9), `plan.md` (new sections), `docs/analytics/tracking-plan.md` (a dated line at the end) and `lib/private/me-parts.test.ts` (S2 renames the first test and changes its "not read yet" line; this PR changes the average lines under it). Keep both sides. S2 renames `me.week.noRead` to "No daily update"; this PR's tests do not assert that word.
+- Merged with S2 (PR 669) by a merge of `dev`; S1b's checks were renumbered C18–C22 and the two Coverage tables merged into one (review of PR 672).
 - The adversarial reviewer's "<1" for a non-zero average that rounds to 0 is not built (for example "Average 0 · 7 days, of which 6 none" for 1 point among six "none" days). It is a new display rule, and the line already names the "none" days.
 - The member card on the desk has no legend for "none" counting as 0. The line names the "none" days; the panel did not ask for one.
 
