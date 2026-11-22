@@ -18,7 +18,7 @@ on:
 permissions:
   contents: write # generate-notes is a POST and needs it; nothing here pushes, tags or releases
   pull-requests: write
-  actions: write # starts ci and e2e on dev: a PR opened with GITHUB_TOKEN does not trigger pull_request runs
+  actions: write # starts e2e on dev, with WebKit, on what ships (D150)
 
 jobs:
   prepare:

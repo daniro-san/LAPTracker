@@ -59,3 +59,5 @@ Public pages and the members' board show none. A workspace's desk shows only its
 **Not done here** (follow-ups): sign-in and sign-out (with its own session), Follow-up, Calendar add/delete/Undo, notices (save, translate, publish), member facts, a feature switch (its own workspace or phone only), the export ZIP sweep (D71's export rule), compare, the live event page, viewer settings, the other 34 `/api/w/[slug]` routes in the cross-workspace check, a realistic roster (about 95 invented members), and unit tests for `proxy.ts`.
 
 **Amendment 2026-11-22 (orchestrator, issue 477):** The global setup no longer refuses to start within 10 minutes of 02:00 UTC: it waits until 10 minutes after the day change, then seeds with the time after the wait. A required check must not fail on the clock; the first refusal blocked a docs-only PR at 01:58 UTC. The job's timeout is 35 minutes to fit the wait (at most 20).
+
+**Amendment 2026-11-22 (orchestrator, issue 592):** Prepare release no longer starts `ci` on `dev` (D29, 2026-11-22), so it dispatches only e2e there; the release PR into `main` gets its `check` from its own `pull_request` run of `ci`.
