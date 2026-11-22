@@ -35,6 +35,8 @@ export interface KvkMember {
 
 export interface KvkEvent {
   at: Date;
+  /** When the End read started: a follow-up record from then on was written after the KvK (#585 S5). */
+  afterAt: Date;
   /** The event's server day. */
   day: string;
   /**
@@ -113,6 +115,7 @@ function eventOf(
     : [];
   return {
     at: e.at,
+    afterAt: e.afterAt,
     day,
     nowDay: last.day,
     members: counted.length,
@@ -179,4 +182,25 @@ export function kvkOf(
     waiting: day ? { day, today: day === dayIn(zone, now.getTime()) } : null,
     readsFrom: inside.length < events.length ? first.day : null,
   };
+}
+
+/** Follow-up's "After KvK, offer help" (#585 S5) holds a KvK's help list for this many server days from its day. */
+export const KVK_HELP_DAYS = 7;
+
+/** The KvK Follow-up offers help after: its day, when its End read began, and who might want help. */
+export interface AfterKvk {
+  day: string;
+  afterAt: Date;
+  help: ReadonlySet<number>;
+}
+
+/**
+ * The newest KvK shown (`kvkOf`), while server day `today` is less than KVK_HELP_DAYS after its day: from its
+ * night read to the Friday after, as the recovery week (RECOVERY_READS). On the next KvK day it is gone until
+ * that KvK's own read, and a skipped KvK never leaves an old list (#585 S5). Null with nobody to help.
+ */
+export function afterKvk(kvk: KvkView, today: string): AfterKvk | null {
+  const e = kvk.events[0];
+  if (!e || e.help.length === 0 || today >= addDays(e.day, KVK_HELP_DAYS)) return null;
+  return { day: e.day, afterAt: e.afterAt, help: new Set(e.help.map((p) => p.uid)) };
 }

@@ -63,13 +63,17 @@ export function readyMessage(w: ReadyWords, m: MessageInput): string {
 export const readyWords = (language: WorkspaceLanguage): ReadyWords => READY_MESSAGE[language];
 
 /**
- * A member's message from their Follow-up work item (D140): the reasons only when they are under Check in,
- * the tip, the facts still to ask. Follow-up's panel and the member card (issue 516) both build it here.
+ * A member's message from their Follow-up work item (D140): the KvK line first after a heavy hit (#585 S5,
+ * no number in it), the reasons only when they are under Check in, the tip, the facts still to ask.
+ * Follow-up's panel and the member card (issue 516) both build it here.
  */
-export const inputOf = (item: Pick<WorkItem, "member" | "checkIn" | "tip" | "toAsk">) => ({
+export const inputOf = (item: Pick<WorkItem, "member" | "checkIn" | "tip" | "toAsk" | "kvk">) => ({
   name: item.member.name,
   isNew: item.member.isNew,
-  reasons: item.checkIn ? item.member.reasons.map((r) => r.kind) : [],
+  reasons: [
+    ...(item.kvk ? (["kvk"] as const) : []),
+    ...(item.checkIn ? item.member.reasons.map((r) => r.kind) : []),
+  ],
   tip: item.tip,
   toAsk: item.toAsk,
 });

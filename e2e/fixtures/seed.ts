@@ -13,6 +13,7 @@ import {
   FACT_MEMBERS,
   FACT_SEEDED,
   FILLERS,
+  HEAVY_HIT,
   fillerNames,
   IDLE_DAYS,
   IDLE_UIDS,
@@ -74,6 +75,12 @@ export function calendarOf(now: Date) {
     events: [iso(lastSat - 7 * DAY_MS), iso(lastSat)],
   };
 }
+
+/**
+ * Follow-up offers help after the last KvK (HEAVY_HIT, issue 585 slice 5) for the week after it: over on
+ * the next KvK day, a Saturday (server days), when the seed's last event is 7 days back.
+ */
+export const kvkWeek = (now: Date) => new Date(calendarOf(now).today).getUTCDay() !== 6;
 
 /** The moment the global setup seeded at (E2E_NOW, which Playwright passes to its workers). */
 export const seededAt = () => new Date(Number(process.env.E2E_NOW ?? Date.now()));
@@ -140,9 +147,18 @@ export const newMembers = (side: Side) =>
 
 // What the pages show, computed from the rows above (the specs format them with lib/compact, as the pages do).
 
-/** An event member's figures: the Start's are `members(side, 0)`, the End loses 3M might and gains 90K kills. */
+/** HEAVY_HIT's extra loss at the last event's End, and on every read after it (issue 585 slice 5). */
+const hitOf = (uid: number, afterLastEvent: boolean) =>
+  afterLastEvent && uid === uidOf("a", HEAVY_HIT.k) ? HEAVY_HIT.lost : 0;
+
+/**
+ * A last-event member's figures: the Start's are `members(side, 0)`, the End loses 3M might (HEAVY_HIT more)
+ * and gains 90K kills.
+ */
 const atEvent = (m: Member, phase: "before" | "after") =>
-  phase === "after" ? { might: m.power - 3_000_000, kills: m.kills + 90_000 } : { might: m.power, kills: m.kills };
+  phase === "after"
+    ? { might: m.power - 3_000_000 - hitOf(m.uid, true), kills: m.kills + 90_000 }
+    : { might: m.power, kills: m.kills };
 
 /** An alliance's totals at the last event's Start or End. */
 export function eventTotals(side: Side, phase: "before" | "after") {
@@ -166,7 +182,9 @@ export const endOf = (side: Side, k: number) => atEvent(members(side, 0)[k] as M
 /** Member k on the newest daily roster (day 13 of 14), and on the first (day 0). */
 export const rosterOf = (side: Side, k: number, day = 13) => {
   const m = members(side, day)[k] as Member;
-  return { might: m.power, kills: m.kills };
+  const { today, events } = calendarOf(seededAt());
+  const after = iso(today - (14 - day) * DAY_MS) >= (events[1] as string);
+  return { might: m.power - hitOf(m.uid, after), kills: m.kills };
 };
 
 /** Yesterday's ranks board, in seed order: rank, might, kills. */
@@ -203,7 +221,9 @@ function dailyReads(today: number, lastEvent: string): string[] {
       `insert into daily_reads (day, started_at, finished_at, status, calls_used, quota_remaining_before) values ('${day}', '${day}T23:30:00-02:00', '${day}T23:34:00-02:00', 'complete', 9, 4000);`,
     );
     for (const side of ["a", "b"] as const) {
-      const list = members(side, 14 - n).filter((_, k) => onRoster(side, k, day >= lastEvent));
+      const list = members(side, 14 - n)
+        .filter((_, k) => onRoster(side, k, day >= lastEvent))
+        .map((m) => ({ ...m, power: m.power - hitOf(m.uid, day >= lastEvent) }));
       lines.push(rosterRow(side, day, list, n - 1));
     }
     for (const f of FILLERS)
@@ -248,7 +268,11 @@ function eventRows(events: string[]): string[] {
       for (const side of ["a", "b"] as const) {
         const list = members(side, 0)
           .filter((_, k) => onRoster(side, k, last && phase === "after"))
-          .map((m) => ({ ...m, power: m.power - offset * 3_000_000, kills: m.kills + offset * 90_000 }));
+          .map((m) => ({
+            ...m,
+            power: m.power - offset * 3_000_000 - hitOf(m.uid, last && phase === "after"),
+            kills: m.kills + offset * 90_000,
+          }));
         lines.push(...snapshotRows(sid, side, list, at));
       }
       for (const f of FILLERS)

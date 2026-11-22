@@ -184,6 +184,64 @@ New: nothing - no entity.
 
 **S3 validation:** the plan review is under [Validation (h) to (k)](#h-s3-officer-panel-first-glance-test-and-review).
 
+## S5 plan: After KvK, offer help (built in `feat/585-after-kvk-help`)
+
+**S5 problem.** Measured in the code at `b8bb5f56` and on invented data (Lantern Keep, KvK Sat, Nov 21, Sun, Nov 22 10:00 ST):
+
+- Insights' KvK card lists "Took a heavy hit — maybe offer help" (`kvkOf` `help`: lost more than 25% of their Start might, still under 80% of it now, not on a break; D139). The 585 seed has 8 names in it. The card is about four phone screens down Insights, has its own rule, and does not link to Follow-up.
+- Follow-up, the week's worklist, does not know about the KvK: "2 to look at · everyone else is fine" while three members took a heavy hit and nobody has talked to them. Home's and Members' "Follow-up: n to look at" (S1) leave them out too.
+- Officer panel, first-glance test on Follow-up (Validation (l)): 4 of 6 wrong, 2 of 6 "can't tell" on "Who should I offer help to after this KvK?".
+
+What is different for an officer when S5 ships: in the week after a KvK, Follow-up has "After KvK, offer help · n" under Needs help, with a jump to it in the head; a member leaves it once an officer writes something down, or at the next KvK; Home and Members count it; Insights' help list keeps its names and links to the group while the group has someone in it.
+
+**S5 shape.** Reuses `kvkOf` and its `help` (`insights-kvk.ts`, unchanged rule), `scheduledEventMight` (`lib/repo/workspace-rosters.ts`, its date-bounded statement, D149), `MembersView.reads` (15 end-of-day reads, already read), `worklist`, `resolvedBy`, `weekLists`, `followUpCounts`, `groupsOf` and the ready message's existing `kvk` line ("How did KvK go for you? Anything we can help with?"). No new route, table, field or migration.
+
+1. officer opens `/w/[slug]/follow-up` -> `requireWorkspace` (exists); `followUpView` (exists) reads `scheduledEventMight` from 00:00 ST six server days back, beside `membersView`, `notedSince` (from last Monday, exists) and the thefts
+2. `afterKvk` (new, pure, `insights-kvk.ts`): `kvkOf`'s newest event shown, while today is less than `KVK_HELP_DAYS` (7) server days after its day: its day, its End read's start (`afterAt`) and its `help` uids; else null
+3. `kvkOpen` (new, pure, `follow-up-rules.ts`): those uids minus the members with a record still counting since Monday 00:00 ST or since `afterAt`
+4. `weekLists` (exists, changed) takes the rows of the whole window and splits them itself: this week's for the list and Noted, from `afterAt` for `kvkOpen`; `worklist` (exists, changed) gains `kvk` (in the open set, not on a break) and lists such a member
+5. `groupsOf` (exists, changed): "After KvK, offer help · n" second, after Needs help, before Worth a hello; its hint holds the rule and the KvK's date, so its rows show name and rank only; the reason line "Still rebuilding after the KvK of {date}." stays in `lines` (the panel) and on a Needs help row
+6. `FollowUpHead` (exists): "{n} to offer help after the KvK ↓" to `#follow-up-kvk`
+7. Home and Members (exist) -> `followUpCounts` (exists, changed): the same events read beside `followedUpSince` from the earlier of this Monday and the window's first day, then `weekLists`
+8. Insights (exists) -> `insightsView`: while the Follow-up tab is on and `afterKvk` holds, `followedUpSince` from the same start and `kvkOpen` minus members marked Needs help; the KvK card shows "Offer help: Follow-up ›" under the names while that set is not empty
+
+```mermaid
+flowchart LR
+    F["1. followUpView (exists)"] --> E[("1. scheduledEventMight (exists)")]
+    F --> A["2. afterKvk (new)"]
+    A --> K["kvkOf (exists)"]
+    F --> W["4. weekLists (changed)"]
+    W --> O["3. kvkOpen (new)"]
+    W --> WL["worklist (changed)"]
+    F --> G["5. groupsOf (changed)"]
+    H["7. Home / Members"] --> C["7. followUpCounts (changed)"] --> W
+    I["8. insightsView (exists)"] --> O
+```
+
+**Changes underneath (S5)**
+
+| Front       | What changes                                                                                                                                                                                                                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| domain      | Who is on Follow-up's list: the newest KvK's help list, for the 7 server days from its day, until an officer writes something after its End. D104, D139 and D140 get dated amendments                                                                                                                                                 |
+| stored data | nothing to migrate; nothing new written                                                                                                                                                                                                                                                                                               |
+| readers     | Follow-up (group, head jump, panel, ready message), Home and Members (the numbers, through `followUpCounts`), Insights (the link). The member card's "on the list" flag and its message do not see the group (follow-up)                                                                                                              |
+| cost        | Follow-up, Home and Members: one `scheduledEventMight` over 6 days (one statement, events by `events_event_at_utc_unique`); Home and Members read `followedUpSince` from up to 6 days before Monday (uid, action, time). Insights: one `followedUpSince` only while the tab is on and a KvK is in the window. Measured in the handoff |
+
+New: nothing - read only.
+
+**S5 assumptions**
+
+| Assumption                  | Chosen default                                                                                                           | Rationale                                                                                                                                                          | Confirmed? |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| How long the group stays    | From the KvK's night read through the Friday after (7 server days from its day); gone on the next KvK day until its read | 5 of 6 officers (A (b)); product MUST: the same week as Insights' recovery; a skipped KvK never leaves an old list                                                 | n          |
+| A member noted after it     | Any record still counting since the KvK's End read takes them out of the group until it ends (not back on Monday)        | 4 of 6 officers and product: one offer of help, not a weekly reminder (D75); their other reasons still follow the weekly rule                                      | n          |
+| One group per member, order | Needs help > After KvK > Worth a hello > New > A tip, shown in that order; other reasons stay as lines on the row        | Round 2 first glance: KvK first made 2 of 6 think an officer marked the three, 0 of 6 right on "who needs help"; Needs help first plus a head jump: 5 of 6 on both | n          |
+| Home's and Members' number  | Counted, one number with Follow-up's ("Follow-up: 5 to look at")                                                         | 4 of 6 officers; the task: equal to Follow-up's, through `followUpCounts`                                                                                          | n          |
+| Insights                    | Names kept; "Offer help: Follow-up ›" under them while the group has someone in it                                       | 4 of 6 officers and the designer; the names must stay with the tab off anyway (product MUST). Product picked links only (see Validation (n))                       | n          |
+| Copy                        | "After KvK, offer help · n"; row line "Still rebuilding after the KvK of {date}."; hint as criterion 41                  | 4 of 6 officers each; "note"/"noter" reads as grading in French, so the hint says "writes down what they said"                                                     | n          |
+
+**S5 validation:** the plan review is under [Validation (l) to (o)](#l-s5-officer-panel-first-glance-test-and-review).
+
 ## Criteria
 
 ### S1: Follow-up says who is left and who was noted; Home and Members say the same (P1) - built in this PR
@@ -251,7 +309,19 @@ S3 continues at 32 (19 to 31 are taken):
 
 ### S5: "After KvK, offer help" in Follow-up (P2) - later PR (F3; M: a rule change)
 
-22. Follow-up SHALL hold an "After KvK, offer help · n" group from Insights' heavy-hit rule (`insights-kvk.ts` `help`), not on a break, for the week after the KvK; Insights' list SHALL link to it instead of being a list of its own
+22. Follow-up SHALL hold an "After KvK, offer help · n" group from Insights' heavy-hit rule (`insights-kvk.ts` `help`), not on a break, for the week after the KvK; Insights' list SHALL link to it instead of being a list of its own (superseded by criteria 40 to 47: Insights keeps its names, see the S5 assumptions)
+
+S5 is built in `feat/585-after-kvk-help`; its criteria start at 40 (35 to 39 are S4's, in PR 652). Shape, problem and plan review: [S5 plan](#s5-plan-after-kvk-offer-help-built-in-feat585-after-kvk-help).
+
+40. WHILE the newest KvK Insights shows (`kvkOf`'s first event: Start and End read, a daily read after its End) is less than 7 server days old, Follow-up SHALL list under "After KvK, offer help · n" ("Depois da KvK, ofereça ajuda · n", "Après la KvK, proposer de l’aide · n"), the second group, by name, every current member in that KvK's help list who is not on a break, not marked Needs help, and has no record still counting written this week or since the KvK's End read began
+    - KvK Sat, Nov 21: Sun 22 and Fri 27 → listed; Sat 28 before that day's KvK read → not listed; "Talked to them" Sun 22 → under "Noted this week", and not back on Mon 23; talked then undone → listed; on a break → not listed; marked Needs help → under "Needs help", with the KvK line
+41. The group SHALL say under its title "Lost over a quarter of their might in the KvK of {date}, and still below 80% of what they had. Here for the week after it, or until someone writes down what they said."; its rows SHALL leave out the KvK line (the hint says it), and keep every other line; the reason "Still rebuilding after the KvK of {date}." SHALL be in the panel's "Why they’re on the list", and on the row of a Needs help member in the help list; no number SHALL be shown beside a name, on the row, in the panel or in the ready message (D139), whose first reason line SHALL be the KvK one ("How did KvK go for you? Anything we can help with?"); names inside `ph-no-capture`
+42. WHEN the group has members THEN Follow-up's head SHALL show "{n} to offer help after the KvK ↓" ("{n} para oferecer ajuda depois da KvK ↓", "{n} à qui proposer de l’aide après la KvK ↓") as a 44 px jump to the group, first among the head's jumps
+43. Home's and Members' Follow-up numbers SHALL count the group through `followUpCounts` / `weekLists` (no count of their own), so they equal Follow-up's for the same data and time, a member noted on the Sunday after the KvK included on the Monday
+44. Insights' "Took a heavy hit — maybe offer help" SHALL keep its names and, WHILE the Follow-up tab is on (D126) and Follow-up's group has at least one member, show under them "Offer help: Follow-up ›" ("Oferecer ajuda: Acompanhar ›", "Proposer de l’aide : À suivre ›"), a 44 px link to `/w/[slug]/follow-up#follow-up-kvk`; otherwise the card SHALL be as today
+45. The desk dictionary SHALL hold every new string in EN, PT-BR and FR
+46. D104, D139 and D140 SHALL each get an amendment dated 2026-11-22 for the group, its window and noted rule, the head jump, Home's and Members' numbers, Insights' link and the ready message's line
+47. The e2e seed SHALL give one Lantern Keep member a heavy hit at the last KvK (the other members' figures unchanged); the Home e2e SHALL assert Follow-up's number with that member counted, the head jump, the group with its hint, the member's row and Insights' link to it; the Members e2e SHALL assert the Members head's number equal to Home's; on a Saturday (server day) the group is gone and the numbers leave the member out
 
 ### S6: a claim you can check (P3) - built in feat/585-claim-check (F15)
 
@@ -425,6 +495,47 @@ No one-way door: no migration, nothing deleted, no route or contract change, no 
 - SHOULD, taken: the help's cookie is not written while the first-use cards cover the page; the open state is taken once, so a save's refresh never closes it (criterion 17); each row's description names the shared lines (criterion 15); the e2e taps "Card ›" and sees the member's card (criterion 34).
 - NOTE, taken: D104's amendment says the owner's help line moved behind the disclosure (its words unchanged); the deviation "only the name styled as the link" (the S1 handoff said "the name and reasons") is in the handoff; `sharedOf` compares exact strings, so "Quiet for 3 days" and "for 4 days" stay on their rows; a save that shrinks a group to one row brings that row's line back (a small jump, accepted); privacy improves (`?q=<name>` becomes `?m=<uid>`); a screenshot at 1024 with the rail.
 - Changed after it, while building: the Members line shows while the head shows Follow-up's numbers (`followUpCounts` not null: the tab on and the first daily update in), not on the tab switch alone. That is the case where the two numbers met; before the first daily update the head says nothing about check-ins (criterion 8).
+
+### (l) S5: officer panel, first-glance test and review
+
+Six officer personas (R5 40s UK, war lead 30s US, diplomat early 20s FR, Discord-upkeep officer 50s PH, officer early 20s UA, architect 30s CH; AI personas on invented data) saw the 360 × 780 first viewport of text wireframes for about 5 seconds. Truth: KvK Sat, Nov 21; Esk, Ivo and Mabry took a heavy hit and nobody has talked to them; Galen took one too and is marked Needs help; Juno took one and was talked to this morning. Q1: "Who should I offer help to after this KvK?" Q2 (round 2): "Who needs help this week, and has an officer already said so?"
+
+| Screen and question                                                | Right | Partial | Wrong | Can't tell |
+| ------------------------------------------------------------------ | ----- | ------- | ----- | ---------- |
+| Before (today's Follow-up), Q1                                     | 0     | 0       | 4     | 2          |
+| Round 1, A: Needs help first, KvK group title at the fold, Q1      | 0     | 4       | 2     | 0          |
+| Round 1, B: KvK group first, Q1                                    | 6     | 0       | 0     | 0          |
+| Round 2, A': Needs help first, a head jump, the hint said once, Q1 | 5     | 1       | 0     | 0          |
+| Round 2, A', Q2                                                    | 5     | 1       | 0     | 0          |
+| Round 2, B': KvK group first, the hint said once, Q1               | 6     | 0       | 0     | 0          |
+| Round 2, B', Q2                                                    | 0     | 3       | 2     | 1          |
+
+Votes (round 1): A (window) (b) 5, (c) 1, (a) 0; B (noted rule) until the next KvK 4, weekly 2; C (order) KvK first 4, Needs help first 2 (round 2: A' 4, B' 2); D (Home's number) one number 4, a separate "· 3 after KvK" 2; E title "After KvK, offer help" 4, "Rebuilding after KvK" 2; row line "Still rebuilding…" 4, "Took a heavy hit…" 2; F (Insights) keep the names and link 4, link only 2.
+
+- MUST, taken: the group on Follow-up (before: 4 wrong, 2 can't tell; "everyone else is fine" read as false).
+- MUST, taken as A': with the KvK group first, 2 of 6 thought an officer had marked the three and nobody answered Q2 right; with Needs help first and the head's jump, 5 of 6 on both questions. Round 1's A put the names below the fold with no count in sight (2 wrong).
+- MUST, taken: no "note" in the new copy: "noter" reads as "to grade" in French. The hint says "until someone writes down what they said" (round 2: "records how it went" was unclear to 2 of 6). S1's "noted" words stay (follow-up).
+- SHOULD, taken: the hint rewritten ("still under 80% of before" read as clumsy by 6 of 6); title (1) and row line (i).
+- SHOULD, not taken: "Same for all 3:" as "All 3:" (2 of 6; S3's words, follow-up); the KvK group no longer uses a shared line, the hint says it.
+- COULD, not taken: "· 3 after KvK" on Home on Sundays (2 of 6): a second number on Home, and the head's jump on Follow-up says it.
+
+### (m) S5: designer: approve with changes
+
+- MUST, taken: say the reason once: the hint holds the date and the rule, the rows show name and rank, the panel keeps the reason line, a Needs help row keeps it.
+- MUST, taken: the hint names the KvK (not "in it") and matches the rule (until the next KvK, or a note after the KvK).
+- MUST, taken: Insights' link only while Follow-up's group has someone in it (else the jump lands nowhere); the names stay in every case.
+- SHOULD, taken: "Offer help: Follow-up ›" (the "label: Destination ›" shape of "This week’s list: Follow-up ›"), after the names, no border, the link style, no count (Insights' list and the group differ by the noted and Needs help members); `scroll-mt-4` on the group heading (no sticky top bar, so the jump would cut the card's top edge).
+- Picked A (Needs help first): an officer's own mark is the stronger signal; the round 2 test agreed with the head jump added.
+
+### (n) S5: product strategy: approve with changes
+
+- MUST, taken: read the records from the earlier of Monday and the window's first day (a 7 × 24 h window would miss a record near its end); no number on the row, the panel or the ready message (D139, a copied message leaves the app); with the Follow-up tab off Insights keeps its names (D126); the window is Insights' recovery week (`addDays(day, 7)`).
+- SHOULD, not taken: "Took a heavy hit…" as the row's line (a fact, not a judgement): 4 of 6 officers picked "Still rebuilding…" as kinder and the diplomat read "heavy hit" as blame in translation. Kept on Insights, where it is today.
+- SHOULD, not taken: "3 already noted since Sat, Nov 21" under the group (members noted last week are on no card); a new line on a phone screen the designer asked to shorten. Follow-up.
+- SHOULD, measured instead: skip the KvK read on Home and Members when no KvK is in the window; the read is one date-bounded statement, measured in the handoff.
+- Picked Insights (b), links only (F3: two lists for one question). Not taken: 4 of 6 officers and the designer kept the names, which must stay with the tab off anyway; the link has no count, so no second number.
+- Measure (database, read-only, per workspace and KvK, no names): the share of the group with a record inside the window, by answer; the median time from the night read to the first record; members with records from 2 or more officers in the window; the group's size and the share also marked Needs help; the share back to 80% by the window's end. PostHog: Insights → Follow-up pageviews within 10 minutes; `ws_message_copied` `where=follow_up` in the window against outside it.
+- Later uses: a "Back on their feet" thanks line; a pre-KvK tip for members still under 80% while the shield check is on; an alliance-level "how concentrated was the hit" note, no names.
 
 ## Analytics plan
 

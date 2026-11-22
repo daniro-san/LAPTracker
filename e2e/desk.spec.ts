@@ -12,6 +12,7 @@ import {
   daysAgo,
   JOINER,
   KVK_ENTRY,
+  kvkWeek,
   LEAVER,
   NEEDS_HELP,
   needsHelpDays,
@@ -40,6 +41,13 @@ const MARKED_BY = { phone: A.names[6], wide: A.names[7], iphone: A.names[8] } as
 /** A label that starts with `prefix` and a name, the name inside Unicode isolates (isolate(), <bdi>). */
 const labelled = (prefix: string, name: string) => new RegExp(`^${prefix}\\u2068?${name}\\u2069?`);
 const cal = calendarOf(seededAt());
+/**
+ * Follow-up's list for the seed (issue 585): the new members (each with every fact to ask), the member marked
+ * Needs help (slice 2), and HEAVY_HIT for the week after the last KvK (slice 5, e2e/desk-kvk.spec.ts).
+ */
+const TO_LOOK = newMembers("a").length + 1 + (kvkWeek(seededAt()) ? 1 : 0);
+/** Follow-up's line on Home and Members; the noted part races (see the Home test). */
+const followUpLine = new RegExp(`^Follow-up: ${TO_LOOK} to look at( · 1 noted this week)?$`);
 
 test.beforeEach(async ({ context }) => {
   await signIn(context, "a", "officer");
@@ -72,14 +80,10 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
   // Issue 585: Follow-up's numbers, linked to Follow-up. The seed gives everyone quest points and coins at
-  // the cap (DAILY) and records no facts for its new members, so the list holds the new members, each with
-  // every fact to ask, and the member marked Needs help (slice 2), who has no reason of their own. The noted
+  // the cap (DAILY) and records no facts for its new members, so the list holds TO_LOOK. The noted
   // part races: the card test below, in this project and the other one running beside it, keeps a Talked
   // on a member, so 0 or 1 is right at this moment; the exact rule is in follow-up-week.test.ts.
-  const toLook = newMembers("a").length + 1;
-  const followUp = week.getByRole("link", {
-    name: new RegExp(`^Follow-up: ${toLook} to look at( · 1 noted this week)?$`),
-  });
+  const followUp = week.getByRole("link", { name: followUpLine });
   await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
   // With someone to look at, "Everyone looks fine" never shows; on Sunday and Monday (server days), while
   // the week is not thanked yet (the seed shares none), the thanks nudge shows too (D114).
@@ -123,6 +127,11 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   await deskFrame(page, A);
   await sees(page.locator("main"), `${ROSTER} of ${ROSTER} members`);
+  // Issue 585: the head says Follow-up's numbers, the same as Home's (slice 5's KvK group counted).
+  await expect(page.locator("main").getByRole("link", { name: followUpLine })).toHaveAttribute(
+    "href",
+    `/w/${A.slug}/follow-up`,
+  );
   // Issue 585 S3: the first group (it holds the member marked Needs help) says its status words, no count,
   // and points at Follow-up for the week's list while that tab is on.
   const first = page.getByRole("region", { name: "Check in or Needs help" });

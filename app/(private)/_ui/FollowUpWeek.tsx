@@ -47,6 +47,8 @@ export function FollowUpHead(props: {
   help: { seen: boolean; covered: boolean };
 }) {
   const { data, t, language } = props;
+  // "After KvK, offer help" (issue 585 S5): the members in it, not those under Needs help.
+  const hit = data.items.filter((i) => i.kvk && !i.help).length;
   return (
     <>
       <h1 className="font-display text-display-lg">{t["tab.review"]}</h1>
@@ -62,6 +64,11 @@ export function FollowUpHead(props: {
         <p className="font-semibold">{fill(t["followup.count"], { n: data.items.length })}</p>
       )}
       <div className="flex flex-wrap gap-x-4">
+        {hit > 0 && (
+          <a href="#follow-up-kvk" className={LINK}>
+            {counted(t, "followup.kvk.jump", hit, language)}
+          </a>
+        )}
         {data.noted.length > 0 && (
           <a href="#follow-up-noted" className={LINK}>
             {counted(t, "followup.noted.jump", data.noted.length, language)}
