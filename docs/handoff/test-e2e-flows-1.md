@@ -82,4 +82,4 @@ Follow-ups for #477 (later PRs):
 - Moss Hollow now has 6 members with no quest points or donations on the last 3 reads. Any test of Moss Hollow's Home or Members must allow for them.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/632
