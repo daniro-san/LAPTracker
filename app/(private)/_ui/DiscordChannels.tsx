@@ -236,6 +236,7 @@ function ChannelCard(props: {
       <p className={c.state === "reenter" ? "font-semibold text-seal" : "text-ink/80"}>
         <bdi>{stateLine(c, t)}</bdi>
       </p>
+      <p className="text-body-sm text-ink/70">{t["discord.channel.look"]}</p>
       {usable && !editing && (
         <HookActions
           c={c}
