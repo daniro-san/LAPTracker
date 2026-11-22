@@ -1,5 +1,6 @@
 // The "To review" list on Home (issue 299): the workspace's drafts waiting for an officer, shared by all of
-// them, and the door in, "Send screenshots". Each draft says what was read and how many rows need a person.
+// them; the door in, "Send screenshots", is its own card after it (SendCard, issue 585 slice 4). Each draft
+// says what was read and how many rows need a person.
 // Above them, "2 new members to match" when a roster read could not match new members added by hand, and
 // each notice review request the officer may answer (D113), linked to its notice, and each member's "This is
 // me" waiting for an officer (D142), with Approve and Not them.
@@ -117,6 +118,43 @@ function NoticeReviewLinks(props: {
   );
 }
 
+/**
+ * "1 waiting in “To review” ↓" near the top of Home (issue 585 slice 4): what waits for a person, the Home
+ * tab's own number, said on the first screen; nothing when nothing waits.
+ */
+export function ReviewJump(props: { t: WorkspaceDictionary; waiting: number }) {
+  if (props.waiting === 0) return null;
+  return (
+    <p className="mt-2">
+      <a
+        href="#to-review"
+        className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+      >
+        {fill(props.t["home.toReview.jump"], { n: props.waiting })}
+      </a>
+    </p>
+  );
+}
+
+/**
+ * Home's "Screenshots" card (issue 585 slice 4): "Send screenshots" and its help line, out of "To review",
+ * whose number counts only what waits for a person. The drafts it makes join "To review" above.
+ */
+export function SendCard(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+}) {
+  return (
+    <section aria-labelledby="home-send" className="drawn-card mt-4 px-4 py-4 first:mt-0">
+      <h2 id="home-send" className="font-subhead text-display-sm">
+        {props.t["shots.cardHead"]}
+      </h2>
+      <SendScreenshots {...sendProps(props.slug, props.t, props.language)} />
+    </section>
+  );
+}
+
 export function ToReview(props: {
   slug: string;
   items: ReviewItem[];
@@ -159,8 +197,6 @@ export function ToReview(props: {
           </a>
         </p>
       )}
-      {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
-      <SendScreenshots {...sendProps(slug, t, language)} />
       {waiting === 0 && <p className="mt-3">{t["shots.none"]}</p>}
       {items.length > 0 && (
         <ul className="mt-3 space-y-2">

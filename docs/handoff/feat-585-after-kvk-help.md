@@ -82,6 +82,8 @@ Part of #585 (F3). Size M: a rule change across Follow-up, Insights, Home and Me
 
 ## Next
 
+- Merged with S4 (PR 652) by a merge of `dev`: Home's assertion is S4's card with S5's count. The count is `toLookOf` in the new `e2e/fixtures/follow-up-list.ts`, shared with `e2e/desk-kvk.spec.ts`. Members' head assertion moved to `desk-kvk.spec.ts` so `desk.spec.ts` stays under 300 lines.
+
 - **Batch 3 is complete with this PR**, with S1 to S3 and S6 merged and S4 in PR 652. Batch 4, the words pass in EN, PT and FR, is next. It can take:
   - the help's lines and first-visit layout (the after-build MUST above);
   - S1's "noted" words ("noter" reads as "to grade" in French);

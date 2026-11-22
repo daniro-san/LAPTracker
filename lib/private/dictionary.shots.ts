@@ -6,6 +6,7 @@ export const shotsEn = {
   "shots.head": "To review",
   "shots.lead": "Check each one, then save it.",
   "shots.none": "Nothing to review.",
+  "shots.cardHead": "Screenshots",
   "shots.send": "Send screenshots",
   "shots.help":
     "Rankings: turn on My Alliance first. Several screenshots of one long list become one draft. Screenshots are not kept after reading.",

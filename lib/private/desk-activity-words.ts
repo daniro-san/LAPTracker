@@ -19,6 +19,14 @@ export function namesList(names: string[], language: WorkspaceLanguage): string 
   return new Intl.ListFormat(language, { type: "conjunction" }).format(names.map(isolate));
 }
 
+/** "Wren and Tomas", "Wren, Tomas and Lucien", "Wren, Tomas and 3 others": who finished a roll call. */
+function officersList(names: string[], t: WorkspaceDictionary, language: WorkspaceLanguage) {
+  if (names.length <= 3) return namesList(names, language);
+  const others = fill(t["activity.others"], { n: names.length - 2 });
+  const shown = [...names.slice(0, 2).map(isolate), others];
+  return new Intl.ListFormat(language, { type: "conjunction" }).format(shown);
+}
+
 /** A line about one member, or about "a member" when the name is not known (a former member). */
 function aboutMember(
   t: WorkspaceDictionary,
@@ -80,9 +88,11 @@ function marksLine(
   t: WorkspaceDictionary,
   who: string,
   item: Extract<ActivityItem, { kind: "marks" | "callDeleted" | "callArchived" }>,
+  many = false,
 ): string {
   const call = callTitle({ ...item.call, kind: item.call.kind as RollKind, placed: null }, t);
   if (item.kind !== "marks") return fill(t[`activity.${item.kind}`], { who, call });
+  if (many) return fill(t["activity.marksRestMany"], { who, call });
   return fill(t[item.rest ? "activity.marksRest" : "activity.marks"], { who, call });
 }
 
@@ -199,10 +209,14 @@ const counted = (kind: ActivityItem["kind"]): kind is (typeof COUNTED_RUNS)[numb
 /**
  * A line of the feed as one sentence. A run of calendar entries, notice saves or screenshots says how many
  * lines it opens to ("Rook added 6 entries to the Calendar"); a run of member saves, thefts or new members
- * says what it holds.
+ * says what it holds; a roll call finished by several officers names each once, newest first (issue 585).
  */
 export function feedLine(line: ActivityLine, t: WorkspaceDictionary, language: WorkspaceLanguage) {
   const { item } = line;
+  if (item.kind === "marks" && line.run.length > 0) {
+    const names = [...new Set(line.run.map((one) => one.who))];
+    return marksLine(t, officersList(names, t, language), item, names.length > 1);
+  }
   if (line.run.length === 0 || !counted(item.kind)) return activityLine(item, t, language);
   return fill(t[`activity.run.${item.kind}`], { who: isolate(item.who), n: line.run.length });
 }

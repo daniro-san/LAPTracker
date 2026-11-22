@@ -1,8 +1,9 @@
 // Follow-up's "After KvK, offer help" (issue 585 slice 5): the seed's HEAVY_HIT lost more than a quarter of
 // their might at the last KvK and is still under 80% of it, and nobody wrote anything about them since, so
 // for the week after that KvK Follow-up offers help: a jump in the head, the group with its rule and the KvK's
-// day, their row; and Insights' help list links to it. Read-only. Home's and Members' numbers that count it
-// are in desk.spec.ts. Expected values come from the seed (e2e/fixtures/seed.ts).
+// day, their row; and Insights' help list links to it. Read-only. Home's numbers that count it are in
+// desk.spec.ts; Members' head is below. Expected values come from the seed (e2e/fixtures/seed.ts).
+import { toLookOf } from "./fixtures/follow-up-list";
 import { ALLIANCES, calendarOf, HEAVY_HIT, kvkWeek, seededAt, uidOf, usDay } from "./fixtures/seed";
 import { deskFrame, expect, hydrated, sees, signIn, test } from "./fixtures/test";
 
@@ -57,4 +58,15 @@ test("After KvK, offer help: Follow-up offers help to the member who took a heav
   await offer.click();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await expect(page.getByRole("heading", { name: GROUP })).toBeInViewport();
+});
+
+test("Members' head says Follow-up's numbers, the KvK group counted", async ({ page }) => {
+  await page.goto(`${desk}/members`);
+  await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  // The same list as Follow-up and Home (slice 5); the noted part races (see desk.spec.ts's Home test).
+  const line = new RegExp(`^Follow-up: ${toLookOf()} to look at( · 1 noted this week)?$`);
+  await expect(page.locator("main").getByRole("link", { name: line })).toHaveAttribute(
+    "href",
+    `${desk}/follow-up`,
+  );
 });

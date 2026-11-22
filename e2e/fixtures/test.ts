@@ -213,3 +213,6 @@ export const test = base.extend<{ guards: undefined }>({
 });
 
 export { expect };
+
+/** A label that starts with `prefix` and a name, the name inside Unicode isolates (isolate(), <bdi>). */
+export const labelled = (prefix: string, name: string) => new RegExp(`^${prefix}\\u2068?${name}\\u2069?`);
