@@ -71,8 +71,11 @@ export type DrilldownSurface = "insights" | "raid_prep" | "roll_call" | "home" |
  */
 export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone";
 
-/** Raid prep's two counts of people behind "Show the n ›" (#691): "To remind" and "Mark ✓ the n seen". */
-export type RaidPrepSet = "remind" | "accept";
+/**
+ * Raid prep's counts of people behind "Show the n ›" (#691): "To remind", "Mark ✓ the n seen" and "Check by
+ * hand" (#726).
+ */
+export type RaidPrepSet = "remind" | "accept" | "hand";
 
 /** The chip a Roll call card's count opened its marking page on (#691): "To mark", ✗ or ✓. */
 export type RollCallSet = "todo" | "no" | "yes";

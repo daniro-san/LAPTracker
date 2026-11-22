@@ -129,7 +129,7 @@ async function raidPrep(marks: Record<number, "yes" | "no">, rest: number[] = []
   const rows = markRows(read.view.rows, { t, language: "en" });
   // The page's own split: away members are apart, never asked.
   const asked = rows.filter((row) => row.away === null);
-  const prep = prepRows(view, t, ZONE);
+  const prep = prepRows(view, t, ZONE, "en");
   return { access, occasion, rows, asked, prep, head: prepHead(view, t, ZONE) };
 }
 

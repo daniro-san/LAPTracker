@@ -5,8 +5,10 @@
 // tracker's map scan, and the tracker's own marks are shown "from the tracker" until an officer checks them
 // (D137, 2026-11-21). One vocabulary (issue 585): the Raid Shield check has a night check and a morning
 // check, on this page, on Insights, in settings and in the Discord summary. French puts a no-break space
-// before : and ?. The first-glance words (issue 585) are in dictionary.raidprep-glance.ts.
+// before : and ?. The first-glance words (issue 585) are in dictionary.raidprep-glance.ts, "Check by hand"
+// (issue 726) in dictionary.raidprep-hand.ts.
 import { glanceEn, glanceFr, glancePt } from "./dictionary.raidprep-glance";
+import { handEn, handFr, handPt } from "./dictionary.raidprep-hand";
 
 export const prepEn = {
   "roll.prep.shield": "Shield",
@@ -25,6 +27,7 @@ export const prepEn = {
   "roll.prep.notSeenLeft": "{n} not seen yet, left out",
   "roll.prep.notSeenLeft.one": "{n} not seen yet, left out",
   ...glanceEn,
+  ...handEn,
   "roll.prep.read.none":
     "Night check: Friday from 23:30 ST. Morning check: Saturday from {time} ST. The tracker reads every member at each.",
   "roll.prep.read.unread": "{n} not read yet",
@@ -103,6 +106,7 @@ export const prepPt: PrepWords = {
   "roll.prep.notSeenLeft": "{n} ainda sem escudo visto, deixados de fora",
   "roll.prep.notSeenLeft.one": "{n} ainda sem escudo visto, deixado de fora",
   ...glancePt,
+  ...handPt,
   "roll.prep.read.none":
     "Conferência da noite: sexta a partir das 23:30 ST. Conferência da manhã: sábado a partir das {time} ST. O tracker lê todos os membros em cada uma.",
   "roll.prep.read.unread": "{n} ainda sem leitura",
@@ -180,6 +184,7 @@ export const prepFr: PrepWords = {
   "roll.prep.notSeenLeft": "{n} pas encore vus, laissés de côté",
   "roll.prep.notSeenLeft.one": "{n} pas encore vu, laissé de côté",
   ...glanceFr,
+  ...handFr,
   "roll.prep.read.none":
     "Vérification du soir : vendredi à partir de 23:30 ST. Vérification du matin : samedi à partir de {time} ST. Le tracker lit chaque membre à chacune.",
   "roll.prep.read.unread": "{n} pas encore lus",

@@ -196,11 +196,14 @@ export function RollGrid<T extends { uid: number }>(props: {
   said?: { yes: string; no: string };
   /** Which mark the chips count, above them ("Filter by Shield mark", Raid prep, issue 585). */
   caption?: string;
+  /** In place of "Nobody left to mark" (Raid prep while only the tracker has marked, issue 726). */
+  emptyTodo?: string | undefined;
   tile: (row: T) => ReactNode;
 }) {
   const { g, words } = props;
   const { list, marked } = g.sectionsOf(props.found);
-  const empty = g.snap.filter === "todo" ? "roll.grid.none.todo" : "roll.grid.none";
+  const todo = g.snap.filter === "todo";
+  const empty = todo ? (props.emptyTodo ?? words["roll.grid.none.todo"]) : words["roll.grid.none"];
   return (
     <>
       {!props.found && props.caption && (
@@ -212,8 +215,8 @@ export function RollGrid<T extends { uid: number }>(props: {
         <p className="mt-2 text-body-sm font-semibold">{g.snap.label}</p>
       )}
       {/* With nobody left, the tiles marked meanwhile stay; the line says why (persona review). */}
-      {!props.found && (list.length === 0 || (g.snap.filter === "todo" && g.counts.todo === 0)) && (
-        <p className="py-3 text-ink/80">{words[empty]}</p>
+      {!props.found && (list.length === 0 || (todo && g.counts.todo === 0)) && (
+        <p className="py-3 text-ink/80">{empty}</p>
       )}
       <Tiles rows={list} cols={props.cols} tile={props.tile} />
       <MarkedGroup g={g} rows={marked} cols={props.cols} words={words} tile={props.tile} />
