@@ -110,6 +110,8 @@ export interface NameSighting {
   tag: string;
   name: string;
   at: Date;
+  /** When the snapshot that saw it ran, where Before and After of one event differ; `at` when absent. */
+  seenAt?: Date;
 }
 
 export interface NameHistoryEntry {
@@ -117,6 +119,28 @@ export interface NameHistoryEntry {
   name: string;
   firstSeen: Date;
   lastSeen: Date;
+}
+
+/**
+ * The sightings without the source's misreads. A misread is a (tag, name) seen in one snapshot only, while
+ * another name of the same alliance was seen both earlier and at the same time or later: a glitch, not a
+ * rename. For example, YAHO was read once as "PKM / POKEMON" on 2026-11-07 and as YAHO before and after.
+ * A rename seen once, in the newest snapshot, stays.
+ */
+export function withoutMisreads(rows: readonly NameSighting[]): NameSighting[] {
+  const key = (r: NameSighting) => JSON.stringify([r.tag, r.name]);
+  const time = (r: NameSighting) => (r.seenAt ?? r.at).getTime();
+  const count = new Map<string, number>();
+  for (const r of rows) count.set(key(r), (count.get(key(r)) ?? 0) + 1);
+  const misread = (r: NameSighting) => {
+    if (count.get(key(r)) !== 1) return false;
+    const t = time(r);
+    return rows.some(
+      (o) =>
+        key(o) !== key(r) && time(o) < t && rows.some((p) => key(p) === key(o) && time(p) >= t),
+    );
+  };
+  return rows.filter((r) => !misread(r));
 }
 
 /** Distinct (tag, name) pairs in order of first appearance, each with first and last sighting (§3.8). */
