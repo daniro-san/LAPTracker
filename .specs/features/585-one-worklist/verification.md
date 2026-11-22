@@ -20,6 +20,8 @@
 | C10   | walk `585-worklist/after/followup--360-light-en-fold.png`, `followup--360-light-en.png`, `home--360-light-en.png`, `members--360-light-en.png`        | not judged here - pictures are the screens sub-agent's                                                                                                         |
 | C11   | `pnpm exec tsx scripts/i18n-check.ts`                                                                                                                 | no - the script reads only `lib/copy` and `lib/i18n` (public pages); it never opens `lib/private/dictionary.followup.ts`                                       |
 | C12   | `app/(private)/_ui/CheckInLine.test.ts` `says nothing about check-ins on Home before the alliance's first daily update`                               | appended by the builder after this report (finding 4); not judged by the Verifier; the builder broke the early branch and the test failed                      |
+| C13   | `app/(private)/_ui/FollowUpWeek.test.ts` `keeps the Noted card and the Monday rule before the first daily update, so the jump has its card`           | appended by the builder after the review of PR 640; not judged by the Verifier; the builder hid the card while early and the test failed                       |
+| C14   | `lib/private/follow-up-week.test.ts` `reads nothing and gives no numbers before the alliance's first daily update`                                    | appended by the builder after the review of PR 640; not judged by the Verifier; the builder dropped the early guard and the test failed (`noQueryDb`)          |
 
 ## Findings
 
