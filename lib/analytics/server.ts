@@ -131,7 +131,7 @@ export function eventWorkspace(w: {
 
 export interface ServerEvents {
   /**
-   * A server error (lib/app-errors.ts, D115's 2026-11-21 amendment): its class, its message and stack frames
+   * A server error (lib/report-error.ts, D115's 2026-11-21 amendment): its class, its message and stack frames
    * after redact(), redactPrivate and scrubMessage, where (`kind`, the route pattern, the desk's or /admin's
    * `section`), and whether our code caught it (`handled`). Never a request body, query string or user text.
    */

@@ -23,17 +23,20 @@ const Q = "{0,500}";
 /**
  * One value: an (escaped) quoted string, a short array, or a bare run up to a delimiter (a number, true,
  * an ISO time, a URL); never a SQL placeholder (`= $1`). Quoted forms are bounded, so a quote with no end
- * costs at most Q characters at each key.
+ * costs at most Q characters at each key; an escaped string's text holds no backslash, so its closing `\"`
+ * never rescans a run of them.
  */
 const VALUE =
-  `(?!\\$\\d)(?:\\\\+"[^"\\n]${Q}?\\\\+"|"(?:[^"\\\\\\n]|\\\\.)${Q}"|'[^'\\n]${Q}'|` +
+  `(?!\\$\\d)(?:\\\\+"[^"\\\\\\n]${Q}\\\\+"|"(?:[^"\\\\\\n]|\\\\.)${Q}"|'[^'\\n]${Q}'|` +
   `\`[^\`\\n]${Q}\`|\\[[^\\]\\n]${Q}\\]|[^\\s,;&)}\\]"'\`<>\\\\]+)`;
 /** `"x":123`, `\"x\":123`, `x=123`, `X: 123`, `members.3.x: 123`; never `max: 3` or `is_online=1`. */
 const KEY_VALUE = new RegExp(`(?<![\\w$])(${KEY})(\\\\*["'\`]?\\s*[:=]\\s*)${VALUE}`, "gi");
 /** The text between braces: one Zod issue, or the rest of a union's issue after its nested `errors`. */
 const ZOD_SEGMENT = /[^{}]+/g;
-const ZOD_PATH = /\\*"path\\*"\s*:\s*\[([^\]]*)\]/;
-const ZOD_ECHO = new RegExp(`(\\\\*"(?:input|received)\\\\*"\\s*:\\s*)${VALUE}`, "g");
+// Each starts at the first backslash of a run and reads a bounded path, so a backslash run or an unclosed
+// `"path":[` costs one pass.
+const ZOD_PATH = /(?<!\\)\\*"path\\*"\s*:\s*\[([^\]]{0,500})\]/;
+const ZOD_ECHO = new RegExp(`(?<!\\\\)(\\\\*"(?:input|received)\\\\*"\\s*:\\s*)${VALUE}`, "g");
 /** Postgres' detail line: `Key (union_id, x)=(5, 123) already exists.` */
 const PG_KEY = /Key \(([^()]*)\)=\(([^()]*)\)/g;
 /**

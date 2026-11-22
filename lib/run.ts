@@ -3,7 +3,6 @@
 // final and the logger's inserts settled before the response leaves, on every path.
 import { OWN_ALLIANCE_ID } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
-import { reportError } from "./app-errors";
 import { RunRefusedError, runSample, runSnapshot, type Deps, type RunSummary } from "./collector";
 import type { Db } from "./db";
 import { createRunLogger } from "./logger";
@@ -13,6 +12,7 @@ import { createRepo, type Phase, type Repo, type SnapshotPhase } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
 import type { EventInfo } from "./repo/events";
 import { insertRunLog } from "./repo/run-logs";
+import { reportError } from "./report-error";
 import { notifyFinished, notifySample } from "./run-notify";
 import { nextEvent } from "./schedule";
 

@@ -17,7 +17,7 @@ Owner rule (2026-11-21), and its scope extension the same day: replace private r
   - `appErrorDetail` redacts up to 2,000 characters, then cuts to 500. Before, it cut first, so a value or Zod issue cut in half could slip past.
   - `appErrorMessage` (the admin alert's builder) applies it again.
   - The browser's `scrubMessage` cuts the message to 2,000 characters, then applies it first.
-- **Server `$exception`** (`lib/app-errors.ts` `sendException`, `lib/analytics/server.ts`):
+- **Server `$exception`** (`lib/report-error.ts` `sendException`, `lib/analytics/server.ts`):
   - It carries `$exception_list[0]` with `type`, `value` and `mechanism.handled`.
   - `value` is the message after `redact()` and `scrubMessage`.
   - `stacktrace` is `raw` with `node:javascript` frames, outermost first. The frames come from the 12 redacted frames that `app_errors` keeps.
@@ -66,12 +66,19 @@ Owner rule (2026-11-21), and its scope extension the same day: replace private r
 
 ## Deviations
 
-- `.claude/rules/private.md` is not on `origin/dev` (only `api-routes.md`, `collector.md` and `tests.md`; PR #594 is pending). It is not updated here. After #594 merges, it needs the same sentence as CLAUDE.md.
 - Server source maps are not uploaded: `scripts/sourcemaps.ts` handles `.next/static` only. Server frames therefore arrive with built file names and lines, so Error Tracking groups them but cannot map them to source.
 
 ## Verified
 
-- `pnpm check` exits 0: prettier, eslint, tsc, vitest (296 files passed and 2 skipped; 1,544 tests passed and 4 skipped), drift (no schema change, no migration) and i18n (17 languages up to date).
+- `pnpm check` exits 0 after the PR #598 review fixes: prettier, eslint, tsc, vitest (296 files passed and 2 skipped; 1,545 tests passed and 4 skipped), drift (no schema change, no migration) and i18n (17 languages up to date).
+- PR #598 review (`/pr-review`), every item fixed:
+  - MUST, frames: officer text in a query's `params:` (for example "at 8pm in the hall") passed the old `startsWith("at ")` filter. The stack is now read only after the message, and only real V8 frame shapes are kept. The Drizzle test uses that input; with the old filter it fails.
+  - Quadratic regexes: the escaped-string value excludes backslashes, and `ZOD_PATH`/`ZOD_ECHO` start only at a run's first backslash and read at most 500 characters of path. 100 kB backslash runs and unclosed `"path":[` inputs are in the test, which asserts outputs.
+  - Wall-clock bounds and the 20 ms sleep are gone. The linearity tests assert outputs; the handled-error test asserts synchronously, since a send outside a request posts before its first await.
+  - The source scan strips comments and matches the calls (`= redact(`, `message: redactPrivate(`, `message: scrubMessage(`).
+  - A tick-route test shows the day's first read deleting the 31-day-old `app_errors` row and keeping the 29-day-old one.
+  - `.claude/rules/private.md` (now on dev, PR #594) says what CLAUDE.md says.
+  - `appErrorDetail`, `sendException` and `reportError` moved to `lib/report-error.ts`, which imports neither `lib/notify*` nor `lib/discord-*`. `lib/push` (and through it `lib/private`) no longer reaches `lib/notify`. ARCHITECTURE.md lists the module and its edges.
 - Purge measured on the test PGlite with 600 inserts, kept at 500 by the cap: an Index Scan on `app_errors_at_idx`, 239 rows deleted in 0.36 ms, 257 shared buffer hits. The plan is bounded by the 500-row cap.
 - Zod 4.6.7's real `error.message` shapes were checked (`"path": [...]`, `"input"` only with `reportInput`). The test uses a real `ZodError` as the cause.
 - Adversarial review (one subagent; its result was relayed by the orchestrator), all addressed:
@@ -86,12 +93,11 @@ Owner rule (2026-11-21), and its scope extension the same day: replace private r
 - Follow-up (separate PR, after about 3 weeks of comparing PostHog Error Tracking with `/admin/errors`): remove `app_errors`, `/admin/errors`, `purgeOldAppErrors` and the admin alert, and move the alert to a PostHog alert.
 - Follow-up: PostHog Logs and APM / OpenTelemetry (declined by D115 at this size; the orchestrator opens an issue).
 - Follow-up: upload server source maps so server frames resolve.
-- `lib/private` catches (`w.import.discord_failed`, `w.pending.match_failed`, `w.read_status.failed`) are not reported. `lib/private` may not import `lib/app-errors`, which imports `lib/notify` (D71).
+- `lib/private` catches (`w.import.discord_failed`, `w.pending.match_failed`, `w.read_status.failed`) are not reported. They could now use `reportError` from `lib/report-error.ts`, which imports no `lib/notify`. Not done here: what those errors carry should get a D71 look first.
 - `instrumentation.ts` `register()` prints the env validation message with `console.error`. It names env variables only, not roster data, so it is left as it is.
 - Follow-up (review): Next.js prints a request error to Vercel's runtime log itself, unredacted, apart from `onRequestError`. Our code does not control that line.
 - Follow-up (review): `httpDetail` in `lib/sources/v1.ts` cuts the upstream body to 1,000 characters before `redact()`, so a value cut at the edge can slip past. `appErrorDetail` now does the opposite (redact, then cut).
 - Known limit: a bare name in our own error text (not quoted, not a parameter) still reaches PostHog, as on the browser side (D115's scrubber keeps bare words). A Postgres cause that quotes a value (`invalid input syntax …: "…"`) is kept in `app_errors.detail.cause` for the owner, and is not sent to PostHog (PostHog gets no cause).
-- `.claude/rules/private.md`: once PR #594 is on dev, add the same sentence as CLAUDE.md.
 
 ## Next
 

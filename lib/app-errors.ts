@@ -3,57 +3,16 @@
 // name, plan §12.3) and groups the rows; `detail` (D61) keeps the error's own message, stack start and
 // cause, for /admin/errors only, after redact(): secrets and, through redactPrivate, private roster values
 // (D115's 2026-11-21 amendment). The admin alert adds the message's first line. Rows go after 30 days.
-import { analyticsKey } from "./analytics/events";
-import { areaOf, scrubMessage } from "./analytics/sanitise";
-import { captureServer, eventWorkspace, sendLater, type EventWorkspace } from "./analytics/server";
+// The detail and PostHog's `$exception` are built in lib/report-error.ts.
+import { eventWorkspace, type EventWorkspace } from "./analytics/server";
 import { secretsOf, type AppContext } from "./app-context";
 import { appErrorMessage, createNotifier } from "./notify";
-import { redact } from "./redact";
 import { allianceLabelOf } from "./repo/alliances";
 import { claimAppErrorAlert, insertAppError } from "./repo/app-errors";
 import { findWorkspaceBySlug, WORKSPACE_SLUG } from "./repo/workspaces";
+import { appErrorDetail, sendException, type AppErrorDetail } from "./report-error";
 
-const MESSAGE_CHARS = 500;
-/** How much of a message is redacted before it is cut to MESSAGE_CHARS; bounds the redactor's work. */
-const REDACT_CHARS = 4 * MESSAGE_CHARS;
-const STACK_LINES = 12;
 const ALERT_REASON_CHARS = 160;
-
-export interface AppErrorDetail {
-  name: string;
-  message: string;
-  stack?: string;
-  cause?: string;
-}
-
-const line = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : String(e));
-
-/** The error as thrown (D61): name, message, the stack's first frames and the cause, redacted. */
-export function appErrorDetail(error: unknown, secrets: readonly string[]): AppErrorDetail {
-  const e = error instanceof Error ? error : null;
-  // Only the frames: a message of several lines also opens the stack, before the first "at ".
-  const stack = e?.stack
-    ?.split("\n")
-    .map((frame) => frame.trim())
-    .filter((frame) => frame.startsWith("at "))
-    .slice(0, STACK_LINES)
-    .join("\n");
-  // Redacted before the cut: a value, a Zod issue or a `Key (…)=(…)` line cut in half would not be recognised.
-  const detail = redact(
-    {
-      name: e?.name ?? "unknown",
-      message: (e?.message ?? String(error)).slice(0, REDACT_CHARS),
-      ...(stack && { stack }),
-      ...(e?.cause !== undefined && { cause: line(e.cause).slice(0, REDACT_CHARS) }),
-    },
-    secrets,
-  ) as AppErrorDetail; // INVARIANT app-errors.private-redacted: redact() passes every string through redactPrivate.
-  return {
-    ...detail,
-    message: detail.message.slice(0, MESSAGE_CHARS),
-    ...(detail.cause !== undefined && { cause: detail.cause.slice(0, MESSAGE_CHARS) }),
-  };
-}
 
 const MIN_INSERT_GAP_MS = 1_000;
 const ALERT_GAP_MS = 60 * 60_000;
@@ -91,57 +50,6 @@ async function workspaceOf(ctx: AppContext, slug: string): Promise<EventWorkspac
   } finally {
     await opened?.close();
   }
-}
-
-/** The desk's or /admin's section a route pattern is in ("/(private)/w/[slug]/thefts/page" → thefts). */
-function sectionOfRoute(route: string): string | undefined {
-  const path = route
-    .replace(/\/\([^/)]*\)/g, "")
-    .replace(/^\/api(?=\/)/, "")
-    .replace(/\/(?:page|route|layout)$/, "");
-  return areaOf(path).section;
-}
-
-/**
- * PostHog's error tracking (D115's 2026-11-21 amendment): the error's class, its message (after redact(),
- * redactPrivate and scrubMessage) and its redacted frames, `kind`, the route pattern and its section, and
- * under a workspace its slug and tag (issue 452), only for a slug a workspace has. No request body, query
- * string or user text: only the error's own. Sent after the response, so the error path never waits for it.
- */
-function sendException(
-  ctx: Pick<AppContext, "env" | "fetch">,
-  entry: { route: string; kind: string; handled: boolean },
-  detail: AppErrorDetail,
-  workspace?: () => Promise<EventWorkspace | null>,
-): void {
-  const section = sectionOfRoute(entry.route);
-  const properties = {
-    name: detail.name,
-    kind: entry.kind,
-    route: entry.route,
-    message: scrubMessage(detail.message),
-    ...(detail.stack && { stack: detail.stack }),
-    handled: entry.handled,
-    ...(section && { section }),
-  };
-  sendLater(async () => {
-    const where = workspace && analyticsKey(ctx.env) ? await workspace() : null;
-    await captureServer(ctx.env, ctx.fetch, [
-      { event: "$exception", properties, ...(where && { where }) },
-    ]);
-  });
-}
-
-/**
- * An error our code caught and carried on from (a daily job, a run's crash, a notification's read): PostHog
- * only, `handled: true`, no app_errors row and no alert, no await. `kind` is the code its log line has.
- * Never for an error that is thrown on, which reaches recordAppError through withContext or onRequestError.
- */
-export function reportError(
-  ctx: Pick<AppContext, "env" | "fetch">,
-  entry: { route: string; kind: string; error: unknown },
-): void {
-  sendException(ctx, { ...entry, handled: true }, appErrorDetail(entry.error, secretsOf(ctx.env)));
 }
 
 export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Promise<void> {

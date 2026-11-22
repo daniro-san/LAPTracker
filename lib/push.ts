@@ -9,11 +9,11 @@ import { createHash } from "node:crypto";
 import { after } from "next/server";
 
 import type { AppContext } from "./app-context";
-import { reportError } from "./app-errors";
 import { PUSH_WORDS, type PushWords } from "./copy-push";
 import type { Db } from "./db";
 import type { Env } from "./env";
 import { deleteDevices, markDelivered, pushRecipients } from "./repo/push";
+import { reportError } from "./report-error";
 import type { PushUse } from "./schema-push";
 import { sendPush, type PushSubscriptionJson, type Vapid } from "./web-push";
 import { masterFingerprint, openKey, sealKey, type Sealed } from "./workspace-keys";

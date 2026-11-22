@@ -4,7 +4,6 @@
 // The daily roster read (D60) comes last, when nothing else is due; after the day's first one, the workspaces
 // whose deletion grace ended are deleted (D125), and app_errors older than 30 days go (D115).
 import { secretsOf, type AppContext } from "./app-context";
-import { reportError } from "./app-errors";
 import { RUN_DEADLINE_MS } from "./compute";
 import { autoRetryDailyRead, runDailyRead, type DailyReadSummary } from "./daily-read";
 import { databaseDown } from "./data-unavailable";
@@ -30,6 +29,7 @@ import { clearOldPlayerRaw } from "./repo/player-reads";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
 import { purgeDueWorkspaces } from "./repo/workspace-purge";
+import { reportError } from "./report-error";
 import { executeSample, executeSnapshot, quotaReport, type RunOutcome } from "./run";
 import {
   dailyReadDue,

@@ -5,10 +5,11 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { ADMIN_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
-import { recordAppError, reportError } from "./app-errors";
+import { recordAppError } from "./app-errors";
 import { minutes, T0 } from "./collector.test-helpers";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { claimAppErrorAlert, insertAppError, purgeOldAppErrors } from "./repo/app-errors";
+import { reportError } from "./report-error";
 import { appErrors, workspaces } from "./schema";
 
 const db = await openTestDb();
@@ -149,7 +150,8 @@ describe("app-error alert", () => {
   it("keeps a failed query's parameters (an officer's text) out of the row, the alert and PostHog", async () => {
     const { ctx, clock, posts } = testContext(db, ON);
     clock.now = new Date(T0.getTime() + 72 * HOUR);
-    const text = "Invented Bramble wrote this notice";
+    // An officer's text of two lines: the second starts like a stack frame.
+    const text = "Invented Bramble wrote this notice\nat 8pm in the hall";
     // A real Drizzle failure: "Failed query: … values (now(), $1, null)\nparams: <text>".
     const error = await db
       .execute(sql`insert into app_errors (at, route, message) values (now(), ${text}, null)`)
@@ -166,9 +168,11 @@ describe("app-error alert", () => {
     const [row] = await db.select().from(appErrors);
     const alert = posts.find((p) => p.url === ADMIN_WEBHOOK)?.content ?? "";
     for (const kept of [JSON.stringify(row?.detail), alert, JSON.stringify(exceptions(posts))])
-      expect(kept).not.toContain("Invented Bramble");
+      for (const leak of ["Invented Bramble", "8pm"]) expect(kept).not.toContain(leak);
     expect(row?.detail).toMatchObject({
       message: expect.stringMatching(/^Failed query: insert into app_errors .*\nparams: …$/s),
+      // The stack keeps its real frames only.
+      stack: expect.stringMatching(/^at .+:\d+:\d+\)?$/m),
     });
   });
 
@@ -179,8 +183,7 @@ describe("app-error alert", () => {
       kind: "workspaces.purge_failed",
       error: new TypeError("boom"),
     });
-    await vi.waitFor(() => expect(exceptions(posts)).toHaveLength(1));
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Outside a request the send starts at once and posts before its first await: one call, one post.
     expect(exceptions(posts)).toHaveLength(1);
     expect(exceptions(posts)[0]).toMatchObject({
       $exception_list: [{ type: "TypeError", value: "boom", mechanism: { handled: true } }],
@@ -191,7 +194,7 @@ describe("app-error alert", () => {
     expect(posts.filter((p) => p.url === ADMIN_WEBHOOK)).toHaveLength(0);
   });
 
-  it("purges rows older than 30 days through the daily job (D115, 2026-11-21)", async () => {
+  it("purges rows older than 30 days (D115, 2026-11-21)", async () => {
     const now = new Date(T0.getTime() + 60 * 24 * HOUR);
     for (const days of [31, 29]) {
       const at = new Date(now.getTime() - days * 24 * HOUR);
@@ -216,12 +219,15 @@ describe("app-error alert", () => {
 // INVARIANT app-errors.private-redacted, read off the source like the other invariant checks: the stored
 // detail, the alert and the PostHog payload all pass the private-field redactor.
 describe("one private-field redactor on every error's way out (D115, 2026-11-21)", () => {
-  /** A top-level function's text, from its declaration to the first line that closes it. */
+  /** A top-level function's code without its comments, from its declaration to the line that closes it. */
   const body = (file: string, name: string) => {
     const text = readFileSync(new URL(file, import.meta.url), "utf8");
     const start = text.search(new RegExp(`^(?:export )?(?:async )?function ${name}\\b`, "m"));
     expect(start, `${name} in ${file}`).toBeGreaterThanOrEqual(0);
-    return text.slice(start, text.indexOf("\n}\n", start));
+    return text
+      .slice(start, text.indexOf("\n}\n", start))
+      .replace(/\/\*[^]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
   };
 
   it("redact() passes every string through redactPrivate, and the browser's scrubber does too", () => {
@@ -230,12 +236,12 @@ describe("one private-field redactor on every error's way out (D115, 2026-11-21)
   });
 
   it("appErrorDetail redacts, the alert builder redacts, and every error leaves through them", () => {
-    expect(body("./app-errors.ts", "appErrorDetail")).toContain("redact(");
-    expect(body("./notify.ts", "appErrorMessage")).toContain("redactPrivate(");
+    expect(body("./report-error.ts", "appErrorDetail")).toContain("= redact(");
+    expect(body("./notify.ts", "appErrorMessage")).toContain("message: redactPrivate(");
     const record = body("./app-errors.ts", "recordAppError");
-    for (const call of ["appErrorDetail(", "appErrorMessage(", "sendException("])
+    for (const call of ["= appErrorDetail(", "appErrorMessage(", "sendException("])
       expect(record).toContain(call);
-    expect(body("./app-errors.ts", "reportError")).toContain("appErrorDetail(");
-    expect(body("./app-errors.ts", "sendException")).toContain("scrubMessage(");
+    expect(body("./report-error.ts", "reportError")).toContain("appErrorDetail(");
+    expect(body("./report-error.ts", "sendException")).toContain("message: scrubMessage(");
   });
 });

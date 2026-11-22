@@ -80,7 +80,7 @@ describe("server events (D115)", () => {
     for (const key of ["$ai_input", "$ai_output_choices", "$ai_output", "$ai_base_url"]) {
       expect(ai).not.toHaveProperty(key);
     }
-    // The message arrives already redacted and scrubbed (lib/app-errors.ts); frames outermost first.
+    // The message arrives already redacted and scrubbed (lib/report-error.ts); frames outermost first.
     expect(error).toMatchObject({
       $exception_list: [
         {

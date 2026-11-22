@@ -80,21 +80,25 @@ describe("redactPrivate", () => {
     });
   });
 
-  it("stays linear: 100 kB of adversarial text in under 50 ms each", () => {
+  // 100 kB of each shape that made an earlier version quadratic: a quadratic redactor would not finish inside
+  // the test's timeout. Outputs, not times, are asserted.
+  it("reads adversarial text in one pass and redacts it as it would short text", () => {
     const n = 100_000;
-    for (const text of [
-      "a.".repeat(n / 2) + "phs-image.globallap.co",
-      "phs-image.globallap.com ".repeat(n / 24),
-      '"x":"'.repeat(n / 5),
-      'x:\\"'.repeat(n / 4),
-      "{".repeat(n),
-      '{"path":["x"],"input":"'.repeat(n / 22),
-      "Key (" + "x,".repeat(n / 2),
-      "x:[".repeat(n / 3),
-    ]) {
-      const started = performance.now();
-      redactPrivate(text);
-      expect(performance.now() - started, text.slice(0, 12)).toBeLessThan(50);
-    }
+    const backslashes = "\\".repeat(n);
+    const cases: [string, string][] = [
+      [
+        "a.".repeat(n / 2) + "phs-image.globallap.co",
+        "a.".repeat(n / 2) + "phs-image.globallap.co",
+      ],
+      ["phs-image.globallap.com ".repeat(n / 24), "… ".repeat(n / 24)],
+      [`x:\\"${backslashes}`, `x:\\"${backslashes}`],
+      [`${backslashes}"path":["x"],"input":"98765"`, `${backslashes}"path":["x"],"input":…`],
+      ['"path":['.repeat(n / 8), '"path":['.repeat(n / 8)],
+      ["{".repeat(n), "{".repeat(n)],
+      ["Key (" + "x,".repeat(n / 2), "Key (" + "x,".repeat(n / 2)],
+      ['x:\\"'.repeat(n / 4), "x:…".repeat(n / 8)],
+      ["x:[".repeat(n / 3), "x:…"],
+    ];
+    for (const [text, out] of cases) expect(redactPrivate(text)).toBe(out);
   });
 });
