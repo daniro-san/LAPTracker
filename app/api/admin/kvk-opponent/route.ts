@@ -1,7 +1,8 @@
 // POST /api/admin/kvk-opponent — /admin's "KvK opponent" card (D152, issue 306): the opponent's server and up to
 // 15 alliance tags for one scheduled event, or the war's result. Only the next scheduled event and the 4 before
 // it; the server and tags only before the war and while no Before or After of it runs, and the server not once
-// its Start read a tag. The result is admin-only. PIN only, with the PIN's rate limiter.
+// its Start read a tag. The result is admin-only. PIN only, with the PIN's rate limiter. A save of a server, or
+// the "Suggest tags" press, reads that server's ranks board once for the KvK (D155): no quota, /admin only.
 import { z } from "zod";
 
 import { SERVER } from "@/config/alliances";
@@ -9,17 +10,11 @@ import type { AppContext } from "@/lib/app-context";
 import { authorize } from "@/lib/auth";
 import { MAX_OPPONENT_TAGS } from "@/lib/budget";
 import type { Db } from "@/lib/db";
+import { opponentTag } from "@/lib/kvk";
+import { suggestTags } from "@/lib/opponent-suggest";
 import { kvkEventTimes, opponentsAt, saveOpponent, setOpponentResult } from "@/lib/repo/kvk";
 import { errorResponse, withContext } from "@/lib/route";
 import { nextEvent } from "@/lib/schedule";
-
-/** A tag as one path segment of the by-tag lookup: 1–12 characters after NFC, no space, no `/ ? # % \`, no
- * control character, not dots only (`..` would leave the segment). Case-sensitive (plan §2). */
-const tag = z
-  .string()
-  .transform((s) => s.normalize("NFC"))
-  .refine((s) => [...s].length >= 1 && [...s].length <= 12)
-  .refine((s) => !/[\s/?#%\\\p{Cc}]/u.test(s) && !/^\.+$/.test(s));
 
 const eventAt = z.iso.datetime().transform((s) => new Date(s));
 
@@ -33,16 +28,24 @@ const body = z.union([
         .min(1)
         .max(9999)
         .refine((n) => n !== SERVER),
-      tags: z.array(tag).max(MAX_OPPONENT_TAGS),
+      tags: z.array(opponentTag).max(MAX_OPPONENT_TAGS),
     })
     .strict(),
   z.object({ event_at: eventAt, result: z.enum(["won", "lost"]).nullable() }).strict(),
+  z.object({ event_at: eventAt, suggest: z.literal(true) }).strict(),
 ]);
 
 type Input = z.infer<typeof body>;
 
-/** The write itself: the result, or the server and tags; an error answer, else null. */
+/** The write itself: the result, the board's suggestion, or the server and tags; an error answer, else null. */
 async function write(ctx: AppContext, db: Db, input: Input, now: Date): Promise<Response | null> {
+  if ("suggest" in input) {
+    const outcome = await suggestTags(ctx, db, input.event_at, now, true);
+    if (outcome === "no_opponent") return errorResponse(404, outcome);
+    if (outcome === "war_started" || outcome === "opponent_read")
+      return errorResponse(409, outcome);
+    return null;
+  }
   if ("result" in input) {
     const saved = await setOpponentResult(db, input.event_at, input.result, now);
     return saved ? null : errorResponse(404, "no_opponent");
@@ -54,6 +57,8 @@ async function write(ctx: AppContext, db: Db, input: Input, now: Date): Promise<
   if (refused) return errorResponse(409, refused);
   // INVARIANT cache.write-invalidates-reads (D143): the event page reads the opponent.
   ctx.publicCache.invalidate();
+  // The board's read, once per (KvK, server); its failure or refusal leaves the save as it is (D155).
+  await suggestTags(ctx, db, input.event_at, now, false);
   return null;
 }
 

@@ -1,6 +1,6 @@
 // /admin's KvK opponent card (D152, issue 306): the next scheduled event and the 4 before it, each with its
-// opponent's server, tags, result and what the Start and End read of each tag. Read after the page's own
-// isAdmin() check. English only (D48).
+// opponent's server, tags, result, what the Start and End read of each tag, and the server's ranks board
+// suggestion (D155). Read after the page's own isAdmin() check. English only (D48).
 import { copy } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -8,11 +8,14 @@ import { adminKvk, type AdminKvkRead } from "@/lib/queries/admin-kvk";
 import { nextEvent } from "@/lib/schedule";
 import { fill } from "@/lib/words";
 
-import type { Clock } from "../format";
-import { KvkForm, type KvkChoice } from "./KvkForm";
+import { compact, hhmmOn, type Clock } from "../format";
+import { requestLocale } from "../locale";
+import { KvkForm, type KvkChoice, type KvkSuggestion } from "./KvkForm";
 import { AdminSection } from "./parts";
 
 const t = copy.admin.kvk;
+
+type Row = Awaited<ReturnType<typeof adminKvk>>[number];
 
 /** A tag's outcome in one phase, in words: read (with the name), stale, the row's error, or none yet. */
 function stateOf(r: AdminKvkRead | undefined): string {
@@ -22,10 +25,30 @@ function stateOf(r: AdminKvkRead | undefined): string {
   return r.name ? fill(t.state.readName, { name: r.name }) : t.state.read;
 }
 
+/** The board's suggestion for the saved server in words: its line and chips; null with no read. */
+function suggestionOf(row: Row, now: Date, clock: Clock, locale: string): KvkSuggestion | null {
+  const s = row.suggestion;
+  if (!s) return null;
+  const server = s.server;
+  if (s.status === "running") return { line: fill(t.suggest.running, { server }), chips: [] };
+  if (s.status === "failed" || !s.alliances || !s.readAt)
+    return { line: fill(t.suggest.failed, { server }), chips: [] };
+  const time = hhmmOn(clock, s.readAt, clock.day(s.readAt) !== clock.day(now));
+  return {
+    line: fill(t.suggest.from, { server, time }),
+    chips: s.alliances.map((a) => ({
+      tag: a.tag,
+      label: fill(t.suggest.chip, { tag: a.tag, might: compact(a.power, locale) }),
+    })),
+  };
+}
+
 async function choices(now: Date, clock: Clock): Promise<KvkChoice[]> {
   const next = nextEvent(now, getEnv()).eventAtUtc;
-  const rows = await withPageDb((db) => adminKvk(db, next));
-  return rows.map(({ at, opponent: o, reads }) => {
+  const locale = await requestLocale();
+  const rows = await withPageDb((db) => adminKvk(db, next, now));
+  return rows.map((row) => {
+    const { at, opponent: o, reads } = row;
     const of = (tag: string, phase: "before" | "after") =>
       stateOf(reads.find((r) => r.tag === tag && r.phase === phase));
     const tags = [...new Set([...(o?.tags ?? []), ...reads.map((r) => r.tag)])];
@@ -39,6 +62,8 @@ async function choices(now: Date, clock: Clock): Promise<KvkChoice[]> {
       result: o?.result ?? null,
       locked: now >= at,
       lines: reads.length === 0 ? [] : tags.map(line),
+      suggestion: suggestionOf(row, now, clock, locale),
+      canSuggest: row.canSuggest,
     };
   });
 }
