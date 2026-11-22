@@ -72,12 +72,20 @@ Not run: Neon itself (not reachable here), so no cold-wake timing. Measure after
 ## Open issues
 
 - #507, still open after this PR: a line on /admin when the daily read's 90-day purge fails (today it reaches the log and PostHog only). The newcomer test bites since #630 (the older roster names 8; checked again after the rebase: removing the newer-roster check fails it), the purge trigger test is in #630, and the Settings item was done by D135.
-- #509: done with this PR. #623 fixed the lookups on /admin/runs and added the four tests; the per-address counting was dropped and the home page count was done (#537) in the 2026-11-22 triage; this PR folds the label query and keeps one `isSameOriginJson`.
+- #509: this PR does its last two code items (the label query, one `isSameOriginJson`); #623 did the lookups and the four tests. Two items were not built, by the 2026-11-22 triage: the per-address lookup counting (three lines in the details route, no user value) and a count query for the home page (#537 serves the count from the cached shared list, so no extra read happens per visit). The orchestrator closes #509 by hand with that note.
 - Follow-up seen while measuring: `featuresBySlug` reads `workspaces` by slug again (`settingsBySlug`), plus `allowance_pauses`, on every private request. That is 2 of the 5 statements. Folding the settings into the workspace read, by id, would save one more.
 - Follow-up: the roster insert at the start of every squads batch (Deviations) could be skipped once the day's queue holds the roster. That saves about 100 conflicting rows per batch.
 
+## What was missing from the task prompt?
+
+The prompt listed #509's items without the triage's decisions on the two not built, so the PR body first said "Closes #509" without recording why.
+
 ## Next
 
+- #507: a line on /admin when the daily read's 90-day purge fails.
+- `featuresBySlug`: fold the settings read into the workspace read (one statement less per private request).
+- The roster insert at the start of every squads batch could be skipped once the day's queue holds it.
+- A test that the alliance label is read only after the three refusals.
 - Model/effort: keep. All four items were small, and the measurements settled each one.
 - Owner first: merge and release. The migration blocks `player_reads` writes for a few ms during `db:migrate`, so avoid deploying during Friday's 23:30 ST shield burst.
 - Plan change: none.
