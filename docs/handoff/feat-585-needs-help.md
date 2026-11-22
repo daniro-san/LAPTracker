@@ -126,4 +126,4 @@ What was missing from the task prompt? Two things:
 - that desk copy lives in the desk dictionary, not `lib/copy.ts`;
 - that a visible way to end a mark was in scope. The panel and the product persona both made it a MUST; it was built and is listed under Deviations.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/646
