@@ -67,4 +67,4 @@ Analytics: no change (dated line in `docs/analytics/tracking-plan.md`). No event
 
 What was missing from the task prompt? That PR #669 also appends to the tracking plan's "Changed" list and edits `me-parts.test.ts`, so a rebase conflict is certain there; and that the installed `validate_plan.py` is newer than this plan's template.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/672
