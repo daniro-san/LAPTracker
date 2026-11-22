@@ -110,4 +110,4 @@ Analytics: change. A dated "Changed" line says the help is closed on every visit
 
 What was missing from the task prompt? That in PT and FR the KvK title is below the fold even on a return visit with the e2e seed, so no change to the help alone can put it on the first screen there.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/669
