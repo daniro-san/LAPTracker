@@ -7,9 +7,8 @@ import { SHEET_KEYS } from "./sheet-words";
 export const FOLLOW_UP_KEYS = [
   ...SHEET_KEYS,
   "followup.talkedNow",
-  "followup.record",
-  "followup.inMembers",
-  "followup.inMembersAria",
+  "followup.card",
+  "followup.cardAria",
   "followup.what",
   "followup.action.talked",
   "followup.action.break",

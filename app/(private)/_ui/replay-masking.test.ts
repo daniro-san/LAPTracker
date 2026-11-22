@@ -89,6 +89,7 @@ describe("session replay on the Members list (issue 549)", () => {
         serverZone: "Etc/GMT+2",
         early: false,
         sheetHeader: "",
+        followUp: null,
         open: null,
         wide: null,
         onOpen: () => {},

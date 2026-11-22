@@ -330,6 +330,9 @@ function Roster(props: {
         hour: Number(clockIn(now.getTime(), zone, today).time.slice(0, 2)),
         serverZone: zone,
         sheetHeader: sheetHeader(view.week, t),
+        // Issue 585 S3: with Follow-up's numbers in the head (its tab on, D126), the list's first group points
+        // at Follow-up instead of being a second count.
+        followUp: props.followUp ? `/w/${slug}/follow-up` : null,
       }}
     />
   );

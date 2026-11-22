@@ -44,6 +44,8 @@ export interface FollowUpRow {
    * week's context; `quote` marks an officer's note, clamped on the row and whole in the panel.
    */
   lines: RowLine[];
+  /** The lines the row shows: `lines` without those its group says once for every row (issue 585 S3). */
+  own: RowLine[];
   /** Every fact still to ask, each a way into the facts editor at its field. */
   ask: { field: FactField; label: string }[];
   /** The ready message in each language, and the one shown first: the member's, else the officer's (D140). */
