@@ -5,6 +5,7 @@
 // fallback, which the reader decodes itself. No picture is stored, logged or sent anywhere else.
 import type { Db } from "../db";
 import { settlePictures } from "../repo/import";
+import type { Report } from "../report-error";
 import { serverDay } from "../schedule";
 import { readScreen } from "../screenshot/classify";
 import { ImageRefusedError } from "../screenshot/prepare";
@@ -23,6 +24,7 @@ const HOSTS = new Set(["cdn.discordapp.com", "media.discordapp.net"]);
 const TIMEOUT_MS = 10_000;
 /** Pictures fetched at once. */
 const FETCHES = 4;
+const ROUTE = "lib/private/import-discord.ts";
 /** The reading stops here, so the drafts and the reply's edit fit in the function's 60 s. */
 const DEADLINE_MS = 45_000;
 
@@ -36,6 +38,8 @@ export interface JobDeps {
   origin: string;
   serverTz: string;
   now: () => Date;
+  /** AppContext's: a failure the reply only says "could not be read" about reaches Error Tracking. */
+  report: Report;
 }
 
 /** An attachment address on Discord's CDN over https; null for any other host. */
@@ -221,8 +225,11 @@ export async function runJob(deps: JobDeps, job: Job): Promise<void> {
     privateLog(failureCode("w.import.discord_failed", error), {
       workspace: job.access.workspaceId,
     });
+    deps.report(error, { route: ROUTE, kind: "w.import.discord_failed" });
     // Nothing was made: every picture of this run can be sent again.
-    await settlePictures(db, key, new Map(), all).catch(() => undefined);
+    await settlePictures(db, key, new Map(), all).catch((settle: unknown) =>
+      deps.report(settle, { route: ROUTE, kind: "w.import.settle_failed" }),
+    );
   } finally {
     await editReply(deps, job, content);
     await close();

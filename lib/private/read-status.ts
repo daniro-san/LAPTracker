@@ -92,18 +92,20 @@ export async function readStatus(
 
 /**
  * The frame's read (D135): the same lines on the request's connection (withPageDb, D141 2026-11-21), or null
- * when that connection or a query fails. The bar is never worth the desk page: the failure is logged as a code only.
+ * when that connection or a query fails. The bar is never worth the desk page: the failure is logged as a code only
+ * and reported through `report` (redacted, D115).
  */
 export async function frameReadStatus(
   access: WorkspaceAccess,
   t: WorkspaceDictionary,
   now: Date,
 ): Promise<ReadStatus | null> {
-  const { env } = getAppContext();
+  const { env, report } = getAppContext();
   try {
     return await withPageDb((db) => readStatus(db, access, env, now, t));
-  } catch {
+  } catch (error) {
     privateLog("w.read_status.failed");
+    report(error, { route: "lib/private/read-status.ts", kind: "w.read_status.failed" });
     return null;
   }
 }

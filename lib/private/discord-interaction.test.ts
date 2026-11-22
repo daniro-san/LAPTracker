@@ -3,6 +3,7 @@ import { generateKeyPairSync } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TEST_ENV, testContext } from "../app-context.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { allowUser, findWorkspaceBySlug } from "../repo/workspaces";
@@ -220,5 +221,41 @@ describe("the deferred flow", () => {
       "w.import.discord_failed:reader:MODULE_NOT_FOUND",
     );
     logged.mockRestore();
+  });
+
+  it("reports a failed save to error tracking without the screenshot's text (D71, D115)", async () => {
+    const handled = await deferred(command([LEADER]));
+    const { ctx, posts } = testContext(db, {
+      ...TEST_ENV,
+      VERCEL_ENV: "production",
+      POSTHOG_KEY: "phc_test",
+    });
+    // The read's lines with one invented player in them; the drafts' insert fails, so its params hold them.
+    const lines = recorded("98-alliance-duel-weekly-phone").map((line, i) =>
+      i === 4 ? "*78 InventedBramble" : line,
+    );
+    await db.execute(sql`alter table screenshot_drafts add constraint no_drafts check (false)`);
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    try {
+      await runJob({ ...deps(discord().fetcher, lines), report: ctx.report }, handled.job);
+    } finally {
+      await db.execute(sql`alter table screenshot_drafts drop constraint no_drafts`);
+    }
+    const sent = posts.filter((p) => p.url === "https://us.i.posthog.com/batch/");
+    await vi.waitFor(() => expect(sent.length).toBeGreaterThan(0));
+    const [exception] = sent.flatMap(
+      (p) => p.body.batch as { event: string; properties: Record<string, unknown> }[],
+    );
+    expect(exception).toMatchObject({
+      event: "$exception",
+      properties: {
+        kind: "w.import.discord_failed",
+        route: "lib/private/import-discord.ts",
+        $exception_list: [
+          { value: expect.stringMatching(/^Failed query: insert into .*\nparams: …$/s) },
+        ],
+      },
+    });
+    expect(JSON.stringify(sent)).not.toContain("InventedBramble");
   });
 });

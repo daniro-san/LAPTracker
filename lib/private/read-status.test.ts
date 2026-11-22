@@ -287,11 +287,27 @@ describe("frameReadStatus (D135)", () => {
     const openDb = vi.fn(() => {
       throw new Error("connect ECONNREFUSED postgres://secret@db.test");
     });
-    holder.ctx = { env: TEST_ENV, openDb } as unknown as AppContext;
+    holder.ctx = { env: TEST_ENV, openDb, report: vi.fn() } as unknown as AppContext;
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
     expect(await frameReadStatus(access(), t, NOW)).toBeNull();
     expect(openDb).toHaveBeenCalledTimes(1);
     expect(log.mock.calls).toEqual([[JSON.stringify({ code: "w.read_status.failed" })]]);
     log.mockRestore();
+  });
+
+  it("reports the failure to error tracking with where and its code only, never the workspace or a member (D71)", async () => {
+    const failure = new Error("connect ECONNREFUSED postgres://secret@db.test");
+    const openDb = vi.fn(() => {
+      throw failure;
+    });
+    const report = vi.fn<AppContext["report"]>();
+    holder.ctx = { env: TEST_ENV, openDb, report } as unknown as AppContext;
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    expect(await frameReadStatus(access(), t, NOW)).toBeNull();
+    expect(report.mock.calls).toEqual([
+      [failure, { route: "lib/private/read-status.ts", kind: "w.read_status.failed" }],
+    ]);
+    // toEqual ignores undefined keys: the context's keys, exactly.
+    expect(Object.keys(report.mock.calls[0]?.[1] ?? {}).sort()).toEqual(["kind", "route"]);
   });
 });

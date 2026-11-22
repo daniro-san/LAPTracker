@@ -110,6 +110,17 @@ describe("one browser, public page first (D115)", () => {
   });
 });
 
+describe("person keys in URLs (D71, D115, 2026-11-21)", () => {
+  it("has the SDK mask a member's uid (?m=) and a typed name (?q=) on public and desk loads alike", async () => {
+    for (const path of ["/players", "/w/ogs/members"]) {
+      await start(path, "granted");
+      const config = sdk.init.mock.calls[0]?.[1] ?? {};
+      expect(config.mask_personal_data_properties).toBe(true);
+      expect(config.custom_personal_data_properties).toEqual(expect.arrayContaining(["m", "q"]));
+    }
+  });
+});
+
 describe("desk and /admin page loads (D115)", () => {
   it("are unchanged: memory persistence, no consent mode, recorded", async () => {
     const { m, ph } = await start("/w/ogs/members", null);

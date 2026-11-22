@@ -7,6 +7,7 @@
 // Shield channel has none: without a saved one no summary is posted (lib/shield-post.ts).
 import { z } from "zod";
 
+import { getAppContext } from "../app-context";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { recordFailure } from "../repo/auth-attempts";
@@ -127,7 +128,12 @@ function opened(env: Secret, ws: Workspace, rows: Sealed, c: WebhookChannel): Ch
   try {
     const url = openKey(env.WORKSPACE_KEYS_SECRET, ws.workspaceId, row, purpose(c));
     return { url, name: row.name, forum: row.forum };
-  } catch {
+  } catch (error) {
+    // A sealed webhook that does not open (the secret changed, or the row did): the channel acts unset.
+    getAppContext().report(error, {
+      route: "lib/private/discord-webhooks.ts",
+      kind: "w.webhook.open_failed",
+    });
     return null;
   }
 }

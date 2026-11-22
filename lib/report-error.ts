@@ -100,6 +100,23 @@ export function sendException(
 }
 
 /**
+ * All a lib/private report says besides the error (D71): the module (`route`) and its code (`kind`), each from
+ * a closed list, so no name, id, value or user's text can be put in. A new catch adds its pair here.
+ */
+export type ReportContext =
+  | { route: "lib/private/read-status.ts"; kind: "w.read_status.failed" }
+  | { route: "lib/private/pending-members.ts"; kind: "w.pending.match_failed" }
+  | {
+      route: "lib/private/import-discord.ts";
+      kind: "w.import.discord_failed" | "w.import.settle_failed";
+    }
+  | { route: "lib/private/discord-webhooks.ts"; kind: "w.webhook.open_failed" }
+  | { route: "lib/private/invite-steps.ts"; kind: "w.invite.commands_failed" };
+
+/** `AppContext.report`: how lib/private reports an error it caught and carried on from. */
+export type Report = (error: unknown, context: ReportContext) => void;
+
+/**
  * An error our code caught and carried on from (a daily job, a run's crash, a notification's read, a push):
  * PostHog only, `handled: true`, no app_errors row and no alert, no await. `kind` is the code its log line
  * has. Never for an error that is thrown on, which reaches recordAppError through withContext or
@@ -111,3 +128,9 @@ export function reportError(
 ): void {
   sendException(ctx, { ...entry, handled: true }, appErrorDetail(entry.error, secretsOf(ctx.env)));
 }
+
+/** `AppContext.report` over `ctx`'s env and fetch, for getAppContext and the tests' context alike. */
+export const reporter =
+  (ctx: Pick<AppContext, "env" | "fetch">): Report =>
+  (error, { route, kind }) =>
+    reportError(ctx, { route, kind, error });

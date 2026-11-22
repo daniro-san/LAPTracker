@@ -1,10 +1,16 @@
 // The server's PostHog events (D115), with a stand-in fetch: nothing leaves the machine.
-import { describe, expect, it, vi } from "vitest";
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   captureServer,
   eventWorkspace,
   SERVER_DISTINCT_ID,
+  stackFrames,
   wireProperties,
   type ServerEvent,
 } from "./server";
@@ -124,5 +130,41 @@ describe("server events (D115)", () => {
       expect(props).not.toHaveProperty("workspace");
       expect(props).not.toHaveProperty("alliance");
     }
+  });
+});
+
+describe("server stack frames in PostHog (D115, 2026-11-21)", () => {
+  /** What posthog-cli 0.19.0 `sourcemap process` puts at the top of each chunk (its event release mode). */
+  const SNIPPET =
+    '!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{};e._posthogReleaseId=e._posthogReleaseId||"rel-1";var n=(new e.Error).stack;n&&(e._posthogChunkIds=e._posthogChunkIds||{},e._posthogChunkIds[n]="0193c2f0-chunk-a")}catch(e){}}();';
+  let dir = "";
+  afterEach(() => {
+    delete (globalThis as { _posthogChunkIds?: unknown })._posthogChunkIds;
+    delete (globalThis as { _posthogReleaseId?: unknown })._posthogReleaseId;
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("a frame in a chunk the build injected carries that chunk's id; other frames carry none", () => {
+    // Node names a loaded file by its real path (on macOS the temp folder is a link into /private).
+    dir = realpathSync(mkdtempSync(join(tmpdir(), "chunk-")));
+    const chunk = join(dir, "lib_squads-read_ts_1a5._.js");
+    writeFileSync(
+      chunk,
+      `${SNIPPET}module.exports={read(){return [].x.map(String)}};\n//# chunkId=0193c2f0-chunk-a\n`,
+    );
+    const { read } = createRequire(import.meta.url)(chunk) as { read: () => unknown };
+    let thrown: unknown;
+    try {
+      read();
+    } catch (error) {
+      thrown = error;
+    }
+    const frames = stackFrames((thrown as Error).stack ?? "") as Record<string, unknown>[];
+    const own = frames.filter((f) => f.filename === chunk);
+    expect(own).toHaveLength(1);
+    expect(own[0]).toMatchObject({ function: "read", chunk_id: "0193c2f0-chunk-a" });
+    const others = frames.filter((f) => f.filename !== chunk);
+    expect(others.length).toBeGreaterThan(0);
+    for (const frame of others) expect(frame).not.toHaveProperty("chunk_id");
   });
 });

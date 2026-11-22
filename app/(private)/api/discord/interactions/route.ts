@@ -73,6 +73,7 @@ export async function POST(request: Request): Promise<Response> {
         origin,
         serverTz: ctx.env.SERVER_TZ,
         now: ctx.now,
+        report: ctx.report,
       };
       after(() => runJob(deps, job));
     }
