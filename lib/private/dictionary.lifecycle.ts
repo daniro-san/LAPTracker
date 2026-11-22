@@ -9,10 +9,10 @@ export const lifecycleEn = {
   "pending.head": "New members",
   "pending.add": "Add a new member",
   "pending.addHelp":
-    "For someone who joined today. Their notes attach to their player after the nightly roster ({time} ST).",
+    "For someone who joined today. Their notes attach to their player after the next daily update ({time} ST).",
   "pending.name": "Name in the game",
   "pending.nameMissing": "Type their name as the game shows it.",
-  "pending.tag": "New · waiting for the nightly roster",
+  "pending.tag": "New · waiting for the daily update",
   "pending.unmatched":
     "The roster of {date} did not have exactly one player with this name. Link them to the right member, or wait for the next roster.",
   "pending.link": "Link to a member",
@@ -41,7 +41,7 @@ export const lifecycleEn = {
   "pending.toMatch.one": "{n} new member needs linking",
   "pending.toMatch.other": "{n} new members need linking",
   "pending.toMatchHelp":
-    "The nightly roster did not have exactly one player with this name. Pick the right player, or wait for the next roster.",
+    "The daily update did not list exactly one player with this name. Pick the right player, or wait for the next daily update.",
   "pending.toMatchTag": "Needs linking",
   "pending.dismissed": "Removed ({n})",
   "pending.dismissedOn": "Removed {date}",
@@ -58,9 +58,9 @@ export const lifecycleEn = {
   "shots.newMember": "New member: {name}",
   "shots.newName": "New member’s name in the game",
   "shots.newHelp":
-    "Saves to a new member who waits for the nightly roster. Fix the name if the screenshot misread it.",
+    "Saves to a new member who waits for the daily update. Fix the name if the screenshot misread it.",
   "shots.pickInstead": "Pick a member instead",
-  "shots.pendingGroup": "New, waiting for the nightly roster",
+  "shots.pendingGroup": "New, waiting for the daily update",
   "shots.taken": "{name} is already in the alliance. Use {name}, or add a second {name}?",
   "shots.pickThem": "Use {name}",
   "shots.addAnyway": "Add anyway",
@@ -78,10 +78,10 @@ export const lifecyclePt: Record<LifecycleKey, string> = {
   "pending.head": "Membros novos",
   "pending.add": "Adicionar membro novo",
   "pending.addHelp":
-    "Para quem entrou hoje. As anotações vão para o jogador depois da lista da noite ({time} ST).",
+    "Para quem entrou hoje. As anotações vão para o jogador depois da próxima atualização diária ({time} ST).",
   "pending.name": "Nome no jogo",
   "pending.nameMissing": "Digite o nome como aparece no jogo.",
-  "pending.tag": "Novo · esperando a lista da noite",
+  "pending.tag": "Novo · esperando a atualização diária",
   "pending.unmatched":
     "A lista de {date} não trouxe exatamente um jogador com esse nome. Vincule ao membro certo ou espere a próxima lista.",
   "pending.link": "Vincular a um membro",
@@ -110,7 +110,7 @@ export const lifecyclePt: Record<LifecycleKey, string> = {
   "pending.toMatch.one": "{n} membro novo para vincular",
   "pending.toMatch.other": "{n} membros novos para vincular",
   "pending.toMatchHelp":
-    "A lista da noite não trouxe exatamente um jogador com esse nome. Escolha o jogador certo ou espere a próxima lista.",
+    "A atualização diária não trouxe exatamente um jogador com esse nome. Escolha o jogador certo ou espere a próxima atualização diária.",
   "pending.toMatchTag": "Falta vincular",
   "pending.dismissed": "Tirados ({n})",
   "pending.dismissedOn": "Tirado em {date}",
@@ -127,9 +127,9 @@ export const lifecyclePt: Record<LifecycleKey, string> = {
   "shots.newMember": "Membro novo: {name}",
   "shots.newName": "Nome do membro novo no jogo",
   "shots.newHelp":
-    "Salva num membro novo que espera a lista da noite. Corrija o nome se o print foi lido errado.",
+    "Salva num membro novo que espera a atualização diária. Corrija o nome se o print foi lido errado.",
   "shots.pickInstead": "Escolher um membro",
-  "shots.pendingGroup": "Novos, esperando a lista da noite",
+  "shots.pendingGroup": "Novos, esperando a atualização diária",
   "shots.taken": "{name} já está na aliança. Usar {name} ou adicionar outro {name}?",
   "shots.pickThem": "Usar {name}",
   "shots.addAnyway": "Adicionar mesmo assim",
@@ -145,10 +145,10 @@ export const lifecycleFr: Record<LifecycleKey, string> = {
   "pending.head": "Nouveaux membres",
   "pending.add": "Ajouter un nouveau membre",
   "pending.addHelp":
-    "Pour quelqu’un arrivé aujourd’hui. Ses notes passent à son joueur après la liste de la nuit ({time} ST).",
+    "Pour quelqu’un arrivé aujourd’hui. Ses notes passent à son joueur après la prochaine mise à jour quotidienne ({time} ST).",
   "pending.name": "Nom dans le jeu",
   "pending.nameMissing": "Tapez son nom tel que le jeu l’affiche.",
-  "pending.tag": "Nouveau · attend la liste de la nuit",
+  "pending.tag": "Nouveau · attend la mise à jour quotidienne",
   "pending.unmatched":
     "La liste du {date} n’avait pas exactement un joueur avec ce nom. Associez-le au bon membre, ou attendez la prochaine liste.",
   "pending.link": "Associer à un membre",
@@ -176,7 +176,7 @@ export const lifecycleFr: Record<LifecycleKey, string> = {
   "pending.toMatch.one": "{n} nouveau membre à associer",
   "pending.toMatch.other": "{n} nouveaux membres à associer",
   "pending.toMatchHelp":
-    "La liste de la nuit n’avait pas exactement un joueur avec ce nom. Choisissez le bon joueur, ou attendez la prochaine liste.",
+    "La mise à jour quotidienne n’a pas trouvé exactement un joueur avec ce nom. Choisissez le bon joueur, ou attendez la prochaine mise à jour quotidienne.",
   "pending.toMatchTag": "À associer",
   "pending.dismissed": "Retirés ({n})",
   "pending.dismissedOn": "Retiré le {date}",
@@ -192,10 +192,10 @@ export const lifecycleFr: Record<LifecycleKey, string> = {
   "former.duel": "Points Alliance Duel, semaine du {date}",
   "shots.newMember": "Nouveau membre : {name}",
   "shots.newHelp":
-    "Enregistre pour un nouveau membre qui attend la liste de la nuit. Corrigez le nom si la capture l’a mal lu.",
+    "Enregistre pour un nouveau membre qui attend la mise à jour quotidienne. Corrigez le nom si la capture l’a mal lu.",
   "shots.newName": "Nom du nouveau membre dans le jeu",
   "shots.pickInstead": "Choisir plutôt un membre",
-  "shots.pendingGroup": "Nouveaux, en attente de la liste de la nuit",
+  "shots.pendingGroup": "Nouveaux, en attente de la mise à jour quotidienne",
   "shots.taken": "{name} est déjà dans l’alliance. Utiliser {name}, ou ajouter un second {name} ?",
   "shots.pickThem": "Utiliser {name}",
   "shots.addAnyway": "Ajouter quand même",

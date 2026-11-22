@@ -6,7 +6,7 @@ Plan: `.specs/features/585-words/plan.md`
 
 profile: light
 
-16 checks in 2 slices built (S1 in `feat/585-words-1`, S2 in `feat/585-words-2`) · 0 one-way doors · 1 open (S1b, waits for the owner), of which 0 block S1 or S2
+17 checks in 2 slices built (S1 in `feat/585-words-1`, S2 in `feat/585-words-2`) · 0 one-way doors · 1 open (S1b, waits for the owner), of which 0 block S1 or S2
 
 ## Checks
 
@@ -41,11 +41,14 @@ Proof: `pnpm test:e2e e2e/board.spec.ts -g "a member's session opens the board"`
 
 ### S2 - one word for the daily update, and Follow-up's help on one screen
 
-**C10** - In EN, PT-BR and FR the workspace dictionary names the end-of-day read with one word each ("daily update", "atualização diária", "mise à jour quotidienne"), each used at least once, and no value holds an old form ("daily read", "no read", "first read", "leitura diária", "relevé quotidien", "lecture quotidienne", "mise à jour du jour", "pas de relevé"); FR "Pas de relevé" put back in Me's day cell fails (AC 14)
+**C10** - Each of the 40 lines that name the daily update (S2's and the new-member lines) says it with the one term in EN, PT-BR and FR ("daily update", "atualização diária", "mise à jour quotidienne"), and no value anywhere holds a form that only ever meant it ("daily read", "no read", "first read", "nightly roster", "leitura diária", "lista da noite", "relevé quotidien", "lecture quotidienne", "mise à jour du jour", "pas de relevé", "liste de la nuit"). Each old form put back fails it: EN "No reading", "not read yet", "{n} reads", "New · waiting for the nightly roster"; PT "Sem leitura", "ainda não lido", "{n} leitura"; FR "pas encore lu", "{n} relevé", "Nouveau · attend la liste de la nuit" (AC 14, AC 15)
 Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > calls the end-of-day read the daily update, one word per language, never a read or a relevé (issue 585 batch 4 S2)
 
-**C11** - The status bar says "Today’s daily update is late · the cards keep the last numbers · squads wait for it" and "Today’s daily update failed · …" (AC 14)
+**C11** - The status bar says "Today’s daily update failed · the cards keep the last numbers · squads wait for it" (AC 14)
 Proof: run unit | ✓ lib/private/read-status.test.ts > readStatus (D135) > a failed roster read says so
+
+**C17** - A roster not in after its window: the status bar says "Today’s daily update is late · the cards keep the last numbers · squads wait for it"; nothing when all is well (AC 14)
+Proof: run unit | ✓ lib/private/read-status.test.ts > readStatus (D135) > a roster not in after its window says the cards keep the last numbers; nothing when all is well
 
 **C12** - On Me a day still to come reads "2026-11-05: no daily update yet" beside "none" and the no-data mark (AC 14)
 Proof: run unit | ✓ lib/private/me-parts.test.ts > a member's own week (D142) > says none, no data and no daily update yet apart, and puts their own last week beside it
@@ -72,7 +75,7 @@ Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "Talked to them takes a quiet me
 | seen line, AC 11-12 (4)              | Me, other day C6 · Me, same day C6 · desk C6 · no zone C6   | -        |
 | sentence-ending lines, AC 5 (2)      | every caller traced C3 · a caller (KvK reason) C7           | -        |
 | server-time wording, AC 6 (3)        | en C4 · pt-BR C4 · fr C4                                    | -        |
-| daily-update word, AC 14 (3)         | en C10, C11, C12, C13 · pt-BR C10 · fr C10                  | -        |
+| daily-update word, AC 14 (3)         | en C10, C11, C12, C13, C17 · pt-BR C10 · fr C10             | -        |
 | help states, AC 17 (3)               | first visit C15, C16 · after a tap C16 · after a reload C16 | -        |
 
 ## Swept
@@ -91,7 +94,6 @@ Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "Talked to them takes a quiet me
 
 - AC 4 (the notice picture's "kept" day built on the server): the editor's `kept.on` is a required string and `noticeDetail` no longer carries the kept instant inside the picture, so a page that skips `noticeWords().picture` does not type-check (`pnpm typecheck`); C3 traces its date form.
 - AC 8 (/admin's zone row "UTC−2 (server time)") and AC 13 (Me's "Times are in server time (ST).") are one-line wirings with no rule of their own, named in the handoff for review.
-- AC 15 (Insights' week note "{n} daily updates"): one string per language with no rule of its own; C10 guards the word; FR checked at 360 px (the value and note wrap under the label, nothing overflows).
 - AC 18 (the KvK title on a first visit's first screen): depends on the seed's date, the fonts and a margin of a few pixels, so it is not a committed test. Measured on the e2e seed at 360 × 780 (Chromium): the title's top at y 695, its box above the tab bar (top 723), on a first visit as on a return visit; it was at 788 before. PT 739 and FR 763 on every visit, the jump in sight.
 - AC 19 (the cookie retired): `FOLLOW_UP_HELP_COOKIE` is gone, so a reader of it fails `pnpm typecheck`; no other code names `lap_ws_fu_help`.
 

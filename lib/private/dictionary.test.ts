@@ -47,18 +47,64 @@ describe("the workspace dictionary (D71, #305)", () => {
       "pt-BR": /\batualiza(?:ção|ções) diárias?/iu,
       fr: /\bmises? à jour quotidiennes?/iu,
     };
+    // Forms no line may use, whatever it is about. "no reading", "not read yet" and "sem leitura" are left out:
+    // the shield lines still say them.
     const OLD = {
-      en: /\bdaily reads?\b|\bend-of-day reads?\b|\broster read\b|\bno read\b|\bfirst read\b|\bday’s read\b/iu,
-      "pt-BR": /\bleituras? diárias?|\bleitura da lista\b|\bsem leitura em\b/iu,
-      fr: /\brelevés? quotidiens?|\blectures? quotidiennes?|\bmise à jour du jour\b|\blecture de la liste\b|\b(?:sans|pas de) relevé/iu,
+      en: /\bdaily reads?\b|\bend-of-day reads?\b|\broster read\b|\bno read\b|\bfirst read\b|\bday’s read\b|\bnightly roster\b/iu,
+      "pt-BR": /\bleituras? diárias?|\bleitura da lista\b|\bsem leitura em\b|\blista da noite\b/iu,
+      fr: /\brelevés? quotidiens?|\blectures? quotidiennes?|\bmise à jour du jour\b|\blecture de la liste\b|\b(?:sans|pas de) relevé|\bliste de la nuit\b/iu,
     };
+    // Every line that names the daily update, in all three languages (S2 and the new-member lines): each
+    // must say it with the one term, so an old form put back in any of them fails here.
+    const NAMED = [
+      "week.noRead",
+      "me.progress.lead",
+      "me.progress.early",
+      "me.week.legend",
+      "me.week.legendNone",
+      "me.week.noRead",
+      "me.week.later",
+      "insights.lead",
+      "insights.rules.read",
+      "insights.rules.none",
+      "insights.pulse.based.one",
+      "insights.pulse.based.other",
+      "insights.pulse.noRead",
+      "insights.pulse.days.one",
+      "insights.pulse.days.other",
+      "insights.pulse.noReadWeek",
+      "insights.effort.based.one",
+      "insights.effort.based.other",
+      "insights.effort.noMight",
+      "insights.effort.few",
+      "insights.flow.based.one",
+      "insights.flow.based.other",
+      "insights.tenure.based",
+      "insights.tenure.start",
+      "insights.kvk.waitingToday",
+      "insights.kvk.waiting",
+      "insights.kvk.notInReads",
+      "insights.squads.based.one",
+      "insights.squads.based.other",
+      "status.roster.failed",
+      "status.roster.late",
+      "push.use.night_read",
+      "push.use.night_read.help",
+      "squads.todayNone",
+      "followup.early",
+      "pending.addHelp",
+      "pending.tag",
+      "pending.toMatchHelp",
+      "shots.newHelp",
+      "shots.pendingGroup",
+    ] as const;
     for (const [language, words] of Object.entries(WORKSPACE_DICTIONARIES)) {
-      const values = Object.values(words);
       const term = TERM[language as keyof typeof TERM];
       const old = OLD[language as keyof typeof OLD];
-      expect(values.filter((v) => term.test(v)).length, language).toBeGreaterThan(0);
+      const missing = NAMED.filter((k) => !term.test(words[k]));
+      expect(missing, language).toEqual([]);
       expect(
-        values.filter((v) => old.test(v)),
+        Object.values(words).filter((v) => old.test(v)),
         language,
       ).toEqual([]);
     }

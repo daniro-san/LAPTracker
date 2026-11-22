@@ -15,6 +15,7 @@ Part of #585 (F25) and the "first-visit fold" item of #656. Size L for the batch
     - "Today’s daily update failed · the cards keep the last numbers"
     - "Today’s daily update is late · …" (it said "roster")
   - Alliance settings: "They are read after the daily update."
+  - New members (PR review): "New · waiting for the daily update", "Their notes attach to their player after the next daily update ({time} ST).", "The daily update did not list exactly one player with this name. …", and the screenshot import's hint and group. They said "the nightly roster" (PT "lista da noite", FR "liste de la nuit").
   - Notifications: the setting is labelled "Daily update failed". The notification reads "Daily update failed" · "Tonight’s daily update and its retry failed. Nothing to do: the desk keeps the last numbers and tries again tomorrow."
   - FR Follow-up's empty state: "mise à jour du jour" becomes "mise à jour quotidienne".
 - **Kept, other concepts:**
@@ -31,13 +32,13 @@ Part of #585 (F25) and the "first-visit fold" item of #656. Size L for the batch
   - The summary "Tap a name to write down what they said. How this list works" stays in sight.
   - One tap shows two lines. First, D140's line, now "Say hello, write down what they said, mark how it went." (it dropped "Nothing is sent for you."). Second, the owner's line, word for word: "These are notes for you. Nothing is sent and nobody is removed from the alliance."
 - **Tests:**
-  - New guard in `lib/private/dictionary.test.ts`: one daily-update word per language, none of the old forms. It fails with FR "Pas de relevé" put back.
+  - New guard in `lib/private/dictionary.test.ts`: each of the 40 lines that name the daily update says it with the one term, in all three languages, and no value holds a form that only ever meant it. Put back one at a time, each of these fails it: EN "No reading", "not read yet", "{n} reads", "New · waiting for the nightly roster"; PT "Sem leitura", "ainda não lido", "{n} leitura"; FR "pas encore lu", "{n} relevé", "Nouveau · attend la liste de la nuit". A wider pattern was not used: the shield lines still say "no reading", "not read yet" and "sem leitura".
   - Rewritten in `FollowUpWeek.test.ts`: the help is closed, with both lines inside.
   - Assertions changed with the words: `read-status`, `me-parts`, `insights-kvk`, `push-uses`.
   - The `help` prop is gone from `follow-up-groups.test.ts`.
   - e2e `desk-flows.spec.ts`: on a first visit the help is closed; a tap opens it and shows the owner's line; it is still closed after the reload.
 - **Docs:**
-  - Dated amendments (2026-11-22) to D104, D140 and D73 (the help and the cookie), and to D139, D142, D146, D148, D135 and D132 (the word).
+  - Dated amendments (2026-11-22) to D104, D140 and D73 (the help and the cookie), and to D139, D142, D146, D148, D135, D132 and D106 (the word).
   - The glossary's "daily read" row now names the PT and FR words.
   - A "Changed" line in the tracking plan.
   - S2's criteria, checks and validation in `.specs/features/585-words/`.
@@ -61,8 +62,18 @@ Part of #585 (F25) and the "first-visit fold" item of #656. Size L for the batch
 
 - Criterion 18 holds in English only. In PT and FR the KvK title is below the fold on every visit with this seed (y 739 PT, 763 FR; the tab bar starts at 723), because the header and the jump link wrap. The jump link is in sight in all three languages. The task asked for the groups to stay on the first screen; this change makes a first visit's first screen the same as a return visit's, which is what the help controls.
 - The adversarial reviewer found Alliance settings' "after the daily roster". It also names the daily update, so it changed too (D132 amended).
+- The PR review (MUST) found the new-member lines still saying "the nightly roster", D106's "one term". A quick check (an officer reading English as a second language, and the PT-BR and FR copy experts, on invented data) kept the new-member meaning with "daily update" in all five lines and asked for one EN change: the banner says "did not list" instead of "did not have". PT and FR strings are the experts'. D106 amended.
 
 ## Verified
+
+Review round (PR 669): the numbers below the S2 build's are from the run after the review fixes.
+
+- `pnpm vitest related --run lib/private/dictionary.lifecycle.ts lib/private/dictionary.test.ts`: 68 files, 352 tests passed.
+- `pnpm check`: exit 0 (1753 passed, 4 skipped), first round, no fixes needed.
+- e2e not run again: the review round changes no text an e2e test asserts (no e2e names these lines).
+
+S2 build:
+
 
 - `pnpm vitest related --run <changed>`: 121 files, 709 tests passed.
 - `pnpm check`: exit 0 (1753 passed, 4 skipped; prettier, eslint, tsc, drift, i18n). No public string changed, so translate-copy was not needed.
@@ -81,6 +92,7 @@ Part of #585 (F25) and the "first-visit fold" item of #656. Size L for the batch
 - Me's "none" legend says "nothing sent". A member asked "sent what?". The wording predates this slice and was kept.
 - `.specs/features/585-one-worklist/checks.md` C27 still describes the help as open on the first visit. Its proof names a test title that no longer exists, so `check_proofs.py` on that folder will fail. That spec is historical and was not edited.
 - The new-alliance guide: its Follow-up screenshots may show the help open. Retake them after release (standing rule).
+- From the PR 669 review, left as follow-ups: criterion 18's proof is a local screenshot measurement, not a committed test; the PT and FR notification strings (`lib/copy-push.ts` `nightTitle`, `nightBody`) have no test (only EN's title is asserted). C11's proof was fixed by splitting it: C11 the failed line, C17 the late line.
 
 ## Next
 
