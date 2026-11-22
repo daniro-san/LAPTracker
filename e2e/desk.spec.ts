@@ -16,7 +16,10 @@ const desk = `/w/${A.slug}`;
 /** Lantern Keep's roster today: the leaver is gone. */
 const ROSTER = A.names.length - 1;
 /** Each project marks its own member, so the two can run at once on one database. */
-const MARKED_BY = { phone: A.names[6], wide: A.names[7] } as Record<string, string>;
+const MARKED_BY = { phone: A.names[6], wide: A.names[7], iphone: A.names[8] } as Record<
+  string,
+  string
+>;
 const isolated = (name: string) => new RegExp(`⁨?${name}⁩?`);
 
 test.beforeEach(async ({ context }) => {
@@ -30,7 +33,7 @@ test("Home shows the alliance and its day", async ({ page }) => {
   await expect(page.getByText("Recent activity")).toBeVisible();
 });
 
-test("Members: a card opens from the list and stays closed once closed", async ({ page }, info) => {
+test("Members: a card opens from the list and stays closed once closed", async ({ page }) => {
   await page.goto(`${desk}/members`);
   await hydrated(page);
   await expect(page.getByText(`${ROSTER} of ${ROSTER} members`)).toBeVisible();
@@ -41,7 +44,9 @@ test("Members: a card opens from the list and stays closed once closed", async (
     .click();
   // Below 1024 px the card is a sheet (a dialog); from 1024 px a pane beside the list (D122).
   const card =
-    info.project.name === "phone" ? page.getByRole("dialog", { name }) : page.locator("main");
+    (page.viewportSize()?.width ?? 0) < 1024
+      ? page.getByRole("dialog", { name })
+      : page.locator("main");
   await expect(card.getByRole("heading", { name, level: 2 })).toBeVisible();
   await expect(card.getByText("Last 7 days")).toBeVisible();
   await expect(page).toHaveURL(/[?&]m=\d+/);

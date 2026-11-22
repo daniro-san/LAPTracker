@@ -1,30 +1,16 @@
 # The e2e suite (issue 477, D150): a production build against a Postgres service container, with the
-# invented seed of e2e/fixtures/seed.ts. Actions pinned to commit SHAs; the tag is in the comment. Runs once per
-# PR that changes what the app runs (Actions minutes, 2026-11-19), and by hand. Needs no secret: the server
-# points every outside service at 127.0.0.1:9 and the suite fails if anything leaves the runner.
+# invented seed of e2e/fixtures/seed.ts. Actions pinned to commit SHAs; the tag is in the comment. A required
+# check: every PR gets a job named `e2e`, and one that changes nothing the app runs skips the install, build
+# and tests. Daily on `dev` at 03:17 UTC, with WebKit (the schedule runs from the default branch, so it starts
+# once a release has copied this file to main). Needs no secret: the app under test (`next start` and the
+# browser) points every outside service at 127.0.0.1:9, and a test fails if it tries to reach any other
+# host. `next build` is not guarded: it downloads the Google Fonts that next/font self-hosts.
 name: e2e
 
 on:
   pull_request:
-    paths:
-      - "app/**"
-      - "lib/**"
-      - "config/**"
-      - "drizzle/**"
-      - "e2e/**"
-      - "public/**"
-      - "scripts/db-local*.mjs"
-      - "proxy.ts"
-      - "instrumentation.ts"
-      - "next.config.ts"
-      - "postcss.config.mjs"
-      - "tsconfig.json"
-      - "playwright.config.ts"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".nvmrc"
-      - ".github/workflows/e2e.yml"
+  schedule:
+    - cron: "17 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -55,32 +41,65 @@ jobs:
           --health-retries 30
     env:
       E2E_DATABASE_URL: postgres://lap:lap@127.0.0.1:54320/lap_e2e
+      # D150: WebKit runs in the daily run only.
+      E2E_WEBKIT: ${{ github.event_name == 'schedule' && '1' || '0' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1 — version from packageManager
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+          # The schedule runs on the default branch (main); the daily run tests dev.
+          ref: ${{ github.event_name == 'schedule' && 'dev' || '' }}
+      - name: Changes the app?
+        id: changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -z "$BASE" ]; then echo "app=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git fetch --no-tags --depth=1 origin "$BASE"
+          files=$(git diff --name-only "$BASE" HEAD)
+          echo "$files"
+          app='^(app|lib|config|drizzle|e2e|public)/|^scripts/db-local[^/]*\.mjs$|^(proxy|instrumentation|next\.config|playwright\.config)\.ts$|^(postcss\.config\.mjs|tsconfig\.json|package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|\.nvmrc|\.github/workflows/e2e\.yml)$'
+          if echo "$files" | grep -Eq "$app"; then echo "app=true" >> "$GITHUB_OUTPUT"; else echo "app=false" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.changes.outputs.app == 'true'
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1 — version from packageManager
+      - if: steps.changes.outputs.app == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - if: steps.changes.outputs.app == 'true'
+        run: pnpm install --frozen-lockfile
       - name: Playwright version
+        if: steps.changes.outputs.app == 'true'
         id: pw
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - if: steps.changes.outputs.app == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
-      # The browser comes from the cache when it holds this version; its system libraries come from apt every run.
-      - run: pnpm exec playwright install --with-deps --only-shell chromium
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-webkit${{ env.E2E_WEBKIT }}
+          restore-keys: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-
+      # The browsers come from the cache when it holds this version; their system libraries come from apt.
+      - if: steps.changes.outputs.app == 'true'
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+      - if: steps.changes.outputs.app == 'true' && env.E2E_WEBKIT == '1'
+        run: pnpm exec playwright install --with-deps webkit
       # The runner image's client; global setup drops, creates and seeds the database with it.
-      - run: psql --version
+      - if: steps.changes.outputs.app == 'true'
+        run: psql --version
+      - if: steps.changes.outputs.app == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('app/**', 'lib/**', 'config/**', '*.ts', '*.mjs') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       # Its own step, so the build's time shows apart and does not count against the web server's timeout.
-      - run: pnpm exec next build
+      - if: steps.changes.outputs.app == 'true'
+        run: pnpm exec next build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
-      - run: pnpm test:e2e
+      - if: steps.changes.outputs.app == 'true'
+        run: pnpm test:e2e
         env:
           E2E_NO_BUILD: "1"
       - if: failure()
@@ -90,4 +109,5 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            e2e-outbound.log
           retention-days: 7

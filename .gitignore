@@ -12,6 +12,7 @@ coverage/
 
 # e2e suite output (pnpm test:e2e)
 test-results/
+e2e-outbound.log
 playwright-report/
 
 # local Postgres cluster (pnpm db:local:start)

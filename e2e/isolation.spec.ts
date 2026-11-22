@@ -13,7 +13,6 @@ import {
   LINKED,
   memberUid,
   seededAt,
-  SENTINELS,
   TOKENS,
   type Side,
 } from "./fixtures/seed";
@@ -199,15 +198,22 @@ test.describe("no answer carries a private roster field", () => {
     });
   }
 
-  test("an officer's own member card shows its own map position, never the other alliance's or the photo URL", async () => {
+  // The positive controls: the scan, given these real answers as if a public page had sent them, finds every
+  // sentinel D71 lets the own desk carry, so the passes above are not blind.
+  test("the scan sees the own desk's fields where D71 allows them", async () => {
     const ctx = await api(cookiesOf("a", "officer")[0] as string);
-    const res = await ctx.get(`/api/w/${slug("a")}/members/${LINKED.a}`);
-    expect(res.status()).toBe(200);
-    const body = await res.text();
-    // D71 allows this one answer the alliance's own fields; the sentinel shows the check above can see them.
-    expect(body).toContain(String(SENTINELS.a.x));
-    expect(body).toMatch(/Feb 29/);
-    expect(leaksIn(`${BASE_URL}/api/w/${slug("a")}/members/${LINKED.a}`, body)).toEqual([]);
+    const cardPath = `/api/w/${slug("a")}/members/${LINKED.a}`;
+    const card = await ctx.get(cardPath);
+    expect(card.status()).toBe(200);
+    const cardBody = await card.text();
+    expect(leaksIn(`${BASE_URL}${cardPath}`, cardBody)).toEqual([]);
+    expect(leaksIn(`${BASE_URL}/`, cardBody)).toEqual(
+      expect.arrayContaining(["a.x", "a.y", "last_online_at (as printed)"]),
+    );
+    const members = await ctx.get(`/w/${slug("a")}/members`);
+    const membersBody = await members.text();
+    expect(leaksIn(`${BASE_URL}/w/${slug("a")}/members`, membersBody)).toEqual([]);
+    expect(leaksIn(`${BASE_URL}/`, membersBody)).toContain("a.joined_at");
     await ctx.dispose();
   });
 });

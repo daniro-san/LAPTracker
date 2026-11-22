@@ -13,8 +13,12 @@ export const BASE_URL = `http://localhost:${APP_PORT}`;
 export const DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? "postgres://lap:lap@127.0.0.1:54320/lap_e2e";
 
-/** Where the server's no-network preload writes each host it refused (e2e/no-network.mjs). */
-export const OUTBOUND_LOG = "test-results/e2e-outbound.log";
+/**
+ * Where the server's no-network preload writes each host it refused (e2e/no-network.mjs). Outside
+ * test-results/, which Playwright empties after the config loads; the config deletes this file before the
+ * servers start, and the preload makes it on the first refusal.
+ */
+export const OUTBOUND_LOG = "e2e-outbound.log";
 
 const NOWHERE = "http://127.0.0.1:9";
 
