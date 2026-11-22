@@ -26,4 +26,4 @@ The audit's R1 was verified only by the presence of the check run on the SHA, no
 ## Next
 Close #611, run Prepare release again after this merges, approve the held `ci` run, merge.
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/613
