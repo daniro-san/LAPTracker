@@ -58,7 +58,9 @@ const list = (followUp: string | null) =>
 
 describe("the Members list's first group (issue 585 S3)", () => {
   it("says its status words with no count, and never points at a turned-off Follow-up tab (D126)", () => {
-    const off = textOf(list(null));
+    const html = list(null);
+    const off = textOf(html);
+    expect(html).not.toContain("/follow-up");
     expect(off).toContain("Check in or Needs help");
     expect(off).not.toContain("This week’s list:");
     expect(off).not.toContain("Follow-up");

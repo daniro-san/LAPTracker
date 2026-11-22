@@ -217,8 +217,8 @@ describe("app-error alert", () => {
   });
 });
 
-// The stored detail, the alert and the PostHog payload of a recorded error are checked for leaks in the first
-// test above; a handled error's PostHog payload is checked in "sends a handled error to PostHog once".
+// INVARIANT app-errors.private-redacted is enforced by behaviour: the stored detail, the alert and the PostHog
+// payload of a recorded error are checked for leaks in the first test above; a handled error's PostHog payload is checked in "sends a handled error to PostHog once".
 describe("one private-field redactor on every error's way out (D115, 2026-11-21)", () => {
   // The type is the guard: `pnpm typecheck` fails if any line marked @ts-expect-error stops being an error.
   it("lib/private's report context takes only a listed module and its own code, nothing else (D71)", () => {

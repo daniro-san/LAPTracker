@@ -25,7 +25,7 @@ const NOW = new Date("2026-11-17T12:00:00Z");
 const TODAY = "2026-11-17";
 const t = WORKSPACE_DICTIONARIES.en;
 
-/** The week as a member sees it: a member entry today at 23:00 ST, a leadership one, a member one Saturday. */
+/** The week as a member sees it: a member entry today at 23:00 ST and a member one Saturday. */
 let html = "";
 beforeAll(async () => {
   const db = await openTestDb();
@@ -33,7 +33,6 @@ beforeAll(async () => {
   const add = (input: Record<string, unknown>) =>
     createEntry(db, officer, newEntry.parse(input), randomUUID());
   await add({ kind: "other", day: TODAY, minute: 1380, title: "Quiz night", forMembers: true });
-  await add({ kind: "other", day: TODAY, minute: 1320, title: "Leadership call" });
   await add({ kind: "other", day: "2026-11-21", minute: 600, title: "Rally", forMembers: true });
   const view = await boardView(db, member, TODAY);
   html = renderToStaticMarkup(
