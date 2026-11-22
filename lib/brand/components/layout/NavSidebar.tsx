@@ -17,6 +17,7 @@ export function NavSidebar({
   soon,
   footer,
 }: NavProps & { footer?: ReactNode }) {
+  // pb-20 keeps the last item clear of the desk's floating "Feedback" badge (app/(private)/_ui/FeedbackButton.tsx).
   return (
     <nav aria-label={label} className="sticky top-0 h-dvh overflow-y-auto pt-3 pb-20">
       <ul>

@@ -197,15 +197,19 @@ export function FeedbackButton(props: Props) {
       <button type="button" onClick={() => setEntry("end")} className={buttonClass("secondary")}>
         {props.words["feedback.open"]}
       </button>
-      {entry === null && (
-        <button
-          type="button"
-          onClick={() => setEntry("badge")}
-          className={buttonClass("secondary", "fixed bottom-4 left-4 z-10 bg-paper max-xl:hidden")}
-        >
-          {props.words["feedback.badge"]}
-        </button>
-      )}
+      {/* Kept mounted while the sheet is open (hidden and inert), so the sheet returns focus to it on close. */}
+      <button
+        type="button"
+        onClick={() => setEntry("badge")}
+        hidden={entry !== null}
+        inert={entry !== null}
+        className={buttonClass(
+          "secondary",
+          `fixed bottom-4 left-4 z-10 bg-paper max-xl:hidden ${entry !== null ? "xl:hidden" : ""}`,
+        )}
+      >
+        {props.words["feedback.badge"]}
+      </button>
       {entry !== null && <FeedbackSheet {...props} entry={entry} onClose={() => setEntry(null)} />}
     </div>
   );
