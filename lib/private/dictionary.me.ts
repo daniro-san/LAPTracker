@@ -44,6 +44,8 @@ export const meEn = {
   "me.week.later": "not read yet",
   "me.week.noRead": "No reading",
   "me.week.early": "Your week shows after the first daily update.",
+  // Owner, 2026-11-22 (#663): the card's average rule, said where the member reads their own.
+  "me.week.legendZero": "A “none” day counts as 0 in the average.",
   "me.squads.none": "The tracker has not seen your squads yet.",
   "me.needed.head": "Where you’re needed",
   "me.needed.lead": "What your officers planned with you this week. Times are in server time (ST).",
@@ -145,6 +147,7 @@ export const mePt: MeWords = {
   "me.week.later": "ainda não lido",
   "me.week.noRead": "Sem leitura",
   "me.week.early": "Sua semana aparece depois da primeira atualização diária.",
+  "me.week.legendZero": "Um dia “nada” conta como 0 na média.",
   "me.squads.none": "O tracker ainda não viu seus esquadrões.",
   "me.needed.head": "Onde precisam de você",
   "me.needed.lead":
@@ -226,6 +229,7 @@ export const meFr: MeWords = {
   "me.week.later": "pas encore lu",
   "me.week.noRead": "Pas de relevé",
   "me.week.early": "Votre semaine s’affiche après la première mise à jour quotidienne.",
+  "me.week.legendZero": "Un jour « rien » compte pour 0 dans la moyenne.",
   "me.squads.none": "Le tracker n’a pas encore vu vos escouades.",
   "me.needed.head": "Là où on a besoin de vous",
   "me.needed.lead":

@@ -80,3 +80,13 @@ Why: the owner, 2026-11-19: the member card is one long column of label/value ro
 The Shield line ("Shields are not on the card") is still not built: showing the Raid Shield reading on the card changes D137's Privacy rule and how this decision's owner rule of 2026-11-20 ("squads and shields always show when the tracker saw them, on the server's clock and the viewer's") is applied, so it waits for the owner (`.specs/features/516-card-followup-shield/plan.md`, S2).
 
 **Amendment 2026-11-22 (issue 585 batch 4, slice S1; personas under the owner's standing approval, `.specs/features/585-words/plan.md`): one way to write dates, times and zones.** The squads' "seen" line joins the date and the time the desk's one way: "seen Thu, Nov 19, 22:32 ST" (PT "visto em qui., 19 de nov. às 22:32 ST", FR "vue le jeu. 19 nov. à 22:32 ST"). On the desk card the viewer's time follows, as before. On a member's own page see D142's amendment of today.
+
+**Amendment 2026-11-22 (owner's decision on #663: "yes, go with the recommendation"; issue 585 batch 4, slice S1b, `.specs/features/585-words/plan.md`): one average rule.** This replaces the sentence "Each row says "Average 589 · 4 days": the mean of the days with a number only, so "none" and missing days never lower it, and the count says how many days it rests on."
+
+- Each row's average is over the days whose daily update lists the member. A "none" day counts as 0. A day with no daily update never counts.
+- The line names the "none" days: "Average 400 · 6 days, of which 2 none" (PT "Média 400 · 6 dias, dos quais 2 sem nada", FR "Moyenne 400 · 6 jours, dont 2 sans rien"). With no "none" day it reads as before: "Average 589 · 4 days".
+- When every listed day is "none", the line reads "None on all 7 days" ("Nada enviado nos 7 dias", "Rien sur les 7 jours"; one day: "None on 1 day", "Nada enviado em 1 dia", "Rien sur 1 jour"), never "Average 0". With no listed day the row still shows the no-data mark.
+- The cells do not change: "none" stays "none", and a day with no daily update stays the no-data mark (D127).
+- The rule is one function, `dayAverage` in `lib/private/member-days.ts`, with its words in `averageLine`. A member's own page (D142) and Insights (D139) use the same function, so the three agree on the same days.
+- The owner's comment wrote "6 days, 2 none". The persona panel of 2026-11-22 added "of which" ("dos quais", "dont"), because an officer who reads English as a second language could not tell whether the 2 were among the 6.
+- Tests: `lib/private/day-average.test.ts` (the card, Me and Insights give the same average and the same count of "none" days, read from PGlite), `lib/private/member-days.test.ts`, `lib/private/me-parts.test.ts`, `lib/private/insights-rules.test.ts`.

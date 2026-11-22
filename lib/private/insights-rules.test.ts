@@ -99,7 +99,7 @@ describe("effort at every might level (issue 489)", () => {
 
   it("averages the reads that list a member, none as 0, and makes four bands of might, the highest first", () => {
     const efforts = effortsOf(reads, new Set([8]));
-    expect(efforts.find((e) => e.uid === 3)?.quests).toBe(50);
+    expect(efforts.find((e) => e.uid === 3)?.quests).toEqual({ value: 50, days: 2, none: 1 });
     const bands = bandsOf(efforts);
     expect(bands.map((b) => [b.low, b.high, b.members])).toEqual([
       [6_000_000, 7_000_000, 2],

@@ -90,6 +90,7 @@ export function MeWeek({ view, t }: { view: Shown; t: WorkspaceDictionary }) {
               {t["me.week.legend"]}
             </li>
             <li>{t["me.week.legendNone"]}</li>
+            <li>{t["me.week.legendZero"]}</li>
           </ul>
         </>
       ) : (

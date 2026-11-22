@@ -1,5 +1,5 @@
 // The member card's "Last 7 days" (issue 461, D136): the 7 server days up to the newest read, "—" for a
-// day with no read, "none" for a read that sent nothing (D127), averages over the days with a number, coins
+// day with no read, "none" for a read that sent nothing (D127), averages with "none" as 0 (#663), coins
 // against their 1,000 cap, and might since the first day. Invented values.
 import { describe, expect, it } from "vitest";
 
@@ -75,10 +75,12 @@ describe("the member card's last 7 days (issue 461)", () => {
     expect(lastDays([], 1)).toBeNull();
   });
 
-  it("says each row's average over the days with a number, draws coins against 1,000 and never a 0 for no data", () => {
+  it("says each row's average with its none days counted as 0 and named, draws coins against 1,000 and never a 0 for no data", () => {
     const words = daysCard(lastDays(READS, 1) as NonNullable<ReturnType<typeof lastDays>>, t, f);
     const [quests, coins, donations] = words.rows;
-    expect(quests?.average).toBe("Average 550 · 4 days");
+    // Owner, 2026-11-22 (#663): (500 + 700 + 0 + 600 + 400) / 5; the two days with no read never count.
+    expect(quests?.average).toBe("Average 440 · 5 days, of which 1 none");
+    expect(coins?.average).toBe("Average 500 · 5 days, of which 2 none");
     expect(quests?.bars.map((b) => b.value)).toEqual([
       "500",
       "700",
@@ -91,8 +93,21 @@ describe("the member card's last 7 days (issue 461)", () => {
     expect(quests?.bars[2]?.said).toBe("Sun, Nov 15: no data");
     expect(quests?.bars[1]?.share).toBe(1);
     expect(coins?.bars.map((b) => b.share)).toEqual([1, 0.5, null, null, null, 1, null]);
-    expect(donations?.average).toBe("Average 7.33K · 3 days");
+    expect(donations?.average).toBe("Average 4.40K · 5 days, of which 2 none");
     expect(donations?.bars[1]?.value).toBe("12.4K");
     expect(words.might).toBe("Might +1.20M since Fri, Nov 13");
+  });
+
+  it("says a week of only none days as none on all of them, never Average 0", () => {
+    const week = ["13", "14", "15", "16", "17", "18", "19"].map((d) =>
+      read(`2026-11-${d}`, [member(1)]),
+    );
+    const [quests] = daysCard(
+      lastDays(week, 1) as NonNullable<ReturnType<typeof lastDays>>,
+      t,
+      f,
+    ).rows;
+    expect(quests?.average).toBe("None on all 7 days");
+    expect(quests?.bars.every((b) => b.value === "none")).toBe(true);
   });
 });

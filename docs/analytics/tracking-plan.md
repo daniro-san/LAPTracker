@@ -178,6 +178,8 @@ One dated line for each change in what a number means, newest last. The first th
 
 - 2026-11-22 (issue 585, batch 3, slice 4, D104, D108 and D110 amended): Home's Follow-up link moves from the "Members this week" note to a "Follow-up" card near the top of the main column, worded "12 members to look at this week · 4 already noted by officers"; `$autocapture` on Home's old "Follow-up:" text ends and clicks to Follow-up from Home may rise from this release (read a rise as the place, not as more follow-up work). Home's "Send screenshots" moves out of "To review" into its own "Screenshots" card; `ws_screenshot_sent` is unchanged. Home's "1 waiting in “To review” ↓" is an in-page jump with no event. Recent activity folds a roll call finished by several officers into one line, so "Show more" reads of `/api/w/[slug]/activity` per Home view may fall. No event changed.
 
+- 2026-11-22 (issue 585, batch 4, slice S1b, owner's decision on #663, D136, D139, D142 and D127 amended): the member card's and Me's averages count a "none" day as 0 and name it ("Average 400 · 6 days, of which 2 none"), as Insights already did. Nothing is tracked about them: no event or property carries an average, and the bars and lines are in `ph-no-capture` on Me. Add, change, remove: nothing. If officers report that the card's numbers "dropped", read it as the rule, not as less effort.
+
 ## Not tracked, on purpose
 
 - Who marked, saved, thanked or was thanked; any member's value; anything typed.

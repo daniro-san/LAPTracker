@@ -1,6 +1,6 @@
 # Words pass in EN, PT and FR: one rule per concept for dates, times, zones and averages, then the words (#585 batch 4)
 
-**Approved**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (c)](#c-product-strategy-approve-with-changes); adversarial verdict: [Validation (d)](#d-adversarial-approve-with-changes). Covers S1 only. S1b (F19) reverses a rule D136 states and both verdicts ask for the owner's own yes, so it waits for the owner's reply (see S1b).
+**Approved**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (c)](#c-product-strategy-approve-with-changes); adversarial verdict: [Validation (d)](#d-adversarial-approve-with-changes). Covers S1. S1b (F19) reverses a rule D136 states and both verdicts asked for the owner's own yes; the owner gave it on 2026-11-22 (#663, see S1b).
 
 Size: L (more than one PR: seven slices across the desk, the members' board, Me and /admin). This plan covers every slice; **slice 1 (S1) is built in `feat/585-words-1`**. Part of #585 (findings F19, F25, F30, F31, F35, F43, F44, F45, F46, F47) and the "first-visit fold" item of #656.
 
@@ -101,20 +101,34 @@ Every desk, board and Me date, time and zone is written one way per purpose, in 
 12. WHILE the browser does not know its zone, the board, Me and the desk SHALL show the ST time alone, so server and browser HTML never differ (as today)
 13. Me SHALL say once, where its times appear, that they are in server time (ST)
 
-### S1b: one rule for a member's average (F19) - waits for the owner (P1)
+### S1b: one rule for a member's average (F19) (P1)
 
-The card, Me and Insights agree on a member's average. Not built until the owner answers; recommended by the officer panel (6 of 7 with changes) and the product-strategy persona, with the adversarial reviewer's conditions.
+The card, Me and Insights agree on a member's average. Recommended by the officer panel (6 of 7 with changes) and the product-strategy persona, with the adversarial reviewer's conditions. Built in `feat/585-words-1b`.
 
-The question for the owner: "D136 says the card's and Me's averages leave a 'none' day out; D139 says Insights counts it as 0. Should 'none' count as 0 everywhere (Insights' rule, recommended), with the average line naming the none days ('Average 400 · 6 days, 2 none'; all none: 'None on all 7 days', never 'Average 0')?"
+**Approved (S1b)**: 2026-11-22 - owner: "yes, go with the recommendation" (owner, 2026-11-22, #663); S1b's panel: [Validation (i)](#i-s1b-panel-approve-with-changes).
 
-Criteria, when approved:
+The question the owner answered: "D136 says the card's and Me's averages leave a 'none' day out; D139 says Insights counts it as 0. Should 'none' count as 0 everywhere (Insights' rule, recommended), with the average line naming the none days ('Average 400 · 6 days, 2 none'; all none: 'None on all 7 days', never 'Average 0')?"
 
-1. The system SHALL average a member's daily quest points, Alliance Help coins and donations over the days whose daily update lists the member, counting a "none" day as 0 and leaving out a day with no daily update and a day still to come (`dayAverage`, one function, used by the card, Me and Insights)
-   - 600, none, none, 600, no update, 600, 600 → "Average 400 · 6 days, 2 none"; seven "none" → "None on all 7 days"; no day with a daily update → no average
-2. WHEN the card's Last 7 days, Me's last week and Insights' effort for one member are built from the same seven end-of-day reads THEN the system SHALL show the same average in all three
-3. The card and Me SHALL keep writing a "none" day as "none" and a day with no daily update as the no-data mark (D127)
-4. Insights keeps its last-7-reads window and its "few reads" rule (adversarial finding 3); the agreement in criterion 2 is for the same days
-5. A new decision supersedes D136's average sentence and D139's "This differs" paragraph (adversarial finding 2); the PT and FR "none" counts get their own `.one`/`.other` keys from the copy experts
+Decisions amended (2026-11-22, the owner's decision on #663): D136 (its average sentence), D139 (its "This differs" paragraph), D142 (Me's week lines and legend) and D127 (its 2026-11-20 amendment's average sentence). Dated amendments, as the owner's comment says, not a new decision.
+
+**Acceptance Criteria**
+
+20. The system SHALL average a member's daily quest points, Alliance Help coins and donations over the days whose daily update lists the member, counting a "none" day as 0 and leaving out a day with no daily update and a day still to come (`dayAverage`, one function, used by the card, Me and Insights), and the line SHALL name the "none" days
+    - 600, none, none, 600, no update, 600, 600 → "Average 400 · 6 days, of which 2 none" (PT "Média 400 · 6 dias, dos quais 2 sem nada", FR "Moyenne 400 · 6 jours, dont 2 sans rien"); with no "none" day, "Average 589 · 4 days" as before
+21. IF every day whose daily update lists the member is "none" THEN the line SHALL read "None on all {n} days" (PT "Nada enviado nos {n} dias", FR "Rien sur les {n} jours"; one day: "None on 1 day", "Nada enviado em 1 dia", "Rien sur 1 jour") and never "Average 0"; IF no day lists the member THEN the card SHALL show the no-data mark and Me "This week: no average yet" / "Last week: no average"
+22. WHEN the card's Last 7 days, Me's this week and Insights' effort for one member are built from the same end-of-day reads THEN the system SHALL give the same average and the same count of "none" days in all three
+23. The card and Me SHALL keep writing a "none" day as "none" and a day with no daily update as the no-data mark (D127)
+24. Insights SHALL keep its last-7-reads window and its "few reads" rule (adversarial finding 3), and none of its numbers changes; the agreement in criterion 22 is for the same days
+25. Me's legend SHALL add "A “none” day counts as 0 in the average." (PT "Um dia “nada” conta como 0 na média.", FR "Un jour « rien » compte pour 0 dans la moyenne.")
+
+### (i) S1b panel: approve with changes
+
+Quick review, 2026-11-22, on invented data at 360 px (the rendered strings of criteria 20 and 21): two officers (UK, native English; Philippines, English as a second language), a member reading their own Me page in Portuguese, PT-BR and FR copy experts, and an adversarial reviewer (D75).
+
+- First glance, "How many days did this member send nothing, and how many are counted?" on "Average 400 · 6 days, 2 none": the UK officer was right; the Philippine officer got "2 none" right but was unsure whether the 2 were among the 6. The member was right in PT and read "6 dias" as "days I played" for a moment.
+- Adopted: "of which" / "dos quais" (FR "dont" already says it), so the 2 read as among the 6; PT "Nada enviado nos {n} dias" (a bare "Nada" read as a verdict on the member; "enviado" matches the legend); Me's legend line, criterion 25 (a member who adds up their bars gets a different number without it); the count of listed days, never a fixed 7, in "None on all {n} days". One key for the "none" count: the experts found no plural difference in any of the three languages.
+- Not adopted, a follow-up: the adversarial reviewer's "<1" for a non-zero average that rounds to 0 (for example one point among six "none" days reads "Average 0 · 7 days, of which 6 none"). It is a new display rule beyond the owner's, and the line already names the six "none" days.
+- D75: counting "none" as 0 lowers some averages; the line names why, nothing is automatic, and Me shows only the member's own numbers.
 
 ### S2: one word for the daily update, and Follow-up's help on one screen (F25, #656) (P2)
 
@@ -159,9 +173,9 @@ A disabled button says why; the back link returns to where the officer came from
 | "ST" in PT and FR                   | keep "ST"                          | the community writes it in every language (PT and FR experts)                                                         | y - personas                              |
 | The Portuguese "20/11" break date   | the one `day` form                 | one form per purpose (PT expert approves)                                                                             | y - personas                              |
 | EN board title                      | "Next 7 days in the alliance"      | the officer panel's wording; PT and FR from the native experts                                                        | y - personas                              |
-| F19's direction                     | Insights' rule                     | D127; officer panel and product strategy                                                                              | n - owner (S1b)                           |
+| F19's direction                     | Insights' rule                     | D127; officer panel and product strategy                                                                              | y - owner, 2026-11-22, #663               |
 
-**Open questions:** S1b's question to the owner (`blocks` S1b only).
+**Open questions:** none (S1b's question was answered by the owner on 2026-11-22, #663).
 
 ## Differences from the source
 

@@ -1,7 +1,9 @@
 // The member card's "Last 7 days" (issue 461, D127, D136): daily quest points, Alliance Help coins (out of
-// 1,000) and donations on each of the 7 server days up to the newest end-of-day read, the average over the
-// days with a number, and might since the first of those days. A day with no read of the member is null
-// ("—"); a read that lists them with nothing sent is "none" (D127), never 0 and never in an average.
+// 1,000) and donations on each of the 7 server days up to the newest end-of-day read, the average, and might
+// since the first of those days. A day with no read of the member is null ("—"); a read that lists them with
+// nothing sent is "none" (D127), written "none". The average is `dayAverage`, the one rule the card, Me and
+// Insights share (owner, 2026-11-22, #663): a "none" day counts as 0 and the line names it; a day with no
+// read never counts.
 import { fill } from "../copy";
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
 import type { WorkspaceDictionary } from "./dictionary";
@@ -53,6 +55,47 @@ export function lastDays(reads: readonly RosterRead[], uid: number): LastDays | 
   };
 }
 
+/** A member's average over the days a daily update lists them, with how many of those days were "none". */
+export interface DayAverage {
+  /** The mean, unrounded: a "none" day counts as 0. */
+  value: number;
+  days: number;
+  none: number;
+}
+
+/**
+ * The one average rule (owner, 2026-11-22, #663; D136 and D139 amended): over the days whose daily update
+ * lists the member, a "none" day counting as 0; a day with no daily update (null) and a day still to come
+ * are left out. Null when no day lists the member.
+ */
+export function dayAverage(cells: readonly (DayCell | "later")[]): DayAverage | null {
+  const listed = cells.filter((c): c is number | "none" => c !== null && c !== "later");
+  if (listed.length === 0) return null;
+  const sum = listed.reduce<number>((a, c) => a + (c === "none" ? 0 : c), 0);
+  const none = listed.filter((c) => c === "none").length;
+  return { value: sum / listed.length, days: listed.length, none };
+}
+
+const plural = (n: number) => (n === 1 ? "one" : "other");
+
+/**
+ * "Average 400 · 6 days, of which 2 none", so a lower average says why; "None on all 7 days" when every listed day
+ * is "none", never "Average 0"; null with no listed day.
+ */
+export function averageLine(
+  a: DayAverage | null,
+  t: WorkspaceDictionary,
+  show: (n: number) => string,
+): string | null {
+  if (!a) return null;
+  if (a.none === a.days) return fill(t[`card.days.allNone.${plural(a.days)}`], { n: a.days });
+  const line = fill(t[`card.days.average.${plural(a.days)}`], {
+    v: show(Math.round(a.value)),
+    n: a.days,
+  });
+  return a.none === 0 ? line : fill(t["card.days.withNone"], { line, k: a.none });
+}
+
 /** One day of one row as the card shows it: the bar's share of the row's scale, the number, its words. */
 export interface DayBar {
   /** 0–1 against the row's scale; null when there is no number. */
@@ -67,7 +110,7 @@ export interface DayBar {
 export interface DaysRow {
   metric: DayMetric;
   label: string;
-  /** "Average 555 a day · 6 days"; "—" when no day has a number. */
+  /** "Average 400 · 6 days, of which 2 none" (`averageLine`); "—" when no day lists the member. */
   average: string;
   /** A member's own page (D142): the same row's average over their own last week. */
   last?: string;
@@ -114,13 +157,7 @@ function rowOf(
       said: `${f.date(days[i] as string)}: ${said}`,
     };
   });
-  const average =
-    numbers.length === 0
-      ? NONE
-      : fill(t[numbers.length === 1 ? "card.days.average.one" : "card.days.average.other"], {
-          v: show(Math.round(numbers.reduce((a, b) => a + b, 0) / numbers.length)),
-          n: numbers.length,
-        });
+  const average = averageLine(dayAverage(cells), t, show) ?? NONE;
   return { metric, label: t[`card.days.${metric}`], average, bars };
 }
 

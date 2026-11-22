@@ -39,15 +39,22 @@ describe("a member's own week (D142)", () => {
     const quests = card?.rows.find((r) => r.metric === "quests");
     expect(quests?.bars.map((b) => b.value)).toEqual(["600", "none", "400", "", "", "", ""]);
     expect(quests?.bars[3]?.said).toBe("2026-11-05: not read yet");
-    // The average counts the days with a number only (D75).
-    expect(quests?.average).toBe("This week: Average 500 · 2 days");
+    // Owner, 2026-11-22 (#663): "none" counts as 0 and is named; days still to come never count.
+    expect(quests?.average).toBe("This week: Average 333 · 3 days, of which 1 none");
     expect(quests?.last).toBe("Last week: Average 400 · 2 days");
     expect(weekCard([], "2026-11-05", t, f)).toBeNull();
-    // No number yet this week: no average, and last week stays a plain line, never a target.
+    // Only "none" so far: said as such, never "Average 0"; last week stays a plain line, never a target.
     const early = weekCard([day("2026-10-28", 500), day("2026-11-02", null)], "2026-11-02", t, f);
     expect(early?.rows[0]).toMatchObject({
-      average: "This week: no average yet",
+      average: "This week: None on 1 day",
       last: "Last week: Average 500 · 1 day",
+    });
+    // A day with no daily update is no average at all, not a "none".
+    const noUpdate = { ...day("2026-11-02", 500), daily: null };
+    const quiet = [day("2026-10-27", null), day("2026-10-28", null), noUpdate];
+    expect(weekCard(quiet, "2026-11-02", t, f)?.rows[0]).toMatchObject({
+      average: "This week: no average yet",
+      last: "Last week: None on all 2 days",
     });
     expect(weekCard([day("2026-11-02", 500)], "2026-11-02", t, f)?.rows[0]?.last).toBe(
       "Last week: no average",
