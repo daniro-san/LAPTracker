@@ -42,7 +42,7 @@ export const privateError = (status: number, code: string): Response =>
 
 /**
  * Runs work that carries what officers typed or a sheet held (member facts, D80). A database error's
- * message quotes the query's parameters, and app_errors and the admin alert keep a message: so an error
+ * message quotes the query's parameters, and app_errors keeps a message: so an error
  * leaves here as `code` alone, without its message or cause (D71).
  */
 export async function privately<T>(

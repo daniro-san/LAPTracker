@@ -45,8 +45,7 @@ export async function purgeOldAppErrors(db: Db, now: Date): Promise<number> {
   return gone.length;
 }
 
-/** app_alerts ids: one row per kind of alert (D45). */
-export const APP_ERROR_ALERT = 1;
+/** app_alerts ids: one row per kind of alert (D45). Id 1 was the app-error alert, retired in favour of PostHog's (D115). */
 export const TICK_SILENCE_ALERT = 2;
 
 /**
@@ -64,9 +63,4 @@ export async function claimAlert(db: Db, id: number, now: Date, gapMs: number): 
     })
     .returning({ id: appAlerts.id });
   return rows.length > 0;
-}
-
-export function claimAppErrorAlert(db: Db, now: Date, gapMs: number): Promise<boolean> {
-  // INVARIANT app-errors.alert-hourly
-  return claimAlert(db, APP_ERROR_ALERT, now, gapMs);
 }

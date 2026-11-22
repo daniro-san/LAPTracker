@@ -128,6 +128,7 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "PostHog → Error tracking → Alerts: connect the admin Discord channel as a destination (paste its webhook there yourself), then ask Claude to send the error alert to it.",
     issue: 527,
+    done: true,
   },
 
   {
