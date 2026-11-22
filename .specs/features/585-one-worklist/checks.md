@@ -1,12 +1,12 @@
 # One worklist (#585 batch 3) checks
 
 Build: `pnpm typecheck`; `pnpm lint`
-Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
+Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" "app/(private)/_ui/MembersList.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
 Plan: `.specs/features/585-one-worklist/plan.md`
 
 profile: light
 
-24 checks in 2 slices built (S1 in PR 640: C1-C14; S2 in `feat/585-needs-help`: C15-C24; S3-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
+34 checks in 3 slices built (S1 in PR 640: C1-C14; S2 in PR 646: C15-C24; S3 in `feat/585-follow-up-rows`: C25-C34; S4-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
 
 ## Checks
 
@@ -86,6 +86,38 @@ Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's g
 **C24** - In a workspace of its own (phone, per repeat), "No longer needs help" on a seeded Needs help member is first refused after another officer saved the status ("Could not save. Try again.", the member still under "Needs help"), then a second tap with the version read again says "Saved. {name} no longer needs help.", the panel closes, the "Needs help" group is gone, and stays gone after a reload (AC 13, AC 31; review of PR 646)
 Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "No longer needs help"`
 
+### S3 - Follow-up's rows: one action, the name as the way in, the card one tap away (built in `feat/585-follow-up-rows`)
+
+**C25** - In a group of two or more, a plain line every row holds is said once under the title after "Same for all {n}:" and left off the rows (two Needs help rows share their quiet reason, three Worth a hello rows show only their name); the mark line stays on each Needs help row; New rows with different facts to ask keep their own; a group of one keeps its line; the panel's lines stay whole (AC 15)
+Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's groups (issue 585 slice 2) > says a line every row of a group holds once under its title, never a mark, and keeps each row's own
+
+**C26** - The Needs help group says "They stay here each week until someone taps their name, then “No longer needs help”." (AC 14)
+Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's groups (issue 585 slice 2) > puts a member marked Needs help first, with the mark and their reasons on one row, and not under Worth a hello
+
+**C27** - "How this list works" holds D140's line and D104's help line word for word, open when its cookie is absent and closed when it is there, its summary saying "Tap a name to write down what they said." before the label (AC 17)
+Proof: run unit | ✓ app/(private)/_ui/FollowUpWeek.test.ts > Follow-up's week around the list (issue 585) > holds the owner's two lines word for word in How this list works, open on the first visit only, the tap cue always in sight
+
+**C28** - Members' first group is titled "Check in or Needs help" with no count; "This week’s list: Follow-up ›" links to Follow-up while the head shows Follow-up's numbers, and neither the line nor any Follow-up link shows otherwise (AC 18)
+Proof: run unit | ✓ app/(private)/_ui/MembersList.test.ts > the Members list's first group (issue 585 S3) > says its status words with no count, and points at Follow-up only while that tab is on
+
+**C29** - On Moss Hollow (phone and wide), the quiet member's row has two buttons (the name and "Talked to them"), no "Add a note", and "Card ›" named "{name}’s card" linking to `/w/msh/members?m=<their uid>`, whose tap opens that member's card; the quiet reason shows on the group; "How this list works" is open on the first visit and closed after a reload, its summary still saying "Tap a name to write down what they said."; the Talked, Noted and Undo flow of C8 still holds (AC 14, AC 15, AC 17, AC 34)
+Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "Follow-up: Talked to them"`
+
+**C30** - Home's link opens Follow-up, whose "Needs help · 1" says the new line (AC 14, AC 34)
+Proof: `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance"`
+
+**C31** - Members (Lantern Keep) shows the "Check in or Needs help" region with "This week’s list: Follow-up ›" linking to `/w/lnk/follow-up` (AC 18, AC 34)
+Proof: `pnpm test:e2e e2e/desk.spec.ts -g "Members: a card opens"`
+
+**C32** - Every new key exists in EN, PT-BR and FR, and the dropped keys are gone from all three (AC 32)
+Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, pt-BR and fr, and no empty value
+
+**C33** - At 360 × 780 (e2e seed, Sun 22 Nov), Lantern Keep's first screen holds the head, "How this list works" (closed), Galen's row with one button and "Card ›", and the "New · 1" title above the tabs; on a first visit the help is open; Moss Hollow says "Same for all 6:" once and each row is a name and one button; at 1280 the page uses the wide frame with the panel's column beside the list; dark matches; Members shows the renamed group and its link (AC 14, AC 15, AC 16, AC 17, AC 18)
+Proof: walk - `s3-shots/after2/followup-a-phone-light-fold.png` (the tap cue, Nyla's name above the tabs), `followup-b-phone-dark-full.png`; `s3-shots/after/followup-a-phone-first-light-fold.png`, `followup-b-phone-light-full.png`, `followup-a-wide-light-fold.png`, `followup-a-phone-dark-full.png`, `members-b-phone-light-full.png` (before: `s3-shots/before/`)
+
+**C34** - D104, D140, D98 and D73 each carry an amendment dated 2026-11-22 for issue 585 slice 3 (AC 33)
+Proof: `grep -c "2026-11-22 (issue 585 batch 3, slice 3\|2026-11-22, issue 585 S3" docs/decisions/D104-follow-up-weekly-worklist.md docs/decisions/D140-follow-up-panel-ready-messages-and-the-coins-tip.md docs/decisions/D98-members-list-filters-orders-and-the-clock-switch.md docs/decisions/D73-workspace-sign-in-implementation-choices.md`
+
 ## Coverage
 
 | Set (size)                        | Member -> proof                                                                              | Unproven |
@@ -99,6 +131,9 @@ Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "No longer needs help"`
 | S2: where the mark comes from (3) | "They need help" with a note C16 · Edit info C16 · Undo of a repeated mark C16               | -        |
 | S2: last week's context (4)       | newest of last week C17 · two weeks back C17 · undone across Monday C17 · the mark's own C17 | -        |
 | S2: readers of the mark (2)       | Follow-up row C16, C21 · card header C16, C22                                                | -        |
+| S3: AC 15 examples (4)            | six alike → once C25 · differing facts → own C25 · group of one C25 · same mark → kept C25   | -        |
+| S3: help states (3)               | first visit open C27, C29 · after closed C27, C29 · first-use cards cover it: walk only      | covered  |
+| S3: Members pointer states (2)    | with Follow-up's numbers C28, C31 · without C28                                              | -        |
 
 ## Swept
 
@@ -124,6 +159,18 @@ S2 swept:
 - state transitions: C15 (needs help → noted → needs help → paused → needs help → cleared)
 - observability: n/a - no log; marks and notes are inside `ph-no-capture` on the row, the panel and the card (walk C22)
 
+S3 swept:
+
+- validation: n/a - no input; the row and the help only change how stored lines are shown
+- failure modes: existing - a failed save of "Talked to them" leaves the row and says nothing, as before; the cookie may be blocked: the help then opens on every visit (stated in `FollowUpHelp.tsx`)
+- idempotency: existing - `follow-up.request-once` (D100), unchanged
+- authorization: existing - `requireWorkspace` before any read; "Card ›" opens Members, which checks the session itself (`?m=` is D122's address)
+- concurrency: n/a - nothing new is written to the database
+- data lifecycle: C25 - a group that shrinks to one row after a save shows that row's line again
+- dependency failure: n/a - no outside call
+- state transitions: C27, C29 (the help: first visit open → cookie → closed); the cookie is not written while the first-use cards cover the page (code, `covered`; the e2e fixture sets `lap_ws_intro`, so no e2e)
+- observability: n/a - no log; the shared lines sit inside `ph-no-capture` like the rows' (code, `FollowUpList.tsx` `Group`)
+
 ## Handoff
 
 - **Settled mid-build:** none from the owner; the plan review (panel, product, adversarial) changed "Done" to "Noted", renamed "Check in" to "Worth a hello", moved the counts first and kept the Noted card on the page with nobody noted
@@ -131,3 +178,5 @@ S2 swept:
 - **Boundary:** C1-C11 at the commit named in the handoff
 - **Abandoned:** "Done this week" (panel and adversarial MUST); one wide `followedUpSince` for every reader (adversarial SHOULD: the counts read uid, action and time only)
 - **Walked:** `585-worklist/after/` at 360 light and dark and 1280, EN, server clock Sat 21 Nov 16:30 ST, invented 585 seed
+- **S3 dispatched:** officer panel with a first-glance test (before, returned), product strategy, designer, adversarial (plan review, returned: all approve with changes, plan Validation (h) to (k)); officer panel after the build (two rounds, returned: a tap cue added between them)
+- **S3 walked:** `s3-shots/before/`, `after/`, `after2/` at 360 light and dark and 1280, EN, invented e2e seed, Sun 22 Nov

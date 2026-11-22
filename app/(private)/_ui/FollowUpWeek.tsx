@@ -13,6 +13,8 @@ import { notedLine, type FollowUpAction } from "@/lib/private/follow-up-rules";
 import type { Formats } from "@/lib/private/members-sheet";
 import type { AttackerGroup } from "@/lib/private/theft-groups";
 
+import { FollowUpHelp } from "./FollowUpHelp";
+
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
 
@@ -34,12 +36,15 @@ function weekRange(week: string[], language: string) {
 
 /**
  * The title, then the week's two numbers: who is left to look at and who was already noted, with jumps to
- * the noted and the thefts; then what to do (issue 460) and the D104 promise.
+ * the noted and the thefts; then "How this list works" (issue 585 S3): what to do (issue 460), the D104
+ * promise and how to open a member's panel, open on the first visit.
  */
 export function FollowUpHead(props: {
   data: FollowUpView;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
+  /** "How this list works" was shown open on this browser before; the first-use cards cover the page. */
+  help: { seen: boolean; covered: boolean };
 }) {
   const { data, t, language } = props;
   return (
@@ -68,8 +73,14 @@ export function FollowUpHead(props: {
           </a>
         )}
       </div>
-      <p className="mt-2 text-body-sm font-semibold">{t["followup.todo"]}</p>
-      <p className="mt-1 text-body-sm text-ink/80">{t["followup.help"]}</p>
+      <FollowUpHelp
+        {...props.help}
+        words={{
+          tap: t["followup.howTap"],
+          head: t["followup.how"],
+          lines: [t["followup.todo"], t["followup.help"]],
+        }}
+      />
     </>
   );
 }
