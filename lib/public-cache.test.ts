@@ -193,7 +193,10 @@ describe("INVARIANT cache.write-invalidates-reads (D143)", () => {
     const { writers, invalidating } = writePaths();
 
     // A writer in app/ is a route, page or action that writes with no invalidation on its way.
-    expect([...writers].filter((w) => w.startsWith("app/"))).toEqual([]);
+    expect(
+      [...writers].filter((w) => w.startsWith("app/")),
+      "D143 cache.write-invalidates-reads: this route or page writes a table the public pages read, and nothing on its way calls publicCache.invalidate(). Call it after the write, or add the writer to NEVER_SHOWN with the reason no public page shows those rows.",
+    ).toEqual([]);
     // The scan found the writers it is meant to find.
     expect([...invalidating].sort()).toEqual(
       expect.arrayContaining([

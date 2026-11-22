@@ -95,9 +95,18 @@ beforeEach(async () => {
 describe("the quota routes without a secret (plan §3.4, D3)", () => {
   it("puts every app/api route in exactly one list, and lists no file that is gone", () => {
     expect(ROUTES.length).toBeGreaterThan(0);
-    expect(ROUTES.filter((f) => !LISTED.includes(f))).toEqual([]);
-    expect(LISTED.filter((f, i) => LISTED.indexOf(f) !== i)).toEqual([]);
-    expect(LISTED.filter((f) => !ROUTES.includes(f))).toEqual([]);
+    expect(
+      ROUTES.filter((f) => !LISTED.includes(f)),
+      "Plan §3.4, D3: a new app/api route is in no list. Add it to QUOTA (it can spend /v1 quota, so it sits behind the secret or the PIN), PUBLIC_OR_OTHER_GATE or NOT_QUOTA, with its reason.",
+    ).toEqual([]);
+    expect(
+      LISTED.filter((f, i) => LISTED.indexOf(f) !== i),
+      "Plan §3.4: a route is in two lists. Keep it in one.",
+    ).toEqual([]);
+    expect(
+      LISTED.filter((f) => !ROUTES.includes(f)),
+      "Plan §3.4: a listed route file is gone. Remove it from its list.",
+    ).toEqual([]);
   });
 
   it.each(Object.entries(QUOTA))(
@@ -125,8 +134,14 @@ describe("the quota routes without a secret (plan §3.4, D3)", () => {
       });
       for (const task of later) await task();
 
-      expect([401, 403], file).toContain(res.status);
-      expect(upstream, file).toEqual([]);
+      expect(
+        [401, 403],
+        `${file}: a quota route answered a request with no secret and no PIN (plan §3.4, D3). Check the secret or the PIN before any other work.`,
+      ).toContain(res.status);
+      expect(
+        upstream,
+        `${file}: a quota route called /v1 for a request with no secret and no PIN (plan §3.4, D3). Check the secret or the PIN before any /v1 call, also in work left for after().`,
+      ).toEqual([]);
     },
   );
 });

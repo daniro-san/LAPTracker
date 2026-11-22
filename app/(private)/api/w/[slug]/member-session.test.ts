@@ -165,7 +165,10 @@ function call(handler: Handler, method: Method, fixture: Fixture, token: string 
 describe("a member's session on the officers' API (D105)", () => {
   it("finds the officer routes, and every one has a fixture", () => {
     expect(ROUTES.length).toBeGreaterThanOrEqual(15);
-    expect(ROUTES.filter((f) => !(f in FIXTURES))).toEqual([]);
+    expect(
+      ROUTES.filter((f) => !(f in FIXTURES)),
+      "D105: an officer route under /api/w/[slug] has no fixture. Add a minimal valid request to FIXTURES, or add it to EXCLUDED with the reason it is not an officer route.",
+    ).toEqual([]);
   });
 
   it.each(ROUTES)(
@@ -179,7 +182,7 @@ describe("a member's session on the officers' API (D105)", () => {
       // Every handler the route exports has a fixture, so none is skipped.
       expect(
         exported.filter((m) => !FIXTURES[file]?.[m]),
-        file,
+        `${file}: an exported handler has no fixture (D105). Add one for each method the route exports.`,
       ).toEqual([]);
       for (const method of exported) {
         const handler = mod[method] as Handler;
@@ -190,15 +193,18 @@ describe("a member's session on the officers' API (D105)", () => {
           ["another workspace's officer", tokens.other],
         ] as const) {
           const res = await call(handler, method, fixture, token);
-          expect([res.status, await res.json()], `${file} ${method} ${who}`).toEqual([
-            401,
-            { code: "signed_out" },
-          ]);
+          expect(
+            [res.status, await res.json()],
+            `${file} ${method} ${who}: must answer 401 signed_out (D105, D71). Call requireWorkspace (officer tier) before any other answer.`,
+          ).toEqual([401, { code: "signed_out" }]);
         }
         // The same request passes the session check for an officer: the refusal above is the tier's.
         if (fixture.officer !== false) {
           const res = await call(handler, method, fixture, tokens.officer);
-          expect(res.status, `${file} ${method} officer`).not.toBe(401);
+          expect(
+            res.status,
+            `${file} ${method} officer: the fixture does not pass the officer's session check, so the refusals above prove nothing. Fix the fixture.`,
+          ).not.toBe(401);
         }
       }
     },

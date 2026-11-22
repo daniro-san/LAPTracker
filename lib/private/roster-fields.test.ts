@@ -71,7 +71,10 @@ describe("roster fields kept for the workspace (D71)", () => {
         ];
         return hits.map((k) => `${f}: ${k}`);
       });
-    expect(offenders).toEqual([]);
+    expect(
+      offenders,
+      "D71: a roster field kept for the workspace is read outside lib/repo, lib/private, the collector and lib/raw-json.ts. Read it in lib/private behind requireWorkspace, or leave it in raw_json (.claude/rules/private.md).",
+    ).toEqual([]);
   });
 
   it("are never kept in a cache shared between workspaces or viewers (issue 471)", () => {
@@ -81,6 +84,9 @@ describe("roster fields kept for the workspace (D71)", () => {
       /["']next\/cache["']|unstable_cache|["']use cache["']|\bcacheTag\b|import\s*{[^}]*\bcache\b[^}]*}\s*from\s*["']react["']/;
     const files = ["app/(private)", "lib/private", "lib/repo"].flatMap(sources);
     expect(files.length).toBeGreaterThan(100);
-    expect(files.filter((f) => shared.test(readFileSync(join(ROOT, f), "utf8")))).toEqual([]);
+    expect(
+      files.filter((f) => shared.test(readFileSync(join(ROOT, f), "utf8"))),
+      "Issue 471: a cache shared between requests (next/cache, 'use cache', React cache) in app/(private), lib/private or lib/repo. Read the request's own rows from the database instead.",
+    ).toEqual([]);
   });
 });

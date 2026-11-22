@@ -30,8 +30,14 @@ describe("upstream location is config (plan Phase 2)", () => {
         .map((l) => `${relative(root, join(root, file))}:${l.n}: ${l.text.trim()}`),
     );
     const allowed = hits.filter((h) => /^lib\/env\.ts:\d+: LAP_(API|SITE)_BASE_URL:/.test(h));
-    expect(allowed).toHaveLength(2);
-    expect(hits.filter((h) => !allowed.includes(h))).toEqual([]);
+    expect(
+      allowed,
+      "lib/env.ts keeps the two upstream defaults, LAP_API_BASE_URL and LAP_SITE_BASE_URL.",
+    ).toHaveLength(2);
+    expect(
+      hits.filter((h) => !allowed.includes(h)),
+      "Plan Phase 2: the upstream host is written outside lib/env.ts. Read it from env (LAP_API_BASE_URL or LAP_SITE_BASE_URL) instead.",
+    ).toEqual([]);
   });
 });
 
@@ -40,6 +46,9 @@ describe("internal.ts is read-only (plan §3.5)", () => {
     const offenders = codeLines("lib/sources/internal.ts").filter((l) =>
       /refresh|\b(POST|PUT|PATCH|DELETE)\b|origin|referer|cookie|credentials/i.test(l.text),
     );
-    expect(offenders).toEqual([]);
+    expect(
+      offenders,
+      "Plan §3.5: lib/sources/internal.ts is read-only, with no refresh, no write method and no Origin/Referer/cookie header. Remove that code; its use never widens beyond docs/decisions.",
+    ).toEqual([]);
   });
 });

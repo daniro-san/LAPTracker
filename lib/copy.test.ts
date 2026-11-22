@@ -77,7 +77,10 @@ describe("copy", () => {
     const hits = tsxFiles(join(ROOT, "app")).flatMap((f) =>
       literalsIn(f).map((h) => `${relative(ROOT, f)}: ${h}`),
     );
-    expect(hits).toEqual([]);
+    expect(
+      hits,
+      "Text of more than two words in app/ JSX (D23, docs/DESIGN.md Language-light rules). Move it to a copy key: public pages in lib/copy*.ts, the desk in lib/private/dictionary*.ts.",
+    ).toEqual([]);
   });
 
   it("blank mode keeps length, spaces and placeholders and hides every letter", () => {

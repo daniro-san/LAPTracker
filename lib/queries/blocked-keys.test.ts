@@ -40,6 +40,9 @@ describe("BLOCKED_ROSTER_KEYS (plan §12.1)", () => {
         (key) => `${file}: ${key}`,
       );
     });
-    expect(offenders).toEqual([]);
+    expect(
+      offenders,
+      "Plan §12.1: a read model in lib/queries names a key from BLOCKED_ROSTER_KEYS. Remove it: those fields stay in raw_json, and the workspace reads them only through lib/private (D71).",
+    ).toEqual([]);
   });
 });
