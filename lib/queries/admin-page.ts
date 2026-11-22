@@ -92,6 +92,7 @@ const CLEANUP_CODES = {
   workspaces: ["workspaces.purged", "workspaces.purge_failed"],
   players: ["players.raw_cleared", "players.raw_clear_failed"],
   errors: ["app_errors.purged", "app_errors.purge_failed"],
+  feedback: ["feedback.purged", "feedback.purge_failed"],
 } as const;
 
 export type CleanupJob = keyof typeof CLEANUP_CODES;

@@ -26,6 +26,7 @@ import {
   findOrCreateEvent,
   type NewEvent,
 } from "./repo/events";
+import { purgeOldFeedback } from "./repo/feedback";
 import { pruneEndedPictures } from "./repo/notice-picture-cleanup";
 import { clearOldPlayerRaw } from "./repo/player-reads";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
@@ -141,7 +142,8 @@ async function invalidateOnThrow<T>(ctx: AppContext, write: () => Promise<T>): P
 }
 
 /**
- * The daily jobs of D125, D132 (raw bodies past 90 days) and D115 (app_errors past 30 days): counts only in
+ * The daily jobs of D125, D132 (raw bodies past 90 days), D115 (app_errors past 30 days) and D157 (feedback
+ * past 180 days): counts only in
  * the log, and a failure never fails the day's read. A job that throws is one code-only line and a handled
  * PostHog exception (D115's 2026-11-21 amendment). Each outcome is also a line in the run log of the day's
  * read (`day`), so /admin's "Needs you" shows a job whose newest outcome failed until a later one succeeds
@@ -170,6 +172,9 @@ async function purgeWorkspaces(ctx: AppContext, db: Db, now: Date, day: string):
   await purgeOldAppErrors(db, now)
     .then((rows) => done("app_errors.purged", { rows }))
     .catch(tickJobFailed(ctx, "app_errors.purge_failed", log));
+  await purgeOldFeedback(db, now)
+    .then((rows) => done("feedback.purged", { rows }))
+    .catch(tickJobFailed(ctx, "feedback.purge_failed", log));
 }
 
 /** A tick job's failure: a code-only line (also in `log`, which mirrors it to the console), and PostHog's

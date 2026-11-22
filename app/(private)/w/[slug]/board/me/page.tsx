@@ -26,6 +26,7 @@ import { fill } from "@/lib/words";
 import { BoardAccount } from "../../../../_ui/BoardAccount";
 import { LINK } from "../../../../_ui/BoardSections";
 import { editorWords } from "../../../../_ui/facts-form";
+import { Feedback } from "../../../../_ui/Feedback";
 import { Frame, workspaceWords } from "../../../../_ui/Frame";
 import { MeLink } from "../../../../_ui/MeLink";
 import { MeNeeded, MeProgress, MeSquads, MeWeek } from "../../../../_ui/MeSections";
@@ -187,6 +188,7 @@ export default async function MePage({ params }: { params: Promise<{ slug: strin
       <PageHead id="me-title" title={t["me.title"]} meta={t["me.lead"]} />
       {board.officer && <p className="mb-2 text-body-sm text-ink/75">{t["me.preview"]}</p>}
       <Body shown={shown} slug={slug} t={t} language={language} now={now.getTime()} />
+      <Feedback slug={slug} area="board" language={language} t={t} />
     </Frame>
   );
 }

@@ -9,6 +9,7 @@ import { authAttempts, workspaces, workspaceUsers } from "../schema";
 import { workspaceTombstones } from "../schema-retention";
 import { allianceLabelOf } from "./alliances";
 import { DAY_KEY_PREFIX } from "./auth-attempts";
+import { feedbackLimitKey } from "./feedback";
 import { selfReportLimitKey } from "./self-reports";
 import { ownedBy, WORKSPACE_TABLES } from "./workspace-data";
 
@@ -91,6 +92,7 @@ export async function purgeWorkspace(db: Db, id: number, now: Date): Promise<num
     }
     const counters = [
       exportLimitKey(w.id),
+      feedbackLimitKey(w.id),
       `keytest:ws:${w.id}`,
       ...users.map((u) => `keytest:user:${u.id}`),
       ...users.map((u) => selfReportLimitKey(u.id)),
