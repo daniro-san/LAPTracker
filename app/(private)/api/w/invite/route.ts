@@ -33,7 +33,7 @@ export async function POST(request: Request): Promise<Response> {
   const parsed = inviteInput.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
   return withContext("/api/w/invite", async (ctx, db) => {
-    const deps = { env: ctx.env, fetch: ctx.fetch, now: ctx.now() };
+    const deps = { env: ctx.env, fetch: ctx.fetch, now: ctx.now(), report: ctx.report };
     const result = await inviteStep(db, deps, requestCookies(request), parsed.data);
     if (!result.ok) return privateError(STATUS[result.code], result.code);
     if ("slug" in result) {

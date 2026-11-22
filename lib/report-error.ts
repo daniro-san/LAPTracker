@@ -1,11 +1,13 @@
 // An error as it leaves our code (D61, D115's 2026-11-21 amendment): its detail after redact() (secrets and,
 // through redactPrivate, private roster values), and PostHog's `$exception`. Apart from lib/app-errors.ts,
 // which adds the app_errors row and the admin alert, so lib/push.ts (and through it lib/private) can report a
-// caught error without reaching lib/notify (D71). Imports only lib/analytics, lib/app-context and lib/redact.
+// caught error without reaching lib/notify (D71). Imports only lib/analytics, lib/env, lib/redact and
+// lib/app-context's type: lib/app-context imports this module for AppContext.report, so no value comes back.
 import { analyticsKey } from "./analytics/events";
 import { areaOf, scrubMessage } from "./analytics/sanitise";
 import { captureServer, sendLater, type EventWorkspace } from "./analytics/server";
-import { secretsOf, type AppContext } from "./app-context";
+import type { AppContext } from "./app-context";
+import { secretsOf } from "./env";
 import { redact } from "./redact";
 
 const MESSAGE_CHARS = 500;

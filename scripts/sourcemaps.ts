@@ -77,12 +77,17 @@ function deleteMaps(dir: string): number {
  */
 function keepChunks(dir: string): { restore: () => void; drop: () => void } {
   const aside = mkdtempSync(join(tmpdir(), "lap-chunks-"));
+  const drop = () => rmSync(aside, { recursive: true, force: true });
   const chunks = readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((e) => e.isFile() && e.name.endsWith(".js.map"))
     .map((e) => join(e.parentPath, e.name.slice(0, -".map".length)))
     .filter((chunk) => existsSync(chunk));
-  chunks.forEach((chunk, i) => copyFileSync(chunk, join(aside, String(i))));
-  const drop = () => rmSync(aside, { recursive: true, force: true });
+  try {
+    chunks.forEach((chunk, i) => copyFileSync(chunk, join(aside, String(i))));
+  } catch (error) {
+    drop();
+    throw error;
+  }
   return {
     restore: () => chunks.forEach((chunk, i) => copyFileSync(join(aside, String(i)), chunk)),
     drop,
@@ -91,11 +96,19 @@ function keepChunks(dir: string): { restore: () => void; drop: () => void } {
 
 /**
  * One directory's upload, as the build line says it. A run that did not finish (a failure or the timeout)
- * leaves the chunks as Next built them, without chunk ids: their frames stay minified, never broken.
+ * leaves the chunks as Next built them, without chunk ids: their frames stay minified, never broken. When
+ * the chunks cannot be copied aside (a full or read-only temp folder), the CLI is not run for that directory:
+ * an upload problem never fails the build. A restore that fails does: the chunks may be cut short.
  */
 function upload(env: Record<string, string | undefined>, key: string, dir: string, run: Runner) {
   const version = env.VERCEL_GIT_COMMIT_SHA;
-  const kept = keepChunks(dir);
+  let kept: ReturnType<typeof keepChunks>;
+  try {
+    kept = keepChunks(dir);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code ?? "error";
+    return `${dir} not uploaded (its chunks could not be copied aside: ${code})`;
+  }
   const status = run(
     [
       "sourcemap",

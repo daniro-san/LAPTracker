@@ -3,6 +3,7 @@ import { generateKeyPairSync } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AppContext } from "../app-context";
 import { TEST_ENV, testContext } from "../app-context.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
@@ -257,5 +258,28 @@ describe("the deferred flow", () => {
       },
     });
     expect(JSON.stringify(sent)).not.toContain("InventedBramble");
+  });
+
+  it("reports a picture claim that cannot be let go with where and its code only, and still edits the reply (D71)", async () => {
+    const handled = await deferred(command([LEADER]));
+    const { calls, fetcher } = discord();
+    const report = vi.fn<AppContext["report"]>();
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    // The claims' table is gone as in a database outage: the settle fails, then the cleanup's settle too.
+    await db.execute(sql`alter table discord_pictures rename to discord_pictures_gone`);
+    try {
+      await runJob(
+        { ...deps(fetcher, recorded("98-alliance-duel-weekly-phone")), report },
+        handled.job,
+      );
+    } finally {
+      await db.execute(sql`alter table discord_pictures_gone rename to discord_pictures`);
+    }
+    expect(report.mock.calls.map(([, context]) => context)).toEqual([
+      { route: "lib/private/import-discord.ts", kind: "w.import.discord_failed" },
+      { route: "lib/private/import-discord.ts", kind: "w.import.settle_failed" },
+    ]);
+    expect(Object.keys(report.mock.calls[1]?.[1] ?? {}).sort()).toEqual(["kind", "route"]);
+    expect(calls.some((c) => c.method === "PATCH")).toBe(true);
   });
 });

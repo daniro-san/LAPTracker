@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { and, eq, sql } from "drizzle-orm";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AppContext } from "../app-context";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { aliasesOf } from "../repo/member-facts";
@@ -20,6 +21,13 @@ import {
   toMatch,
 } from "./pending-members";
 import { createSession } from "./session";
+
+/** matchOnRead takes no deps: it reads `report` from getAppContext, as a page's read does. */
+const reporting = vi.hoisted(() => ({ report: (() => undefined) as AppContext["report"] }));
+vi.mock("../app-context", async (original) => ({
+  ...(await original<typeof import("../app-context")>()),
+  getAppContext: () => ({ report: reporting.report }),
+}));
 
 const OGS = 67111155;
 const ZONE = "Etc/GMT+2";
@@ -166,6 +174,29 @@ describe("pending members and the roster (D106)", () => {
     const open = await matchOnRead(db, ana, LATER);
     expect(open.map((p) => p.name)).toEqual(["Nobody Here", "Ilsa"]);
     expect(toMatch(open, ROSTER_AT)).toHaveLength(1);
+  });
+
+  it("shows the pending members as they are when the match fails, and reports where and its code only (D71)", async () => {
+    await added("Zephyrine");
+    const report = vi.fn<AppContext["report"]>();
+    reporting.report = report;
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    // The roster read fails as a database outage would: the table it reads is gone.
+    await db.execute(sql`alter table daily_rosters rename to daily_rosters_gone`);
+    let open;
+    try {
+      open = await matchOnRead(db, ana, LATER);
+    } finally {
+      await db.execute(sql`alter table daily_rosters_gone rename to daily_rosters`);
+    }
+    expect(open.map((p) => p.name)).toEqual(["Zephyrine"]);
+    expect(report.mock.calls).toEqual([
+      [
+        expect.any(Error),
+        { route: "lib/private/pending-members.ts", kind: "w.pending.match_failed" },
+      ],
+    ]);
+    expect(Object.keys(report.mock.calls[0]?.[1] ?? {}).sort()).toEqual(["kind", "route"]);
   });
 
   it("links by hand after a member's own facts: their versions follow the member's", async () => {

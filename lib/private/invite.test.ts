@@ -3,9 +3,10 @@
 // created with the alliance's own tag; finishing makes the workspace with her as officer, signs her in and
 // registers the commands that are on; the link works once and expires. Discord is a stub (invite.test-helpers).
 // Issue 500: the wrong-link count and the IP limit, the 30-step limit, and the transaction's own guards.
-import { eq } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { eq, sql } from "drizzle-orm";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AppContext } from "../app-context";
 import { IP_LIMIT, IP_WINDOW_MS } from "../auth";
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
@@ -161,6 +162,34 @@ describe("the invite link (D130)", () => {
     expect(await db.select().from(workspaces)).toHaveLength(1);
     const [row] = await db.select().from(allianceInvites);
     expect(row?.guilds).toBeNull();
+  });
+
+  it("still makes the Desk when the commands' registration throws, and reports where and its code only (D71)", async () => {
+    const b = await openedInvite(db);
+    await signInThrough(db, b);
+    await inviteStep(db, deps(), b.jar, { action: "server", guild_id: GUILD });
+    const finish: InviteInput = {
+      action: "finish",
+      leader_role_ids: [R5_ROLE],
+      member_role_ids: [MEMBER_ROLE],
+    };
+    const report = vi.fn<AppContext["report"]>();
+    // The registration's first read fails as a database outage would: a table it reads is gone.
+    await db.execute(sql`alter table allowance_pauses rename to allowance_pauses_gone`);
+    let done;
+    try {
+      done = await inviteStep(db, deps(T0, report), b.jar, finish);
+    } finally {
+      await db.execute(sql`alter table allowance_pauses_gone rename to allowance_pauses`);
+    }
+    expect(done).toMatchObject({ ok: true, slug: "wack" });
+    expect(report.mock.calls).toEqual([
+      [
+        expect.any(Error),
+        { route: "lib/private/invite-steps.ts", kind: "w.invite.commands_failed" },
+      ],
+    ]);
+    expect(Object.keys(report.mock.calls[0]?.[1] ?? {}).sort()).toEqual(["kind", "route"]);
   });
 
   it("expires after 7 days", async () => {

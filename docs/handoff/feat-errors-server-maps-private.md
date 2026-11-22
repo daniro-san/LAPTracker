@@ -21,8 +21,8 @@ The owner-approved follow-up to PR #598 (part of #592). Size M: a new external c
   | `matchOnRead` | `w.pending.match_failed` | `getAppContext()` |
   | `runJob` failure | `w.import.discord_failed` | `JobDeps.report = ctx.report`, set in `app/(private)/api/discord/interactions/route.ts` |
   | `runJob` cleanup | `w.import.settle_failed` | `JobDeps.report` |
-  | `opened` (a sealed webhook that does not open) | `w.webhook.open_failed` | `getAppContext()` |
-  | invite `syncCommands` | `w.invite.commands_failed` | `getAppContext()` |
+  | `opened` (a sealed webhook that does not open) | `w.webhook.open_failed` | `noticeChannels(db, ws, { env, report })` and `testWebhook`'s deps; the routes pass `ctx` or `ctx.report` |
+  | invite `syncCommands` | `w.invite.commands_failed` | `StepDeps.report = ctx.report`, set in `app/(private)/api/w/invite/route.ts` |
 
   Each catch still does what it did before: a log line, a null, a fallback, or the reply.
 - **Browser SDK** (`lib/analytics/posthog.ts`): `mask_personal_data_properties: true` and `custom_personal_data_properties: PERSONAL_QUERY_KEYS` (`["m", "q"]`).
@@ -51,7 +51,7 @@ The owner-approved follow-up to PR #598 (part of #592). Size M: a new external c
   - Discord and Groq network failures that are already turned into a reply;
   - refused pictures;
   - closing a dropped OCR worker.
-- **`getAppContext()` inside the catch** where the function has no deps built from `ctx`, as `frameReadStatus` already does. Pages and routes keep their signatures. `runJob` already receives deps that its route builds from `ctx`, so `report` goes there.
+- **`report` comes from the deps a route builds from `ctx`** wherever the function takes deps (`runJob`, `noticeChannels`, `testWebhook`, the invite's steps). `getAppContext()` is called only in `frameReadStatus`, which already read it, and `matchOnRead`, which takes no deps and is called from two pages (changed in the PR #615 review; the first version called `getAppContext()` in three catches).
 - **The context is closed by its type.** Plan review asked for it: a template string with a name in it no longer type-checks. A new catch adds its pair to `ReportContext`, which is the review point.
 - **Copy aside and put back** instead of splitting `inject` and `upload` into two commands. `inject` also needs the network (it resolves the release), so it can hang as well. Putting the chunks back covers both.
 - **No new dependency, no new env variable.** posthog-cli 0.19.0 and posthog-js 1.444.4 are already installed.
@@ -97,6 +97,27 @@ The owner-approved follow-up to PR #598 (part of #592). Size M: a new external c
 - Not run: `next start`. The pages need the database, and `.env*` was not read.
 - The Verifier sub-agent of `/tlc-spec-lean` was not dispatched. The skill reserves that for the orchestrator, over `origin/dev..HEAD`.
 
+### PR #615 review fixes (2026-11-22)
+
+- **A run-time test for each of the four reports that had none** (checks C13-C16). Each one causes a real failure: a table renamed as in a database outage, or a sealed webhook whose ciphertext was changed. Each asserts that `report` got exactly `{ route, kind }`, and that the catch still does its job: the pending list is shown, the reply is edited, nothing is posted, the Desk is made.
+- **One injection point.** `noticeChannels(db, ws, { env, report })` (the three publishing routes pass `ctx`), `testWebhook`'s deps, and the invite's `StepDeps` now carry `report`. Before, three catches called `getAppContext()`. `JobDeps.report` is typed as `AppContext["report"]`.
+- **The CLI-environment test** first asserts that the CLI ran twice. Without that, its loop over the calls passed when the CLI never ran.
+- **The copy aside is guarded.** If the chunks cannot be copied aside (`mkdtemp` or a copy throws, for example ENOSPC or EACCES), that directory is not uploaded, the build line says why, and its maps are still deleted. A restore that fails is still fatal, because the chunks may be cut short (check C12).
+- **`ReportContext` has a type-level test** in `lib/app-errors.test.ts`. `@ts-expect-error` marks three calls: a free-string `kind`, an extra key, and another module's code. `pnpm typecheck` fails if any of them type-checks (check C9).
+- **The import cycle is gone.** `secretsOf` moved to `lib/env.ts`. `lib/app-context.ts` re-exports it, so its six other importers are unchanged. `lib/report-error.ts` now imports `AppContext` as a type only.
+- **checks.md:** the paragraph that sat inside the Coverage table is gone. The catches row names C13-C16.
+- **Breaks for the new tests.** Each break was reverted after its run.
+
+  | Break | Result |
+  | --- | --- |
+  | `matchOnRead`'s report call removed | C13 test fails |
+  | the cleanup's `settle_failed` report removed | C14 test fails |
+  | an extra `slug` key in the webhook's report context (forced past the type) | C15 test fails |
+  | the invite's report call removed | C16 test fails |
+  | the copy-aside guard removed | C12 test fails (ENOENT thrown) |
+  | `MAP_DIRS` emptied, so the CLI never runs | the CLI-environment test fails on `toHaveBeenCalledTimes(2)` |
+  | `ReportContext` opened to `{ route: string; kind: string; slug?: string }` | `pnpm typecheck` fails: 3 unused `@ts-expect-error` |
+
 ## Open issues
 
 - `/admin/errors` keeps the minified server stack. PostHog Error Tracking is the readable view.
@@ -119,7 +140,7 @@ The owner-approved follow-up to PR #598 (part of #592). Size M: a new external c
 - Plan change: none.
 
 <adjustments>
-- A `lib/private` catch that swallows a failure of our own code calls `report(error, { route, kind })` from `getAppContext()` or from deps built from `ctx`, and adds its pair to `ReportContext` in `lib/report-error.ts`. It never imports `reportError` directly.
+- A `lib/private` catch that swallows a failure of our own code calls `report(error, { route, kind })` from the deps its caller builds from `ctx` (`getAppContext()` only when the function takes no deps), and adds its pair to `ReportContext` in `lib/report-error.ts`. It never imports `reportError` directly.
 - Server frames resolve in PostHog only for chunks whose upload finished. A failed or stopped upload puts that directory's chunks back without ids.
 - New query keys that carry a person go in `PERSONAL_QUERY_KEYS` (`lib/analytics/posthog.ts`).
 </adjustments>

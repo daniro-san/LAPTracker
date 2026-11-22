@@ -74,22 +74,5 @@ export function getAppContext(): AppContext {
   };
 }
 
-/** Every value the logger and messages must never carry (plan §12.2). */
-export function secretsOf(env: Env): string[] {
-  return [
-    env.DATABASE_URL,
-    env.CRON_SECRET,
-    env.EDIT_PIN,
-    env.LAP_API_KEY,
-    env.NOTIFY_WEBHOOK_PUBLIC,
-    env.NOTIFY_WEBHOOK_ADMIN,
-    env.DISCORD_CLIENT_SECRET,
-    env.DISCORD_BOT_TOKEN,
-    env.GROQ_API_KEY,
-    env.WORKSPACE_KEYS_SECRET,
-    env.VAPID_PRIVATE_KEY,
-    ...Object.values(env.WORKSPACE_DISCORD_WEBHOOKS ?? {}).flatMap((w) =>
-      [w.members?.url, w.leaders?.url].filter((u) => u !== undefined),
-    ),
-  ].filter((s): s is string => s !== undefined);
-}
+/** In lib/env.ts since 2026-11-22, so lib/report-error needs no value from this module (no import cycle). */
+export { secretsOf } from "./env";

@@ -3,9 +3,9 @@
 // forgotten; the drafts are made and the sender's reply is edited to say what was read, with a link to
 // review it. A non-PNG asks Discord's media proxy for a PNG first (`format=png`); the original is the
 // fallback, which the reader decodes itself. No picture is stored, logged or sent anywhere else.
+import type { AppContext } from "../app-context";
 import type { Db } from "../db";
 import { settlePictures } from "../repo/import";
-import type { Report } from "../report-error";
 import { serverDay } from "../schedule";
 import { readScreen } from "../screenshot/classify";
 import { ImageRefusedError } from "../screenshot/prepare";
@@ -39,7 +39,7 @@ export interface JobDeps {
   serverTz: string;
   now: () => Date;
   /** AppContext's: a failure the reply only says "could not be read" about reaches Error Tracking. */
-  report: Report;
+  report: AppContext["report"];
 }
 
 /** An attachment address on Discord's CDN over https; null for any other host. */

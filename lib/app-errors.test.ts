@@ -9,7 +9,7 @@ import { recordAppError } from "./app-errors";
 import { minutes, T0 } from "./collector.test-helpers";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { claimAppErrorAlert, insertAppError, purgeOldAppErrors } from "./repo/app-errors";
-import { reportError } from "./report-error";
+import { reportError, type Report } from "./report-error";
 import { appErrors, workspaces } from "./schema";
 
 const db = await openTestDb();
@@ -243,5 +243,27 @@ describe("one private-field redactor on every error's way out (D115, 2026-11-21)
       expect(record).toContain(call);
     expect(body("./report-error.ts", "reportError")).toContain("appErrorDetail(");
     expect(body("./report-error.ts", "sendException")).toContain("message: scrubMessage(");
+  });
+
+  // The type is the guard: `pnpm typecheck` fails if any line marked @ts-expect-error stops being an error.
+  it("lib/private's report context takes only a listed module and its own code, nothing else (D71)", () => {
+    const report = vi.fn<Report>();
+    const name: string = "Invented Bramble";
+    const error = new Error("boom");
+    // @ts-expect-error a free-string kind could carry a member's name
+    report(error, { route: "lib/private/read-status.ts", kind: `w.read_status.failed ${name}` });
+    report(error, {
+      route: "lib/private/read-status.ts",
+      kind: "w.read_status.failed",
+      // @ts-expect-error an extra key could carry the workspace or a member
+      slug: "ogs",
+    });
+    // @ts-expect-error a code that belongs to another module
+    report(error, { route: "lib/private/read-status.ts", kind: "w.webhook.open_failed" });
+    report(error, { route: "lib/private/read-status.ts", kind: "w.read_status.failed" });
+    expect(report.mock.calls.at(-1)?.[1]).toEqual({
+      route: "lib/private/read-status.ts",
+      kind: "w.read_status.failed",
+    });
   });
 });

@@ -110,6 +110,8 @@ describe("finishSourceMaps (D115)", () => {
       built(),
       run,
     );
+    // Once per directory: an empty loop below would pass with the CLI never run.
+    expect(run).toHaveBeenCalledTimes(2);
     for (const [, env] of run.mock.calls) {
       expect(env).not.toHaveProperty("DATABASE_URL");
       expect(env).not.toHaveProperty("CRON_SECRET");
@@ -153,5 +155,25 @@ describe("finishSourceMaps (D115)", () => {
       'module.exports=[1,a=>{"use strict";a.s([])}];',
     );
     expect(readFileSync(chunk("static/chunks"), "utf8")).toBe("/*id*/ injected");
+  });
+
+  it("skips the upload but not the build, and still deletes the maps, when the chunks cannot be copied aside", () => {
+    const dirs = built();
+    // The build machine's temp folder is unusable (here: missing), as with a full or read-only disk.
+    vi.stubEnv("TMPDIR", join(root, "no-such-temp"));
+    const run = vi.fn<Runner>(() => 0);
+    let said: string;
+    try {
+      said = finishSourceMaps({ POSTHOG_PERSONAL_API_KEY: "phx_test" }, dirs, run);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    expect(run).not.toHaveBeenCalled();
+    expect(said).toBe(
+      "source maps: .next/static not uploaded (its chunks could not be copied aside: ENOENT), " +
+        ".next/server not uploaded (its chunks could not be copied aside: ENOENT); 2 left-over map files deleted",
+    );
+    expect(left("static/chunks")).toBe(false);
+    expect(left("server/chunks/ssr")).toBe(false);
   });
 });

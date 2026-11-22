@@ -50,7 +50,7 @@ export async function POST(
       publishNotice(db, access, parsed.data, {
         fetch: ctx.fetch,
         now,
-        channels: await noticeChannels(db, access, ctx.env),
+        channels: await noticeChannels(db, access, ctx),
         names: LANGUAGE_NAME,
       }),
     );
