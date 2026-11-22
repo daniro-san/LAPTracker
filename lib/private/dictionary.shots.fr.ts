@@ -139,7 +139,7 @@ export const shotsFr: ShotsWords = {
   "shots.entry.theft": "a volé des récompenses de quête",
   "shots.entry.help": "a aidé (pas enregistré)",
   "shots.entry.unknown": "phrase illisible",
-  "shots.at": "{at}, heure du serveur",
+  "shots.at": "{at} ST",
   "shots.openThefts": "Ouvrir le journal des vols",
   "shots.where.pickTab": "Choisissez d’abord l’onglet : il décide où ceci est enregistré.",
   "shots.higher": "la capture est {d} au-dessus",

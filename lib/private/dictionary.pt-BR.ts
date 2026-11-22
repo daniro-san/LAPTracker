@@ -142,7 +142,7 @@ export const pt: WorkspaceDictionary = {
   "howto.after":
     "A partir daí, abra pelo ícone, como qualquer app. Você fica conectado por um dia. Depois, o Discord confere seu cargo de novo.",
   "howto.open": "Abrir a Mesa dos oficiais",
-  "time.server": "{time} hora do servidor",
+  "time.server": "{time} ST",
   "tab.review": "Acompanhar",
   "members.lead": "Atualizado uma vez por dia, pouco antes de o servidor virar o dia.",
   "members.lastRead": "Última atualização: {when}",
@@ -177,7 +177,7 @@ export const pt: WorkspaceDictionary = {
     "Um círculo pontilhado quer dizer que ainda não há dados. Dados que faltam nunca contam contra ninguém.",
   "intro.desk.title": "Agenda, prints e Discord",
   "intro.desk.calendar":
-    "Agenda: o que vai acontecer, na hora do servidor e na sua hora. Avisos e Roubos são abas dentro dela.",
+    "Agenda: o que vai acontecer, no horário do servidor (ST) e no seu horário. Avisos e Roubos são abas dentro dela.",
   "intro.desk.shots":
     "Início: Enviar prints de um ranking ou de um relatório do jogo. Confira cada um e salve.",
   "intro.desk.discord":
@@ -208,7 +208,7 @@ export const pt: WorkspaceDictionary = {
   "status.breakUntil": "Em pausa até {date}",
   "status.help": "Precisa de ajuda",
   "members.early":
-    "Lista de {when} · doações e atividade vêm com a primeira atualização diária, depois das {time} hora do servidor.",
+    "Lista de {when} · doações e atividade vêm com a primeira atualização diária, depois das {time} ST.",
   "members.import": "Importar as planilhas antigas",
   "src.message": "de uma mensagem",
   "src.sheet": "da planilha",
@@ -246,7 +246,7 @@ export const pt: WorkspaceDictionary = {
   "tz.search": "Cidade, país, PST, ST +3…",
   "tz.searchAria": "Buscar fuso horário",
   "tz.theirTime": "Hora da pessoa agora",
-  "tz.st": "ST é a hora do servidor ({offset}).",
+  "tz.st": "ST é o horário do servidor ({offset}).",
   "tz.more": "Mais {n}: continue digitando.",
   "tz.none": "Nenhum fuso horário encontrado.",
   "tz.now": "agora {time}",

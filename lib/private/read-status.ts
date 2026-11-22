@@ -9,6 +9,7 @@
 // - the Raid Shield check (D137), while it is on: running, then done until KvK starts (shield-status.ts).
 import { getAppContext } from "../app-context";
 import { fill } from "../copy";
+import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { withPageDb } from "../page";
@@ -49,8 +50,7 @@ export interface ReadStatus {
 }
 
 /** "02:15" on the server's clock. */
-export const serverClock = (timeZone: string, at: Date) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit" }).format(at);
+export const serverClock = (timeZone: string, at: Date) => dateWords("en", timeZone).time(at);
 
 /** A line and the time it sorts by: when its read started or ended. */
 type Dated = { at: number; line: StatusLine };

@@ -177,6 +177,18 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.55.0",
+    date: "2026-11-22",
+    title: "Dates and times written one way",
+    changes: [
+      'On the desk, the board and Me, dates and times are now written one way in English, Portuguese and French: "Fri, Nov 20, 18:54 ST" (PT "sex., 20 de nov. às 18:54 ST", FR "ven. 20 nov. à 18:54 ST"). Every server time ends in "ST"; the full words "server time (ST)" appear only in the legends.',
+      'Time zones show as an offset at the moment shown, "UTC−3", so summer time is right, on the board and on /admin (which showed "Etc/GMT+2").',
+      'The board\'s week is "Next 7 days", so "This week" always means Monday to Sunday; on Me, the squads line shows your own time first.',
+      "Portuguese and French lines that end with a date no longer print a double dot.",
+    ],
+    prs: [662],
+  },
+  {
     version: "v5.54.0",
     date: "2026-11-22",
     title: "Two Follow-up fixes",

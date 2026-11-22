@@ -45,7 +45,7 @@ describe("the card's trend (D109)", () => {
     // PT: the date never wraps inside itself (a no-break space).
     const t = WORKSPACE_DICTIONARIES["pt-BR"];
     const pt = factLines(facts, t, cardFormats("pt-BR", ZONE, NOW), previous);
-    expect(pt.find((l) => l.field === "squadMight")?.change).toBe("+400K desde 10 nov.");
+    expect(pt.find((l) => l.field === "squadMight")?.change).toBe("+400K desde 10 de nov.");
   });
 
   it("marks AD Tech at 100% complete, and says nothing of a change with no version before", () => {

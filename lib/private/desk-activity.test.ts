@@ -227,7 +227,7 @@ describe("recent activity", () => {
 
     const me = (await browser(db, ws, "Rook")).visit(NOW);
     const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
-    const plain = (language: "en" | "fr") => linesOf(items, language);
+    const plain = (language: "en" | "pt-BR" | "fr") => linesOf(items, language);
     expect(plain("en")).toEqual([
       "Wren noted a member is fine",
       "Wren marked Thistle on a break until Nov\u00a024",
@@ -237,6 +237,8 @@ describe("recent activity", () => {
       "Ana added “Undead Siege · Lv.5” to the Calendar",
     ]);
     expect(plain("fr")[1]).toBe("Wren a mis Thistle en pause jusqu’au 24\u00a0nov.");
+    // Portuguese writes the day as the other two languages do, never "24/11" (issue 585 batch 4).
+    expect(plain("pt-BR")[1]).toBe("Wren colocou Thistle em pausa até 24\u00a0de\u00a0nov.");
     expect(plain("en").join(" ")).not.toMatch(/private-note/);
   });
 });

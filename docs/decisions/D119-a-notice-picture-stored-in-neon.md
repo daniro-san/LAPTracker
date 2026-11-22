@@ -74,3 +74,5 @@ Why: officers want to show a map, a schedule or a game screen with a notice. The
   - A notice save that changes `ends_on` ends its picture's warning, in the same transaction (`writeNotice`). A date moved away and back restarts the 7 days.
   - "Use in another notice" copies only from a live notice.
   - The browser's header and EXIF read is wrapped: a failure there, or a failed resized decode, falls back to a plain `createImageBitmap(file)`.
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S1; personas under the owner's standing approval, `.specs/features/585-words/plan.md`): one way to write dates, times and zones.** Both dates end their sentence, so they are written as in a sentence: Home's card reads "The pictures of 3 notices will be deleted after November 25: “A”, “B”, “C”." and the editor "Kept · Ana kept it on November 18. The weekly cleanup never deletes it." (they read "Nov 25" and "Nov 18"; PT and FR no longer print "nov.."). The "kept" day is written on the server, on the server's clock (it was formatted in the browser, in no set zone). Building the Home card's date on the server too is a follow-up.

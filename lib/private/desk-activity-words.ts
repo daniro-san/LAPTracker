@@ -49,12 +49,12 @@ function factsLine(
   return aboutMember(t, who, item.member, ["activity.facts", "activity.factsSomeone"]);
 }
 
-/** A break's last day: "Nov 24", "24 nov."; Portuguese writes it as officers do, "24/11" (persona panel). */
-function breakDay(day: string, language: WorkspaceLanguage): string {
-  if (language !== "pt-BR") return calendarDates(language).dayMonth(day);
-  const numeric = { day: "2-digit", month: "2-digit", timeZone: "UTC" } as const;
-  return new Intl.DateTimeFormat(language, numeric).format(new Date(`${day}T00:00:00Z`));
-}
+/**
+ * A break's last day: "Nov 24", "24 de nov.", "24 nov.", the same form in every language (issue 585 batch 4:
+ * Portuguese wrote "24/11"); no weekday, since French puts an article before it ("jusqu’au 24 nov.").
+ */
+const breakDay = (day: string, language: WorkspaceLanguage) =>
+  calendarDates(language).dayMonth(day);
 
 /**
  * A follow-up record names the choice (owner, 2026-11-17): talked, a break with its last day away, needs

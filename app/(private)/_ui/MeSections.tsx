@@ -102,7 +102,7 @@ export function MeWeek({ view, t }: { view: Shown; t: WorkspaceDictionary }) {
 export function MeSquads({ view }: { view: Shown }) {
   return (
     <section aria-label={view.squads.head} className={CARD}>
-      <MemberSquads squads={view.squads} />
+      <MemberSquads squads={view.squads} mineFirst />
     </section>
   );
 }

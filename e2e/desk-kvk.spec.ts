@@ -4,7 +4,16 @@
 // day, their row; and Insights' help list links to it. Read-only. Home's numbers that count it are in
 // desk.spec.ts; Members' head is below. Expected values come from the seed (e2e/fixtures/seed.ts).
 import { toLookOf } from "./fixtures/follow-up-list";
-import { ALLIANCES, calendarOf, HEAVY_HIT, kvkWeek, seededAt, uidOf, usDay } from "./fixtures/seed";
+import {
+  ALLIANCES,
+  calendarOf,
+  HEAVY_HIT,
+  kvkWeek,
+  seededAt,
+  shown,
+  uidOf,
+  usDay,
+} from "./fixtures/seed";
 import { deskFrame, expect, hydrated, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
@@ -30,7 +39,10 @@ test("After KvK, offer help: Follow-up offers help to the member who took a heav
     await expect(group).toHaveCount(0);
     return;
   }
-  const day = usDay(calendarOf(seededAt()).events[1] as string);
+  const kvk = calendarOf(seededAt()).events[1] as string;
+  const day = usDay(kvk);
+  // A line that ends with the date writes it as in a sentence: "November 21" (issue 585 batch 4).
+  const sentence = shown(kvk, "en-US", { month: "long", day: "numeric" });
   await sees(
     group,
     `Lost over a quarter of their might in the KvK of ${day}, and still below 80% of what they had. Here for the week after it, or until someone writes down what they said.`,
@@ -38,7 +50,7 @@ test("After KvK, offer help: Follow-up offers help to the member who took a heav
   // The row: their name opens their panel; the hint says the KvK line, so the row does not repeat it.
   const row = group.getByRole("button", { name: new RegExp(`^\\u2068?${name}\\u2069?`) });
   await expect(row).toBeVisible();
-  await expect(group).not.toContainText(`Still rebuilding after the KvK of ${day}.`);
+  await expect(group).not.toContainText(`Still rebuilding after the KvK of ${sentence}.`);
   await expect(jump).toHaveAttribute("href", "#follow-up-kvk");
   await hydrated(jump);
   await jump.click();

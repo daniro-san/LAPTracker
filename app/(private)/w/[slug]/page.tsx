@@ -15,6 +15,7 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { Spread } from "@/lib/brand/components/layout/Spread";
 import { fill } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
@@ -134,16 +135,10 @@ function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; item
   );
 }
 
-/** "Mon 18:54 server time", for each item to review. */
+/** "Mon, Nov 16, 18:54 ST", for each item to review. */
 function serverWhen(t: WorkspaceDictionary, language: WorkspaceLanguage) {
-  const at = new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: getEnv().SERVER_TZ,
-  });
-  return (d: Date) => fill(t["time.server"], { time: at.format(d) });
+  const words = dateWords(language, getEnv().SERVER_TZ);
+  return (d: Date) => fill(t["time.server"], { time: words.at(d) });
 }
 
 function Home(props: {

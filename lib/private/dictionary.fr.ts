@@ -141,7 +141,7 @@ export const fr: WorkspaceDictionary = {
   "howto.after":
     "Ensuite, ouvrez-le depuis l’icône, comme une appli. Vous restez connecté une journée. Après, Discord vérifie de nouveau votre rôle.",
   "howto.open": "Ouvrir le Bureau des officiers",
-  "time.server": "{time} heure du serveur",
+  "time.server": "{time} ST",
   "tab.review": "À suivre",
   "members.lead": "Mis à jour une fois par jour, juste avant le changement de jour du serveur.",
   "members.lastRead": "Dernière mise à jour : {when}",
@@ -178,7 +178,7 @@ export const fr: WorkspaceDictionary = {
     "Un cercle en pointillés veut dire pas encore de données. Les données manquantes ne comptent jamais contre personne.",
   "intro.desk.title": "Agenda, captures et Discord",
   "intro.desk.calendar":
-    "Agenda : ce qui est prévu, en heure serveur et dans votre heure. Annonces et Vols sont des onglets de l’agenda.",
+    "Agenda : ce qui est prévu, à l’heure du serveur (ST) et à votre heure. Annonces et Vols sont des onglets de l’agenda.",
   "intro.desk.shots":
     "Accueil : Envoyer des captures d’un classement ou d’un rapport du jeu. Vérifiez chacune, puis enregistrez-la.",
   "intro.desk.discord":
@@ -210,7 +210,7 @@ export const fr: WorkspaceDictionary = {
   "status.breakUntil": "En pause jusqu’au {date}",
   "status.help": "Besoin d’aide",
   "members.early":
-    "Liste du {when} · dons et activité arrivent avec la première mise à jour quotidienne, après {time} heure serveur.",
+    "Liste du {when} · dons et activité arrivent avec la première mise à jour quotidienne, après {time} ST.",
   "members.import": "Importer les anciens tableurs",
   "src.message": "d’un message",
   "src.sheet": "du tableur",

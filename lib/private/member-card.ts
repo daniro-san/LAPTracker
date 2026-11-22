@@ -6,6 +6,7 @@
 // Squads (D117) and History (follow-up notes, earlier values). Issue 516: the Follow-up block (card-follow-up.ts).
 import { compactLarge } from "../compact";
 import { fill } from "../copy";
+import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { factHistory, type FactRow } from "../repo/member-facts";
 import { endOfDayReads } from "../repo/workspace-rosters";
@@ -120,21 +121,12 @@ export function cardFormats(
   zone: string,
   now: Date,
 ): CardFormats & { time: (at: Date) => string } {
-  const options = { weekday: "short", day: "numeric", month: "short" } as const;
-  const day = new Intl.DateTimeFormat(language, { ...options, timeZone: "UTC" });
-  const instant = new Intl.DateTimeFormat(language, { ...options, timeZone: zone });
-  const hhmm = new Intl.DateTimeFormat(language, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: zone,
-  });
+  const words = dateWords(language, zone);
   return {
-    date: (at) =>
-      typeof at === "string" ? day.format(new Date(`${at}T00:00:00Z`)) : instant.format(at),
+    date: words.day,
     number: (n) => exact(n, language),
     compact: (n) => compact(n, language),
-    time: (at) => `${instant.format(at)} ${hhmm.format(at)}`,
+    time: words.at,
     language,
     zone,
     now,

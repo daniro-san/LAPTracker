@@ -260,7 +260,7 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
         ];
   return {
     based: counted(t, "insights.flow.based", flow.reads, language, {
-      date: dates.short(flow.from),
+      date: dates.sentence(flow.from),
     }),
     weeks: flow.weeks.map((w, i) => ({
       label:

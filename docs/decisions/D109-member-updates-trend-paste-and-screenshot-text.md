@@ -51,3 +51,5 @@ Why: officers get new main squad and AD Tech values from members whenever someon
 **Amendment 2026-11-20 (owner, issue 461; D136).** On the member card, "Updated …" under Main squad and AD Tech shows only after "Show when each was updated" on the Info tab. The change line ("+400K since Nov 10") is unchanged. Pending and former members' cards keep showing "Updated …".
 
 **Amendment 2026-11-21 (perf panel; D149).** The thanks' progress on Home and Members reads only the thanks week's main squad and AD Tech versions and the version before them (`progressHistory` on `factHistorySince`), not every version. The thanks are unchanged.
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S1; personas under the owner's standing approval, `.specs/features/585-words/plan.md`): one way to write dates, times and zones.** The trend's short date comes from the desk's one date rule (`dayMonth`, `lib/date-words.ts`): EN "Nov 10" and FR "10 nov." as before, PT "10 de nov." (it read "10 nov."), still on one line (no-break spaces).

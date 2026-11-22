@@ -63,7 +63,7 @@ test("a member's session opens the board, not the desk", async ({ page }) => {
   await page.goto(`/w/${A.slug}/members`);
   await expect(page).toHaveURL(new RegExp(`/w/${A.slug}/board`));
   await expect(
-    page.getByRole("heading", { level: 1, name: "This week in the alliance" }),
+    page.getByRole("heading", { level: 1, name: "Next 7 days in the alliance" }),
   ).toBeVisible();
   await noError(page);
   const days = page.getByRole("list", { name: "The next 7 days" });

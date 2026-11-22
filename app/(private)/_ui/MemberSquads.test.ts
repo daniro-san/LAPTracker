@@ -10,7 +10,7 @@ import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { cardFormats } from "@/lib/private/member-card";
 import { squadsCardOf, starIcons, type StoredSquad } from "@/lib/private/member-squads";
 
-import { MemberSquads } from "./MemberSquads";
+import { MemberSquads, seenParts } from "./MemberSquads";
 
 const NOW = new Date("2026-11-17T12:00:00Z");
 const hero = (id: number, lv: number, star: number, q: number, honor?: number) => ({
@@ -64,7 +64,7 @@ describe("the member card's squads (D117)", () => {
     expect(html).toContain("Squad 2");
     expect(html).toContain("Might 61.2M");
     // 20:00 UTC is 18:00 on the server's clock (UTC−2).
-    expect(html).toContain("seen Mon, Nov 16 18:00 ST");
+    expect(html).toContain("seen Mon, Nov 16, 18:00 ST");
     // How old the sighting is when the card is made (the page is made at 12:00 UTC on the 17th).
     expect(html).toMatch(/ · (<span[^>]*>)?16\sh ago/);
     expect(html).toContain('class="font-semibold text-rarity-ur">UR<');
@@ -193,5 +193,43 @@ describe("the member card's squads (D117)", () => {
     expect(lower?.change).toBe("−400K since Sun, Nov 15");
     const [first] = squadsCardOf(only([after]), NAMES, EN, F).squads;
     expect(first).toMatchObject({ change: null, heroesChanged: null });
+  });
+});
+
+describe("when a squad was seen, on Me and on the desk (issue 585 batch 4)", () => {
+  // Seen Mon, Nov 16 18:00 ST (20:00 UTC): 22:00 the same day in Kyiv, Tue 05:00 in Tokyo.
+  const cardIn = (language: "en" | "pt-BR") =>
+    squadsCardOf(
+      only([SQUAD]),
+      NAMES,
+      WORKSPACE_DICTIONARIES[language],
+      cardFormats(language, "Etc/GMT+2", NOW),
+    );
+
+  it("puts the member's own time first on Me, with its own date, the ST date said once on one day", () => {
+    const card = cardIn("en");
+    const [s] = card.squads;
+    if (!s) throw new Error("no squad");
+    expect(seenParts(s, card, "Asia/Tokyo", true)).toEqual([
+      "seen Tue, Nov 17, 05:00 your time",
+      "Mon, Nov 16, 18:00 ST",
+    ]);
+    expect(seenParts(s, card, "Europe/Kyiv", true)).toEqual([
+      "seen Mon, Nov 16, 22:00 your time",
+      "18:00 ST",
+    ]);
+    // The desk's card keeps server time first; before the browser knows its zone, ST alone.
+    expect(seenParts(s, card, "Asia/Tokyo", false)).toEqual([
+      "seen Mon, Nov 16, 18:00 ST",
+      "05:00 your time (the next day)",
+    ]);
+    expect(seenParts(s, card, null, true)).toEqual(["seen Mon, Nov 16, 18:00 ST"]);
+    const pt = cardIn("pt-BR");
+    const [p] = pt.squads;
+    if (!p) throw new Error("no squad");
+    expect(seenParts(p, pt, "Asia/Tokyo", true)).toEqual([
+      "visto em ter., 17 de nov. às 05:00 seu horário",
+      "seg., 16 de nov. às 18:00 ST",
+    ]);
   });
 });

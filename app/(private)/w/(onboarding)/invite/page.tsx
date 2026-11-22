@@ -8,6 +8,7 @@ import { getAppContext } from "@/lib/app-context";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Measure } from "@/lib/brand/components/layout/Measure";
 import { fill } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import { withPageDb } from "@/lib/page";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import { inviteView, type InviteView } from "@/lib/private/invite";
@@ -84,11 +85,7 @@ export default async function InvitePage({
             <p className="mt-2">{fill(t["invite.lead"], { alliance: subtitle ?? "" })}</p>
             <p className="mt-1 text-body-sm text-ink/75">
               {fill(t["invite.expires"], {
-                date: new Intl.DateTimeFormat(language, {
-                  day: "numeric",
-                  month: "long",
-                  timeZone: "UTC",
-                }).format(view.expiresAt),
+                date: dateWords(language, "UTC").sentence(view.expiresAt),
               })}
             </p>
             {view.signedIn ? (

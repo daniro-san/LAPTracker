@@ -2,6 +2,7 @@
 // the muted line under main squad and AD Tech ("+600K this week", "+400K since Nov 10", "Complete") and
 // "Updated Nov 17". Split from member-card.ts for its size.
 import { fill } from "../copy";
+import { dateWords } from "../date-words";
 import type { WorkspaceDictionary } from "./dictionary";
 import { AD_COMPLETE } from "./fact-fields";
 import type { TrendField, Version } from "./fact-trend";
@@ -36,14 +37,7 @@ const SQUAD_KEY = {
  * and month are joined with a no-break space.
  */
 export function shortDate(at: Date, f: Pick<CardFormats, "language" | "zone">): string {
-  const parts = new Intl.DateTimeFormat(f.language, {
-    day: "numeric",
-    month: "short",
-    timeZone: f.zone,
-  }).formatToParts(at);
-  const of = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  const [day, month] = [of("day"), of("month")];
-  return f.language === "en" ? `${month}\u00a0${day}` : `${day}\u00a0${month}`;
+  return dateWords(f.language, f.zone).dayMonth(at);
 }
 
 /** AD Tech's change in points: "+5 points this week", "+1 point since Nov 10". */

@@ -145,7 +145,7 @@ const en = {
   "howto.after":
     "Then open it from the icon, like any app. You stay signed in for a day. After that, Discord checks your role again.",
   "howto.open": "Open the Officers’ Desk",
-  "time.server": "{time} server time",
+  "time.server": "{time} ST",
   "tab.review": "Follow-up",
   "members.lead": "Updated once a day, just before the server resets.",
   "members.lastRead": "Last update: {when}",
@@ -179,7 +179,7 @@ const en = {
   "intro.2.more": "A dotted circle means no data yet. Missing data never counts against anyone.",
   "intro.desk.title": "Calendar, screenshots and Discord",
   "intro.desk.calendar":
-    "Calendar: what is on, in server time and in your time. Notices and Thefts are tabs inside it.",
+    "Calendar: what is on, in server time (ST) and in your time. Notices and Thefts are tabs inside it.",
   "intro.desk.shots":
     "Home: Send screenshots of a ranking or a report from the game. Check each one, then save it.",
   "intro.desk.discord":
@@ -211,7 +211,7 @@ const en = {
   "status.breakUntil": "On a break until {date}",
   "status.help": "Needs help",
   "members.early":
-    "Roster from {when} · donations and activity come with the first daily update, after {time} server time.",
+    "Roster from {when} · donations and activity come with the first daily update, after {time} ST.",
   "members.import": "Import the old spreadsheets",
   "src.message": "from a message",
   "src.sheet": "from the sheet",

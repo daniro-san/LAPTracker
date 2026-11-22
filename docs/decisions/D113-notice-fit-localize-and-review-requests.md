@@ -48,3 +48,5 @@ Why: a notice over the game board's 1,000 characters was cut when copied, and tr
   - Not changed: answered requests keep each language's own name ("Rook aprovou English"), as this decision set on 2026-11-17 for the request lines.
 - Edit opens the editor at the tab in view, without scrolling past the title. "Jump to Français" in an open review request opens that tab.
 - The tabs and the panel are at most the editor's width (`max-w-2xl`) at every width.
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S1; personas under the owner's standing approval, `.specs/features/585-words/plan.md`): one way to write dates, times and zones.** Review request times end in "ST": "Rook approved EN · Tue, Nov 17, 19:08 ST" (PT "ter., 17 de nov. às 19:08 ST", FR "mar. 17 nov. à 19:08 ST"), and the note under them reads "Times are in server time (ST)." (PT "Os horários estão no horário do servidor (ST).", FR "Les heures sont à l’heure du serveur (ST)."; it read "Times are server time.").
