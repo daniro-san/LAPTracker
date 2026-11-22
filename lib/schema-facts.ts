@@ -37,8 +37,11 @@ export const memberFacts = pgTable(
     field: text("field").notNull(),
     version: integer("version").notNull(),
     value: jsonb("value"),
-    // "tracker": the strongest squad the tracker saw, written by the nightly squads read (D117).
-    source: text("source", { enum: ["message", "officer", "sheet", "tracker"] }).notNull(),
+    // "tracker": the strongest squad the tracker saw, written by the nightly squads read (D117). "member":
+    // what the member sent about themselves, put on the card by an officer's "Use this" (D154).
+    source: text("source", {
+      enum: ["message", "officer", "sheet", "tracker", "member"],
+    }).notNull(),
     writtenBy: integer("written_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     writtenAt: tstz("written_at").notNull(),
   },
@@ -48,7 +51,47 @@ export const memberFacts = pgTable(
     index("member_facts_workspace_written_idx").on(t.workspaceId, t.writtenAt),
     check(
       "member_facts_source_check",
-      sql`${t.source} in ('message', 'officer', 'sheet', 'tracker')`,
+      sql`${t.source} in ('message', 'officer', 'sheet', 'tracker', 'member')`,
+    ),
+  ],
+);
+
+/**
+ * What a member sent about themselves from their own page (D154, issue 301): one row per workspace user and
+ * field, the newest only. `version` counts that user's sends of that field, so a send names the version it
+ * saw (D80). An officer's "Use this" or "Mark seen" sets `seen_version` to the version they saw; a later
+ * send makes it new again. Keyed by the workspace user, not the player: only the reports of the user who
+ * holds the approved link to `uid` now are shown, so an impostor's never reach the real member's card. A
+ * null value is a removal. Never read by `latestFacts`: nothing here changes a fact until an officer
+ * says so (D75). Read and written only by lib/repo and lib/private.
+ */
+export const memberSelfReports = pgTable(
+  "member_self_reports",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => workspaceUsers.id, { onDelete: "cascade" }),
+    /** The player of the user's approved link when they sent it. */
+    uid: big("uid").notNull(),
+    field: text("field", { enum: ["adTech", "timeZone", "languages"] }).notNull(),
+    value: jsonb("value"),
+    version: integer("version").notNull(),
+    /** The send's request id (D100): a repeat stores nothing. */
+    requestId: text("request_id").notNull(),
+    writtenAt: tstz("written_at").notNull(),
+    seenVersion: integer("seen_version").notNull().default(0),
+    seenBy: integer("seen_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    seenAt: tstz("seen_at"),
+  },
+  (t) => [
+    unique("member_self_reports_user_field_unique").on(t.workspaceId, t.userId, t.field),
+    check(
+      "member_self_reports_field_check",
+      sql`${t.field} in ('adTech', 'timeZone', 'languages')`,
     ),
   ],
 );

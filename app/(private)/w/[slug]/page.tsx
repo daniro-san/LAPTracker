@@ -198,6 +198,7 @@ function Home(props: {
               when={serverWhen(t, language)}
               day={f.date}
               links={props.desk.links}
+              reports={props.desk.reports}
               waiting={props.waiting}
             />
             <SendCard slug={slug} t={t} language={language} />

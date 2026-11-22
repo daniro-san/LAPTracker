@@ -119,6 +119,7 @@ async function home(access: Awaited<ReturnType<typeof claimed>>) {
       language: "en",
       toMatch: null,
       reviews: [],
+      reports: [],
       when: () => "",
       day: cardFormats("en", "Etc/GMT+2", NOW).date,
       links: await linkReviews(db, access),

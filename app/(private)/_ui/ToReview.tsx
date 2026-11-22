@@ -15,6 +15,7 @@ import type { ReviewItem } from "@/lib/private/import-view";
 import { draftCounts, kindLabel } from "@/lib/private/import-words";
 import type { LinkReview } from "@/lib/private/me-link";
 import type { reviewsForMe } from "@/lib/private/notice-reviews";
+import type { ReportReview } from "@/lib/private/self-report";
 
 import { LANGUAGE_NAME } from "./languages";
 import { LinkReviews } from "./MemberLinks";
@@ -155,6 +156,29 @@ export function SendCard(props: {
   );
 }
 
+/** D154: each member who sent their own info no officer has seen yet, linked to their card. */
+function ReportReviews(props: { slug: string; t: WorkspaceDictionary; reports: ReportReview[] }) {
+  const { slug, t } = props;
+  if (props.reports.length === 0) return null;
+  return (
+    <ul className="mt-1">
+      {props.reports.map((r) => (
+        <li key={r.uid}>
+          <a
+            href={`/w/${slug}/members?m=${r.uid}`}
+            className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+          >
+            {fill(t["self.home"], {
+              player: isolate(r.player),
+              fields: r.fields.map((f) => t[`facts.${f}`]).join(", "),
+            })}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ToReview(props: {
   slug: string;
   items: ReviewItem[];
@@ -170,6 +194,8 @@ export function ToReview(props: {
   day: (at: Date) => string;
   /** Members' "This is me" links waiting for an officer (D142). */
   links: LinkReview[];
+  /** D154: members who sent their own info that no officer has seen yet; not in the tab's number. */
+  reports: ReportReview[];
   /** The Home tab's number: screenshot drafts, the notice reviews for this officer (D113) and the links
    * to approve (D142), counted once by the page. */
   waiting: number;
@@ -198,7 +224,8 @@ export function ToReview(props: {
           </a>
         </p>
       )}
-      {waiting === 0 && <p className="mt-3">{t["shots.none"]}</p>}
+      <ReportReviews slug={slug} t={t} reports={props.reports} />
+      {waiting === 0 && props.reports.length === 0 && <p className="mt-3">{t["shots.none"]}</p>}
       {items.length > 0 && (
         <ul className="mt-3 space-y-2">
           {items.map((d) => (

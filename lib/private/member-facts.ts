@@ -40,8 +40,8 @@ const PG_INT_MAX = 2_147_483_647;
 const text = (max: number) => z.string().trim().max(max);
 const DAY = z.string().refine(isDay);
 
-/** Each field's value; null clears it. */
-const VALUES = {
+/** Each field's value; null clears it. A member's own report (D154) takes the same values. */
+export const FACT_VALUES = {
   squadMight: z.number().int().min(0).max(1e11),
   adTech: z.number().min(0).max(100),
   troopTier: z.number().int().min(1).max(TIER_MAX),
@@ -61,7 +61,7 @@ const change = <F extends FactField>(field: F) =>
       field: z.literal(field),
       /** The version the officer saw; 0 when the field had none. */
       version: z.number().int().min(0),
-      value: VALUES[field].nullable(),
+      value: FACT_VALUES[field].nullable(),
       source: z.enum(["message", "officer"]),
     })
     .strict();
@@ -225,4 +225,34 @@ export async function saveFacts(
   const results: ChangeResult[] = [];
   for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone));
   return results;
+}
+
+/**
+ * An officer's "Put on the card" of what a member sent about themselves (D154): the next version of that
+ * fact with source `member`, only while the fact is still at the version the card showed. Unlike an
+ * officer's edit it is never combined (languages too): any save since, even one landing between this read
+ * and the write, is refused with the newer value, because the unique version lets only one write in and a
+ * combined list is a value nobody saw. Null when the uid is not in the alliance's newest roster.
+ */
+export async function saveMemberFact(
+  db: Db,
+  access: WorkspaceAccess,
+  uid: number,
+  change: { field: "adTech" | "timeZone" | "languages"; version: number; value: unknown },
+  now: Date,
+): Promise<ChangeResult | null> {
+  if (!(await isMember(db, access, uid))) return null;
+  const where = [db, access.workspaceId, uid, change.field] as const;
+  const newest = await factVersion(...where, "newest");
+  const current = newest?.version ?? 0;
+  const value = normalise({ ...change, source: "officer" } as FactChange);
+  const row = { workspaceId: access.workspaceId, uid, field: change.field, version: current + 1 };
+  const written = { value, source: "member" as const, writtenBy: access.user.id, writtenAt: now };
+  if (current === change.version && (await insertFact(db, { ...row, ...written }))) {
+    return { field: change.field, status: "saved", version: current + 1, value, source: "member" };
+  }
+  // Another officer saved first: the newer value, or none when the card named a version that is gone.
+  const latest = (await factVersion(...where, "newest")) ?? newest;
+  if (latest) return refused(change.field, latest);
+  return { field: change.field, status: "conflict", version: 0, value: null, source: "officer" };
 }

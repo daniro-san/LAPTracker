@@ -19,8 +19,9 @@ export const FACT_FIELDS = [
 export type FactField = (typeof FACT_FIELDS)[number];
 
 /** "from a message" (the paste box, confirmed), "typed by an officer", "from the sheet" (the import),
- * "from the tracker" (Main squad might from the nightly squads read, D117; never typed in the editor). */
-export const FACT_SOURCES = ["message", "officer", "sheet", "tracker"] as const;
+ * "from the tracker" (Main squad might from the nightly squads read, D117; never typed in the editor),
+ * "from the member" (what the member sent about themselves, put on the card by an officer, D154). */
+export const FACT_SOURCES = ["message", "officer", "sheet", "tracker", "member"] as const;
 export type FactSource = (typeof FACT_SOURCES)[number];
 
 /** Statuses an officer sets (D75); Fine and Check in stay computed. */
