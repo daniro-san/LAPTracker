@@ -58,24 +58,32 @@ describe("filterMembers", () => {
 
 describe("filterFromUrl", () => {
   const usable = { canDelta: true, compared: true };
+  // One stayed, two joined, one left.
+  const roster: Pick<MemberView, "status">[] = [
+    { status: "" },
+    { status: "joined" },
+    { status: "joined" },
+    { status: "left" },
+  ];
+  const url = (q: { show?: string; sort?: string }, mode = usable, members = roster) =>
+    filterFromUrl(q, mode, members);
 
   it("opens Joined or Left from the URL only when both sides are usable, never against a stale side or one roster", () => {
-    expect(filterFromUrl({ show: "left" }, usable).show).toBe("left");
-    expect(filterFromUrl({ show: "left" }, { canDelta: false, compared: true }).show).toBe("");
-    expect(filterFromUrl({ show: "joined" }, { canDelta: true, compared: false }).show).toBe("");
-    expect(filterFromUrl({ show: "renamed" }, usable).show).toBe("");
+    expect(url({ show: "left" }).show).toBe("left");
+    expect(url({ show: "left" }, { canDelta: false, compared: true }).show).toBe("");
+    expect(url({ show: "joined" }, { canDelta: true, compared: false }).show).toBe("");
+    expect(url({ show: "renamed" }).show).toBe("");
+  });
+
+  it("ignores Joined or Left from the URL when nobody joined or left, so the list never opens empty", () => {
+    expect(url({ show: "left" }, usable, [{ status: "" }, { status: "joined" }]).show).toBe("");
+    expect(url({ show: "joined" }, usable, [{ status: "" }]).show).toBe("");
   });
 
   it("sorts as the URL says, highest first, but not by a change the list cannot show", () => {
-    expect(filterFromUrl({ sort: "killsDelta" }, usable)).toEqual({
-      show: "",
-      sort: "killsDelta",
-      desc: true,
-    });
-    expect(filterFromUrl({ sort: "killsDelta" }, { canDelta: false, compared: false }).sort).toBe(
-      "might",
-    );
-    expect(filterFromUrl({ sort: "nonsense" }, usable).sort).toBe("might");
+    expect(url({ sort: "killsDelta" })).toEqual({ show: "", sort: "killsDelta", desc: true });
+    expect(url({ sort: "killsDelta" }, { canDelta: false, compared: false }).sort).toBe("might");
+    expect(url({ sort: "nonsense" }).sort).toBe("might");
   });
 });
 

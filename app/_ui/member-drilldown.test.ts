@@ -77,7 +77,7 @@ async function listed(eventId: number, query: { show?: string; sort?: string }) 
   if (!detail) throw new Error("no alliance detail");
   const views = memberViews(detail.membersBefore, detail.membersAfter);
   const steps = mightSteps(views);
-  const start = filterFromUrl(query, { canDelta: true, compared: true });
+  const start = filterFromUrl(query, { canDelta: true, compared: true }, views);
   const f = { ...start, name: "", lo: 0, hi: steps.length - 1 };
   return { detail, uids: filterMembers(views, f, steps, true).map((m) => m.uid) };
 }

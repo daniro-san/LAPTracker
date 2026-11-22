@@ -23,7 +23,7 @@ import {
   type MemberView,
   type SortKey,
 } from "./member-views";
-import { CHIP, keepInUrl, ShowChips, ShowReads, STATUS } from "./MemberShow";
+import { CHIP, keepInUrl, ShowChips, ShowReads, STATUS, useShowFromUrl } from "./MemberShow";
 import { MightRange } from "./MightRange";
 import { Num } from "./Num";
 import { PlayerAvatar } from "./Pictures";
@@ -230,6 +230,7 @@ export function MembersExplorer({
   const steps = useMemo(() => mightSteps(members), [members]);
   const plain = plainFilter(steps);
   const [f, setF] = useState<MemberFilter>({ ...plain, ...initial });
+  useShowFromUrl(members, { canDelta, compared }, (show) => setF({ ...f, show }));
   const [all, setAll] = useState(false);
   const kept = useMemo(
     () => filterMembers(members, f, steps, canDelta),

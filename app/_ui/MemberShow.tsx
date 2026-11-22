@@ -2,12 +2,13 @@
 
 // The member list's Joined / Left chips (the drilldowns' landing, `show=` in the URL), the line that says when
 // the two member lists were read while one is on, and the URL kept in step with the list's filter and order.
-import type { ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, type ReactNode } from "react";
 
 import { fill } from "@/lib/copy";
 
 import { useCopy } from "./LocaleProvider";
-import type { MemberFilter, MemberShow, MemberView } from "./member-views";
+import { filterFromUrl, type MemberFilter, type MemberShow, type MemberView } from "./member-views";
 
 export const CHIP =
   "drawn-frame-soft tint-button inline-flex min-h-11 shrink-0 items-center gap-1 px-3 text-body-sm font-medium";
@@ -78,6 +79,24 @@ export function ShowReads({
       {fill(show === "joined" ? copy.members.joinedReads : copy.members.leftReads, reads)}
     </p>
   );
+}
+
+/**
+ * The list follows the address's `show=`: a link on the same page (the split's lines) navigates without
+ * remounting the list, so the server's first filter alone would leave it on All. The chips' own
+ * `replaceState` changes the address too; `apply` then sets what the chip already set.
+ */
+export function useShowFromUrl(
+  members: MemberView[],
+  mode: { canDelta: boolean; compared: boolean },
+  apply: (show: MemberShow) => void,
+) {
+  const show = filterFromUrl({ show: useSearchParams().get("show") }, mode, members).show;
+  const [seen, setSeen] = useState(show);
+  if (seen !== show) {
+    setSeen(show);
+    apply(show);
+  }
 }
 
 /** The URL's `show=` and `sort=` follow the chips, without a reload (Next's router keeps the address). */

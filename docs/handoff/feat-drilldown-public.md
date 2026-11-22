@@ -10,6 +10,9 @@
 - Copy: `members.joinedReads`, `members.leftReads`, translated in 17 languages (translate-copy skill, stamped).
 - Decisions: dated amendments to D69 (split lines and ledger counts link), D83 (Kill share and War turnout rows link with the sort; uids stay in the query) and D15 (the ± Kills order counts a null as 0).
 - Plan: `.specs/features/drilldown-public/plan.md`, with the persona verdicts.
+- Review fixes (PR 690):
+  - The list follows the address's `show=` (`useShowFromUrl`, `app/_ui/MemberShow.tsx`, through `useSearchParams`). Before, the split's links on the alliance page itself did nothing after the Joined chip was tapped back to All, because the list remounted only when the server's filter changed. The chips still use `replaceState`, so a chip tap reads nothing from the database.
+  - `filterFromUrl` obeys `show=joined|left` only when that set has a member, so a hand-edited or stale link no longer opens an empty list with no chip to clear it.
 
 ## Decisions
 
@@ -18,6 +21,8 @@
 - Filter gate: Joined / Left and a URL `show=` only when both sides are usable (`comparable`) and both rosters exist (REVIEW item 1, D32). The ledger shows its links only where it shows a delta, which needs the same.
 - A War turnout row during the event (`soFar`) links to the plain page: there is no End to sort by.
 - Chip counts come from the whole list, not the search or the might range (adversarial reviewer).
+- Fix 1 used the address, not `router.replace`: `router.replace` would render the page on the server again (its database reads) on every chip tap.
+- `countBucket` stays in `lib/analytics/events.ts`, with the same values as PR 688's `lib/analytics/count-bucket.ts` (`0 | 1 | 2_4 | 5_9 | 10_plus`). PR 688 was not on dev at this rebase; the orchestrator reconciles at merge, importing that module in place of this copy.
 
 ## Deviations
 
@@ -30,6 +35,7 @@
 - `pnpm check`: green (prettier, eslint, tsc, vitest 1,7xx tests, drift, i18n 17 languages up to date).
 - New tests each fail when their rule breaks (checked by mutation, then restored): the show filter ignored, the ± Kills order by the displayed change, `show=` obeyed against a stale side, `rosterDiff` matching by name.
 - `pnpm test:e2e e2e/public.spec.ts` on this worktree's own cluster (127.0.0.1:55440, app 3577, bridge 55477): 10 passed, phone and wide. The new flow fails with the show filter broken (checked, then restored).
+- After the review fixes (rebased on dev with the KvK opponent test): `pnpm test:e2e e2e/public.spec.ts` 14 passed, phone and wide. The new flow "the alliance page's split opens Joined again after the list went back to All" fails without `useShowFromUrl` (checked, then restored: "Expected true, Received false" on the Joined chip). The new unit test "ignores Joined or Left from the URL when nobody joined or left" covers fix 2.
 
 ## Open issues
 
@@ -40,7 +46,11 @@
 
 - Follow-up: an in-event `+n joined · −n left` on Across events rows (from `HistoryRow.inEvent`, which already diffs Start and End), which could then link to the event's filter exactly (P3).
 - Follow-up: "Might at Start" label on Left rows (alliance leader persona); "Showing 1 of 11" wording for the filtered count (public visitor persona).
-- Follow-up: decide the D15 null-as-gain rule above.
+- Follow-up (review finding 3, issue to be opened by the orchestrator): a member with a null kills on one side shows `—` while the ± Kills order ranks them by the gain War turnout counts (a null at Start at the top, a null at End low). Proposal: show the gain the sort used on those rows (for example `+40K` with a D15 note "kills at Start unknown, counted as 0"), and add a test for a null at End. Then decide whether a null side should count as a gain at all (that would change War turnout and Kill share figures).
+- Follow-up (review finding 2): a `WhoFought` test with `soFar: true` asserting the plain href (no `sort=killsDelta`).
+- Follow-up (review finding 6): a test that a URL with `show` or `sort` gets `robots: { index: false }` from `generateMetadata`, and a plain one does not.
+- Follow-up (review finding 7): `StatTable.tsx` has the `shared` doc comment of `MetricCell` stranded above `RosterNote`, and `SplitMark.tsx` has its JSDoc split from its function; move each back above its function.
+- PR body: add the `Part of #N` line for the drilldown spike issue (review finding 5); no issue number is named in the task, so the orchestrator adds it.
 - Owner, after release: check `drilldown_opened` arrives in PostHog project 741657 and add the "Drilldowns" insight from the tracking plan.
 
 What was missing from the task prompt? That Across events' joined/left counts are since the previous event, not inside the event, so P3 cannot link to the same filter.

@@ -206,3 +206,32 @@ test("tapping a ledger row's joined count opens the alliance's member list with 
   await noErrorOrEmpty(page);
   expect(await sideways(page)).toBe(false);
 });
+
+test("the alliance page's split opens Joined again after the list went back to All", async ({
+  page,
+}) => {
+  await page.goto(`/events/2/alliances/${A.unionId}`);
+  const joined = changedAtLastEvent("a", "joined");
+  const list = page.getByRole("region", { name: "Members" });
+  const chip = list.getByRole("button", { name: `Joined (${joined.length})` });
+  const split = page.locator("details", {
+    hasText: "Includes member changes: show the split, Might",
+  });
+  // The split's "Came in with" line links to this same page, so the list is not remounted by it.
+  const openJoined = async () => {
+    await hydrated(split);
+    await split.locator("summary").click();
+    await split.getByRole("link", { name: `Came in with ${joined.length} who joined` }).click();
+    await expect(page).toHaveURL(/\?show=joined#members$/);
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expect(list.getByRole("listitem")).toHaveCount(joined.length);
+  };
+  await openJoined();
+  await chip.click();
+  await expect(list.getByRole("listitem")).toHaveCount(A.names.length);
+  await openJoined();
+  for (const name of joined) {
+    await expect(list.getByRole("link", { name, exact: true })).toBeVisible();
+  }
+  await noErrorOrEmpty(page);
+});

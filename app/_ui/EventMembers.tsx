@@ -31,7 +31,8 @@ export async function EventMembers({
   const [copy, params] = await Promise.all([requestCopy(), search]);
   const { before, after, membersBefore, membersAfter } = detail;
   const compared = canCompare(membersBefore, membersAfter);
-  const initial = filterFromUrl(params, { canDelta, compared });
+  const members = viewsOf(detail);
+  const initial = filterFromUrl(params, { canDelta, compared }, members);
   const [from, to] = [before?.sourceUpdatedAt, after?.sourceUpdatedAt];
   return (
     <section aria-labelledby={MEMBERS_ID}>
@@ -41,7 +42,7 @@ export async function EventMembers({
       <MembersExplorer
         // A link to this page with another filter remounts the list, so it starts from the new URL.
         key={`${initial.show}:${initial.sort}`}
-        members={viewsOf(detail)}
+        members={members}
         canDelta={canDelta}
         compared={compared}
         capacity={after?.capacity ?? before?.capacity ?? null}

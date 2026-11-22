@@ -221,15 +221,18 @@ export function filterMembers(
 
 /**
  * The list's start from the page's URL: `show=joined|left` only when the two rosters can be compared with
- * both sides usable (no change against a stale side, REVIEW item 1), `sort=` only a sort the list offers.
- * Anything else is ignored: the list opens as it always does.
+ * both sides usable (no change against a stale side, REVIEW item 1) and someone is in that set (an empty
+ * list would have no chip to clear it), `sort=` only a sort the list offers. Anything else is ignored: the
+ * list opens as it always does.
  */
 export function filterFromUrl(
-  params: { show?: string | string[] | undefined; sort?: string | string[] | undefined },
+  params: { show?: string | string[] | null | undefined; sort?: string | string[] | undefined },
   mode: { canDelta: boolean; compared: boolean },
+  members: readonly Pick<MemberView, "status">[],
 ): Pick<MemberFilter, "show" | "sort" | "desc"> {
+  const asked = params.show === "joined" || params.show === "left";
   const show =
-    mode.canDelta && mode.compared && (params.show === "joined" || params.show === "left");
+    asked && mode.canDelta && mode.compared && members.some((m) => m.status === params.show);
   const sort = SORT_KEYS.find((k) => k === params.sort);
   const offered = sort !== undefined && (mode.compared || !CHANGE_SORTS.includes(sort));
   const key = offered ? sort : "might";
