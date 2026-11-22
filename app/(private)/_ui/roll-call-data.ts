@@ -2,11 +2,12 @@
 // as a card, each row of a roll call, and each member of an Elixir Scramble team with why they are
 // suggested. Dates and numbers are formatted here, never in the browser.
 import { fill } from "@/lib/copy";
-import { hhmm, zonedInstant } from "@/lib/private/calendar-time";
+import { addDays, hhmm, zonedInstant } from "@/lib/private/calendar-time";
 import { calendarDates, stOf } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { RollWords } from "@/lib/private/dictionary.rollcall";
 import type { AwayNote } from "@/lib/private/fact-fields";
+import { fridayOf } from "@/lib/private/raid-prep";
 import type { Occasion } from "@/lib/private/roll-call";
 import {
   awakeAt,
@@ -63,6 +64,7 @@ export interface RollCard {
   teamHref: string | null;
 }
 
+/** A Raid prep card (a Raid Shield roll call) is dated by its raid, as its page is (issue 585). */
 export function rollCard(item: WeekItem, slug: string, today: string, ctx: Ctx): RollCard {
   const { t } = ctx;
   const query = occasionQuery(item.occasion);
@@ -70,8 +72,9 @@ export function rollCard(item: WeekItem, slug: string, today: string, ctx: Ctx):
   return {
     key: item.key,
     title: callTitle(item, t),
-    ...headerOf(item, ctx),
-    day: item.day,
+    ...(item.kind === "shield"
+      ? raidHead(fridayOf(item.day), { ...ctx, today })
+      : { ...headerOf(item, ctx), day: item.day }),
     counts: item.team === 0 ? null : tallyParts(item.tally, item.kind, t),
     team: team?.team ?? null,
     registration: team?.registration ?? null,
@@ -176,6 +179,25 @@ export function teamRows(
       away: r.away ? t["roll.team.awayThatDay"] : null,
     };
   });
+}
+
+/**
+ * Raid prep's day line names the raid it serves, not the day the roll call was added (issue 585, first
+ * glance: "Wednesday, November 18" read as an old roll call): that week's KvK Saturday, the one its
+ * Raid Shield check reads for, and the reset the raid starts at. A week whose KvK day has gone by says so.
+ * `friday` is the roll call's `fridayOf` (lib/raid-prep-fill.ts), as Raid prep's own view reads it.
+ */
+export function raidHead(friday: string, { t, language, zone, today }: Ctx & { today: string }) {
+  const kvk = addDays(friday, 1);
+  const date = calendarDates(language).short(kvk);
+  if (kvk < today)
+    return { dayLabel: fill(t["roll.prep.raid.past"], { date }), st: null, at: null, day: kvk };
+  return {
+    dayLabel: fill(t["roll.prep.raid"], { date }),
+    st: fill(t["calendar.st"], { time: hhmm(0) }),
+    at: zonedInstant(kvk, 0, zone),
+    day: kvk,
+  };
 }
 
 /** The occasion's day and time line pieces for a page header. */

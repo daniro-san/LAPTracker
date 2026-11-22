@@ -18,6 +18,10 @@ export const glanceEn = {
   "roll.prep.remind": "To remind: {n}",
   "roll.prep.remind.none": "Nobody to remind",
   "roll.prep.filterBy": "Filter by Shield mark",
+  // The sticky bar counts in the card's words, "to mark", not "not set" (read as "no shield", issue 585).
+  "roll.prep.left": "{n} to mark",
+  "roll.prep.leftAway": "{n} to mark · {away} away, left out",
+  "roll.prep.leftAway.one": "{n} to mark · {away} away, left out",
 } as const;
 
 type GlanceWords = Record<keyof typeof glanceEn, string>;
@@ -39,6 +43,9 @@ export const glancePt: GlanceWords = {
   "roll.prep.remind": "Para lembrar: {n}",
   "roll.prep.remind.none": "Ninguém para lembrar",
   "roll.prep.filterBy": "Filtrar pela marca do Escudo",
+  "roll.prep.left": "{n} para marcar",
+  "roll.prep.leftAway": "{n} para marcar · {away} ausentes, fora da chamada",
+  "roll.prep.leftAway.one": "{n} para marcar · {away} ausente, fora da chamada",
 };
 
 export const glanceFr: GlanceWords = {
@@ -58,4 +65,7 @@ export const glanceFr: GlanceWords = {
   "roll.prep.remind": "À relancer : {n}",
   "roll.prep.remind.none": "Personne à relancer",
   "roll.prep.filterBy": "Filtrer par marque du Bouclier",
+  "roll.prep.left": "{n} à marquer",
+  "roll.prep.leftAway": "{n} à marquer · {away} absents, hors de l’appel",
+  "roll.prep.leftAway.one": "{n} à marquer · {away} absent, hors de l’appel",
 };

@@ -47,20 +47,21 @@ export function useRest(m: ReturnType<typeof useMarks>, marks: MarkWords, words:
   return { text: last?.text ?? null, fresh, busy, undoable, rest, undo };
 }
 
-/** "57 not set · 3 away, left out"; Raid prep's "Shield: 61 not set · 16 not seen yet, left out". */
+/** "57 not set · 3 away, left out"; Raid prep's "Shield: 61 to mark · 16 not seen yet, left out". */
 function countLine(
   p: { left: number; rest: number; away: number; part?: string | undefined },
   words: RollSheetWords,
 ) {
   // One away or one not seen takes the singular: PT and FR agree the word with the count (issue 585).
   const notSeen = p.left - p.rest;
+  // Raid prep (the bar names its part) counts in its card's words, "to mark" (issue 585).
+  const [left, away, awayOne] = p.part
+    ? (["roll.prep.left", "roll.prep.leftAway", "roll.prep.leftAway.one"] as const)
+    : (["roll.left", "roll.leftAway", "roll.leftAway.one"] as const);
   const counts = [
     p.away > 0
-      ? fill(words[p.away === 1 ? "roll.leftAway.one" : "roll.leftAway"], {
-          n: p.left,
-          away: p.away,
-        })
-      : fill(words["roll.left"], { n: p.left }),
+      ? fill(words[p.away === 1 ? awayOne : away], { n: p.left, away: p.away })
+      : fill(words[left], { n: p.left }),
     ...(notSeen > 0
       ? [
           fill(words[notSeen === 1 ? "roll.prep.notSeenLeft.one" : "roll.prep.notSeenLeft"], {
@@ -88,7 +89,7 @@ export function RestBar(props: {
   left: number;
   /** D137: how many "the rest" marks, when fewer than `left` (Raid prep leaves out the not-seen). */
   rest?: number;
-  /** Raid prep: the part the counts are about ("Shield: 61 not set · 16 not seen yet, left out"). */
+  /** Raid prep: the part the counts are about ("Shield: 61 to mark · 16 not seen yet, left out"). */
   part?: string;
   away: number;
   /**

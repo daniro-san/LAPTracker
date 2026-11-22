@@ -158,8 +158,9 @@ type PageProps = TileProps & {
 function usePrep(props: PageProps) {
   const { words, marks, prep } = props;
   const failed = words["roll.failed"];
-  const m = useMarks(props.slug, props.occasion, props.rows, failed);
-  const w = useMarks(props.slug, props.occasion, wallRowsOf(props.rows, prep), failed, WALL);
+  const page = { failed, roll_call: "raid_prep" } as const;
+  const m = useMarks(props.slug, props.occasion, props.rows, page);
+  const w = useMarks(props.slug, props.occasion, wallRowsOf(props.rows, prep), page, WALL);
   const r = useRest(m, marks, words);
   const all = useOrder(ordered(props.rows, prep));
   const asked = all.filter((row) => row.away === null);

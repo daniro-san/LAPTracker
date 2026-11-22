@@ -30,7 +30,9 @@ describe("custom events (D77)", () => {
     // @ts-expect-error a reviewer's name is not a target
     track("ws_review_requested", { scope: "notice", to: "Ana" as string });
     // @ts-expect-error no member value rides on a mark
-    track("ws_roll_call_marked", { how: "tap", uid: 4242 });
+    track("ws_roll_call_marked", { how: "tap", roll_call: "raid_prep", uid: 4242 });
+    // @ts-expect-error a mark says Raid prep or other (issue 585), never the roll call's title
+    track("ws_roll_call_marked", { how: "tap", roll_call: "Cheese Trap · Lv.3" as string });
     // Issue 486: the key's state and the owner's switch, never the key or the workspace.
     track("ws_key_saved", { state: "ok" });
     // @ts-expect-error the key itself is not a state

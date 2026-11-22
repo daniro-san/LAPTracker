@@ -46,7 +46,7 @@ export function TrackerBar(props: {
     const written = await props.m.bulk({ action: "accept", uids: acceptable });
     setBusy(false);
     if (!written) return;
-    track("ws_roll_call_marked", { how: "tracker" });
+    track("ws_roll_call_marked", { how: "tracker", roll_call: "raid_prep" });
     setDone(fill(words["roll.prep.accepted"], { n: written.length }));
   };
   return (

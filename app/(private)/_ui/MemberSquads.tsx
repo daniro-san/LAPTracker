@@ -73,7 +73,7 @@ export function MemberSquads({ squads }: { squads: SquadsCard }) {
   );
 }
 
-/** "seen Thu, Nov 19 22:32 ST · 00:32 your time (+1 d)": the viewer's clock once the page is live. */
+/** "seen Thu, Nov 19 22:32 ST · 00:32 your time (the next day)": the viewer's clock once the page is live. */
 function Seen({ s, w }: { s: SquadCard; w: Words }) {
   const zone = useViewerZone();
   if (!s.seen) return null;
