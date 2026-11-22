@@ -77,7 +77,15 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   );
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
-  await sees(week, "Everyone looks fine this week.");
+  // D114: on Sunday and Monday (server days), while the week is not thanked yet (the seed shares none), the
+  // thanks nudge takes the place of "Everyone looks fine"; on the other days that line shows.
+  const thanksDay = [0, 1].includes(new Date(cal.today).getUTCDay());
+  if (thanksDay) {
+    await sees(week, "Time for the weekly appreciation post");
+    await expect(week.getByText("Everyone looks fine this week.")).toHaveCount(0);
+  } else {
+    await sees(week, "Everyone looks fine this week.");
+  }
 });
 
 test("Members: a card opens from the list and stays closed once closed, after a reload too", async ({

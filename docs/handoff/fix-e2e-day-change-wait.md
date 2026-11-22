@@ -5,6 +5,7 @@
 - `e2e/global-setup.test.ts`: two tests, a run away from 02:00 UTC starts at once; one at 01:58:20 UTC waits until 02:10 UTC.
 - `.github/workflows/e2e.yml`: `timeout-minutes` 15 → 35 to fit the wait (at most 20).
 - D150: dated amendment.
+- `e2e/desk.spec.ts` (Home): on Sunday and Monday (server days) the thanks nudge replaces "Everyone looks fine this week." (D114); the test now expects the line for the seeded day. It failed every Sunday and Monday: the first run after the 02:00 UTC wait (Sunday 00:13 ST) found the nudge.
 
 ## Decisions
 - Wait instead of fail: `e2e` is a required check, and the first refusal blocked a docs-only PR (#607) at 01:58 UTC. D150's own rule removes a required check that fails at random; a clock-based refusal is one.
@@ -21,7 +22,7 @@ None.
 None.
 
 ## What was missing from the task prompt?
-Nothing; found from #607's failed run.
+Nothing; both found from #607's failed runs.
 
 ## Next
 Keep the e2e required check; no change to the plan.
