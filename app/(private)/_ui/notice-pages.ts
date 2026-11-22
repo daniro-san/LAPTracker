@@ -76,9 +76,9 @@ export function noticeWords(language: WorkspaceLanguage, t: WorkspaceDictionary)
     when: when(at),
   });
   return {
-    /** The picture with the day it was kept on the server's clock: the client never formats it. */
-    picture: (p: PictureView): PictureView =>
-      p.kept ? { ...p, kept: { ...p.kept, on: words.sentence(p.kept.at) } } : p,
+    /** The picture with who kept it and the day, on the server's clock: the client never formats it. */
+    picture: (p: PictureView, kept: { by: string | null; at: Date } | null): PictureView =>
+      kept ? { ...p, kept: { by: kept.by, on: words.sentence(kept.at) } } : p,
     flags: (n: { forMembers: boolean; endsOn: string | null }) => [
       t[n.forMembers ? "notices.forMembers" : "notices.leadersOnly"],
       ...(n.endsOn

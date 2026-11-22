@@ -167,3 +167,5 @@ These are plain information: a squad the tracker has not seen asks nothing of an
 **Amendment 2026-11-20 (owner, issue 481; D138): 100, not 101.** "OGs (101 members)" in "The Saturday rule" was a tracker artefact: the alliance holds 100 (capacity 100), and the 101st member of that body had an empty rank. The squads queue is made from the day's roster, which now leaves such members out, so it holds at most the ranked members. The cap of 120 stays: some older servers allow 120 members.
 
 **Amendment 2026-11-21 (owner; D136): every squad is framed.** Every squad on the card now sits in the soft drawn frame, not only the strongest one; the strongest keeps the plum tint and "Strongest". See D136.
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S1; personas under the owner's standing approval, `.specs/features/585-words/plan.md`): one way to write dates, times and zones.** The "seen" line joins the date and the time the desk's one way: "seen Mon, Nov 16, 22:32 ST" (it read "seen Mon, Nov 16 22:32 ST"). On a member's own page the viewer's time comes first (D142's amendment of today).

@@ -22,7 +22,7 @@ export function KeptMark(props: {
   slug: string;
   id: number;
   /** `on`: the day it was kept, as words made on the server (its clock, not the viewer's). */
-  kept: { by: string | null; on?: string };
+  kept: { by: string | null; on: string };
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
 }) {
@@ -49,7 +49,7 @@ export function KeptMark(props: {
         <span>
           {fill(t["notices.picture.keptBy"], {
             name: isolate(props.kept.by ?? t["notices.picture.someone"]),
-            date: props.kept.on ?? "",
+            date: props.kept.on,
           })}
         </span>
       </p>

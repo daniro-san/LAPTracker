@@ -79,7 +79,7 @@ export default async function NoticePage({
         slug={slug}
         id={notice.id}
         fields={notice.fields}
-        {...editorSwitches(access, notice.picture && words.picture(notice.picture))}
+        {...editorSwitches(access, notice.picture && words.picture(notice.picture, notice.kept))}
         {...savedStates(notice, reviews.list)}
         t={t}
         viewer={language}

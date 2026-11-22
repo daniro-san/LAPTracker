@@ -37,11 +37,20 @@ Part of #585 (F35, F31). Size L (batch 4 needs more than one PR), planned with `
 - `validate_plan.py` and `validate_checks.py`: 0 errors.
 - Not run: the tlc-spec-lean Verifier sub-agent and `check_proofs.py` (C9 is an e2e proof that needs the cluster). Left for the PR review.
 
+## Review round (pr-review of PR 662, 2026-11-22)
+
+- **The picture's kept day is required.** The editor's `kept` is `{ by, on }`, with `on` a required string. `noticeDetail` returns the kept instant as its own `kept` field, not inside `picture`. So a page that skips `noticeWords().picture` no longer type-checks.
+- **D119 and D80 amended.** Sweeping docs/decisions for every changed string also found D97, D102, D117 and D121, which are amended too. All dated 2026-11-22.
+- **PT break line tested:** "Wren colocou Thistle em pausa até 24 de nov." in `desk-activity.test.ts`. C8 names that test.
+- **The ".." guard now works at the caller.** It traces each of the 14 PT and FR lines that end a sentence with a date to every file between its caller and its date form, and requires a `sentence` or `withYear` form there. A new caller of such a line, or a new line, fails until it is traced.
+- **The guard fails when it should.** I switched Frame's deletion date from `withYear` to `day`, and separately the KvK reason from `sentence` to `day`. Each run failed with the file and key named. Both were reverted.
+- **Checked:** `pnpm vitest related --run <changed>` 151 passed; `pnpm check` exit 0 (1747 passed, 4 skipped) after one fix round (a type in the new test); `validate_checks.py` 0 errors. e2e not run again: this round changes no rendered text an e2e test asserts.
+
 ## Open issues
 
 - **S1b waits for the owner.** The question, word for word, is in the plan under S1b.
-- AC 4 (the picture's kept day), AC 8 (/admin's zone row) and AC 13 (Me's ST line) have no test of their own: each is a one-line wiring.
-- The ".." guard test checks the dictionary lines against the sentence form. It does not check that each caller passes that form. The callers changed here are listed under Built.
+- AC 8 (/admin's zone row) and AC 13 (Me's ST line) have no test of their own: each is a one-line wiring.
+- The caller guard compares source snippets, so a reformat of one of its traced lines breaks it until the snippet is updated.
 - The officer panel's "yesterday/today before a date" (SHOULD) and the "−" glyph check at 360 px are not done.
 - Pre-existing, not changed: `calendar-words.ts`' comment says dates never end a sentence, but about 14 lines did before this PR.
 
@@ -57,7 +66,16 @@ Remaining slices, in order (plan `.specs/features/585-words/plan.md`):
 6. **S6** Start here (F46).
 7. **S7** /admin's date forms (with #392 if that batch runs first).
 
-Follow-ups: `dateWords` for Discord ready messages and theft warnings (with the players' persona); "UTC−2" on the public pages; for two weeks after release, watch `$exception` on the board and Me, and Me page views (product strategy).
+Follow-ups:
+
+- `dateWords` for Discord ready messages and theft warnings (with the players' persona); "UTC−2" on the public pages.
+- For two weeks after release, watch `$exception` on the board and Me, and Me page views (product strategy).
+- From the PR 662 review:
+  - tests for half-hour offsets ("UTC+5:30") and UTC+0;
+  - the per-zone formatter cache in `dateWords` (one entry per language and zone, never emptied: viewer zones on the client add up);
+  - tests for `withYear`, `range` and the exact PT and FR `sentence` forms;
+  - the duplicate `offsetLabel` exports (`lib/calendar-time.ts` and `lib/private/time-zones.ts`, one formatting each other);
+  - building the pictures-due card's date on the server (D119's amendment).
 
 Analytics: no change. No event or property changes meaning; `board_section` `week` keeps its days.
 

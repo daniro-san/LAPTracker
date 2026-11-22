@@ -18,8 +18,8 @@ Proof: run unit | ✓ lib/date-words.test.ts > one way to write a date and a tim
 **C2** - A date and its time are joined "Fri, Nov 20, 23:31", "sex., 20 de nov. às 23:31", "ven. 20 nov. à 23:31" (AC 2)
 Proof: run unit | ✓ lib/date-words.test.ts > one way to write a date and a time (issue 585 batch 4) > joins a date and its time the way each language does: a comma, às, à
 
-**C3** - Every PT and FR dictionary line that ends a sentence with a date prints ".." with the short form and never with the sentence form (AC 5)
-Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > ends every Portuguese and French sentence that ends with a date without a doubled dot (issue 585 batch 4)
+**C3** - Each of the 14 PT and FR lines that end a sentence with a date is traced to every file between its caller and its date form, and that form is `sentence` or `withYear`; a caller switched to `day` (tried on Frame's deletion date and the KvK reason) or a caller not traced fails (AC 5)
+Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > fills every Portuguese and French line that ends a sentence with a date from the sentence or year form, at its caller (issue 585 batch 4)
 
 **C4** - In each language, every line that spells out server time also names "ST", and Portuguese never says "hora do servidor" nor French "heure serveur" (AC 6)
 Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > writes every time as ST and spells server time out only in a line that names ST (issue 585 batch 4)
@@ -33,7 +33,7 @@ Proof: run unit | ✓ app/(private)/_ui/MemberSquads.test.ts > when a squad was 
 **C7** - The KvK reason reads "Still rebuilding after the KvK of November 21." while the group's hint keeps "in the KvK of Sat, Nov 21," (AC 5)
 Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's groups (issue 585 slice 2) > offers help after the KvK in the second group, its rule said once in the hint, the KvK line on a Needs help row and in every panel (issue 585 S5)
 
-**C8** - A break line in Recent activity reads "until Nov 24" and French "jusqu’au 24 nov." (AC 1)
+**C8** - A break line in Recent activity reads "until Nov 24", Portuguese "até 24 de nov." (never "24/11") and French "jusqu’au 24 nov." (AC 1)
 Proof: run unit | ✓ lib/private/desk-activity.test.ts > recent activity > names a calendar change and the follow-up choice, never the note
 
 **C9** - A member's session lands on the board titled "Next 7 days in the alliance", with its 7-day strip (AC 9)
@@ -47,7 +47,7 @@ Proof: `pnpm test:e2e e2e/board.spec.ts -g "a member's session opens the board"`
 | languages, AC 2 (3)                  | en C2 · pt-BR C2, C6 · fr C2                              | -        |
 | zones, AC 3, AC 7 (3)                | the server's C1 · a viewer's in winter C5 · in summer C5  | -        |
 | seen line, AC 11-12 (4)              | Me, other day C6 · Me, same day C6 · desk C6 · no zone C6 | -        |
-| sentence-ending lines, AC 5 (2)      | dictionary sweep C3 · a caller (KvK reason) C7            | -        |
+| sentence-ending lines, AC 5 (2)      | every caller traced C3 · a caller (KvK reason) C7         | -        |
 | server-time wording, AC 6 (3)        | en C4 · pt-BR C4 · fr C4                                  | -        |
 
 ## Swept
@@ -64,7 +64,8 @@ Proof: `pnpm test:e2e e2e/board.spec.ts -g "a member's session opens the board"`
 
 ## Not proven by a test
 
-- AC 4 (the notice picture's "kept" day built on the server), AC 8 (/admin's zone row "UTC−2 (server time)") and AC 13 (Me's "Times are in server time (ST).") are one-line wirings with no rule of their own; they are covered by `pnpm typecheck` and named in the handoff for review.
+- AC 4 (the notice picture's "kept" day built on the server): the editor's `kept.on` is a required string and `noticeDetail` no longer carries the kept instant inside the picture, so a page that skips `noticeWords().picture` does not type-check (`pnpm typecheck`); C3 traces its date form.
+- AC 8 (/admin's zone row "UTC−2 (server time)") and AC 13 (Me's "Times are in server time (ST).") are one-line wirings with no rule of their own, named in the handoff for review.
 
 ## Handoff
 

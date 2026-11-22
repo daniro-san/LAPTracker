@@ -21,13 +21,11 @@ export interface PictureView {
   src: string;
   width: number;
   height: number;
-  /** "Keep" (D119): who kept it and when; only on the desk's notice reads. */
-  kept?: {
-    by: string | null;
-    at: Date;
-    /** The day it was kept, as words on the server's clock, made by the page (issue 585 batch 4). */
-    on?: string;
-  } | null;
+  /**
+   * "Keep" (D119): who kept it and the day, as words on the server's clock made by the notice page
+   * (`noticeWords().picture`, issue 585 batch 4), so the editor never formats a date; only on the desk.
+   */
+  kept?: { by: string | null; on: string } | null;
 }
 
 export const pictureView = (p: {

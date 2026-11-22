@@ -90,3 +90,5 @@ Why: before an Undead Siege, leadership finds the members with three or four str
 
 - `active` is daily quest points, not weekly. The signal is now the member's `active` added up over the end-of-day reads of the newest read's game week (`weekQuestPoints`), above 0; null when no day has a number.
 - The card word is "Did daily quests this week" ("Fez missões diárias nesta semana", "Quêtes du jour faites cette semaine") instead of "Active this week".
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S1; personas under the owner's standing approval, `.specs/features/585-words/plan.md`): one way to write dates, times and zones.** The carried enemy line's date ends its sentence, so it is written as in a sentence: "Carried over from the siege in the week of November 16. Save it if it is still right." (it read "… of Mon, Nov 16."; PT and FR printed "nov..").
