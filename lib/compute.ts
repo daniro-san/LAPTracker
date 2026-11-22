@@ -260,7 +260,9 @@ export const TURNOUT_MIN_GAINERS = 10;
 export interface KillsTurnout {
   /** Members in both rosters, matched by uid. */
   n: number;
-  /** Of those, the members whose kills rose. */
+  /** Of those, the members whose kills rose, biggest gain first (a tie: the lower uid first). */
+  gainerUids: number[];
+  /** How many they are: `gainerUids.length`. */
   gainers: number;
   /** The kills those members gained, together. */
   gained: number;
@@ -268,27 +270,32 @@ export interface KillsTurnout {
   top: number;
 }
 
+/** A member's kills gained from one roster to the next (#271): a null counts as 0 (D15). Positive is a gain. */
+export const killsGain = (before: number | null, after: number | null): number =>
+  (after ?? 0) - (before ?? 0);
+
 /**
  * Who gained kills in one alliance between two rosters (#271). Only members in both count; a member in
  * one roster is a join or a leave. A kills of null counts as 0 (D15). A fall in kills is not a gain.
+ * The counts come from the gainers' own list, so a page that lists them shows the same people.
  * The caller decides that both rosters are usable (INVARIANT freshness.no-stale-delta).
  */
 export function killsTurnout(
   before: readonly { uid: number; kills: number | null }[],
   after: readonly { uid: number; kills: number | null }[],
 ): KillsTurnout {
-  const was = new Map(before.map((m) => [m.uid, m.kills ?? 0]));
-  const stayed = after.flatMap((m) => {
-    const b = was.get(m.uid);
-    return b === undefined ? [] : [(m.kills ?? 0) - b];
-  });
-  const gains = stayed.filter((g) => g > 0).sort((x, y) => y - x);
-  const sum = (xs: readonly number[]) => xs.reduce((t, g) => t + g, 0);
+  const was = new Map(before.map((m) => [m.uid, m.kills]));
+  const stayed = after.flatMap((m) =>
+    was.has(m.uid) ? [{ uid: m.uid, gain: killsGain(was.get(m.uid) ?? null, m.kills) }] : [],
+  );
+  const gainers = stayed.filter((s) => s.gain > 0).sort((x, y) => y.gain - x.gain || x.uid - y.uid);
+  const sum = (xs: readonly { gain: number }[]) => xs.reduce((t, g) => t + g.gain, 0);
   return {
     n: stayed.length,
-    gainers: gains.length,
-    gained: sum(gains),
-    top: sum(gains.slice(0, TURNOUT_TOP)),
+    gainerUids: gainers.map((g) => g.uid),
+    gainers: gainers.length,
+    gained: sum(gainers),
+    top: sum(gainers.slice(0, TURNOUT_TOP)),
   };
 }
 

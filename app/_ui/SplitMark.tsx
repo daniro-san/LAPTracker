@@ -3,14 +3,17 @@
 // The tappable `*` beside a Might or Kills change that members who joined or left moved (D69 amendment,
 // 2026-11-21): a disclosure with the total, what the joiners came in with, what the leavers took and the
 // change without them. The change itself stays the alliance's total. Nothing hover-only; the target is 44 px.
-// A tap outside it or Escape closes it.
+// A tap outside it or Escape closes it. With the alliance page given, the joiners' and leavers' lines open its
+// member list with Joined or Left on: the same people the line counts.
 
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { fill } from "@/lib/copy";
 
+import { DrilldownLink } from "./DrilldownLink";
 import { MEMBER_MARK, signOf } from "./format";
 import { useCopy } from "./LocaleProvider";
+import { drillHref } from "./member-views";
 import { Num } from "./Num";
 
 /** `joined.value`: what the joiners brought into the total; `left.value`: what the leavers took out of it. */
@@ -53,25 +56,30 @@ function useDismiss() {
  * figure's cell; the alliance page's summary band), under the mark. `name`: what the mark is about, for a
  * screen reader ("Kills, [TAG] Name").
  */
+type Line = [label: string, n: number, show?: "joined" | "left"];
+
 export function SplitMark({
   total,
   split,
   name,
+  page,
 }: {
   total: number;
   split: MetricSplit;
   name: ReactNode;
+  /** The alliance's event page, whose member list the joiners' and leavers' lines open. */
+  page?: string | undefined;
 }) {
   const ref = useDismiss();
   const copy = useCopy();
   const s = copy.split;
-  const lines: [string, number][] = [
+  const lines: Line[] = [
     [s.total, total],
     ...(split.joined.n > 0
-      ? [[fill(s.joined, { n: String(split.joined.n) }), split.joined.value] as [string, number]]
+      ? [[fill(s.joined, { n: String(split.joined.n) }), split.joined.value, "joined"] as Line]
       : []),
     ...(split.left.n > 0
-      ? [[fill(s.left, { n: String(split.left.n) }), -split.left.value] as [string, number]]
+      ? [[fill(s.left, { n: String(split.left.n) }), -split.left.value, "left"] as Line]
       : []),
     [s.without, total - split.joined.value + split.left.value],
   ];
@@ -84,12 +92,26 @@ export function SplitMark({
         </span>
       </summary>
       <dl className="absolute inset-x-2 z-30 mt-1 border border-rule bg-paper p-3 text-left text-sm font-normal text-ink shadow-[0_8px_24px_var(--sheet-shadow)] sm:left-auto sm:w-72">
-        {lines.map(([label, n], i) => (
+        {lines.map(([label, n, show], i) => (
           <div
             key={label}
             className={`flex items-baseline justify-between gap-3 py-0.5 ${i === lines.length - 1 ? "mt-1 border-t border-rule pt-1.5 font-medium" : ""}`}
           >
-            <dt>{label}</dt>
+            <dt>
+              {page && show ? (
+                <DrilldownLink
+                  href={drillHref(page, { show })}
+                  surface="split"
+                  kind={show}
+                  count={split[show].n}
+                  className="text-link inline-flex min-h-11 items-center"
+                >
+                  {label}
+                </DrilldownLink>
+              ) : (
+                label
+              )}
+            </dt>
             <dd className="tabular-nums">
               <Signed n={n} />
             </dd>

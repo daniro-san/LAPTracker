@@ -114,6 +114,7 @@ function toStatRow(
     key: String(r.unionId),
     anchor: rowAnchor(r.unionId),
     href: `/events/${eventId}/alliances/${r.unionId}`,
+    members: `/events/${eventId}/alliances/${r.unionId}`,
     rank: { n: r.rank, move: r.rank === null ? null : r.ranks.might.move },
     lead: allianceLabel(r.tag, r.name),
     icon: <AllianceBadge badgeId={r.after?.badgeId ?? r.before?.badgeId} />,

@@ -9,7 +9,8 @@ import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots, snapshots } from "../schema";
 import { numbers } from "./history-readings";
 
-export interface AllianceTurnout extends KillsTurnout {
+/** The counts only: the gainers' uids stay here, out of the shared entry and the page (D143). */
+export interface AllianceTurnout extends Omit<KillsTurnout, "gainerUids"> {
   unionId: number;
   tag: string | null;
   name: string | null;
@@ -27,6 +28,9 @@ export interface TurnoutLists {
    */
   topShare: AllianceTurnout[];
 }
+
+/** The counts only: the uids stay here (`AllianceTurnout`). */
+const countsOf = ({ gainerUids: _, ...counts }: KillsTurnout) => counts;
 
 /** Biggest figure first; the larger alliance, then the lower id, when two are equal. */
 const byFigure =
@@ -77,7 +81,7 @@ export async function memberTurnout(
   const ends = usable.filter((r) => r.snapshotId === a.id);
   const alliances = [...new Map(ends.map((r) => [r.unionId, r])).values()];
   const all = alliances.flatMap((end) => {
-    const figures = killsTurnout(side(b.id, end.unionId), side(a.id, end.unionId));
+    const figures = countsOf(killsTurnout(side(b.id, end.unionId), side(a.id, end.unionId)));
     const { unionId, tag, name, badgeId } = end;
     return figures.n === 0 ? [] : [{ ...figures, unionId, tag, name, badgeId }];
   });
@@ -152,7 +156,7 @@ export async function memberTurnoutSoFar(
     const kills = numbers(row?.kills ?? null);
     const sample = (row?.uids ?? []).map((uid, i) => ({ uid, kills: kills[i] ?? null }));
     const start = startRows.filter((r) => r.unionId === unionId);
-    const figures = killsTurnout(start, sample);
+    const figures = countsOf(killsTurnout(start, sample));
     return figures.n === 0 ? [] : [{ ...figures, unionId, tag, name, badgeId }];
   });
   return turnoutLists(all, true);

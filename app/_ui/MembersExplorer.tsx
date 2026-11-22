@@ -2,8 +2,10 @@
 
 // The alliance page's member list (plan Phase 5c): the same StatTable, under three controls that read
 // without English — sort chips (tap a figure; tap it again to flip the order), one might range on the
-// roster's own steps, a name search — and chips that show each active filter and clear it. The first
-// TOP members show; "Show all" opens the rest. All data is already in the page; nothing is fetched.
+// roster's own steps, a name search, Joined / Left chips — and chips that show each active filter and clear
+// it. The page's URL sets the first filter (`show=`, `sort=`), and the chips keep it in step, so the address
+// is the link to share. The first TOP members show; "Show all" opens the rest. All data is already in the
+// page; nothing is fetched.
 import { useMemo, useState } from "react";
 
 import { ROLE_TONE, RoleMark } from "@/lib/brand/components/RoleMark";
@@ -12,13 +14,16 @@ import { fill, type Dictionary } from "@/lib/copy";
 
 import { useCopy } from "./LocaleProvider";
 import {
+  CHANGE_SORTS,
   change,
   filterMembers,
   mightSteps,
+  plainFilter,
   type MemberFilter,
   type MemberView,
   type SortKey,
 } from "./member-views";
+import { CHIP, keepInUrl, ShowChips, ShowReads, STATUS, useShowFromUrl } from "./MemberShow";
 import { MightRange } from "./MightRange";
 import { Num } from "./Num";
 import { PlayerAvatar } from "./Pictures";
@@ -35,16 +40,6 @@ const SORTS: { key: SortKey; label: (copy: Dictionary) => string }[] = [
   { key: "lv", label: (c) => c.ledger.level },
   { key: "name", label: (c) => c.members.byName },
 ];
-
-/** Joined / Left carry a sign and a colour as well as the word `copy.members[status]` (07c S12; DESIGN.md
- * three channels). */
-const STATUS = {
-  joined: { sign: "+", tone: "text-yarn" },
-  left: { sign: "−", tone: "text-seal" },
-} as const;
-
-const CHIP =
-  "drawn-frame-soft tint-button inline-flex min-h-11 shrink-0 items-center gap-1 px-3 text-body-sm font-medium";
 
 type Field = "power" | "kills" | "lv";
 
@@ -104,8 +99,6 @@ function toRow(m: MemberView, mode: Mode, copy: Dictionary): StatRow {
     ],
   };
 }
-
-const CHANGE_SORTS: SortKey[] = ["mightDelta", "killsDelta"];
 
 function SortChips({
   f,
@@ -219,6 +212,8 @@ export function MembersExplorer({
   canDelta,
   compared,
   capacity,
+  initial,
+  reads,
 }: {
   members: MemberView[];
   canDelta: boolean;
@@ -226,20 +221,31 @@ export function MembersExplorer({
   compared: boolean;
   /** The most members the alliance can hold, as the upstream reports it; null when not stored. */
   capacity: number | null;
+  /** The filter the page's URL asks for (`filterFromUrl`). */
+  initial: Pick<MemberFilter, "show" | "sort" | "desc">;
+  /** When the Start and End member lists were read, as the page writes them; for the Joined / Left line. */
+  reads: { from: string; to: string };
 }) {
   const copy = useCopy();
   const steps = useMemo(() => mightSteps(members), [members]);
-  const start: MemberFilter = { sort: "might", desc: true, name: "", lo: 0, hi: steps.length - 1 };
-  const [f, setF] = useState<MemberFilter>(start);
+  const plain = plainFilter(steps);
+  const [f, setF] = useState<MemberFilter>({ ...plain, ...initial });
+  useShowFromUrl(members, { canDelta, compared }, (show) => setF({ ...f, show }));
   const [all, setAll] = useState(false);
   const kept = useMemo(
     () => filterMembers(members, f, steps, canDelta),
     [members, f, steps, canDelta],
   );
   const shown = all ? kept : kept.slice(0, TOP);
-  const set = (patch: Partial<MemberFilter>) => setF({ ...f, ...patch });
+  const set = (patch: Partial<MemberFilter>) => {
+    const next = { ...f, ...patch };
+    if (next.show !== f.show || next.sort !== f.sort) keepInUrl(next);
+    setF(next);
+  };
   const mode = { canDelta, compared };
-  const filtered = f.name.trim() !== "" || f.lo > 0 || f.hi < steps.length - 1;
+  // No Joined / Left against a stale side (REVIEW item 1), nor with one roster (D32).
+  const shows = canDelta && compared && members.some((m) => m.status !== "");
+  const filtered = f.name.trim() !== "" || f.lo > 0 || f.hi < steps.length - 1 || f.show !== "";
   return (
     <div>
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-end">
@@ -255,6 +261,11 @@ export function MembersExplorer({
           <SortChips f={f} set={set} compared={compared} />
         </div>
         <MightRange f={f} steps={steps} set={set} />
+        {shows && (
+          <div className="sm:col-span-2">
+            <ShowChips f={f} set={set} members={members} />
+          </div>
+        )}
       </div>
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         <MemberCount
@@ -262,8 +273,9 @@ export function MembersExplorer({
           capacity={capacity}
           shown={filtered ? kept.length : null}
         />
-        <ActiveChips f={f} steps={steps} reset={() => setF(start)} set={set} />
+        <ActiveChips f={f} steps={steps} reset={() => set(plain)} set={set} />
       </div>
+      <ShowReads show={f.show} reads={reads} />
       <StatTable
         leadLabel={copy.ledger.member}
         columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.level]}

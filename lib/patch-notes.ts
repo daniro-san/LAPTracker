@@ -195,6 +195,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.60.0",
+    date: "2026-11-22",
+    title: "Tap a count to see exactly those people",
+    changes: [
+      "Insights: a count of members (an effort group, who is left out on a break or with no might, each week's joined and left, tenure from a month with us, a time zone row) opens exactly those members under it, in name order, each opening their card; Back brings the list back. Newcomers, squads and came from / went to stay counts, as decided.",
+      'Raid prep: "Show the n ›" beside "To remind" and beside "Mark ✓ the n seen with a shield" puts exactly those members in the grid. On Roll call, a card\'s "Not set", ✗ and ✓ counts open the marking page on that chip; ✗ is never the default.',
+      'Public pages: an event ledger row\'s "+3 joined · −2 left" and the split\'s "Came in with / Went with" open the alliance\'s member list filtered to exactly those players, and War turnout and Kill share rows open it sorted by kills gained.',
+    ],
+    prs: [688, 691, 690],
+  },
+  {
     version: "v5.59.0",
     date: "2026-11-22",
     title: "Members can tell their officers their own details",

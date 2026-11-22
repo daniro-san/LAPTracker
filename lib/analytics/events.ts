@@ -6,6 +6,7 @@ import type { PostHog } from "posthog-js";
 
 import type { PushUse } from "../schema-push";
 import type { Allowance, Feature } from "../workspace-features";
+import type { CountBucket } from "./count-bucket";
 
 /** The workspace languages (D71); the same three as lib/private/dictionary.ts, which this module may not import. */
 export type AnalyticsLanguage = "en" | "pt-BR" | "fr";
@@ -58,8 +59,36 @@ export type TrackerKeyState =
  */
 export type RollCallType = "raid_prep" | "other";
 
+/** The desk pages whose counts open their members (#678: Insights; Raid prep and Roll call come with #691). */
+export type DrilldownSurface = "insights" | "raid_prep" | "roll_call";
+
+/**
+ * The Insights sets an officer can open (#678; `MemberSet.kind` in lib/private/insights-sets.ts), the
+ * `kind` of `ws_drilldown_opened` on Insights: never which range, week or zone, nor a name.
+ */
+export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone";
+
+/** Raid prep's two counts of people behind "Show the n ›" (#691): "To remind" and "Mark ✓ the n seen". */
+export type RaidPrepSet = "remind" | "accept";
+
+/** The chip a Roll call card's count opened its marking page on (#691): "To mark", ✗ or ✓. */
+export type RollCallSet = "todo" | "no" | "yes";
+
+/** Each surface with its own closed list of kinds, so a kind never rides on another page's event. */
+type DrilldownOpened = { count_bucket: CountBucket } & (
+  | { surface: Extract<DrilldownSurface, "insights">; kind: InsightsSet }
+  | { surface: Extract<DrilldownSurface, "raid_prep">; kind: RaidPrepSet }
+  | { surface: Extract<DrilldownSurface, "roll_call">; kind: RollCallSet }
+);
+
 /** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */
 export type BoardSection = "week" | "notices" | "start_here";
+
+/** Where a public count was tapped to open the people behind it: a ledger row's `+3 joined · −2 left`, a
+ * split's "Came in with / Went with" line (ledger or alliance page), a War turnout or a Kill share row. */
+export type PublicDrilldownSurface = "ledger" | "split" | "war_turnout" | "kill_share";
+/** What it opened: the members who joined, who left, or the list by kills gained. */
+export type PublicDrilldownKind = "joined" | "left" | "kills";
 
 type NoProperties = Record<string, never>;
 
@@ -110,6 +139,11 @@ export interface AnalyticsEvents {
   ws_thanks_shared: { to: "game" | "discord" | "board" };
   /** A ready message copied (D140, issue 516): from a member card or Follow-up's panel, for the game or Discord. */
   ws_message_copied: { where: "card" | "follow_up"; to: "game" | "discord" };
+  /**
+   * A desk count opened to its members' names (#678): the page, the kind of set and how many it held as a
+   * bucket, once per kind per page view; never a name, uid, exact count or range.
+   */
+  ws_drilldown_opened: DrilldownOpened;
   /** A members' board section came on screen, once per page load. */
   ws_board_section_viewed: { board_section: BoardSection };
   /** D154: a member sent their own info to their officers from their own page (no value, no field). */
@@ -137,6 +171,12 @@ export interface AnalyticsEvents {
   ws_push_enabled: { use: PushUse };
   /** A notification use turned off for this device, or the device turned off (one per use it had). */
   ws_push_disabled: { use: PushUse };
+  /** A public count opened to the people behind it (the drilldowns): where, what, and the count's bucket. */
+  drilldown_opened: {
+    surface: PublicDrilldownSurface;
+    kind: PublicDrilldownKind;
+    count_bucket: CountBucket;
+  };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 
@@ -165,6 +205,7 @@ export const ANALYTICS_EVENTS = [
   "ws_roll_call_marked",
   "ws_thanks_shared",
   "ws_message_copied",
+  "ws_drilldown_opened",
   "ws_board_section_viewed",
   "ws_self_report_sent",
   "ws_bot_installed",
@@ -177,6 +218,7 @@ export const ANALYTICS_EVENTS = [
   "admin_feature_changed",
   "ws_push_enabled",
   "ws_push_disabled",
+  "drilldown_opened",
 ] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */

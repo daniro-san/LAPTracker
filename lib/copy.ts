@@ -251,6 +251,9 @@ export const en = {
     lowFirst: "Lowest first",
     joined: "Joined",
     left: "Left",
+    /** Under the member list's Joined / Left chips while one is on: when the two member lists were read. */
+    joinedReads: "In the member list at End ({to}), not at Start ({from}).",
+    leftReads: "In the member list at Start ({from}), not at End ({to}).",
   },
   /** The alliance's R5 and titled R4 officers: a section on the alliance page, a mark in the member list. */
   leadership: {

@@ -1,15 +1,16 @@
 // The Insights page's sections (issue 489), server-rendered: one drawn card per section, each opening with
 // what it rests on, then HTML bars (D68: hand-built, the label and the number in HTML beside every bar,
-// token colours, nothing hover-only). A missing number is the NoData mark, never 0 (D75). The only names
-// are the "Quiet contributors" thanks list, in name order, with "Share the thanks" (D114).
+// token colours, nothing hover-only). A missing number is the NoData mark, never 0 (D75). A count that
+// stands for a set of members opens its names (issue 678), in name order with nothing beside a name. The effort
+// card is in InsightsEffort.tsx.
 import type { ReactNode } from "react";
 
+import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { BarRow, InsightsWords, PulseMetricWords } from "@/lib/private/insights-words";
 
+import { Caret, Names, SetFold, TapHint } from "./InsightsSets";
 import { withNoData } from "./NoData";
-import type { ShareThanksProps } from "./share-thanks-data";
-import { ShareThanks } from "./ShareThanks";
 
 export function Card({
   id,
@@ -37,41 +38,78 @@ export function Card({
   );
 }
 
+/** A bar row's label and number on one line, the bar under them; a set's count is plum with its ▾. */
+function RowBody(props: {
+  r: BarRow;
+  noData: string;
+  tone: "plum" | "ink";
+  bare: boolean;
+  /** False where the fold's ▾ sits elsewhere (a flow week's, by its label). */
+  caret?: boolean;
+}) {
+  const { r, noData, tone, bare, caret = true } = props;
+  return (
+    <>
+      <span className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
+        <span className="min-w-0">{r.label}</span>
+        <span className="whitespace-nowrap tabular-nums">
+          <span className={r.set ? "font-semibold text-plum" : undefined}>
+            {withNoData(r.value, noData)}
+          </span>
+          {r.set && caret && <Caret />}
+          {r.note && <span className="ml-2 font-normal text-ink/70">{r.note}</span>}
+        </span>
+      </span>
+      {!(bare && r.share === null) && (
+        <span aria-hidden="true" className="mt-1 block h-2 w-full bg-ink/10">
+          {r.share !== null && (
+            <span
+              className={`block h-2 ${tone === "plum" ? "bg-plum/60" : "bg-ink/45"}`}
+              style={{ width: `${Math.round(Math.max(0, Math.min(1, r.share)) * 100)}%` }}
+            />
+          )}
+        </span>
+      )}
+    </>
+  );
+}
+
 /**
  * Horizontal bars: label and number on one line, the bar under them, a muted note after the number.
- * `bare`: a row with no share draws no empty track.
+ * `bare`: a row with no share draws no empty track. A row with a set opens its names under it (`slug`
+ * makes their links).
  */
 export function Bars({
   rows,
   noData,
   tone = "plum",
   bare = false,
+  slug = "",
 }: {
   rows: BarRow[];
   noData: string;
   tone?: "plum" | "ink";
   bare?: boolean;
+  slug?: string;
 }) {
   return (
     <ul className="mt-1">
       {rows.map((r, i) => (
-        <li key={i} className={`border-t border-rule py-1.5 ${r.current ? "font-semibold" : ""}`}>
-          <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
-            <span className="min-w-0">{r.label}</span>
-            <span className="whitespace-nowrap tabular-nums">
-              {withNoData(r.value, noData)}
-              {r.note && <span className="ml-2 font-normal text-ink/70">{r.note}</span>}
-            </span>
-          </p>
-          {!(bare && r.share === null) && (
-            <span aria-hidden="true" className="mt-1 block h-2 w-full bg-ink/10">
-              {r.share !== null && (
-                <span
-                  className={`block h-2 ${tone === "plum" ? "bg-plum/60" : "bg-ink/45"}`}
-                  style={{ width: `${Math.round(Math.max(0, Math.min(1, r.share)) * 100)}%` }}
-                />
-              )}
-            </span>
+        <li
+          key={i}
+          className={`border-t border-rule ${r.set ? "" : "py-1.5"} ${r.current ? "font-semibold" : ""}`}
+        >
+          {r.set ? (
+            <SetFold
+              kind={r.set.kind}
+              setKey={r.set.key}
+              count={r.set.people.length}
+              summary={<RowBody r={r} noData={noData} tone={tone} bare={bare} />}
+            >
+              <Names set={r.set} slug={slug} label={`${r.label}: ${r.value}`} />
+            </SetFold>
+          ) : (
+            <RowBody r={r} noData={noData} tone={tone} bare={bare} />
           )}
         </li>
       ))}
@@ -140,69 +178,83 @@ export function PulseCard({
   );
 }
 
-export function EffortCard(props: {
-  effort: NonNullable<InsightsWords["effort"]>;
-  t: WorkspaceDictionary;
-  noData: string;
-  share: ShareThanksProps | null;
-}) {
-  const { effort, t, noData } = props;
-  // With too few reads the based lines say so: no groups and no names.
-  if (!effort.groups[0]?.rows.length)
-    return <Card id="insights-effort" title={t["insights.effort.head"]} based={effort.based} />;
+/** A week's label and its joined and left bars side by side; the count of a set that opens is plum. */
+function WeekBars({ w, noData }: { w: FlowWeek; noData: string }) {
   return (
-    <Card id="insights-effort" title={t["insights.effort.head"]} based={effort.based}>
-      <p className="mt-2 text-body-sm">{t["insights.effort.lead"]}</p>
-      {effort.groups.map((g) => (
-        <div key={g.label}>
-          <Sub>{g.label}</Sub>
-          <Bars rows={g.rows} noData={noData} />
-        </div>
-      ))}
-      <div className="mt-4 border-t-2 border-rule pt-2">
-        <h3 className="font-semibold">{t["insights.quiet.head"]}</h3>
-        <p className="text-body-sm text-ink/80">{t["insights.quiet.lead"]}</p>
-        {effort.quiet.length > 0 ? (
-          <ul className="mt-1 text-body-sm">
-            {effort.quiet.map((q) => (
-              <li key={q.uid} className="border-t border-rule py-2">
-                <bdi translate="no" className="font-semibold">
-                  {q.name}
-                </bdi>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1 text-body-sm">{t["insights.quiet.none"]}</p>
-        )}
-        {props.share && effort.quiet.length > 0 && <ShareThanks {...props.share} />}
-      </div>
-    </Card>
+    <>
+      <span className="block text-body-sm font-semibold">
+        {w.label}
+        {(w.joined.set || w.left.set) && <Caret />}
+      </span>
+      <span className="grid grid-cols-2 gap-x-3">
+        {([w.joined, w.left] as const).map((r, i) => (
+          <span key={i} className="block border-t border-rule py-1.5">
+            <RowBody
+              r={r}
+              noData={noData}
+              tone={i === 0 ? "plum" : "ink"}
+              bare={false}
+              caret={false}
+            />
+          </span>
+        ))}
+      </span>
+    </>
   );
 }
+
+type FlowWeek = NonNullable<InsightsWords["flow"]>["weeks"][number];
 
 export function FlowCard({
   flow,
   t,
   noData,
+  slug,
 }: {
   flow: NonNullable<InsightsWords["flow"]>;
   t: WorkspaceDictionary;
   noData: string;
+  slug: string;
 }) {
   const joinedAny = flow.came.length > 0;
   const leftAny = flow.went.length > 0;
   return (
     <Card id="insights-flow" title={t["insights.flow.head"]} based={[flow.based]}>
       <Sub>{t["insights.flow.weeks"]}</Sub>
+      <TapHint t={t} />
       <ul className="mt-1">
-        {flow.weeks.map((w) => (
-          <li key={w.label} className="border-t border-rule py-1.5">
-            <p className="text-body-sm font-semibold">{w.label}</p>
-            <div className="grid grid-cols-2 gap-x-3">
-              <Bars rows={[w.joined]} noData={noData} />
-              <Bars rows={[w.left]} noData={noData} tone="ink" />
-            </div>
+        {flow.weeks.map((w, i) => (
+          <li key={w.label} className="border-t border-rule">
+            {w.joined.set || w.left.set ? (
+              // One fold per week, its names at full width: joined, then left (issue 678).
+              <SetFold
+                kind="flow_week"
+                setKey={`week-${i}`}
+                count={(w.joined.set?.people.length ?? 0) + (w.left.set?.people.length ?? 0)}
+                summary={<WeekBars w={w} noData={noData} />}
+              >
+                {(
+                  [
+                    [w.joined.set, "insights.flow.joinedWho"],
+                    [w.left.set, "insights.flow.leftWho"],
+                  ] as const
+                ).map(([set, key]) => {
+                  if (!set) return null;
+                  // "Joined (1)": a noun and the count, never the bar's "−1" over a name.
+                  const head = fill(t[key], { n: set.people.length });
+                  return (
+                    <div key={key}>
+                      <h4 className="text-body-sm font-semibold">{head}</h4>
+                      <Names set={set} slug={slug} label={`${w.label}: ${head}`} />
+                    </div>
+                  );
+                })}
+              </SetFold>
+            ) : (
+              <div className="py-1.5">
+                <WeekBars w={w} noData={noData} />
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -223,7 +275,7 @@ export function FlowCard({
       )}
       <Sub>{t["insights.tenure.head"]}</Sub>
       <p className="text-body-sm text-ink/80">{t["insights.tenure.based"]}</p>
-      <Bars rows={flow.tenure} noData={noData} />
+      <Bars rows={flow.tenure} noData={noData} slug={slug} />
       <Sub>{t["insights.newcomers.head"]}</Sub>
       {flow.newcomers.map((line) => (
         <p key={line} className="text-body-sm">

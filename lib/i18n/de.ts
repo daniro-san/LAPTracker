@@ -421,6 +421,8 @@ export const de = {
     lowFirst: "Niedrigste zuerst",
     joined: "Beigetreten",
     left: "Ausgetreten",
+    joinedReads: "In der Members-Liste bei Ende ({to}), nicht bei Beginn ({from}).",
+    leftReads: "In der Members-Liste bei Beginn ({from}), nicht bei Ende ({to}).",
   },
   leadership: {
     title: "Führung",

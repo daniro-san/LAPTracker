@@ -87,11 +87,17 @@ async function card(
     kvk: nextKvk(now, today, ZONE, 6, "12:00"),
   };
   const words = WORKSPACE_DICTIONARIES[language];
-  return zonesWords(view.zones, moments, { t: words, language, serverZone: ZONE, today });
+  return zonesWords(view.zones, moments, {
+    t: words,
+    language,
+    serverZone: ZONE,
+    today,
+    people: view.people,
+  });
 }
 
 describe("the Insights Time zones card (owner, 2026-11-22)", () => {
-  it("groups the zones that share an offset, west to east, cities most members first", async () => {
+  it("groups the zones that share an offset, west to east, cities most members first, each row naming exactly the members it counts", async () => {
     await roster("2026-11-21", [101, 102, 103, 104, 105, 106, 107, 108, 109]);
     const { access, zone } = await officer();
     for (const uid of [101, 102, 103]) await zone(uid, "Europe/Zurich");
@@ -108,8 +114,14 @@ describe("the Insights Time zones card (owner, 2026-11-22)", () => {
     expect(words.based[0]).toBe(
       "Largest group: Paris, Zurich and 1 more (UTC+1), 7 of the 9 members with a time zone. The 00:00 ST reset is 03:00 for them.",
     );
-    // Counts only: no member's name (P101 …) or uid anywhere in the card's words.
-    expect(JSON.stringify(words)).not.toMatch(/P1\d\d|\b1\d\d\b/);
+    // #678: a row's names are the members it counts, in name order, and its number is that list's length.
+    const rows = words.details?.rows ?? [];
+    expect(rows.map((r) => r.set?.people.map((p) => p.name))).toEqual([
+      ["P109"],
+      ["P101", "P102", "P103", "P104", "P105", "P106", "P107"],
+      ["P108"],
+    ]);
+    expect(rows.map((r) => r.value)).toEqual(rows.map((r) => String(r.set?.people.length)));
   });
 
   it("counts only the newest daily update's members, and a cleared or missing zone as not recorded", async () => {

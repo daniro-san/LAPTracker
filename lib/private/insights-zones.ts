@@ -1,16 +1,25 @@
 // The Insights page's Time zones card (owner, 2026-11-22), pure: the newest daily update's members by the
 // time zone their officers recorded (D80), grouped by the UTC offset each zone has now, at the next 00:00 ST
 // reset and at the next KvK start, so a group never holds two clock times for one moment (summer time).
-// Members with no zone recorded are a count that never joins a group or a share (D75). Counts only: no uid
-// or name leaves this module. Usual hours are Members' (08:00–22:59 on their own clock, `isDaytime`).
+// Members with no zone recorded are a count that never joins a group or a share (D75), by Members' own
+// Missing-info rule (`factsToAsk`). Each zone carries its members' uids, so a group's names are the list its
+// count is the length of (#678). Usual hours are Members' (`daytimeAt`, 08:00–22:59 on their own clock).
 import { addDays, parseTime, weekdayIndex, zonedInstant, zoneOffset } from "./calendar-time";
 import type { MemberFacts } from "./fact-fields";
-import { clockAt, isDaytime } from "./members-list";
+import { clockAt, daytimeAt, factsToAsk, NO_QUERY, type MemberQuery } from "./members-list";
 
-/** The newest daily update's members and how many of them have each zone. */
+/** Members' query that lists "Not recorded yet": Missing info, time zone (`members?ask=timeZone`). */
+export const NOT_RECORDED: MemberQuery = { ...NO_QUERY, ask: "timeZone" };
+/** Members' query that lists the members within their usual hours at server hour `hour` (`members?day=H`). */
+export const usualAt = (hour: number): MemberQuery => ({
+  ...NO_QUERY,
+  time: { mode: "day", hour },
+});
+
+/** The newest daily update's members and which of them have each zone. */
 export interface ZoneCounts {
   members: number;
-  zones: { zone: string; n: number }[];
+  zones: { zone: string; uids: number[] }[];
 }
 
 /** The instants the card says on each zone's clock. */
@@ -25,7 +34,8 @@ export interface Moments {
 export interface ZoneGroup {
   /** Minutes east of UTC at each moment (UTC−3 is −180); every zone of the group has these. */
   offsets: { now: number; reset: number; kvk: number };
-  n: number;
+  /** The group's members: its count is this list's length. */
+  uids: number[];
   /** The group's IANA zones, most members first, then by city name. */
   zones: string[];
 }
@@ -34,22 +44,30 @@ export interface ZoneGroup {
 export const cityOf = (zone: string): string | null =>
   zone.startsWith("Etc/") ? null : (zone.split("/").at(-1) ?? zone).replaceAll("_", " ");
 
-/** How many of `uids` (the newest daily update's members) have each time zone; a cleared fact has none. */
+/**
+ * Which of `uids` (the newest daily update's members) have each time zone; one with the time zone to ask
+ * (Members' `ask=timeZone`: never written or cleared) has none.
+ */
 export function zoneCountsOf(uids: number[], facts: Map<number, MemberFacts>): ZoneCounts {
-  const perZone = new Map<string, number>();
+  const perZone = new Map<string, number[]>();
   for (const uid of uids) {
-    const zone = facts.get(uid)?.timeZone?.value;
-    if (zone) perZone.set(zone, (perZone.get(zone) ?? 0) + 1);
+    const f = facts.get(uid) ?? {};
+    if (factsToAsk(f).includes("timeZone")) continue;
+    const zone = f.timeZone?.value as string;
+    perZone.set(zone, [...(perZone.get(zone) ?? []), uid]);
   }
   return {
     members: uids.length,
     zones: [...perZone]
-      .sort((a, b) => b[1] - a[1] || (cityOf(a[0]) ?? a[0]).localeCompare(cityOf(b[0]) ?? b[0]))
-      .map(([zone, n]) => ({ zone, n })),
+      .sort(
+        (a, b) =>
+          b[1].length - a[1].length || (cityOf(a[0]) ?? a[0]).localeCompare(cityOf(b[0]) ?? b[0]),
+      )
+      .map(([zone, uids]) => ({ zone, uids })),
   };
 }
 
-export const knownOf = (c: ZoneCounts) => c.zones.reduce((sum, z) => sum + z.n, 0);
+export const knownOf = (c: ZoneCounts) => c.zones.reduce((sum, z) => sum + z.uids.length, 0);
 
 /** The 00:00 ST after the server's `today`. */
 export const nextReset = (today: string, serverZone: string) =>
@@ -75,15 +93,15 @@ export function nextKvk(
 /** The groups, west to east: by the offset now, then at the reset, then at KvK. */
 export function zoneGroups(c: ZoneCounts, m: Moments): ZoneGroup[] {
   const groups = new Map<string, ZoneGroup>();
-  for (const { zone, n } of c.zones) {
+  for (const { zone, uids } of c.zones) {
     const offsets = {
       now: zoneOffset(zone, m.now.getTime()),
       reset: zoneOffset(zone, m.reset.getTime()),
       kvk: zoneOffset(zone, m.kvk.getTime()),
     };
     const key = `${offsets.now} ${offsets.reset} ${offsets.kvk}`;
-    const g = groups.get(key) ?? { offsets, n: 0, zones: [] };
-    g.n += n;
+    const g = groups.get(key) ?? { offsets, uids: [], zones: [] };
+    g.uids.push(...uids);
     // `c.zones` is most members first, then by city name, so the group's zones keep that order.
     g.zones.push(zone);
     groups.set(key, g);
@@ -100,7 +118,7 @@ export function zoneGroups(c: ZoneCounts, m: Moments): ZoneGroup[] {
 export function usualHours(c: ZoneCounts, today: string, serverZone: string): number[] {
   const clock = clockAt(today, serverZone);
   return Array.from({ length: 24 }, (_, hour) =>
-    c.zones.reduce((sum, z) => sum + (isDaytime(clock(z.zone, hour)) ? z.n : 0), 0),
+    c.zones.reduce((sum, z) => sum + (daytimeAt(z.zone, hour, clock) ? z.uids.length : 0), 0),
   );
 }
 

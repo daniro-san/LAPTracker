@@ -140,6 +140,14 @@ function rosterRow(side: Side, day: string, list: Member[], daysLeft: number) {
 const onRoster = (side: Side, k: number, afterLastEvent: boolean) =>
   side === "b" || (afterLastEvent ? k !== LEAVER : k !== JOINER);
 
+/** The members who joined (on the last event's End roster, not its Start's) or left (the reverse). */
+export const changedAtLastEvent = (side: Side, show: "joined" | "left") =>
+  ALLIANCES[side].names.filter((_, k) =>
+    show === "joined"
+      ? onRoster(side, k, true) && !onRoster(side, k, false)
+      : onRoster(side, k, false) && !onRoster(side, k, true),
+  );
+
 /** The members first seen in the seeded reads (not on the roster before the last event): new members. */
 export const newMembers = (side: Side) =>
   ALLIANCES[side].names.filter((_, k) => !onRoster(side, k, false));

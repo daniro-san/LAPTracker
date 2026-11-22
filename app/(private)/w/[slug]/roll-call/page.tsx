@@ -3,9 +3,7 @@
 // its counts, where "not set" is only that (D75), and opens the marking page; an Elixir Scramble card also
 // opens its team. `?week=` takes any day of the week shown, as on the Calendar. An archived roll call
 // leaves the week and shows under `?archived=1`, the newest first; after a delete the week says "Roll call
-// deleted." with Undo (D120).
-import { Fragment } from "react";
-
+// deleted." with Undo (D120). Its "Not set", ✓ and ✗ counts open the marking page on that chip.
 import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
@@ -18,7 +16,7 @@ import { AddRollCall } from "../../../_ui/AddRollCall";
 import { calendarWords, type CalendarSheetWords } from "../../../_ui/calendar-data";
 import { CalendarWeekBar } from "../../../_ui/CalendarWeekBar";
 import { SignedInFrame } from "../../../_ui/Frame";
-import { rollCard, rollWords, type RollCard } from "../../../_ui/roll-call-data";
+import { rollCard, rollWords, type RollCard, type RollCount } from "../../../_ui/roll-call-data";
 import { openRollCall } from "../../../_ui/roll-call-page";
 import { RollCallDeletedLine } from "../../../_ui/RollCallManage";
 import { Times } from "../../../_ui/YourTime";
@@ -26,17 +24,24 @@ import { Times } from "../../../_ui/YourTime";
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
 
-/** The counts, each kept whole on one line; the line breaks only between them. */
-function Counts({ parts }: { parts: string[] }) {
+/**
+ * The counts, each kept whole; the line breaks only between them. "Not set", ✓ and ✗ are chips (44 px) that
+ * open the marking page on their chip (drilldown, 2026-11-22; pills, not thin underlines, panel review).
+ */
+function Counts({ parts }: { parts: RollCount[] }) {
   return (
-    <p className="text-body-sm text-ink/80">
-      {parts.map((p, i) => (
-        <Fragment key={p}>
-          {/* The separator stays outside the unit, so the line can break at its spaces. */}
-          {i > 0 && " · "}
-          <span className="whitespace-nowrap">{p}</span>
-        </Fragment>
-      ))}
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm">
+      {parts.map((p) =>
+        p.href ? (
+          <a key={p.text} href={p.href} className={`${chip()} tabular-nums`}>
+            {p.text}
+          </a>
+        ) : (
+          <span key={p.text} className="whitespace-nowrap text-ink/80 tabular-nums">
+            {p.text}
+          </span>
+        ),
+      )}
     </p>
   );
 }

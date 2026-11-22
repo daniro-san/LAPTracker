@@ -38,6 +38,20 @@ describe("custom events (D77)", () => {
     // @ts-expect-error the key itself is not a state
     track("ws_key_saved", { state: "lap_0123" as string });
     track("admin_feature_changed", { feature: "ai_cap", on: false });
+    // Issue 678: a desk drilldown carries the page, the set's kind and a count bucket, never the count.
+    track("ws_drilldown_opened", { surface: "insights", kind: "tenure", count_bucket: "2_4" });
+    // @ts-expect-error the exact count is not a bucket
+    track("ws_drilldown_opened", { surface: "insights", kind: "zone", count_bucket: 3 });
+    const opened = { surface: "insights", kind: "zone", count_bucket: "1" } as const;
+    // @ts-expect-error no uid rides on a drilldown
+    track("ws_drilldown_opened", { ...opened, uid: 4242 });
+    // #691: Raid prep's and the Roll call list's sets, each in its own surface's closed list.
+    track("ws_drilldown_opened", { surface: "raid_prep", kind: "remind", count_bucket: "5_9" });
+    track("ws_drilldown_opened", { surface: "roll_call", kind: "no", count_bucket: "1" });
+    // @ts-expect-error an Insights set never rides on Raid prep's event
+    track("ws_drilldown_opened", { surface: "raid_prep", kind: "tenure", count_bucket: "1" });
+    // @ts-expect-error a Roll call chip is To mark, ✗ or ✓, never All
+    track("ws_drilldown_opened", { surface: "roll_call", kind: "all", count_bucket: "1" });
     // @ts-expect-error no workspace rides on the owner's change
     track("admin_feature_changed", { feature: "notices", on: true, workspace: "ogs" });
   });

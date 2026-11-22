@@ -423,6 +423,8 @@ export const fr = {
     lowFirst: "Plus petit d’abord",
     joined: "Arrivés",
     left: "Partis",
+    joinedReads: "Dans la liste des membres à la Fin ({to}), pas au Début ({from}).",
+    leftReads: "Dans la liste des membres au Début ({from}), pas à la Fin ({to}).",
   },
   leadership: {
     title: "Direction",

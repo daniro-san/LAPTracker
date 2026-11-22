@@ -32,7 +32,8 @@ describe("Raid prep's reminder list and one message (issue 585)", () => {
     const rows = ["Aster", "Briar", "Corin", "Dell"].map((name, i) => ({ uid: i + 1, name }));
     const marks: Record<number, "yes" | "no" | null> = { 1: "no", 2: null, 3: null, 4: "yes" };
     const seen = (uid: number) => uid === 3;
-    expect(toRemind(rows, (uid) => marks[uid] ?? null, seen)).toEqual(["Aster", "Briar"]);
+    const remind = toRemind(rows, (uid) => marks[uid] ?? null, seen);
+    expect(remind.map((r) => r.name)).toEqual(["Aster", "Briar"]);
   });
 
   it("names everyone first in one message to many, typed names escaped so nobody is pinged", () => {

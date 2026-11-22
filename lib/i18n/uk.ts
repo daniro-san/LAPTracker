@@ -417,6 +417,8 @@ export const uk = {
     lowFirst: "Спершу менші",
     joined: "Прийшли",
     left: "Пішли",
+    joinedReads: "У списку учасників на «Кінці» ({to}), а не на «Початку» ({from}).",
+    leftReads: "У списку учасників на «Початку» ({from}), а не на «Кінці» ({to}).",
   },
   leadership: {
     title: "Керівництво",

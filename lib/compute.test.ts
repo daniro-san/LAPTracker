@@ -318,15 +318,12 @@ describe("killsTurnout", () => {
     const before = [m(1, 10), m(2, 10), m(3, 10), m(4, 10), m(5, 10), m(6, 10), m(7, 10), m(8, 10)];
     const after = [m(1, 110), m(2, 60), m(3, 40), m(4, 30), m(5, 20), m(6, 11), m(7, 10), m(9, 99)];
     // 8 before, uid 8 left and uid 9 joined: 7 stayed. Gains 100, 50, 30, 20, 10, 1; uid 7 unchanged.
-    expect(killsTurnout(before, after)).toEqual({ n: 7, gainers: 6, gained: 211, top: 210 });
+    const t = killsTurnout(before, after);
+    expect(t).toEqual({ n: 7, gainerUids: [1, 2, 3, 4, 5, 6], gainers: 6, gained: 211, top: 210 });
   });
 
   it("is zero everywhere when nobody gained, and a fall in kills is not a gain", () => {
-    expect(killsTurnout([m(1, 10), m(2, null)], [m(1, 4), m(2, 0)])).toEqual({
-      n: 2,
-      gainers: 0,
-      gained: 0,
-      top: 0,
-    });
+    const none = killsTurnout([m(1, 10), m(2, null)], [m(1, 4), m(2, 0)]);
+    expect(none).toEqual({ n: 2, gainerUids: [], gainers: 0, gained: 0, top: 0 });
   });
 });
