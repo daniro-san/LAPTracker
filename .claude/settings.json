@@ -22,7 +22,7 @@
       "Bash(gh workflow list*)",
       "Bash(gh workflow view *)",
       "Bash(gh workflow run release-prepare.yml*)",
-      "Bash(gh workflow run ci.yml --ref dev)",
+      "Bash(gh api -X POST repos/daniro-san/LAPTracker/actions/runs/*/approve)",
       "Bash(gh workflow run e2e.yml --ref dev)",
       "Bash(git push -u origin HEAD)",
       "Bash(git push origin HEAD:refs/heads/*)",

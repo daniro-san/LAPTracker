@@ -2,13 +2,15 @@
 # Runs once per PR, not also on the branch push (2026-11-19, to measure Actions minutes before deciding on a
 # private repo). A PR that changes only docs (docs/** or *.md) checks formatting and skips the rest; the job
 # still reports "check", which the dev and main rulesets require.
-# Only PRs into dev run here. The release PR (dev -> main) gets its "check" from the Run workflow on dev that
-# release-prepare starts: same head commit, so no second run and no held run to approve (D29, 2026-11-21).
+# PRs into dev and the release PR into main run here. The release PR needs its own pull_request run: a
+# "check" from a Run workflow on the same commit does not count toward a PR's required checks (verified on the
+# v5.46.0 release PR, 2026-11-22, D29). Prepare release no longer starts a Run workflow of ci, so a release
+# still runs ci once.
 name: ci
 
 on:
   pull_request:
-    branches: [dev]
+    branches: [dev, main]
   workflow_dispatch:
 
 permissions:

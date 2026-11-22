@@ -18,7 +18,7 @@ on:
 permissions:
   contents: write # generate-notes is a POST and needs it; nothing here pushes, tags or releases
   pull-requests: write
-  actions: write # starts ci and e2e on dev: a PR opened with GITHUB_TOKEN does not trigger pull_request runs
+  actions: write # starts e2e on dev, with WebKit, on what ships (D150)
 
 jobs:
   prepare:
@@ -66,9 +66,7 @@ jobs:
           echo "Opened $url ($latest -> $next, $ahead commits)."
           echo "Opened $url ($latest -> $next, $ahead commits)." >> "$GITHUB_STEP_SUMMARY"
 
-          # ci runs only on pull_request into dev and on Run workflow (#444, D29), so the release PR gets no run of
-          # its own. workflow_dispatch is allowed from GITHUB_TOKEN and reports the "check" the main ruleset needs
-          # on the release PR's head commit, which is dev's head.
-          gh workflow run ci.yml --ref dev
+          # The release PR gets its "check" from its own pull_request run of ci (held for approval because
+          # GITHUB_TOKEN opened the PR; D29). A Run workflow of ci on dev would not count toward the PR's checks.
           # The e2e suite on what ships, with WebKit (D150); its "e2e" check lands on dev's head.
           gh workflow run e2e.yml --ref dev
