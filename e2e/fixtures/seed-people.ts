@@ -137,6 +137,23 @@ export const NEEDS_HELP = {
 } as const;
 
 /**
+ * The member marked Needs help whom the "No longer needs help" test clears (issue 585 slice 2): the first
+ * roster member of the repeat's own feature-switch workspace (switchWorkspaceOf), phone only, so Lantern
+ * Keep's counts never move while it runs. That alliance has no end-of-day read: an officer's status still
+ * shows then (D80), and Follow-up lists the member under "Needs help".
+ */
+export function clearHelpOf(repeat: number) {
+  const w = switchWorkspaceOf(repeat);
+  const f = FILLERS[repeat % REPEATS] as (typeof FILLERS)[number];
+  return {
+    workspaceId: w.id,
+    officer: 5 + (repeat % REPEATS),
+    uid: Number(`${f.unionId}1`),
+    name: fillerNames(f)[0] as string,
+  };
+}
+
+/**
  * The workspace whose Thefts switch the feature-switch test turns off and on again (phone only): one of the
  * filler alliances per repeat, so no other test's navigation changes while it runs.
  */

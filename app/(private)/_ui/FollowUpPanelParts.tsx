@@ -161,6 +161,8 @@ export function ClearHelp(props: {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ changes: [change] }),
     }).catch(() => null);
+    // Read to the end, as every desk save is: the answer is complete before the list is read again.
+    await res?.text().catch(() => null);
     setBusy(false);
     if (res?.status === 200) return props.onCleared();
     setFailed(res?.status === 401 ? SIGNED_OUT : words["followup.failed"]);

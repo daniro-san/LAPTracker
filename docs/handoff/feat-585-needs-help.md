@@ -75,11 +75,12 @@ Part of #585 (F14). Size M: a rule change across Follow-up, Home, Members and th
 | last week's line also for the mark's own record | "shows last week's newest record…" |
 | the card's `statusMark` left empty | "says since when and who…" |
 | "Worth a hello" built from all items, not the rest | `follow-up-groups.test.ts` |
+| no `router.refresh()` after a refused clear (review of PR 646) | the e2e "No longer needs help …" (C24) |
 
   A first break, "the oldest help record instead of the newest", did not fail: with the Undo it gave the same answer. It was replaced by the break above, which does fail.
 - **The Verifier** (independent sub-agent, at `aa610160`) gave FAIL on proof gaps, with no code bug.
   - Closed: the grouping and group order (C23), and the no-officer "Last week:" line (C19).
-  - Accepted, not fixed: the panel's refusal branch has no test. The route's 409 is tested in its route test; a browser test needs a racing second session.
+  - Accepted at first, then closed in the review of PR 646: the panel's refusal branch now has its e2e (C24).
   - Its five own examples all passed: cleared then set again; a break that ended yesterday; an undone last-week record; Sun 23:59:59; Mon 00:00:00.
 - **Walk at 360 × 780** (e2e seed, Sun 22 Nov). The screenshots are in the orchestrator's scratchpad, `s2-shots/`: the Follow-up fold, full page light and dark, the panel, after the clear, the card light and dark, and 1280 after the clear.
   - "Needs help · 1" is the first group inside the first viewport, with the mark, both notes and last week's line.
@@ -90,9 +91,25 @@ Part of #585 (F14). Size M: a rule change across Follow-up, Home, Members and th
   - After: 6 of 6 right.
   - The panel's other findings are in the plan's Validation (e).
 
+### Review of PR 646 (/pr-review: two MUSTs), fixed
+
+- **One number per criterion.** The plan had 14–21 twice, once for S2 and once for S3/S4, while the checks and the PR body cited S2 as 24–31. S3–S6 keep 14–23, as the S1 and S6 handoffs cite them. S2 keeps 11–13 and takes 24–31 in order: 24 Home and Members, 25 the card, 26 History, 27 last week, 28 this week's records only, 29 the dictionary, 30 D104/D80, 31 the e2e. The criteria's own references, `checks.md` C15–C24, `verification.md` and the S1 review line that said "S2 criterion 13" now use them. `proofs.md` cites no criterion.
+- **"No longer needs help" end to end (C24, `e2e/desk-flows.spec.ts`).**
+  - A second Needs help member is seeded per repeat in that repeat's own feature-switch workspace (`clearHelpOf`, phone only), written as `recordFollowUp` writes it. Home's Lantern Keep count does not move, so no expected count changed.
+  - The test opens the panel. Another officer then saves the status (a request at version 1). The tap is refused with "Could not save. Try again." and the member stays under "Needs help".
+  - A second tap, with the version read again, says "Saved. {name} no longer needs help.". The panel closes and the group is gone, also after a reload.
+  - It then puts the mark back and checks it on screen.
+  - That alliance has no end-of-day read; an officer's status still shows then (D80).
+- **The panel now reads the facts answer to the end** (`res.text()`), as every desk save does. Unread, the answer could not be checked by the e2e guard ("unreadable answer").
+- **Seed module.** The Needs help rows moved to `e2e/fixtures/seed-help.ts`; `seed.ts` was over 300 lines.
+- **Verified after the review fixes:**
+  - `pnpm check` green: 328 test files passed and 2 skipped; 1,720 tests passed and 4 skipped.
+  - E2E on a fresh production build: `desk.spec.ts` and `desk-flows.spec.ts` 17 passed, 3 skipped (by design); the whole suite 47 passed, 3 skipped.
+  - `check_proofs.py` at the review commit: see `proofs.md`.
+  - The first e2e run failed on the guard's "unreadable answer"; reading the answer fixed it.
+
 ## Open issues
 
-- **The panel's refusal branch has no test** (Verifier finding 2, accepted).
 - **Pre-existing, from the adversarial review:** Undo of a "They need help" saved over another officer's standing mark puts `status` back to empty, clearing the other officer's mark. Seen in the Verifier's notes and in this slice's first test draft. Follow-up issue.
 - **The card shows "Needs help" during a break**, while Follow-up leaves the member out (`statusOf` reads the officer's status first). This is stated in the D80 amendment.
 - **A former member who rejoins (D107)** or a pending member who is matched (D106) comes back under "Needs help" with the old date. That follows the rule.
@@ -116,6 +133,8 @@ Part of #585 (F14). Size M: a rule change across Follow-up, Home, Members and th
 - **S6:** the claim (F15): the player linked to their card, the date asked, "Not them" instead of "Reject".
 - **Follow-ups from this slice:**
   - the Undo bug above;
+  - (review of PR 646) the card reads the Needs help history twice: `helpMarksOf` re-reads the records `followUpsOf` already loaded for the card;
+  - (review of PR 646) the Needs help history read (`helpMarkRows`) has no time window: it reads every `status` version and Follow-up record of the members marked Needs help (few members, indexed by `member_follow_ups_workspace_uid_idx`, but a table that grows, D149);
   - a "still needs help?" prompt after a few weeks, or a group collapse (3 and 2 of 6 officers), decided after the mark-age measure;
   - a ready message for a Needs help member that says nothing about the mark (kept as is; the product persona agrees).
 - **Plan change:** none to `docs/IMPLEMENTATION_PLAN.md`; the slices are in `.specs/features/585-one-worklist/plan.md`.
