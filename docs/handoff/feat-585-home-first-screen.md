@@ -1,6 +1,6 @@
 # feat/585-home-first-screen: Home's first screen says what needs the officer (#585 batch 3, slice S4)
 
-Part of #585 (F3 on Home, F21). Size M (Home's main flow; amendments to D104, D108 and D110). Planned with `/tlc-spec-lean` in the same feature folder as S1 and S2: `.specs/features/585-one-worklist/plan.md` ("S4 plan" and the "### S4" criteria 19–21 and 32–36), checks C25–C32 in `checks.md`.
+Part of #585 (F3 on Home, F21). Size M (Home's main flow; amendments to D104, D108 and D110). Planned with `/tlc-spec-lean` in the same feature folder as S1 and S2: `.specs/features/585-one-worklist/plan.md` ("S4 plan" and the "### S4" criteria 19–21 and 35–39), checks C35–C42 in `checks.md`.
 
 ## Built
 
@@ -20,13 +20,13 @@ Part of #585 (F3 on Home, F21). Size M (Home's main flow; amendments to D104, D1
   - A folded line stays when its newest officer's account has no name; the other officers' lines remain.
 - **Words** in EN, PT-BR and FR: Home's keys in `lib/private/dictionary.activity.ts` (the three main dictionaries were at their 300-line limit), `shots.cardHead` in `dictionary.shots*.ts`.
 - **Tests:**
-  - `HomeMembers.test.ts` (C25): the card's states, FR, the margin with the tab on and off.
-  - `desk-activity-pages.test.ts` (C26): the fold's examples and an account without a name.
-  - `HomeNext.test.ts` (C27): the one-line finished entry.
-  - `ToReview.test.ts` (C28): the jump with a real pending claim.
-  - `e2e/desk.spec.ts` "Home shows the alliance" (C29): the card in the main column above "Today and tomorrow", no line in "Members this week", "Send screenshots" outside "To review" in "Screenshots", no jump on the seed.
+  - `HomeMembers.test.ts` (C35): the card's states, FR, the margin with the tab on and off.
+  - `desk-activity-pages.test.ts` (C36): the fold's examples and an account without a name.
+  - `HomeNext.test.ts` (C37): the one-line finished entry.
+  - `ToReview.test.ts` (C38): the jump with a real pending claim.
+  - `e2e/desk.spec.ts` "Home shows the alliance" (C39): the card in the main column above "Today and tomorrow", no line in "Members this week", "Send screenshots" outside "To review" in "Screenshots", no jump on the seed.
 - **Docs:** dated amendments to D104 (Home's card and words), D108 (the fold, the order on Home, the one-line finished entry) and D110 (Home's button in its own card); a dated "Changed" line in `docs/analytics/tracking-plan.md`.
-- **Spec:** S4 plan, criteria 19–21 and 32–36, Validation (h)–(k), the S4 analytics plan, checks C25–C32.
+- **Spec:** S4 plan, criteria 19–21 and 35–39, Validation (h)–(k), the S4 analytics plan, checks C35–C42.
 
 ## Decisions
 
@@ -39,7 +39,7 @@ Part of #585 (F3 on Home, F21). Size M (Home's main flow; amendments to D104, D1
 
 ## Deviations
 
-- **Criterion numbers.** The plan's S2 criteria were back at 14–21 on `dev` (Prettier renumbers one list). The S2 handoff had renumbered them to 24–31. They now sit in a separate list that starts at 24, so the formatter keeps them. S4 keeps 19–21 and adds 32–36.
+- **Criterion numbers.** The plan's S2 criteria were back at 14–21 on `dev` (Prettier renumbers one list). The S2 handoff had renumbered them to 24–31. They now sit in a separate list that starts at 24, so the formatter keeps them. S4 keeps 19–21 and adds 35–39, and its checks are C35–C42: S3 (PR 651, in parallel) holds criteria 32–34 and checks C25–C34 (orchestrator, 2026-11-22).
 - **"1 waiting in “To review” ↓"** was not in the brief. The panel made it a MUST (5 of 6), and the product persona and designer asked for it.
 - **Home's Follow-up words differ from Members'.** The brief said "Follow-up's two numbers". The numbers are the same; the words are Home's own (panel MUST).
 
@@ -47,11 +47,17 @@ Part of #585 (F3 on Home, F21). Size M (Home's main flow; amendments to D104, D1
 
 - `pnpm vitest related --run` on the changed files: 69 files, 343 tests passed (before the last two refactors); the new and touched tests again after them: 19 passed.
 - `pnpm check`: green after two fix rounds. Round 1: the three main dictionaries went over 300 lines, so Home's keys moved to `dictionary.activity.ts`. Round 2: the first repeat-rule fix zeroed every `callId`, which also merged two "deleted the roll call" lines (`roll-call/route.test.ts` caught it); it now leaves out only a marks line's roll call id. Final: 330 files passed and 2 skipped; 1,724 tests passed and 4 skipped; drift and i18n green.
-- Deliberate breaks, each reverted: fold off → C26 fails; a folded line dropped when its head's account is gone → C26 fails; the margin keeps its line with the tab on → C25 fails; a finished entry back on two lines → C27 fails.
+- Deliberate breaks, each reverted: fold off → C36 fails; a folded line dropped when its head's account is gone → C36 fails; the margin keeps its line with the tab on → C35 fails; a finished entry back on two lines → C37 fails.
 - E2E (production build, worktree-local Postgres 18 on 127.0.0.1:54341, app 3497, bridge 54397): 47 passed, 3 skipped (by design), including "Home shows the alliance" on phone and wide.
 - Walk at 360 × 780 light and dark and 1280 on the e2e seed: `585-s4/shots/` in the orchestrator's scratchpad.
 - First-glance test, "What needs me today?", 360 × 780, six officer personas (AI, invented data): before 0 right, 6 partial; round 1 4 right, 2 wrong (no heading) or 4 right, 1 partial, 1 wrong (heading); round 2 3 right, 3 partial, 0 wrong. Details: plan Validation (h).
-- `validate_plan.py` 0 errors (1 warning, pre-existing); `validate_checks.py` 0 errors (1 warning: C31 is a grep).
+- `validate_plan.py` 0 errors (1 warning, pre-existing); `validate_checks.py` 0 errors (1 warning: C41 is a grep).
+- `check_proofs.py` at 48877a20: 34 pass, 0 fail (the e2e proofs with `E2E_NO_BUILD=1` and this worktree's ports).
+- **Verifier** (independent sub-agent, at 48877a20): FAIL on three findings, all closed in the fix commit.
+  - A fold could hide a second roll call of the same name: after a multi-officer fold of "Cheese Trap" #1, the last officer's line on #2 was taken as a repeat. The repeat rule now compares a roll call by its id inside a fold of several officers, by its name after a single line. C36's test has the case.
+  - C37's test had no entry under way; it now has one, with "· Started" on two lines.
+  - C35's tab-off half was tested only at 0; it now asserts the linked "1 person to check in with or help".
+  - Its six own examples (four officers in three languages, a nameless newest officer, a single tap in between, Home's words in three languages, an entry at exactly its end) all held.
 
 ## Open issues
 

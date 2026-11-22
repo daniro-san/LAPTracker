@@ -187,6 +187,7 @@ describe("recent activity pages", () => {
       ...rest(cheese, lucien, ago(100)), // after a line in between: a line of its own
       ...rest(cheese2, annelie, ago(101)), // another "Cheese Trap" roll call
       ...rest(cheese2, lucien, ago(102)),
+      ...rest(cheese, lucien, ago(190)), // the same words on the other roll call: a line of its own
       ...rest(cheese2, kira, ago(13 * 60)), // the day before (UTC)
       ...rest(cheese, kira, ago(13 * 60 + 1)), // the same words in a row: one line, as before
     ]);
@@ -197,6 +198,7 @@ describe("recent activity pages", () => {
       "Tomas, Kira, and Rook finished the roll call “Undead Siege”",
       "Lucien finished the roll call “Cheese Trap”",
       "Annelie and Lucien finished the roll call “Cheese Trap”",
+      "Lucien finished the roll call “Cheese Trap”",
       "Kira finished the roll call “Cheese Trap”",
     ]);
     expect(lines[0]?.run.map((l) => l.who)).toEqual([

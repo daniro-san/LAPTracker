@@ -24,13 +24,13 @@ const view = {
 
 const card = (followUp: WeekCounts | null) =>
   renderToStaticMarkup(createElement(HomeFollowUp, { slug: "ogs", t, language: "en", followUp }));
-const margin = (followUp: WeekCounts | null) =>
+const margin = (followUp: WeekCounts | null, members = view) =>
   renderToStaticMarkup(
     createElement(HomeMembers, {
       slug: "ogs",
       t,
       language: "en",
-      view,
+      view: members,
       nudge: false,
       switches: { board: false, writing: false, channel: null },
       followUp,
@@ -56,8 +56,13 @@ describe("Home's Follow-up card (issue 585 slice 4)", () => {
     // The margin says nothing more about check-ins while the card does.
     expect(margin({ toLook: 0, noted: 0 })).not.toContain("Everyone looks fine this week.");
     expect(margin({ toLook: 12, noted: 4 })).not.toContain("follow-up");
-    // Tab off (D126): no card, nothing read (followUpCounts gives null), and the margin's own line.
+    // Tab off (D126): no card, nothing read (followUpCounts gives null), and the margin's own line, by
+    // Members' rule: "Everyone looks fine", or the count linked to the Members group.
     expect(card(null)).toBe("");
     expect(margin(null)).toContain("Everyone looks fine this week.");
+    const quiet = { reasons: [{ kind: "idle", days: 3 }], officerStatus: null, awayUntil: null };
+    expect(margin(null, { ...view, members: [quiet] } as unknown as MembersView)).toMatch(
+      /href="\/w\/ogs\/members\?order=rank#ml-heading"[^>]*>1 person to check in with or help<\/a>/,
+    );
   });
 });

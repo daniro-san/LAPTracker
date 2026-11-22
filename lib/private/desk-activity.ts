@@ -126,11 +126,13 @@ const rank = (r: Raw) => RANK[r.kind] ?? 0;
 const instant = (r: Raw) => `${r.by}@${r.at.getTime()}`;
 
 /**
- * What makes two lines the same: the action and its object as the line says them, without the time; a roll
- * call by its name, not its id, so the same words in a row stay one line (issue 585).
+ * What makes two lines the same: the action and its object, without the time. A roll call by its name, not
+ * its id, after a single line, so the same words in a row stay one line; inside a fold of several officers
+ * by its id, so another roll call of that name keeps a line of its own (issue 585).
  */
-const sameKey = (r: Raw) =>
-  JSON.stringify({ ...r, at: 0, ...(r.kind === "marks" && { call: { ...r.call, callId: 0 } }) });
+const byName = (r: Raw): Raw => (r.kind === "marks" ? { ...r, call: { ...r.call, callId: 0 } } : r);
+const sameKey = (r: Raw, run: Run) =>
+  JSON.stringify({ ...(run.lines.length === 1 ? byName(r) : r), at: 0 });
 
 /** Kinds whose run line counts the lines it opens to: "Rook added 6 entries to the Calendar". */
 export const COUNTED_RUNS = ["entry", "entryEdit", "noticeSaved", "draft"] as const;
@@ -182,7 +184,7 @@ function runs(lines: Raw[], zone: string): Run[] {
   for (const r of lines) {
     const run = out.at(-1);
     const last = run?.lines.at(-1);
-    if (run && last && sameKey(r) === sameKey(last)) {
+    if (run && last && sameKey(r, run) === sameKey(last, run)) {
       run.oldest = r.at;
     } else if (run && day(r.at) === day(run.head.at) && joins(r, run.head)) {
       run.head = joined(run.head, r);

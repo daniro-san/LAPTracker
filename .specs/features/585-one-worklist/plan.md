@@ -249,13 +249,13 @@ Shape, problem and plan review: [S4 plan](#s4-plan-homes-first-screen-built-in-f
     - "Send screenshots" and its help line in a card titled "Screenshots" right after "To review"; "To review" keeps its number, its items and "Nothing to review."
     - an entry whose end (`endOf`) has passed on the viewer's clock: one 44 px link line, "{time} · {title} · Ended", no "your time"; an entry not over keeps its two lines
 
-S4 continues at 32 (19–21 above are S4's own; 24–31 are S2's):
+S4 continues at 35 (19–21 above are S4's own; 24–31 are S2's; 32–34 are S3's, PR 651):
 
-32. WHILE the Follow-up tab is off (D126), Home SHALL read no follow-up record, show no Follow-up card, and keep today's line in "Members this week" ("{n} people to check in with or help", linked to the Members group); WHILE the alliance has no daily update yet (`early`), Home SHALL show no Follow-up card, as today
-33. The desk dictionary SHALL hold every new string in EN, PT-BR and FR
-34. D108 (the fold, the order on Home) and D110 (Home's "Send screenshots" in its own card) SHALL each get an amendment dated 2026-11-22
-35. The Home e2e SHALL assert the Follow-up card's line in Home's main column (before "Today and tomorrow", none in "Members this week") from the seed's numbers, its link to Follow-up, and "Send screenshots" outside "To review"
-36. WHILE something waits in "To review" (the Home tab's number: drafts, notice reviews for this officer, "This is me" claims), Home's main column SHALL show "{n} waiting in “To review” ↓" right after the Follow-up card (first when there is no card), a 44 px link to the "To review" card (`#to-review`); with nothing waiting it SHALL show nothing (panel MUST 1, round 2)
+35. WHILE the Follow-up tab is off (D126), Home SHALL read no follow-up record, show no Follow-up card, and keep today's line in "Members this week" ("{n} people to check in with or help", linked to the Members group); WHILE the alliance has no daily update yet (`early`), Home SHALL show no Follow-up card, as today
+36. The desk dictionary SHALL hold every new string in EN, PT-BR and FR
+37. D108 (the fold, the order on Home) and D110 (Home's "Send screenshots" in its own card) SHALL each get an amendment dated 2026-11-22
+38. The Home e2e SHALL assert the Follow-up card's line in Home's main column (before "Today and tomorrow", none in "Members this week") from the seed's numbers, its link to Follow-up, and "Send screenshots" outside "To review"
+39. WHILE something waits in "To review" (the Home tab's number: drafts, notice reviews for this officer, "This is me" claims), Home's main column SHALL show "{n} waiting in “To review” ↓" right after the Follow-up card (first when there is no card), a 44 px link to the "To review" card (`#to-review`); with nothing waiting it SHALL show nothing (panel MUST 1, round 2)
 
 ### S5: "After KvK, offer help" in Follow-up (P2) - later PR (F3; M: a rule change)
 
@@ -407,10 +407,10 @@ Round 1 graded "right" on the key and the 12; round 2 also asked for the waiting
 No one-way door: no schema, no migration, nothing written, no privacy widening, no quota, no dependency.
 
 - MUST, taken: a folded line was dropped whole when its newest officer's account had no name (the head was that officer's line); `activityPage` now keeps the others' lines, and one left alone is a plain line (test).
-- MUST, taken: the criteria now carry the built words and order (19, 20, 36).
+- MUST, taken: the criteria now carry the built words and order (19, 20, 39).
 - SHOULD, taken: English lists have the serial comma ("Wren, Tomas, and 3 others", `Intl.ListFormat`, as `namesList` already wrote); `followUpWords` takes a `WorkspaceLanguage`.
 - SHOULD, reported: on real data an officer's single taps ("took the roll call") between two "finished" lines end the fold, so the gain may be smaller than on the seed; folding the "took" lines of the same roll call in too is a criteria change, a follow-up. The id also reached `sameKey`, which showed one officer's identical lines on two roll calls of the same name four times in the e2e walk; `sameKey` now leaves the id out, so the same words in a row stay one line as before (in D108's amendment and the test).
-- NOTE: `followUpCounts` is null both with the tab off and before the first daily update; Home tells them apart through `view.early`, so criterion 32 holds. Two officers with the same desk name are named once in a fold (names are deduplicated as text).
+- NOTE: `followUpCounts` is null both with the tab off and before the first daily update; Home tells them apart through `view.early`, so criterion 35 holds. Two officers with the same desk name are named once in a fold (names are deduplicated as text).
 
 ## Analytics plan
 

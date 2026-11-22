@@ -22,11 +22,12 @@ const item = (key: string, title: string, st: string, start: string, end: string
 });
 
 describe("Home's Today and tomorrow (issue 585 slice 4)", () => {
-  it("shows an entry that is over on one line, still a link to its day", () => {
+  it("shows an entry that is over on one line, still a link to its day; one under way or to come keeps two", () => {
     const html = renderToStaticMarkup(
       createElement(HomeNext, {
         items: [
           item("kvk", "KvK", "12:00 ST", "2026-11-21T14:00:00Z", "2026-11-21T16:00:00Z"),
+          item("siege", "Undead Siege", "16:00 ST", "2026-11-21T18:00:00Z", "2026-11-21T19:00:00Z"),
           item(
             "meet",
             "Alliance meeting",
@@ -41,10 +42,12 @@ describe("Home's Today and tomorrow (issue 585 slice 4)", () => {
         heads: { today: t["home.today"], tomorrow: t["home.tomorrow"], none: t["home.next.none"] },
       }),
     );
-    const [, kvk = "", meet = ""] = html.split("<li>");
+    const [, kvk = "", siege = "", meet = ""] = html.split("<li>");
     expect(kvk).toContain('href="/w/ogs/calendar?week=2026-11-16#day-2026-11-21-kvk"');
     expect(kvk.replace(/<[^>]+>/g, "")).toBe("12:00 ST · KvK · Ended");
-    // Still to come: the time line, then the title on a line of its own.
+    // Under way (started, not over) and still to come: the time line, then the title on a line of its own.
+    expect(siege).toContain("flex-col");
+    expect(siege.replace(/<[^>]+>/g, "")).toBe("16:00 STUndead Siege · Started");
     expect(meet).toContain("flex-col");
     expect(meet.replace(/<[^>]+>/g, "")).toBe("19:00 STAlliance meeting");
   });
