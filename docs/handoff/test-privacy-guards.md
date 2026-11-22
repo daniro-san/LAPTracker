@@ -14,10 +14,12 @@ Vitest tests for gaps G1, G2, G5, G6, G8 and G9 of the 2026-11-21 test audit. No
 - `app/(private)/_ui/replay-masking.test.ts` (2 tests, G6, issue 549 and D142). A small helper, `recorded()`, removes every `ph-no-capture` element and its children from the server-rendered HTML. What is left is what session replay records.
   - The Members list (`MembersList`, rendered whole, so both the cards below 640 and the table from 640 are included). The week's donations (`6.54K`, shown twice) and the status line (`No daily quests on Wed, Nov 18`) are in the page but not in the recorded HTML. The name and might stay in the recorded HTML.
   - The Me page's week (`MeWeek` with `weekCard` from invented reads). The daily values, bar heights and last week's average are in the page but not in the recorded HTML. The section heading stays.
-- `app/api/quota-gate.test.ts` (1 guard + 7 cases, G8). Reads every `app/api/**/route.ts` for the functions that reach the /v1 quota (`ctx.v1`, `fetchQuota`/`fetchAlliance`/`fetchPlayer`, `executeSnapshot`, `runSnapshot`, `runTick`, `runDailyRead`, `retryDailyRead`, `runSquadsBatch`, `squadsBatch`, `scheduleSquadsBatch`, `quotaReport`, `lookupAlliance`).
-  - Guard: every matching file is in `GATED` or `EXCLUDED`, and every `GATED` entry still matches.
-  - `GATED`: `admin/squads-read`, `daily-read/retry`, `quota`, `quota/check`, `snapshot`, `squads-read`, `tick`. Each is called with no secret and no PIN. Then the work queued with `after` is run. Each answers 401 or 403, and a proxy over `ctx.v1` counts zero calls to any method.
-  - `EXCLUDED`: `alliances/[unionId]/details` ("Get today's details", D133). It is public on purpose, behind the same-origin check, an IP limit and a daily cap, and it has its own route test.
+- `app/api/quota-gate.test.ts` (1 guard + 8 cases, G8). It lists every `app/api/**/route.ts` (24 files). I sorted each file into one of three lists by reading the route and what it calls, as `member-session.test.ts` does with its FIXTURES.
+  - Guard: every route file is in exactly one list, and no list names a file that no longer exists. A new route file in none of the lists fails. The guard does not find quota use by itself: if a listed route starts spending quota, the change that does it must move the route to `QUOTA`.
+  - `QUOTA` (8): `admin/squads-read`, `daily-read/retry`, `quota`, `quota/check`, `rehearsal`, `snapshot`, `squads-read`, `tick`. `rehearsal` makes no /v1 call in its request, but it makes an `is_test` event that the ticks then read. Each route is called with no secret and no PIN, and then the work queued with `after` is run. Each answers 401 or 403, and a proxy over `ctx.v1` counts zero calls to any of its methods.
+  - `PUBLIC_OR_OTHER_GATE` (1, with its reason): `alliances/[unionId]/details` ("Get today's details", D133). It is public on purpose, behind the same-origin check, an IP limit and a daily cap, and it has its own route test.
+  - `NOT_QUOTA` (15, each with its reason): the `/admin` workspace, invite, session and Discord-command routes, the public reads (`events`, `events/[id]`, `alliances/[unionId]/history`), the three `manual-event` routes (a manual round is read only through `/api/snapshot`) and `tick/watch`.
+  - The route modules are imported in `beforeAll`, so their load time is not counted in each case's 10 s timeout.
 - `app/api/squads-read/route.test.ts` (1 test, G9). With the cron secret on Wednesday 22:30 ST, before the day's 23:30 read, the route answers 204 over `noQueryDb`, so it makes no query (D141).
 
 ### Deliberate breaks (each made the named test fail, then was restored with `git checkout`)
@@ -41,7 +43,8 @@ Vitest tests for gaps G1, G2, G5, G6, G8 and G9 of the 2026-11-21 test audit. No
 | G8 gate | `/api/quota/check` auth check removed | `… to include 200` |
 | G8 gate | `/api/daily-read/retry` auth check removed | `… to include 409` |
 | G8 zero /v1 | `/api/quota` calls `ctx.v1.fetchQuota()` before `authorize` (still 401) | `expected [ 'fetchQuota' ] to deeply equal []` |
-| G8 guard | a new `app/api/zz-probe/route.ts` using `ctx.v1` (deleted afterwards) | `expected [ 'zz-probe/route.ts' ] to deeply equal []` |
+| G8 gate | `/api/rehearsal` auth check removed | `… to include 409` |
+| G8 guard | a new `app/api/zz-probe/route.ts` that reads `const { v1 } = ctx` (the old name-matching version missed this shape; deleted afterwards) | `expected [ 'zz-probe/route.ts' ] to deeply equal []` |
 | G9 | `/api/squads-read` skips its `squadsMayRun` gate | `expected 500 to be 204` (the query threw) |
 
 ## Decisions
@@ -49,21 +52,23 @@ Vitest tests for gaps G1, G2, G5, G6, G8 and G9 of the 2026-11-21 test audit. No
 - The deny-all CSP test covers `/api` and `/img`, as D11 and D22 state. D77 states the same for `/ingest`, but the brief listed only `/api` and `/img`, so `/ingest` is not covered (see Open issues).
 - G5's private-key check is a check on keys. D71 allows the card to show the map position and last online as formatted words, so the test does not ban those values; it bans the raw keys and the photo URL.
 - G8 counts calls on every method of `ctx.v1` through a `Proxy`. `fakeV1().calls` counts only `fetchAlliance`. Every quota path goes through `ctx.v1`, including the workspace keys (D124), which pass the key as an argument.
+- G8 sorts the routes into hand-kept lists (review of PR #608). The first version found quota routes by matching function names, so a route that reached /v1 through any other helper was skipped without a failure.
 - G8 asserts 401 or 403, as the brief asked. Today every gated route answers 401 `unauthorized`. The failure count is cleared before each case, so the IP limit's 429 never shows up.
 
 ## Deviations
 - G5's 404 for another alliance's uid overlaps with `cross-workspace.test.ts`, which sends Bravo's uid 202 to this route and expects a 4xx that is not an early refusal. The new test asserts the exact `404 not_member`. Both were kept because the brief asked for it on this route.
-- The two G6 tests are in one new file, `replay-masking.test.ts`, so they share the `recorded()` helper. The UI test cannot import `lib/repo` (lint zone, D71), so `OwnDay` is derived from `weekCard`'s parameter type.
+- The two G6 tests are in one new file, `replay-masking.test.ts`, so they share the `recorded()` helper, which stays local to that file. The UI test cannot import `lib/repo` (lint zone, D71), so `OwnDay` is derived from `weekCard`'s parameter type.
 
 ## Verified
 - `pnpm check` passes: prettier, eslint, tsc, vitest, the schema drift check (no schema change) and i18n (17 languages up to date).
-- Full `vitest run` after that: 302 files passed, 2 skipped; 1571 tests passed, 4 skipped. That is 19 new test cases.
+- Full `vitest run` after that: 302 files passed, 2 skipped; 1572 tests passed, 4 skipped. That is 20 new test cases.
 - One extra full run showed `1 failed | 1570 passed`. Four other full runs, including the one inside `pnpm check`, passed, and the failure did not come back, so I could not name the test. All the new files passed in every run and on their own.
 - Each new test failed against a deliberately broken build (table above). The app code was restored each time, and `git status` shows only the new test files and this handoff.
 - No upstream, Discord or PostHog call was made; all are stubs. Only invented names and values are used.
 
 ## Open issues
 - One full-suite run had one failing test that did not reproduce in four more runs. It may be one of the load-sensitive tests the audit lists (PGlite timeouts, `setTimeout(0)` flushes). Follow-up: run the suite with `--reporter=verbose` in CI when it happens again, to get the name.
+- Outside this PR: when the full suite runs in shuffled order, older tests fail because they depend on test order. They are `lib/app-errors.test.ts` (3 tests), `lib/queries/players.test.ts` (the blocked-key test) and `lib/private/features.test.ts` (once). They belong in audit batch 5.
 - `/ingest` deny-all CSP (D77) has no test. It would be one more path in the G2 deny-all test.
 - The proxy's trailing-slash redirect (`/w/lnk/` → 308) returns before the no-store line, so the redirect carries no `Cache-Control`. It carries only a `Location` and no workspace data, so this is not a leak. Noted only.
 
@@ -74,9 +79,11 @@ Vitest tests for gaps G1, G2, G5, G6, G8 and G9 of the 2026-11-21 test audit. No
 - Analytics plan: no change. Tests only, no event added, changed or removed.
 
 <adjustments>
-- Batch 6 of the audit ("`ph-no-capture` render checks") is done for the Members list and the Me page. `recorded()` in `app/(private)/_ui/replay-masking.test.ts` can check other private views.
-- A new quota route under `app/api` must be added to `GATED` (or to `EXCLUDED` with its reason) in `app/api/quota-gate.test.ts`, or the guard fails.
+- Batch 6 of the audit ("`ph-no-capture` render checks") is done for the Members list and the Me page.
+- Every new route under `app/api` must be added to `QUOTA`, `PUBLIC_OR_OTHER_GATE` or `NOT_QUOTA` (the last two with a reason) in `app/api/quota-gate.test.ts`, or the guard fails.
 - The audit's harness proposal ("a quota-spending route under `app/api` passes its walker test") can now point at `app/api/quota-gate.test.ts`.
 </adjustments>
+
+What was missing from the task prompt? Whether the quota walker may find routes by matching function names or must list every route file. Review settled it: list every file. Also whether `rehearsal`, which spends quota only through the ticks, counts as a quota route; I put it in `QUOTA`.
 
 https://github.com/daniro-san/LAPTracker/pull/608

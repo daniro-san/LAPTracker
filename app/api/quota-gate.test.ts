@@ -1,9 +1,10 @@
-// Plan §3.4, D3: the routes that can spend upstream (/v1) quota answer a request without the scheduler's
-// secret or the PIN with 401 or 403, before any /v1 call, and leave no work after the answer that makes one.
-// The routes are found by reading every app/api route.ts for what reaches the quota: a new one that is not in
-// GATED (or EXCLUDED, with the reason) fails here.
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+// Plan §3.4, D3: every app/api route.ts is sorted, by reading it and what it calls, into one of three lists:
+// QUOTA (it can spend upstream /v1 quota, or arms the ticks to), PUBLIC_OR_OTHER_GATE and NOT_QUOTA, the last two
+// with their reasons. A route file in none of them fails here, so a new route needs that decision. The lists do
+// not find quota use by themselves: a route that starts spending quota is moved to QUOTA by the change that does
+// it. Each QUOTA route, sent no secret and no PIN, answers 401 or 403 and makes no /v1 call, also from the work
+// it leaves for after the answer.
+import { readdirSync } from "node:fs";
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,36 +25,64 @@ vi.mock("next/server", async (original) => ({
   after: (task: () => Promise<void>) => void later.push(task),
 }));
 
-/** What reaches the /v1 quota from a route: the context's v1 source or a function that spends it. */
-const SPENDS =
-  /\b(ctx\.v1|fetchQuota|fetchAlliance|fetchPlayer|executeSnapshot|runSnapshot|runTick|runDailyRead|retryDailyRead|runSquadsBatch|squadsBatch|scheduleSquadsBatch|quotaReport|lookupAlliance)\b/;
-
-/** The quota routes, each behind the scheduler's secret or the PIN (lib/auth.ts). */
-const GATED: Record<string, "GET" | "POST"> = {
+/** Routes that spend /v1 quota, or make the ticks spend it, each behind the scheduler's secret or the PIN. */
+const QUOTA: Record<string, "GET" | "POST"> = {
   "admin/squads-read/route.ts": "POST",
   "daily-read/retry/route.ts": "POST",
   "quota/check/route.ts": "GET",
   "quota/route.ts": "GET",
+  // An is_test event that the ticks then read, with no secret of their own (plan §3.1).
+  "rehearsal/route.ts": "POST",
   "snapshot/route.ts": "POST",
   "squads-read/route.ts": "POST",
   "tick/route.ts": "POST",
 };
-/**
- * Spends quota without a secret, on purpose. alliances/[unionId]/details: "Get today's details" (D133), a public
- * press from our own page, behind its same-origin check, an IP limit and a daily cap; its own route test.
- */
-const EXCLUDED = new Set(["alliances/[unionId]/details/route.ts"]);
+/** Spends quota without a secret, on purpose. */
+const PUBLIC_OR_OTHER_GATE: Record<string, string> = {
+  "alliances/[unionId]/details/route.ts":
+    "D133 'Get today's details': a public press from our own page, behind its same-origin check, an IP limit and a daily cap; its own route test",
+};
+/** Calls no /v1 method, directly or through what it calls. */
+const NOT_QUOTA: Record<string, string> = {
+  "admin/discord-command/route.ts": "registers Discord commands (D96); Discord only",
+  "admin/invites/route.ts": "invite links (D130); database only",
+  "admin/session/route.ts": "the /admin PIN cookie",
+  "admin/workspaces/allowlist/route.ts": "a sign-in allowlist row; database only",
+  "admin/workspaces/deletion/route.ts":
+    "asks or cancels a workspace deletion (D125); database only",
+  "admin/workspaces/features/route.ts":
+    "feature switches and caps (D126); database and Discord commands",
+  "admin/workspaces/route.ts":
+    "saves a workspace row; the alliance is checked against stored data (D133)",
+  "admin/workspaces/sign-out/route.ts": "ends a workspace's sessions; database only",
+  "alliances/[unionId]/history/route.ts": "a public read through lib/queries",
+  "events/[id]/route.ts": "a public read through lib/queries",
+  "events/route.ts": "a public read through lib/queries",
+  "manual-event/rename/route.ts": "renames an event row (D39)",
+  "manual-event/route.ts": "creates a manual round's row; only /api/snapshot reads it (D28)",
+  "manual-event/settings/route.ts": "a manual round's visibility and Discord options (D28)",
+  "tick/watch/route.ts": "reads the newest tick time and posts an admin alert (D45); no snapshot",
+};
 
-const DIR = import.meta.dirname;
-const QUOTA_ROUTES = readdirSync(DIR, { recursive: true, encoding: "utf8" })
-  .filter((f) => f.endsWith("route.ts") && SPENDS.test(readFileSync(join(DIR, f), "utf8")))
+const ROUTES = readdirSync(import.meta.dirname, { recursive: true, encoding: "utf8" })
+  .filter((f) => f.endsWith("route.ts"))
   .sort();
+const LISTED = [
+  ...Object.keys(QUOTA),
+  ...Object.keys(PUBLIC_OR_OTHER_GATE),
+  ...Object.keys(NOT_QUOTA),
+];
 
 type Handler = (r: Request, c: { params: Promise<Record<string, string>> }) => Promise<Response>;
 
 let db: Db;
+const handlers = new Map<string, Handler>();
 beforeAll(async () => {
   db = await openTestDb();
+  for (const [file, method] of Object.entries(QUOTA)) {
+    const mod = (await import(/* @vite-ignore */ `./${file}`)) as Record<string, Handler>;
+    handlers.set(file, mod[method] as Handler);
+  }
 });
 beforeEach(async () => {
   // A fresh failure count, so each route answers its first refusal, not the IP limit's 429.
@@ -62,13 +91,14 @@ beforeEach(async () => {
 });
 
 describe("the quota routes without a secret (plan §3.4, D3)", () => {
-  it("lists every route that reaches the quota, and nothing else", () => {
-    expect(QUOTA_ROUTES.length).toBeGreaterThan(0);
-    expect(QUOTA_ROUTES.filter((f) => !(f in GATED) && !EXCLUDED.has(f))).toEqual([]);
-    expect(Object.keys(GATED).filter((f) => !QUOTA_ROUTES.includes(f))).toEqual([]);
+  it("puts every app/api route in exactly one list, and lists no file that is gone", () => {
+    expect(ROUTES.length).toBeGreaterThan(0);
+    expect(ROUTES.filter((f) => !LISTED.includes(f))).toEqual([]);
+    expect(LISTED.filter((f, i) => LISTED.indexOf(f) !== i)).toEqual([]);
+    expect(LISTED.filter((f) => !ROUTES.includes(f))).toEqual([]);
   });
 
-  it.each(Object.entries(GATED))(
+  it.each(Object.entries(QUOTA))(
     "%s refuses with 401 or 403 and calls /v1 nothing",
     async (file, method) => {
       const { ctx } = testContext(db);
@@ -85,10 +115,10 @@ describe("the quota routes without a secret (plan §3.4, D3)", () => {
         },
       });
       holder.ctx = ctx;
-      const mod = (await import(/* @vite-ignore */ `./${file}`)) as Record<string, Handler>;
-      const handler = mod[method] as Handler;
+      const handler = handlers.get(file) as Handler;
 
-      const res = await handler(request(`/api/${file.replace(/\/?route\.ts$/, "")}`, { method }), {
+      const path = `/api/${file.replace(/\/?route\.ts$/, "")}`;
+      const res = await handler(request(path, { method }), {
         params: Promise.resolve({}),
       });
       for (const task of later) await task();
