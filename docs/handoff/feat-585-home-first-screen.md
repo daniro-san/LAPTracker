@@ -88,4 +88,4 @@ Analytics plan: no new event, no change to an event. Home's Follow-up link moves
 
 What was missing from the task prompt? That the plan's criterion numbers had been reset by Prettier (S2 back at 14–21), and that the three main desk dictionaries were at their 300-line limit.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/652
