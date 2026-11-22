@@ -43,6 +43,42 @@ async function deviceState(slug: string, view: PushView) {
   return row ? { phase: "on" as const, uses: row.uses } : { phase: "off" as const, uses: null };
 }
 
+/** Worker registration plus subscribe: some browsers never answer (Brave with Google push off, or a worker that never activates). */
+const SUBSCRIBE_TIMEOUT_MS = 20_000;
+
+class TimedOut extends Error {}
+
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new TimedOut()), ms);
+  });
+  return Promise.race([work, late]).finally(() => clearTimeout(timer));
+}
+
+/** The failure line for a save to the server that did not go through. */
+const failureNote = (res: Response | null, t: WorkspaceDictionary) =>
+  res?.status === 401 ? SIGNED_OUT : t["push.failed"];
+
+/**
+ * The browser's subscription, then the save. A refused subscription says so on its own: nothing reached the
+ * server, and "Not saved" would send the officer to retry what the browser's push service will refuse again.
+ */
+export async function enableDevice(
+  subscribe: () => Promise<PushSubscription>,
+  save: (sub: PushSubscription) => Promise<Response | null>,
+  t: WorkspaceDictionary,
+): Promise<{ done: true } | { note: string }> {
+  let sub: PushSubscription;
+  try {
+    sub = await withTimeout(subscribe(), SUBSCRIBE_TIMEOUT_MS);
+  } catch (e) {
+    return { note: t[e instanceof TimedOut ? "push.timedOut" : "push.serviceRefused"] };
+  }
+  const res = await save(sub).catch(() => null);
+  return res?.ok ? { done: true } : { note: failureNote(res, t) };
+}
+
 type Props = {
   slug: string;
   view: PushView;
@@ -65,13 +101,15 @@ function usePushDevice(props: Props) {
     });
   }, [slug, view]);
 
-  const post = async (body: unknown) => {
-    const res = await fetch(`/api/w/${slug}/push`, {
+  const send = (body: unknown) =>
+    fetch(`/api/w/${slug}/push`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     }).catch(() => null);
-    if (!res?.ok) setNote(res?.status === 401 ? SIGNED_OUT : t["push.failed"]);
+  const post = async (body: unknown) => {
+    const res = await send(body);
+    if (!res?.ok) setNote(failureNote(res, t));
     return res;
   };
 
@@ -82,10 +120,18 @@ function usePushDevice(props: Props) {
       // The permission prompt comes only from this tap (iPhone requires it inside the tap).
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return setPhase(permission === "denied" ? "blocked" : "off");
-      const sub = await subscribe(slug, view.publicKey);
-      const body = { subscription: subscriptionBody(sub), uses, language: props.language };
-      const res = await post({ action: "subscribe", ...body });
-      if (!res?.ok) return;
+      const result = await enableDevice(
+        () => subscribe(slug, view.publicKey),
+        (sub) =>
+          send({
+            action: "subscribe",
+            subscription: subscriptionBody(sub),
+            uses,
+            language: props.language,
+          }),
+        t,
+      );
+      if ("note" in result) return setNote(result.note);
       setPhase("on");
       for (const use of uses) track("ws_push_enabled", { use });
     } catch {
@@ -163,6 +209,7 @@ export function PushSettings(props: Props) {
         <li>{t["push.ios"]}</li>
         <li>{t["push.iosSignIn"]}</li>
         <li>{t["push.android"]}</li>
+        <li>{t["push.brave"]}</li>
         <li>{t["push.session"]}</li>
       </ul>
     </section>
