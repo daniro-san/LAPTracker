@@ -58,4 +58,4 @@ Each row below names the deliberate code change that makes its test fail. Every 
 - `app/api/tick/route.test.ts` is near the 300-line cap; a new tick daily-job test goes in `app/api/tick/daily-jobs.test.ts`.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/630
