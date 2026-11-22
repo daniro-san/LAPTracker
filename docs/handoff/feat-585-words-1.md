@@ -63,4 +63,4 @@ Analytics: no change. No event or property changes meaning; `board_section` `wee
 
 What was missing from the task prompt? That F19 reverses an owner-stated rule (D136), which takes it outside the standing approval once the gate verdicts ask for the owner, and that the brief's F35 covers lines that end a sentence with a date in PT and FR.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/662
