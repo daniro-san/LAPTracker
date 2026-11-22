@@ -48,12 +48,6 @@ function intlTag(tag: string): string | null {
   }
 }
 
-/** The first Accept-Language tag (by q) that Intl supports; "en" when none is usable. */
-export const pickLocale = (header: string | null): string =>
-  tagsOf(header)
-    .map(intlTag)
-    .find((t) => t !== null) ?? "en";
-
 /** Base languages written in one regional form: any Portuguese reads pt-BR, any Chinese zh-CN. */
 const REGIONAL: Record<string, Language> = { pt: "pt-BR", zh: "zh-CN" };
 
@@ -66,7 +60,8 @@ function languageOf(tag: string): Language | null {
 /**
  * The page's language: the `lang` cookie, else the first Accept-Language tag in a language the pages
  * are written in, else English. Its Intl locale: the viewer's own tag in that language (en-GB keeps
- * `31 Oct`), else the chosen language; with neither cookie nor match, the first tag Intl supports.
+ * `31 Oct`), else the language served, so an English fallback never takes the browser's digits or
+ * calendar (ar, fa, he; issue 671).
  */
 export function pickLanguage(
   cookie: string | undefined,
@@ -79,7 +74,7 @@ export function pickLanguage(
     .filter((t) => languageOf(t) === language)
     .map(intlTag)
     .find((t) => t !== null);
-  return { language, locale: own ?? chosen ?? pickLocale(header) };
+  return { language, locale: own ?? language };
 }
 
 export const requestLanguage = cache(async () => {
