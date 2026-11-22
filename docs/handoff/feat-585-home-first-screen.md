@@ -53,7 +53,7 @@ Part of #585 (F3 on Home, F21). Size M (Home's main flow; amendments to D104, D1
 - First-glance test, "What needs me today?", 360 × 780, six officer personas (AI, invented data): before 0 right, 6 partial; round 1 4 right, 2 wrong (no heading) or 4 right, 1 partial, 1 wrong (heading); round 2 3 right, 3 partial, 0 wrong. Details: plan Validation (h).
 - `validate_plan.py` 0 errors (1 warning, pre-existing); `validate_checks.py` 0 errors (1 warning: C41 is a grep).
 - `check_proofs.py` at 48877a20: 34 pass, 0 fail (the e2e proofs with `E2E_NO_BUILD=1` and this worktree's ports).
-- **Verifier** (independent sub-agent, at 48877a20): FAIL on three findings, all closed in the fix commit.
+- **Verifier** (independent sub-agent, at 48877a20): FAIL on three findings, all closed in b8e94249.
   - A fold could hide a second roll call of the same name: after a multi-officer fold of "Cheese Trap" #1, the last officer's line on #2 was taken as a repeat. The repeat rule now compares a roll call by its id inside a fold of several officers, by its name after a single line. C36's test has the case.
   - C37's test had no entry under way; it now has one, with "· Started" on two lines.
   - C35's tab-off half was tested only at 0; it now asserts the linked "1 person to check in with or help".
