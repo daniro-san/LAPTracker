@@ -66,3 +66,32 @@ export const workspaceWebhooks = pgTable(
     ),
   ],
 );
+
+/** The posts an alliance may put its own line on (#713, D155). */
+export const POST_KEYS = ["shield", "thanks", "garrison"] as const;
+export type PostKey = (typeof POST_KEYS)[number];
+
+/**
+ * An alliance's own touches on the posts LAPTracker makes for it (#713, D155): one row per workspace and
+ * post, holding the officers' one line (the callout, at most 120 graphemes, never translated; empty: no
+ * line) and who changed it last. Deleted with the workspace and downloaded (D125).
+ */
+export const workspacePostTouches = pgTable(
+  "workspace_post_touches",
+  {
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    postKey: text("post_key", { enum: POST_KEYS }).notNull(),
+    callout: text("callout").notNull(),
+    updatedBy: integer("updated_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    updatedAt: tstz("updated_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.postKey] }),
+    check(
+      "workspace_post_touches_post_key_check",
+      sql`${t.postKey} in ('shield', 'thanks', 'garrison')`,
+    ),
+  ],
+);

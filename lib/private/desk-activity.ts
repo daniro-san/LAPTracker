@@ -69,7 +69,9 @@ type What =
   | ({ kind: "reviewAnswered" } & Pick<ReviewAnsweredDone, "noticeId" | "outcome" | "language">)
   | { kind: "thanks"; target: "discord" | "board" | "down" }
   | Omit<ActivityRows["keyChanges"][number], "by" | "at">
-  | Omit<ActivityRows["dataEvents"][number], "by" | "at">;
+  | Omit<ActivityRows["dataEvents"][number], "by" | "at">
+  /** A post's own line changed (D155): which post, never the text. */
+  | Omit<ActivityRows["calloutChanges"][number], "by" | "at">;
 
 type Raw = What & { by: number; at: Date };
 
@@ -267,6 +269,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
     ...[rows.callDeletes, rows.callArchives, rows.garrisonSaves, rows.garrisonPosts].flat(),
     ...[rows.entryDeletes, rows.theftDeletes, rows.newMemberDeletes].flat(),
     ...[rows.followUps, rows.thefts, rows.theftSteps, rows.keyChanges, rows.dataEvents].flat(),
+    ...rows.calloutChanges,
     ...rows.newMembers.map(({ by, at, name }) => ({
       by,
       at,

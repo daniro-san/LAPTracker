@@ -1,0 +1,71 @@
+// Alliance settings → Your line on our posts (#713, D155) and its Home activity lines, in English,
+// Brazilian Portuguese and French: one module the settings dictionaries spread. French puts a no-break space
+// before : ! and inside « ».
+export const calloutsEn = {
+  "callouts.head": "Your line on our posts",
+  "callouts.lead":
+    "Add one line of your own at the top of a post LAPTracker makes for you, such as “Let’s go, family!”. It is posted as you write it, never translated, and pings no one: @everyone, mentions and links do not work in it.",
+  "callouts.post.shield": "Raid Shield summary",
+  "callouts.post.thanks": "Weekly thanks",
+  "callouts.post.garrison": "Garrison post",
+  "callouts.where.shield": "Goes above the summary in the Raid Shield channel.",
+  "callouts.where.thanks": "Goes above the weekly thanks when you post them to Discord.",
+  "callouts.where.garrison": "Goes above the garrison plan when you post it to Discord.",
+  "callouts.count": "{n} of 120 characters",
+  "callouts.tooLong": "Too long: keep it to 120 characters.",
+  "callouts.preview": "Preview of the next post",
+  "callouts.noLine": "No line yet: the post starts with its title.",
+  "callouts.rest": "… the rest of the post",
+  "callouts.failed": "That didn’t save. Try again.",
+  "callouts.rateLimited": "Too many saves just now. Wait 15 minutes, then try again.",
+  "settings.state.callouts": "{set} of {n} set",
+  "activity.callout.shield": "{who} changed the line on the Raid Shield summary",
+  "activity.callout.thanks": "{who} changed the line on the weekly thanks",
+  "activity.callout.garrison": "{who} changed the line on the garrison post",
+};
+
+export const calloutsPt: typeof calloutsEn = {
+  "callouts.head": "Sua frase nos nossos posts",
+  "callouts.lead":
+    "Adicione uma frase sua no topo de um post que o LAPTracker faz para vocês, como “Vamos lá, família!”. Ela sai como você escreveu, nunca é traduzida e não marca ninguém: @everyone, menções e links não funcionam nela.",
+  "callouts.post.shield": "Resumo do Escudo de raid",
+  "callouts.post.thanks": "Agradecimento da semana",
+  "callouts.post.garrison": "Post da guarnição",
+  "callouts.where.shield": "Vai acima do resumo no canal do Escudo de raid.",
+  "callouts.where.thanks": "Vai acima do agradecimento da semana quando vocês o postam no Discord.",
+  "callouts.where.garrison": "Vai acima do plano de guarnição quando vocês o postam no Discord.",
+  "callouts.count": "{n} de 120 caracteres",
+  "callouts.tooLong": "Longa demais: use até 120 caracteres.",
+  "callouts.preview": "Prévia do próximo post",
+  "callouts.noLine": "Sem frase ainda: o post começa pelo título.",
+  "callouts.rest": "… o resto do post",
+  "callouts.failed": "Não salvou. Tente de novo.",
+  "callouts.rateLimited": "Muitas alterações agora. Espere 15 minutos e tente de novo.",
+  "settings.state.callouts": "{set} de {n} definidas",
+  "activity.callout.shield": "{who} mudou a frase do resumo do Escudo de raid",
+  "activity.callout.thanks": "{who} mudou a frase do agradecimento da semana",
+  "activity.callout.garrison": "{who} mudou a frase do post da guarnição",
+};
+
+export const calloutsFr: typeof calloutsEn = {
+  "callouts.head": "Votre phrase sur nos messages",
+  "callouts.lead":
+    "Ajoutez une phrase à vous en haut d’un message que LAPTracker publie pour vous, comme « On y va, la famille ! ». Elle est publiée telle que vous l’écrivez, jamais traduite, et ne mentionne personne : @everyone, les mentions et les liens n’y marchent pas.",
+  "callouts.post.shield": "Résumé du Bouclier de raid",
+  "callouts.post.thanks": "Remerciements de la semaine",
+  "callouts.post.garrison": "Message de garnison",
+  "callouts.where.shield": "Au-dessus du résumé, dans le salon du Bouclier de raid.",
+  "callouts.where.thanks": "Au-dessus des remerciements quand vous les publiez sur Discord.",
+  "callouts.where.garrison": "Au-dessus du plan de garnison quand vous le publiez sur Discord.",
+  "callouts.count": "{n} sur 120 caractères",
+  "callouts.tooLong": "Trop long : 120 caractères au plus.",
+  "callouts.preview": "Aperçu du prochain message",
+  "callouts.noLine": "Pas encore de phrase : le message commence par son titre.",
+  "callouts.rest": "… la suite du message",
+  "callouts.failed": "Ce n’est pas enregistré. Réessayez.",
+  "callouts.rateLimited": "Trop d’enregistrements d’un coup. Attendez 15 minutes, puis réessayez.",
+  "settings.state.callouts": "{set} sur {n} définies",
+  "activity.callout.shield": "{who} a changé la phrase du résumé du Bouclier de raid",
+  "activity.callout.thanks": "{who} a changé la phrase des remerciements de la semaine",
+  "activity.callout.garrison": "{who} a changé la phrase du message de garnison",
+};

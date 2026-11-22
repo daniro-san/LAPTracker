@@ -3,6 +3,7 @@
 // code (D102), once per request id (D100), with no mention allowed. The text carries names and squad might
 // only (D71, D76); the log, codes and counts.
 import type { Db } from "../db";
+import { discordCallout } from "../post-callout";
 import { claimPost, ensurePlan, findPlan, finishPost, type GarrisonRow } from "../repo/garrison";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
@@ -11,6 +12,7 @@ import { garrisonText, shareWordsOf } from "./garrison-words";
 import { privateLog } from "./log";
 import { discordMessages } from "./notice-formats";
 import { postMessages, STUCK_MS, type Channels } from "./notice-publish";
+import { postCallout } from "./post-callouts";
 
 export type PostResult =
   | { ok: true; at: Date; rev: number }
@@ -63,7 +65,9 @@ export async function postGarrison(
   const words = shareWordsOf(view, deps.t, deps.language);
   const [title = "", ...head] = words.head;
   const text = garrisonText(view, { ...words, head }, deps.language);
-  const messages = discordMessages(title, [{ name: "", text }], !channel.forum);
+  // D155: the alliance's own line above our title.
+  const lead = discordCallout(await postCallout(db, access, "garrison"));
+  const messages = discordMessages(title, [{ name: "", text }], !channel.forum, lead);
   const { sent } = await postMessages(deps.fetch, channel, title, messages);
   const done = sent === messages.length;
   await finishPost(db, row.id, input.requestId, done ? "posted" : "failed");

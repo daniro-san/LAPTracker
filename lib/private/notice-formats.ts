@@ -98,15 +98,19 @@ function pieces(block: string): string[] {
 /**
  * "Publish to Discord": the chosen languages as messages of at most DISCORD_LIMIT characters each. Each
  * language under its name when there are several; the title in bold first unless it is the forum post's
- * own title. Whole languages share a message while they fit.
+ * own title. Whole languages share a message while they fit. `lead`, a line already made safe for Discord
+ * (the alliance's own line, D155), goes first, on a line of its own above the title.
  */
 export function discordMessages(
   title: string,
   sections: { name: string; text: string }[],
   titleInBody: boolean,
+  lead = "",
 ): string[] {
+  const head = titleInBody ? `**${discordLiteral(title.trim())}**` : "";
+  const top = [lead, head].filter(Boolean).join("\n");
   const blocks = [
-    ...(titleInBody ? [`**${discordLiteral(title.trim())}**`] : []),
+    ...(top ? [top] : []),
     ...sections.map(({ name, text }) => {
       const body = discordLiteral(gameText(text));
       return sections.length > 1 ? `**${name}**\n${body}` : body;

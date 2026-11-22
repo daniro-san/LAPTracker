@@ -6,6 +6,7 @@ import { and, desc, eq, gt, gte, isNotNull, lt, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberFacts, workspaceSessions, workspaceUsers } from "../schema";
+import * as callout from "./desk-activity-callouts";
 import { callParts, callRows, type CallKind, type CallRows } from "./desk-activity-calls";
 import * as data from "./desk-activity-data";
 import * as garrison from "./desk-activity-garrison";
@@ -97,6 +98,7 @@ export interface ActivityRows
   thanks: ThanksDone[];
   keyChanges: key.KeyDone[];
   dataEvents: data.DataDone[];
+  calloutChanges: callout.CalloutDone[];
 }
 
 /** The page's bounds: since `from`, and before `before` (an ISO time, or "infinity" for the first page). */
@@ -128,7 +130,14 @@ function factSaves(db: Db, ws: number, [from, before]: Span, n: number) {
 type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp";
 
 type PartKind =
-  ReviewKind | TrashKind | picture.Kind | CallKind | garrison.Kind | key.Kind | data.Kind;
+  | ReviewKind
+  | TrashKind
+  | picture.Kind
+  | CallKind
+  | garrison.Kind
+  | key.Kind
+  | data.Kind
+  | callout.Kind;
 
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
@@ -206,7 +215,8 @@ async function smallSources(
     ${garrison.parts(ws, since, before, n)}
     ${theftLog.parts(ws, since, before, n)}
     ${key.parts(ws, since, before, n)}
-    ${data.parts(ws, since, before, n)}`);
+    ${data.parts(ws, since, before, n)}
+    ${callout.parts(ws, since, before, n)}`);
   return result.rows;
 }
 
@@ -318,6 +328,7 @@ function split(rows: SmallRow[]) {
     thanks: of("thanks").map(({ by, at, a }) => ({ by, at, target: a as ThanksDone["target"] })),
     ...key.rows(of),
     ...data.rows(of),
+    ...callout.rows(of),
     ...callRows(of),
     ...garrison.rows(of),
     ...theftLog.rows(of),

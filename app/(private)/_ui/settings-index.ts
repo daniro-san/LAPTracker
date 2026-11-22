@@ -24,6 +24,8 @@ export interface SettingsIndexInput {
   /** The Notifications card: the site has push keys. */
   push: boolean;
   discord: { channels: WebhookState[]; botOff: boolean };
+  /** "Your line on our posts" (D155), shown while `post_callouts` is on: how many posts have a line. */
+  callouts: { set: number; n: number } | null;
   /** `download`: the data card is shown (D126); `deletionDate`: a deletion is asked, its date. */
   data: { download: boolean; deletionDate: string | null };
 }
@@ -64,6 +66,13 @@ export function settingsIndex(input: SettingsIndexInput, t: WorkspaceDictionary)
     state: botOff ? `${count} · ${t["settings.state.botOff"]}` : count,
     attention: channels.includes("reenter"),
   });
+  if (input.callouts)
+    rows.push({
+      id: "callouts",
+      label: t["callouts.head"],
+      state: fill(t["settings.state.callouts"], input.callouts),
+      attention: false,
+    });
   const deletion = input.data.deletionDate;
   rows.push({
     id: input.data.download ? "workspace-data" : "workspace-delete-head",

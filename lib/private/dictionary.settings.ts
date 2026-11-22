@@ -1,6 +1,7 @@
 // Alliance settings and the tracker key (D124, issue 438) in English, Brazilian Portuguese and French: one
 // module the three workspace dictionaries spread. The key itself is never shown: only its last 4
 // characters, its status and the quota it has left. French puts a no-break space before : and inside « ».
+import { calloutsEn, calloutsFr, calloutsPt } from "./dictionary.callouts";
 import { chooserEn, chooserFr, chooserPt } from "./dictionary.chooser";
 import { discordEn, discordPt } from "./dictionary.discord";
 import { discordFr } from "./dictionary.discord-fr";
@@ -96,6 +97,7 @@ export const settingsEn = {
   ...discordEn,
   ...inviteEn,
   ...chooserEn,
+  ...calloutsEn,
   ...pushEn,
 };
 
@@ -192,6 +194,7 @@ export const settingsPt: typeof settingsEn = {
   ...discordPt,
   ...invitePt,
   ...chooserPt,
+  ...calloutsPt,
   ...pushPt,
 };
 
@@ -289,5 +292,6 @@ export const settingsFr: typeof settingsEn = {
   ...discordFr,
   ...inviteFr,
   ...chooserFr,
+  ...calloutsFr,
   ...pushFr,
 };
