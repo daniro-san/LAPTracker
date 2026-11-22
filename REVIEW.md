@@ -59,9 +59,9 @@ Read by `/code-review` and by `/pr-review` (through `.claude/pr-review.md`) on e
 - [ ] Tests that assert the wrong thing or pass vacuously (e.g. a privacy detector or scan with no positive control, a mock that makes the assertion trivially true).
 - [ ] A change to `lib/compute.ts`, `lib/collector.ts`, `lib/budget.ts` or `lib/sources/*` ships with a test.
 - [ ] Every new or changed test protects a named user flow, user action or stated rule, and none is on the fake-test list in CONTRIBUTING.md § Working rules, "Tests check real behaviour".
-- [ ] E2E: a new or changed test asserts rendered values computed from the seed and, after an action, the changed screen, and again after a reload where the flow promises persistence; a status code or a request wait alone does not pass.
-- [ ] No `new Date()`, `Date.now()`, `waitForTimeout` or real `setTimeout` in a test body; PGlite is opened once per file (`.claude/rules/tests.md`).
-- [ ] A new route under `app/(private)/api/w/[slug]` passes `member-session.test.ts` with a `FIXTURES` entry, not an `EXCLUDED` one.
+- [ ] E2E: a new or changed test asserts rendered values computed from `e2e/fixtures/seed.ts` and, after an action, the changed screen, and again after a reload where the flow promises persistence; a status code or a request wait alone does not pass.
+- [ ] Vitest: no `new Date()`, `Date.now()` or real `setTimeout` in a test body, and PGlite is opened once per file. E2E: no `waitForTimeout`, and dates come from `seededAt()` / `calendarOf`, never a bare `Date.now()` in seeded rows or expected values (`.claude/rules/tests.md`).
+- [ ] A new route under `app/(private)/api/w/[slug]` passes `member-session.test.ts` with a `FIXTURES` entry; an `EXCLUDED` entry needs its reason written next to it.
 
 ## Specs (`.specs/`, see `.specs/README.md`)
 
