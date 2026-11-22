@@ -24,6 +24,26 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
+    text: 'GitHub → Settings → Actions: allow only selected actions (GitHub\'s own, pnpm/action-setup, dependabot/fetch-metadata), require actions pinned to a full commit SHA, set the default workflow token to read-only and turn off "Allow GitHub Actions to create and approve pull requests". Also turn on non-provider secret patterns. The CI/CD panel recommends it; every workflow already pins SHAs and sets its own permissions.',
+    issue: 592,
+  },
+  {
+    text: "Decide whether dev becomes the default branch. Issues would close on their own, Dependabot security PRs would target dev, and schedules would run from dev. The order matters: first change the main ruleset to target refs/heads/main, then switch the default branch, then ask Claude for the follow-up PR.",
+    issue: 592,
+  },
+  {
+    text: "Decide whether to drop tick.yml's own GitHub schedule (it fired in about 4% of its slots; cron-job.org is the real scheduler, D30) and keepalive.yml.",
+    issue: 592,
+  },
+  {
+    text: "Confirm the test rule: a change to a desk flow, or to the numbers a public page shows, updates its end-to-end test in the same PR (orchestrator recommendation).",
+    issue: 592,
+  },
+  {
+    text: "Private repo: CI used about 16,000 Actions minutes a month at the current pace (about 1,000 PRs a month). After this release's savings it should land around 7,000–9,000, still above GitHub Pro's 3,000, so a private repo would need a self-hosted runner or paid minutes.",
+    issue: 592,
+  },
+  {
     text: "Browser notifications: test on a real iPhone (add the desk to the Home Screen, open it from the icon, then Alliance settings → Notifications) and on Android Chrome.",
     issue: 558,
   },
@@ -115,6 +135,24 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.46.0",
+    date: "2026-11-22",
+    title: "Raid prep says which raid it is for, an honest KvK card, and safer, faster checks",
+    changes: [
+      "Raid prep: the header names the raid it serves (\"KvK Sat, Nov 21 · raid at the reset\"), not the day the roll call was added. The card opens with the answer, how many shields the tracker saw at the last check, and the marks below it add up and change with every tap. Each member's line says the shield time is the map's time.",
+      "Insights → KvK cost and recovery: on KvK day, after the End read, the card says the KvK is recorded and that its numbers show after the 23:30 ST daily read, instead of claiming no KvK was read. When the page's reads start after the last KvK, it says so.",
+      'Easier to read: stronger contrast in light mode, visible labels on fields, "Started"/"Ended" words instead of faded items, and larger values on Me, the member card and Calendar.',
+      "Error reports: before any error text leaves the site, one filter removes the private roster fields and member text. Server errors now go to PostHog Error Tracking; /admin → App errors keeps 30 days as a fallback.",
+      "Every change to the site is now checked in a real browser before it can merge: 28 checks of what the public pages, the desk and the Me page show, including that one alliance never sees another's data. Each release also runs them in the iPhone browser engine.",
+      "Checks run about 3 minutes faster per change, a release no longer runs them twice, and Dependabot waits 7 days before proposing a new version.",
+      "For whoever builds the site: issue and PR templates with testable criteria, a rule to keep the analytics plan current with every change, and rules that every test checks real behaviour.",
+    ],
+    needsYou: [
+      "GitHub Actions settings and three CI decisions are on the to-do list below (issue #592).",
+    ],
+    prs: [596, 597, 598, 599, 600, 601, 602, 603, 604],
+  },
   {
     version: "v5.45.0",
     date: "2026-11-21",
