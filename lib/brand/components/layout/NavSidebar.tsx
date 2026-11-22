@@ -18,7 +18,7 @@ export function NavSidebar({
   footer,
 }: NavProps & { footer?: ReactNode }) {
   return (
-    <nav aria-label={label} className="sticky top-0 h-dvh overflow-y-auto pt-3 pb-6">
+    <nav aria-label={label} className="sticky top-0 h-dvh overflow-y-auto pt-3 pb-20">
       <ul>
         {sidebarEntries(items, current, view).map((entry) => {
           const top = entry.depth === 0;

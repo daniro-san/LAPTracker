@@ -164,7 +164,12 @@ export interface AnalyticsEvents {
    * D157: "Send feedback" went through, from the desk or the board, and its kind; never the text. Not `area`,
    * which before_send sets to the page's area on every event.
    */
-  feedback_sent: { feedback_area: "desk" | "board"; kind: "idea" | "problem" | "good" };
+  feedback_sent: {
+    feedback_area: "desk" | "board";
+    kind: "idea" | "problem" | "good";
+    /** Which button opened the sheet: the floating badge (from 1280) or the one at the end of the page. */
+    entry: "badge" | "end";
+  };
   /** Alliance settings' Check found the bot in the alliance's Discord server for the first time (D129). */
   ws_bot_installed: NoProperties;
   /** A channel's webhook saved in Alliance settings (D129, D147): which channel only, never the URL. */
