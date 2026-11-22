@@ -107,6 +107,8 @@ describe("the Insights Time zones card (owner, 2026-11-22)", () => {
     expect(words.based[0]).toBe(
       "Largest group: Paris, Zurich and 1 more (UTC+1), 7 of the 9 members with a time zone. The 00:00 ST reset is 03:00 for them.",
     );
+    // Counts only: no member's name (P101 …) or uid anywhere in the card's words.
+    expect(JSON.stringify(words)).not.toMatch(/P1\d\d|\b1\d\d\b/);
   });
 
   it("counts only the newest daily update's members, and a cleared or missing zone as not recorded", async () => {
@@ -152,6 +154,32 @@ describe("the Insights Time zones card (owner, 2026-11-22)", () => {
     expect(joined.details?.rows.map((r) => r.label)).toEqual(["Lagos, Paris · UTC+1"]);
     expect(joined.based[0]).toBe(
       "All 2 members with a time zone are in one group: Lagos, Paris (UTC+1). The 00:00 ST reset is 03:00 for them.",
+    );
+  });
+
+  it("says the clocks change before KvK when KvK comes first, and names a tie west to east", async () => {
+    await roster("2026-11-21", [101, 102]);
+    const { access, zone } = await officer();
+    await zone(101, "Europe/London");
+    await zone(102, "America/New_York");
+    // Sunday 2027-03-14 03:00 ST; a Sunday KvK at 12:00 ST comes before the reset, and New York's clocks
+    // go forward at 07:00 UTC in between.
+    const now = new Date("2027-03-14T05:00:00Z");
+    const words = await card(access, now, "2027-03-14", {
+      now,
+      kvk: new Date("2027-03-14T14:00:00Z"),
+      reset: new Date("2027-03-15T02:00:00Z"),
+    });
+    expect(words.details?.rows.map((r) => [r.label, r.times, r.change])).toEqual([
+      [
+        "New York · UTC−5",
+        "Now 00:00 · Reset Sun 22:00 · KvK Sun 10:00",
+        "Clocks change before KvK",
+      ],
+      ["London · UTC+0", "Now 05:00 · Reset 02:00 · KvK Sun 14:00", null],
+    ]);
+    expect(words.based[0]).toBe(
+      "Largest groups, 1 member each: New York (UTC−5), London (UTC+0). The 00:00 ST reset is Sun 22:00 and 02:00 for them.",
     );
   });
 

@@ -10,7 +10,7 @@ Why: the owner asked (2026-11-22) for "in the officers' Insights, something grou
 
 - **Label.** Up to 2 of the row's cities (the IANA city, most members first, then by name), "and N more" for the rest, then the offset now in the one offset form: "Paris, Zurich and 1 more · UTC+1". A fixed-offset zone (`Etc/GMT-1`) counts but names no city. A row of only such zones reads "UTC+1".
 - **Order.** West to east: by the offset now, then at the reset, then at KvK. The headline already answers "most".
-- **A clock change ahead.** When a row's offset at the reset or at KvK is not its offset now, the row says "Clocks change before the reset" or "Clocks change before KvK". It gives no date.
+- **A clock change ahead.** When a row's offset at the reset or at KvK is not its offset now, the row says "Clocks change before the reset" or "Clocks change before KvK", naming whichever of those two moments comes first. It gives no date.
 
 **The moments.** Each row reads "Now 10:00 · Reset Sun 21:00 · KvK Sat 09:00", on the row's own clock at each instant (`dateWords`, `zoneOffset`). "Now" and "Reset" carry the zone's weekday only when its date is not the server's date at that instant. KvK always carries it.
 
@@ -20,7 +20,7 @@ Why: the owner asked (2026-11-22) for "in the officers' Insights, something grou
 
 **What shows.** Without a tap, the card shows two lines:
 
-- the largest group and its reset: "Largest group: Manila, Singapore (UTC+8), 8 of the 29 members with a time zone. The 00:00 ST reset is 10:00 for them." The panel rejected "Most …" because 8 of 29 read as a majority. There are separate sentences for a tie, for a single group and for a single member.
+- the largest group and its reset: "Largest group: Manila, Singapore (UTC+8), 8 of the 29 members with a time zone. The 00:00 ST reset is 10:00 for them." The panel rejected "Most …" because 8 of 29 read as a majority. There are separate sentences for a tie (its groups named west to east, as the rows), for a single group and for a single member.
 - the coverage: "Time zone recorded for 29 of the 41 members in the newest daily update."
 
 Behind "Show the details" (44 px), as on the other cards:

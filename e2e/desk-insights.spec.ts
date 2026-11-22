@@ -31,6 +31,12 @@ test("Time zones: the largest group and its reset, the groups west to east, and 
     "Largest group: Manila (UTC+8), 2 of the 3 members with a time zone. The 00:00 ST reset is 10:00 for them.",
   );
   await sees(card, "Time zone recorded for 3 of the 11 members in the newest daily update.");
+  // The last card, its rows behind the fold.
+  await expect(page.locator("section.drawn-card").last()).toHaveAttribute(
+    "aria-labelledby",
+    "insights-zones",
+  );
+  await expect(card.getByText("Not recorded yet")).toBeHidden();
 
   await card.getByText("Show the details").click();
   const rows = card.getByRole("listitem");
@@ -42,13 +48,17 @@ test("Time zones: the largest group and its reset, the groups west to east, and 
   await sees(rows.nth(1), "Manila · UTC+8");
   await sees(rows.nth(1), "Reset 10:00");
   await sees(rows.nth(2), "Not recorded yet");
+  await sees(rows.nth(2), "Not counted in any group.");
+  await expect(rows.nth(2).locator(".h-2")).toHaveCount(0);
   await expect(rows.nth(2).locator(".tabular-nums")).toHaveText("8");
   await sees(
     card,
     "Within their usual hours for the most: 09:00–12:59 and 22:00–23:59 ST, 3 of the 3 members with a time zone (8 not recorded).",
   );
 
-  await card.getByRole("link", { name: "Add their time zone ›" }).click();
+  const add = card.getByRole("link", { name: "Add their time zone ›" });
+  expect((await add.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await add.click();
   await expect(page).toHaveURL(`${desk}/members?ask=timeZone`);
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   await expect(memberLine(page, A.names[1] as string)).toBeVisible();

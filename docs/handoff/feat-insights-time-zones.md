@@ -24,7 +24,7 @@ The owner asked for this on 2026-11-22: "in the officers' Insights, something gr
 - **`dateWords` gains `weekday`** ("Sat"), in `lib/date-words.ts`.
 - **Copy** is `insights.zones.*` in `lib/private/dictionary.insights-zones.ts` (EN, PT-BR, FR), spread by `dictionary.insights.ts`. `Fold` in `InsightsMore.tsx` is now exported.
 - **Tests.**
-  - `lib/private/insights-zones.test.ts` (PGlite, 7 tests): grouping and order, who counts, a summer-time split (Paris and Lagos across the EU change), the reset and KvK in New York, Manila and Kiritimati, the next KvK never a running one, usual-hour ranges, and no zone.
+  - `lib/private/insights-zones.test.ts` (PGlite, 8 tests): grouping and order (no name or uid in the words), who counts, a summer-time split (Paris and Lagos across the EU change), a change before KvK with a tie named west to east, the reset and KvK in New York, Manila and Kiritimati, the next KvK never a running one, usual-hour ranges, and no zone.
   - `e2e/desk-insights.spec.ts`: the card on the seed and the add link to Members.
   - `e2e/fixtures/seed-facts.ts` (new) holds the seed's fact rows: the Troops rows moved out of `seed.ts` for its 300-line limit, plus `ZONE_FACTS` (seed-people.ts: k=0 and k=3 Manila, k=5 São Paulo).
 - **Docs.** D152, D139's dated amendment, and the README index line.
@@ -47,14 +47,14 @@ The owner asked for this on 2026-11-22: "in the officers' Insights, something gr
 
 - **The clock-change note has no date.** The adversarial reviewer asked for the date; it says "Clocks change before KvK" instead. The reviewer accepted this in the second round.
 - **The card is a new file**, `InsightsZones.tsx`, not part of `InsightsMore.tsx`, to keep that file under 300 lines.
-- **The Verifier sub-agent was not run.** As in 585-words, it is left to the orchestrator's `/pr-review`.
+- **The Verifier** (an independent sub-agent) found 4 issues, all fixed in the second commit (`verification.md`): the clock-change note named the reset when KvK came first; a tie was named west to east while the plan's example put London first (the plan now says west to east); the e2e did not check that the card is last and folded; the "no name" claim rested on a scan that cannot see own-member names (now a unit assertion).
 
 ## Verified
 
 Local: Node 26.5.0, Postgres 18 (worktree `.pglocal` on 54320), Playwright Chromium.
 
 - `pnpm vitest related --run` on the 9 changed source files: 76 files, 387 tests passed.
-- `pnpm check`: exit 0 (prettier, eslint, tsc, Vitest 1760 passed and 4 skipped, drift, i18n). It passed on the third run: the first two failed on formatting, then on the page's function length and `seed.ts`'s line limit.
+- `pnpm check`: exit 0 (prettier, eslint, tsc, Vitest 1761 passed and 4 skipped, drift, i18n). It failed twice first (formatting; then the page's function length and `seed.ts`'s line limit), and passed after the fixes and again after the Verifier's fixes.
 - `pnpm test:e2e`, with the build: 53 passed, 3 skipped. This includes `desk-insights.spec.ts` on `phone` and `wide`, and `isolation.spec.ts` with the new facts seeded.
 - **Deliberate breaks.** Each was run against `insights-zones.test.ts`, then reverted. Every one failed at least the test named for its rule:
 
@@ -73,11 +73,7 @@ Local: Node 26.5.0, Postgres 18 (worktree `.pglocal` on 54320), Playwright Chrom
   | rows with no zone | no zone |
 
   For e2e, the add link pointed at `?ask=1`, which fails at `toHaveURL(…?ask=timeZone)`.
-- **Screenshots** at 360×780 (Chromium, e2e seed, local only, not committed):
-  - `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/shots/zones-closed-light.png`
-  - `…/shots/zones-open-light.png`
-  - `…/shots/zones-open-dark.png`
-  - `…/shots/zones-closed-dark.png`
+- **Screenshots** at 360×780 (Chromium, e2e seed), light and dark, the card closed and open. They were taken on the build machine and are not committed; the build agent's report gives their paths.
 - **Plan review.** The panel ran on invented data:
   - the six officers, with the first-glance test;
   - a designer;

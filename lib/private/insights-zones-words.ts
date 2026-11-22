@@ -77,6 +77,16 @@ function clockOf(g: ZoneGroup, at: Date, f: ZoneFormats, weekday: boolean) {
   return weekday || otherDay ? `${words.weekday(at)} ${words.time(at)}` : words.time(at);
 }
 
+/** "Clocks change before KvK" or "… before the reset": the earlier moment whose offset is not now's. */
+function changeOf(g: ZoneGroup, m: Moments, f: Formats): string | null {
+  const moments = [
+    { at: m.reset, offset: g.offsets.reset, key: "insights.zones.changeReset" as const },
+    { at: m.kvk, offset: g.offsets.kvk, key: "insights.zones.changeKvk" as const },
+  ].sort((a, b) => a.at.getTime() - b.at.getTime());
+  const first = moments.find((x) => x.offset !== g.offsets.now);
+  return first ? f.t[first.key] : null;
+}
+
 const listOf = (items: string[], language: string) =>
   new Intl.ListFormat(language, { type: "conjunction" }).format(items);
 
@@ -147,12 +157,7 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
           reset: clockOf(g, m.reset, f, false),
           kvk: clockOf(g, m.kvk, f, true),
         }),
-        change:
-          g.offsets.reset !== g.offsets.now
-            ? t["insights.zones.changeReset"]
-            : g.offsets.kvk !== g.offsets.now
-              ? t["insights.zones.changeKvk"]
-              : null,
+        change: changeOf(g, m, f),
       })),
       missing: c.members > known ? String(c.members - known) : null,
       usual: groups.length >= 2 ? usualLine(c, known, f) : null,
