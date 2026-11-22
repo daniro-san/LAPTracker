@@ -1,4 +1,4 @@
-// /admin/changes: what each release changed and what it needs from the owner, newest first. Static data,
+// /admin/changes: what each release changed, newest first, and the owner's to-do (every owner step, only there). Static data,
 // English only (D48). Before running Prepare release, add the release's entry on top (CONTRIBUTING.md).
 // Plain words for the owner: what changed for officers, members, the public or the owner, and why. No file
 // names, secrets, webhook URLs or member data; no player names. `#123` in a text links to GitHub.
@@ -97,7 +97,7 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 558,
   },
   {
-    text: "Set the Raid Shield channel (Alliance settings → Discord) before Friday 23:30 ST; without it no summary is posted.",
+    text: "Set the Raid Shield channel (Alliance settings → Discord) before Friday 23:30 ST, then tap Send a test message; without the channel no summary is posted.",
   },
   {
     text: 'For the OGs alliance, Discord: on its desk, Alliance settings → Discord, tap Check, save both webhooks and send a test message. When /admin shows both channels as "set", delete WORKSPACE_DISCORD_WEBHOOKS in Vercel.',
