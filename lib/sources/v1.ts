@@ -95,9 +95,13 @@ async function httpDetail(path: string, response: Response): Promise<UpstreamDet
       return value === null ? [] : [[h, value]];
     }),
   );
-  const detail = { path, status: response.status, headers, body: body.slice(0, DETAIL_BODY_CHARS) };
-  return redact(detail) as UpstreamDetail;
+  // Redacted before the cut, so a value cut at the edge is still recognised.
+  const detail = redact({ path, status: response.status, headers, body }) as UpstreamDetail;
+  return { ...detail, body: detail.body?.slice(0, DETAIL_BODY_CHARS) ?? "" };
 }
+
+/** The path as an error's message names it: a player's uid never is (D115, 2026-11-21). */
+const shownPath = (path: string) => path.replace(/^\/players\/\d+/, "/players/[uid]");
 
 /** A request with no HTTP answer, as /admin shows it: the path, the timeout or the network cause. */
 function noAnswerDetail(path: string, e: unknown, timeoutMs: number): UpstreamDetail {
@@ -117,8 +121,9 @@ async function answerError(
   const { status } = response;
   // INVARIANT quota-429-aborts: never retried.
   if (status === 429)
-    return new QuotaExhaustedError(`429 on ${path}`, await httpDetail(path, response));
-  if (status === 404) return new NotFoundError(`404 on ${path}`, await httpDetail(path, response));
+    return new QuotaExhaustedError(`429 on ${shownPath(path)}`, await httpDetail(path, response));
+  if (status === 404)
+    return new NotFoundError(`404 on ${shownPath(path)}`, await httpDetail(path, response));
   // INVARIANT retry-only-5xx-gateway: 502/503/504, max 3, backoff + jitter, Retry-After honoured.
   if (!RETRYABLE.has(status) || attempt >= maxRetries)
     return new UpstreamError(status, await httpDetail(path, response));

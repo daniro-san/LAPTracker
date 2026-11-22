@@ -59,7 +59,7 @@ export async function squadsBatch(
       await shieldTick({ ...deps, origin }, db, startedAt + AFTER_BUDGET_MS);
   } catch (error) {
     const route = press?.route ?? "/api/tick";
-    await recordAppError(ctx, { route, kind: "after", digest: null, error });
+    await recordAppError(ctx, { route, kind: "after", digest: null, error, handled: true });
   } finally {
     await close();
   }

@@ -2,9 +2,9 @@
 // alliance, and the daily clean-up clears raw bodies past 90 days while their columns stay.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { appErrorDetail } from "../app-errors";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { appErrorDetail } from "../report-error";
 import { playerHistory, playerReads } from "../schema-squads";
 import type { HistoryInput } from "../sources/types";
 import { playerAnswer } from "../squads.test-helpers";

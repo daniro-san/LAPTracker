@@ -2,12 +2,12 @@
 // latest rehearsal. Never linked from public pages; the pages check the admin cookie first.
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 
-import type { AppErrorDetail } from "../app-errors";
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
 import type { SnapshotPhase } from "../repo";
 import { loadVerdictInput } from "../repo/rehearsals";
+import type { AppErrorDetail } from "../report-error";
 import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } from "../schema";
 import { runProblems } from "./run-problems";
 import { phaseColumn, phaseSnapshot } from "./visibility";

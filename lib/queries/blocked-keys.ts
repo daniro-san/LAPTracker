@@ -14,6 +14,9 @@ export const BLOCKED_ROSTER_KEYS = [
 
 export type BlockedRosterKey = (typeof BLOCKED_ROSTER_KEYS)[number];
 
+/** avatar_url's photos live on this host (D22); lib/redact.ts removes any URL on it from error text. */
+export const PHOTO_HOST = "phs-image.globallap.com";
+
 const blocked = new Set<string>(BLOCKED_ROSTER_KEYS);
 
 /** Every path at which a blocked key appears in `value`, e.g. `members.0.last_online_at`. Empty = clean. */

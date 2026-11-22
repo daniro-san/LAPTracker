@@ -29,7 +29,7 @@ The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?privat
 
 ## Where they must never go
 
-- [ ] Logs, `run_logs`, `app_errors`.
+- [ ] Logs, `run_logs`. `app_errors.detail` may keep an error's own message only after the private-field redactor (`redactPrivate`, `lib/redact.ts`), for the owner's `/admin/errors` only; rows are purged after 30 days (D115, 2026-11-21).
 - [ ] Discord messages.
 - [ ] AI or translation requests.
 - [ ] Any shared cache (D143 caches hold public reads only).

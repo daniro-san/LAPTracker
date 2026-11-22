@@ -1,6 +1,7 @@
-// Events the server sends to PostHog (D115): route errors as codes, Groq calls as `$ai_generation` metadata,
-// Discord command counts, and the desk's writes (`ws_action`). A closed list, each with properties that are
-// codes, enums or numbers: no name, no text, no roster field, no member value, no secret. Production with
+// Events the server sends to PostHog (D115): server errors, Groq calls as `$ai_generation` metadata, Discord
+// command counts, and the desk's writes (`ws_action`). A closed list, each with properties that are codes,
+// enums or numbers: no name, no text, no roster field, no member value, no secret. The one text is
+// `$exception`'s message and frames, which pass redact(), redactPrivate and scrubMessage first. Production with
 // POSTHOG_KEY only, as D77; anywhere else nothing is sent. Events have the fixed distinct id
 // `laptracker-server` (as D91's flag read) and no person profile, except `ws_action`, which belongs to the
 // officer's pseudonymous id (lib/analytics/person.ts), the same one the desk's page identifies, so funnels
@@ -129,8 +130,21 @@ export function eventWorkspace(w: {
 }
 
 export interface ServerEvents {
-  /** A route or render error (lib/app-errors.ts): the error's class name and where, never its message. */
-  $exception: { name: string; kind: string; route: string };
+  /**
+   * A server error (lib/report-error.ts, D115's 2026-11-21 amendment): its class, its message and stack frames
+   * after redact(), redactPrivate and scrubMessage, where (`kind`, the route pattern, the desk's or /admin's
+   * `section`), and whether our code caught it (`handled`). Never a request body, query string or user text.
+   */
+  $exception: {
+    name: string;
+    kind: string;
+    route: string;
+    message: string;
+    /** The redacted frames, one `at …` per line, innermost first, as AppErrorDetail keeps them. */
+    stack?: string;
+    handled: boolean;
+    section?: string;
+  };
   /** One Groq request (D81), privacy mode: no prompt and no output, only what it cost and how it went. */
   $ai_generation: {
     model: string;
@@ -178,19 +192,26 @@ export function wireProperties(e: ServerEvent): Wire {
 function ownProperties(e: ServerEvent): Wire {
   const base: Wire = { $process_person_profile: false, $lib: "laptracker-server" };
   switch (e.event) {
-    case "$exception":
+    case "$exception": {
+      const p = e.properties;
+      const frames = p.stack ? stackFrames(p.stack) : [];
       return {
         ...base,
+        // PostHog's error tracking format, as posthog-js and posthog-node build it.
         $exception_list: [
           {
-            type: e.properties.name,
-            value: `${e.properties.kind} error`,
-            mechanism: { handled: true, synthetic: false },
+            type: p.name,
+            value: p.message,
+            mechanism: { handled: p.handled, synthetic: false, type: "generic" },
+            ...(frames.length > 0 && { stacktrace: { type: "raw", frames } }),
           },
         ],
-        kind: e.properties.kind,
-        route: e.properties.route,
+        $exception_level: "error",
+        kind: p.kind,
+        route: p.route,
+        ...(p.section && { section: p.section }),
       };
+    }
     case "$ai_generation": {
       const p = e.properties;
       return {
@@ -225,6 +246,33 @@ function ownProperties(e: ServerEvent): Wire {
         tier: "officer",
       };
   }
+}
+
+/** `at fn (file:line:col)`, `at file:line:col`, `at async fn (…)`, `at fn (native)`. */
+const FRAME = /^at (?:async )?(?:(.+?) \()?(.+?)(?::(\d+):(\d+))?\)?$/;
+
+/**
+ * Node's `at …` lines as PostHog's raw frames (the fields of @posthog/core's node parser), outermost first as
+ * PostHog orders them. A frame on an absolute path outside node_modules is the app's.
+ */
+export function stackFrames(stack: string): object[] {
+  return stack
+    .split("\n")
+    .flatMap((line) => {
+      const m = FRAME.exec(line.trim());
+      if (!m) return [];
+      const filename = m[2]?.replace(/^file:\/\//, "");
+      return [
+        {
+          platform: "node:javascript",
+          function: m[1] ?? "?",
+          ...(filename && { filename }),
+          ...(m[3] && { lineno: Number(m[3]), colno: Number(m[4]) }),
+          in_app: !!filename?.startsWith("/") && !filename.includes("/node_modules/"),
+        },
+      ];
+    })
+    .reverse();
 }
 
 export interface ServerAnalyticsEnv {

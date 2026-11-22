@@ -203,9 +203,10 @@ lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot and the tick's executeSample (D69) (finalise + logger
                     shutdown in finally, then notify) and quotaReport (the Friday check).
-lib/route.ts, lib/app-context.ts, lib/app-errors.ts
+lib/route.ts, lib/app-context.ts, lib/app-errors.ts, lib/report-error.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
-                    the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors.
+                    the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors
+                    and its admin alert; an error's redacted detail and PostHog's `$exception` (`reportError`).
 config/alliances.ts the server, TRACKED_COUNT (20), LOOKUPS_PER_DAY (30) and the own alliance (D133: no fixed list).
 lib/tracked.ts      the day's ranks board and tracked set before the daily read (D133): the board stored, its top 20 by
                     might claimed once a day, the admin line on a change; `dayTargets` adds the workspaces' alliances
@@ -235,7 +236,7 @@ lib/app-commands.ts the app's Discord message commands (D96, D101) and registerA
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai, flags}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/{app-errors, app-context} → lib/analytics/server` (route errors and `$ai_generation`, D115); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries, flags}` (queries: the public Discord message's numbers; flags: its war-turnout line, D91).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai, flags}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/{app-errors, report-error, app-context} → lib/analytics/server` (route errors and `$ai_generation`, D115); `lib/report-error → lib/analytics/{sanitise, events}` (the exception's scrubbed message, D115 2026-11-21); `lib/{app-errors, run, run-notify, tick, push} → lib/report-error` (an error's redacted detail and a handled `$exception`; `lib/report-error` imports neither `lib/notify*` nor `lib/discord-*`, so `lib/private` reaches it through `lib/push` within D71); `lib/analytics/sanitise → lib/redact` (the private-field redactor in the browser's scrubber); `lib/{redact, sources/shared} → lib/queries/blocked-keys` (the private keys and the photo host, which import nothing); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries, flags}` (queries: the public Discord message's numbers; flags: its war-turnout line, D91).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

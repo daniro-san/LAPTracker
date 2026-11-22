@@ -7,7 +7,7 @@ Why: the owner saw `✗ failed [NSE]: v1 TimeoutError` and `✗ App error on /ad
   - for an HTTP error: the request path, the status, the headers `retry-after`, `content-type`, `date`, `server`, `cf-ray` and `x-request-id`, and the first 1,000 characters of the body;
   - for a call with no answer: the path, the timeout (30 s) or the network cause. These calls throw `RequestError`, which keeps the cause's name (`TimeoutError`, `TypeError`), so `describe()` and every one-line text read as before.
   - It passes through `redact()` (LAP keys, database URLs). It is stored in `run_logs.data.detail` (snapshot runs) and `daily_rosters.error_detail` (migration 0013).
-- **App error detail** (`AppErrorDetail`, `lib/app-errors.ts`): name, message (500 characters), up to 12 stack frames, and the cause. It is redacted with every configured secret (`secretsOf`) and stored in `app_errors.detail` (migration 0013). The admin Discord alert adds the message's first line (160 characters): `✗ App error on /admin: render TypeError — Cannot read …`. The stack stays on `/admin/errors`.
+- **App error detail** (`AppErrorDetail`, `lib/report-error.ts` since 2026-11-21, was `lib/app-errors.ts`): name, message (500 characters), up to 12 stack frames, and the cause. It is redacted with every configured secret (`secretsOf`) and stored in `app_errors.detail` (migration 0013). The admin Discord alert adds the message's first line (160 characters): `✗ App error on /admin: render TypeError — Cannot read …`. The stack stays on `/admin/errors`.
 - **What it means, what to do** (`lib/error-guide.ts`, text in `lib/copy-guide.ts`). The one-line error text is matched to an entry: timeout, network, gateway 5xx, quota 429, the quota rule, key refused 401/403, not found, other HTTP, schema, not fetched, deadline, call cap, page/route failure, unknown.
 - **Where it shows:**
   - `/admin/errors`: each group has its entry and a closed **Details** (message, cause, where).
@@ -15,3 +15,5 @@ Why: the owner saw `✗ failed [NSE]: v1 TimeoutError` and `✗ App error on /ad
   - The run page: a failed `v1.fetch` log line has its entry and **Details**.
   - The daily read's admin message: under each `✗ reason (n): …` line, a `↳ meaning action` line.
 - **Size:** body 1,000 characters, message 500, 12 frames, a fixed header list. Rows recorded before this change have no detail and show only the one-line text.
+
+**Amendment (owner, 2026-11-21, D115's amendment of the same day):** the detail fields now also pass the private-field redactor (`redactPrivate`, `lib/redact.ts`) through `redact()`: app error detail, upstream detail in `run_logs.data.detail` and `daily_rosters.error_detail`. A failed query's parameters are dropped (`params: …`). The message and cause are redacted at up to 2,000 characters, then cut to 500. The admin alert's line passes it again. `app_errors` rows are deleted after 30 days, in addition to the 500-row cap.
