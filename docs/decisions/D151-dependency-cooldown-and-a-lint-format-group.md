@@ -1,4 +1,4 @@
-## D150 — Dependencies wait 7 days before Dependabot proposes them, and formatter/linter bumps are their own group that never merges itself (2026-11-21, CI audit, issue 592; amends plan §11.6 and §12.4)
+## D151 — Dependencies wait 7 days before Dependabot proposes them, and formatter/linter bumps are their own group that never merges itself (2026-11-21, CI audit, issue 592; amends plan §11.6 and §12.4)
 
 Why: Dependabot merged every new minor or patch release on its own within a week, and a merge to `dev` reaches the production build, which holds secrets, within hours. A compromised release is usually found and pulled within days, so a short wait removes most of that risk. Separately, PR #420 has been red since 2026-11-18. Prettier 3.10.1 measures Thai text narrower than 3.9.10 does, so it re-wraps 5 lines of `lib/i18n/th.ts` and re-pads the whole table in `lib/i18n/glossary/th.md`. Because prettier sat in the same group as `next` 16.4.6 and 9 other runtime updates, the formatter held them all back.
 

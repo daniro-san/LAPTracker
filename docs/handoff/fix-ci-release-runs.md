@@ -16,14 +16,14 @@
 - `CONTRIBUTING.md` release step 4: wait for `check` from the dispatch on `dev`, then `gh pr merge <n> --merge --match-head-commit <sha>`; nobody approves a held run.
 - `.claude/settings.json`: removed the `gh api -X POST …/actions/runs/*/approve` allow rule.
 - `docs/decisions/D29-…`: dated amendment (no held run, with the run evidence).
-- `docs/decisions/D150-dependency-cooldown-and-a-lint-format-group.md` and its index line.
+- `docs/decisions/D151-dependency-cooldown-and-a-lint-format-group.md` and its index line.
 
 ## Decisions
 
 - **No formatting change for #420.** Prettier 3.10.1 measures Thai text narrower than 3.9.10. It joins 5 broken lines in `lib/i18n/th.ts` and re-pads the whole table in `lib/i18n/glossary/th.md` (339 lines). 3.9.10's `--check` rejects 3.10.1's output of both files, and 3.10.1 rejects the current files. No whitespace change passes under both, so the regrouping is what unblocks #420.
 - **pnpm `minimumReleaseAge` not added.** pnpm 12.16.1 supports it (minutes; strict when set explicitly). It checks every lockfile entry even on `pnpm install --frozen-lockfile`. With `10080`, a clean frozen install of today's lockfile fails with `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`: `@posthog/core@1.68.0`, published 2026-11-15T14:18:02Z. The task said to add it only if it does not break that install.
 - **pnpm `trustPolicy: no-downgrade` not added.** A clean frozen install with it fails with `ERR_PNPM_TRUST_DOWNGRADE` on `lefthook@2.2.2` ("High-risk trust downgrade … possible package takeover").
-- **D150 amends plan §11.6 and §12.4, not a decision.** No earlier decision covers Dependabot automerge; the workflow cites plan §11.6.
+- **D151 amends plan §11.6 and §12.4, not a decision.** No earlier decision covers Dependabot automerge; the workflow cites plan §11.6.
 - **The GitHub Actions cooldown has only `default-days`.** GitHub's options reference lists github-actions as supporting default days but not the SemVer-bump keys.
 
 ## Deviations
@@ -50,7 +50,7 @@
 - **Dependabot reads `dependabot.yml` from the default branch (`main`).** The cooldown and the `lint-format` group take effect only after the next release. Then Dependabot rebuilds #420 without prettier, and prettier arrives in its own `lint-format` PR, which needs `pnpm exec prettier --write lib/i18n/th.ts lib/i18n/glossary/th.md` by hand.
 - **`lefthook@2.2.2` trust downgrade** reported by pnpm's `trustPolicy`. Look at its provenance on npm before turning on `trustPolicy: no-downgrade`, or before the next lefthook bump.
 - **`minimumReleaseAge: 10080`** can go into `pnpm-workspace.yaml` once `@posthog/core@1.68.0` is 7 days old (2026-11-22T14:18Z), if nothing younger lands first. Re-run a clean `pnpm install --frozen-lockfile` with it set before committing. In strict mode it also makes `pnpm add`/`update` fail when no version in range is 7 days old.
-- **D150 collides with PR #600's D150.** Whichever of the two merges second renumbers (README rule).
+- **Renumbered to D151** by the orchestrator: PR #600 holds D150.
 - **Security updates still target `main`** (report S7). This change does not touch that; R8 does.
 
 ## Next
