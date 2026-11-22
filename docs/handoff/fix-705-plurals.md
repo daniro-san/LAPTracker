@@ -15,7 +15,8 @@ Every hand-written one/other choice of a workspace copy key now goes through `pl
 - `SavedThefts` is exported for the test, and its `link` prop is renamed `thefts` so `SecretOpsReview` can spread its props into it (keeps the function under the 80-line lint limit).
 
 ## Deviations
-None from the task. The roll-call "one" copies still hold a literal "1" in some keys; that is safe only because they are shown for n >= 1.
+- Scope: the issue names one bug (Secret Operations), and its 2026-11-22 comment adds the other sites to move to `plural()`. This PR moves all of them, so it is wider than the single fix the issue body describes.
+- Some `.one` copies (roll call, `SaveRow`) still hold a literal "1". With `plural()`, fr and pt-BR pick `.one` for 0, so those copies would print "1" for 0 if their `n >= 1` guard were ever dropped. Every one of them is guarded today. Write `{n}` in a `.one` copy when the copy is next edited.
 
 ## Verified
 - `pnpm vitest related --run <changed>`: 63 files, 366 tests passed.
