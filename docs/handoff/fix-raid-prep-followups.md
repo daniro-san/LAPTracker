@@ -14,6 +14,7 @@ This branch does the follow-ups that PR #599's handoff (`docs/handoff/fix-raid-p
   - PT: "(dia anterior)" and "(dia seguinte)".
   - FR: "(la veille)" and "(le lendemain)".
   - The Calendar legend drops its sentence "+1 d means the next day." in all three languages.
+  - The members' board's time column (`BoardTimeColumn` in `app/(private)/_ui/BoardParts.tsx`, fixed at 6rem) shows these words on their own small line under the bold time. Inline after the time, at 360 px, they broke across lines: "23:00 the day / before", "02:00 dia / seguinte".
 - **The Roll call list dates Raid prep by its raid** (`rollCard` in `app/(private)/_ui/roll-call-data.ts`).
   - A Raid Shield roll call's card reads "KvK Sat, Nov 28 · raid at the reset · 00:00 ST · 23:00 your time (the day before)", where it used to name the day it was added ("Wednesday, November 25").
   - A week whose KvK day has gone by reads "Past raid · KvK Sat, Nov 21". The Archived list uses the same card.
@@ -25,7 +26,9 @@ This branch does the follow-ups that PR #599's handoff (`docs/handoff/fix-raid-p
   - dated amendments to D103 (it quotes the bar) and D136 (it quotes "(+1 d)").
 - **Tests** (one per behaviour, realistic times):
   - `RollCallRest.test.ts`: "counts Raid prep's Shield marks still to mark in the card's words" (KvK Saturday after the morning check: 6 to mark, 1 not seen, 2 away).
-  - `roll-call-data.test.ts`: "dates a Raid prep added on Wednesday by the KvK Saturday it serves" (added Wed Nov 18, opened Sat Nov 21).
+  - `roll-call-data.test.ts`:
+    - "dates a Raid prep added on Wednesday by the KvK Saturday it serves" (added Wed Nov 18, opened Sat Nov 21);
+    - "says a Raid prep whose KvK Saturday has gone by is a past raid, with no time" (the same roll call read on Wed Nov 25: "Past raid · KvK Sat, Nov 21", `st` and `at` null, `day` the KvK Saturday).
   - `YourTime.test.ts`: "says the raid's reset is the day before on a viewer's clock behind the server's" (00:00 ST on Sat Nov 21 is 23:00 on Friday in São Paulo).
   - `events.test.ts`: a type-level line, "a mark says Raid prep or other, never the roll call's title". The existing `uid` line now passes `roll_call`, so its `@ts-expect-error` still fails only because of `uid`.
 
@@ -52,19 +55,21 @@ This branch does the follow-ups that PR #599's handoff (`docs/handoff/fix-raid-p
 
 ## Verified
 
-- **`pnpm check` passed**: prettier, eslint, tsc, vitest (300 files, 1560 tests, 4 skipped), drift, and i18n (17 languages).
+- **`pnpm check` passed**: prettier, eslint, tsc, vitest (301 files, 1564 tests, 4 skipped, after the rebase onto `origin/dev` at 4037eb39), drift, and i18n (17 languages).
 - **Each new test fails when the code is broken on purpose**:
 
   | Deliberate break | Result |
   |---|---|
   | `countLine` picks `roll.left` for Raid prep | the bar test failed: "Shield: 6 not set · …" |
   | `rollCard` uses `headerOf` for a Raid Shield roll call | the list test failed |
+  | `raidHead`'s past branch never taken | the past-raid test failed |
   | `calendar.prevDay` back to "−1 d" | the your-time test failed: "23:00 your time (−1 d)" |
   | `roll_call` typed `string` | `tsc` failed: an unused `@ts-expect-error` and the closed-list check |
 
 - **`pnpm test:e2e` (local, db:local cluster)**: 36 passed, 1 skipped, 2 failed. The two failures are "Home shows the alliance, its activity and its week line" (phone and wide). They expect "Everyone looks fine this week." and get "Time for the weekly appreciation post", because the server day was Sunday.
   - The same test fails the same way on an untouched build of `origin/dev`, so the failure is not caused by this change.
   - No e2e assertion quotes any changed text.
+  - This branch is now rebased onto `origin/dev`, which has #609. Per review, #609 addresses this failure. I did not re-run e2e after the rebase.
 - **First-glance test**, run before and after the change at 360 × 780, on a local production build of each version.
   - Data: the e2e seed's invented roster (11 members), plus a Raid prep added by hand on Wednesday Nov 25 for KvK Saturday Nov 28. Five members are marked ✓. The morning-check readings saw 10 of 11 with a shield. The Raid Shield check is on. The browser clock is São Paulo (UTC−3).
   - The bar's count line shows on a phone, the R5's state: everyone "the rest" would cover was seen with a shield, so no button.
@@ -87,6 +92,28 @@ This branch does the follow-ups that PR #599's handoff (`docs/handoff/fix-raid-p
   - bar, after: "Shield: 6 to mark · 1 not seen yet, left out" (PT "Escudo: 6 para marcar · 1 ainda sem escudo visto, deixado de fora"; FR "Bouclier: 6 à marquer · 1 pas encore vu, laissé de côté");
   - list card, before: "Wednesday, November 25";
   - list card, after: "KvK Sat, Nov 28 · raid at the reset · 00:00 ST · 23:00 your time (the day before)" (PT "KvK sáb., 28 de nov. · raid no reset · 00:00 ST · 23:00 sua hora (dia anterior)"; FR "KvK sam. 28 nov. · raid au reset · 00:00 ST · 23:00 votre heure (la veille)").
+- **The members' board's time column**, rendered at 360 × 780 as a member on a local production build. Invented entries at 00:00 ST and 23:00 ST; one browser clock behind ST (São Paulo, UTC−3), one ahead (Paris, UTC+1).
+  - Inline after the time (this PR's first commit):
+    - EN broke in the middle of the phrase: "23:00 the day / before".
+    - PT broke the same way: "02:00 dia / seguinte".
+    - FR "la veille" fit on one line.
+  - On its own line (now): every phrase fits on one line, in each language:
+    - EN: "23:00 / the day before" and "02:00 / the next day";
+    - PT: "dia anterior" and "dia seguinte";
+    - FR: "la veille" and "le lendemain".
+  - A shifted row is one small line taller than an unshifted one. The column stays 6rem.
+- **First-glance test on the board's time column.**
+  - Same three personas, the EN São Paulo shot. Before is `origin/dev` with "−1 d"; after is the own line. Each persona saw one version only.
+  - Question: "Rally at the reset (first event under Sunday, November 22): on your own clock, what day and time does it start?" The right answer is Saturday, Nov 21, 23:00.
+
+  | Persona | Before ("23:00 −1 d") | After ("23:00 / the day before") |
+  |---|---|---|
+  | R5, 40s, native English | **Sunday Nov 22, 23:00 (wrong)**; "−1 d was confusing" | Saturday 21st, 23:00 |
+  | Officer, early 20s, English second language | Saturday Nov 21, 23:00, after guessing "d means day" | Saturday 21st, 23:00; "the line is split in a way that is a bit confusing" |
+  | Product strategy | **Sunday Nov 22, 23:00 (wrong)**; "−1 d is cryptic" | Saturday 21st, 23:00; "I'd glance twice" |
+
+  - Before: 2 of 3 wrong. After: none wrong.
+  - The product persona proposed naming the viewer's own day instead of a shift ("Sat 21, 23:00"), because the row sits under the "Sunday, November 22" heading.
 - **PostHog Endpoints**: checked by reading the code that uses them, `lib/analytics/endpoints.ts`, `lib/queries/admin-activity.ts` and `lib/private/board-reach.ts`, against the HogQL recorded in `docs/handoff/feat-484-posthog-usage-numbers.md`.
   - `lap_board_reach` and `lap_alliance_usage` read only `$pageview` (`section`, `area`) and the server's `ws_action`. Neither reads `ws_roll_call_marked`, so neither is affected.
   - I had no PostHog access, so I could not check saved insights or dashboards. One that breaks `ws_roll_call_marked` down by a property sees `roll_call` only from this release on.
@@ -94,7 +121,8 @@ This branch does the follow-ups that PR #599's handoff (`docs/handoff/fix-raid-p
 
 ## Open issues
 
-- **"Home shows the alliance…" e2e fails on a Sunday server day.** The page shows the weekly-thanks prompt instead of "Everyone looks fine this week." This is pre-existing and depends on the weekday.
+- **"Home shows the alliance…" e2e failed on a Sunday server day** (weekly-thanks prompt instead of "Everyone looks fine this week."). This was pre-existing. #609 is on `dev` now; this branch was not re-run after the rebase.
+- **The board names the shift, not the viewer's own day.** A row under "Sunday, November 22" with "the day before" still makes a reader do the step. The product persona's "Sat 21, 23:00" would need the weekday in `ownClock`.
 - **A Raid prep card keeps its slot by the day it was added.** On the list it now reads "KvK Sat, Nov 28" but sits between Tuesday's and Wednesday's cards. Ordering it by its raid day would be a change in `weekItems` (`lib/private/roll-call-view.ts`).
 - **The list card's counts still say "Not set 6" on Raid prep** ("Shield up 5 · No shield 0 · Not set 6", `tallyParts`). Its page and bar say "to mark". The officer who reads English as a second language named "Not set" unclear again.
 - **The French bar has no space before its colon** ("Bouclier: 6 à marquer"). French wants a no-break space there. `countLine` joins the part and the counts with a fixed `": "`. This is pre-existing.
@@ -120,7 +148,7 @@ This branch does the follow-ups that PR #599's handoff (`docs/handoff/fix-raid-p
 - `raidHead(friday, { t, language, zone, today })` is in `app/(private)/_ui/roll-call-data.ts`. Any other place that dates a Raid prep roll call calls it with `fridayOf(day)`.
 - `ws_roll_call_marked` has `roll_call` (`raid_prep`, `other`) from this release on. An insight on Raid prep marks filters on it. Events before this release have no `roll_call`.
 - Raid prep's bar words are `roll.prep.left`, `roll.prep.leftAway` and `roll.prep.leftAway.one` in `dictionary.raidprep-glance.ts`. The shared `roll.left*` keys are for the other roll calls.
-- The e2e "Home shows the alliance…" test fails on a Sunday server day. Expect it red in a local run on Sunday, or fix it first in a small `fix/` PR.
+- The board's time column puts a day shift on its own line under the time (`BoardTimeColumn`). Any other narrow time column should do the same rather than put the words inline.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/610

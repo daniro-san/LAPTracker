@@ -12,25 +12,38 @@ import { rollCard } from "./roll-call-data";
 const ZONE = "Etc/GMT+2";
 const ctx = { t: WORKSPACE_DICTIONARIES.en, language: "en" as const, zone: ZONE };
 
+/** A Raid prep added by hand on Wednesday, Nov 18, for KvK Saturday, Nov 21. */
+const item: WeekItem = {
+  key: "id:41",
+  occasion: { id: 41 },
+  kind: "shield",
+  variant: null,
+  day: "2026-11-18",
+  placed: null,
+  callId: 41,
+  tally: { yes: 72, no: 20, assumed: 0, notSet: 6, away: 2 },
+  team: null,
+};
+
 describe("the Roll call list's cards", () => {
   it("dates a Raid prep added on Wednesday by the KvK Saturday it serves", () => {
-    // Added by hand on Wednesday, Nov 18, and opened from the list on KvK Saturday, Nov 21.
-    const item: WeekItem = {
-      key: "id:41",
-      occasion: { id: 41 },
-      kind: "shield",
-      variant: null,
-      day: "2026-11-18",
-      placed: null,
-      callId: 41,
-      tally: { yes: 72, no: 20, assumed: 0, notSet: 6, away: 2 },
-      team: null,
-    };
+    // Opened from the list on KvK Saturday, Nov 21.
     const card = rollCard(item, "wrens", "2026-11-21", ctx);
     expect(card).toMatchObject({
       dayLabel: "KvK Sat, Nov 21 · raid at the reset",
       st: "00:00 ST",
       at: zonedInstant("2026-11-21", 0, ZONE),
+      day: "2026-11-21",
+    });
+  });
+
+  it("says a Raid prep whose KvK Saturday has gone by is a past raid, with no time", () => {
+    // Read from the Archived list on Wednesday, Nov 25, the week after.
+    const card = rollCard(item, "wrens", "2026-11-25", ctx);
+    expect(card).toMatchObject({
+      dayLabel: "Past raid · KvK Sat, Nov 21",
+      st: null,
+      at: null,
       day: "2026-11-21",
     });
   });
