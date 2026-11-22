@@ -1,8 +1,8 @@
 "use client";
 
-// Raid prep's head above the tiles (issue 474, D137; issue 585): the summary card (the newest check's
-// count, the Discord summary's state, "Mark ✓ the n seen with a shield"), then "Copy n names" and "Copy one
-// message" for those still to remind, and the switch that shows the optional Squads off the wall pair on
+// Raid prep's head above the tiles (issue 474, D137; issue 585): the summary card (the answer from the
+// newest check, the Shield marks' counts, the Discord summary's state, "Mark ✓ the n seen with a shield"),
+// then "To remind: n", "Copy n names" and "Copy one message" for those still to remind, and the switch that shows the optional Squads off the wall pair on
 // every tile. Counts, times and names only; nothing here is sent anywhere by the page.
 import { useRef, useState } from "react";
 
@@ -19,17 +19,26 @@ import type { useMarks } from "./use-marks";
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
 
+/**
+ * The Shield marks in numbers that add up, the chips' own counts: "Shield marks: 98 of 99 · ✓ 86 · ✗ 12 ·
+ * 1 to mark" (issue 585, first glance).
+ */
+function marksLine(c: Record<"todo" | "yes" | "no" | "all", number>, words: RollSheetWords) {
+  const n = { marked: c.all - c.todo, total: c.all, yes: c.yes, no: c.no, todo: c.todo };
+  return fill(words[c.todo === 0 ? "roll.prep.marks.done" : "roll.prep.marks"], n);
+}
+
+/** The card at the top: the answer first, the Shield marks' counts, the summary's state, "Mark ✓ the n". */
 export function TrackerBar(props: {
-  head: PrepHeadView;
+  page: { head: PrepHeadView; words: RollSheetWords; slug: string };
   notSet: MarkRowView[];
-  words: RollSheetWords;
-  slug: string;
+  counts: Record<"todo" | "yes" | "no" | "all", number>;
   m: ReturnType<typeof useMarks>;
 }) {
-  const { head, words } = props;
+  const { head, words, slug } = props.page;
   const [done, setDone] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  if (head.lines.length === 0) return null;
+  if (head.answer === null) return null;
   const seen = new Set(head.seen);
   const acceptable = props.notSet.filter((row) => seen.has(row.uid)).map((row) => row.uid);
   const accept = async () => {
@@ -41,17 +50,16 @@ export function TrackerBar(props: {
     setDone(fill(words["roll.prep.accepted"], { n: written.length }));
   };
   return (
+    // The answer to "are our shields recorded for this raid?" leads; the marks' counts follow it.
     <section aria-label={words["roll.prep.shield"]} className="drawn-card mt-3 px-3 py-2">
-      {head.lines.map((line) => (
-        <p key={line} className="text-body-sm tabular-nums">
-          {line}
-        </p>
-      ))}
+      <p className="font-semibold tabular-nums">{head.answer}</p>
+      {head.next && <p className="text-body-sm">{head.next}</p>}
+      <p className="text-body-sm tabular-nums">{marksLine(props.counts, words)}</p>
       {head.discord && (
         <p className="flex flex-wrap items-center gap-x-3 text-body-sm text-ink/80">
           <span>{head.discord.text}</span>
           {head.discord.settings && (
-            <a href={`/w/${props.slug}/settings`} className={LINK}>
+            <a href={`/w/${slug}/settings`} className={LINK}>
               {words["roll.prep.discord.settings"]}
             </a>
           )}
@@ -138,6 +146,10 @@ export function RemindBar(props: {
     : fill(words["roll.prep.copyNames"], { n });
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
+      {/* The count those copies hold, said before them (issue 585, first glance). */}
+      <span className="text-body-sm font-semibold tabular-nums">
+        {n === 0 ? words["roll.prep.remind.none"] : fill(words["roll.prep.remind"], { n })}
+      </span>
       {n > 0 && (
         <>
           <button type="button" onClick={() => void copy("names")} className={chip()}>
@@ -165,7 +177,7 @@ export function RemindBar(props: {
 
 /** "How this works" lines: the tracker's two (while the check is on), the wall's and the copy's. */
 export const prepNotes = (head: PrepHeadView, words: RollSheetWords) => [
-  ...(head.lines.length === 0
+  ...(head.answer === null
     ? []
     : [...(head.hint ? [head.hint] : []), words["roll.prep.acceptHelp"]]),
   words["roll.prep.wall.help"],

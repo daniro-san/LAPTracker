@@ -123,13 +123,18 @@ export function Intro(props: {
   shield: boolean;
   undo: (() => void) | null;
   more?: string[];
+  /** False when the page says "n of m marked" elsewhere (Raid prep's answer card, issue 585). */
+  progress?: boolean;
 }) {
   const { words, marks } = props;
+  const progress = props.progress !== false;
   return (
     <>
       <p className="mt-3 flex flex-wrap items-center gap-x-3 text-body-sm">
-        <span>{fill(words["roll.progress"], { n: props.marked, total: props.total })}</span>
-        {props.total > 0 && props.marked === props.total && (
+        {progress && (
+          <span>{fill(words["roll.progress"], { n: props.marked, total: props.total })}</span>
+        )}
+        {progress && props.total > 0 && props.marked === props.total && (
           <span className="font-semibold">{words["roll.done"]}</span>
         )}
         {props.undo && (

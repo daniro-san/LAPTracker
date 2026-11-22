@@ -160,6 +160,8 @@ export function RollGrid<T extends { uid: number }>(props: {
   words: RollSheetWords;
   /** The kind's ✓ and ✗ words, the chips' spoken names; without them "49 marked ✓" (Raid prep). */
   said?: { yes: string; no: string };
+  /** Which mark the chips count, above them ("Filter by Shield mark", Raid prep, issue 585). */
+  caption?: string;
   tile: (row: T) => ReactNode;
 }) {
   const { g, words } = props;
@@ -167,6 +169,9 @@ export function RollGrid<T extends { uid: number }>(props: {
   const empty = g.snap.filter === "todo" ? "roll.grid.none.todo" : "roll.grid.none";
   return (
     <>
+      {!props.found && props.caption && (
+        <p className="mt-1 text-body-sm text-ink/80">{props.caption}</p>
+      )}
       {!props.found && <Filters g={g} words={words} said={props.said} />}
       {/* With nobody left, the tiles marked meanwhile stay; the line says why (persona review). */}
       {!props.found && (list.length === 0 || (g.snap.filter === "todo" && g.counts.todo === 0)) && (

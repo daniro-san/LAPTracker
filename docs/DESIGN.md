@@ -508,6 +508,8 @@ Short, dry, grandmotherly. Written in English; the public pages also read in 17 
 
   It checks overflow, 44 px targets, contrast, truncation, and the one sentence a reader should take away in 3 seconds. A problem at a phone width blocks the PR; one that shows only at 640 px or wider is secondary. Lead with the answer and keep controls compact.
 
+- **First-glance test (owner, 2026-11-21, issue 585).** Every screen, route, component, modal and feature is checked this way before it ships. Each persona gets a real question the screen exists to answer ("Do we have shields recorded for today's raid?", "Who do I still need to remind?", "Is this the right raid?") and sees only the first viewport at 360 × 780 for about 5 seconds: a screenshot of the first screen, nothing below it. The persona says what they conclude. A wrong conclusion is a MUST, even when a careful reading of the screen would get it right. Run it before and after the change, and record each question with each persona's answer in the PR. It came from an R5 who read Raid prep's date line, the day the roll call was added, as an old roll call, and concluded that no shields were recorded for the raid.
+
 ## Enforcement
 
 - `lib/brand/tokens.css` is the only place a colour literal appears: a test greps `app/` and `lib/brand/components/` for `#[0-9a-f]{3,6}` and `rgb(` and fails on any hit.

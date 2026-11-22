@@ -86,6 +86,8 @@ export interface PrepView {
   members: number;
   /** "before the reset" until Saturday 00:00 ST, then "before KvK". */
   when: "reset" | "kvk";
+  /** KvK has not started yet: the checks still to come can be named (issue 585, first glance). */
+  ahead: boolean;
   rows: Map<number, PrepRow>;
   /** The newest unchecked tracker mark's time (epoch ms): the notice's "reading at" and Checked's `seen`. */
   toCheckAt: number | null;
@@ -256,6 +258,7 @@ export async function prepView(
     ...counts,
     members: roster.length,
     when: clock.now.getTime() < reset ? "reset" : "kvk",
+    ahead: current,
     rows,
     toCheckAt: toCheck.length > 0 ? Math.max(...toCheck) : null,
     summary: tracker ? summaryOf(check, on, counts, clock.now.getTime()) : null,
