@@ -102,18 +102,20 @@ const SCANNED = /text\/html|application\/json|text\/x-component/;
 
 /**
  * Adds the session cookie of `side`'s officer or member, as a sign-in through Discord would (D131); `name`
- * puts the token under another cookie name, as a forged cookie would.
+ * puts the token under another cookie name, as a forged cookie would; `token` sends another seeded session
+ * (one a test ends, or another workspace's under that workspace's `name`).
  */
 export async function signIn(
   context: BrowserContext,
   side: Side,
   tier: "officer" | "member",
   name = `__Host-lap_ws.${ALLIANCES[side].slug}`,
+  token: string = TOKENS[side][tier],
 ) {
   await context.addCookies([
     {
       name,
-      value: TOKENS[side][tier],
+      value: token,
       // A domain, not a url: Playwright drops Secure from a cookie given an http url, and a __Host- cookie
       // without Secure is refused.
       domain: HOST,

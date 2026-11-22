@@ -5,80 +5,34 @@
 // private roster fields, so a test can tell a leak, and whose it is, from any page or answer.
 import { createHash } from "node:crypto";
 
-export type Side = "a" | "b";
+import {
+  ALLIANCES,
+  AVATAR_SENTINEL,
+  cheeseOf,
+  FACT_MEMBERS,
+  FACT_SEEDED,
+  FILLERS,
+  IDLE_DAYS,
+  IDLE_UIDS,
+  JOINER,
+  LEAVER,
+  LINKED,
+  LINKED_MEMBER,
+  KVK_ENTRY,
+  PROJECTS,
+  REPEATS,
+  SENTINELS,
+  SHIELD_MARKED,
+  signOutToken,
+  switchWorkspaceOf,
+  TOKENS,
+  uidOf,
+  WALL_ONLY,
+  type Side,
+} from "./seed-people";
 
-/**
- * The private roster fields' values in each alliance's raw_json (CLAUDE.md "Roster fields"): six-digit map
- * coordinates, and four years no page shows otherwise. Last online falls on a 29 February, which the member
- * card writes as "Feb 29" (no year), so a formatted leak can be seen too.
- */
-export const SENTINELS = {
-  a: { x: 713579, y: 713580, lastOnline: "2088-02-29T12:00:00Z", joined: "2086-05-21T06:07:08Z" },
-  b: { x: 824681, y: 824682, lastOnline: "2092-02-29T12:00:00Z", joined: "2090-06-22T07:08:09Z" },
-} as const;
-export const AVATAR_SENTINEL = "e2e-avatar-sentinel.invalid";
-
-const A_NAMES = [
-  "Bramblewick",
-  "Corin Ashdown",
-  "Delphine Marr",
-  "Esk Vale",
-  "Fennick Lowe",
-  "Galen Thorne",
-  "Hessa Quill",
-  "Ivo Brandt",
-  "Juno Pell",
-  "Kestrel Ames",
-  "Mabry Holt",
-  "Nyla Fairweather",
-];
-const B_NAMES = [
-  "Orrin Slate",
-  "Pella Dunmore",
-  "Quill Harrow",
-  "Rook Ashby",
-  "Sable Wren",
-  "Tamsin Oakes",
-  "Ulric Moss",
-  "Vesna Kay",
-];
-
-export const ALLIANCES = {
-  a: { id: 1, slug: "lnk", unionId: 900101, tag: "LNK", name: "Lantern Keep", names: A_NAMES },
-  b: { id: 2, slug: "msh", unionId: 900202, tag: "MSH", name: "Moss Hollow", names: B_NAMES },
-} as const;
-const FILLERS = [
-  { unionId: 900303, tag: "IRT", name: "Iron Thistle" },
-  { unionId: 900404, tag: "MNW", name: "Moonwake" },
-  { unionId: 900505, tag: "GLW", name: "Glass Wolves" },
-];
-
-const uidOf = (side: Side, k: number) => ALLIANCES[side].unionId * 10 + k;
-/** Lantern Keep's member who left during the last event, and the one who joined. */
-export const LEAVER = 10;
-export const JOINER = 11;
-/** The member each workspace's member session is linked to (approved, D142). */
-export const LINKED_MEMBER = 3;
-export const LINKED = { a: uidOf("a", LINKED_MEMBER), b: uidOf("b", LINKED_MEMBER) };
-export const memberUid = uidOf;
-
-/** Raid prep this week: Shield marks for these members, a wall mark only for these (issue 590 F1). */
-export const SHIELD_MARKED = [0, 1, 2, 3];
-export const WALL_ONLY = [4, 5];
-/** Calendar entries: the weekly KvK (Raid prep), and the cheese entries below. */
-export const KVK_ENTRY = 1;
-
-/** The projects (playwright.config.ts) and the repeats (--repeat-each) that each get a roll call of their own. */
-const PROJECTS = ["phone", "wide", "iphone"];
-const REPEATS = 3;
-/**
- * The weekly cheese entry a roll call test marks: one per project and repeat (up to three repeats), so each
- * run checks its exact counts while the others run. Lv.1 to Lv.9, on this week's days in turn.
- */
-export function cheeseOf(project: string, repeat: number) {
-  const n = Math.max(0, PROJECTS.indexOf(project)) * REPEATS + (repeat % REPEATS);
-  return { entry: 2 + n, level: 1 + n };
-}
+// The specs import the people from here too, with the rows' figures below.
+export * from "./seed-people";
 
 /**
  * Raid prep for the test that marks it (phone only): the same marks on a later week of its own per repeat
@@ -89,13 +43,6 @@ export function raidOf(now: Date, repeat: number) {
   const shift = (day: string) => iso(Date.parse(day) + 7 * (1 + (repeat % REPEATS)) * DAY_MS);
   return { day: shift(raid.day), week: shift(raid.week) };
 }
-
-/** Session tokens: invented, local only; the database keeps their sha256 (lib/private/session.ts). */
-export const TOKENS = {
-  a: { officer: "e2e-session-lnk-officer-token-000001", member: "e2e-session-lnk-member-token-000002" },
-  b: { officer: "e2e-session-msh-officer-token-000003", member: "e2e-session-msh-member-token-000004" },
-} as const;
-
 const DAY_MS = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 const q = (s: string | null) => (s === null ? "null" : `'${s.replace(/'/g, "''")}'`);
@@ -144,7 +91,7 @@ const members = (side: Side, day: number): Member[] =>
     kills: 1_000_000 + k * 40_000 + day * 3_000,
   }));
 
-function rawMember(side: Side, m: Member, k: number) {
+function rawMember(side: Side, m: Member, k: number, idle: boolean) {
   const s = SENTINELS[side];
   return {
     uid: m.uid,
@@ -154,9 +101,10 @@ function rawMember(side: Side, m: Member, k: number) {
     lv: 25,
     rank_code: k === 0 ? 105 : k < 3 ? 104 : 102,
     rank_label: k === 0 ? "R5" : k < 3 ? "R4" : "R2",
-    active: DAILY.active,
+    // The game sends null, never 0, for none that day (D127).
+    active: idle ? null : DAILY.active,
     daily_honor: DAILY.honor,
-    daily_tech: DAILY.tech,
+    daily_tech: idle ? null : DAILY.tech,
     x: s.x,
     y: s.y,
     online: true,
@@ -166,9 +114,11 @@ function rawMember(side: Side, m: Member, k: number) {
   };
 }
 
-function rosterRow(side: Side, day: string, list: Member[]) {
+/** `daysLeft`: the end-of-day reads after this one; the IDLE members are quiet on the last IDLE_DAYS. */
+function rosterRow(side: Side, day: string, list: Member[], daysLeft: number) {
   const { unionId, tag, name } = ALLIANCES[side];
-  const raw = { union_id: unionId, abbr: tag, name, members: list.map((m, k) => rawMember(side, m, k)) };
+  const members = list.map((m, k) => rawMember(side, m, k, IDLE_UIDS.has(m.uid) && daysLeft < IDLE_DAYS));
+  const raw = { union_id: unionId, abbr: tag, name, members };
   const total = (f: (m: Member) => number) => list.reduce((s, m) => s + f(m), 0);
   return `insert into daily_rosters (read_day, union_id, tag, name, member_count, total_power, total_kills, source_updated_at, is_fresh, member_uids, member_names, member_power, member_kills, raw_json) values ('${day}', ${unionId}, '${tag}', ${q(name)}, ${list.length}, ${total((m) => m.power)}, ${total((m) => m.kills)}, '${day}T23:31:00-02:00', true, ${arr(list.map((m) => m.uid))}, ${arr(list.map((m) => m.name))}, ${arr(list.map((m) => m.power))}, ${arr(list.map((m) => m.kills))}, ${q(JSON.stringify(raw))}::jsonb);`;
 }
@@ -243,7 +193,7 @@ function dailyReads(today: number, lastEvent: string): string[] {
     );
     for (const side of ["a", "b"] as const) {
       const list = members(side, 14 - n).filter((_, k) => onRoster(side, k, day >= lastEvent));
-      lines.push(rosterRow(side, day, list));
+      lines.push(rosterRow(side, day, list, n - 1));
     }
     for (const f of FILLERS)
       lines.push(
@@ -312,7 +262,39 @@ function workspaceRows(): string[] {
       `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ('${hash(TOKENS[side].officer)}', ${w.id}, ${officer}, now(), now() + interval '6 days', now(), 'officer'), ('${hash(TOKENS[side].member)}', ${w.id}, ${member}, now(), now() + interval '6 days', now(), 'member');`,
     );
   }
+  // Lantern Keep's officer's sessions that the sign-out test ends, one per project and repeat.
+  const signOuts = PROJECTS.flatMap((p) =>
+    Array.from({ length: REPEATS }, (_, r) => signOutToken(p, r)),
+  ).map(
+    (token) =>
+      `('${hash(token)}', ${ALLIANCES.a.id}, 1, now(), now() + interval '6 days', now(), 'officer')`,
+  );
+  lines.push(
+    `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ${signOuts.join(", ")};`,
+  );
+  // A workspace per filler alliance, with its officer's session, for the feature-switch test.
+  for (let r = 0; r < REPEATS; r++) {
+    const w = switchWorkspaceOf(r);
+    const user = 5 + r;
+    lines.push(
+      `insert into workspaces (id, slug, union_id, discord_guild_id, leader_role_ids, member_role_ids) values (${w.id}, '${w.slug}', ${w.unionId}, '70000000000000010${w.id}', '{70000000000000020${w.id}}', '{70000000000000030${w.id}}');`,
+      `insert into workspace_features (workspace_id, switches) values (${w.id}, '{}');`,
+      `insert into workspace_users (id, workspace_id, discord_user_id, display_name, allowlisted, last_login_at) values (${user}, ${w.id}, '70000000000000040${user}', 'Officer ${w.tag}', true, now());`,
+      `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ('${hash(w.token)}', ${w.id}, ${user}, now(), now() + interval '6 days', now(), 'officer');`,
+    );
+  }
   return lines;
+}
+
+/** Troops T10 for each member the member-facts test edits, saved by Lantern Keep's officer FACT_SEEDED.daysAgo days ago. */
+function factRows(cal: ReturnType<typeof calendarOf>): string[] {
+  const at = `${iso(cal.today - FACT_SEEDED.daysAgo * DAY_MS)}T12:00:00-02:00`;
+  const rows = Object.values(FACT_MEMBERS)
+    .flat()
+    .map((k) => `(${ALLIANCES.a.id}, ${uidOf("a", k)}, 'troopTier', 1, '${FACT_SEEDED.tier}', 'officer', 1, '${at}')`);
+  return [
+    `insert into member_facts (workspace_id, uid, field, version, value, source, written_by, written_at) values ${rows.join(", ")};`,
+  ];
 }
 
 /** This week's Raid prep (the weekly KvK entry) with its marks, and a cheese entry with no roll call yet. */
@@ -357,6 +339,7 @@ export function seedSql(now: Date): string {
     ...eventRows(cal.events),
     ...workspaceRows(),
     ...rollCallRows(cal),
+    ...factRows(cal),
     "select setval('events_id_seq', 100), setval('snapshots_id_seq', 100), setval('workspaces_id_seq', 100), setval('workspace_users_id_seq', 100), setval('calendar_entries_id_seq', 100), setval('roll_calls_id_seq', 100);",
     "commit;",
   ].join("\n");
