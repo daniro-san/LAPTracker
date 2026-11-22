@@ -20,7 +20,7 @@ import { FRESH_MAX_AGE_MS } from "../collector-rows";
 import type { Db } from "../db";
 import { allianceLabels } from "../repo/alliances";
 import { dailyReads, dailyRosters, runLogs } from "../schema";
-import { allianceLookups } from "../schema-alliances";
+import { allianceLookups, trackedSets } from "../schema-alliances";
 import type { UpstreamDetail } from "../sources/types";
 import { DEADLINE_ERROR, runTrace } from "./admin";
 
@@ -41,7 +41,8 @@ const readFields = {
  * includes a roster a retry kept from an earlier read, once it is more than 20 minutes older than the
  * start of the day's latest read (D67), as the read's own outcome counts it. A "Get today's details" roster
  * stored under the day (D133) is not the read's: an alliance the day has a lookup claim for counts only when
- * the read also wrote a line for it, i.e. read it after the lookup. */
+ * it is in the day's tracked set (the read's targets on LAP_API_KEY, stored before it reads, so a roster the
+ * read never reached still counts), or when the read wrote a line for it (a workspace's alliance it read). */
 function problemsOf(db: Db, days: string[]) {
   const lookedUp = db
     .select({ one: sql`1` })
@@ -50,6 +51,15 @@ function problemsOf(db: Db, days: string[]) {
       and(
         eq(allianceLookups.unionId, dailyRosters.unionId),
         eq(allianceLookups.day, dailyRosters.readDay),
+      ),
+    );
+  const tracked = db
+    .select({ one: sql`1` })
+    .from(trackedSets)
+    .where(
+      and(
+        eq(trackedSets.day, dailyRosters.readDay),
+        sql`${dailyRosters.unionId} = any(${trackedSets.allianceIds})`,
       ),
     );
   const readByRun = db
@@ -72,7 +82,7 @@ function problemsOf(db: Db, days: string[]) {
     .where(
       and(
         inArray(dailyRosters.readDay, days),
-        or(notExists(lookedUp), exists(readByRun)),
+        or(notExists(lookedUp), exists(tracked), exists(readByRun)),
         or(
           eq(dailyRosters.isFresh, false),
           isNotNull(dailyRosters.error),
