@@ -200,21 +200,23 @@ function usePrep(props: PageProps) {
   const all = useOrder(ordered(props.rows, prep));
   const asked = all.filter((row) => row.away === null);
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
-  // "No problem seen" is never given to someone the tracker did not see with a shield (D137).
-  const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false);
-  const seen = new Set(props.head.seen);
-  // The chips count the Shield only, as "n of m marked" does: the wall part is optional (issue 585).
-  const g = useGrid(asked, (uid) => m.shown(uid).mark, props.filter, props.opened);
-  // "Check by hand" (issue 726): the members it listed when the page was read, less those an officer marked.
+  // "To check by hand" (issue 726): the members it listed when the page was read, less those an officer
+  // marked since.
   const listed = new Set(props.head.hand ?? []);
   const hand =
     props.head.hand && asked.filter((row) => listed.has(row.uid) && !officerMarked(m, row, props));
+  // "No problem seen" is never given to someone the tracker did not see with a shield (D137), nor to someone
+  // on "To check by hand", whom no map near the reset vouches for (issue 726).
+  const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false && !listed.has(row.uid));
+  const seen = new Set(props.head.seen);
+  // The chips count the Shield only, as "n of m marked" does: the wall part is optional (issue 585).
+  const g = useGrid(asked, (uid) => m.shown(uid).mark, props.filter, props.opened);
   return {
     hand,
     looked: props.head.looked || tappedHere(m, w, props.rows, props),
     g,
     show: useShow(g),
-    accept: toAccept(notSet, props.head.seen),
+    accept: toAccept(notSet, props.head.seen, props.head.hand ?? []),
     m,
     w,
     r,

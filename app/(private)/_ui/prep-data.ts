@@ -130,7 +130,8 @@ export function prepRows(
       uid,
       {
         tracker: r.tracker && trackerView(r.tracker, said, view.reset),
-        rank: rankOf(r.tracker),
+        // The members to check by hand open first among the not set (panel review, issue 726).
+        rank: r.hand === null ? rankOf(r.tracker) : 0,
         hand: handWords(r.hand, t),
         wall: { mark: r.wall.mark as "yes" | "no" | null, version: r.wall.version },
         fromTracker: r.fromTracker,

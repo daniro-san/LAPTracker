@@ -171,7 +171,7 @@ describe("drilldown on Raid prep and the Roll call list", () => {
     // 102 was seen at night but not this morning: the newest reading decides.
     const { asked, head } = await raidPrep({});
     const notSet = asked.filter((row) => row.mark === null);
-    const accept = toAccept(notSet, head.seen);
+    const accept = toAccept(notSet, head.seen, head.hand ?? []);
     expect(accept.map((row) => row.name)).toEqual(["Aster Vale"]);
     expect(head.seen).toEqual([101]);
   });

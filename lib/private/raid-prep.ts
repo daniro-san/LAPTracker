@@ -59,27 +59,23 @@ export interface TrackerHint {
 }
 
 /**
- * Why a member is on "Check by hand" (issue 726): the map nearest the reset saw no shield, is more than 3 h
- * from the reset, or there is no reading. Officers mark a shield up at 00:00 ST (owner, 2026-11-22).
+ * Why a member is on "To check by hand" (issue 726): a map within 3 h of the reset saw no shield, no map is
+ * that near, or there is no reading. Officers mark a shield up at 00:00 ST (owner, 2026-11-22).
  */
 export type HandReason = "not_seen" | "old_map" | "no_reading";
 
 /** A map further than this from the reset does not speak for 00:00 ST (issue 726). */
 export const HAND_MAP_MS = 3 * 3_600_000;
 
-/** The checkpoint whose map is nearest the reset (`reset`, epoch ms); the night one on a tie. */
-export const nearestOf = (checkpoints: Checkpoint[], reset: number): Checkpoint | null =>
-  checkpoints.reduce<Checkpoint | null>(
-    (best, c) => (!best || Math.abs(c.at - reset) < Math.abs(best.at - reset) ? c : best),
-    null,
-  );
-
-/** The member's reason to be checked by hand, from the map nearest the reset; null: that map vouches. */
+/**
+ * The member's reason to be checked by hand; null when every map within 3 h of the reset, and at least one,
+ * saw a shield. A map before the reset and one after it that disagree leave 00:00 ST unknown (panel review).
+ */
 export function handReason(hint: TrackerHint | null, reset: number): HandReason | null {
-  const near = hint && nearestOf(hint.checkpoints, reset);
-  if (!near) return "no_reading";
-  if (!near.on) return "not_seen";
-  return Math.abs(near.at - reset) > HAND_MAP_MS ? "old_map" : null;
+  if (!hint || hint.checkpoints.length === 0) return "no_reading";
+  const near = hint.checkpoints.filter((c) => Math.abs(c.at - reset) <= HAND_MAP_MS);
+  if (near.length === 0) return "old_map";
+  return near.every((c) => c.on) ? null : "not_seen";
 }
 
 export interface PrepRow {

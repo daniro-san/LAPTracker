@@ -35,9 +35,11 @@ import {
   WALL_ONLY,
   type Side,
 } from "./seed-people";
+import { shieldRows } from "./seed-shield";
 
 // The specs import the people from here too, with the rows' figures below.
 export * from "./seed-people";
+export { HAND_CHECK, SHIELD_PREP_ID, SHIELD_READINGS } from "./seed-shield";
 
 /**
  * Raid prep for the test that marks it (phone only): the same marks on a later week of its own per repeat
@@ -416,6 +418,8 @@ export function seedSql(now: Date): string {
     ...eventRows(cal.events),
     ...workspaceRows(),
     ...rollCallRows(cal),
+    // Moss Hollow's Raid Shield check of the last raid (issue 726).
+    ...shieldRows(cal.events[1] as string, iso(Date.parse(cal.events[1] as string) - 5 * DAY_MS)),
     ...siegeRows(cal),
     // ADDED_BY_HAND, a minute before the seed and one second apart, each already matched to their member.
     `insert into pending_members (workspace_id, name, name_key, created_by, created_at, matched_uid, matched_at) values ${ADDED_BY_HAND.map((name, i) => `(${ALLIANCES.a.id}, ${q(name)}, ${q(name.toLowerCase())}, 1, now() - interval '${60 - i} seconds', ${uidOf("a", ALLIANCES.a.names.indexOf(name))}, now())`).join(", ")};`,
