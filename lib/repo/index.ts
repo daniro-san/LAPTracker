@@ -12,6 +12,13 @@ import {
 import { allianceLabels, trackedAllianceIds } from "./alliances";
 import { lastMemberUids } from "./daily-reads";
 import { getEvent, setEventAllianceIds } from "./events";
+import {
+  insertOpponentRead,
+  opponentFor,
+  opponentReads,
+  type OpponentInfo,
+  type OpponentRead,
+} from "./kvk";
 import { findSnapshot, finishSnapshot, startSample, startSnapshot } from "./snapshots";
 
 export type Phase = "before" | "after";
@@ -117,7 +124,14 @@ export interface Repo {
   allianceLabels(ids: number[]): Promise<Map<number, { tag: string | null; name: string | null }>>;
   /** Each id's uids in its newest daily roster (D60); ids with none are left out. */
   lastMemberUids(ids: number[]): Promise<Map<number, number[]>>;
+  /** The KvK opponent of a scheduled event (D152); null for any other event or none saved. */
+  opponentFor(eventId: number): Promise<OpponentInfo | null>;
+  /** The opponent's rows so far, both phases. */
+  opponentReads(opponentId: number): Promise<OpponentRead[]>;
+  insertOpponentRead(row: OpponentRead): Promise<void>;
 }
+
+export type { OpponentInfo, OpponentRead };
 
 export function createRepo(db: Db): Repo {
   return {
@@ -137,5 +151,8 @@ export function createRepo(db: Db): Repo {
     trackedAllianceIds: () => trackedAllianceIds(db),
     allianceLabels: (ids) => allianceLabels(db, ids),
     lastMemberUids: (ids) => lastMemberUids(db, ids),
+    opponentFor: (eventId) => opponentFor(db, eventId),
+    opponentReads: (id) => opponentReads(db, [id]),
+    insertOpponentRead: (row) => insertOpponentRead(db, row),
   };
 }

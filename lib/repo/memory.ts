@@ -4,6 +4,8 @@ import type {
   AllianceRow,
   EventRow,
   MemberRow,
+  OpponentInfo,
+  OpponentRead,
   Phase,
   Repo,
   SnapshotPhase,
@@ -24,6 +26,9 @@ export interface MemoryTables {
   events: Map<number, EventRow>;
   snapshots: StoredSnapshot[];
   rows: Map<number, { row: AllianceRow; members: MemberRow[] }[]>;
+  /** The KvK opponent per event id (D152), and its rows. */
+  opponents: Map<number, OpponentInfo>;
+  opponentReads: OpponentRead[];
 }
 
 function claim(
@@ -49,6 +54,28 @@ function claim(
   return current.id;
 }
 
+/** The KvK opponent's part of the Repo (D152); unique (opponent, phase, tag), as the table. */
+const opponentMethods = (tables: MemoryTables) =>
+  ({
+    opponentFor: async (eventId) => tables.opponents.get(eventId) ?? null,
+    opponentReads: async (id) => tables.opponentReads.filter((r) => r.opponentId === id),
+    insertOpponentRead: async (row) => {
+      const taken = tables.opponentReads.some(
+        (r) => r.opponentId === row.opponentId && r.phase === row.phase && r.tag === row.tag,
+      );
+      if (!taken) tables.opponentReads.push(row);
+    },
+  }) satisfies Pick<Repo, "opponentFor" | "opponentReads" | "insertOpponentRead">;
+
+/** The tables of a new repo; a test sets an event's opponent in `opponents` (D152). */
+const newTables = (seedEvents: EventRow[]): MemoryTables => ({
+  events: new Map(seedEvents.map((e) => [e.id, { ...e }])),
+  snapshots: [],
+  rows: new Map(),
+  opponents: new Map(),
+  opponentReads: [],
+});
+
 /** `tracked`: the tracked set a Before copies (D133); `labels`: the alliances' tags and names; `rosters`:
  * each alliance's newest daily roster uids. */
 export function createMemoryRepo(
@@ -57,11 +84,7 @@ export function createMemoryRepo(
   labels: Map<number, { tag: string | null; name: string | null }> = new Map(),
   rosters: Map<number, number[]> = new Map(),
 ): Repo & { tables: MemoryTables } {
-  const tables: MemoryTables = {
-    events: new Map(seedEvents.map((e) => [e.id, { ...e }])),
-    snapshots: [],
-    rows: new Map(),
-  };
+  const tables = newTables(seedEvents);
   const snapshot = (id: number) => tables.snapshots.find((s) => s.id === id);
   const rowsOf = (id: number) => tables.rows.get(id) ?? [];
 
@@ -130,5 +153,6 @@ export function createMemoryRepo(
     trackedAllianceIds: async () => [...tracked],
     allianceLabels: async (ids) => new Map([...labels].filter(([id]) => ids.includes(id))),
     lastMemberUids: async (ids) => new Map([...rosters].filter(([id]) => ids.includes(id))),
+    ...opponentMethods(tables),
   };
 }

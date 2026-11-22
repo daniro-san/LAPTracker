@@ -33,14 +33,14 @@ const ours = (ids: number[]) => ids.map((unionId) => ({ unionId, key: null }));
 
 describe("runDailyRead (D60)", () => {
   it("reads no roster when the quota would not leave an event run its reserve", async () => {
-    // 2 alliances need requiredQuota(2) + requiredQuota(20) = 14 + 50 = 64.
-    const v1 = fakeV1((id) => roster(id, ago(T0, minutes(1))), 63);
+    // 2 alliances need requiredQuota(2) + requiredQuota(20 + 15 opponent tags, D152) = 14 + 80 = 94.
+    const v1 = fakeV1((id) => roster(id, ago(T0, minutes(1))), 93);
 
     const summary = await runDailyRead(deps(v1), db, "2026-11-10", ours(IDS.slice(0, 2)));
 
     expect(v1.calls).toEqual([]);
     expect(summary).toMatchObject({ status: "failed", callsUsed: 1 });
-    expect(summary?.error).toBe("quota: remaining 63 < required 64");
+    expect(summary?.error).toBe("quota: remaining 93 < required 94");
     expect(await db.select().from(dailyRosters)).toEqual([]);
   });
 
@@ -143,10 +143,10 @@ describe("a workspace's alliance on its own key (D124, D133)", () => {
       .returning({ id: workspaces.id });
     const workspaceId = ws?.id ?? 0;
     await db.insert(workspaceKeys).values({ workspaceId, nonce: "n1", status: "ok", statusAt: T0 });
-    // Our quota holds dailyReadQuota(1, 20) = 12 + 50 = 62: enough only when theirs is not counted.
+    // Our quota holds dailyReadQuota(1, 20 + 15) = 12 + 80 = 92: enough only when theirs is not counted.
     const v1 = fakeV1(
       (id) => (id === theirs && theirsOutcome()) || roster(id, ago(T0, minutes(1))),
-      62,
+      92,
     );
     const used = new Map<number, string | undefined>();
     const fetch = v1.fetchAlliance;

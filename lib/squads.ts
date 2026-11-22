@@ -1,7 +1,7 @@
 // The squads read's rules (D117, D132), pure: no IO, `now` passed in. The quota it must leave, the day's
 // queue and its batches, which squad is the main one, and when the tracker's main squad becomes a new
 // version of "Main squad might".
-import { requiredQuota } from "./budget";
+import { MAX_OPPONENT_TAGS, requiredQuota } from "./budget";
 import type { Env } from "./env";
 import { inEventWindow, nextEvent, quotaDayRead, type ScheduleConfig } from "./schedule";
 
@@ -29,7 +29,7 @@ const utcDate = (at: Date) => at.toISOString().slice(0, 10);
 
 /**
  * The calls the scheduled event still needs on `now`'s quota day (a UTC day): its Before and After with
- * their reserve, and one quota call plus one read per alliance for every sample between them (D69). Zero
+ * their reserve and the KvK opponent's reads (D152), and one quota call plus one read per alliance for every sample between them (D69). Zero
  * when the event does not fall on that UTC day or is over. The read of Friday 23:37 server time is
  * Saturday 01:37 UTC, so it spends from the KvK's own quota day.
  */
@@ -41,7 +41,8 @@ export function eventReserve(now: Date, cfg: SquadsConfig, alliances: number): n
   const every = cfg.SAMPLE_EVERY_MIN * 60_000;
   const span = event.afterAt.getTime() - event.beforeAt.getTime();
   const samples = every > 0 ? Math.max(0, Math.ceil(span / every) - 1) : 0;
-  return requiredQuota(alliances) + samples * (alliances + 1);
+  // The KvK opponent's Start and End reads at their worst (D152): one call per tag each.
+  return requiredQuota(alliances + MAX_OPPONENT_TAGS) + samples * (alliances + 1);
 }
 
 /**

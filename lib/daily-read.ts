@@ -6,7 +6,7 @@
 // (D5 covers event snapshots only): a missed alliance is a gap in the history. It writes run_logs lines
 // under its day (`read_day`) with the collector's codes, so /admin/runs/daily/[day] shows its calls.
 import { TRACKED_COUNT } from "../config/alliances";
-import { dailyReadQuota } from "./budget";
+import { dailyReadQuota, MAX_OPPONENT_TAGS } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
 import { checkIdentity } from "./collector-identity";
 import { logRosterCheck } from "./collector-log";
@@ -158,7 +158,8 @@ async function checkQuota(read: Read, n: number): Promise<string | null> {
     return `quota: ${describe(e)}`;
   }
   // INVARIANT budget.daily-keeps-event-reserve
-  const needed = dailyReadQuota(n, TRACKED_COUNT);
+  // The event's reserve counts the KvK opponent's reads at their worst too (D152).
+  const needed = dailyReadQuota(n, TRACKED_COUNT + MAX_OPPONENT_TAGS);
   if (read.remaining >= needed) return null;
   await read.log.error("quota", { remaining: read.remaining, required: needed });
   return `quota: remaining ${read.remaining} < required ${needed}`;

@@ -47,6 +47,8 @@ export interface AllianceSnapshotInput {
   sourceUpdatedAt: Date | null;
   /** null for the internal source, which has no cache flag. */
   cached: boolean | null;
+  /** The alliance's server as /v1 sends it (`sid`); absent on the internal source (D152). */
+  sid?: number | null;
   /** Quota as reported by this response; null for the internal source. */
   quota: Quota | null;
   raw: unknown;
@@ -170,6 +172,15 @@ export interface V1Source {
   /** `signal` cuts the call when it aborts (the run deadline), on top of TIMEOUT_MS. */
   fetchAlliance(
     id: UnionId,
+    onAttempt?: OnAttempt,
+    signal?: AbortSignal,
+    options?: CallOptions,
+  ): Promise<AllianceSnapshotInput>;
+  /** GET /v1/alliances/{server}/{tag}?fresh=1, the documented lookup by tag (plan §2): the KvK opponent's
+   * Start read only (D152). A tag is not unique, so the upstream may answer 409. */
+  fetchAllianceByTag(
+    server: number,
+    tag: string,
     onAttempt?: OnAttempt,
     signal?: AbortSignal,
     options?: CallOptions,

@@ -5,7 +5,8 @@ import { claim, RunRefusedError } from "./collector-claim";
 import { checkIdentity } from "./collector-identity";
 import { allianceIds, fetchBoard } from "./collector-ids";
 import { logRosterCheck, logV1Fetch } from "./collector-log";
-import { dataRow, errorRow, failedList } from "./collector-rows";
+import { opponentEndsDue, readOpponent } from "./collector-opponent";
+import { dataRow, errorRow, failedList, MAX_UPSTREAM_CALLS } from "./collector-rows";
 import { callOptions, SAMPLE_DEADLINE_MS } from "./collector-sample";
 import { RUN_DEADLINE_MS } from "./compute";
 import type { Logger } from "./logger";
@@ -18,9 +19,7 @@ import {
 } from "./sources/types";
 import { describe } from "./upstream-errors";
 
-/** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
-export const MAX_UPSTREAM_CALLS = 120;
-export { FRESH_MAX_AGE_MS } from "./collector-rows";
+export { FRESH_MAX_AGE_MS, MAX_UPSTREAM_CALLS } from "./collector-rows";
 export { RunRefusedError } from "./collector-claim";
 /** Measured from the start of the run (docs/decisions/D25); defined in lib/compute so pages can read it. */
 export { RUN_DEADLINE_MS };
@@ -63,6 +62,9 @@ interface Run {
   deadlineMs: number;
   /** A sample's alliances that failed in an earlier sample of the event: one attempt each (D69). */
   noRetry: Set<number>;
+  eventId: number;
+  /** A sample's count of the KvK opponent's End reads still due (D152), kept in its quota rule. */
+  opponentDue?: number;
   startedAt: Date;
   calls: number;
   /** The lowest quota remaining seen, and run.calls then: the calls after it returned no quota. */
@@ -128,7 +130,7 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
     run.quotaBefore = quota.remaining;
     noteQuota(run, quota.remaining);
     // INVARIANT budget.reserve-for-after; for a sample, INVARIANT budget.samples-yield-to-after (D69)
-    const needed = run.sample ? sampleQuota(idCount) : requiredQuota(idCount);
+    const needed = run.sample ? sampleQuota(idCount, run.opponentDue) : requiredQuota(idCount);
     if (quota.remaining >= needed) return null;
     await run.deps.logger.error("quota", { remaining: quota.remaining, required: needed });
     return `quota: remaining ${quota.remaining} < required ${needed}`;
@@ -279,7 +281,7 @@ export async function runSnapshot(
 ): Promise<RunSummary> {
   const { force = false, stale } = options;
   const snapshotId = await claim(deps, eventId, phase, { force, stale });
-  const run = newRun(deps, snapshotId, false);
+  const run = newRun(deps, eventId, snapshotId, false);
   return collectRun(run, await allianceIds(deps, eventId, phase), phase);
 }
 
@@ -288,14 +290,17 @@ export async function runSnapshot(
 export async function runSample(eventId: number, slotAt: Date, deps: Deps): Promise<RunSummary> {
   const snapshotId = await deps.repo.startSample(eventId, slotAt, deps.now());
   if (snapshotId === null) throw new RunRefusedError("taken");
-  const run = newRun(deps, snapshotId, true);
+  const run = newRun(deps, eventId, snapshotId, true);
   run.noRetry = new Set(await deps.repo.failedSampleUnionIds(eventId));
+  // INVARIANT budget.samples-yield-to-after, with the opponent's End reads in the After's reserve (D152).
+  run.opponentDue = await opponentEndsDue(deps, eventId);
   return collectRun(run, await allianceIds(deps, eventId, "sample"), "sample");
 }
 
-function newRun(deps: Deps, snapshotId: number, sample: boolean): Run {
+function newRun(deps: Deps, eventId: number, snapshotId: number, sample: boolean): Run {
   return {
     deps,
+    eventId,
     snapshotId,
     sample,
     deadlineMs: sample ? SAMPLE_DEADLINE_MS : RUN_DEADLINE_MS,
@@ -354,5 +359,7 @@ async function collectRun(run: Run, ids: number[], phase: SnapshotPhase): Promis
   }
   if (error && !run.deadlineHit)
     await deps.logger.error("abort", { reason: error, calls_used: run.calls });
+  // D152: the KvK opponent after our own reads have settled, in the time left; never a sample's.
+  if (!error && !run.deadlineHit) await readOpponent(run, phase, ids.length);
   return finish(run, ids, phase, error);
 }

@@ -484,6 +484,13 @@
       "when": 1795325099370,
       "tag": "0068_player_reads_raw_read_at",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1795359086446,
+      "tag": "0069_kvk_opponents",
+      "breakpoints": true
     }
   ]
 }

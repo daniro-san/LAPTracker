@@ -33,4 +33,10 @@ describe("sampleQuota", () => {
   it("asks for 131 calls with the 20 configured alliances", () => {
     expect(sampleQuota(20)).toBe(131);
   });
+
+  it("keeps the KvK opponent's End reads in the After's reserve, and reads none of them itself (D152)", () => {
+    // 2 × (20 + 15 + 5) + 1 + 4 × 20: the opponent adds 2 per End read, never 4.
+    expect(sampleQuota(20, 15)).toBe(161);
+    expect(sampleQuota(20, 1) - sampleQuota(20)).toBe(2);
+  });
 });
