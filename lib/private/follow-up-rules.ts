@@ -29,6 +29,19 @@ export interface WorkItem {
   kvk: boolean;
 }
 
+/**
+ * An officer's Needs help mark stands (#585 S2): the status is Needs help and no away note runs (a status of
+ * Needs help is never a break of its own). `worklist`'s rule, which Insights also uses for its link.
+ */
+export const helpStands = (m: Pick<MemberRow, "officerStatus" | "awayUntil">) =>
+  m.officerStatus === "help" && m.awayUntil === null;
+
+/**
+ * In "After KvK, offer help" (#585 S5): hit in the KvK and not under Needs help, whose row keeps the KvK
+ * line instead. The group, the head's jump and Insights' link count by it.
+ */
+export const inKvkGroup = (item: Pick<WorkItem, "kvk" | "help">) => item.kvk && !item.help;
+
 /** D140 (owner, issue 460): the tip shows when coins were below 1,000 on at least 5 days with data. */
 export const COINS_TIP_DAYS = 5;
 
@@ -64,7 +77,7 @@ export function worklist(
       const checkIn = member.reasons.length > 0 && needsAWord(who);
       const toAsk = who.includes("new") && !who.includes("break") ? factsToAsk(member.facts) : [];
       const tip = tips.has(member.uid) && !who.includes("break");
-      const help = who.includes("help") && !who.includes("break");
+      const help = helpStands(member);
       const hit = kvk.has(member.uid) && !who.includes("break");
       return help || checkIn || toAsk.length > 0 || tip || hit
         ? [{ member, checkIn, help, toAsk, tip, kvk: hit }]

@@ -8,6 +8,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { isolate } from "../copy";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { helpMarkRows } from "../repo/member-follow-ups";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
@@ -232,5 +233,30 @@ describe("Follow-up's Needs help group (#585 slice 2)", () => {
       home: { toLook: 2, noted: 1 },
       page: { toLook: 2, noted: 1 },
     });
+  });
+
+  it("reads a mark set again after it was cleared from its new run only, the older record's Undo changing nothing (D149)", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    // v1 Ana's "They need help" on Thu 12 Nov; v2 cleared by Bo; v3 set again by Bo in Edit info on Fri 13.
+    const first = await markHelp(
+      ana,
+      101,
+      "Unsure about the shield timing",
+      st("2026-11-12T12:00"),
+    );
+    await setStatus(bo, 101, null, st("2026-11-12T13:00"));
+    await setStatus(bo, 101, "help", st("2026-11-13T08:00"));
+    // Ana then undoes her record from before the run: the status stays as Bo set it.
+    const undo = { uid: 101, target: first.requestId, requestId: randomUUID() };
+    await undoFollowUp(db, ana, undo, at(st("2026-11-13T09:00")));
+    // The read holds only the run and what was written from its start.
+    const { versions, records } = await helpMarkRows(db, ana.workspaceId, [101]);
+    expect(versions.map((v) => v.version)).toEqual([3]);
+    expect(records.map((r) => r.action)).toEqual(["withdrawn"]);
+    // The row and the card name Bo's mark, with no note.
+    const mark = (await followUpView(db, ana, NOW, ZONE)).items.find((i) => i.member.uid === 101);
+    expect(mark?.mark).toEqual({ at: st("2026-11-13T08:00"), by: "Bo", note: null });
+    const card = await memberCard(db, ana, 101, { now: NOW, zone: ZONE, language: "en", t });
+    expect(card?.statusMark).toEqual([`Since Fri, Nov 13 · added by ${isolate("Bo")}`]);
   });
 });

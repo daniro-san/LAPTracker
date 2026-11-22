@@ -344,8 +344,13 @@ export async function memberCard(
     memberOrigin(db, access, uid, at.zone, at.t, f.date),
     cardLink(db, access, uid, at.t),
     cardFollowUp(db, access, member, followUps, view.reads, at, f.date),
-    // Follow-up's own rule, read only while the status is Needs help (#585 S2).
-    helpMarksOf(db, access.workspaceId, member.officerStatus === "help" ? [uid] : []),
+    // Follow-up's own rule, read only while the status is Needs help (#585 S2), on the records read above.
+    helpMarksOf(
+      db,
+      access.workspaceId,
+      member.officerStatus === "help" ? [uid] : [],
+      [...followUps].reverse(),
+    ),
   ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),

@@ -19,6 +19,7 @@ import { addDays, dayIn } from "./calendar-time";
 import { awayUntil } from "./fact-fields";
 import { featureOn } from "./features";
 import { kvkGroupOpen } from "./follow-up-kvk";
+import { helpStands } from "./follow-up-rules";
 import { KVK_READ_FROM, kvkOf, type KvkView } from "./insights-kvk";
 import {
   bandsOf,
@@ -256,9 +257,17 @@ export async function insightsView(
     fridays ? shieldPassCounts(db, access.unionId, shieldWindows(fridays, zone)) : [],
   ]);
   const kvk = kvkOf(events, reads, zone, away, now);
-  // Members marked Needs help sit in Follow-up's Needs help group, not in the KvK one.
+  // Members whose Needs help mark stands sit in Follow-up's Needs help group, not in the KvK one.
   const marked = new Set(
-    newest.members.filter((m) => facts.get(m.uid)?.status?.value === "help").map((m) => m.uid),
+    newest.members
+      .filter((m) => {
+        const f = facts.get(m.uid);
+        return helpStands({
+          officerStatus: f?.status?.value ?? null,
+          awayUntil: awayUntil(f?.away?.value, today),
+        });
+      })
+      .map((m) => m.uid),
   );
   return {
     newest: newest.day,

@@ -6,7 +6,12 @@
 import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { FollowUpItem } from "@/lib/private/follow-up";
-import { lastWeekLines, markLines, type FollowUpAction } from "@/lib/private/follow-up-rules";
+import {
+  inKvkGroup,
+  lastWeekLines,
+  markLines,
+  type FollowUpAction,
+} from "@/lib/private/follow-up-rules";
 import type { Reason } from "@/lib/private/members";
 import { reasonText, type Formats } from "@/lib/private/members-sheet";
 import { inputOf, readyTexts } from "@/lib/private/ready-message";
@@ -118,7 +123,7 @@ export function groupsOf(
   const date = kvkDay && f.date(kvkDay);
   const kvkLine = date ? fill(t["followup.reason.kvk"], { date }) : null;
   const help = items.filter((i) => i.help);
-  const hit = items.filter((i) => !i.help && i.kvk);
+  const hit = items.filter(inKvkGroup);
   const rest = items.filter((i) => !i.help && !i.kvk);
   const checkIn = rest.filter((i) => i.checkIn);
   const fresh = rest.filter((i) => !i.checkIn && i.toAsk.length > 0);
