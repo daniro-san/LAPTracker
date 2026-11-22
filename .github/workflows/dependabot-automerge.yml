@@ -1,21 +1,26 @@
-# Dependabot minor/patch PRs merge themselves once CI is green (plan §11.6). Majors wait for the owner.
+# Dependabot minor/patch PRs merge themselves once CI is green (plan §11.6). Majors wait for the owner, and so
+# does the lint-format group: a formatter or linter bump can reformat files and needs a person (D150).
+# Write scopes live on the job, which runs only when Dependabot both triggered the run and authored the PR.
 name: dependabot-automerge
 
-on: pull_request
+on:
+  pull_request:
+    branches: [dev]
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   automerge:
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot[bot]' && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      - if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+      - if: steps.metadata.outputs.update-type != 'version-update:semver-major' && steps.metadata.outputs.dependency-group != 'lint-format'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
