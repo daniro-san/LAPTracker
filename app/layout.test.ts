@@ -1,9 +1,10 @@
 // Brave iOS Night Mode runs Dark Reader, which recolours the light theme: the head must carry its lock tag.
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("./_ui/locale", () => ({
-  requestCopy: async () => ({ site: { name: "LAP Tracker", description: "d" } }),
-  requestLanguage: async () => ({ language: "en", locale: "en" }),
+// The real requestCopy runs on an English request: only Next's request APIs are replaced.
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
+  headers: async () => new Headers({ "accept-language": "en" }),
 }));
 vi.mock("./globals.css", () => ({}));
 vi.mock("@/lib/brand/fonts", () => ({ fontVariables: "" }));

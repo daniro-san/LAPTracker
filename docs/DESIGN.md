@@ -251,7 +251,7 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - Colour means something: sign of a delta, a warning, a neutral badge. Decoration never uses the accent colours.
 - Square corners (`{rounded.none}`) on tables and cards, 2 px on controls; the one circle is the wax seal.
 - Mobile first: designed at 360 px, cards below 640 px, every target ≥ 44 px, nothing hover-only.
-- Dark mode is the same ledger by lamplight — swapped token values, nothing redesigned. It follows the system until the viewer picks a theme in the header's settings gear; that choice is kept in a `theme` cookie (per browser, never server state) so the server renders the right mode on first paint. The head carries `<meta name="darkreader-lock">` (2026-11-22) so Dark Reader-based "night modes", such as Brave iOS Night Mode, do not recolour either theme; our two themes are the only dark mode.
+- Dark mode is the same ledger by lamplight — swapped token values, nothing redesigned. It follows the system until the viewer picks a theme in the header's settings gear; that choice is kept in a `theme` cookie (per browser, never server state) so the server renders the right mode on first paint. The head carries `<meta name="darkreader-lock">` (2026-11-22) to ask Dark Reader-based "night modes", such as Brave iOS Night Mode, not to recolour either theme (Dark Reader documents the tag; that Brave honours it is not yet confirmed); our two themes are the only dark mode.
 
 ## Colors
 
