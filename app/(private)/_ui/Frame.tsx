@@ -9,7 +9,7 @@ import { type ReactNode, Suspense } from "react";
 
 import { analyticsPerson } from "@/lib/analytics/person";
 import { AppShell } from "@/lib/brand/components/layout/AppShell";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
@@ -21,6 +21,7 @@ import {
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import { frameReadStatus } from "@/lib/private/read-status";
+import { fill } from "@/lib/words";
 import type { Feature } from "@/lib/workspace-features";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";

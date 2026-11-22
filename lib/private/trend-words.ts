@@ -1,8 +1,8 @@
 // The member card's trend words (D109; weekly baseline D114), made on the server in the officer's language:
 // the muted line under main squad and AD Tech ("+600K this week", "+400K since Nov 10", "Complete") and
 // "Updated Nov 17". Split from member-card.ts for its size.
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
+import { fill, plural } from "../words";
 import type { WorkspaceDictionary } from "./dictionary";
 import { AD_COMPLETE } from "./fact-fields";
 import type { TrendField, Version } from "./fact-trend";
@@ -49,9 +49,13 @@ function pointsText(
   f: CardFormats,
 ): string {
   const points = Math.abs(change);
-  const form = new Intl.PluralRules(f.language).select(points) === "one" ? "one" : "other";
   const n = new Intl.NumberFormat(f.language, { maximumFractionDigits: 1 }).format(points);
-  return fill(t[`facts.points${since}.${form}`], { change: `${change > 0 ? "+" : "−"}${n}`, date });
+  const words = plural(
+    points,
+    { one: t[`facts.points${since}.one`], other: t[`facts.points${since}.other`] },
+    f.language,
+  );
+  return fill(words, { change: `${change > 0 ? "+" : "−"}${n}`, date });
 }
 
 /**

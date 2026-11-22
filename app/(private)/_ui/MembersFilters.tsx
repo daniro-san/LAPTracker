@@ -8,7 +8,6 @@ import type { MemberFilter } from "@/lib/analytics/events";
 import { FIELD } from "@/lib/brand/components/controls";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import { clockIn, hhmm, zonedInstant } from "@/lib/private/calendar-time";
 import {
   ORDERS,
@@ -19,6 +18,7 @@ import {
   type TimeMode,
   type Who,
 } from "@/lib/private/members-list";
+import { fill } from "@/lib/words";
 
 import type { ListWords } from "./member-list-data";
 import { chipClass } from "./MembersListParts";

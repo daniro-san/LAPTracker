@@ -11,7 +11,6 @@ import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
-import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
@@ -42,6 +41,7 @@ import {
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import { AllianceWeekLine, allianceWeekParts } from "../../../_ui/AllianceWeekLine";
 import { CheckInLine, checkInLink } from "../../../_ui/CheckInLine";

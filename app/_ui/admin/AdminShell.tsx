@@ -11,13 +11,14 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { adminSession } from "@/lib/admin-session";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { hasPendingRehearsal, listRuns, runningSnapshots } from "@/lib/queries/admin";
 import { countErrorsSince } from "@/lib/queries/admin-errors";
 import { listDailyReads } from "@/lib/queries/daily-runs";
 import { pollFrom } from "@/lib/tick-gate";
+import { fill } from "@/lib/words";
 
 import { LogoutButton, PinGate } from "./PinGate";
 import { LiveNow, RunWatch } from "./RunWatch";

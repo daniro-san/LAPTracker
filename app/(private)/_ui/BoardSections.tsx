@@ -2,7 +2,6 @@
 // as a strip of seven days and a card per day with events, each event's time first on the viewer's clock
 // with server time under it (D116); the notices marked for members; and Start here. Texts written in
 // several languages show the viewer's first, the others one tap away (BoardText.tsx).
-import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { BOARD_DAYS, type BoardEntry, type BoardNotice } from "@/lib/private/board";
 import { addDays, zonedInstant } from "@/lib/private/calendar-time";
@@ -10,6 +9,7 @@ import { calendarDates, endOf, stOf, titleOf } from "@/lib/private/calendar-word
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
 import type { StartHereText } from "@/lib/private/start-here";
+import { fill } from "@/lib/words";
 
 import { BoardTimeColumn, Clamped } from "./BoardParts";
 import { Strip } from "./BoardStrip";

@@ -4,8 +4,8 @@
 // nothing sent is "none" (D127), written "none". The average is `dayAverage`, the one rule the card, Me and
 // Insights share (owner, 2026-11-22, #663): a "none" day counts as 0 and the line names it; a day with no
 // read never counts.
-import { fill } from "../copy";
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
+import { fill } from "../words";
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";
 import { DAY_MS, isoDay } from "./member-week";

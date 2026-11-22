@@ -23,7 +23,7 @@ import { ShowFirst } from "@/app/_ui/ShowFirst";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { Legend } from "@/app/_ui/Status";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
@@ -35,6 +35,7 @@ import {
   type EventComparison,
   type PlayerComparison,
 } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 /** The members view lists this many by Might; "Show all" opens the rest, as the alliance page does. */
 const TOP_MEMBERS = 20;

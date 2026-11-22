@@ -2,8 +2,9 @@
 // lines the admin Discord channel gets when a request arrives and when an invite makes a Desk (issue 500).
 // English only (D48). The in-game name and rank are public game data; no other roster field is read or sent
 // (D71).
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
 import { allianceLabel, escapeDiscord } from "./notify";
+import { fill } from "./words";
 
 const t = copy.admin.invites;
 

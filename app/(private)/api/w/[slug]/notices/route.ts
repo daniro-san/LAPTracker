@@ -4,7 +4,7 @@
 // A save from a review request closes it as "Edited by …" in the same transaction (D113); a request that is
 // not the officer's, or that someone already answered, stays as it was, and the save still counts.
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { answerReview } from "@/lib/private/notice-reviews";
@@ -40,7 +40,7 @@ export async function POST(
     const result = await saveNotice(db, access, id ?? null, changes, now, requestId ?? null, close);
     if (result.ok) {
       const saved = Response.json({ id: result.id }, { headers: NO_STORE });
-      return counted(
+      return withActionEvent(
         ctx,
         access,
         "notice",

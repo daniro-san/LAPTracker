@@ -9,7 +9,8 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { Chip } from "@/lib/brand/components/Chip";
 import { type Column, ResponsiveTable } from "@/lib/brand/components/layout/ResponsiveTable";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 import { ALLOWANCES } from "@/lib/workspace-features";
 
 import { Activity } from "./Activity";

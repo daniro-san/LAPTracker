@@ -1,13 +1,13 @@
 // The check-in line Home and Members show (issue 585), rendered on the server: Follow-up's two numbers,
 // linked to Follow-up, while its tab is on; Members' own count of its "Check in and Needs help" group, linked
 // to that group, while the tab is off (D126: no link to a turned-off tab).
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { WeekCounts } from "@/lib/private/follow-up";
 import { weekCountLine } from "@/lib/private/follow-up-rules";
 import type { MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
-import { plural, type Formats } from "@/lib/private/members-sheet";
+import { type Formats } from "@/lib/private/members-sheet";
+import { fill, plural } from "@/lib/words";
 
 import { LINK } from "./BoardText";
 
@@ -25,7 +25,14 @@ export function checkInLink(
   }
   const n = view.members.filter((m) => needsAWord(whoOf(m))).length;
   if (n === 0) return null;
-  const text = fill(plural(t, "members.checkinCount", n, f), { n });
+  const text = fill(
+    plural(
+      n,
+      { one: t["members.checkinCount.one"], other: t["members.checkinCount.other"] },
+      f.language,
+    ),
+    { n },
+  );
   return { text, href: `/w/${slug}/members?order=rank#ml-heading` };
 }
 

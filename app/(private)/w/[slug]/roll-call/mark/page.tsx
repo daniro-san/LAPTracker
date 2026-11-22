@@ -7,7 +7,6 @@
 // chip, as the Roll call list's counts link it; anything else opens on "To mark".
 import { notFound } from "next/navigation";
 
-import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
@@ -16,6 +15,7 @@ import { prepView } from "@/lib/private/raid-prep";
 import type { Occasion } from "@/lib/private/roll-call";
 import { callRead } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
+import { fill } from "@/lib/words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
 import { openedFrom } from "../../../../_ui/drilldown-event";

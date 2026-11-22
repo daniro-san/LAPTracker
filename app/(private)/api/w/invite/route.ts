@@ -8,7 +8,7 @@
 // gets one line in the admin Discord channel (issue 500), and it counts as `ws_action` `workspace` / `create`.
 import { createNotifier } from "@/lib/notify";
 import { deskMadeMessage } from "@/lib/notify-request";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { inviteInput, inviteStep, type StepCode } from "@/lib/private/invite-steps";
 import { withContext } from "@/lib/route";
@@ -46,7 +46,7 @@ export async function POST(request: Request): Promise<Response> {
       // An alliance with no label yet gets its union id as the tag (allianceOf); the desk's events send null.
       const tag = result.tag === String(result.unionId) ? null : result.tag;
       const made = { slug: result.slug, alliance: { tag }, user: { id: result.userId } };
-      return counted(
+      return withActionEvent(
         ctx,
         made,
         "workspace",

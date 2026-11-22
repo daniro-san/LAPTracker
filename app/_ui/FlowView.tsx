@@ -8,9 +8,10 @@ import Link from "next/link";
 import { Fragment } from "react";
 
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { FLOW_MIN, type FlowCell } from "@/lib/flow";
 import type { FlowAlliance, FlowResult } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { allianceLabel, dayDate, type Clock } from "./format";
 import { MERGE_PATH } from "./MergePicker";

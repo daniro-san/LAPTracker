@@ -11,9 +11,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill } from "@/lib/copy";
 import { mondayOf } from "@/lib/private/calendar-time";
 import { FROM_CALENDAR } from "@/lib/private/roll-call-rules";
+import { fill } from "@/lib/words";
 import type { Feature } from "@/lib/workspace-features";
 
 import type { AgendaDay, AgendaItem, CalendarSheetWords } from "./calendar-data";

@@ -8,11 +8,11 @@ import { useState, type FormEvent } from "react";
 import { FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { changedFrom } from "@/lib/brand/components/sheet-close";
-import { fill } from "@/lib/copy";
 import { hhmm, parseTime } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { THEFT_KINDS, type TheftKind } from "@/lib/private/theft-groups";
 import { serverInstant } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";

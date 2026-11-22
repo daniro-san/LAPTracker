@@ -8,10 +8,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import type { GarrisonWords } from "@/lib/private/dictionary.garrison";
 import { enemyMightIn } from "@/lib/private/garrison-plan";
 import { mightIn, millionsIn } from "@/lib/private/onboarding-parse";
+import { fill } from "@/lib/words";
 
 import { Labeled } from "./CalendarFields";
 import { ReadScreenshot, type ShotWords } from "./ReadScreenshot";

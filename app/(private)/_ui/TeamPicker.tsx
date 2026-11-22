@@ -11,10 +11,10 @@ import { useState } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill } from "@/lib/copy";
 import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
 import { TEAM_MAX } from "@/lib/private/roll-call-rules";
+import { fill } from "@/lib/words";
 
 import { useFreshOnReturn } from "./CalendarAgenda";
 import { sendRoll } from "./roll-call-client";

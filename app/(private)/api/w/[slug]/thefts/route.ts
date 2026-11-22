@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginJson,
@@ -132,7 +132,7 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
           ? "undo_delete"
           : "delete"
         : ({ add: "add", follow: "record", server: "edit" } as const)[input.action];
-    return counted(
+    return withActionEvent(
       ctx,
       access,
       "theft",

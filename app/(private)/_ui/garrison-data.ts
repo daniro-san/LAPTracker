@@ -1,12 +1,12 @@
 // The garrison plan page's data (D121), made on the server in the officer's language: each member's
 // strongest squad and the good signals as words (never a number, D76), each spare squad as a choice with
 // its might, and the share's words. The client lays it out and edits the pairs.
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { GarrisonKey, GarrisonWords } from "@/lib/private/dictionary.garrison";
 import type { GarrisonView } from "@/lib/private/garrison";
 import type { GarrisonPair, ShareWords } from "@/lib/private/garrison-plan";
 import { mightText, shareWordsOf } from "@/lib/private/garrison-words";
+import { fill } from "@/lib/words";
 
 export interface BoardMember {
   uid: number;

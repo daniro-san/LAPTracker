@@ -7,9 +7,9 @@
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
-import { fill } from "@/lib/copy";
 import { gameNotice } from "@/lib/private/notice-formats";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { CopyButton } from "./CopyButton";
 import { newRequestId } from "./request-id";

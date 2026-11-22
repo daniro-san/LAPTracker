@@ -6,7 +6,7 @@
 //     card members see until the next thanks or a Take down.
 //   {action: "take_down", id}: hides the board's card; not_found for another workspace's or a Discord share.
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { noticeChannels } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import {
@@ -47,7 +47,7 @@ export async function POST(
     if (ask.action === "take_down") {
       const done = await takeDownThanks(db, access, ask.id, now);
       return done
-        ? counted(
+        ? withActionEvent(
             ctx,
             access,
             "thanks",
@@ -66,7 +66,7 @@ export async function POST(
     );
     if (!result.ok) return privateError(STATUS[result.code], result.code);
     const { id, target, at } = result.row;
-    return counted(
+    return withActionEvent(
       ctx,
       access,
       "thanks",

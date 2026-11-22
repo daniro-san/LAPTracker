@@ -10,9 +10,10 @@ import { useState, type ReactNode } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type { GarrisonWords } from "@/lib/private/dictionary.garrison";
 import { shareText, type GarrisonPair } from "@/lib/private/garrison-plan";
+import { fill } from "@/lib/words";
 
 import { CopyButton } from "./CopyButton";
 import type { BoardData, BoardMember, BoardSpare } from "./garrison-data";

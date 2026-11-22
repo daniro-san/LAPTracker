@@ -1,9 +1,10 @@
 // The End picture's KvK block (D152, issue 306): the opponent's server, how many alliances each side counts,
 // then each side's might change and kills gained from Start to End. Server numbers and sums only.
 import { MightMark } from "./brand/components/MoverMarks";
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
 import { compact, signedCompact } from "./discord-format";
 import { Colors, ROW, Section, SECTION, u } from "./event-image-parts";
+import { fill } from "./words";
 
 /** One side's Start to End, as the matchup counts it. */
 interface Sums {

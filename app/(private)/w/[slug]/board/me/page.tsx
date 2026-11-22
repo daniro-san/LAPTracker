@@ -10,7 +10,6 @@ import { notFound, redirect } from "next/navigation";
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { Spread } from "@/lib/brand/components/layout/Spread";
-import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { meAccess, requireBoard, type CookieReader } from "@/lib/private/access";
@@ -22,6 +21,7 @@ import { linkedName, linkPicker, type LinkPicker } from "@/lib/private/me-link";
 import { cardFormats } from "@/lib/private/member-card";
 import { ownReport, REPORT_FIELDS, type OwnReports } from "@/lib/private/self-report";
 import { SLUG } from "@/lib/private/sign-in";
+import { fill } from "@/lib/words";
 
 import { BoardAccount } from "../../../../_ui/BoardAccount";
 import { LINK } from "../../../../_ui/BoardSections";

@@ -12,12 +12,12 @@
 import { useEffect, useState } from "react";
 
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import { addDays } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { FactField } from "@/lib/private/fact-fields";
 import { FOLLOW_UP_ACTIONS, type FollowUpAction } from "@/lib/private/follow-up-rules";
+import { fill } from "@/lib/words";
 
 import { FIELD, Labeled, TextInput } from "./CalendarFields";
 import { focusField } from "./FactFields";

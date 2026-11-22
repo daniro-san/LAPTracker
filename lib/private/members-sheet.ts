@@ -2,9 +2,9 @@
 // (D75), the day labels, and the row as tab-separated cells for "Copy for spreadsheet". The copy leaves
 // out the map position, online status, last online time and the photo (D71); numbers are plain integers,
 // a cell with no data is empty, and dates are server days.
-import { fill } from "../copy";
 import { serverDay } from "../schedule";
-import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
+import { fill, plural } from "../words";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { MemberRow, Reason } from "./members";
 
 /** How the page writes dates and whole numbers in the officer's language. */
@@ -17,19 +17,17 @@ export interface Formats {
   zone: string;
 }
 
-type Counted =
-  "reason.might" | "reason.idle" | "nodata.donations" | "members.checkinCount" | "pending.toMatch";
-
-/** The singular or plural form of a counted phrase, by the language's own rule. */
-export function plural(t: WorkspaceDictionary, key: Counted, n: number, f: Formats): string {
-  const form = new Intl.PluralRules(f.language).select(n) === "one" ? "one" : "other";
-  return t[`${key}.${form}` as WorkspaceKey];
-}
-
 export function reasonText(r: Reason, t: WorkspaceDictionary, f: Formats): string {
-  if (r.kind === "might") return fill(plural(t, "reason.might", r.days, f), { n: r.days });
+  if (r.kind === "might")
+    return fill(
+      plural(r.days, { one: t["reason.might.one"], other: t["reason.might.other"] }, f.language),
+      { n: r.days },
+    );
   if (r.kind === "kvk") return fill(t["reason.kvk"], { date: f.date(r.at) });
-  return fill(plural(t, "reason.idle", r.days, f), { n: r.days });
+  return fill(
+    plural(r.days, { one: t["reason.idle.one"], other: t["reason.idle.other"] }, f.language),
+    { n: r.days },
+  );
 }
 
 /**
@@ -51,7 +49,14 @@ export function statusOf(m: MemberRow): Status {
 export function missingText(m: MemberRow, t: WorkspaceDictionary, f: Formats): string {
   const words = m.missing.map((k) =>
     k === "donations"
-      ? fill(plural(t, "nodata.donations", m.missingDays, f), { n: m.missingDays })
+      ? fill(
+          plural(
+            m.missingDays,
+            { one: t["nodata.donations.one"], other: t["nodata.donations.other"] },
+            f.language,
+          ),
+          { n: m.missingDays },
+        )
       : t[`nodata.${k}`],
   );
   return fill(t["members.nodata"], { list: words.join(", ") });

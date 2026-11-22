@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
@@ -54,6 +54,6 @@ export async function POST(
         "content-disposition": `attachment; filename="${result.filename}"`,
       },
     });
-    return counted(ctx, access, "workspace_data", "download", file);
+    return withActionEvent(ctx, access, "workspace_data", "download", file);
   });
 }

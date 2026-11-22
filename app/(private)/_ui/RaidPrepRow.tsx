@@ -9,9 +9,10 @@
 import { useState, type ReactNode } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { PREP_MESSAGE } from "@/lib/private/dictionary.raidprep";
 import type { Mark } from "@/lib/private/roll-call-rules";
+import { fill } from "@/lib/words";
 
 import type { PrepRowView, PrepTrackerView } from "./prep-data";
 import { prepMessage, shieldDone } from "./prep-message";

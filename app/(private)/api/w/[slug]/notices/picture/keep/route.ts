@@ -4,7 +4,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { keepPicture } from "@/lib/private/notice-picture-due";
@@ -32,6 +32,6 @@ export async function POST(
     if (!result) return privateError(404, "not_found");
     const done = Response.json({ kept: keep }, { headers: NO_STORE });
     if (!result.changed) return done;
-    return counted(ctx, access, "notice", keep ? "picture_keep" : "picture_unkeep", done);
+    return withActionEvent(ctx, access, "notice", keep ? "picture_keep" : "picture_unkeep", done);
   });
 }

@@ -16,6 +16,7 @@ import { isolate } from "@/lib/copy";
 import type { ImportKind, PhotoFact, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 import { nameKey } from "@/lib/screenshot/name-key";
+import { fill } from "@/lib/words";
 
 import { Actions, confirmRetype, Message, useDraftActions, type Why } from "./draft-actions";
 import {
@@ -24,7 +25,6 @@ import {
   DAYS,
   duelKnown,
   factKnown,
-  fillIn,
   type Day,
   type Words,
 } from "./draft-known";
@@ -60,7 +60,7 @@ function withConflicts(view: DraftView, rows: RowState[], detail: unknown): RowS
 }
 
 const matchedTo = (name: string | undefined, w: Words) =>
-  name === undefined ? undefined : fillIn(w["shots.matchedTo"], { name: isolate(name) });
+  name === undefined ? undefined : fill(w["shots.matchedTo"] ?? "", { name: isolate(name) });
 
 /**
  * A row's label and anchor, and (D109) in a Paste updates draft the member it is matched to, and on an
@@ -178,11 +178,11 @@ function CheckReview(props: Props) {
           {w["shots.check.head"]}
         </h2>
         <p className="mt-1 text-lg font-semibold tabular-nums">
-          {fillIn(w["shots.check.match"], { same: sum.same, compared: sum.compared })}
+          {fill(w["shots.check.match"] ?? "", { same: sum.same, compared: sum.compared })}
         </p>
         {sum.left > 0 && (
           <p className="mt-1 text-body-sm text-ink/80">
-            {fillIn(w["shots.check.left"], { n: sum.left })}
+            {fill(w["shots.check.left"] ?? "", { n: sum.left })}
           </p>
         )}
       </section>

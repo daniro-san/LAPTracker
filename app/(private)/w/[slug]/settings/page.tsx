@@ -17,7 +17,6 @@ import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { PageIndex } from "@/lib/brand/components/layout/PageIndex";
 import { Spread } from "@/lib/brand/components/layout/Spread";
-import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -37,6 +36,7 @@ import { SLUG } from "@/lib/private/sign-in";
 import { squadsReader, squadsToday, type SquadsToday } from "@/lib/private/squads-today";
 import { trackerKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
+import { fill } from "@/lib/words";
 
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { siteBotOff } from "../../../_ui/discord-step";

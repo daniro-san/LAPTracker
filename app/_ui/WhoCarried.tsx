@@ -9,8 +9,8 @@
 // alliance's member list sorted by kills gained, highest first (the section exists only once the End ran).
 import { useState } from "react";
 
-import { fill } from "@/lib/copy";
 import type { Carried, CarriedRow } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { DrilldownLink } from "./DrilldownLink";
 import {

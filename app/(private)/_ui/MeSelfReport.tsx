@@ -14,8 +14,9 @@ import { chip } from "@/lib/brand/components/controls";
 import type { SelfReportWords } from "@/lib/private/dictionary.self-report";
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import type { OwnReport, OwnReports } from "@/lib/private/self-report";
+import { fill, plural } from "@/lib/words";
 
-import { percentOf, say, type EditorWords } from "./facts-form";
+import { percentOf, type EditorWords } from "./facts-form";
 import { SuffixInput } from "./SuffixInput";
 import { TimeZonePicker } from "./TimeZonePicker";
 
@@ -178,12 +179,20 @@ function SendBar(props: {
   onSend: () => void;
 }) {
   const { w, changes, line } = props;
-  const count = new Intl.PluralRules(props.language).select(changes) === "one" ? "one" : "other";
   return (
     <div className="sticky bottom-0 z-10 -mx-4 mt-3 border-t border-rule bg-paper px-4 py-3">
       {changes > 0 && !props.busy && (
         <p className="mb-2 text-body-sm font-semibold text-yarn">
-          {say(w["self.notSent"], { n: say(w[`self.notSent.${count}`], { n: changes }) })}
+          {fill(w["self.notSent"], {
+            n: fill(
+              plural(
+                changes,
+                { one: w["self.notSent.one"], other: w["self.notSent.other"] },
+                props.language,
+              ),
+              { n: changes },
+            ),
+          })}
         </p>
       )}
       <button
@@ -237,7 +246,7 @@ function Zone(props: Props & { value: string; onChange: (zone: string) => void }
       <p className="mt-2 flex flex-wrap gap-2">
         {zone && zone !== value && (
           <button type="button" onClick={() => onChange(zone)} className={chip()}>
-            {say(w["self.phoneZone"], { zone: city })}
+            {fill(w["self.phoneZone"], { zone: city })}
           </button>
         )}
         {value && (
@@ -293,5 +302,5 @@ function FieldState(props: { report: OwnReport | null; day: string | null; w: Se
     : report.seen
       ? "self.state.seen"
       : "self.state.sent";
-  return <p className="mt-1 text-body-sm text-ink/75">{say(w[key], { day })}</p>;
+  return <p className="mt-1 text-body-sm text-ink/75">{fill(w[key], { day })}</p>;
 }

@@ -9,7 +9,6 @@
 // - the Raid Shield check (D137), while it is on: running, then done until KvK starts (shield-status.ts),
 //   with its way to Raid prep.
 import { getAppContext } from "../app-context";
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -19,6 +18,7 @@ import { dayRosterState } from "../repo/squads";
 import { keyFacts } from "../repo/workspace-keys";
 import { inEventWindow, quotaDayRead, serverInstant } from "../schedule";
 import { stopKind } from "../squads";
+import { fill } from "../words";
 import { dailyKeyRule, dailyTracked } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";

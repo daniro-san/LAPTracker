@@ -10,7 +10,8 @@ import { useMemo, useState } from "react";
 
 import { ROLE_TONE, RoleMark } from "@/lib/brand/components/RoleMark";
 import { rankDelta } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { useCopy } from "./LocaleProvider";
 import {

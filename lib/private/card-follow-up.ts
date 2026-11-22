@@ -3,10 +3,10 @@
 // with the words the card's browser part needs (the Members page has no Follow-up words of its own). People
 // first (D75): "no follow-up note yet" only for a member on the list; a member off it with nothing noted
 // gets no line. The workspace's own records and its own alliance's reads only (D71).
-import { fill } from "../copy";
 import type { Db } from "../db";
 import { gameLanguages } from "../repo/player-reads";
 import type { RosterRead } from "../repo/workspace-rosters";
+import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";

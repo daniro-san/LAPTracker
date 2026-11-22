@@ -8,9 +8,9 @@ import type { ReactNode } from "react";
 
 import { Wax } from "@/lib/brand/components/Wax";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
-import { fill } from "@/lib/copy";
 import type { BoardView } from "@/lib/private/board";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { LanguageTag, Translated } from "./BoardText";
 import { weekRange } from "./share-thanks-data";

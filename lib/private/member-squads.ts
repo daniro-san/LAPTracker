@@ -6,12 +6,12 @@
 // Troops are never read here (owner, issue 461).
 // Only the workspace's own alliance (access.unionId, D71). Pictures come from /img/hero/[id], and only for
 // heroes in the catalog; any other id is a plain placeholder.
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { heroNames } from "../repo/hero-catalog";
 import { squadPairs, type StoredSquad } from "../repo/squads";
 import { mainSquad } from "../squads";
+import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";

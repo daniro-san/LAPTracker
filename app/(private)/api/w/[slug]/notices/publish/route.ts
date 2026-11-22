@@ -4,7 +4,7 @@
 // audience), no_text, posting (the same request is still running), recent (this notice went to this
 // audience in the last 30 s), failed (Discord refused, timed out or ran past the budget).
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { noticeChannels } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import {
@@ -57,6 +57,6 @@ export async function POST(
     if (!result.ok) return privateError(STATUS[result.code], result.code);
     const { audience, languages, at } = result.row;
     const posted = Response.json({ audience, languages, at }, { headers: NO_STORE });
-    return counted(ctx, access, "notice_publish", "publish", posted);
+    return withActionEvent(ctx, access, "notice_publish", "publish", posted);
   });
 }

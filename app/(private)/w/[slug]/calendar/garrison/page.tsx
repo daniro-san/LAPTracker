@@ -4,7 +4,6 @@
 // session never reaches it.
 import { notFound } from "next/navigation";
 
-import { fill } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
@@ -13,6 +12,7 @@ import { calendarDates, titleOf } from "@/lib/private/calendar-words";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { garrisonView } from "@/lib/private/garrison";
+import { fill } from "@/lib/words";
 
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { boardData, garrisonWords } from "../../../../_ui/garrison-data";

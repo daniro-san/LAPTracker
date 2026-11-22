@@ -17,9 +17,9 @@ import { useRef, useState } from "react";
 
 import { track, type RaidPrepSet, type RollCallSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
+import { fill } from "@/lib/words";
 
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";

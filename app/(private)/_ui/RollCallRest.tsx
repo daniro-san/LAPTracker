@@ -9,7 +9,7 @@ import { useRef, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import type { MarkWords, RollSheetWords } from "./roll-call-data";
 import type { useMarks } from "./use-marks";

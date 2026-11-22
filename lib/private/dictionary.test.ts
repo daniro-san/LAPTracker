@@ -2,8 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
+import { fill } from "../words";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "./dictionary";
 
 describe("the workspace dictionary (D71, #305)", () => {
@@ -126,7 +126,7 @@ describe("the workspace dictionary (D71, #305)", () => {
     const source = sourceFiles();
     const flat = (text: string) => text.replace(/\s+/gu, " ");
     for (const [key, links] of Object.entries(SENTENCE_CALLERS)) {
-      // A plural line is named by its stem ("insights.flow.based") where `counted` picks the form.
+      // A plural line may be named by its stem ("insights.flow.based") or by its form.
       const refs = [`"${key}"`, `"${key.replace(/\.(one|other)$/u, "")}"`];
       const callers = [...source]
         .filter(([, text]) => refs.some((ref) => text.includes(ref)))
@@ -187,16 +187,10 @@ const SENTENCE_CALLERS: Record<string, [string, string][]> = {
     ],
   ],
   "insights.flow.based.one": [
-    [
-      "lib/private/insights-words.ts",
-      'counted(t, "insights.flow.based", flow.reads, language, { date: dates.sentence(flow.from),',
-    ],
+    ["lib/private/insights-words.ts", "{ n: flow.reads, date: dates.sentence(flow.from) }"],
   ],
   "insights.flow.based.other": [
-    [
-      "lib/private/insights-words.ts",
-      'counted(t, "insights.flow.based", flow.reads, language, { date: dates.sentence(flow.from),',
-    ],
+    ["lib/private/insights-words.ts", "{ n: flow.reads, date: dates.sentence(flow.from) }"],
   ],
   "invite.expires": [
     [

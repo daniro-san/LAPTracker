@@ -8,8 +8,8 @@
 import type { CSSProperties } from "react";
 
 import type { Dictionary } from "@/lib/copy";
-import { fill } from "@/lib/copy";
 import type { EventClock } from "@/lib/fight-clock";
+import { fill } from "@/lib/words";
 
 import { compact, shareText, type Clock } from "./format";
 import { MoreBar, LABEL } from "./StatTable";

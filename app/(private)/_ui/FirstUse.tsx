@@ -12,6 +12,7 @@ import { Sheet } from "@/lib/brand/components/Sheet";
 import { WORKSPACE_INTRO_COOKIE } from "@/lib/private/cookies";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { FIRST_USE_STEPS, SOURCES, type FirstUseStep } from "@/lib/private/first-use";
+import { fill } from "@/lib/words";
 
 import { SourceBadge } from "./SourceBadge";
 
@@ -59,9 +60,7 @@ function Cards({
   const [index, setIndex] = useState(0);
   const step = FIRST_USE_STEPS[index] as FirstUseStep;
   const last = index === FIRST_USE_STEPS.length - 1;
-  const counter = t["intro.step"]
-    .replace("{n}", String(index + 1))
-    .replace("{total}", String(FIRST_USE_STEPS.length));
+  const counter = fill(t["intro.step"], { n: index + 1, total: FIRST_USE_STEPS.length });
   return (
     <Sheet labelledBy="first-use-title" onCancel={() => onClose("skipped")}>
       <div className="flex items-center justify-between gap-3">

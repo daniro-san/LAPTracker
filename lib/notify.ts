@@ -4,7 +4,7 @@
 // never member names, never secrets (plan §12.3). Text lives in lib/copy-discord.ts.
 import type { RunSummary } from "./collector";
 import { topMovers } from "./compute";
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
 import {
   escapeDiscord,
   MINUS,
@@ -20,6 +20,7 @@ import type { TurnoutLists } from "./queries";
 import { redactPrivate } from "./redact";
 import type { Verdict } from "./rehearsal";
 import type { SnapshotPhase } from "./repo";
+import { fill } from "./words";
 
 export { discordClock, escapeDiscord, type DiscordClock } from "./discord-format";
 export { quotaReportMessage, type QuotaReport } from "./notify-quota";

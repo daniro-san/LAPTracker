@@ -1,6 +1,7 @@
 // What an error means and what to do (D61): our one-line error texts ("v1 TimeoutError", "v1 http 504",
 // "not fetched: deadline", "render TypeError", …) matched to an entry of copy.admin.guide. Pure.
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
+import { fill } from "./words";
 
 export interface Guide {
   meaning: string;

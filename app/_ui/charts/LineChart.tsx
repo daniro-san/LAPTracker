@@ -3,7 +3,8 @@
 // it, never SVG <text>, so the same drawing can go into a next/og picture, whose Satori renderer refuses
 // <text>. Colours are tokens, so dark mode follows. The numbers themselves sit in text or a table beside
 // the chart; the chart only shows their shape.
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 export interface ChartPoint {
   at: Date;

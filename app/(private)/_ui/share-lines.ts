@@ -1,7 +1,7 @@
 // What Home says after a share from the phone (D110), from the share target's redirect query.
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
+import { fill, plural } from "@/lib/words";
 
 /**
  * What became of a share from the phone (D110), from the share target's redirect: `shared=again` (not
@@ -14,10 +14,6 @@ export function sharedLines(
   query: Record<string, string | string[] | undefined>,
 ): string[] | null {
   const count = (key: string) => Math.min(MAX_PICTURES, Math.max(0, Number(query[key]) || 0));
-  const counted = (key: "shots.share.made" | "shots.share.none", n: number) =>
-    fill(t[`${key}.${new Intl.PluralRules(language).select(n) === "one" ? "one" : "other"}`], {
-      n,
-    });
   switch (query.shared) {
     case "again":
       return [t["shots.share.again"]];
@@ -29,8 +25,30 @@ export function sharedLines(
     case "done": {
       const [made, none] = [count("made"), count("none")];
       const lines = [
-        ...(made > 0 ? [counted("shots.share.made", made)] : []),
-        ...(none > 0 ? [counted("shots.share.none", none)] : []),
+        ...(made > 0
+          ? [
+              fill(
+                plural(
+                  made,
+                  { one: t["shots.share.made.one"], other: t["shots.share.made.other"] },
+                  language,
+                ),
+                { n: made },
+              ),
+            ]
+          : []),
+        ...(none > 0
+          ? [
+              fill(
+                plural(
+                  none,
+                  { one: t["shots.share.none.one"], other: t["shots.share.none.other"] },
+                  language,
+                ),
+                { n: none },
+              ),
+            ]
+          : []),
       ];
       return lines.length > 0 ? lines : null;
     }

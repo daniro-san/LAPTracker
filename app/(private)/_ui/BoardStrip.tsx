@@ -1,9 +1,9 @@
 // The members' board's week strip (D116), out of BoardSections.tsx for its length: the seven days with a
 // dot per event, and under them the legend that says what the dots are (issue 585).
-import { fill } from "@/lib/copy";
 import type { BoardEntry } from "@/lib/private/board";
 import { calendarDates } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { fill, plural } from "@/lib/words";
 
 /**
  * The seven days as a strip (D116): weekday and date, a dot per event (three at most) and the count for
@@ -19,7 +19,6 @@ export function Strip(props: {
   const { t, language, today } = props;
   const dates = calendarDates(language);
   const number = new Intl.DateTimeFormat(language, { day: "numeric", timeZone: "UTC" });
-  const plural = new Intl.PluralRules(language);
   return (
     <>
       <ol aria-label={t["board.days"]} className="mt-3 grid grid-cols-7 gap-0.5">
@@ -29,7 +28,14 @@ export function Strip(props: {
           const look = now ? "bg-plum text-paper" : n > 0 ? "bg-plum/10 text-plum" : "text-ink/70";
           const said = `${dates.long(day)}${now ? ` · ${t["board.today"]}` : ""} · ${
             n > 0
-              ? fill(t[`board.events.${plural.select(n) === "one" ? "one" : "other"}`], { n })
+              ? fill(
+                  plural(
+                    n,
+                    { one: t["board.events.one"], other: t["board.events.other"] },
+                    language,
+                  ),
+                  { n },
+                )
               : t["board.free"]
           }`;
           const inside = (

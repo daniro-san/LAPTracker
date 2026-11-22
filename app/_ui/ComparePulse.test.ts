@@ -2,9 +2,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { en, fill } from "@/lib/copy";
+import { en } from "@/lib/copy";
 import { textOf } from "@/lib/html.test-helpers";
 import type { EventComparison, EventPulse } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { ComparePulse } from "./ComparePulse";
 import type { Clock } from "./format";

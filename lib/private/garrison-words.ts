@@ -2,7 +2,7 @@
 // the enemy might, then one line per pair with names and squad might only. The page's "Copy for the game"
 // and the Discord post use the same words and the same builder (shareText), so they never differ.
 import { compactLarge } from "../compact";
-import { fill } from "../copy";
+import { fill } from "../words";
 import { calendarDates, titleOf } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { GarrisonView } from "./garrison";

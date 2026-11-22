@@ -6,11 +6,11 @@
 // Squads (D117) and History (follow-up notes, earlier values). Issue 516: the Follow-up block (card-follow-up.ts).
 // Issue 634: the Raid Shield block (card-shield.ts), from Friday's night check until KvK starts.
 import { compactLarge } from "../compact";
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { factHistory, type FactRow } from "../repo/member-facts";
 import { endOfDayReads } from "../repo/workspace-rosters";
+import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import { cardFollowUp, type CardFollowUp } from "./card-follow-up";

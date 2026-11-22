@@ -2,7 +2,7 @@
 // failed after its retry, and a member's "This is me" claim to approve. The roll call reminders are in
 // lib/push-tick.ts. Each is claimed once per trigger in `push_marks` (INVARIANT push.once-per-trigger) and
 // sent only to the officers of the workspace concerned. Counts and a link only (lock screens).
-import { fill, type PushWords } from "./copy-push";
+import type { PushWords } from "./copy-push";
 import type { DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
 import type { Env } from "./env";
@@ -16,6 +16,7 @@ import { serverDay } from "./schedule";
 import { passWindows, type ShieldPass } from "./shield-check";
 import { summarize } from "./shield-post";
 import type { ShieldTarget } from "./shield-read";
+import { fill } from "./words";
 
 export type UseDeps = PushDeps & {
   env: PushDeps["env"] & Pick<Env, "SERVER_TZ">;

@@ -9,8 +9,9 @@ import { useMemo, type ReactNode } from "react";
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { LANGUAGES, TIER_MAX, type FactField, type MemberFacts } from "@/lib/private/fact-fields";
 import { mightIn, millionsIn } from "@/lib/private/onboarding-parse";
+import { fill } from "@/lib/words";
 
-import { percentOf, say, SOURCE_KEY, type EditorWords, type Form } from "./facts-form";
+import { percentOf, SOURCE_KEY, type EditorWords, type Form } from "./facts-form";
 import { SuffixInput } from "./SuffixInput";
 import { TimeZonePicker } from "./TimeZonePicker";
 
@@ -197,7 +198,7 @@ function Languages(p: FieldsProps) {
 function Status(p: FieldsProps) {
   const { form, edit, words } = p;
   const options = [
-    ["", say(words["facts.computed"], { status: p.autoStatus })],
+    ["", fill(words["facts.computed"], { status: p.autoStatus })],
     ["break", words["status.break"]],
     ["help", words["status.help"]],
   ] as const;

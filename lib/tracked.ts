@@ -4,7 +4,7 @@
 // the newest set at its Before. A board that fails keeps the newest set; before any set, the newest event's list.
 import { SERVER, TRACKED_COUNT } from "../config/alliances";
 import { topByPower } from "./compute";
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
 import type { Db } from "./db";
 import { allianceLabel } from "./notify";
 import {
@@ -18,6 +18,7 @@ import {
 } from "./repo/alliances";
 import type { InternalSource } from "./sources/types";
 import { describe } from "./upstream-errors";
+import { fill } from "./words";
 import { dailyTargets, type DailyTarget } from "./workspace-keys";
 
 export interface TrackedDay extends TrackedSet {

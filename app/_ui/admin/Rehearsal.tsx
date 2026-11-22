@@ -3,8 +3,9 @@
 import type { Clock } from "@/app/_ui/format";
 import { Chip } from "@/lib/brand/components/Chip";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { RehearsalStatus } from "@/lib/queries/admin";
+import { fill } from "@/lib/words";
 
 import { AdminSection } from "./parts";
 import { phaseWord, stateWord } from "./words";

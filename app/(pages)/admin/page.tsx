@@ -32,7 +32,7 @@ import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { offsetLabel } from "@/lib/calendar-time";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -41,6 +41,7 @@ import { listRuns, type recentTicks } from "@/lib/queries/admin";
 import { loadAdminPage } from "@/lib/queries/admin-page";
 import { countWaitingRequests } from "@/lib/queries/alliance-invites";
 import { isGeneratedName, lastOccurrence, nextEvent } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 const t = copy.admin;
 const st = t.status;

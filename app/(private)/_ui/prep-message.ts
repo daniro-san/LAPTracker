@@ -2,10 +2,10 @@
 // yet done, then "bring your troops home". The Shield part is done when it is ✓ or "no problem seen" (the
 // shield's "the rest", D103); when the tracker saw a shield, it asks to check it is still on. The one
 // message for everyone still to remind (issue 585) is the same request, to many, names first.
-import { fill } from "@/lib/copy";
 import { escapeDiscord } from "@/lib/discord-format";
 import type { PrepMessageWords } from "@/lib/private/dictionary.raidprep";
 import type { Mark } from "@/lib/private/roll-call-rules";
+import { fill } from "@/lib/words";
 
 type Words = Record<
   "text" | "reset" | "kvk" | "shield" | "check" | "wall" | "home" | "and",

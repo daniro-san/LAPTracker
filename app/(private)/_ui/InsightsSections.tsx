@@ -5,9 +5,9 @@
 // card is in InsightsEffort.tsx.
 import type { ReactNode } from "react";
 
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { BarRow, InsightsWords, PulseMetricWords } from "@/lib/private/insights-words";
+import { fill } from "@/lib/words";
 
 import { Caret, Names, SetFold, TapHint } from "./InsightsSets";
 import { withNoData } from "./NoData";

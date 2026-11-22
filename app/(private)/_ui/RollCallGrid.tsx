@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { track, type RollCallSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { rollCallOpened } from "./drilldown-event";
 import type { RollSheetWords } from "./roll-call-data";

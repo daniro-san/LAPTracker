@@ -8,8 +8,9 @@ import { useState } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import type { FactField } from "@/lib/private/fact-fields";
+import { fill, plural } from "@/lib/words";
 
-import { counted, say, type EditorWords } from "./facts-form";
+import { type EditorWords } from "./facts-form";
 import { ReadScreenshot, shotWords } from "./ReadScreenshot";
 
 /** What the save bar needs from the editor's save. */
@@ -73,7 +74,14 @@ export function Paste(props: {
         <p aria-live="polite" className="mt-2 text-body-sm">
           {found === 0
             ? words["paste.nothing"]
-            : say(counted(words, "paste.found", found, props.language), { n: found })}
+            : fill(
+                plural(
+                  found,
+                  { one: words["paste.found.one"] ?? "", other: words["paste.found.other"] ?? "" },
+                  props.language,
+                ),
+                { n: found },
+              )}
         </p>
       )}
     </details>
@@ -89,21 +97,21 @@ export function Conflict(props: {
   const { words, mine, theirs } = props;
   return (
     <div role="alert" className="mt-2 border border-yarn px-3 py-2 text-body-sm">
-      <p>{say(words["facts.conflictField"], { theirs, mine })}</p>
+      <p>{fill(words["facts.conflictField"], { theirs, mine })}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => props.onSettle(true)}
           className={buttonClass("secondary")}
         >
-          {say(words["facts.theirs"], { theirs })}
+          {fill(words["facts.theirs"], { theirs })}
         </button>
         <button
           type="button"
           onClick={() => props.onSettle(false)}
           className={buttonClass("secondary")}
         >
-          {say(words["facts.mine"], { mine })}
+          {fill(words["facts.mine"], { mine })}
         </button>
       </div>
     </div>
@@ -130,12 +138,12 @@ export function SaveNote({ s, words }: { s: SaveState; words: EditorWords }) {
           onClick={() => showField(first)}
           className="mb-2 min-h-11 text-left text-body-sm underline underline-offset-4"
         >
-          {say(words["facts.conflictBar"], { field: names(s.conflicts.map((c) => c.field)) })}
+          {fill(words["facts.conflictBar"], { field: names(s.conflicts.map((c) => c.field)) })}
         </button>
       )}
       {s.merged.length > 0 && (
         <p aria-live="polite" className="mb-2 text-body-sm">
-          {say(words["facts.mergedLine"], { fields: names(s.merged) })}
+          {fill(words["facts.mergedLine"], { fields: names(s.merged) })}
         </p>
       )}
     </>

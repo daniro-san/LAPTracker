@@ -12,9 +12,10 @@ import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { getRun } from "@/lib/queries/admin";
+import { fill } from "@/lib/words";
 
 export default async function RunPage({ params }: { params: Promise<{ id: string }> }) {
   const t = copy.admin.runs;

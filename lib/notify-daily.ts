@@ -1,10 +1,11 @@
 // The daily roster read's admin line (D60): posted by the tick only when the read falls short. Failed
 // alliances are grouped by reason, so a whole-day outage stays a few lines, and the last line links to
 // what can be done: Retry on /admin (D67), and for a partial day the daily reads list as well.
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
 import type { DailyReadSummary } from "./daily-read";
 import { guideFor } from "./error-guide";
 import { allianceLabel, STATE_ICON, STATE_WORD } from "./notify";
+import { fill } from "./words";
 
 export function dailyReadMessage(s: DailyReadSummary, at: string, origin: string): string {
   const t = copy.discord.admin;

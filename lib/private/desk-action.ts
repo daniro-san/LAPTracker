@@ -19,7 +19,7 @@ import type { WorkspaceAccess } from "./access";
  * `response`, unchanged; when it is a success (2xx), the write is counted as `feature` / `action`. `access`
  * is the officer's, or for the invite's "finish" the workspace it just made and its first officer.
  */
-export function counted(
+export function withActionEvent(
   ctx: Pick<AppContext, "env" | "fetch">,
   access: Pick<WorkspaceAccess, "slug"> & {
     alliance: { tag: string | null } | null;

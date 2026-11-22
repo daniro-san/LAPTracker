@@ -2,11 +2,12 @@
 // ranked by might on the newest complete daily read, each with its rank change, might, might growth against
 // the tracked alliances' total, and a small rank line; the ranks day by day sit under Details while the
 // `chart-details` flag is on (D91). Alliance totals only, public. The page's own alliance and the viewer's ("My alliance") are marked.
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import { allianceStanding, type Standing as Figures } from "@/lib/queries";
 import type { StandingRow } from "@/lib/standing";
+import { fill } from "@/lib/words";
 
 import { Sparkline } from "./charts/Sparkline";
 import { allianceLabel, percentText, rowAnchor, type Clock } from "./format";

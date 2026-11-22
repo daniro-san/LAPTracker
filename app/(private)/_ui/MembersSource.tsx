@@ -1,8 +1,8 @@
 // Where the Members tab's rows come from, in one or two short lines (issues 296, 297): the end-of-day
 // reads with their "from the game" badge, or, before the alliance's first one, the newest roster
 // LAPTracker has, with the hour the end-of-day read runs (DAILY_ROSTER_AT, server time).
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { SourceBadge } from "./SourceBadge";
 

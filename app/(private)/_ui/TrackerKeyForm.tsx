@@ -10,9 +10,9 @@ import { useState, type FormEvent } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { KeyState } from "@/lib/private/tracker-key";
+import { fill } from "@/lib/words";
 
 import { AskSheet } from "./AskSheet";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";

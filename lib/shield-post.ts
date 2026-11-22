@@ -28,6 +28,7 @@ import {
 import { sealedWebhooks } from "./repo/workspace-discord";
 import { passWindows, suggestionOf, type ShieldPass } from "./shield-check";
 import type { ShieldTarget } from "./shield-read";
+import { fill } from "./words";
 import { masterFingerprint, openKey } from "./workspace-keys";
 
 /** Names listed at most, so the message stays far under Discord's 2,000 characters. */
@@ -112,9 +113,6 @@ export function summarize(
   notSeen.sort((a, b) => a.localeCompare(b));
   return { shielded, read, unread: members.length - read, notSeen, away: awayNotSeen, at };
 }
-
-const fill = (text: string, values: Record<string, string | number>) =>
-  text.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ""));
 
 function readLine(w: ShieldPostWords, s: ReadSummary, day: string, zone: string) {
   const time = s.at ? discordClock(zone).time(s.at) : "–";

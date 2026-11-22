@@ -3,10 +3,11 @@
 // and today's "Get today's details" lookups against the day's cap. Read after the page's own isAdmin() check.
 // English only (D48).
 import { LOOKUPS_PER_DAY, TRACKED_COUNT } from "@/config/alliances";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { adminTracked } from "@/lib/queries/alliance-list";
+import { fill } from "@/lib/words";
 
 import type { Clock } from "../format";
 import { AdminSection } from "./parts";

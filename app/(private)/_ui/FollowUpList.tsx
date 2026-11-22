@@ -12,7 +12,8 @@ import { useState, type ReactNode } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
 import { MasterDetail } from "@/lib/brand/components/layout/MasterDetail";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { send } from "./follow-up-send";
 import type { FollowUpWords } from "./follow-up-words";

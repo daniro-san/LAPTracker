@@ -7,7 +7,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -73,14 +73,14 @@ export async function POST(
       if (!added) return privateError(400, "bad_name");
       const conflict = added.results.some((r) => r.status === "conflict");
       const made = answer(conflict ? 409 : 200, { ok: true, ...added });
-      return counted(ctx, access, "new_member", "add", made);
+      return withActionEvent(ctx, access, "new_member", "add", made);
     }
     if (input.action === "link") {
       const linked = await privately("pending.link", () =>
         linkPending(db, access, -input.uid, input.to, now),
       );
       if (linked === "ok")
-        return counted(ctx, access, "new_member", "link", answer(200, { ok: true }));
+        return withActionEvent(ctx, access, "new_member", "link", answer(200, { ok: true }));
       return privateError(linked === "not_member" ? 400 : 404, linked);
     }
     const { requestId, undo } = input;
@@ -89,7 +89,7 @@ export async function POST(
     );
     // ws_action (D115, D123): new_member / delete, or undo_delete for the deleter's Undo.
     return gone
-      ? counted(
+      ? withActionEvent(
           ctx,
           access,
           "new_member",

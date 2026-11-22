@@ -1,8 +1,9 @@
 // The calendar's words, made on the server in the officer's language (issue 300): an entry's title, a
 // server day and time, and the sentence a refused edit (409) shows. Dates never end a sentence, so PT and
 // FR never print "nov..". Numbers and dates stay out of client components (no Node/Chrome Intl drift).
-import { fill, isolate } from "../copy";
+import { isolate } from "../copy";
 import { dateWords } from "../date-words";
+import { fill } from "../words";
 import type { Conflict } from "./calendar";
 import type { EntryRow } from "./calendar-model";
 import { ELIXIR_MINUTES } from "./calendar-model";

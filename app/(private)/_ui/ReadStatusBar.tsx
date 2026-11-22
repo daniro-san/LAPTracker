@@ -17,6 +17,7 @@ import { track } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
 import type { ReadStatus, StatusLine } from "@/lib/private/read-status";
 import { batchMayRun } from "@/lib/tick-batch";
+import { fill } from "@/lib/words";
 
 import { nextWake } from "./read-status-wake";
 
@@ -124,7 +125,7 @@ export function ReadStatusBar({
   usePolling(slug, status.running, setStatus);
   const lines = useShown(status.lines.filter((l) => !(keyShown && l.keyCard)));
   if (lines.length === 0) return null;
-  const more = (n: number) => (n > 0 ? words.more.replace("{n}", String(n)) : null);
+  const more = (n: number) => (n > 0 ? fill(words.more, { n }) : null);
   const narrow = more(lines.length - 1);
   const wide = more(lines.length - 2);
   const raidPrep = lines.find((l) => l.raidPrep)?.raidPrep;

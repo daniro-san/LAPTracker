@@ -7,13 +7,13 @@
 // prep and the member's newest Shield mark there (`newestMark`, one row by index). An officer's mark leads (officer marks win, D137); the tracker's own marks do not, since
 // its checkpoints say the same with their map time. A member away on the raid's Saturday gets only "Away on
 // raid day" (D103, as the Discord summary counts them). Attack-relevant: never logged or cached (D137).
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { weekRaidPrep } from "../raid-prep-fill";
 import { newestMark } from "../repo/roll-call";
 import { shieldReadings } from "../repo/shield-checks";
 import { passWindows, raidOf } from "../shield-check";
+import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";

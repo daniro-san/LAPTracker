@@ -10,7 +10,8 @@ import { useEffect, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { SealButton } from "@/lib/brand/components/SealButton";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import {
   createRound,

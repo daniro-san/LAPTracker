@@ -8,12 +8,13 @@ import { useState } from "react";
 
 import { Notice } from "@/lib/brand/components/Notice";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type {
   WorkspaceDictionary,
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { smallButton } from "./NoticeBits";
 import { isSignedOut, post } from "./screenshot-upload";

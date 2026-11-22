@@ -1,6 +1,6 @@
 // /admin's New alliances section (D130, issue 453): reads the invite links and the requests after the page's
 // own isAdmin() check and hands them, as words, to InvitesCard. English only (D48).
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { rankWarning, rosterLine } from "@/lib/notify-request";
 import { withPageDb } from "@/lib/page";
 import {
@@ -10,6 +10,7 @@ import {
   type AdminInvite,
 } from "@/lib/queries/alliance-invites";
 import type { AllianceLabel } from "@/lib/queries/alliance-list";
+import { fill } from "@/lib/words";
 
 import { InvitesCard } from "./InvitesCard";
 import { AdminSection } from "./parts";

@@ -6,7 +6,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { exact } from "@/app/_ui/format";
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
@@ -15,9 +15,10 @@ import { featureOn } from "@/lib/private/features";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
 import { draftView, toReview, toReviewCount, type DraftView } from "@/lib/private/import-view";
-import { counted, kindLabel } from "@/lib/private/import-words";
+import { kindLabel } from "@/lib/private/import-words";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
+import { fill, plural } from "@/lib/words";
 
 import { type ReviewText } from "../../../../_ui/DraftHeader";
 import { DraftReview } from "../../../../_ui/DraftReview";
@@ -138,8 +139,6 @@ function NextDraft(props: {
 }) {
   const { slug, t, others } = props;
   const next = others[0];
-  const form =
-    new Intl.PluralRules(props.language).select(others.length) === "one" ? "one" : "other";
   return (
     <p className="mt-6">
       <a
@@ -147,7 +146,7 @@ function NextDraft(props: {
         className={buttonClass(next ? "primary" : "secondary", "w-full sm:w-auto")}
       >
         {next
-          ? `${fill(t[`shots.nextDraft.${form}`], { n: others.length })} →`
+          ? `${fill(plural(others.length, { one: t["shots.nextDraft.one"], other: t["shots.nextDraft.other"] }, props.language), { n: others.length })} →`
           : t["shots.draft.back"]}
       </a>
     </p>
@@ -172,7 +171,16 @@ function Draft(props: {
         {kindLabel(t, view.kind, view.scope, view.scopeSure)}
       </h1>
       <p className="mt-1 flex flex-wrap items-center gap-x-2 text-body-sm text-ink/80">
-        <span>{counted(t, language, "shots.rows", view.rows.length)}</span>
+        <span>
+          {fill(
+            plural(
+              view.rows.length,
+              { one: t["shots.rows.one"], other: t["shots.rows.other"] },
+              language,
+            ),
+            { n: view.rows.length },
+          )}
+        </span>
         {!pasted && <SourceBadge source="photo" label={t["src.photo"]} />}
       </p>
       <p className="mt-1 text-body-sm text-ink/80">
@@ -191,7 +199,14 @@ function Draft(props: {
       </p>
       {view.leftOut > 0 && (
         <p className="mt-2 border-l-4 border-yarn pl-2">
-          {counted(t, language, "shots.leftOut", view.leftOut)}
+          {fill(
+            plural(
+              view.leftOut,
+              { one: t["shots.leftOut.one"], other: t["shots.leftOut.other"] },
+              language,
+            ),
+            { n: view.leftOut },
+          )}
         </p>
       )}
       {view.status !== "open" && (

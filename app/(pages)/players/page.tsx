@@ -13,10 +13,11 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { CardGrid } from "@/lib/brand/components/layout/CardGrid";
 import { GrannyEmpty } from "@/lib/brand/components/Mascot";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { fill, isolate, type Dictionary } from "@/lib/copy";
+import { isolate, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { homeEvent } from "@/lib/queries";
 import { SEARCH_LIMIT, type PlayerMatch } from "@/lib/queries/player-search";
+import { fill } from "@/lib/words";
 
 const MAX_QUERY = 64;
 

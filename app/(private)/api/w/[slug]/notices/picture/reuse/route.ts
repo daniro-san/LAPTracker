@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { reusePicture } from "@/lib/private/notice-picture-due";
@@ -36,6 +36,6 @@ export async function POST(
     const result = await reusePicture(db, access, from, to, now);
     if (!result) return privateError(404, "not_found");
     const done = Response.json({ to }, { headers: NO_STORE });
-    return result.changed ? counted(ctx, access, "notice", "picture_reuse", done) : done;
+    return result.changed ? withActionEvent(ctx, access, "notice", "picture_reuse", done) : done;
   });
 }

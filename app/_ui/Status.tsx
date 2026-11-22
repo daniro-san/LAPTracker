@@ -10,7 +10,8 @@ import {
   StitchedCheck,
 } from "@/lib/brand/components/StatusIcons";
 import { runAbandoned } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { MEMBER_MARK, type Clock } from "./format";
 

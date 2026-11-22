@@ -4,8 +4,9 @@
 // says so, and nothing here is sent anywhere. The picker is in MergePicker.tsx.
 import type { ReactNode } from "react";
 
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { MergePage, MergeSide } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { allianceLabel, type Clock } from "./format";
 import { Num } from "./Num";

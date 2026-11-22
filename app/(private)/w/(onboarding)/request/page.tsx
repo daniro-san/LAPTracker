@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Measure } from "@/lib/brand/components/layout/Measure";
-import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import {
   REQUEST_COOKIE,
@@ -14,6 +13,7 @@ import {
   type RequestView,
 } from "@/lib/private/access-request";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { Frame, workspaceWords } from "../../../_ui/Frame";
 import { CopyLink, RequestForm } from "../../../_ui/RequestForm";
