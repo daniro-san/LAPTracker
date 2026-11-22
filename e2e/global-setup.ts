@@ -21,17 +21,26 @@ function run(command: string, args: string[], input?: string, env?: Record<strin
 /** The server's day changes at 02:00 UTC (UTC−2); a run across it would see two different "todays". */
 const DAY_CHANGE_MARGIN_MS = 10 * 60_000;
 
-export default function globalSetup() {
-  const now = new Date();
+/** How long to wait so the run starts at least DAY_CHANGE_MARGIN_MS after the day change; 0 when clear. */
+export function waitForDayChange(nowMs: number): number {
+  const now = new Date(nowMs);
   const change = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2);
-  const near = [change - 86_400_000, change, change + 86_400_000].some(
-    (t) => Math.abs(now.getTime() - t) < DAY_CHANGE_MARGIN_MS,
+  const near = [change - 86_400_000, change, change + 86_400_000].find(
+    (t) => Math.abs(nowMs - t) < DAY_CHANGE_MARGIN_MS,
   );
-  if (near) {
-    throw new Error(
-      "e2e: within 10 minutes of 02:00 UTC, the server's day change; run it again after.",
+  return near === undefined ? 0 : near + DAY_CHANGE_MARGIN_MS - nowMs;
+}
+
+export default async function globalSetup() {
+  // A required check must not fail on the clock: near the day change, wait it out (at most 20 minutes).
+  const wait = waitForDayChange(Date.now());
+  if (wait > 0) {
+    console.log(
+      `e2e: waiting ${Math.ceil(wait / 60_000)} min for the server's day change (02:00 UTC)`,
     );
+    await new Promise((resolve) => setTimeout(resolve, wait));
   }
+  const now = new Date();
   const url = new URL(DATABASE_URL);
   const name = decodeURIComponent(url.pathname.slice(1));
   if (!name.includes("e2e")) throw new Error("E2E_DATABASE_URL's database name must contain e2e");
