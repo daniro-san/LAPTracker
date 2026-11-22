@@ -28,7 +28,9 @@ interface Props {
   sheet: SheetWords;
 }
 
-function FeedbackSheet(props: Props & { onClose: () => void }) {
+type Entry = "badge" | "end";
+
+function FeedbackSheet(props: Props & { entry: Entry; onClose: () => void }) {
   const w = props.words;
   const [kind, setKind] = useState<Kind | null>(null);
   const [text, setText] = useState("");
@@ -54,7 +56,7 @@ function FeedbackSheet(props: Props & { onClose: () => void }) {
     // Read to its end, so the browser finishes the answer.
     await res?.json().catch(() => null);
     if (res?.ok) {
-      track("feedback_sent", { feedback_area: props.area, kind });
+      track("feedback_sent", { feedback_area: props.area, kind, entry: props.entry });
       return setState("received");
     }
     setState("idle");
@@ -184,14 +186,31 @@ function Fields(props: {
   );
 }
 
+// From 1280 (the width the desk's sidebar shows) a small "Feedback" badge also floats at the bottom left, so
+// the entry is in view without scrolling to the end. It sits in the sidebar's column on the desk (the sidebar
+// keeps room for it) and in the empty margin on the board and Me, so it never covers content. Below 1280
+// there is no floating element: the bottom tabs own that corner on a phone. It opens the same sheet.
 export function FeedbackButton(props: Props) {
-  const [open, setOpen] = useState(false);
+  const [entry, setEntry] = useState<Entry | null>(null);
   return (
     <div className="mt-10 border-t border-rule pt-4">
-      <button type="button" onClick={() => setOpen(true)} className={buttonClass("secondary")}>
+      <button type="button" onClick={() => setEntry("end")} className={buttonClass("secondary")}>
         {props.words["feedback.open"]}
       </button>
-      {open && <FeedbackSheet {...props} onClose={() => setOpen(false)} />}
+      {/* Kept mounted while the sheet is open (hidden and inert), so the sheet returns focus to it on close. */}
+      <button
+        type="button"
+        onClick={() => setEntry("badge")}
+        hidden={entry !== null}
+        inert={entry !== null}
+        className={buttonClass(
+          "secondary",
+          `fixed bottom-4 left-4 z-10 bg-paper max-xl:hidden ${entry !== null ? "xl:hidden" : ""}`,
+        )}
+      >
+        {props.words["feedback.badge"]}
+      </button>
+      {entry !== null && <FeedbackSheet {...props} entry={entry} onClose={() => setEntry(null)} />}
     </div>
   );
 }

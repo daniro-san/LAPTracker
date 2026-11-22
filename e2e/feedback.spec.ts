@@ -73,3 +73,42 @@ test("an officer's feedback from the desk says “Received, thank you.” and th
   await expect(again.getByRole("button", { name: "Read" })).toHaveAttribute("aria-pressed", "true");
   await expect(again.getByRole("button", { name: "New" })).toHaveAttribute("aria-pressed", "false");
 });
+
+// The floating badge (issue 713): from 1280, where the desk's sidebar shows, a "Feedback" badge opens the same
+// sheet; below it, only the end-of-page button.
+test("from 1280 a “Feedback” badge opens the same sheet and gives way to it, and the end-of-page button stays", async ({
+  context,
+  page,
+}, info) => {
+  test.skip(info.project.name !== "wide", "the badge shows from 1280");
+  const a = ALLIANCES.a;
+  await signIn(context, "a", "officer");
+  await page.goto(`/w/${a.slug}`);
+  await deskFrame(page, a);
+  const badge = page.getByRole("button", { name: "Feedback", exact: true });
+  const end = page.getByRole("button", { name: "Send feedback" });
+  await expect(badge).toBeVisible();
+  await expect(end).toHaveCount(1);
+  expect((await badge.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await hydrated(badge);
+  await badge.click();
+  const sheet = page.getByRole("dialog", { name: "Send feedback" });
+  await expect(sheet.getByText("They read it without your name and do not reply.")).toBeVisible();
+  await expect(badge).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Close" }).first().click();
+  await expect(sheet).toHaveCount(0);
+  await expect(badge).toBeVisible();
+});
+
+test("on a phone there is no floating “Feedback” badge, only the end-of-page button", async ({
+  context,
+  page,
+}, info) => {
+  test.skip(info.project.name !== "phone", "the badge shows from 1280");
+  const a = ALLIANCES.a;
+  await signIn(context, "a", "officer");
+  await page.goto(`/w/${a.slug}`);
+  await deskFrame(page, a);
+  await expect(page.getByRole("button", { name: "Send feedback" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Feedback", exact: true })).toHaveCount(0);
+});

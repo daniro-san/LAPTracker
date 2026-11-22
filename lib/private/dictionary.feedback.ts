@@ -3,6 +3,7 @@
 // sender's name and does not reply. French puts a no-break space before : ; ! and ?.
 export const feedbackEn = {
   "feedback.open": "Send feedback",
+  "feedback.badge": "Feedback",
   "feedback.lead":
     "An idea, a problem, or something that works well: tell the people who make this site, not your officers. They read it without your name and do not reply.",
   "feedback.kind": "What is it about?",
@@ -25,6 +26,7 @@ export type FeedbackWords = Record<keyof typeof feedbackEn, string>;
 
 export const feedbackPt: FeedbackWords = {
   "feedback.open": "Enviar feedback",
+  "feedback.badge": "Feedback",
   "feedback.lead":
     "Uma ideia, um problema ou algo que funciona bem: conte a quem faz este site, não aos seus oficiais. Eles leem sem o seu nome e não respondem.",
   "feedback.kind": "Sobre o que é?",
@@ -46,6 +48,7 @@ export const feedbackPt: FeedbackWords = {
 
 export const feedbackFr: FeedbackWords = {
   "feedback.open": "Envoyer un retour",
+  "feedback.badge": "Retour",
   "feedback.lead":
     "Une idée, un problème ou quelque chose qui marche bien : dites-le aux personnes qui font ce site, pas à vos officiers. Elles le lisent sans votre nom et ne répondent pas.",
   "feedback.kind": "C’est à propos de quoi ?",
