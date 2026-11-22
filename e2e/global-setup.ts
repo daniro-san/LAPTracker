@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 
 import { BRIDGE_PORT, DATABASE_URL } from "./env";
 import { seedSql } from "./fixtures/seed";
+import { opponentSql } from "./fixtures/seed-kvk";
 
 function run(command: string, args: string[], input?: string, env?: Record<string, string>) {
   const result = spawnSync(command, args, {
@@ -57,4 +58,5 @@ export default async function globalSetup() {
   // The specs lay out their dates from this same moment (seededAt).
   process.env.E2E_NOW = String(now.getTime());
   psql(url.href, seedSql(now));
+  psql(url.href, opponentSql(now));
 }

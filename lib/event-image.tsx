@@ -15,6 +15,7 @@ import { tokenColor, TOKENS } from "./brand/palette";
 import { delta } from "./compute";
 import { copy, fill } from "./copy";
 import { compact, signedCompact, type DiscordClock } from "./discord-format";
+import { kvkBlock, type KvkLine } from "./event-image-kvk";
 import { drawable, label, ROW, Section, SECTION, u, type Colors } from "./event-image-parts";
 import { turnoutBlock } from "./event-image-turnout";
 import { topGains, usable, type PublicAlliance } from "./notify";
@@ -44,6 +45,8 @@ export interface EventImageInput {
   before: PublicAlliance[];
   /** The After's members with kills gained per alliance (#271); null or left out draws no block. */
   turnout?: TurnoutLists | null;
+  /** The KvK opponent's Start to End (D152); null or left out draws no block. */
+  kvk?: KvkLine | null;
 }
 
 // Layout in CSS px at 1×; every box has a fixed height, so the picture's height is their sum.
@@ -232,6 +235,11 @@ function body(e: EventImageInput, c: Colors) {
       }
       height += SECTION + gains.length * ROW;
     }
+  }
+  if (e.phase === "after") {
+    const block = kvkBlock(e.kvk, c);
+    parts.push(...block.parts);
+    height += block.height;
   }
   if (e.phase === "after" && e.turnout) {
     const block = turnoutBlock(e.turnout, c);

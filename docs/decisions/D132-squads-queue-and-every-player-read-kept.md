@@ -85,3 +85,5 @@ Why: D117 read the squads in two batches of about 100 s at 23:30 and 23:45 serve
 **Amendment (2026-11-20, issue 521, D141): batches only while the queue can have work.** A tick starts a batch from the quota day's daily read until the 00:00 UTC reset, and only until every target's day is done, stopped or skipped (or has no roster that can still come). Once settled, the ticks ask the database nothing about the queue until a key, a switch or a Retry changes it. See D141.
 
 **Amendment 2026-11-22 (issue 585 batch 4, slice S2):** the line before the queue starts reads "Squads today: not started yet. They are read after the daily update." (PT "… depois da atualização diária.", FR "… après la mise à jour quotidienne."; it read "… after the daily roster."): "daily update" is the glossary's UI word for the end-of-day read. When it shows is unchanged.
+
+**Amendment 2026-11-22 (D152, issue 306):** `eventReserve` counts the KvK opponent's reads at their worst, `requiredQuota(alliances + 15)`: 30 calls more kept on the KvK's quota day by the squads read, lookups and the Raid Shield checks. The daily read's event term is `dailyReadQuota(n, 20 + 15)`.

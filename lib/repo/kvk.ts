@@ -1,6 +1,6 @@
 // The KvK opponent's tables (D152): the collector's view (which opponent a run reads, its rows so far, a row's
 // insert) and /admin's (save the server and tags, the result, the card's list).
-import { and, asc, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, lt, sql } from "drizzle-orm";
 
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
@@ -167,4 +167,16 @@ export async function opponentsAt(db: Db, eventAts: Date[]) {
     })
     .from(kvkOpponents)
     .where(inArray(kvkOpponents.eventAt, eventAts));
+}
+
+/** The scheduled events /admin offers an opponent for: the next one (its row may not exist yet) and the
+ * `before` scheduled events before it, newest first. */
+export async function kvkEventTimes(db: Db, next: Date, before = 4): Promise<Date[]> {
+  const past = await db
+    .select({ at: events.eventAtUtc })
+    .from(events)
+    .where(and(eq(events.manual, false), eq(events.isTest, false), lt(events.eventAtUtc, next)))
+    .orderBy(desc(events.eventAtUtc))
+    .limit(before);
+  return [next, ...past.map((p) => p.at)];
 }

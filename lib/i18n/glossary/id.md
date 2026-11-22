@@ -372,6 +372,8 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Seats open                            | kursi kosong                        | `statement.seats`, `statement.seatOne` — free places in an alliance                                                        |
 | Ranks board                           | papan peringkat                     | `alliances.*`, `standing.*` — the server's list of alliances by Might, read from the game's ranks board                    |
 | Lookup                                | pencarian                           | `alliances.get*`, `alliances.got`, `alliances.usedUp`, `alliances.failed` — a press that asks the game for today's details |
+| KvK matchup                           | Pertandingan KvK                    | `kvk.title` — the event page's section; KvK stays English                                                                  |
+| Reading                               | pembacaan                           | `kvk.overMembers`, `kvk.noChange` — one read of a server's data at the Start or the End                                    |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

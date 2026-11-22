@@ -8,6 +8,7 @@ import { logV1Fetch } from "./collector-log";
 import { FRESH_MAX_AGE_MS, MAX_UPSTREAM_CALLS } from "./collector-rows";
 import { SAMPLE_CALL_TIMEOUT_MS } from "./collector-sample";
 import { isFresh } from "./compute";
+import { usableStart } from "./kvk";
 import type { OpponentInfo, OpponentRead, Phase, SnapshotPhase } from "./repo";
 import {
   type AllianceSnapshotInput,
@@ -30,14 +31,6 @@ export interface OpponentRun {
   calls: number;
   lowest: { remaining: number | null; calls: number };
 }
-
-/** A Start row the End and the matchup may use: data, fresh, and read before the war (D152). */
-export const usableStart = (r: OpponentRead, eventAtUtc: Date) =>
-  r.phase === "before" &&
-  r.error === null &&
-  r.unionId !== null &&
-  r.isFresh &&
-  r.readAt < eventAtUtc;
 
 /**
  * What this phase still reads. Start: saved tags with no Start row, while the opponent has fewer than

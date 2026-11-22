@@ -34,6 +34,11 @@ export const discordCopy = {
     /** One line under the bars: the alliance whose top 5 made the largest share of its kills gained. */
     topShare: "Highest top 5's share of kills",
     stale: "○ stale",
+    /** The KvK block (D152): `vs server 326 · 14 v 12 alliances`, then each side's sums. */
+    kvk: "vs server {server} · {a} v {b} alliances",
+    kvkMight: "Might",
+    kvkKills: "Kills",
+    kvkSides: "{us} us · {them} them",
     footer: "{site} · Server {server} · times are server time",
   },
   admin: {

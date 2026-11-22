@@ -17,6 +17,7 @@ import {
   shown,
   type Side,
 } from "./fixtures/seed";
+import { OPPONENT } from "./fixtures/seed-kvk";
 import { big, expect, hydrated, noError, sees, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
@@ -144,6 +145,34 @@ test("an event's ledger marks the change that members who joined or left moved, 
   // Escape closes it again.
   await page.keyboard.press("Escape");
   await expect(split).toBeHidden();
+  await noErrorOrEmpty(page);
+  expect(await sideways(page)).toBe(false);
+});
+
+test("an event with a KvK opponent shows both servers at the Start and from Start to End (D152)", async ({
+  page,
+}) => {
+  await page.goto("/events/2");
+  const section = page.getByRole("region", { name: "KvK matchup" });
+  await expect(section.getByRole("heading", { level: 2, name: "KvK matchup" })).toBeVisible();
+  // Both sides read 2 alliances, so each compares its top 2.
+  await sees(section, `Server 325 vs server ${OPPONENT.server} · top 2 alliances each`);
+  const sum = (rows: readonly (readonly [number, number])[], i: 0 | 1) =>
+    rows.reduce((t, r) => t + r[i], 0);
+  const start = OPPONENT.alliances.flatMap((a) => a.start);
+  const end = OPPONENT.alliances.flatMap((a) => a.end);
+  const card = (name: string) => section.getByRole("group", { name, exact: true });
+  const theirStart = card(`Server ${OPPONENT.server}`);
+  await sees(theirStart, `Might ${big(sum(start, 0))}`);
+  await sees(theirStart, `Kills ${big(sum(start, 1))}`);
+  await sees(theirStart, "2 of 2 alliances read");
+  await sees(theirStart, "Members with 60M+ might 1 of 4");
+  const ours = eventTotals("a", "before").might + eventTotals("b", "before").might;
+  await sees(card("Server 325"), `Might ${big(ours)}`);
+  const theirChange = card(`Server ${OPPONENT.server} · Start to End`);
+  await sees(theirChange, "2 of 2 alliances counted");
+  await sees(theirChange, `Might change ${MINUS}${big(sum(start, 0) - sum(end, 0))}`);
+  await sees(theirChange, `Kills gained +${big(sum(end, 1) - sum(start, 1))}`);
   await noErrorOrEmpty(page);
   expect(await sideways(page)).toBe(false);
 });

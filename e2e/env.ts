@@ -58,7 +58,8 @@ export const SERVER_ENV: Record<string, string> = {
   POSTHOG_KEY: "",
   POSTHOG_PERSONAL_API_KEY: "",
   POSTHOG_QUERY_API_KEY: "",
-  LOCAL_FLAGS: "",
+  // The KvK matchup (D152) is on, so its section is tested; no other flag is.
+  LOCAL_FLAGS: "kvk-matchup",
   GROQ_API_KEY: "",
   WORKSPACE_DISCORD_WEBHOOKS: "",
   WORKSPACE_KEYS_SECRET: "",

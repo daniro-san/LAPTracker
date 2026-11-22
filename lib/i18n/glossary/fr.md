@@ -77,6 +77,8 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | Alliance officers | Officiers d’alliance | `site.signInFooter` — the alliance's officers, who sign in to the workspace |
 | Ranks board | Tableau des classements | `alliances.*`, `alliances.board` — the server's board of alliances by Might; not the server rank (`ledger.ranking`) |
 | lookup | consultation | `alliances.get*`, `alliances.usedUp` — one daily read of an alliance's details, shared by everyone |
+| KvK matchup | Affrontement KvK | `kvk.title` — the event page's section: both servers at the Start; KvK stays English |
+| Start to End | Du Début à la Fin | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — one alliance's change between its Start and End readings |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

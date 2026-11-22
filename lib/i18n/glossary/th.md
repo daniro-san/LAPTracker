@@ -341,6 +341,8 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Ranks board                         | กระดานอันดับ                    | `alliances.*` — the server's alliance board by Might; `alliances.asOf`, `alliances.board`                                                                        |
 | Lookup (of today's details)         | การดึงข้อมูล                     | `alliances.getNote`, `alliances.usedUp`, `alliances.failed` — one read of an alliance's details a day                                                            |
 | Joining                             | การเข้าร่วม                     | `statement.joining`, `statement.title` — how a player joins an alliance                                                                                          |
+| KvK matchup                         | การเทียบ KvK                   | `kvk.title`, `kvk.versus` — the event page's section: both servers' top alliances at the Start                                                                   |
+| Start to End                        | เริ่ม ถึง สิ้นสุด                   | `kvk.change`, `kvk.changeLater` — a reading's change from the Start to the End; `ledger.progressEvents` uses the same words                                      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -1,0 +1,36 @@
+## D152 — The KvK opponent: its alliances read once at the Start and once at the End, the matchup on the event page, a block in the End picture, the result on /admin (2026-11-22, owner 2026-11-19, issue 306; folds in #286's opponent and result; amends D69's sample budget and D117/D132's event reserve)
+
+Why: the tracker measured only our own server in a KvK. The owner (issue 306, 2026-11-19): "wanted, with these additions", including "**Quota:** about 15 enemy alliances × 2 (Start and End), about 30 calls on our key, inside the KvK reserve" and "**Privacy:** alliance-level aggregates only, and never enemy member names". Plan: `.specs/features/306-kvk-matchup/plan.md`, reviewed by six officer personas, product strategy, data honesty and an adversarial reviewer (2026-11-22).
+
+**The opponent** (`kvk_opponents`, migration 0069). The owner saves a server (1–9999, never ours) and up to 15 alliance tags on /admin's "KvK opponent" card, for the next scheduled event or one of the 4 before it. It is keyed by the event's war time (`event_at` = `events.event_at_utc`), so it can be saved before the tick makes the event's row. Tags are case-sensitive, NFC, 1–12 characters, with no space, `/ ? # % \`, control character, and not dots only, so each stays one path segment. The server and tags change only before the war and while no Before or After of that event runs (409 `snapshot_running`); the server not once its Start read a tag (409 `opponent_read`, one conditional statement). The result (won, lost or not set) is admin-only: no public page, route or Discord message shows it (#286's closing comment).
+
+**The reads** (`lib/collector-opponent.ts`, `kvk_reads`).
+
+- Only a scheduled event (not a rehearsal, not a manual round) whose war time is the opponent's.
+- After our own Start or End reads have settled, in the time the run has left of its 100 s (no call starts with less than 5 s left; each call's timeout is at most 12 s and within the time left).
+- One attempt per alliance (no retry), on `LAP_API_KEY` only.
+- Start: `GET /v1/alliances/{server}/{tag}?fresh=1`, the documented lookup by tag (plan §2), for each saved tag without a Start row, before the war only (checked before each call, INVARIANT `kvk.start-before-war`).
+- End: `GET /v1/alliances/{union_id}?fresh=1` for each usable Start row (no error, fresh, read before the war) whose tag is still saved and has no End row.
+- **At most 15 Start calls and 15 End calls per KvK, ever.** Every call sent leaves a row, data or error, and rows are never deleted (INVARIANT `kvk.one-call-per-row`); the Start reads only while the opponent has fewer than 15 Start rows. A re-run, a forced re-run or edited tags cannot add calls past that. An error row is not read again (unlike D62 for our own rows): a corrected tag has no row and is read on a later Start run before the war; a complete Start runs again only with force, so a failed tag usually stays unread for that KvK.
+- Errors: 404 `not found`, 409 `not unique`, another `sid` `wrong server`, a second tag of an alliance already read `duplicate`; at the End, another `union_id` `wrong alliance (id)`, and an answer sharing less than `SAME_ROSTER_MIN` (20 %) of the Start's members `wrong alliance (roster)` (D69's 2026-11-21 amendment, applied to the opponent). A 429 stores that tag's error row and stops the other opponent calls.
+- **Our snapshot never changes** (INVARIANT `kvk.never-changes-status`): the opponent's reads run outside the run's deadline race, with their own hook, so the call cap, a 429 or the time limit never set our run's `capped`, `abort` or `deadlineHit`. Their calls are added to the snapshot's `calls_used`. A failure inside them is one `opponent.failed` log line.
+- **Quota** (INVARIANT `budget.reserve-for-after`, with the opponent): before the opponent's calls, the run's remaining as last seen, less the calls since that answer, must hold `requiredQuota(n + k)`, n our alliances and k the opponent's reads still due; else none is made (`opponent.quota` line). Our own quota check (`requiredQuota(n)`) is unchanged, so the opponent can never make our Start or End abort.
+- **Stored**: totals and the members as uid, might and kills arrays; no member name, no photo, no `raw_json`, so no blocked roster key of another server is stored. A row is fresh when its `source_updated_at` is within 20 minutes of its `read_at`. Collecting never reads the `kvk-matchup` flag.
+- No samples of the opponent (the issue: "Samples stay ours only"). No use of `lib/sources/internal.ts`.
+
+**Reserves elsewhere.**
+
+- A sample's minimum is `sampleQuota(n, k) = requiredQuota(n + k) + 1 + 4n`, k the opponent's End reads still due (amends D69's rule; 161 for 20 alliances and 15 due, 131 with none).
+- `eventReserve` (the squads read, lookups and the Raid Shield checks, D117, D132, D133, D137) and the daily read's event term (`dailyReadQuota(n, 20 + 15)`) count `MAX_OPPONENT_TAGS` (15) more alliances in `requiredQuota`: 30 calls more on the KvK's quota day, whether or not an opponent is saved.
+
+**The matchup** (`lib/kvk.ts`, `lib/queries/kvk.ts`, `app/_ui/Matchup.tsx`; event page, behind the PostHog flag `kvk-matchup`, D91).
+
+- "KvK matchup": our top n alliances against theirs, n the smaller count of usable Start readings on each side (ours: no error, fresh, `source_updated_at` before the war). Per side: might, lifetime kills, kills per 1B might (Σ kills / Σ might over the same n), "Members with 60M+ might" with the side's member count, and the time of the side's newest Start reading. The opponent side says "{read} of {k} alliances read".
+- "Start to End", once the End's row has finished: per side, over the same n chosen at the Start (never re-ranked), the might change and kills gained summed over the members in both readings; a member with a null figure in either reading is left out of that figure, a fall in kills counts as none (D83). An alliance whose End is stale or missing shows no change and is left out of its side's sums; each side says "{c} of {n} alliances counted" and how many members it counts. Before the End: "Start to End appears after the End ({time})."
+- "Alliance by alliance": each side's n alliances as its own list, by Start might, with no "#1 vs #1" pairing.
+- Alliance tags, names and alliance-level numbers only; both sides in the same neutral colours; no win, loss or blame words.
+- Read with the event page's shared public read (D143); the admin save and every run invalidate it.
+
+**The End picture** (D58): while the flag is on and Start to End counts at least one alliance on each side, a block "vs server {server} · {a} v {b} alliances", then "Might {ours} us · {theirs} them" and "Kills +{ours} us · +{theirs} them". The owner asked for one line; officers and the data-honesty review asked for kills and the counts beside might, which do not fit one line at 360 px.
+
+**Not built**: the public "suggest the next opponent" form; discovering the opponent's tags from its server's ranks board (it would be a new use of `internal.ts` and needs its own decision); a day-before tag check (about 15 more calls a KvK, past the approval); a "read the opponent now" button.

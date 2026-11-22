@@ -135,6 +135,8 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Sign in                   | サインイン                | `site.signIn`, `site.signInFooter` — the Discord sign-in link for officers and members                                                        |
 | Ranks board               | 順位表                    | `alliances.*`, `alliances.asOf`, `alliances.board*` — the server's ranks board of alliances by might and by kills                             |
 | Lookup                    | 照会                      | `alliances.get*`, `alliances.usedUp`, `alliances.failed`, `alliances.tooMany` — one request for an alliance's details, shared by everyone     |
+| KvK matchup               | KvK 対戦                  | `kvk.title`, `kvk.versus` — the two servers' KvK section on the event page                                                                    |
+| Start to End              | 開始から終了まで          | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — the change between the Start and End readings                                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
