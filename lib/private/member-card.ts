@@ -4,6 +4,7 @@
 // Issue 461 (D136): a header (status, the stat strip, languages, where they came from) over four tabs:
 // Overview (reasons, the last 7 days, might since, this week's Alliance Duel), Info (facts and details),
 // Squads (D117) and History (follow-up notes, earlier values). Issue 516: the Follow-up block (card-follow-up.ts).
+// Issue 634: the Raid Shield block (card-shield.ts), from Friday's night check until KvK starts.
 import { compactLarge } from "../compact";
 import { fill } from "../copy";
 import { dateWords } from "../date-words";
@@ -13,6 +14,7 @@ import { endOfDayReads } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import { cardFollowUp, type CardFollowUp } from "./card-follow-up";
+import { cardShield, type CardShield } from "./card-shield";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { CardTab } from "./dictionary.card";
 import {
@@ -113,6 +115,8 @@ export interface CardData {
   link?: CardLink | null;
   /** Issue 516: this week's follow-up and the ready message; null while the Follow-up tab is off. */
   followUp?: CardFollowUp | null;
+  /** Issue 634: the Raid Shield block, from Friday's night check until KvK starts; null otherwise. */
+  shield?: CardShield | null;
 }
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
@@ -331,7 +335,7 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const [squads, origin, link, followUp, marks] = await Promise.all([
+  const [squads, origin, link, followUp, marks, shield] = await Promise.all([
     squadsCard(db, access, uid, at.t, f),
     memberOrigin(db, access, uid, at.zone, at.t, f.date),
     cardLink(db, access, uid, at.t),
@@ -343,6 +347,7 @@ export async function memberCard(
       member.officerStatus === "help" ? [uid] : [],
       [...followUps].reverse(),
     ),
+    cardShield(db, access, member, at),
   ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
@@ -354,5 +359,5 @@ export async function memberCard(
   });
   const mark = marks.get(uid);
   const statusMark = mark ? markLines(mark, at.t, f.date) : [];
-  return { ...card, statusMark, squads, link, followUp };
+  return { ...card, statusMark, squads, link, followUp, shield };
 }

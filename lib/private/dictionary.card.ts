@@ -40,6 +40,11 @@ export const cardEn = {
   "card.followup.undone": "Undone.",
   "card.followup.undoChanged": "Could not undo: the notes changed since.",
   "card.followup.undoFailed": "Could not undo. Try again.",
+  // Issue 634: the Raid Shield block, from Friday's night check until KvK starts (server time).
+  "card.shield.head": "Raid Shield",
+  "card.shield.mark": "Raid prep: {mark}",
+  "card.shield.notRead": "Tracker: not read yet",
+  "card.shield.away": "Away on raid day",
 };
 
 type CardWords = Record<keyof typeof cardEn, string>;
@@ -81,6 +86,10 @@ export const cardPt: CardWords = {
   "card.followup.undone": "Desfeito.",
   "card.followup.undoChanged": "Não foi possível desfazer: as notas mudaram desde então.",
   "card.followup.undoFailed": "Não foi possível desfazer. Tente de novo.",
+  "card.shield.head": "Escudo de raid",
+  "card.shield.mark": "Preparação do raid: {mark}",
+  "card.shield.notRead": "Tracker: ainda sem leitura",
+  "card.shield.away": "Ausente no dia do raid",
 };
 
 export const cardFr: CardWords = {
@@ -120,6 +129,10 @@ export const cardFr: CardWords = {
   "card.followup.undone": "Annulé.",
   "card.followup.undoChanged": "Impossible d’annuler : les notes ont changé depuis.",
   "card.followup.undoFailed": "Impossible d’annuler. Réessayez.",
+  "card.shield.head": "Bouclier de raid",
+  "card.shield.mark": "Préparation du raid : {mark}",
+  "card.shield.notRead": "Tracker : pas encore lu",
+  "card.shield.away": "Absent le jour du raid",
 };
 
 /** The card's four tabs, in their order; each one's name is `card.tab.<tab>`. */
