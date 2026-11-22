@@ -53,4 +53,5 @@ For end-to-end tests, the seed's clock rule above applies instead.
 - Don't assert a constant's value; assert the behaviour at its edge (just under, at and just over the limit).
 - A count is only a guard that a scan found its inputs (`toBeGreaterThan(0)`), never the assertion itself.
 - A privacy detector or scan has a positive control: a case it must catch.
+- A data-migration test (one that replays a migration on old rows) lives until the release that ships its migration, then it is deleted; the schema itself is exercised by `openTestDb()` applying every migration.
 - A new route under `app/(private)/api/w/[slug]` gets its `FIXTURES` entry in `member-session.test.ts`. A route goes in `EXCLUDED` only with a reason written next to the entry: a decision, or the route's own auth (e.g. `login`, where every sign-in starts with no session yet).

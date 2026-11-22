@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -176,34 +175,4 @@ describe("thefts between two workspaces (D71)", () => {
     );
     expect(await listThefts(db, ogs.workspaceId)).toEqual([]);
   });
-});
-
-describe("the thefts_kind migration (D97, amended 2026-11-17)", () => {
-  it("turns quest rewards into Ops and keeps an unknown as null", async () => {
-    const dir = `${import.meta.dirname}/../../drizzle`;
-    const journal = JSON.parse(readFileSync(`${dir}/meta/_journal.json`, "utf8")) as {
-      entries: { tag: string }[];
-    };
-    const at = journal.entries.findIndex((e) => e.tag.endsWith("_thefts_kind"));
-    const pg = new PGlite();
-    const apply = async (tag: string) => {
-      for (const statement of readFileSync(`${dir}/${tag}.sql`, "utf8").split(
-        "--> statement-breakpoint",
-      ))
-        await pg.exec(statement);
-    };
-    for (const e of journal.entries.slice(0, at)) await apply(e.tag);
-    await pg.exec(`
-      insert into workspaces (slug, union_id, discord_guild_id, leader_role_ids) values ('ogs', 1, '1', '{}');
-      insert into thefts (workspace_id, attacker_key, attacker_name, attacker_tag, stolen, source, created_at)
-      values (1, 'name:a', 'A', '', 'quest_rewards', 'photo', now()), (1, 'name:b', 'B', '', null, 'typed', now());
-    `);
-    await apply(journal.entries[at]?.tag ?? "");
-    const { rows } = await pg.query("select attacker_key, kind from thefts order by id");
-    expect(rows).toEqual([
-      { attacker_key: "name:a", kind: "ops" },
-      { attacker_key: "name:b", kind: null },
-    ]);
-    await pg.close();
-  }, 60_000); // Replays the migrations up to thefts_kind on PGlite; slow when the machine is busy.
 });

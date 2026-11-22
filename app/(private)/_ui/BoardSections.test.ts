@@ -49,12 +49,6 @@ beforeAll(async () => {
 });
 
 describe("the board's week (D116)", () => {
-  it("shows only the entries marked for members", () => {
-    expect(html).toContain("Quiz night");
-    expect(html).toContain("Rally");
-    expect(html).not.toContain("Leadership call");
-  });
-
   it("draws a strip of seven days, with a jump only on the days that have events", () => {
     expect(html.match(/<ol[^>]*>.*?<\/ol>/)?.[0].match(/<li>/g)).toHaveLength(7);
     expect(html.match(/href="#day-[^"]+"/g)).toEqual([

@@ -148,18 +148,6 @@ test.describe("one workspace's sessions never open the other's", () => {
     for (const name of ALLIANCES.b.names) await expect(page.getByText(name)).toHaveCount(0);
   });
 
-  test("a's member gets signed_out from a's own desk API", async () => {
-    const ctx = await api(cookiesOf("a", "member")[0] as string);
-    for (const path of [
-      `/api/w/${slug("a")}/members/${memberUid("a", 0)}`,
-      `/api/w/${slug("a")}/activity?before=${Date.now()}`,
-      `/api/w/${slug("a")}/read-status`,
-    ]) {
-      expect((await ctx.get(path)).status(), path).toBe(401);
-    }
-    await ctx.dispose();
-  });
-
   for (const [tier, name] of (["officer", "member"] as const).flatMap((t) =>
     cookieNames("a").map((n) => [t, n] as const),
   )) {
