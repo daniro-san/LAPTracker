@@ -110,7 +110,7 @@ export interface NameSighting {
   tag: string;
   name: string;
   at: Date;
-  /** When the snapshot that saw it ran, where Before and After of one event differ; `at` when absent. */
+  /** Its order inside one event, where Before comes before After although both carry the event's time; `at` when absent. */
   seenAt?: Date;
 }
 

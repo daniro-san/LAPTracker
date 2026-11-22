@@ -1,8 +1,8 @@
 # Alliance names: one-off misreads are not renames
 
 ## Built
-- `lib/compute.ts`: new `withoutMisreads(sightings)`. It drops a (tag, name) that was seen in one snapshot only, when another name of the same alliance was seen both earlier and at the same time or later. It compares each snapshot's own start time (`seenAt`), because Before and After share the event's time. `NameSighting` gets an optional `seenAt`.
-- `lib/queries/names.ts`: `allianceNames` selects `snapshots.started_at` as `seenAt` and runs `withoutMisreads` before `nameHistory`. The result:
+- `lib/compute.ts`: new `withoutMisreads(sightings)`. It drops a (tag, name) that was seen in one snapshot only, when another name of the same alliance was seen both earlier and at the same time or later. It orders sightings by the event's time with the After just after the Before (`seenAt`), because Before and After share the event's time; a snapshot's own start time is not used, since a re-run resets it (review of PR 676). `NameSighting` gets an optional `seenAt`.
+- `lib/queries/names.ts`: `allianceNames` selects each snapshot's phase, builds `seenAt` from it and runs `withoutMisreads` before `nameHistory`. The result:
   - the alliance page's "Names" block shows only real names;
   - the event ledger's "was …" shows only real names.
 - `nameHistory` itself is unchanged, including its "never drops a pair" property.
@@ -14,7 +14,7 @@
 - **Alliances only.** Player name history (`lib/queries/players.ts`) is unchanged, since no player misread has been seen.
 
 ## Deviations
-- None.
+- Plan §3.8 describes the name history as every pair seen; alliance names now leave out one-off misreads (this PR). The plan is not edited here (CLAUDE.md); §3.8 needs that line.
 
 ## Verified
 - `lib/name-misreads.test.ts` (new; `lib/compute.test.ts` is at its line limit) has four tests:
