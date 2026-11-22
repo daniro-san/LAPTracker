@@ -166,6 +166,7 @@ One dated line for each change in what a number means, newest last. The first th
 - Public pages ask the analytics question; the 25 % public replay holds only for visitors who said "Allow".
 - 2026-11-21 (issue 585): the browser's `ws_roll_call_marked` carries `roll_call` (`raid_prep` or `other`), so Raid prep's marks can be counted apart from other roll calls. Events before this date have no `roll_call`. Page views of `/roll-call/mark` still cannot tell them apart: the URL does not say which roll call it is, and `before_send` reads only the path.
 - 2026-11-21: server `$exception` counts now include six caught `lib/private` failures (`kind` `w.read_status.failed`, `w.pending.match_failed`, `w.import.discord_failed`, `w.import.settle_failed`, `w.webhook.open_failed`, `w.invite.commands_failed`, all `handled: true`), and server frames resolve to our source in Error Tracking.
+- 2026-11-22 (issue 585, D134 amended): Alliance settings → Features saves on Save instead of on each tick. `ws_action` `features` still counts one per switch that went through, but a tick and an untick before Save now send nothing, so `turn_off` → `turn_on` pairs within minutes (mis-taps) should drop from this release; read a drop as the save model, not as less use.
 
 ## Not tracked, on purpose
 

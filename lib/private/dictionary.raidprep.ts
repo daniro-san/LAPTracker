@@ -81,8 +81,6 @@ export const prepEn = {
   "prep.settings.reenter":
     "Paste the Raid Shield channel's webhook again under Discord first. Until then the summary is not posted.",
   "prep.settings.language": "Message language",
-  "prep.settings.save": "Save",
-  "prep.settings.saved": "Saved.",
   "prep.settings.failed": "Not saved. Try again.",
 } as const;
 
@@ -162,8 +160,6 @@ export const prepPt: PrepWords = {
   "prep.settings.reenter":
     "Cole de novo o webhook do canal do Escudo de raid em Discord. Até lá, o resumo não é postado.",
   "prep.settings.language": "Idioma da mensagem",
-  "prep.settings.save": "Salvar",
-  "prep.settings.saved": "Salvo.",
   "prep.settings.failed": "Não foi salvo. Tente de novo.",
 };
 
@@ -241,8 +237,6 @@ export const prepFr: PrepWords = {
   "prep.settings.reenter":
     "Collez à nouveau le webhook du salon du Bouclier de raid sous Discord. D’ici là, le résumé n’est pas publié.",
   "prep.settings.language": "Langue du message",
-  "prep.settings.save": "Enregistrer",
-  "prep.settings.saved": "Enregistré.",
   "prep.settings.failed": "Pas enregistré. Réessayez.",
 };
 

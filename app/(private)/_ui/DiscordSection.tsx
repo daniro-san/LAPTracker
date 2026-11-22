@@ -4,6 +4,7 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { BotView } from "@/lib/private/discord-setup";
 import type { WebhookView } from "@/lib/private/discord-webhooks";
 
+import { botLines } from "./discord-step";
 import { DiscordBot } from "./DiscordBot";
 import { DiscordChannels } from "./DiscordChannels";
 
@@ -16,27 +17,27 @@ export function DiscordSection(props: {
   t: WorkspaceDictionary;
 }) {
   const { slug, bot, t } = props;
+  const facts = {
+    installUrl: bot.installUrl,
+    ready: bot.ready,
+    seen: bot.botSeenAt !== null,
+    commands: bot.commands,
+    wanted: bot.wanted,
+  };
+  const lines = botLines(facts);
   return (
     <section aria-labelledby="discord" className="drawn-card mt-6 max-w-2xl px-4 py-3">
       <h2 id="discord" className="font-subhead text-display-sm">
         {t["discord.head"]}
       </h2>
-      <p className="mt-1">{t["discord.lead"]}</p>
-      <DiscordBot
-        slug={slug}
-        bot={{
-          installUrl: bot.installUrl,
-          ready: bot.ready,
-          seen: bot.botSeenAt !== null,
-          commands: bot.commands,
-          wanted: bot.wanted,
-        }}
-        t={t}
-      />
+      {/* "Do the steps in order" only while there are steps (issue 585). */}
+      {lines.step !== "off" && <p className="mt-1">{t["discord.lead"]}</p>}
+      <DiscordBot slug={slug} bot={facts} t={t} />
       <DiscordChannels
         slug={slug}
         channels={props.channels.map((c) => ({ channel: c.channel, state: c.state, name: c.name }))}
         saving={props.saving}
+        head={lines.hooksHead}
         t={t}
       />
     </section>

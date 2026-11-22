@@ -6,11 +6,17 @@
 // Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
-// webhook URL ever reaches the page.
+// webhook URL ever reaches the page. Issue 585: the page head says how the page saves, and an "On this page"
+// index (`settingsIndex`) lists every card with its state, above the cards on a phone and in the margin
+// column from 1024; it shows only what the cards below show.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { getAppContext } from "@/lib/app-context";
+import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
+import { PageHead } from "@/lib/brand/components/layout/PageHead";
+import { PageIndex } from "@/lib/brand/components/layout/PageIndex";
+import { Spread } from "@/lib/brand/components/layout/Spread";
 import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv, type Env } from "@/lib/env";
@@ -33,11 +39,13 @@ import { trackerKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
+import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { PushSettings } from "../../../_ui/PushSettings";
 import { RaidPrepSettings } from "../../../_ui/RaidPrepSettings";
 import { refuse } from "../../../_ui/refuse";
+import { settingsIndex, type SettingsIndexInput } from "../../../_ui/settings-index";
 import { TrackerKeyForm } from "../../../_ui/TrackerKeyForm";
 import { WorkspaceDataForm } from "../../../_ui/WorkspaceDataForm";
 
@@ -110,6 +118,50 @@ async function readSettings(
   return { view, waiting, bot, channels, squads, features, shield, push };
 }
 
+/** The first card: the tracker key and today's squads read. */
+function TrackerKeyCard(props: {
+  slug: string;
+  view: ReturnType<typeof keyForm>;
+  squads: string | null;
+  t: Awaited<ReturnType<typeof workspaceWords>>["t"];
+}) {
+  const { t } = props;
+  return (
+    <section aria-labelledby="tracker-key" className="drawn-card max-w-2xl px-4 py-3">
+      <h2 id="tracker-key" className="font-subhead text-display-sm">
+        {t["key.head"]}
+      </h2>
+      <p className="mt-1">{t["key.lead"]}</p>
+      <TrackerKeyForm
+        slug={props.slug}
+        keyPage={new URL("/account", getEnv().LAP_API_BASE_URL).href}
+        view={props.view}
+        t={t}
+      />
+      {props.squads && <p className="mt-3 text-body-sm tabular-nums">{props.squads}</p>}
+    </section>
+  );
+}
+
+/** The index's facts, from the same views the cards show (issue 585). */
+function indexInput(
+  page: Awaited<ReturnType<typeof readSettings>>,
+  data: SettingsIndexInput["data"],
+): SettingsIndexInput {
+  const { view, bot, channels, features, shield, push } = page;
+  const allowed = features.groups.flatMap((g) => g.features);
+  return {
+    key: view.state,
+    features: allowed.length
+      ? { on: allowed.filter((f) => f.on).length, allowed: allowed.length }
+      : null,
+    shield: shield && { discord: shield.discord, channel: summaryChannel(channels) },
+    push: Boolean(push),
+    discord: { channels: channels.map((c) => c.state), botOff: siteBotOff(bot) },
+    data,
+  };
+}
+
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -127,32 +179,60 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
     if (!access.ok) refuse(slug, access.reason, `/w/${slug}/settings`);
     notFound();
   }
-  const { view, waiting, bot, channels, squads, features, shield, push } = page;
+  const data = {
+    download: featureOn(access, "export"),
+    deletionDate: access.purgeAfter ? deletionDate(access.purgeAfter, language) : null,
+  };
   return (
     <SignedInFrame
       access={access}
       language={language}
       t={t}
       current={null}
-      waiting={waiting}
+      waiting={page.waiting}
       keyShown
+      wide
     >
-      <h1 className="font-display text-display-lg">{t["settings.title"]}</h1>
-      <section aria-labelledby="tracker-key" className="drawn-card mt-4 max-w-2xl px-4 py-3">
-        <h2 id="tracker-key" className="font-subhead text-display-sm">
-          {t["key.head"]}
-        </h2>
-        <p className="mt-1">{t["key.lead"]}</p>
-        <TrackerKeyForm
-          slug={slug}
-          keyPage={new URL("/account", getEnv().LAP_API_BASE_URL).href}
-          view={keyForm(view, t, language, now)}
-          t={t}
-        />
-        {squads && (
-          <p className="mt-3 text-body-sm tabular-nums">{squadsLine(squads, t, env.SERVER_TZ)}</p>
-        )}
-      </section>
+      <PageHead title={t["settings.title"]} meta={t["settings.saveModel"]} />
+      <Spread
+        marginFirst
+        stickyMargin
+        marginLabelledBy="settings-index"
+        margin={
+          <MarginNote id="settings-index" title={t["settings.index"]}>
+            <PageIndex
+              items={settingsIndex(indexInput(page, data), t)}
+              attentionWord={t["settings.index.attention"]}
+            />
+          </MarginNote>
+        }
+        main={
+          <SettingsCards slug={slug} page={page} data={data} ctx={{ env, now, language }} t={t} />
+        }
+      />
+    </SignedInFrame>
+  );
+}
+
+/** The cards, in the index's order. */
+function SettingsCards(props: {
+  slug: string;
+  page: Awaited<ReturnType<typeof readSettings>>;
+  data: SettingsIndexInput["data"];
+  ctx: { env: Env; now: Date; language: WorkspaceLanguage };
+  t: Awaited<ReturnType<typeof workspaceWords>>["t"];
+}) {
+  const { slug, t } = props;
+  const { env, now, language } = props.ctx;
+  const { view, bot, channels, squads, features, shield, push } = props.page;
+  return (
+    <>
+      <TrackerKeyCard
+        slug={slug}
+        view={keyForm(view, t, language, now)}
+        squads={squads && squadsLine(squads, t, env.SERVER_TZ)}
+        t={t}
+      />
       {features.groups.length > 0 && (
         <AllianceFeatures slug={slug} view={features} language={language} t={t} />
       )}
@@ -177,9 +257,8 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         slug={slug}
         t={t}
         graceDate={deletionDate(new Date(now.getTime() + DELETION_GRACE_MS), language)}
-        deletionDate={access.purgeAfter ? deletionDate(access.purgeAfter, language) : null}
-        download={featureOn(access, "export")}
+        {...props.data}
       />
-    </SignedInFrame>
+    </>
   );
 }
