@@ -8,6 +8,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { isolate } from "../copy";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { helpMarkRows } from "../repo/member-follow-ups";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
@@ -232,5 +233,118 @@ describe("Follow-up's Needs help group (#585 slice 2)", () => {
       home: { toLook: 2, noted: 1 },
       page: { toLook: 2, noted: 1 },
     });
+  });
+
+  it("reads a mark set again after it was cleared from its new run only, the older record's Undo changing nothing (D149)", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    // v1 Ana's "They need help" on Thu 12 Nov; v2 cleared by Bo; v3 set again by Bo in Edit info on Fri 13.
+    const first = await markHelp(
+      ana,
+      101,
+      "Unsure about the shield timing",
+      st("2026-11-12T12:00"),
+    );
+    await setStatus(bo, 101, null, st("2026-11-12T13:00"));
+    await setStatus(bo, 101, "help", st("2026-11-13T08:00"));
+    // Ana then undoes her record from before the run: the status stays as Bo set it.
+    const undo = { uid: 101, target: first.requestId, requestId: randomUUID() };
+    await undoFollowUp(db, ana, undo, at(st("2026-11-13T09:00")));
+    // The read holds only the run; no "help" record wrote a version in it, so no record is read.
+    const { versions, records } = await helpMarkRows(db, ana.workspaceId, [101]);
+    expect(versions.map((v) => v.version)).toEqual([3]);
+    expect(records.map((r) => r.action)).toEqual([]);
+    // The row and the card name Bo's mark, with no note.
+    const mark = (await followUpView(db, ana, NOW, ZONE)).items.find((i) => i.member.uid === 101);
+    expect(mark?.mark).toEqual({ at: st("2026-11-13T08:00"), by: "Bo", note: null });
+    const card = await memberCard(db, ana, 101, { now: NOW, zone: ZONE, language: "en", t });
+    expect(card?.statusMark).toEqual([`Since Fri, Nov 13 · added by ${isolate("Bo")}`]);
+  });
+
+  it("names the officer whose Needs help started first and was saved second, on the version the other wrote", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    // Bo taps "They need help" at 12:00:00, Ana at 12:00:01; Ana's save lands first and writes v1. Bo's
+    // request, stamped 12:00:00, finds the same value and records v1: Bo's is the newest record of the mark.
+    await recordFollowUp(
+      db,
+      ana,
+      input(102, { action: "help", note: "Ana's note" }),
+      at(st("2026-11-13T12:00")),
+    );
+    const bos = input(102, { action: "help", note: "Lost the main squad" });
+    await recordFollowUp(db, bo, bos, at(new Date(st("2026-11-13T12:00").getTime() - 1000)));
+    const { versions, records } = await helpMarkRows(db, ana.workspaceId, [102]);
+    expect(versions.map((v) => v.version)).toEqual([1]);
+    expect(records.map((r) => [r.by, r.factVersion])).toEqual([
+      ["Ana", 1],
+      ["Bo", 1],
+    ]);
+    const mark = (await followUpView(db, ana, NOW, ZONE)).items.find((i) => i.member.uid === 102);
+    expect(mark?.mark).toEqual({
+      at: new Date(st("2026-11-13T12:00").getTime() - 1000),
+      by: "Bo",
+      note: "Lost the main squad",
+    });
+  });
+});
+
+describe("Undo of a Needs help record (#647)", () => {
+  const status = async (access: WorkspaceAccess, uid: number) =>
+    (await factsOf(db, access)).get(uid)?.status?.value ?? null;
+  const markOf = async (access: WorkspaceAccess, uid: number, now: Date) =>
+    (await followUpView(db, access, now, ZONE)).items.find((i) => i.member.uid === uid)?.mark;
+  const undo = async (access: WorkspaceAccess, r: FollowUpInput, when: Date) => {
+    const request = { uid: r.uid, target: r.requestId, requestId: randomUUID() };
+    expect(await undoFollowUp(db, access, request, at(when))).toEqual({ ok: true });
+  };
+
+  it("keeps another officer's standing mark when the undone save wrote no version of its own", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    await markHelp(ana, 101, "Unsure about the shield timing", st("2026-11-12T09:00"));
+    // Bo's sheet opened before Ana's mark (version 0): the same value reuses Ana's version.
+    const again = input(101, { action: "help", note: "Asked again" });
+    await recordFollowUp(db, bo, again, at(st("2026-11-12T10:00")));
+    await undo(bo, again, st("2026-11-12T10:01"));
+    expect(await markOf(ana, 101, NOW)).toEqual({
+      at: st("2026-11-12T09:00"),
+      by: "Ana",
+      note: "Unsure about the shield timing",
+    });
+    const card = await memberCard(db, ana, 101, { now: NOW, zone: ZONE, language: "en", t });
+    expect(card?.statusLabel).toBe("Needs help");
+    expect(card?.statusMark).toEqual([
+      `Since Thu, Nov 12 · added by ${isolate("Ana")}`,
+      "“Unsure about the shield timing”",
+    ]);
+  });
+
+  it("keeps last week's mark when a save that reused it on Sunday is undone on Monday", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    await markHelp(ana, 102, "Asked for help rebuilding", st("2026-11-13T12:00"));
+    const sunday = input(102, { action: "help" });
+    await recordFollowUp(db, bo, sunday, at(st("2026-11-15T23:50")));
+    await undo(bo, sunday, st("2026-11-16T00:05"));
+    expect(await status(ana, 102)).toBe("help");
+    expect(await markOf(ana, 102, NOW)).toEqual({
+      at: st("2026-11-13T12:00"),
+      by: "Ana",
+      note: "Asked for help rebuilding",
+    });
+  });
+
+  it("puts a different value back when the undone save wrote a new version over it", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    const onBreak = { field: "status", version: 0, value: "break", source: "officer" } as const;
+    await saveFacts(db, ana, 103, [onBreak], st("2026-11-18T09:00"), ZONE);
+    const help = await markHelp(bo, 103, "", st("2026-11-19T09:00"));
+    await undo(bo, help, st("2026-11-19T09:01"));
+    expect(await status(ana, 103)).toBe("break");
+  });
+
+  it("clears an officer's own mark when they undo it", async () => {
+    const ana = await signedIn("Ana");
+    const help = await markHelp(ana, 101, "", st("2026-11-19T09:00"));
+    await undo(ana, help, st("2026-11-19T09:01"));
+    expect(await status(ana, 101)).toBeNull();
+    expect(await helped(ana, NOW)).toEqual([]);
   });
 });

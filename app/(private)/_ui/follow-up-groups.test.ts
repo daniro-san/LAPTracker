@@ -1,7 +1,9 @@
 // Follow-up's groups (issue 585, slice 2): a member marked Needs help is in the first group only, with the mark
 // and their reasons on one row, never also under "Worth a hello". Slice 3: a line every row of a group holds is
 // said once under its title. Invented members.
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 
 import { isolate } from "@/lib/copy";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
@@ -10,6 +12,12 @@ import { cardFormats } from "@/lib/private/member-card";
 import type { MemberRow } from "@/lib/private/members";
 
 import { groupsOf } from "./follow-up-groups";
+import { followUpWords } from "./follow-up-words";
+import { FollowUpList } from "./FollowUpList";
+import { FollowUpHead } from "./FollowUpWeek";
+
+// A save refreshes the page through the router, which a static render has not mounted.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => undefined }) }));
 
 const t = WORKSPACE_DICTIONARIES.en;
 const f = cardFormats("en", "Etc/GMT+2", new Date("2026-11-20T12:00:00Z")); // Fri 10:00 ST
@@ -139,5 +147,88 @@ describe("Follow-up's groups (issue 585 slice 2)", () => {
     expect(groups[1]?.rows[1]?.message.texts.en).toBe(
       "Hey Cass! How did KvK go for you? Anything we can help with? Just checking in 🙂",
     );
+  });
+
+  it("counts the head's After KvK jump from the group's own rows (issue 585 S5)", () => {
+    const mark = { at: new Date("2026-11-13T14:00:00Z"), by: "Ana", note: null };
+    const items = [
+      item(member(1, "Ash"), { help: true, kvk: true, mark }),
+      item(member(2, "Bryn"), { kvk: true }),
+      item(member(3, "Cass"), { checkIn: false, kvk: true }),
+      item(member(4, "Dax"), {}),
+    ];
+    const group = groupsOf(items, t, f, "en", "2026-11-21").find((g) => g.id === "kvk");
+    const week = Array.from({ length: 7 }, (_, i) => `2026-11-${16 + i}`);
+    const data = { early: false, week, items, noted: [], zones: [], thefts: [] } as never;
+    const head = renderToStaticMarkup(
+      createElement(FollowUpHead, {
+        data,
+        t,
+        language: "en",
+        help: { seen: true, covered: false },
+      }),
+    );
+    expect(group?.rows.map((r) => r.name)).toEqual(["Bryn", "Cass"]);
+    expect(head).toContain(`>${group?.rows.length} to offer help after the KvK ↓</a>`);
+  });
+
+  it("says once only the lines all of a group's rows hold, each row keeping its others (issue 585 S3)", () => {
+    const groups = groupsOf(
+      [
+        // All three quiet; the coins tip on two of them; Dax new with Troops still to ask.
+        item(member(1, "Cass"), { tip: true }),
+        item(member(2, "Dax"), { tip: true, toAsk: ["troopTier"] }),
+        item(member(3, "Eden"), {}),
+      ],
+      t,
+      f,
+      "en",
+    );
+    expect(groups[0]?.shared).toEqual({
+      head: "Same for all 3:",
+      lines: ["Quiet for 3\u00a0days. Worth a hello."],
+    });
+    expect(groups[0]?.rows.map((r) => r.own.map((l) => l.text))).toEqual([
+      [t["followup.reason.coins"]],
+      ["Still to ask: Troops", t["followup.reason.coins"]],
+      [],
+    ]);
+  });
+
+  it("keeps the group's shared lines out of replay and names them in every row's description (issue 585 S3)", () => {
+    const groups = groupsOf(
+      [item(member(1, "Cass"), {}), item(member(2, "Dax"), {}), item(member(3, "Eden"), {})],
+      t,
+      f,
+      "en",
+    );
+    const editor = {
+      slug: "ogs",
+      words: {},
+      shots: false,
+      language: "en",
+      serverZone: "Etc/GMT+2",
+      used: [],
+    };
+    const html = renderToStaticMarkup(
+      createElement(FollowUpList, {
+        slug: "ogs",
+        groups,
+        today: "2026-11-20",
+        language: "en",
+        words: followUpWords(t),
+        editor: editor as never,
+        initialOpen: null,
+        foot: null,
+      }),
+    );
+    expect(html).toMatch(
+      /<div id="fu-shared-checkin" class="ph-no-capture[^"]*"><p[^>]*>Same for all 3:<\/p><p>Quiet for 3\u00a0days\. Worth a hello\.<\/p><\/div>/,
+    );
+    for (const uid of [1, 2, 3]) {
+      expect(html).toMatch(
+        new RegExp(`data-uid="${uid}"[^>]*aria-describedby="fu-shared-checkin fu-hint-${uid}"`),
+      );
+    }
   });
 });

@@ -32,6 +32,28 @@ beforeEach(async () => {
   ws = await freshWorkspace(db);
 });
 
+/** A roll call of `kind` on server day `day` of this week; its id. */
+const rollCall = async (kind: string, day: string) =>
+  (
+    await db
+      .insert(rollCalls)
+      .values({ workspaceId: ws, kind, day, week: "2026-11-16" })
+      .returning()
+  )[0]?.id ?? 0;
+/** "Finished" is one officer writing two marks at one instant ("the rest"). */
+let markUid = 0;
+const finished = (rollCallId: number, by: number | undefined, at: Date) =>
+  [0, 1].map(() => ({
+    rollCallId,
+    uid: ++markUid,
+    version: 1,
+    mark: "yes",
+    writtenBy: by,
+    writtenAt: at,
+  }));
+const officers = (names: string[]) =>
+  Promise.all(names.map(async (name) => (await browser(db, ws, name)).userId));
+
 describe("recent activity pages", () => {
   it("folds one officer's calendar adds on one server day into a line that holds them", async () => {
     const r = (await browser(db, ws, "Rook")).userId;
@@ -153,43 +175,29 @@ describe("recent activity pages", () => {
   });
 
   it("folds a roll call finished by several officers into one line naming each once (issue 585)", async () => {
-    const id = async (name: string) => (await browser(db, ws, name)).userId;
-    const [wren, tomas, lucien, kira, annelie, rook] = await Promise.all(
-      ["Wren", "Tomas", "Lucien", "Kira", "Annelie", "Rook"].map(id),
-    );
-    const call = async (kind: string, day: string) =>
-      (
-        await db
-          .insert(rollCalls)
-          .values({ workspaceId: ws, kind, day, week: "2026-11-16" })
-          .returning()
-      )[0]?.id ?? 0;
+    const [wren, tomas, lucien, kira, annelie, rook] = await officers([
+      "Wren",
+      "Tomas",
+      "Lucien",
+      "Kira",
+      "Annelie",
+      "Rook",
+    ]);
     const [cheese, siege, cheese2] = [
-      await call("cheese", "2026-11-20"),
-      await call("raid", "2026-11-20"),
-      await call("cheese", "2026-11-19"),
+      await rollCall("cheese", "2026-11-20"),
+      await rollCall("raid", "2026-11-20"),
+      await rollCall("cheese", "2026-11-19"),
     ];
-    // "Finished" is one officer writing two marks at one instant ("the rest").
-    let uid = 0;
-    const rest = (rollCallId: number, by: number | undefined, at: Date) =>
-      [0, 1].map(() => ({
-        rollCallId,
-        uid: ++uid,
-        version: 1,
-        mark: "yes",
-        writtenBy: by,
-        writtenAt: at,
-      }));
     await db.insert(rollCallMarks).values([
-      ...[wren, tomas, lucien, kira, annelie].flatMap((by, i) => rest(cheese, by, ago(10 + i))),
-      ...rest(cheese, wren, ago(75)), // Wren again, an hour earlier: named once
-      ...[tomas, kira, rook].flatMap((by, i) => rest(siege, by, ago(90 + i))),
-      ...rest(cheese, lucien, ago(100)), // after a line in between: a line of its own
-      ...rest(cheese2, annelie, ago(101)), // another "Cheese Trap" roll call
-      ...rest(cheese2, lucien, ago(102)),
-      ...rest(cheese, lucien, ago(190)), // the same words on the other roll call: a line of its own
-      ...rest(cheese2, kira, ago(13 * 60)), // the day before (UTC)
-      ...rest(cheese, kira, ago(13 * 60 + 1)), // the same words in a row: one line, as before
+      ...[wren, tomas, lucien, kira, annelie].flatMap((by, i) => finished(cheese, by, ago(10 + i))),
+      ...finished(cheese, wren, ago(75)), // Wren again, an hour earlier: named once
+      ...[tomas, kira, rook].flatMap((by, i) => finished(siege, by, ago(90 + i))),
+      ...finished(cheese, lucien, ago(100)), // after a line in between: a line of its own
+      ...finished(cheese2, annelie, ago(101)), // another "Cheese Trap" roll call
+      ...finished(cheese2, lucien, ago(102)),
+      ...finished(cheese, lucien, ago(190)), // the same words on the other roll call: a line of its own
+      ...finished(cheese2, kira, ago(13 * 60)), // the day before (UTC)
+      ...finished(cheese, kira, ago(13 * 60 + 1)), // the same words in a row: one line, as before
     ]);
     const me = (await (await browser(db, ws, "Ana")).visit(NOW)) as WorkspaceAccess;
     const lines = await recentActivity(db, me, NOW);
@@ -223,6 +231,52 @@ describe("recent activity pages", () => {
     );
   });
 
+  it("keeps a roll call two officers finished as one line at a page's end, each action once after Show more (issue 585)", async () => {
+    const [ana, wren, tomas, kira] = await officers(["Ana", "Wren", "Tomas", "Kira"]);
+    const cheese = await rollCall("cheese", "2026-11-20");
+    await db
+      .insert(rollCallMarks)
+      .values([...finished(cheese, wren, ago(10)), ...finished(cheese, tomas, ago(11))]);
+    const theft = (by: number | undefined, at: Date) => ({
+      workspaceId: ws,
+      attackerKey: "name:raider",
+      attackerName: "Raider",
+      attackerTag: "XYZ",
+      source: "typed" as const,
+      createdBy: by,
+      createdAt: at,
+    });
+    await db.insert(thefts).values([theft(ana, ago(5)), theft(kira, ago(20))]);
+    // Two lines a page: the fold is the first page's last line, and the next page starts below Tomas.
+    const { lines, pages } = await everyPage("Rook", 2);
+    expect(pages).toBe(2);
+    expect(linesOf(lines)).toEqual([
+      "Ana added a theft to the log",
+      "Wren and Tomas finished the roll call “Cheese Trap”",
+      "Kira added a theft to the log",
+    ]);
+    expect(lines[1]?.run.map((l) => l.who)).toEqual(["Wren", "Tomas"]);
+  });
+
+  it("folds a roll call by the server's day, split at its midnight, not UTC's (issue 585)", async () => {
+    const [lucien, kira, annelie, rook] = await officers(["Lucien", "Kira", "Annelie", "Rook"]);
+    const cheese = await rollCall("cheese", "2026-11-19");
+    // Server time UTC−2: Fri 00:30 ST, then Thu 23:30, 22:30 and 21:30 ST (UTC's midnight before the last).
+    await db
+      .insert(rollCallMarks)
+      .values([
+        ...finished(cheese, lucien, ago(570)),
+        ...finished(cheese, kira, ago(630)),
+        ...finished(cheese, annelie, ago(690)),
+        ...finished(cheese, rook, ago(750)),
+      ]);
+    const me = (await (await browser(db, ws, "Ana")).visit(NOW)) as WorkspaceAccess;
+    expect(linesOf(await recentActivity(db, me, NOW, 40, "Etc/GMT+2"))).toEqual([
+      "Lucien finished the roll call “Cheese Trap”",
+      "Kira, Annelie, and Rook finished the roll call “Cheese Trap”",
+    ]);
+  });
+
   it("shows a run longer than one read as two lines on two pages, each action once", async () => {
     const r = (await browser(db, ws, "Rook")).userId;
     const times = Array.from({ length: 50 }, (_, i) => ago(i + 1));
@@ -247,20 +301,14 @@ describe("recent activity pages", () => {
   });
 });
 
-/** Every page of the feed as `who` sees it, read with the cursor until there is none. */
-async function everyPage(who: string) {
+/** Every page of `size` lines of the feed as `who` sees it, read with the cursor until there is none. */
+async function everyPage(who: string, size = ACTIVITY_PAGE) {
   const me = (await (await browser(db, ws, who)).visit(NOW)) as WorkspaceAccess;
   const lines: ActivityLine[] = [];
   let before: Date | null = null;
   let pages = 0;
   do {
-    const page: ActivityPage = await activityPage(
-      db,
-      me,
-      { now: NOW, zone: "UTC" },
-      before,
-      ACTIVITY_PAGE,
-    );
+    const page: ActivityPage = await activityPage(db, me, { now: NOW, zone: "UTC" }, before, size);
     lines.push(...page.lines);
     before = page.next;
     pages += 1;

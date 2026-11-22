@@ -4,6 +4,7 @@ import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import {
   coinsTip,
   historyLine,
+  kvkOpen,
   lastWeekLines,
   markLines,
   notedLine,
@@ -110,5 +111,22 @@ describe("Follow-up's Needs help in words (#585 slice 2)", () => {
       "Semaine dernière : ⁨Tomas⁩ · 2026-11-13 : On a parlé",
       "« on holiday »",
     ]);
+  });
+});
+
+describe("After KvK, offer help (#585 slice 5)", () => {
+  it("keeps a member written about earlier in the KvK's week, before its End read, out of the group until Monday", () => {
+    // Server time UTC−2. KvK Sat 21 Nov, End read 14:00 ST; game weeks start Mon 16 and Mon 23 Nov 00:00 ST.
+    const afterAt = new Date("2026-11-21T16:00:00Z"); // Sat 14:00 ST
+    const [monday, nextMonday] = [
+      weekStart("2026-11-22", "Etc/GMT+2"),
+      weekStart("2026-11-23", "Etc/GMT+2"),
+    ];
+    const hit = new Set([101, 102]);
+    // 101 talked to on Thu 19 Nov, before the KvK; nobody wrote about 102.
+    const rows = [{ uid: 101, action: "talked", at: new Date("2026-11-19T12:00:00Z") }]; // Thu 10:00 ST
+    expect([...kvkOpen(hit, rows, monday, afterAt)]).toEqual([102]);
+    // The new week: Thursday's talk was before the KvK, so 101 is offered help again.
+    expect([...kvkOpen(hit, rows, nextMonday, afterAt)]).toEqual([101, 102]);
   });
 });

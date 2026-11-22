@@ -170,10 +170,11 @@ export function ToReview(props: {
   day: (at: Date) => string;
   /** Members' "This is me" links waiting for an officer (D142). */
   links: LinkReview[];
+  /** The Home tab's number: screenshot drafts, the notice reviews for this officer (D113) and the links
+   * to approve (D142), counted once by the page. */
+  waiting: number;
 }) {
-  const { slug, items, t, language } = props;
-  // Screenshot drafts, the notice reviews for this officer (D113) and the links to approve (D142).
-  const waiting = items.length + props.reviews.length + props.links.length;
+  const { slug, items, t, language, waiting } = props;
   return (
     <section aria-labelledby="to-review" className="drawn-card mt-4 px-4 py-4 first:mt-0">
       <h2 id="to-review" className="font-subhead text-display-sm">

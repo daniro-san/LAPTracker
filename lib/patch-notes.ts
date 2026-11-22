@@ -24,6 +24,10 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
+    text: 'Decide #663: one average rule. Should a "none" day count as 0 on the member card and Me, as on Insights? Recommendation: yes, with the line naming the none days ("Average 400 · 6 days, 2 none"), and a week of only none days reading "None on all 7 days".',
+    issue: 663,
+  },
+  {
     text: "PostHog → your personal API keys: create one with only the error-tracking write scope for project 741657, then add it in Vercel → Production as POSTHOG_PERSONAL_API_KEY (Sensitive). The v5.47.0 build uploaded no source map because the key is missing, so PostHog shows minified stack traces for browser and server errors; the maps are still deleted from every deploy.",
     issue: 592,
   },
@@ -172,6 +176,20 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.54.0",
+    date: "2026-11-22",
+    title: "Two Follow-up fixes",
+    changes: [
+      "Undo no longer clears another officer's Needs help mark: when an officer saved \"They need help\" on a member a colleague had already marked, and then tapped Undo, the colleague's mark disappeared. It now stays, credited to them.",
+      'The Home tab\'s number counts "This is me" claims waiting for an officer on every desk page, as Home already did; it read 0 on the other pages.',
+      "For whoever builds the site: Follow-up's group rules and Home's waiting count each come from one place, the Needs help read is lighter, and the batch 3 checks have the tests they lacked.",
+    ],
+    needsYou: [
+      'Decide #663: should a "none" day count as 0 in averages on the member card and Me, as it does on Insights? Recommendation: yes, with the line naming the none days ("Average 400 · 6 days, 2 none").',
+    ],
+    prs: [664, 661, 659],
+  },
   {
     version: "v5.53.0",
     date: "2026-11-22",

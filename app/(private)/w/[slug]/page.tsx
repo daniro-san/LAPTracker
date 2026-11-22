@@ -161,6 +161,8 @@ function Home(props: {
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
   nudge: boolean;
+  /** The Home tab's number, also said by the jump and the "To review" heading. */
+  waiting: number;
 }) {
   const { t, language } = props;
   const slug = props.access.slug;
@@ -184,10 +186,7 @@ function Home(props: {
           <>
             <KeyCard slug={slug} t={t} state={props.desk.key} />
             <HomeFollowUp slug={slug} t={t} language={language} followUp={props.desk.followUp} />
-            <ReviewJump
-              t={t}
-              waiting={props.items.length + props.reviews.length + props.desk.links.length}
-            />
+            <ReviewJump t={t} waiting={props.waiting} />
             <NextUp slug={slug} t={t} items={props.next} />
             <PicturesDueCard slug={slug} t={t} language={language} items={props.desk.due} />
             <ToReview
@@ -204,6 +203,7 @@ function Home(props: {
               when={serverWhen(t, language)}
               day={f.date}
               links={props.desk.links}
+              waiting={props.waiting}
             />
             <SendCard slug={slug} t={t} language={language} />
           </>
@@ -279,14 +279,13 @@ export default async function WorkspacePage({
       </Frame>
     );
   }
-  // The Home tab's number: drafts, the notice reviews for this officer (D113), the links to approve (D142).
+  // The Home tab's number: drafts, the notice reviews for this officer (D113), the links to approve (D142),
+  // counted once here for the tab, the jump and the "To review" heading.
   const frame = { access, language, t, waiting: items.length + reviews.length + desk.links.length };
   return (
     <SignedInFrame {...frame} current="home" wide keyShown>
       <Home
-        access={access}
-        t={t}
-        language={language}
+        {...frame}
         items={items}
         next={nextItems(placed, slug, { t, language, zone, endRead: getEnv().SNAPSHOT_AFTER })}
         view={view}
