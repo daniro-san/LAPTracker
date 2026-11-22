@@ -30,29 +30,29 @@ Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zon
 **C6** - Peaks at server hours 0, 1, 11, 12, 22, 23 read as runs 11–12 and 22–1; New York and Manila ×2 with a fourth member unrecorded read "Within their usual hours for the most: 11:00–12:59 and 22:00–01:59 ST, 3 of the 3 members with a time zone (1 not recorded). …" and "See who" opens hour 11 (AC 12)
 Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > gives the server hours most members are within their usual hours as ranges, through midnight
 
-**C7** - With no zone recorded for 2 members the card reads only "No time zone recorded yet for the 2 members in the newest daily update." with no rows (AC 8)
-Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > says no time zone is recorded yet, with no rows
+**C7** - With no zone recorded for 2 members the card reads only "No time zone recorded yet for the 2 members in the newest daily update." with no rows; with one of them in Manila, "The one member with a time zone is in Manila (UTC+8). The 00:00 ST reset is 10:00 for them." (AC 7, AC 8)
+Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > says no time zone is recorded yet, with no rows, then names the one member's group
 
 **C8** - The copy has the same keys in EN, PT-BR and FR, none empty, and every time names ST (AC 15)
 Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, pt-BR and fr, and no empty value
 
 **C9** - On the e2e seed an officer sees on Insights, without a tap, "Largest group: Manila (UTC+8), 2 of the 3 members with a time zone. The 00:00 ST reset is 10:00 for them." and "Time zone recorded for 3 of the 11 members in the newest daily update."; after "Show the details" the rows São Paulo, Manila, "Not recorded yet" 8 and the usual-hours line; a tap on "Add their time zone ›" opens Members at `?ask=timeZone` listing a member with no zone and not one with a zone, at 360 and 1280 px (AC 1, AC 7, AC 9, AC 10, AC 11, AC 12)
-Proof: `PATH=/opt/homebrew/opt/postgresql@18/bin:$PATH pnpm test:e2e e2e/desk-insights.spec.ts --project=phone --project=wide`
+Proof: `PATH=/opt/homebrew/opt/postgresql@18/bin:$PATH pnpm test:e2e e2e/desk-insights.spec.ts -g "Time zones" --project=phone --project=wide`
 
 **C10** - The card names no member: the cross-workspace and private-field scans pass over Insights with the new facts seeded (AC 14)
 Proof: `PATH=/opt/homebrew/opt/postgresql@18/bin:$PATH E2E_NO_BUILD=1 pnpm test:e2e e2e/isolation.spec.ts --project=phone`
 
 ## Coverage
 
-| Set (size)               | Member -> proof                                               | Unproven                                                             |
-| ------------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------- |
-| headline forms, AC 7 (4) | largest C1, C9 · tie C3 · one group C3 · one member -         | one member: a template line (`insights.zones.one`), read in the diff |
-| who counts, AC 2 (4)     | newest member with zone C2 · cleared C2 · none C2 · former C2 | -                                                                    |
-| clocks, AC 6 (3)         | west of ST C4 · east, same date C4 · east, next date C4       | -                                                                    |
-| moments, AC 6 (3)        | now C4 · reset C4, C3 · KvK C4, C5                            | -                                                                    |
-| usual hours, AC 12 (3)   | one run C9 · two runs C6 · through midnight C6                | -                                                                    |
-| languages, AC 15 (3)     | en C1-C9 · pt-BR C8 · fr C8                                   | -                                                                    |
-| widths (2)               | 360 C9 · 1280 C9                                              | -                                                                    |
+| Set (size)               | Member -> proof                                               | Unproven |
+| ------------------------ | ------------------------------------------------------------- | -------- |
+| headline forms, AC 7 (4) | largest C1, C9 · tie C3 · one group C3 · one member C7        | -        |
+| who counts, AC 2 (4)     | newest member with zone C2 · cleared C2 · none C2 · former C2 | -        |
+| clocks, AC 6 (3)         | west of ST C4 · east, same date C4 · east, next date C4       | -        |
+| moments, AC 6 (3)        | now C4 · reset C4, C3 · KvK C4, C5                            | -        |
+| usual hours, AC 12 (3)   | one run C9 · two runs C6 · through midnight C6                | -        |
+| languages, AC 15 (3)     | en C1-C9 · pt-BR C8 · fr C8                                   | -        |
+| widths (2)               | 360 C9 · 1280 C9                                              | -        |
 
 ## Swept
 

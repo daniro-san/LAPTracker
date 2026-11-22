@@ -200,13 +200,16 @@ describe("the Insights Time zones card (owner, 2026-11-22)", () => {
     });
   });
 
-  it("says no time zone is recorded yet, with no rows", async () => {
+  it("says no time zone is recorded yet, with no rows, then names the one member's group", async () => {
     await roster("2026-11-21", [101, 102]);
-    const { access } = await officer();
-    const words = await card(access, NOW, TODAY);
-    expect(words).toEqual({
+    const { access, zone } = await officer();
+    expect(await card(access, NOW, TODAY)).toEqual({
       based: ["No time zone recorded yet for the 2 members in the newest daily update."],
       details: null,
     });
+    await zone(101, "Asia/Manila");
+    expect((await card(access, NOW, TODAY)).based[0]).toBe(
+      "The one member with a time zone is in Manila (UTC+8). The 00:00 ST reset is 10:00 for them.",
+    );
   });
 });
