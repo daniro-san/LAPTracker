@@ -88,12 +88,67 @@ export function resolvedBy(rows: readonly { uid: number; action: string }[]): Se
   return new Set([...byUid].filter(([, own]) => liveRecords(own).length > 0).map(([uid]) => uid));
 }
 
+/**
+ * "Noted this week" (#585): for each member with a record still counting among `rows` (the week's, oldest
+ * first), that member's newest one, newest first. The same records that take a member off the list
+ * (`resolvedBy`), so a member is either to look at, noted, or neither.
+ */
+export function notedThisWeek<T extends { uid: number; action: string; at: Date }>(
+  rows: readonly T[],
+): T[] {
+  const byUid = new Map<number, T[]>();
+  for (const row of rows) byUid.set(row.uid, [...(byUid.get(row.uid) ?? []), row]);
+  return [...byUid.values()]
+    .flatMap((own) => liveRecords(own).slice(-1))
+    .sort((a, b) => b.at.getTime() - a.at.getTime());
+}
+
+/**
+ * Follow-up's two numbers in one line for Home and Members (#585): "Follow-up: 12 to look at · 4 noted
+ * this week"; null when both are 0 (the pages then say everyone looks fine).
+ */
+export function weekCountLine(
+  counts: { toLook: number; noted: number },
+  t: WorkspaceDictionary,
+  language: string,
+): string | null {
+  if (counts.toLook === 0 && counts.noted === 0) return null;
+  const head =
+    counts.toLook === 0
+      ? t["followup.week.nobody"]
+      : fill(t["followup.week.toLook"], { n: counts.toLook });
+  if (counts.noted === 0) return head;
+  const form = new Intl.PluralRules(language).select(counts.noted) === "one" ? "one" : "other";
+  return `${head} · ${fill(t[`followup.week.noted.${form}`], { n: counts.noted })}`;
+}
+
 export interface HistoryRow {
   action: FollowUpAction;
   note: string | null;
   until: string | null;
   at: Date;
   by: string | null;
+}
+
+/**
+ * A "Noted this week" row's line (#585), the officer and the day first: "Tomas · Thu, Nov 19: Talked to
+ * them", "Lucien · Thu, Nov 19: On a break until Wed, Nov 25" (the last day away, so it does not read as
+ * the list's "back on Monday"); "Thu, Nov 19: All fine" when the officer is not known. The note is not in it.
+ */
+export function notedLine(
+  row: HistoryRow,
+  t: WorkspaceDictionary,
+  date: (at: Date) => string,
+  day: (iso: string) => string,
+): string {
+  const what =
+    row.action === "break" && row.until
+      ? fill(t["followup.noted.break"], { date: day(row.until) })
+      : t[`followup.action.${row.action}`];
+  const at = date(row.at);
+  return row.by
+    ? fill(t["followup.noted.by"], { who: isolate(row.by), date: at, what })
+    : fill(t["followup.noted.at"], { date: at, what });
 }
 
 /**

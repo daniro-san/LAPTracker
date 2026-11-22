@@ -20,6 +20,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import { featureOn, thanksSwitches } from "@/lib/private/features";
+import { followUpCounts, type WeekCounts } from "@/lib/private/follow-up";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
@@ -30,8 +31,8 @@ import {
   type ListSource,
   type MembersView,
 } from "@/lib/private/members";
-import { needsAWord, pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
-import { plural, sheetHeader } from "@/lib/private/members-sheet";
+import { pickOrder, pickQuery } from "@/lib/private/members-list";
+import { sheetHeader } from "@/lib/private/members-sheet";
 import {
   dismissedMembers,
   matchOnRead,
@@ -43,6 +44,7 @@ import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { AllianceWeekLine, allianceWeekParts } from "../../../_ui/AllianceWeekLine";
+import { CheckInLine, checkInLink } from "../../../_ui/CheckInLine";
 import { editorWords, updatesWords } from "../../../_ui/facts-form";
 import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
@@ -95,13 +97,15 @@ async function readPage(
 ) {
   const { now, zone, showFormer } = p;
   const access = await requireWorkspace(db, p.slug, p.jar, now, RENEW_MS);
-  if (!access.ok)
-    return { access, waiting: 0, view: null, rows: [], lifecycle: null, switches: NO_SWITCHES };
+  if (!access.ok) return { access, waiting: 0, ...REFUSED };
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
-  const [view, channels] = await Promise.all([
-    membersWithProgress(db, access, now, zone),
+  const members = membersWithProgress(db, access, now, zone);
+  const [view, channels, followUp] = await Promise.all([
+    members,
     channelNames(db, access, getEnv()),
+    // Issue 585: Follow-up's numbers for the head, as soon as the members view is in.
+    showFormer ? null : members.then((v) => followUpCounts(db, access, v, now, zone)),
   ]);
   return {
     access,
@@ -111,6 +115,7 @@ async function readPage(
     switches: { ...thanksSwitches(access), channel: channels.members },
     // The list's own read (photos and past names); the card route never runs it (issue 337).
     rows: showFormer ? [] : await withListExtras(db, access, view.members),
+    followUp,
     lifecycle: showFormer
       ? { former: await formerMembers(db, access, zone, view.facts), pending: [], dismissed: [] }
       : {
@@ -123,6 +128,7 @@ async function readPage(
 
 /** Refused: nothing is shown, so nothing is switched on. */
 const NO_SWITCHES: ThanksSwitches = { board: false, writing: false, channel: null };
+const REFUSED = { view: null, rows: [], lifecycle: null, switches: NO_SWITCHES, followUp: null };
 
 /**
  * The editor's words, the add sheet saying when the nightly roster is read (D106), and whether "Read from a
@@ -189,7 +195,7 @@ export default async function MembersPage({
   const at = search.get("view") === "former" ? "former" : "members";
   const showFormer = at === "former";
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, rows, waiting, lifecycle, switches } = await withPageDb((db) =>
+  const { access, view, rows, waiting, lifecycle, switches, followUp } = await withPageDb((db) =>
     readPage(db, { slug, jar, now, zone: env.SERVER_TZ, showFormer }),
   );
   if (!access.ok) {
@@ -243,7 +249,7 @@ export default async function MembersPage({
           </>
         ) : (
           <Roster
-            {...{ slug, view, rows, t, language, search, now, editor, switches }}
+            {...{ slug, view, rows, t, language, search, now, editor, switches, followUp }}
             foot={importLink}
             readAt={view.readAt}
             zone={env.SERVER_TZ}
@@ -275,11 +281,11 @@ function Roster(props: {
   foot: ReactNode;
   /** D126: the thanks sheet's switches. */
   switches: ThanksSwitches;
+  followUp: WeekCounts | null;
 }) {
   const { slug, view, t, language, now, zone } = props;
   const f = cardFormats(language, zone, now);
   const today = serverDay(now, { SERVER_TZ: zone });
-  const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   const share = shareThanksProps({ slug, t, language, view, today, switches: props.switches });
   const allianceWeek = allianceWeekParts(view, t, f, today);
@@ -297,18 +303,11 @@ function Roster(props: {
       <AllianceWeekLine parts={allianceWeek} className="mt-1 max-w-(--measure)" />
       <MembersThanks view={view} t={t} f={f} share={share} />
       {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
-      <p className={view.early ? "hidden" : "mt-3"}>
-        {checkins === 0 ? (
-          t["members.checkinNone"]
-        ) : (
-          <a
-            href={`/w/${slug}/members?order=rank#ml-heading`}
-            className="inline-flex min-h-11 items-center py-2 font-semibold text-plum underline underline-offset-4"
-          >
-            {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
-          </a>
-        )}
-      </p>
+      <CheckInLine
+        check={checkInLink(slug, view, props.followUp, t, f)}
+        none={t["members.checkinNone"]}
+        className={view.early ? "hidden" : "mt-3"}
+      />
       <Legend t={t} />
     </>
   );

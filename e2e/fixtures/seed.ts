@@ -133,6 +133,10 @@ function rosterRow(side: Side, day: string, list: Member[], daysLeft: number) {
 const onRoster = (side: Side, k: number, afterLastEvent: boolean) =>
   side === "b" || (afterLastEvent ? k !== LEAVER : k !== JOINER);
 
+/** The members first seen in the seeded reads (not on the roster before the last event): new members. */
+export const newMembers = (side: Side) =>
+  ALLIANCES[side].names.filter((_, k) => !onRoster(side, k, false));
+
 // What the pages show, computed from the rows above (the specs format them with lib/compact, as the pages do).
 
 /** An event member's figures: the Start's are `members(side, 0)`, the End loses 3M might and gains 90K kills. */

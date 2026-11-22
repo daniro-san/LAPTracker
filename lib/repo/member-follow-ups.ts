@@ -48,7 +48,7 @@ export async function insertMemberFollowUp(
 
 /**
  * The records since `since` (the week's start), oldest first: uid, action and time only, for the week's
- * list (a "withdrawn" cancels the record before it).
+ * list and its counts (a "withdrawn" cancels the record before it).
  */
 export function followedUpSince(
   db: Db,
@@ -64,6 +64,31 @@ export function followedUpSince(
     .from(memberFollowUps)
     .where(and(eq(memberFollowUps.workspaceId, workspaceId), gte(memberFollowUps.writtenAt, since)))
     .orderBy(asc(memberFollowUps.id));
+}
+
+/** One record of the week as Follow-up's "Noted this week" shows it. */
+export type WeekRecord = Omit<MemberFollowUp, "factVersion" | "requestId">;
+
+/**
+ * The same records with the note, the last day away and the officer's desk name, for Follow-up's "Noted
+ * this week" only (#585); Home and Members count with `followedUpSince`.
+ */
+export async function notedSince(db: Db, workspaceId: number, since: Date): Promise<WeekRecord[]> {
+  const rows = await db
+    .select({
+      uid: memberFollowUps.uid,
+      action: memberFollowUps.action,
+      note: memberFollowUps.note,
+      until: memberFollowUps.until,
+      at: memberFollowUps.writtenAt,
+      chosenName: workspaceUsers.chosenName,
+      displayName: workspaceUsers.displayName,
+    })
+    .from(memberFollowUps)
+    .leftJoin(workspaceUsers, eq(workspaceUsers.id, memberFollowUps.writtenBy))
+    .where(and(eq(memberFollowUps.workspaceId, workspaceId), gte(memberFollowUps.writtenAt, since)))
+    .orderBy(asc(memberFollowUps.id));
+  return rows.map(({ chosenName, displayName, ...r }) => ({ ...r, by: chosenName ?? displayName }));
 }
 
 /** One member's follow-ups, oldest first, for their card and for Undo. */

@@ -4,36 +4,24 @@
 // link to Members, and a tap on the person opens their panel (a sheet, beside the list from 1024, D122):
 // why, a ready message in their language, what to fill in, how it went and the last notes. Then the
 // thefts whose follow-up is still open, each linked to its entry in the thefts log. People first (D75):
-// notes for the officers, nothing is sent, no ranking, a warm line when nobody is on it.
-import { fill, isolate } from "@/lib/copy";
+// notes for the officers, nothing is sent, no ranking, a warm line when nobody is on it. Issue 585: the head
+// leads with the week's two numbers, and "Noted this week" says who an officer already noted, by whom.
+import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import {
-  type WorkspaceDictionary,
-  type WorkspaceKey,
-  type WorkspaceLanguage,
-} from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
 import { followUpView, type FollowUpItem, type FollowUpView } from "@/lib/private/follow-up";
 import { cardFormats } from "@/lib/private/member-card";
 import type { Reason } from "@/lib/private/members";
 import { reasonText, type Formats } from "@/lib/private/members-sheet";
 import { inputOf, readyTexts } from "@/lib/private/ready-message";
-import type { AttackerGroup } from "@/lib/private/theft-groups";
 
 import { editorWords } from "../../../_ui/facts-form";
 import { followUpWords } from "../../../_ui/follow-up-words";
 import { FollowUpList, type FollowUpGroup, type FollowUpRow } from "../../../_ui/FollowUpList";
+import { counted, FollowUpFoot, FollowUpHead } from "../../../_ui/FollowUpWeek";
 import { SignedInFrame } from "../../../_ui/Frame";
 import { openRollCall } from "../../../_ui/roll-call-page";
-
-const LINK =
-  "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
-
-/** The singular or plural form of a Follow-up phrase, by the language's own rule. */
-function counted(t: WorkspaceDictionary, key: string, n: number, language: string) {
-  const form = new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
-  return fill(t[`${key}.${form}` as WorkspaceKey], { n });
-}
 
 /** A reason in Follow-up's own words ("Quiet for 3 days. Worth a hello."); the held KvK one as Members says it. */
 function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
@@ -101,55 +89,6 @@ function groupsOf(
     }));
 }
 
-/** "16 – 22 Nov" in the officer's language. */
-function weekRange(week: string[], language: string) {
-  const at = (day: string | undefined) => new Date(`${day}T00:00:00Z`);
-  return new Intl.DateTimeFormat(language, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).formatRange(at(week[0]), at(week[6]));
-}
-
-function Thefts(props: { slug: string; thefts: AttackerGroup[]; t: WorkspaceDictionary }) {
-  const { t, thefts, slug } = props;
-  if (thefts.length === 0) return null;
-  return (
-    <section
-      id="follow-up-thefts"
-      className="drawn-card mt-6 scroll-mt-4 px-4 pt-3"
-      aria-labelledby="follow-up-thefts-h"
-    >
-      <h2 id="follow-up-thefts-h" className="font-subhead text-display-sm">
-        {fill(t["followup.thefts"], { n: thefts.length })}
-      </h2>
-      <ul className="mt-1">
-        {thefts.map((a) => (
-          <li key={a.key} className="border-t border-rule text-body-sm">
-            <a
-              href={`/w/${slug}/thefts#attacker-${encodeURIComponent(a.key)}`}
-              className="block min-h-11 py-3"
-            >
-              <span className="font-semibold text-plum underline underline-offset-4" translate="no">
-                {a.tag ? `[${isolate(a.tag)}] ` : ""}
-                <bdi>{a.name}</bdi>
-              </span>
-              {/* The step they are at; yarn while nothing is done yet (D104, amended 2026-11-19). */}
-              <span className={a.followUp.state === "open" ? "text-yarn" : undefined}>
-                {` · ${a.followUp.reopened ? t["thefts.state.reopened"] : t[`thefts.state.${a.followUp.state}`]}`}
-              </span>
-              {a.week > 0 && <span>{` · ${fill(t["thefts.week"], { n: a.week })}`}</span>}
-            </a>
-          </li>
-        ))}
-      </ul>
-      <a href={`/w/${slug}/thefts`} className={LINK}>
-        {t["followup.theftsLink"]}
-      </a>
-    </section>
-  );
-}
-
 export default async function FollowUpPage({
   params,
   searchParams,
@@ -187,27 +126,7 @@ export default async function FollowUpPage({
       current="review"
       waiting={page.waiting}
     >
-      <h1 className="font-display text-display-lg">{t["tab.review"]}</h1>
-      {/* What to do, in one sentence (issue 460), then the D104 promise. */}
-      <p className="mt-1 font-semibold">{t["followup.todo"]}</p>
-      <p className="mt-1 text-body-sm text-ink/80">{t["followup.help"]}</p>
-      <p className="mt-3 font-semibold">
-        {fill(t["followup.week"], { range: weekRange(data.week, language) })}
-      </p>
-      <p className="text-body-sm text-ink/80">{t["followup.rule"]}</p>
-      {data.items.length === 0 ? (
-        <>
-          <p className="mt-2">{t["followup.empty"]}</p>
-          {data.early && <p className="mt-1 text-body-sm text-ink/80">{t["followup.early"]}</p>}
-        </>
-      ) : (
-        <p className="mt-2 text-body-sm">{fill(t["followup.count"], { n: data.items.length })}</p>
-      )}
-      {data.thefts.length > 0 && (
-        <a href="#follow-up-thefts" className={`${LINK} text-body-sm`}>
-          {counted(t, "followup.theftsJump", data.thefts.length, language)}
-        </a>
-      )}
+      <FollowUpHead data={data} t={t} language={language} />
       {/* Always mounted, so the saved line with Undo stays after the last member leaves. */}
       <FollowUpList
         slug={slug}
@@ -217,7 +136,7 @@ export default async function FollowUpPage({
         words={followUpWords(t)}
         editor={editor}
         initialOpen={typeof open === "string" ? open : null}
-        foot={<Thefts slug={slug} thefts={data.thefts} t={t} />}
+        foot={<FollowUpFoot slug={slug} data={data} t={t} f={f} />}
       />
     </SignedInFrame>
   );
