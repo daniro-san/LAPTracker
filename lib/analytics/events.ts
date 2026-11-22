@@ -161,7 +161,7 @@ export interface AnalyticsEvents {
   /** D154: a member sent their own info to their officers from their own page (no value, no field). */
   ws_self_report_sent: { change: "save" | "remove" };
   /**
-   * D155: "Send feedback" went through, from the desk or the board, and its kind; never the text. Not `area`,
+   * D157: "Send feedback" went through, from the desk or the board, and its kind; never the text. Not `area`,
    * which before_send sets to the page's area on every event.
    */
   feedback_sent: { feedback_area: "desk" | "board"; kind: "idea" | "problem" | "good" };

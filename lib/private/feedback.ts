@@ -1,4 +1,4 @@
-// "Send feedback" (D155, issue 713): an officer on the desk, or an officer or member on the board, sends the
+// "Send feedback" (D157, issue 713): an officer on the desk, or an officer or member on the board, sends the
 // site's owner an idea, a problem or something good. Collect only: nothing comes back to the sender. Who sent
 // it is never stored, and the IP only as an HMAC in a day counter. The text goes through redactPrivate
 // before it is stored, and never to a log, PostHog, AI or Discord.

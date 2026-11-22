@@ -135,7 +135,7 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   // D148: officers' devices for notifications, sealed like the webhooks, and what each trigger last sent.
   { file: null, table: pushSubscriptions, scope: "workspace" },
   { file: null, table: pushMarks, scope: "workspace" },
-  // D155: what officers and members sent the site's owner; it is for the owner, so never downloaded.
+  // D157: what officers and members sent the site's owner; it is for the owner, so never downloaded.
   { file: null, table: feedback, scope: "workspace" },
 ];
 

@@ -173,7 +173,7 @@ describe("/admin pages, unlocked", () => {
     expect(shown).toContain('href="/admin/errors?w=amber"');
   });
 
-  it("/admin/feedback lists what was sent, newest first, and a kind filter keeps only that kind (D155)", async () => {
+  it("/admin/feedback lists what was sent, newest first, and a kind filter keeps only that kind (D157)", async () => {
     await signedInWithAmber();
     const sent = (kind: "idea" | "problem", text: string, hoursAgo: number) => ({
       area: "desk" as const,

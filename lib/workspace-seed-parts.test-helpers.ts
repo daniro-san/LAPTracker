@@ -284,7 +284,7 @@ async function seedPush(db: Db, ws: number, officer: number) {
   await db
     .insert(pushMarks)
     .values({ workspaceId: ws, key: `night:${DAY}`, value: "failed", sentAt: SEED_AT });
-  // D155: feedback sent from the workspace's desk to the site's owner (deleted with it, never downloaded).
+  // D157: feedback sent from the workspace's desk to the site's owner (deleted with it, never downloaded).
   await db.insert(feedback).values({
     area: "desk",
     kind: "idea",

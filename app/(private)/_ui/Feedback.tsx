@@ -1,4 +1,4 @@
-// "Send feedback" (D155) at the end of a desk or board page: the button with only its own words, so the page
+// "Send feedback" (D157) at the end of a desk or board page: the button with only its own words, so the page
 // sends the client none of the rest of the dictionary.
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { feedbackWords } from "@/lib/private/dictionary.feedback";

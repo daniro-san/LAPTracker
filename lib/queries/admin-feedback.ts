@@ -1,4 +1,4 @@
-// /admin/feedback (D155, issue 713): what officers and members sent, newest first, by kind and status. Owner
+// /admin/feedback (D157, issue 713): what officers and members sent, newest first, by kind and status. Owner
 // only (PIN). The text was redacted before it was stored; no sender is stored at all.
 import { and, desc, eq, type SQL } from "drizzle-orm";
 

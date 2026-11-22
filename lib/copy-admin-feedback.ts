@@ -1,4 +1,4 @@
-// /admin/feedback (D155, issue 713), English only (D48): what officers and members sent from the desk and
+// /admin/feedback (D157, issue 713), English only (D48): what officers and members sent from the desk and
 // the board, the owner's filters and the four statuses.
 export const feedbackAdminCopy = {
   title: "Feedback",

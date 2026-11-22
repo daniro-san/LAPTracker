@@ -1,4 +1,4 @@
-// POST /api/w/[slug]/feedback (D155, issue 713): "Send feedback" from the desk or the board, to the site's
+// POST /api/w/[slug]/feedback (D157, issue 713): "Send feedback" from the desk or the board, to the site's
 // owner. Same origin and JSON first, a strict body, then the door of the area it names: `desk` is the
 // officers' (requireWorkspace), `board` the board's (requireBoard, officers and members) while the board is
 // on. 200 `{ok: true}` whatever the honeypot held; 429 past the day's limits. Nothing about the sender is

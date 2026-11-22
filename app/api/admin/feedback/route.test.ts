@@ -1,4 +1,4 @@
-// POST /api/admin/feedback (D155): the owner's status on a feedback item, PIN only. An officer's or a member's
+// POST /api/admin/feedback (D157): the owner's status on a feedback item, PIN only. An officer's or a member's
 // workspace session opens nothing here; the status changes only with the PIN. Invented text only.
 import { createHash } from "node:crypto";
 
@@ -70,7 +70,7 @@ const post = async (headers: Record<string, string>, body: unknown) => {
 };
 const statuses = async () => (await db.select().from(feedback)).map((r) => r.status);
 
-describe("POST /api/admin/feedback (D155)", () => {
+describe("POST /api/admin/feedback (D157)", () => {
   it("refuses an officer's workspace session without the PIN, and a wrong PIN, and changes nothing", async () => {
     expect((await post({ cookie: officerCookie }, { id: 1, status: "dropped" })).status).toBe(401);
     expect((await post({ "x-edit-pin": "wrong-pin" }, { id: 1, status: "dropped" })).status).toBe(

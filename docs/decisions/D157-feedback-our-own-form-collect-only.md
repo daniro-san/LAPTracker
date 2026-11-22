@@ -1,4 +1,4 @@
-## D155 — Feedback: our own form on the desk and the board, collect only, kept 180 days, read on /admin/feedback (2026-11-22, owner, issue 713 part H; amends D77, D115, D125)
+## D157 — Feedback: our own form on the desk and the board, collect only, kept 180 days, read on /admin/feedback (2026-11-22, owner, issue 713 part H; amends D77, D115, D125)
 
 Why: the owner wants officers', members' and later visitors' ideas and problems in one place (#713, 2026-11-22). The spike's Part 3 compared PostHog surveys with a form of our own; the owner approved the recommendation in the chat the same day, relayed on #713: "Feedback: the desk and the board first. Public visitors come later." "Retention: feedback is kept 180 days." "Replies: collect only, with no reply to the sender. A sender sees "Received, thank you", and patch notes credit an idea without a name." Plan: `.specs/features/713-feedback/plan.md`.
 

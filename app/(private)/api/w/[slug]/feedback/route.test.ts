@@ -1,4 +1,4 @@
-// "Send feedback" (D155, issue 713): the door and the same-origin rule come first; then a send is stored
+// "Send feedback" (D157, issue 713): the door and the same-origin rule come first; then a send is stored
 // redacted and without its sender, a filled honeypot stores and counts nothing, and the day's limits hold at
 // their edges (5 per IP hash, 20 per workspace). Invented workspaces, people and text only.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -83,7 +83,7 @@ async function send(
 }
 const rows = () => db.select().from(feedback);
 
-describe("Send feedback: who may send (D155, D105)", () => {
+describe("Send feedback: who may send (D157, D105)", () => {
   it("refuses a cross-site request and every session that is not this workspace's own, and stores nothing", async () => {
     expect(await send("alpha:officer", IDEA, { origin: "https://evil.example" })).toEqual({
       status: 403,
@@ -109,7 +109,7 @@ describe("Send feedback: who may send (D155, D105)", () => {
   });
 });
 
-describe("Send feedback: what is stored (D155)", () => {
+describe("Send feedback: what is stored (D157)", () => {
   it("stores the text redacted, with no sender, and answers only that it was received", async () => {
     const text =
       "Problem: my base x: 512, y: 733 shows wrong, photo https://phs-image.globallap.com/a/9.png";
@@ -153,7 +153,7 @@ describe("Send feedback: what is stored (D155)", () => {
   });
 });
 
-describe("Send feedback: the day's limits (D155)", () => {
+describe("Send feedback: the day's limits (D157)", () => {
   it("takes 5 a day from one IP and refuses the 6th, while another IP still sends", async () => {
     for (let n = 1; n <= 5; n++) expect((await send("alpha:officer", IDEA)).status).toBe(200);
     expect(await send("alpha:officer", IDEA)).toEqual({ status: 429, body: { code: "too_many" } });

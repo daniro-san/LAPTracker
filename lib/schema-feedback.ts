@@ -1,4 +1,4 @@
-// What officers and members send the site's owner from the desk and the board (D155, issue 713): an idea, a
+// What officers and members send the site's owner from the desk and the board (D157, issue 713): an idea, a
 // problem or something good, without the sender. drizzle.config.ts lists this file too.
 import { sql } from "drizzle-orm";
 import { check, index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";

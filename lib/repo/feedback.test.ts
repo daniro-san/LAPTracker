@@ -1,4 +1,4 @@
-// D155: the daily job deletes feedback older than 180 days and keeps everything at or after that edge.
+// D157: the daily job deletes feedback older than 180 days and keeps everything at or after that edge.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { T0 } from "../collector.test-helpers";
@@ -17,7 +17,7 @@ beforeEach(async () => {
 
 const DAY_MS = 86_400_000;
 
-describe("the feedback purge (D155)", () => {
+describe("the feedback purge (D157)", () => {
   it("deletes rows created more than 180 days ago and keeps the one at the edge and newer ones", async () => {
     const ages = { justOver: 180 * DAY_MS + 60_000, edge: 180 * DAY_MS, month: 30 * DAY_MS };
     await db.insert(feedback).values(

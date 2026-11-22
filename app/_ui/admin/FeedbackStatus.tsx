@@ -1,6 +1,6 @@
 "use client";
 
-// /admin/feedback's status of one item (D155): New, Read, Became an issue, Dropped, as four 44 px buttons,
+// /admin/feedback's status of one item (D157): New, Read, Became an issue, Dropped, as four 44 px buttons,
 // the current one pressed. A press sends the PIN as x-edit-pin, like the other admin buttons, and keeps the
 // new status shown; the page is read again so a filter by status stays true.
 import { useRouter } from "next/navigation";
@@ -29,6 +29,8 @@ export function FeedbackStatus({ id, status }: { id: number; status: Status }) {
       headers: { "x-edit-pin": pin, "content-type": "application/json" },
       body: JSON.stringify({ id, status: next }),
     }).catch(() => null);
+    // Read to its end, so the browser finishes the answer.
+    await res?.json().catch(() => null);
     setBusy(null);
     if (res?.status === 401) forgetPin();
     if (!res?.ok) return setError(res?.status === 404 ? t.gone : t.failed);

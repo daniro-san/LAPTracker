@@ -1,4 +1,4 @@
-// /admin/feedback (D155, issue 713): what officers and members sent from the desk and the board, newest
+// /admin/feedback (D157, issue 713): what officers and members sent from the desk and the board, newest
 // first, filtered by kind and status (links, so the filter is in the address), each with the owner's status.
 // English only (D48). Session first (issue 218): locked, the PIN card and no database read.
 import { AdminShell } from "@/app/_ui/admin/AdminShell";

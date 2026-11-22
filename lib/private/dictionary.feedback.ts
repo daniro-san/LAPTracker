@@ -1,4 +1,4 @@
-// "Send feedback" (D155, issue 713) in English, Brazilian Portuguese and French: the button at the end of the
+// "Send feedback" (D157, issue 713) in English, Brazilian Portuguese and French: the button at the end of the
 // desk's and the board's pages, and its sheet. Collect only: the sheet says the owner reads it without the
 // sender's name and does not reply. French puts a no-break space before : ; ! and ?.
 export const feedbackEn = {

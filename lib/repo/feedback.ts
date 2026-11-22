@@ -1,4 +1,4 @@
-// feedback table (D155, issue 713): one row per send from the desk or the board, the owner's status on it,
+// feedback table (D157, issue 713): one row per send from the desk or the board, the owner's status on it,
 // and the daily purge after 180 days. Who sent it is never stored.
 import { eq, lt } from "drizzle-orm";
 
@@ -8,7 +8,7 @@ import { DAY_KEY_PREFIX } from "./auth-attempts";
 
 export type FeedbackRow = Omit<typeof feedback.$inferInsert, "id" | "status">;
 
-/** How long a row is kept (D155). */
+/** How long a row is kept (D157). */
 export const FEEDBACK_DAYS = 180;
 
 /** The workspace's daily count of sends in auth_attempts; deleted with the workspace (D125). */

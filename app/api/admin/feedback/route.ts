@@ -1,4 +1,4 @@
-// POST /api/admin/feedback — /admin/feedback's status on one item (D155): {id, status} with status new, read,
+// POST /api/admin/feedback — /admin/feedback's status on one item (D157): {id, status} with status new, read,
 // issue ("Became an issue") or dropped. PIN only, with the PIN's rate limits; 404 when no such item.
 import { z } from "zod";
 

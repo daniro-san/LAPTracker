@@ -1,4 +1,4 @@
-// "Send feedback" (D155): an officer sends a problem from the desk's Home and sees "Received, thank you.";
+// "Send feedback" (D157): an officer sends a problem from the desk's Home and sees "Received, thank you.";
 // the owner unlocks /admin/feedback with the PIN, finds it with its workspace, area and tier, marks it Read,
 // and the status holds after a reload. Phone only: the feedback IP limit (5 a day) counts every repeat, and
 // the text names the repeat so each finds its own row.
@@ -62,7 +62,11 @@ test("an officer's feedback from the desk says “Received, thank you.” and th
   await expect(item.getByRole("button", { name: "New" })).toHaveAttribute("aria-pressed", "true");
   const read = item.getByRole("button", { name: "Read" });
   await hydrated(read);
+  const saved = page.waitForResponse(
+    (r) => new URL(r.url()).pathname === "/api/admin/feedback" && r.request().method() === "POST",
+  );
   await savedAndRefreshed(page, "/admin/feedback", () => read.click());
+  await (await saved).finished();
   await expect(read).toHaveAttribute("aria-pressed", "true");
   await page.reload();
   const again = page.getByRole("listitem").filter({ hasText: text });

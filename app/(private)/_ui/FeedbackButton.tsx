@@ -1,6 +1,6 @@
 "use client";
 
-// "Send feedback" (D155, issue 713): a button at the end of every desk page and of the board, and the sheet it
+// "Send feedback" (D157, issue 713): a button at the end of every desk page and of the board, and the sheet it
 // opens: the kind (Idea, Problem, Something good), the message (up to 1,000 characters) and Send. After a
 // send the sheet says "Received, thank you." and nothing else comes back. The hidden `website` field is the
 // honeypot: people never see or reach it. PostHog gets the area and the kind only, never the text.
