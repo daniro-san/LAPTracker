@@ -81,4 +81,4 @@ Add a patch-notes entry (`lib/patch-notes.ts`) at release.
 
 What was missing from the task prompt? Whether the result should be public (settled: admin-only, per #286's closing comment) and whether the Discord "one line" could become a short block.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/679
