@@ -2,8 +2,12 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vitest/config";
 
+const root = fileURLToPath(new URL("./", import.meta.url));
+// forceRerunTriggers are matched against absolute paths: a repo-root path, glob characters escaped.
+const atRoot = (glob: string) => root.replace(/[\\[\](){}*?!+@]/g, "\\$&") + glob;
+
 export default defineConfig({
-  resolve: { alias: { "@": fileURLToPath(new URL("./", import.meta.url)) } },
+  resolve: { alias: { "@": root } },
   test: {
     environment: "node",
     globalSetup: ["./vitest.global-setup.ts"],
@@ -17,14 +21,17 @@ export default defineConfig({
     // .claude/worktrees: agent worktrees inside the main checkout have their own tests and node_modules.
     exclude: ["node_modules/**", ".next/**", ".claude/worktrees/**"],
     // `--changed` (pnpm check:fast) runs every test when one of these changed: tests read them from disk or
-    // share them, so the import graph does not see them. Matched against absolute paths, hence the `**/`.
+    // share them, so the import graph does not see them.
     forceRerunTriggers: [
       "**/package.json",
       "**/vitest.config.*",
-      "**/vitest.global-setup.ts",
-      "**/pnpm-lock.yaml",
-      "**/drizzle/**",
-      "**/fixtures/**",
+      atRoot("vitest.global-setup.ts"),
+      atRoot("pnpm-lock.yaml"),
+      atRoot("drizzle/**"),
+      atRoot("fixtures/**"),
+      atRoot("docs/analytics/tracking-plan.md"),
+      atRoot("lib/i18n/glossary/*.md"),
+      atRoot("lib/screenshot/tessdata/**"),
     ],
   },
 });

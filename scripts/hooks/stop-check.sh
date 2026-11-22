@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Claude Code Stop hook: `pnpm check:fast` must pass before a turn ends (plan §11.4). It runs the same gates
-# as `pnpm check` but only the tests related to changes since origin/dev; CI runs the full `pnpm check`.
+# as `pnpm check` but only some tests (scripts/test-changed.sh); CI runs the full `pnpm check`.
 # Exit 2 keeps the agent working with the failure (stderr) in view. After two fix rounds in a row still fail
 # (`stop_hook_active` true on each), the turn may end, so the agent reports instead of looping (CLAUDE.md);
 # Claude Code's own cap is 8 continuations. On that exit 0, stderr reaches no one, so the notice goes to

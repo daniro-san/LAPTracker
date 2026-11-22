@@ -1,5 +1,5 @@
 # Pre-commit gates (plan §11.4). The secrets scan is the reason this hook exists: the repo is public.
-# No pre-push hook: CI and the Claude Code Stop hook already run `pnpm check`.
+# No pre-push hook: CI runs `pnpm check`, and the Claude Code Stop hook `pnpm check:fast`.
 pre-commit:
   parallel: true
   jobs:
