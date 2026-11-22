@@ -78,4 +78,4 @@ Analytics plan: none. No behaviour change.
 
 What was missing from the task prompt? That a page render in Vitest needs `prerender` (the frame streams an async part), and that `lib/private/follow-up.ts` and `WorkspacePage` were within a few lines of their lint limits.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/659
