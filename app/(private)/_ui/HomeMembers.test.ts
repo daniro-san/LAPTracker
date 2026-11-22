@@ -1,13 +1,17 @@
 // Home's and Members' check-in line (issue 585): Follow-up's two numbers, linked to Follow-up, while its
 // tab is on; Members' own count of its "Check in and Needs help" group while the tab is off (D126).
 // Invented members.
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { cardFormats } from "@/lib/private/member-card";
 import type { MemberRow, MembersView } from "@/lib/private/members";
 
-import { checkInLink } from "./HomeMembers";
+import { checkInLink, HomeMembers } from "./HomeMembers";
+
+vi.mock("@/lib/env", () => ({ getEnv: () => ({ SERVER_TZ: "Etc/GMT+2" }) }));
 
 const member = (uid: number, name: string, extra: Partial<MemberRow> = {}): MemberRow => ({
   uid,
@@ -65,5 +69,27 @@ describe("the check-in line on Home and Members (issue 585)", () => {
       text: "2 people to check in with or help",
       href: "/w/ogs/members?order=rank#ml-heading",
     });
+  });
+
+  it("says nothing about check-ins on Home before the alliance's first daily update", () => {
+    const early = {
+      ...view,
+      early: true,
+      thanks: { donors: [], activity: [], progress: [] },
+    } as unknown as MembersView;
+    const html = renderToStaticMarkup(
+      createElement(HomeMembers, {
+        slug: "ogs",
+        t,
+        language: "en",
+        view: early,
+        nudge: false,
+        switches: { board: false, writing: false, channel: null },
+        followUp: { toLook: 12, done: 4 },
+      }),
+    );
+    expect(html).toContain(t["home.notYet"]);
+    expect(html).not.toContain("Follow-up:");
+    expect(html).not.toContain("/w/ogs/follow-up");
   });
 });

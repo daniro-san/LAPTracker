@@ -102,22 +102,24 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
     new RegExp(`^Saved\\. ${isolated(name)} is off the list until Monday\\.$`),
   );
   await expect(row).toHaveCount(0);
-  // "Officer MSH · Sat, Nov 21: Talked to them": the officer and the day first.
-  const by = new RegExp(`${isolated(`Officer ${B.tag}`)} · [^:]+: Talked to them`);
+  const { uid, requestId } = (await sent).postDataJSON() as { uid: number; requestId: string };
+  // "Officer MSH · Sat, Nov 21: Talked to them": the officer and today first, the rank after the name.
+  const by = new RegExp(`${isolated(`Officer ${B.tag}`)} · ${usDay(daysAgo(0))}: Talked to them`);
   await expect(notedRow).toContainText(by);
+  await expect(notedRow).toContainText(/ · R\d/);
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, B);
   await expect(named(page, "", name)).toHaveCount(0);
   await expect(notedRow).toContainText(by);
+  // The name opens this member's own card.
   await expect(notedRow.getByRole("link", { name })).toHaveAttribute(
     "href",
-    new RegExp(`^/w/${B.slug}/members\\?m=\\d+$`),
+    `/w/${B.slug}/members?m=${uid}`,
   );
 
   // Put back, so a later run on this slot finds the member on the list again. The page offers Undo only
   // until it is left, so this is the Undo it sends, for the record the tap made; then checked on screen.
-  const { uid, requestId } = (await sent).postDataJSON() as { uid: number; requestId: string };
   const undo = await page.request.post(`/api${path}`, {
     headers: { origin: BASE_URL },
     data: { uid, action: "undo", target: requestId, requestId: randomUUID() },

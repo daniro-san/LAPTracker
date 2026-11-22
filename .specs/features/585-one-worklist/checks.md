@@ -1,12 +1,12 @@
 # One worklist (#585 batch 3) checks
 
 Build: `pnpm typecheck`; `pnpm lint`
-Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/HomeMembers.test.ts" --reporter=verbose`
+Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/HomeMembers.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
 Plan: `.specs/features/585-one-worklist/plan.md`
 
 profile: light
 
-11 checks in 1 slice built here (S1; S2-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
+12 checks in 1 slice built here (S1; S2-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
 
 ## Checks
 
@@ -33,17 +33,20 @@ Proof: run unit | ✓ lib/private/follow-up-rules.test.ts > Follow-up's week in 
 **C7** - Home and Members link Follow-up's numbers to `/w/[slug]/follow-up` while the tab is on, and show "{n} people to check in with or help" linked to the Members group while it is off (AC 6, AC 7)
 Proof: run unit | ✓ app/(private)/_ui/HomeMembers.test.ts > the check-in line on Home and Members (issue 585) > gives Follow-up's numbers, linked to Follow-up, while its tab is on, and Members' own count while it is off
 
-**C8** - After "Talked to them", the member is under "Noted this week" with "Officer MSH · {day}: Talked to them" and a link to their card, also after a reload, and leaves it after Undo; the group is "Worth a hello · n" (AC 2, AC 3, AC 4, AC 10)
+**C8** - After "Talked to them", the member is under "Noted this week" with "Officer MSH · {today}: Talked to them", the rank, and a link to their own card (`?m=<their uid>`), also after a reload, and leaves it after Undo; the group is "Worth a hello · n" (AC 2, AC 3, AC 4, AC 10)
 Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "Follow-up: Talked to them"`
 
 **C9** - Home's "Members this week" shows "Follow-up: 1 to look at" (the seed's joiner) as a link to `/w/lnk/follow-up`, and never "Everyone looks fine this week." while someone is to look at (AC 6, AC 10)
 Proof: `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance"`
 
 **C10** - At 360 × 780 the Follow-up head shows the week, "12 to look at · everyone else is fine" and "4 others already noted this week ↓" inside the first viewport, the Noted card lists the seed's 4 noted members with officer and day, and Home and Members show "Follow-up: 12 to look at · 4 noted this week" (AC 1, AC 3, AC 6)
-Proof: walk - `585-worklist/after/followup--360-light-en-fold.png`, `followup--360-light-en.png`, `home--360-light-en.png`, `members--360-light-en.png` (dark and 1280 beside them)
+Proof: walk - `585-worklist/after2/followup--360-light-en-fold.png`, `after2/noted-360-light.png`, `after2/noted-360-dark.png`, `after2/home--360-light-en.png`, `after2/members--360-light-en.png` (dark and 1280 beside them); the note under a row shows in `noted-360-light.png`
 
 **C11** - Every new key exists in EN, PT-BR and FR (AC 9)
-Proof: `pnpm exec tsx scripts/i18n-check.ts`
+Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, pt-BR and fr, and no empty value
+
+**C12** - Before the alliance's first daily update, Home says nothing about check-ins and has no Follow-up line, even with Follow-up's numbers given (AC 8; appended after the Verifier)
+Proof: run unit | ✓ app/(private)/_ui/HomeMembers.test.ts > the check-in line on Home and Members (issue 585) > says nothing about check-ins on Home before the alliance's first daily update
 
 ## Coverage
 
@@ -70,7 +73,7 @@ Proof: `pnpm exec tsx scripts/i18n-check.ts`
 ## Handoff
 
 - **Settled mid-build:** none from the owner; the plan review (panel, product, adversarial) changed "Done" to "Noted", renamed "Check in" to "Worth a hello", moved the counts first and kept the Noted card on the page with nobody noted
-- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (see the handoff)
+- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (rounds 1 and 2, returned); Verifier at cb4928d5 (sent)
 - **Boundary:** C1-C11 at the commit named in the handoff
 - **Abandoned:** "Done this week" (panel and adversarial MUST); one wide `followedUpSince` for every reader (adversarial SHOULD: the counts read uid, action and time only)
 - **Walked:** `585-worklist/after/` at 360 light and dark and 1280, EN, server clock Sat 21 Nov 16:30 ST, invented 585 seed
