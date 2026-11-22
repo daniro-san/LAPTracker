@@ -142,11 +142,12 @@ describe("Insights' counts open exactly the members they count (#678)", () => {
     );
   });
 
-  it("names who is left out of the comparison, by kind, and nobody before there are groups", async () => {
+  it("names who is left out of the comparison, by kind, never the new ones, and nobody before there are groups", async () => {
     const access = await alliance();
     const effort = insightsWords(await insightsView(db, access, NOW, ZONE), t, "en").effort;
+    // New members stay a count (newcomers "Aggregate only", owner 2026-11-20).
+    expect(effort?.based.join(" ")).toContain("Left out: 1 new, 1 on a break.");
     expect(effort?.leftOut.map((k) => [k.label, names(k.set)])).toEqual([
-      ["1 new", ["P110"]],
       ["1 on a break", ["P108"]],
     ]);
     // Two daily updates are too few for groups (D139): no names either.
@@ -177,12 +178,12 @@ describe("Insights' counts open exactly the members they count (#678)", () => {
     );
   });
 
-  it("names the members in each tenure band, its count that list's length", async () => {
+  it("names the members in each tenure band, its count that list's length, but not a band of newcomers", async () => {
     const view = await insightsView(db, await alliance(), NOW, ZONE);
     const tenure = insightsWords(view, t, "en").flow?.tenure ?? [];
-    // The date's space is a no-break one, as the page writes it.
+    // The date's space is a no-break one, as the page writes it. Under 2 weeks holds only newcomers: a count.
     expect(tenure.map((r) => [r.label.replace(/\s/gu, " "), r.value, names(r.set)])).toEqual([
-      ["Under 2 weeks", "1", ["P110"]],
+      ["Under 2 weeks", "1", null],
       [
         "Already here at our first daily update, Nov 16",
         "8",

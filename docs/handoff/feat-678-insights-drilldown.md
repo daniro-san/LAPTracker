@@ -16,12 +16,13 @@
   - `Names`: two columns at 360 px, a plum side line, 44 px `text-link` cells, `bdi` and `.name-fit`, `ph-no-capture`, and an `aria-label`.
 - **`Bars`**: a row with a set opens its names under the row.
 - **`app/(private)/_ui/InsightsEffort.tsx`** (new): `EffortCard`, moved out of `InsightsSections.tsx` for the line limit. It adds "See who" under the left-out line and "Who is in each group" before the three measures.
-- **`FlowCard`**: each week is one fold, opening "Joined (n)" and "Left (n)". Tenure rows open their members.
+- **`FlowCard`**: each week is one fold, opening "Joined (n)" and "Left (n)". Tenure bands from 30 days with us on (`NEWCOMER_DAYS`) open their members; "Under 2 weeks" and "2 weeks to a month" stay counts.
 - **`ZonesCard`**: each zone row opens its members.
   - "Add their time zone ›" and "See who ›" are now written by Members' `queryString` from `NOT_RECORDED` and `usualAt(h)`.
   - "Not recorded yet" is counted with Members' `factsToAsk`.
   - Usual hours call the new `daytimeAt` (`members-list.ts`), which Members' day and night filters also call now.
-- **`app/(private)/_ui/InsightsSetMemory.tsx`** (new, client): opening a set writes `#who-<key>` with `replaceState`. After Back, it reopens that set and the folds around it. It sends `ws_insights_set_opened` (`set` = the kind), once per kind per page view, and not for a set reopened after Back.
+- **`app/(private)/_ui/InsightsSetMemory.tsx`** (new, client): opening a set writes `#who-<key>` with `replaceState`. After Back, it reopens that set and the folds around it. It reads the fragment raw, never decoded (`openSetId`), so a stray "%" cannot stop the page. It sends `ws_drilldown_opened` (`drilldownOf`: `surface`, `kind`, `count_bucket`), once per kind per page view, and not for a set reopened after Back. `SetFold` carries `data-count` for the bucket.
+- **`lib/analytics/count-bucket.ts`** (new): `CountBucket` and `countBucket(n)` (`0`, `1`, `2_4`, `5_9`, `10_plus`), defined once for this event and the public `drilldown_opened` of #690.
 - **Copy (EN, PT-BR, FR)**:
   - new: `insights.tapHint`, `insights.effort.who`, `insights.effort.seeWho`, `insights.flow.joinedWho` and `insights.flow.leftWho`;
   - `insights.effort.fresh` split into `.one` and `.other` ("1 novo", "1 nouveau");
@@ -37,13 +38,13 @@
 - **Left out of this PR, because owner decisions say "counts only":**
   - squads (S1–S3; owner, 2026-11-20);
   - came from / went to names (D139: "never names");
-  - newcomers' names (D139: "Aggregate only").
+  - newcomers' names (D139: "Aggregate only"), including the sets that hold only newcomers: "Left out: new" and the tenure bands under 30 days (review of PR 688).
   - The owner's #678 words name only might ranges. The issue's "squads bands" example came from the orchestrator (adversarial blocker).
 - **Also left out:** the pulse (member-days, and a list there would show who did not do quests), Raid Shield (no "who was not seen"), and the KvK card's based lines.
 - **Flow weeks list moves, as the count does.** A member who left and came back in one week is named twice.
 - **Left-out names show only while the card has its groups** (3 or more daily updates), per D139's "no groups and no names".
 - **Back on a phone.** The card is a sheet there, so the first Back closes it, as anywhere on Members (D122). The second Back returns to Insights with the set open.
-- **Analytics:** add `ws_insights_set_opened` with `set` from a closed list (`effort_range`, `effort_left_out`, `flow_week`, `tenure`, `zone`). It never carries a name, a uid, a count or which range. It answers "Which Insights sets do officers open, so we know which to keep, cut, or give Copy names first?".
+- **Analytics:** add `ws_drilldown_opened`, the one desk drilldown event (review of PR 688): `surface` (`insights`; `raid_prep` and `roll_call` declared for #691), `kind` (`effort_range`, `effort_left_out`, `flow_week`, `tenure`, `zone`) and `count_bucket`. A bucket only: never a name, a uid, the exact count or which range. It answers "Which Insights sets do officers open, so we know which to keep, cut, or give Copy names first?".
 
 ## Deviations
 - The issue's inventory included squads, origins and newcomers; this PR does not open them (see Decisions; a question for the owner below).
@@ -68,6 +69,7 @@
   - `desk-insights` (zones), `desk-kvk` and `isolation` also pass at both widths.
 - Screenshots at 360×780 in EN (light and dark), PT-BR and FR were read by a designer and by PT-BR and FR copy readers. Their fixes were applied: "Joined (1)" headings, the singular "novo" / "nouveau", "Hors de tout groupe.", and one line per name instead of two.
 - `pnpm vitest related --run <changed>` (186 files, 1038 tests) and `pnpm check` (Prettier, ESLint, tsc, 1791 tests, drift, i18n) pass.
+- Review fixes (PR 688): `app/(private)/_ui/InsightsSetMemory.test.ts` (new) checks that a stray fragment (`#100%`) neither throws nor opens anything, and that the event carries exactly `surface`, `kind` and `count_bucket`, with the bucket edges. `insights-sets.test.ts` checks that "Left out: new" and the "Under 2 weeks" band have no names. `events.test.ts` type-checks that an exact count or a uid cannot ride on the event. Break check: 5 more mutants (the fragment decoded as before, the exact count sent, a bucket edge off by one, a newcomer band named, new members named), each killed.
 
 ## Open issues
 - **For the owner:** may squads (counts and might groups), "came from / went to" and newcomers open their names? Each needs an amendment to an owner decision of 2026-11-20.
@@ -75,10 +77,15 @@
 - **Parse failures.** A member row that fails to parse shows as left and joined by name. This already happened in the counts before this change.
 - **Groups of one.** With 4–7 members compared, a might group can hold one member, and the group's medians are then that member's own averages (adversarial NICE).
 - **Light-mode cue.** In light mode the plum count is close to ink, so the ▾ is the main cue to tap (designer NICE).
+- **Joined lists name newcomers.** A week's "Joined" list names who joined, who are newcomers for 30 days. The review kept it (it named only tenure and "Left out: new"); the owner's answer on newcomers should cover it too.
+- **Review follow-ups (PR 688):**
+  - finding 2: no automated test checks that the event fires once per kind per page view and not for a set reopened after Back; `drilldownOf` pins its properties, but the once-only rule rests on reading `InsightsSetMemory` (analytics is off in e2e);
+  - finding 6: `setOf` builds an `Intl.Collator` per call (30–50 per render); a collator per render would do;
+  - finding 7: `zoneCountsOf` spreads each zone's array per member (O(k²) per zone); a push would do.
 
 ## Next
 - Ask the owner the question above; if yes, open squads, origins and newcomers with the same `setOf` and `Bars` set rows.
-- Read `ws_insights_set_opened` after two weeks; add "Copy names" to the kinds that are opened, not to the effort groups (product).
+- Read `ws_drilldown_opened` (`surface` = `insights`) after two weeks; add "Copy names" to the kinds that are opened, not to the effort groups (product).
 - If group messaging comes, consider a set address on Members (`?set=`), built from the same functions.
 
 What was missing from the task prompt? That three of the inventoried sets (squads, origins, newcomers) are held as counts only by earlier owner decisions, which the owner's own words did not lift.

@@ -14,24 +14,24 @@ What is different when this ships: on Insights, every count that stands for a se
 
 Every count on Insights, the function that makes it, and what this change does with it.
 
-| #     | Card        | Count                                                                                                      | Function (today)                 | Form                                                                                                |
-| ----- | ----------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------- |
-| E1    | Effort      | members in each of the 4 might ranges (the "22 members" note on each range row, in each of the 3 measures) | `bandsOf` (`insights-rules.ts`)  | in place, once: "Who is in each range"                                                              |
-| E2    | Effort      | left out of the comparison: new, on a break, no might ("Left out: 2 new, 1 on a break")                    | `effortPart` (`insights.ts`)     | in place, only with the groups (3 daily updates or more)                                            |
-| E3    | Effort      | Quiet contributors                                                                                         | `quietOf`                        | already names: unchanged                                                                            |
-| F1    | Flow        | joined and left in each of the 5 weeks                                                                     | `movesOf` + `flowPart`           | in place, one fold per week                                                                         |
-| F2    | Flow        | came from / went to each alliance, "Not known"                                                             | `cameFrom`, `wentTo`, `tally`    | not opened: D139 "counts per alliance, never names" (owner question)                                |
-| F3    | Flow        | tenure bands (under 14, 30, 90 days, more, since our first daily update)                                   | `tenureOf`                       | in place                                                                                            |
-| F4    | Flow        | newcomers ("4 newcomers")                                                                                  | `newcomersOf`                    | not opened: D139 "Aggregate only (owner, 2026-11-20)" (owner question); the list is computed for it |
-| K1    | KvK         | "Took a heavy hit — maybe offer help"                                                                      | `eventOf` `help`                 | already names linking to the card: unchanged                                                        |
-| K2    | KvK         | "All n members counted" fold                                                                               | `eventOf` `people`               | already names: unchanged                                                                            |
-| K3    | KvK         | members not counted, members who left since (based lines)                                                  | `eventOf` `others`, `left`       | not opened (out of scope)                                                                           |
-| S1–S3 | Squads      | squads seen, freshness, strongest squad's might ranges                                                     | `squadsCoverageOf`               | not opened: owner's "counts only: no names" (2026-11-20) (owner question)                           |
-| Z1    | Time zones  | members in each offset group                                                                               | `zoneCountsOf` + `zoneGroups`    | in place                                                                                            |
-| Z2    | Time zones  | "Not recorded yet"                                                                                         | `zoneCountsOf` (members − known) | Members `?ask=timeZone` (exists, D153); the count calls Members' rule                               |
-| Z3    | Time zones  | usual hours ("27 of the 29 … 11:00–12:59 ST")                                                              | `usualHours`                     | Members `?day=H` (exists, D153); the count calls Members' rule                                      |
-| P     | Pulse       | shares of member-days (quests, coins, donations)                                                           | `pulseOf`                        | not opened (out of scope)                                                                           |
-| SH    | Raid Shield | seen with a shield per check                                                                               | `shieldPassCounts` (SQL counts)  | not opened (out of scope)                                                                           |
+| #     | Card        | Count                                                                                                      | Function (today)                 | Form                                                                                                                                |
+| ----- | ----------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| E1    | Effort      | members in each of the 4 might ranges (the "22 members" note on each range row, in each of the 3 measures) | `bandsOf` (`insights-rules.ts`)  | in place, once: "Who is in each range"                                                                                              |
+| E2    | Effort      | left out of the comparison: new, on a break, no might ("Left out: 2 new, 1 on a break")                    | `effortPart` (`insights.ts`)     | in place for on a break and no might, only with the groups (3 daily updates or more); new: a count (newcomers, owner 2026-11-20)    |
+| E3    | Effort      | Quiet contributors                                                                                         | `quietOf`                        | already names: unchanged                                                                                                            |
+| F1    | Flow        | joined and left in each of the 5 weeks                                                                     | `movesOf` + `flowPart`           | in place, one fold per week                                                                                                         |
+| F2    | Flow        | came from / went to each alliance, "Not known"                                                             | `cameFrom`, `wentTo`, `tally`    | not opened: D139 "counts per alliance, never names" (owner question)                                                                |
+| F3    | Flow        | tenure bands (under 14, 30, 90 days, more, since our first daily update)                                   | `tenureOf`                       | in place from 30 days with us (`NEWCOMER_DAYS`); "Under 2 weeks" and "2 weeks to a month" stay counts (newcomers, owner 2026-11-20) |
+| F4    | Flow        | newcomers ("4 newcomers")                                                                                  | `newcomersOf`                    | not opened: D139 "Aggregate only (owner, 2026-11-20)" (owner question); the list is computed for it                                 |
+| K1    | KvK         | "Took a heavy hit — maybe offer help"                                                                      | `eventOf` `help`                 | already names linking to the card: unchanged                                                                                        |
+| K2    | KvK         | "All n members counted" fold                                                                               | `eventOf` `people`               | already names: unchanged                                                                                                            |
+| K3    | KvK         | members not counted, members who left since (based lines)                                                  | `eventOf` `others`, `left`       | not opened (out of scope)                                                                                                           |
+| S1–S3 | Squads      | squads seen, freshness, strongest squad's might ranges                                                     | `squadsCoverageOf`               | not opened: owner's "counts only: no names" (2026-11-20) (owner question)                                                           |
+| Z1    | Time zones  | members in each offset group                                                                               | `zoneCountsOf` + `zoneGroups`    | in place                                                                                                                            |
+| Z2    | Time zones  | "Not recorded yet"                                                                                         | `zoneCountsOf` (members − known) | Members `?ask=timeZone` (exists, D153); the count calls Members' rule                                                               |
+| Z3    | Time zones  | usual hours ("27 of the 29 … 11:00–12:59 ST")                                                              | `usualHours`                     | Members `?day=H` (exists, D153); the count calls Members' rule                                                                      |
+| P     | Pulse       | shares of member-days (quests, coins, donations)                                                           | `pulseOf`                        | not opened (out of scope)                                                                                                           |
+| SH    | Raid Shield | seen with a shield per check                                                                               | `shieldPassCounts` (SQL counts)  | not opened (out of scope)                                                                                                           |
 
 **Why in place.** Members lists the same newest daily update, but it cannot rebuild E1, E2, F1, F3 or Z1 without the reads only Insights makes (36 daily updates, first-seen days, break notes): a Members filter would need a second copy of each rule or new reads on Members (D149). In place, each set comes out of the function that counts it, and the count is that list's length. Z2 and Z3 keep their D153 links, because Members already has those exact filters and is where an officer adds a time zone.
 
@@ -43,7 +43,7 @@ It reuses the reads `insightsView` already makes, the cards' `Bars` rows and the
 2. `insightsView` (exists) - each set's function returns the uids of its members instead of a number (`bandsOf`, `effortPart`, `flowPart`, `tenureOf`, `newcomersOf`, `zoneCountsOf`); the view adds `people`: uid → name for the newest daily update's members and the flow's joiners and leavers, with whether each is still a member
 3. `zoneCountsOf`, `usualHours` (exists) - "not recorded" calls Members' `factsToAsk`, and usual hours call Members' `daytimeAt`, which Members' `day=`/`night=` filter also calls (`members-list.ts`)
 4. `insightsWords` (exists), `zonesWords` (exists) - each row's number is its list's length; each row carries `set`: its kind, key and names in name order (`setOf`)
-5. `Bars` (exists, `InsightsSections.tsx`) - a row with a set is a `<details>`: the row (label, plum count ▾, bar) is the summary; the names open under it, each a 44 px link to `/w/[slug]/members?m=<uid>` (a former member: `?view=former&m=<uid>`); a small client listener keeps the open set in the address fragment and sends `ws_insights_set_opened`; out: server-rendered HTML, `ph-no-capture`
+5. `Bars` (exists, `InsightsSections.tsx`) - a row with a set is a `<details>`: the row (label, plum count ▾, bar) is the summary; the names open under it, each a 44 px link to `/w/[slug]/members?m=<uid>` (a former member: `?view=former&m=<uid>`); a small client listener keeps the open set in the address fragment and sends `ws_drilldown_opened` (surface, kind, count bucket); out: server-rendered HTML, `ph-no-capture`
 
 ```mermaid
 flowchart LR
@@ -97,11 +97,11 @@ An officer taps a count on Insights and sees exactly the members it counts.
 4. WHEN an officer taps a name THEN the system SHALL open `/w/[slug]/members?m=<uid>` with that member's card open; IF the member is not in the newest daily update (a leaver in F1) THEN the link SHALL be `/w/[slug]/members?view=former&m=<uid>`.
 5. Each name link SHALL be at least 44 px tall, a long name SHALL end in "…" on one line, and no part of a set SHALL work only on hover.
 6. The effort ranges (E1) SHALL open in one place: a "Who is in each range" list of the four ranges before the three measures, whose "22 members" notes stay plain text.
-7. WHILE the effort card has its groups (3 daily updates or more) and someone is left out (E2), the system SHALL offer one "See who" fold under the left-out line listing each kind (new, on a break, no might) with its names.
+7. WHILE the effort card has its groups (3 daily updates or more) and someone is left out (E2), the system SHALL offer one "See who" fold under the left-out line listing the members on a break and those with no might, by kind; new members stay a count ("Left out: 1 new"), with no names.
 8. Each flow week (F1) SHALL be one fold whose summary is the week and its two bars, opening "Joined" and "Left" with their names at full width; a week with nobody joining or leaving does not open.
 9. The time zone rows (Z1) SHALL open their members' names; "Not recorded yet" and usual hours SHALL keep their links to Members.
 10. Each card with sets (Effort, Membership flow, Time zones) SHALL say once "Tap a count to see who." above its first set.
-11. WHEN an officer opens a set, taps a name and goes Back THEN the system SHALL show Insights with that set open (the open set's key in the address fragment, `#who-<key>`).
+11. WHEN an officer opens a set, taps a name and goes Back THEN the system SHALL show Insights with that set open (the open set's key in the address fragment, `#who-<key>`). IF the fragment is not a set's (for example `#100%`) THEN the page SHALL load as without one.
 
 ### S2: one rule for the counts Members also filters (P1)
 
@@ -113,27 +113,27 @@ An officer taps a count on Insights and sees exactly the members it counts.
 ### S3: privacy, people first, switches, analytics (P1)
 
 16. The sets SHALL carry only uid and name; no figure SHALL appear beside a name, and no x, y, online, last_online_at, joined_at or avatar_url SHALL be read (CLAUDE.md, D71, D76, D142).
-17. Every names list SHALL be inside `ph-no-capture`; no name, uid or count SHALL reach analytics, logs or a shared cache (the page stays per request, D143).
-18. WHEN an officer opens a set THEN the system SHALL send `ws_insights_set_opened` with `set` from the closed list `effort_range`, `effort_left_out`, `flow_week`, `tenure`, `zone`, at most once per set kind per page view.
+17. Every names list SHALL be inside `ph-no-capture`; no name, uid or exact count SHALL reach analytics (a count only as a bucket), logs or a shared cache (the page stays per request, D143).
+18. WHEN an officer opens a set THEN the system SHALL send `ws_drilldown_opened` with exactly `surface` (`insights`), `kind` from the closed list `effort_range`, `effort_left_out`, `flow_week`, `tenure`, `zone`, and `count_bucket` (`0`, `1`, `2_4`, `5_9`, `10_plus`), at most once per set kind per page view.
 19. WHERE Insights is off the page SHALL go to Home as today (D126); the squads card keeps its counts only.
 20. The system SHALL add no query to the page (D149).
 
 ### S4: tests (P1)
 
-21. One PGlite test per set kind (E1, E2, F1, F3, Z1, Z2, Z3) SHALL assert, on one data set, that the names equal the members the rule selects and that the shown number equals the list's length; for Z2 and Z3 the list is Members' `keepMembers` on `membersView` rows of the same data.
+21. One PGlite test per set kind (E1, E2, F1, F3, Z1, Z2, Z3) SHALL assert, on one data set, that the names equal the members the rule selects and that the shown number equals the list's length; for Z2 and Z3 the list is Members' `keepMembers` on `membersView` rows of the same data. A tenure band under `NEWCOMER_DAYS` and "Left out: new" SHALL have no names.
 22. An e2e flow on the seed SHALL tap the top might range, see exactly the names computed from the seed (no literals), tap one name, see that member's card on Members, go Back and see the range still open.
 
 ## Out of scope
 
-| Excluded                                                              | Why                                                                                                                                                      |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Squads (S1–S3), came from / went to names (F2), newcomers' names (F4) | owner decisions say counts only (2026-11-20; D139 "never names", "Aggregate only"); the owner's #678 quote names only might ranges; asked in the handoff |
-| Pulse (P)                                                             | Pooled member-days, not a set of members; a per-day list would be a daily_* list of who did or did not do quests, a blame list (D75)                     |
-| Raid Shield check (SH)                                                | D137 and D139: alliance-level counts only, never "who was not seen"; per-member readings are not in the page's read (a new query, D149)                  |
-| KvK "not counted" and "left since" (K3)                               | small print in the based lines; who left shows in Flow's weeks; the counted members already have their fold                                              |
-| A Members filter per set (`?band=` …)                                 | would need a second copy of each rule or new reads on Members; in place is one rule                                                                      |
-| Might or any figure beside a name                                     | not shown on Insights today per member; the card has it one tap away                                                                                     |
-| A "Copy names" action                                                 | a new feature; follow-up (product, officers NICE)                                                                                                        |
+| Excluded                                                                                                                                            | Why                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Squads (S1–S3), came from / went to names (F2), newcomers' names (F4, and the sets that hold only newcomers: "Left out: new", tenure under 30 days) | owner decisions say counts only (2026-11-20; D139 "never names", "Aggregate only"); the owner's #678 quote names only might ranges; asked in the handoff |
+| Pulse (P)                                                                                                                                           | Pooled member-days, not a set of members; a per-day list would be a daily_* list of who did or did not do quests, a blame list (D75)                     |
+| Raid Shield check (SH)                                                                                                                              | D137 and D139: alliance-level counts only, never "who was not seen"; per-member readings are not in the page's read (a new query, D149)                  |
+| KvK "not counted" and "left since" (K3)                                                                                                             | small print in the based lines; who left shows in Flow's weeks; the counted members already have their fold                                              |
+| A Members filter per set (`?band=` …)                                                                                                               | would need a second copy of each rule or new reads on Members; in place is one rule                                                                      |
+| Might or any figure beside a name                                                                                                                   | not shown on Insights today per member; the card has it one tap away                                                                                     |
+| A "Copy names" action                                                                                                                               | a new feature; follow-up (product, officers NICE)                                                                                                        |
 
 ## Assumptions
 
@@ -149,7 +149,7 @@ An officer taps a count on Insights and sees exactly the members it counts.
 
 ## Analytics
 
-Add `ws_insights_set_opened`, `set`: `effort_range`, `effort_left_out`, `flow_week`, `tenure`, `zone` (plus the super properties `workspace`, `alliance`), sent on a set's `<details>` opening, at most once per kind per page view; never a name, uid, count or which range. Question: "Which Insights sets do officers open, so we know which to keep, cut or give Copy names first?" (product strategy). A name tap stays a Members page view after Insights (query strings stripped, `lib/analytics/sanitise.ts`).
+Add `ws_drilldown_opened`, the one desk drilldown event (review of PR 688): `surface` (`insights`; `raid_prep` and `roll_call` declared for #691), `kind` (`effort_range`, `effort_left_out`, `flow_week`, `tenure`, `zone`) and `count_bucket` (`0`, `1`, `2_4`, `5_9`, `10_plus`, `countBucket` in `lib/analytics/count-bucket.ts`, shared with the public `drilldown_opened` of #690), plus the super properties `workspace`, `alliance`. Sent on a set's `<details>` opening, at most once per kind per page view; a bucket only, never a name, uid, exact count or which range. Question: "Which Insights sets do officers open, so we know which to keep, cut or give Copy names first?" (product strategy). A name tap stays a Members page view after Insights (query strings stripped, `lib/analytics/sanitise.ts`).
 
 ## Differences from the source
 
@@ -174,7 +174,7 @@ Adopted every MUST: effort names once in "Who is in each range"; a flow week is 
 
 ### (c) Product strategy: approve with changes
 
-Adopted: one effort fold; leave F2 and squads out rather than reverse owner decisions; Back keeps the list open as a criterion and in e2e; one event, `ws_insights_set_opened`. S2/S3 cut with squads. Follow-ups: Copy names (not on effort sets), a set address on Members if group messaging comes, read the event after two weeks.
+Adopted: one effort fold; leave F2 and squads out rather than reverse owner decisions; Back keeps the list open as a criterion and in e2e; one event (now the shared `ws_drilldown_opened`, review of PR 688). S2/S3 cut with squads. Follow-ups: Copy names (not on effort sets), a set address on Members if group messaging comes, read the event after two weeks.
 
 ### (d) Adversarial: one blocker, adopted
 

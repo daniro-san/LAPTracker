@@ -11,7 +11,14 @@ import { NONE } from "./fact-text";
 import type { InsightsView } from "./insights";
 import { effortWords } from "./insights-effort-words";
 import { compact, counted, percent, type Formats } from "./insights-format";
-import { TENURE_DAYS, type Median, type Place, type Pulse, type Share } from "./insights-rules";
+import {
+  NEWCOMER_DAYS,
+  TENURE_DAYS,
+  type Median,
+  type Place,
+  type Pulse,
+  type Share,
+} from "./insights-rules";
 import { setOf, type MemberSet } from "./insights-sets";
 
 /** One bar: its label, the number beside it, its length (0–1, null: no bar) and a muted note. */
@@ -181,6 +188,55 @@ function placeRows(
   }));
 }
 
+/**
+ * How long members have been with us, a row per band. A band that starts at or past the days our records
+ * cover cannot hold anyone yet: left out. `from` is a band's fewest days with us: a band that can hold
+ * newcomers (under NEWCOMER_DAYS) stays a count, as newcomers are "Aggregate only" (owner, 2026-11-20)
+ * until the owner says otherwise (#678).
+ */
+function tenureRows(
+  flow: NonNullable<InsightsView["flow"]>,
+  people: InsightsView["people"],
+  f: Formats,
+): BarRow[] {
+  const { t, language } = f;
+  const tenure = flow.tenure;
+  const members =
+    tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
+  const row = (label: string, uids: number[], key: string, from: number): BarRow => ({
+    label,
+    value: String(uids.length),
+    share: members > 0 ? uids.length / members : 0,
+    set: from >= NEWCOMER_DAYS ? setOf("tenure", key, uids, people, language) : null,
+  });
+  const over = TENURE_DAYS.at(-1) ?? 0;
+  return [
+    ...TENURE_DAYS.flatMap((_, i) => {
+      const from = TENURE_DAYS[i - 1] ?? 0;
+      return from < tenure.span
+        ? [
+            row(
+              t[`insights.tenure.${i}` as WorkspaceKey],
+              tenure.under[i] ?? [],
+              `tenure-${i}`,
+              from,
+            ),
+          ]
+        : [];
+    }),
+    ...(over < tenure.span
+      ? [row(t["insights.tenure.over"], tenure.over, "tenure-over", over)]
+      : []),
+    // Here at our first daily update: never newcomers (they are first seen after it).
+    row(
+      fill(t["insights.tenure.start"], { date: calendarDates(language).dayMonth(flow.firstRead) }),
+      tenure.sinceStart,
+      "tenure-start",
+      Infinity,
+    ),
+  ];
+}
+
 function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const flow = v.flow;
   if (!flow) return null;
@@ -188,15 +244,6 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const dates = calendarDates(language);
   const top = Math.max(1, ...flow.weeks.flatMap((w) => [w.joined.length, w.left.length]));
   const last = flow.weeks.length - 1;
-  const tenure = flow.tenure;
-  const members =
-    tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
-  const tenureRow = (label: string, uids: number[], key: string): BarRow => ({
-    label,
-    value: String(uids.length),
-    share: members > 0 ? uids.length / members : 0,
-    set: setOf("tenure", key, uids, v.people, language),
-  });
   const nc = flow.newcomers;
   const newcomers =
     !nc || nc.uids.length === 0
@@ -235,28 +282,7 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
     })),
     came: placeRows(flow.cameFrom, v.labels, t),
     went: placeRows(flow.wentTo, v.labels, t),
-    // A band that starts at or past the days our records cover cannot hold anyone yet: left out.
-    tenure: [
-      ...TENURE_DAYS.flatMap((_, i) =>
-        (TENURE_DAYS[i - 1] ?? 0) < tenure.span
-          ? [
-              tenureRow(
-                t[`insights.tenure.${i}` as WorkspaceKey],
-                tenure.under[i] ?? [],
-                `tenure-${i}`,
-              ),
-            ]
-          : [],
-      ),
-      ...((TENURE_DAYS.at(-1) ?? 0) < tenure.span
-        ? [tenureRow(t["insights.tenure.over"], tenure.over, "tenure-over")]
-        : []),
-      tenureRow(
-        fill(t["insights.tenure.start"], { date: dates.dayMonth(flow.firstRead) }),
-        tenure.sinceStart,
-        "tenure-start",
-      ),
-    ],
+    tenure: tenureRows(flow, v.people, f),
     newcomers,
   };
 }

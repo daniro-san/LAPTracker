@@ -82,7 +82,12 @@ export function ZonesCard(props: {
               (r) =>
                 r.set && (
                   <li key={r.label} className="border-t border-rule">
-                    <SetFold kind="zone" setKey={r.set.key} summary={<RowBody r={r} />}>
+                    <SetFold
+                      kind="zone"
+                      setKey={r.set.key}
+                      count={r.set.people.length}
+                      summary={<RowBody r={r} />}
+                    >
                       <Names set={r.set} slug={slug} label={`${r.label}: ${r.value}`} />
                     </SetFold>
                   </li>

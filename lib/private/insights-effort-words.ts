@@ -67,11 +67,14 @@ export function effortWords(
   });
   return {
     based,
-    // With too few daily updates there are no groups and so no names (D139).
-    leftOut: (e.bands.length > 0 ? left : []).map(([label, uids], i) => ({
-      label,
-      set: setOf("effort_left_out", `left-${i}`, uids, people, language) as MemberSet,
-    })),
+    // With too few daily updates there are no groups and so no names (D139). New members stay a count:
+    // newcomers are "Aggregate only" (owner, 2026-11-20) until the owner says otherwise (#678).
+    leftOut: (e.bands.length > 0 ? left : [])
+      .filter(([, uids]) => uids !== e.leftOut.fresh)
+      .map(([label, uids], i) => ({
+        label,
+        set: setOf("effort_left_out", `left-${i}`, uids, people, language) as MemberSet,
+      })),
     ranges: e.bands.map((b, i) => ({
       label: rangeLabel(b),
       value: fill(t["insights.effort.members"], { n: b.uids.length }),

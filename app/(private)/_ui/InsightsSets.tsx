@@ -44,17 +44,24 @@ export function Names({ set, slug, label }: { set: MemberSet; slug: string; labe
 }
 
 /**
- * A count that opens its members in place: its id is the open set's address fragment (`#who-<key>`) and
- * `data-set` its analytics kind, both read by `InsightsSetMemory`.
+ * A count that opens its members in place: its id is the open set's address fragment (`#who-<key>`),
+ * `data-set` its analytics kind and `data-count` how many it opens (sent only as a bucket), all read by
+ * `InsightsSetMemory`.
  */
 export function SetFold(props: {
   kind: MemberSet["kind"];
   setKey: string;
+  count: number;
   summary: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <details id={`who-${props.setKey}`} data-set={props.kind} className="group/set">
+    <details
+      id={`who-${props.setKey}`}
+      data-set={props.kind}
+      data-count={props.count}
+      className="group/set"
+    >
       <summary className="tint-button flex min-h-11 cursor-pointer list-none flex-col justify-center py-1.5 focus-visible:outline-plum [&::-webkit-details-marker]:hidden">
         {props.summary}
       </summary>

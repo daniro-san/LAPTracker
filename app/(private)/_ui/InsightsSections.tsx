@@ -103,6 +103,7 @@ export function Bars({
             <SetFold
               kind={r.set.kind}
               setKey={r.set.key}
+              count={r.set.people.length}
               summary={<RowBody r={r} noData={noData} tone={tone} bare={bare} />}
             >
               <Names set={r.set} slug={slug} label={`${r.label}: ${r.value}`} />
@@ -229,6 +230,7 @@ export function FlowCard({
               <SetFold
                 kind="flow_week"
                 setKey={`week-${i}`}
+                count={(w.joined.set?.people.length ?? 0) + (w.left.set?.people.length ?? 0)}
                 summary={<WeekBars w={w} noData={noData} />}
               >
                 {(

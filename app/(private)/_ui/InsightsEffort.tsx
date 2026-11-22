@@ -28,6 +28,7 @@ export function EffortCard(props: {
           <SetFold
             kind="effort_left_out"
             setKey="left-out"
+            count={effort.leftOut.reduce((n, k) => n + k.set.people.length, 0)}
             summary={
               <span className="text-body-sm font-semibold text-plum">
                 {t["insights.effort.seeWho"]}
