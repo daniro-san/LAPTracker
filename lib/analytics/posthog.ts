@@ -25,6 +25,12 @@ import { WORKSPACE_PROPERTIES } from "./events";
 import { COOKIELESS_PREFIX, POSTHOG_UI_HOST } from "./region";
 import { areaOf, MASK_CLASS, sanitiseEvent, withoutQuery } from "./sanitise";
 
+/**
+ * The query keys that name a person: `m`, the member card open on the desk (a uid, D122), and `q`, a typed
+ * name (`/players?q=`, the desk's Members search). The others are filters with fixed values.
+ */
+export const PERSONAL_QUERY_KEYS = ["m", "q"];
+
 /** Share of public page loads whose session is recorded; the free plan's recordings go to the workspace first. */
 export const PUBLIC_REPLAY_SAMPLE = 0.25;
 
@@ -70,6 +76,10 @@ export function startPostHog(key: string): PostHog {
     disableDeviceModel: true,
     save_campaign_params: false,
     disable_capture_url_hashes: true,
+    // before_send drops every query string from events, but posthog-js reads the URL and referrer before it
+    // and keeps the first ones in its own storage (getPersonInfo): there it masks its click ids and these.
+    mask_personal_data_properties: true,
+    custom_personal_data_properties: PERSONAL_QUERY_KEYS,
     capture_pageview: "history_change",
     autocapture: { url_ignorelist: [NO_AUTOCAPTURE] },
     capture_exceptions: {

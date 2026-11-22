@@ -39,7 +39,13 @@ type Shown =
 function readMe(
   slug: string,
   jar: CookieReader,
-  at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
+  at: {
+    now: Date;
+    zone: string;
+    endRead: string;
+    language: WorkspaceLanguage;
+    t: WorkspaceDictionary;
+  },
 ) {
   return withPageDb(async (db) => {
     const board = await requireBoard(db, slug, jar, at.now);
@@ -124,7 +130,8 @@ export default async function MePage({ params }: { params: Promise<{ slug: strin
   const jar = await cookies();
   const now = new Date();
   const { language, t } = await workspaceWords();
-  const at = { now, zone: getEnv().SERVER_TZ, language, t };
+  const env = getEnv();
+  const at = { now, zone: env.SERVER_TZ, endRead: env.SNAPSHOT_AFTER, language, t };
   const { board, shown } = await readMe(slug, jar, at);
   if (!board.ok) {
     refuse(slug, board.reason, `/w/${slug}/board/me`);

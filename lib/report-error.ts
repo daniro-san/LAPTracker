@@ -1,11 +1,13 @@
 // An error as it leaves our code (D61, D115's 2026-11-21 amendment): its detail after redact() (secrets and,
 // through redactPrivate, private roster values), and PostHog's `$exception`. Apart from lib/app-errors.ts,
 // which adds the app_errors row and the admin alert, so lib/push.ts (and through it lib/private) can report a
-// caught error without reaching lib/notify (D71). Imports only lib/analytics, lib/app-context and lib/redact.
+// caught error without reaching lib/notify (D71). Imports only lib/analytics, lib/env, lib/redact and
+// lib/app-context's type: lib/app-context imports this module for AppContext.report, so no value comes back.
 import { analyticsKey } from "./analytics/events";
 import { areaOf, scrubMessage } from "./analytics/sanitise";
 import { captureServer, sendLater, type EventWorkspace } from "./analytics/server";
-import { secretsOf, type AppContext } from "./app-context";
+import type { AppContext } from "./app-context";
+import { secretsOf } from "./env";
 import { redact } from "./redact";
 
 const MESSAGE_CHARS = 500;
@@ -100,6 +102,23 @@ export function sendException(
 }
 
 /**
+ * All a lib/private report says besides the error (D71): the module (`route`) and its code (`kind`), each from
+ * a closed list, so no name, id, value or user's text can be put in. A new catch adds its pair here.
+ */
+export type ReportContext =
+  | { route: "lib/private/read-status.ts"; kind: "w.read_status.failed" }
+  | { route: "lib/private/pending-members.ts"; kind: "w.pending.match_failed" }
+  | {
+      route: "lib/private/import-discord.ts";
+      kind: "w.import.discord_failed" | "w.import.settle_failed";
+    }
+  | { route: "lib/private/discord-webhooks.ts"; kind: "w.webhook.open_failed" }
+  | { route: "lib/private/invite-steps.ts"; kind: "w.invite.commands_failed" };
+
+/** `AppContext.report`: how lib/private reports an error it caught and carried on from. */
+export type Report = (error: unknown, context: ReportContext) => void;
+
+/**
  * An error our code caught and carried on from (a daily job, a run's crash, a notification's read, a push):
  * PostHog only, `handled: true`, no app_errors row and no alert, no await. `kind` is the code its log line
  * has. Never for an error that is thrown on, which reaches recordAppError through withContext or
@@ -111,3 +130,9 @@ export function reportError(
 ): void {
   sendException(ctx, { ...entry, handled: true }, appErrorDetail(entry.error, secretsOf(ctx.env)));
 }
+
+/** `AppContext.report` over `ctx`'s env and fetch, for getAppContext and the tests' context alike. */
+export const reporter =
+  (ctx: Pick<AppContext, "env" | "fetch">): Report =>
+  (error, { route, kind }) =>
+    reportError(ctx, { route, kind, error });

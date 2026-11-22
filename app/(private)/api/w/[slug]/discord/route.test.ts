@@ -125,6 +125,9 @@ const access = async () => {
   return a;
 };
 
+/** What a publishing route hands noticeChannels from its AppContext. */
+const opener = (env = ENV, report: AppContext["report"] = () => undefined) => ({ env, report });
+
 describe("POST /api/w/[slug]/discord (D129)", () => {
   it("Check: says the bot is missing, then registers only the commands on, in this server only", async () => {
     const missing = await post({ action: "check" });
@@ -180,15 +183,15 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
   });
 
   it("posts to the saved webhook over the site's, and back to the site's after Remove", async () => {
-    expect((await noticeChannels(db, await access(), ENV)).members?.url).toBe(SITE);
+    expect((await noticeChannels(db, await access(), opener())).members?.url).toBe(SITE);
     await save(OURS);
-    expect((await noticeChannels(db, await access(), ENV)).members).toEqual({
+    expect((await noticeChannels(db, await access(), opener())).members).toEqual({
       url: OURS,
       name: "town-square",
       forum: false,
     });
     await post({ action: "remove_webhook", channel: "members" });
-    expect((await noticeChannels(db, await access(), ENV)).members?.url).toBe(SITE);
+    expect((await noticeChannels(db, await access(), opener())).members?.url).toBe(SITE);
   });
 
   it("sends one test message that pings no one, and logs no webhook", async () => {
@@ -247,6 +250,25 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
     const views = await webhookViews(db, await access(), rotated);
     expect(views.find((v) => v.channel === "members")?.state).toBe("reenter");
     // The site's variable has a members' webhook, and it is not used in place of the saved one.
-    expect((await noticeChannels(db, await access(), rotated)).members).toBeNull();
+    expect((await noticeChannels(db, await access(), opener(rotated))).members).toBeNull();
+  });
+
+  it("reports a saved webhook that no longer opens with where and its code only, and posts nowhere (D71)", async () => {
+    await save(OURS);
+    // The row changed under the same master key: its tag no longer authenticates.
+    const [row] = await db.select().from(workspaceWebhooks);
+    const flipped = Buffer.from(row?.ciphertext ?? "", "base64").map((b, i) =>
+      i === 0 ? b ^ 1 : b,
+    );
+    await db.update(workspaceWebhooks).set({ ciphertext: Buffer.from(flipped).toString("base64") });
+    const report = vi.fn<AppContext["report"]>();
+    expect((await noticeChannels(db, await access(), opener(ENV, report))).members).toBeNull();
+    expect(report.mock.calls).toEqual([
+      [
+        expect.any(Error),
+        { route: "lib/private/discord-webhooks.ts", kind: "w.webhook.open_failed" },
+      ],
+    ]);
+    expect(Object.keys(report.mock.calls[0]?.[1] ?? {}).sort()).toEqual(["kind", "route"]);
   });
 });

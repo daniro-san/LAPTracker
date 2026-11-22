@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { flagsOf } from "./flags";
-
 // Next's data cache needs a Next request; here the read runs every time.
 vi.mock("next/cache", () => ({ unstable_cache: <T>(read: T) => read }));
 
@@ -9,12 +7,14 @@ const KEY = { POSTHOG_KEY: "phc_test" };
 const answer = (flags: Record<string, { enabled: boolean }>) =>
   new Response(JSON.stringify({ flags, errorsWhileComputingFlags: false }), { status: 200 });
 
-// A failed read is remembered for 30 s on the module: each test starts an hour after the last one, past it.
-let hour = Date.UTC(2026, 10, 17);
-beforeEach(() => {
-  vi.useFakeTimers({ toFake: ["Date"] });
-  hour += 3_600_000;
-  vi.setSystemTime(hour);
+const NOW = new Date("2026-11-17T12:00:00Z").getTime(); // Tue 10:00 ST
+
+// A failed read is remembered for 30 s on the module: each test gets a fresh module, at NOW.
+let flagsOf: (typeof import("./flags"))["flagsOf"];
+beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ["Date"], now: NOW });
+  vi.resetModules();
+  ({ flagsOf } = await import("./flags"));
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -37,12 +37,13 @@ describe("feature flags (D91)", () => {
   });
 
   it("is off for every flag on an error status, a failed request or a body that is not JSON", async () => {
-    for (const reply of [
+    for (const [i, reply] of [
       async () => new Response("{}", { status: 500 }),
       async () => Promise.reject(new TypeError("fetch failed")),
       async () => new Response("<html>", { status: 200 }),
-    ]) {
-      vi.setSystemTime(Date.now() + 31_000);
+    ].entries()) {
+      // Each one past the 30 s the last failure is remembered for.
+      vi.setSystemTime(NOW + i * 31_000);
       const posthog = vi.fn(reply);
       vi.stubGlobal("fetch", posthog);
       expect((await flagsOf(KEY)).size).toBe(0);
@@ -63,7 +64,7 @@ describe("feature flags (D91)", () => {
     vi.stubGlobal("fetch", posthog);
     expect((await flagsOf(KEY)).size).toBe(0);
     expect(posthog).toHaveBeenCalledTimes(1);
-    vi.setSystemTime(Date.now() + 31_000);
+    vi.setSystemTime(NOW + 31_000);
     expect((await flagsOf(KEY)).has("war-turnout")).toBe(true);
   });
 

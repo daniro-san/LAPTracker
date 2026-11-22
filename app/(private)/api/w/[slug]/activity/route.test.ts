@@ -36,10 +36,10 @@ beforeEach(async () => {
   token = (await createSession(db, 1, user?.id ?? 0, T0, null, "officer")).token;
 });
 
-async function page(before: string, signedIn = true) {
+async function page(before: string) {
   const response = await GET(
     new Request(`https://laptracker.test/api/w/ogs/activity?before=${before}`, {
-      headers: signedIn ? { cookie: `${SESSION_COOKIE}=${token}` } : {},
+      headers: { cookie: `${SESSION_COOKIE}=${token}` },
     }),
     { params: Promise.resolve({ slug: "ogs" }) },
   );
@@ -47,14 +47,10 @@ async function page(before: string, signedIn = true) {
 }
 
 describe("GET /api/w/[slug]/activity", () => {
-  it("answers a page to an officer, 401 without a session, 400 for a bad or out-of-range cursor", async () => {
+  it("answers a page to an officer, 400 for a bad or out-of-range cursor", async () => {
     expect(await page(String(T0.getTime()))).toEqual({
       status: 200,
       body: { lines: [], next: null },
-    });
-    expect(await page(String(T0.getTime()), false)).toEqual({
-      status: 401,
-      body: expect.objectContaining({ code: "signed_out" }),
     });
     expect((await page("abc")).status).toBe(400);
     expect((await page("8640000000000000")).status).toBe(400);

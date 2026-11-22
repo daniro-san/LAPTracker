@@ -311,7 +311,7 @@ export default async function WorkspacePage({
         t={t}
         language={language}
         items={items}
-        next={nextItems(placed, slug, { t, language, zone })}
+        next={nextItems(placed, slug, { t, language, zone, endRead: getEnv().SNAPSHOT_AFTER })}
         view={view}
         toMatch={unmatched}
         desk={desk}

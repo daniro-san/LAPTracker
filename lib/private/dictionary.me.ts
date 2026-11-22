@@ -53,6 +53,10 @@ export const meEn = {
   "me.caravan.vip": "Alliance Caravan, {day}: you ride as VIP.",
   "me.caravan.guardian": "Alliance Caravan, {day}: you are the Guardian.",
   "me.mark": "{title}, {day} · your mark: “{mark}”",
+  "me.step.shield.reset": "Next step: turn on your shield before the reset (00:00 ST).",
+  "me.step.shield.kvk": "Next step: turn on your shield before KvK starts at {time} ST.",
+  "me.step.wall.reset": "Next step: take your squads off the wall before the reset (00:00 ST).",
+  "me.step.wall.kvk": "Next step: take your squads off the wall before KvK starts at {time} ST.",
   "me.review.line": "{discord} says they are {player}",
   "me.review.lead":
     "Asked to see their own page. Approve only when you know it is them: anyone can change their Discord nickname.",
@@ -148,6 +152,12 @@ export const mePt: MeWords = {
   "me.caravan.vip": "Alliance Caravan, {day}: você vai como VIP.",
   "me.caravan.guardian": "Alliance Caravan, {day}: você é o Guardian.",
   "me.mark": "{title}, {day} · sua marca: “{mark}”",
+  "me.step.shield.reset": "Próximo passo: ligue o seu escudo antes do reset (00:00 ST).",
+  "me.step.shield.kvk": "Próximo passo: ligue o seu escudo antes do KvK começar às {time} ST.",
+  "me.step.wall.reset":
+    "Próximo passo: tire os seus esquadrões da muralha antes do reset (00:00 ST).",
+  "me.step.wall.kvk":
+    "Próximo passo: tire os seus esquadrões da muralha antes do KvK começar às {time} ST.",
   "me.review.line": "{discord} diz que é {player}",
   "me.review.lead":
     "Pediu para ver a própria página. Aprove só quando souber que é a pessoa: qualquer um pode mudar o apelido no Discord.",
@@ -221,6 +231,12 @@ export const meFr: MeWords = {
   "me.caravan.vip": "Alliance Caravan, {day} : vous voyagez en VIP.",
   "me.caravan.guardian": "Alliance Caravan, {day} : vous êtes le Guardian.",
   "me.mark": "{title}, {day} · votre marque : « {mark} »",
+  "me.step.shield.reset": "Prochaine étape : activez votre bouclier avant le reset (00:00 ST).",
+  "me.step.shield.kvk":
+    "Prochaine étape : activez votre bouclier avant le début du KvK à {time} ST.",
+  "me.step.wall.reset": "Prochaine étape : retirez vos escouades du mur avant le reset (00:00 ST).",
+  "me.step.wall.kvk":
+    "Prochaine étape : retirez vos escouades du mur avant le début du KvK à {time} ST.",
   "me.review.line": "{discord} dit être {player}",
   "me.review.lead":
     "Demande à voir sa propre page. N’approuvez que si vous savez que c’est bien la personne : chacun peut changer son surnom Discord.",

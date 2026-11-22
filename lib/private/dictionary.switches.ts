@@ -4,7 +4,7 @@
 export const switchesEn = {
   "switches.head": "Features",
   "switches.lead":
-    "Turn on what your alliance uses. Turning one off hides it for every officer. Nothing is deleted: turn it on again and everything is back.",
+    "Turn on what your alliance uses, then tap Save. Turning one off hides it for every officer. Nothing is deleted: turn it on again and everything is back.",
   "switches.estimate":
     "Tracker calls with your choices: about {daily} a day, of the 1,000 calls a key has each day. Counted for {members} members.",
   "switches.estimatePeak":
@@ -37,12 +37,15 @@ export const switchesEn = {
   "switches.name.export": "Download our data",
   "switches.rateLimited": "Too many changes just now. Wait 15 minutes, then try again.",
   "switches.failed": "That didn’t save. Try again.",
+  // Issue 585: Save stopped at a switch the site's owner turned off meanwhile.
+  "switches.notAllowed":
+    "Save stopped at {name}: the site’s owner no longer allows it, so it is gone from the list. The changes after it are not saved yet: tap Save again.",
 };
 
 export const switchesPt: typeof switchesEn = {
   "switches.head": "Recursos",
   "switches.lead":
-    "Ligue o que a sua aliança usa. Se você desligar um recurso, ele some para todos os oficiais. Nada é apagado: ligue de novo e tudo volta.",
+    "Ligue o que a sua aliança usa e toque em Salvar. Se você desligar um recurso, ele some para todos os oficiais. Nada é apagado: ligue de novo e tudo volta.",
   "switches.estimate":
     "Chamadas ao tracker com as suas escolhas: cerca de {daily} por dia, das 1.000 chamadas que uma chave tem por dia. Contado para {members} membros.",
   "switches.estimatePeak":
@@ -76,12 +79,14 @@ export const switchesPt: typeof switchesEn = {
   "switches.name.export": "Baixar nossos dados",
   "switches.rateLimited": "Mudanças demais agora. Espere 15 minutos e tente de novo.",
   "switches.failed": "Não foi salvo. Tente de novo.",
+  "switches.notAllowed":
+    "O salvamento parou em {name}: o dono do site não permite mais esse recurso, então ele saiu da lista. As mudanças depois dele ainda não foram salvas: toque em Salvar de novo.",
 };
 
 export const switchesFr: typeof switchesEn = {
   "switches.head": "Fonctions",
   "switches.lead":
-    "Activez ce que votre alliance utilise. Désactiver une fonction la cache pour tous les officiers. Rien n’est supprimé : réactivez-la et tout revient.",
+    "Activez ce que votre alliance utilise, puis touchez Enregistrer. Désactiver une fonction la cache pour tous les officiers. Rien n’est supprimé : réactivez-la et tout revient.",
   "switches.estimate":
     "Appels au tracker avec vos choix : environ {daily} par jour, sur les 1 000 appels qu’une clé a chaque jour. Compté pour {members} membres.",
   "switches.estimatePeak":
@@ -116,4 +121,6 @@ export const switchesFr: typeof switchesEn = {
   "switches.rateLimited":
     "Trop de changements pour l’instant. Attendez 15 minutes, puis réessayez.",
   "switches.failed": "Ce n’est pas enregistré. Réessayez.",
+  "switches.notAllowed":
+    "L’enregistrement s’est arrêté à {name} : le propriétaire du site ne l’autorise plus, elle a donc quitté la liste. Les modifications suivantes ne sont pas encore enregistrées : touchez Enregistrer à nouveau.",
 };

@@ -5,11 +5,10 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { ADMIN_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
-import { recordAppError } from "./app-errors";
 import { minutes, T0 } from "./collector.test-helpers";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { claimAppErrorAlert, insertAppError, purgeOldAppErrors } from "./repo/app-errors";
-import { reportError } from "./report-error";
+import { reportError, type Report } from "./report-error";
 import { appErrors, workspaces } from "./schema";
 
 const db = await openTestDb();
@@ -27,7 +26,11 @@ const exceptions = (posts: { url: string; body: Record<string, unknown> }[]) =>
     .filter((e) => e.event === "$exception")
     .map((e) => e.properties);
 
+// The one-row-a-second limiter lives on the module, per instance: each test gets a fresh instance.
+let recordAppError: (typeof import("./app-errors"))["recordAppError"];
 beforeEach(async () => {
+  vi.resetModules();
+  ({ recordAppError } = await import("./app-errors"));
   await truncateAll(db);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -86,8 +89,7 @@ describe("app-error alert", () => {
   it("stores the request's slug in a slug's shape only, for /admin's errors by workspace (D144)", async () => {
     const { ctx, clock } = testContext(db);
     for (const [i, slug] of ["ogs", "Not A Slug!", undefined].entries()) {
-      // After the other tests' clocks: the per-instance limiter keeps the last insert's time.
-      clock.now = new Date(T0.getTime() + 24 * HOUR + i * minutes(5));
+      clock.now = new Date(T0.getTime() + i * minutes(5));
       await recordAppError(ctx, {
         route: "/w/[slug]/thefts",
         kind: "render",
@@ -104,8 +106,7 @@ describe("app-error alert", () => {
   });
 
   it("stores, alerts and sends to PostHog an error with its private roster values replaced (D115, 2026-11-21)", async () => {
-    const { ctx, clock, posts } = testContext(db, ON);
-    clock.now = new Date(T0.getTime() + 48 * HOUR);
+    const { ctx, posts } = testContext(db, ON);
     const parsed = z.object({ x: z.number() }).safeParse({ x: "98765" }, { reportInput: true });
     const error = new Error(
       [
@@ -148,8 +149,7 @@ describe("app-error alert", () => {
   });
 
   it("keeps a failed query's parameters (an officer's text) out of the row, the alert and PostHog", async () => {
-    const { ctx, clock, posts } = testContext(db, ON);
-    clock.now = new Date(T0.getTime() + 72 * HOUR);
+    const { ctx, posts } = testContext(db, ON);
     // An officer's text of two lines: the second starts like a stack frame.
     const text = "Invented Bramble wrote this notice\nat 8pm in the hall";
     // A real Drizzle failure: "Failed query: … values (now(), $1, null)\nparams: <text>".
@@ -243,5 +243,27 @@ describe("one private-field redactor on every error's way out (D115, 2026-11-21)
       expect(record).toContain(call);
     expect(body("./report-error.ts", "reportError")).toContain("appErrorDetail(");
     expect(body("./report-error.ts", "sendException")).toContain("message: scrubMessage(");
+  });
+
+  // The type is the guard: `pnpm typecheck` fails if any line marked @ts-expect-error stops being an error.
+  it("lib/private's report context takes only a listed module and its own code, nothing else (D71)", () => {
+    const report = vi.fn<Report>();
+    const name: string = "Invented Bramble";
+    const error = new Error("boom");
+    // @ts-expect-error a free-string kind could carry a member's name
+    report(error, { route: "lib/private/read-status.ts", kind: `w.read_status.failed ${name}` });
+    report(error, {
+      route: "lib/private/read-status.ts",
+      kind: "w.read_status.failed",
+      // @ts-expect-error an extra key could carry the workspace or a member
+      slug: "ogs",
+    });
+    // @ts-expect-error a code that belongs to another module
+    report(error, { route: "lib/private/read-status.ts", kind: "w.webhook.open_failed" });
+    report(error, { route: "lib/private/read-status.ts", kind: "w.read_status.failed" });
+    expect(report.mock.calls.at(-1)?.[1]).toEqual({
+      route: "lib/private/read-status.ts",
+      kind: "w.read_status.failed",
+    });
   });
 });

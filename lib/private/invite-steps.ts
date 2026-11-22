@@ -5,6 +5,7 @@
 // her account, never a workspace's that exists (D126), and the alliance is always the invite's own.
 import { z } from "zod";
 
+import type { AppContext } from "../app-context";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import {
@@ -64,6 +65,8 @@ export type StepDeps = {
   >;
   fetch: typeof fetch;
   now: Date;
+  /** AppContext's: a failure the Desk is still made after reaches Error Tracking. */
+  report: AppContext["report"];
 };
 
 export type StepCode =
@@ -228,7 +231,13 @@ async function finish(
   if (!made.ok) return no(made.code);
   await markBotSeen(db, made.workspaceId, deps.now);
   // The commands that are on (D126 defaults) in her server only; a refusal leaves Check in Alliance settings.
-  await syncCommands(db, deps, { only: [made.workspaceId] }).catch(() => null);
+  // A throw (not a refusal, which syncCommands returns) is reported and the Desk is still made.
+  await syncCommands(db, deps, { only: [made.workspaceId] }).catch((error: unknown) =>
+    deps.report(error, {
+      route: "lib/private/invite-steps.ts",
+      kind: "w.invite.commands_failed",
+    }),
+  );
   const session = await createSession(db, made.workspaceId, made.userId, deps.now, null, "officer");
   privateLog("w.invite.used", { invite: row.id, workspace: made.workspaceId });
   return {

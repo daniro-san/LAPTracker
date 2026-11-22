@@ -3,16 +3,14 @@ import { describe, expect, it } from "vitest";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { awayOn, awayUntil } from "./fact-fields";
 import {
-  ADDED_KINDS,
   callOrder,
   registrationOpen,
-  REST,
   tally,
   teamOrder,
   toggled,
   type Mark,
 } from "./roll-call-rules";
-import { tallyParts } from "./roll-call-words";
+import { restWords, tallyParts } from "./roll-call-words";
 
 const marks = (pairs: [number, Mark | null][]) => new Map(pairs);
 /** The server's clock (SERVER_TZ), UTC−2. */
@@ -34,23 +32,21 @@ describe("roll call rules (issue 298)", () => {
     expect(t).toEqual({ yes: 1, no: 1, assumed: 1, notSet: 2, away: 1 });
   });
 
-  it("fills the rest per kind (Cheese Trap took part, none for plunders), and a second tap of the same button clears", () => {
-    expect(REST).toEqual({
-      shield: "assumed",
-      elixir: "no",
-      raid: "yes",
-      plunder: null,
-      cheese: "yes",
-    });
+  it("offers each kind's rest button (Cheese Trap took part, none for plunders), and a second tap of the same button clears", () => {
+    const t = WORKSPACE_DICTIONARIES.en;
+    const kinds = ["shield", "elixir", "raid", "plunder", "cheese"] as const;
+    expect(kinds.map((k) => restWords(k, t)?.button ?? null)).toEqual([
+      "Mark the other {n} as “No problem seen”",
+      "Mark the other {n} as “Did not join”",
+      "Mark the other {n} as “Took part”",
+      null,
+      "Mark the other {n} as “Took part”",
+    ]);
     expect([toggled(null, "yes"), toggled("yes", "yes"), toggled("assumed", "no")]).toEqual([
       "yes",
       null,
       "no",
     ]);
-  });
-
-  it("offers Raid Shield, Undead Siege and Cheese Trap by hand, no longer plunders (2026-11-17)", () => {
-    expect(ADDED_KINDS).toEqual(["shield", "raid", "cheese"]);
   });
 
   it("orders not set first, then marked, by name, and away members last", () => {

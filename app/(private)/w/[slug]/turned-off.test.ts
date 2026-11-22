@@ -1,10 +1,11 @@
 // D126 amended (issue 483): a page turned off for the alliance is simply not there. An officer opening its
 // address goes to the desk's Home with no message; a member opening the turned-off board gets the standard
 // not-found page.
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
 import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
+import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
@@ -60,7 +61,9 @@ let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
 });
+// The pages read the clock themselves: they run at T0, the context's clock.
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ["Date"], now: T0 });
   await truncateAll(db);
   await db.insert(workspaces).values({
     unionId: 67111155,
@@ -72,12 +75,14 @@ beforeEach(async () => {
   holder.ctx = testContext(db).ctx;
 });
 
+afterEach(() => vi.useRealTimers());
+
 async function signIn(tier: "officer" | "member") {
   const [user] = await db
     .insert(workspaceUsers)
     .values({ workspaceId: 1, discordUserId: `id-${tier}`, displayName: "Ana" })
     .returning({ id: workspaceUsers.id });
-  holder.token = (await createSession(db, 1, user?.id ?? 0, new Date(), null, tier)).token;
+  holder.token = (await createSession(db, 1, user?.id ?? 0, T0, null, tier)).token;
 }
 
 const turnOff = (switches: Record<string, boolean>) =>

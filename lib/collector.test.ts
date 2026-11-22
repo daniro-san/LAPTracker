@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS, runSnapshot } from "./collector";
 import {
   ago,
+  BOARD_EXTRA,
   EVENT_ID,
   fakeInternal,
   fakeV1,
@@ -124,6 +125,31 @@ describe("runSnapshot", () => {
         error: "not fetched: quota exhausted (429)",
       })),
     );
+  });
+
+  it("reads the board's top 20 by might in a BEFORE when no tracked set exists yet (D133)", async () => {
+    const v1 = fakeV1(fresh);
+    // The board lists IDS first, then BOARD_EXTRA, but BOARD_EXTRA has the most might and IDS' last three
+    // the least: the top 20 are not the board's first 20 entries.
+    const internal = fakeInternal();
+    const ranks = internal.fetchRanks.bind(internal);
+    internal.fetchRanks = async (server) => {
+      const board = await ranks(server);
+      const might = (id: number, i: number) =>
+        BOARD_EXTRA.includes(id) ? 9_000_000 + id : 5_000_000 - i;
+      return {
+        ...board,
+        power: new Map([...board.power.keys()].map((id, i) => [id, might(id, i)])),
+      };
+    };
+    const { deps, repo } = makeDeps(v1, internal, []);
+    repo.trackedAllianceIds = async () => [];
+
+    await runSnapshot(EVENT_ID, "before", deps);
+
+    const top = [...BOARD_EXTRA].reverse().concat(IDS.slice(0, IDS.length - BOARD_EXTRA.length));
+    expect(repo.tables.events.get(EVENT_ID)?.allianceIds).toEqual(top);
+    expect([...v1.calls].sort()).toEqual([...top].sort());
   });
 
   it("fails an AFTER run on an event with no alliance list without a quota call", async () => {
@@ -285,7 +311,8 @@ describe("runSnapshot deadline", () => {
     vi.useFakeTimers({ now: T0 });
     const v1 = hangingV1();
     const { deps, repo } = makeDeps(v1);
-    deps.now = () => new Date();
+    // The fake timers' clock, started at T0: it moves as the test advances the timers.
+    deps.now = () => vi.getMockedSystemTime() ?? T0;
     const lines: string[] = [];
     deps.logger = { ...deps.logger, warn: async (code) => void lines.push(code) };
 
@@ -305,7 +332,8 @@ describe("runSnapshot deadline", () => {
   it("leaves a run that finishes in time unchanged", async () => {
     vi.useFakeTimers({ now: T0 });
     const { deps } = makeDeps(fakeV1((id) => roster(id, ago(T0, minutes(2)))));
-    deps.now = () => new Date();
+    // The fake timers' clock, started at T0: it moves as the test advances the timers.
+    deps.now = () => vi.getMockedSystemTime() ?? T0;
 
     const summary = await runSnapshot(EVENT_ID, "before", deps);
     await vi.advanceTimersByTimeAsync(RUN_DEADLINE_MS * 2);

@@ -1,11 +1,15 @@
 // Issue 218: every /admin page checks the session before it reads the database.
 import { notFound } from "next/navigation";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
+import { prerender } from "react-dom/static";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { adminToken } from "@/lib/admin-session";
 import type { AppContext } from "@/lib/app-context";
 import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
+import { T0 } from "@/lib/collector.test-helpers";
+import { adminCopy } from "@/lib/copy-admin";
 import type { Db } from "@/lib/db";
 import { openTestDb } from "@/lib/db.test-helpers";
 import type { Env } from "@/lib/env";
@@ -40,6 +44,8 @@ vi.mock("next/navigation", async (original) => ({
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
   }),
+  // The PIN card's router, for its refresh after a sign-in.
+  useRouter: () => ({ refresh: () => undefined }),
 }));
 
 const { default: AdminPage } = await import("./page");
@@ -49,6 +55,11 @@ const { default: RunPage } = await import("./runs/[id]/page");
 const { default: DailyRunPage } = await import("./runs/daily/[day]/page");
 
 const run = (id: string) => RunPage({ params: Promise.resolve({ id }) });
+/** The page as the browser gets it. */
+async function html(page: ReactNode): Promise<string> {
+  const { prelude } = await prerender(page);
+  return new Response(prelude).text();
+}
 const openDb = vi.fn(() => {
   throw new Error("database opened");
 });
@@ -70,12 +81,12 @@ describe("/admin pages, locked", () => {
       "/admin/runs/daily/2026-11-12",
       () => DailyRunPage({ params: Promise.resolve({ day: "2026-11-12" }) }),
     ],
-  ])("%s renders the shell with no children and opens no database connection", async (_, page) => {
+  ])("%s shows the PIN card, not the page, and opens no database connection", async (_, page) => {
     holder.cookie = "not-the-token";
-    const el = await page();
-    expect(el.type).toBe(AdminShell);
-    expect((el.props as { children?: unknown }).children).toBeUndefined();
-    await AdminShell(el.props as Parameters<typeof AdminShell>[0]);
+    const shown = await html(await page());
+    for (const part of [adminCopy.pin.label, adminCopy.pin.unlock]) expect(shown).toContain(part);
+    // The nav and its Log out belong to the unlocked page.
+    expect(shown).not.toContain(adminCopy.nav.logout);
     expect(openDb).not.toHaveBeenCalled();
   });
 
@@ -93,9 +104,13 @@ describe("/admin pages, unlocked", () => {
     db = await openTestDb();
   });
 
+  // The session check reads the clock itself: it runs at T0, the context's clock.
+  afterEach(() => vi.useRealTimers());
+
   it("/admin/runs/<unknown id> still calls notFound", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: T0 });
     holder.ctx = testContext(db).ctx;
-    holder.cookie = adminToken(TEST_ENV, new Date());
+    holder.cookie = adminToken(TEST_ENV, T0);
     await expect(run("999999")).rejects.toThrow("NEXT_NOT_FOUND");
     expect(notFound).toHaveBeenCalledOnce();
   });

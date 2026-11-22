@@ -81,7 +81,9 @@ describe("POST /api/w/[slug]/thanks/draft and the alliance's switches (D126)", (
 
     await db.update(workspaceFeatures).set({ caps: {} });
     expect((await draft()).status).toBe(429);
-    expect(asked.length).toBeGreaterThanOrEqual(3);
+    // Each of the three languages was asked once.
+    const languages = asked.map((user) => /^Write .* in (.+)\.\n/.exec(user)?.[1]);
+    expect(languages.sort()).toEqual(["Brazilian Portuguese (pt-BR)", "English", "French"]);
     // English and Portuguese answered and stay counted; French failed and was given back.
     expect(await used()).toEqual([2]);
   });

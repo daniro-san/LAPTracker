@@ -1,6 +1,7 @@
 // The invite's test fixture (D130, issue 453): a stand-in for Discord (OAuth, the server list, the bot's role
 // reads and writes, the commands' PUT) and the trip from the owner's link to a signed-in invite. Invented ids
 // and names only; no test calls the real Discord.
+import type { AppContext } from "../app-context";
 import { TEST_ENV } from "../app-context.test-helpers";
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
@@ -94,7 +95,12 @@ export const stub: typeof fetch = async (input, init) => {
   return Response.json([]);
 };
 
-export const deps = (now = T0) => ({ env, fetch: stub, now });
+export const deps = (now = T0, report: AppContext["report"] = () => undefined) => ({
+  env,
+  fetch: stub,
+  now,
+  report,
+});
 
 /** A browser's cookie jar: the cookies each step set, by name. */
 export function browser() {

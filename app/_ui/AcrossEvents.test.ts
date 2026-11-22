@@ -7,7 +7,11 @@ import type { HistoryRow } from "@/lib/queries";
 import { AcrossEvents } from "./AcrossEvents";
 import { makeClock } from "./format";
 
-vi.mock("./locale", () => ({ requestCopy: async () => en }));
+// A viewer whose browser asks for English, with no language cookie.
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
+  headers: async () => new Headers({ "accept-language": "en-GB,en;q=0.9" }),
+}));
 
 const at = new Date("2026-11-07T14:00:00Z");
 const row: HistoryRow = {

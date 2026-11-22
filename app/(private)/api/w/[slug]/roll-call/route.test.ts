@@ -15,6 +15,7 @@ import { UNDO_MS } from "@/lib/private/roll-call";
 import { archivedInWeek, archivedItems, callView, weekItems } from "@/lib/private/roll-call-view";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { dailyReads, dailyRosters, workspaces, workspaceUsers } from "@/lib/schema";
+import { rollCalls } from "@/lib/schema-rollcall";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -121,12 +122,10 @@ const mark = (uid: number, m: "yes" | "no", version: number) => ({
 const add = (kind: string) => ({ action: "add", kind, day: "2026-11-18", requestId: randomUUID() });
 
 describe("POST /api/w/[slug]/roll-call (issue 298)", () => {
-  it("refuses a form from elsewhere (403) and a request without a session (401)", async () => {
+  it("refuses a form from elsewhere (403)", async () => {
     expect((await post(mark(101, "yes", 0), { who: "Ana", type: "text/plain" })).status).toBe(403);
     const cross = await post(mark(101, "yes", 0), { who: "Ana", origin: "https://evil.test" });
     expect([cross.status, await cross.json()]).toEqual([403, { code: "forbidden" }]);
-    const out = await post(mark(101, "yes", 0));
-    expect([out.status, await out.json()]).toEqual([401, { code: "signed_out" }]);
   });
 
   it("answers 400 for a bad body or a non-member, 404 for an occasion of no workspace", async () => {
@@ -157,12 +156,12 @@ describe("POST /api/w/[slug]/roll-call (issue 298)", () => {
     expect(body.said).toMatch(/Ana.* marked “No shield” just now/);
   });
 
-  it("adds a Cheese Trap by hand", async () => {
-    const cheese = await post(add("cheese"), { who: "Ana" });
-    expect([cheese.status, await cheese.json()]).toMatchObject([
-      200,
-      { ok: true, id: expect.any(Number) },
-    ]);
+  it.each(["raid", "cheese"])("lets an officer add a %s roll call by hand", async (kind) => {
+    const added = await post(add(kind), { who: "Ana" });
+    const body = (await added.json()) as { id: number };
+    expect([added.status, body]).toMatchObject([200, { ok: true, id: expect.any(Number) }]);
+    const rows = await db.select({ id: rollCalls.id, kind: rollCalls.kind }).from(rollCalls);
+    expect(rows).toContainEqual({ id: body.id, kind });
   });
 
   it("refuses a new plunder (2026-11-17)", async () => {

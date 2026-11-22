@@ -11,7 +11,6 @@ export const discordEn = {
   "discord.bot.tip":
     "You need the Manage Server permission in Discord. The link opens on your alliance’s server only.",
   "discord.bot.add": "Add LAPTracker to Discord",
-  "discord.bot.unset": "Discord is not set up on this site yet. Ask the site’s owner.",
   "discord.check.head": "2. Check the bot and turn on the commands",
   "discord.check.lead":
     "After adding the bot, come back here and tap Check. The commands then show on any message: press and hold it (on a computer, right-click it) → Apps.",
@@ -31,6 +30,14 @@ export const discordEn = {
   "discord.private":
     "Only if a channel is private: for the commands to post there, open the channel’s settings → Permissions → add LAPTracker, then allow View Channel, Send Messages, Create Public Threads and Send Messages in Threads.",
   "discord.hooks.head": "3. Channels for notices",
+  // Issue 585 (F28): one block when the site's bot is off, and the in-place help's summaries.
+  "discord.hooks.headAlone": "Channels for notices",
+  "discord.hooks.howSummary": "How to get a webhook URL",
+  "discord.privateSummary": "Posting in a private channel?",
+  "discord.bot.siteOffHead": "Bot and commands",
+  "discord.bot.siteOff":
+    "LAPTracker’s Discord bot is off on this site for now, so there is nothing to add or check here. The channels below do not need it: notices and the Raid Shield summary post through their own webhooks.",
+  "discord.channel.leadersOnly": "Leaders only",
   "discord.hooks.lead":
     "When you tap Publish to Discord on a notice, leadership notices go to the leaders’ channel and members’ notices to the members’ channel. Each channel needs its own webhook. The Raid Shield check’s summary is posted only to its own channel.",
   "discord.hooks.how":
@@ -104,7 +111,6 @@ export const discordPt: typeof discordEn = {
   "discord.bot.tip":
     "Você precisa da permissão Gerenciar servidor no Discord. O link abre só no servidor da sua aliança.",
   "discord.bot.add": "Adicionar o LAPTracker ao Discord",
-  "discord.bot.unset": "O Discord ainda não está configurado neste site. Fale com o dono do site.",
   "discord.check.head": "2. Confira o bot e ligue os comandos",
   "discord.check.lead":
     "Depois de adicionar o bot, volte aqui e toque em Conferir. Os comandos aparecem em qualquer mensagem: toque e segure nela (no computador, clique com o botão direito) → Apps.",
@@ -124,6 +130,13 @@ export const discordPt: typeof discordEn = {
   "discord.private":
     "Só se um canal for privado: para os comandos postarem nele, abra as configurações do canal → Permissões → adicione o LAPTracker e permita Ver canal, Enviar mensagens, Criar tópicos públicos e Enviar mensagens em tópicos.",
   "discord.hooks.head": "3. Canais dos avisos",
+  "discord.hooks.headAlone": "Canais dos avisos",
+  "discord.hooks.howSummary": "Como pegar a URL do webhook",
+  "discord.privateSummary": "Vai postar num canal privado?",
+  "discord.bot.siteOffHead": "Bot e comandos",
+  "discord.bot.siteOff":
+    "O bot do LAPTracker no Discord está desligado neste site por enquanto, então não há nada para adicionar ou conferir aqui. Os canais abaixo não precisam dele: os avisos e o resumo do Escudo de raid são postados pelos próprios webhooks.",
+  "discord.channel.leadersOnly": "Só liderança",
   "discord.hooks.lead":
     "Quando você toca em Publicar no Discord num aviso, os avisos da liderança vão para o canal dos líderes e os avisos dos membros para o canal dos membros. Cada canal precisa do seu próprio webhook. O resumo da conferência do Escudo de raid é postado só no seu próprio canal.",
   "discord.hooks.how":

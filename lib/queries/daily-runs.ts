@@ -2,12 +2,25 @@
 // server day, with the alliances that failed or were stale and, for a failure, its error and what the
 // upstream answered (D61). One read's page adds its run_logs lines and its upstream calls. Never the
 // member arrays.
-import { and, asc, desc, eq, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNotNull,
+  lt,
+  notExists,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import { FRESH_MAX_AGE_MS } from "../collector-rows";
 import type { Db } from "../db";
 import { allianceLabels } from "../repo/alliances";
 import { dailyReads, dailyRosters, runLogs } from "../schema";
+import { allianceLookups, trackedSets } from "../schema-alliances";
 import type { UpstreamDetail } from "../sources/types";
 import { DEADLINE_ERROR, runTrace } from "./admin";
 
@@ -26,8 +39,35 @@ const readFields = {
 
 /** The failed or stale alliances of these days: identity, the flag, the error and its detail. Stale
  * includes a roster a retry kept from an earlier read, once it is more than 20 minutes older than the
- * start of the day's latest read (D67), as the read's own outcome counts it. */
+ * start of the day's latest read (D67), as the read's own outcome counts it. A "Get today's details" roster
+ * stored under the day (D133) is not the read's: an alliance the day has a lookup claim for counts only when
+ * it is in the day's tracked set (the read's targets on LAP_API_KEY, stored before it reads, so a roster the
+ * read never reached still counts), or when the read wrote a line for it (a workspace's alliance it read). */
 function problemsOf(db: Db, days: string[]) {
+  const lookedUp = db
+    .select({ one: sql`1` })
+    .from(allianceLookups)
+    .where(
+      and(
+        eq(allianceLookups.unionId, dailyRosters.unionId),
+        eq(allianceLookups.day, dailyRosters.readDay),
+      ),
+    );
+  const tracked = db
+    .select({ one: sql`1` })
+    .from(trackedSets)
+    .where(
+      and(
+        eq(trackedSets.day, dailyRosters.readDay),
+        sql`${dailyRosters.unionId} = any(${trackedSets.allianceIds})`,
+      ),
+    );
+  const readByRun = db
+    .select({ one: sql`1` })
+    .from(runLogs)
+    .where(
+      and(eq(runLogs.readDay, dailyRosters.readDay), eq(runLogs.unionId, dailyRosters.unionId)),
+    );
   return db
     .select({
       day: dailyRosters.readDay,
@@ -42,6 +82,7 @@ function problemsOf(db: Db, days: string[]) {
     .where(
       and(
         inArray(dailyRosters.readDay, days),
+        or(notExists(lookedUp), exists(tracked), exists(readByRun)),
         or(
           eq(dailyRosters.isFresh, false),
           isNotNull(dailyRosters.error),

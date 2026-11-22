@@ -14,7 +14,7 @@ describe("Read from a screenshot (D109)", () => {
     expect(text).toBe("Lv.27 [OGs] Ana\nMain squad 12.3 M\nAD Tech 74%");
     const [form, filled] = propose(
       formOf({}, "en"),
-      parseOnboarding(text, new Date(), "UTC"),
+      parseOnboarding(text, new Date("2026-11-21T01:31:00Z"), "UTC"), // Fri 23:31 ST
       "en",
     );
     expect(filled).toEqual(["squadMight", "adTech"]);

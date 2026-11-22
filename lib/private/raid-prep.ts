@@ -19,9 +19,9 @@ import {
   type StoredReading,
 } from "../repo/shield-checks";
 import {
-  kvkStart,
   morningMinuteOf,
   passWindows,
+  raidOf,
   suggestionOf,
   type ShieldSuggestion,
 } from "../shield-check";
@@ -38,6 +38,7 @@ import {
   type Opened,
   type Written,
 } from "./roll-call";
+import type { Loaded } from "./roll-call-view";
 
 export { fridayOf };
 
@@ -205,19 +206,25 @@ async function readingsOf(db: Db, access: WorkspaceAccess, friday: string, zone:
 /**
  * Raid prep's part of a Raid Shield roll call's page: the tracker's hints, the wall marks, the counts and
  * the Discord summary's state. `shieldChannel`: a Raid Shield channel the summary can post to is saved.
+ * `loaded`: the roster and facts the page's `callView` already read; read here when not given.
  */
 export async function prepView(
   db: Db,
   access: WorkspaceAccess,
   opened: Opened,
   clock: { zone: string; now: Date; shieldChannel?: boolean },
+  loaded?: Loaded,
 ): Promise<PrepView> {
-  const friday = fridayOf(opened.day);
+  // The same raid as a member's own page counts from (`raidOf`).
+  const { friday, reset, kvk: kvkAt } = raidOf(opened.day, { SERVER_TZ: clock.zone });
   const tracker = featureOn(access, "shield_check");
   const ids = opened.call ? [opened.call.id] : [];
-  const [roster, facts, main, wall, settings, reads, check] = await Promise.all([
-    rosterOf(db, access),
-    factsOf(db, access),
+  const [{ roster, facts }, main, wall, settings, reads, check] = await Promise.all([
+    loaded ??
+      Promise.all([rosterOf(db, access), factsOf(db, access)]).then(([r, f]) => ({
+        roster: r,
+        facts: f,
+      })),
     newestMarks(db, ids),
     newestMarks(db, ids, "wall"),
     shieldSettingsOf(db, access.workspaceId),
@@ -226,7 +233,6 @@ export async function prepView(
       : Promise.resolve({ night: [], morning: [] }),
     getShieldCheck(db, { day: friday, unionId: access.unionId }),
   ]);
-  const kvkAt = kvkStart(friday, { SERVER_TZ: clock.zone });
   const nightOf = new Map(reads.night.map((r) => [r.uid, r]));
   const morningOf = new Map(reads.morning.map((r) => [r.uid, r]));
   const mainOf = new Map(main.map((m) => [m.uid, m]));
@@ -246,7 +252,6 @@ export async function prepView(
     )
     .map(([uid]) => mainOf.get(uid)?.at.getTime() ?? 0);
   const uids = new Set(roster.map((m) => m.uid));
-  const reset = kvkAt.getTime() - 12 * 3_600_000;
   const counts = { night: countOf(uids, reads.night), morning: countOf(uids, reads.morning) };
   // Only the check still ahead of KvK has a state to infer from today's settings (review of PR 590).
   const current = clock.now.getTime() < kvkAt.getTime();
@@ -257,7 +262,7 @@ export async function prepView(
     morningMinute: morningMinuteOf(settings?.morningMinute),
     ...counts,
     members: roster.length,
-    when: clock.now.getTime() < reset ? "reset" : "kvk",
+    when: clock.now.getTime() < reset.getTime() ? "reset" : "kvk",
     ahead: current,
     rows,
     toCheckAt: toCheck.length > 0 ? Math.max(...toCheck) : null,

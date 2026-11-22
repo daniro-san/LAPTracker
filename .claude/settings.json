@@ -113,6 +113,7 @@
       "Bash(curl *laptracker-inky.vercel.app/api/snapshot*)",
       "Read(//**/.env)",
       "Read(//**/.env.local)",
+      "Read(//**/.env.local.*)",
       "Read(//**/.env.*.local)",
       "Read(//**/.env.dev*)",
       "Read(//**/.env.prod*)",
@@ -126,6 +127,21 @@
       "Read(//**/.env.copy*)",
       "Read(//**/.env.save*)",
       "Read(//**/.env~*)",
+      "Bash(* .env)",
+      "Bash(* .env *)",
+      "Bash(*/.env)",
+      "Bash(*/.env *)",
+      "Bash(*.env.local*)",
+      "Bash(*.env.dev*)",
+      "Bash(*.env.prod*)",
+      "Bash(*.env.preview*)",
+      "Bash(*.env.staging*)",
+      "Bash(*.env.test*)",
+      "Bash(*.env.vercel*)",
+      "Bash(*dotenv/config*)",
+      "Bash(*dotenvx run*)",
+      "Bash(*-r dotenv*)",
+      "Bash(*--require dotenv*)",
       "Bash(pnpm dlx*)",
       "Bash(pnpm exec node*)",
       "Bash(pnpm node*)",
@@ -137,6 +153,12 @@
       "Bash(npm*discord:register*)",
       "Bash(*tsx *discord-register-command*)",
       "Bash(*node *discord-register-command*)",
+      "Bash(pnpm fixture:record*)",
+      "Bash(pnpm run fixture:record*)",
+      "Bash(pnpm*fixture:record*)",
+      "Bash(npm*fixture:record*)",
+      "Bash(*tsx *scripts/record-fixture.ts*)",
+      "Bash(*node *scripts/record-fixture.ts*)",
       "Bash(pnpm drizzle-kit push*)",
       "Bash(pnpm exec drizzle-kit push*)",
       "Bash(rm -rf *)",
@@ -165,6 +187,16 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/hooks/pr-base-guard.sh\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Monitor|Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/hooks/env-guard.sh\"",
             "timeout": 10
           }
         ]

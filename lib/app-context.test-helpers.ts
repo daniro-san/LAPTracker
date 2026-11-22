@@ -6,6 +6,7 @@ import type { Db } from "./db";
 import { parseEnv } from "./env";
 import type { EventCache } from "./event-cache";
 import { decode, encode, type PublicCache } from "./public-cache";
+import { reporter } from "./report-error";
 import type { WakeCache } from "./wake-cache";
 
 export const TEST_PIN = "482913";
@@ -139,6 +140,8 @@ export function testContext(db: Db, env = TEST_ENV) {
     publicCache: memoryPublicCache(),
     wakeCache: memoryWakeCache(),
     ai: null,
+    // getAppContext's: PostHog through this fetch, only when `env` turns analytics on.
+    report: (error, context) => reporter(ctx)(error, context),
   };
   return { ctx, clock, posts, edits, v1 };
 }
