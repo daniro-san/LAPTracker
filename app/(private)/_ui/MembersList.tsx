@@ -77,6 +77,8 @@ export interface MembersListProps {
   early: boolean;
   /** "Copy for spreadsheet"'s header row. */
   sheetHeader: string;
+  /** Follow-up's address while its tab is on (D126): the first group points at the week's list. */
+  followUp: string | null;
 }
 
 /** The open member, kept by the page's roster (`?m=`, D122). */
@@ -202,6 +204,7 @@ function Sections(p: {
   t: ListWords;
   row: ReturnType<typeof useRows>;
   open: number | null;
+  followUp: string | null;
 }) {
   const { s, t, row } = p;
   let left = s.depth;
@@ -225,6 +228,19 @@ function Sections(p: {
           <h2 id="ml-heading" className="mb-1 font-subhead text-display-sm">
             {t["list.heading"]}
           </h2>
+          {/* Members' own status rule, with no week: the week's list and who was noted are Follow-up's, so
+              this group carries no count of its own (issue 585 S3). */}
+          {p.followUp && (
+            <p className="mb-1 text-body-sm text-ink/80">
+              {t["list.followUp"]}{" "}
+              <a
+                href={p.followUp}
+                className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+              >
+                {t["list.followUpLink"]}
+              </a>
+            </p>
+          )}
           <Group caption={t["list.heading"]} rows={heading} open={p.open} t={t} />
         </section>
       )}
@@ -275,7 +291,7 @@ export function MembersList(props: MembersListProps & OpenProps) {
         copy={copyText(s, props.sheetHeader)}
       />
       <Empty s={s} t={t} rows={rows} />
-      <Sections s={s} t={t} row={row} open={props.open} />
+      <Sections s={s} t={t} row={row} open={props.open} followUp={props.followUp} />
       <More s={s} t={t} left={all - s.depth} />
       {filters && s.sheet && <Filters s={s} props={props} onClose={() => setFilters(false)} />}
     </div>

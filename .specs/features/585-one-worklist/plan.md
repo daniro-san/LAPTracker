@@ -4,7 +4,11 @@
 
 **Approved (S2)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (f)](#f-s2-product-strategy-approve-with-changes); adversarial verdict: [Validation (g)](#g-s2-adversarial-d75-privacy-d71d142-correctness-approve-with-changes)
 
-Size: L (more than one PR across Home, Members, Follow-up, Insights and the member card). This plan covers all slices; slice 1 (S1) was built in PR 640, **slice 2 (S2) is built in `feat/585-needs-help`** (its own size: M, a rule change across Follow-up, Home, Members and the card). Part of #585 (findings F3, F14, F15, F21, F29).
+**Approved (S3)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (i)](#i-s3-product-strategy-approve-with-changes); adversarial verdict: [Validation (k)](#k-s3-adversarial-approve-with-changes)
+
+**Approved (S4)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (i)](#i-s4-product-strategy-approve-with-changes); adversarial verdict: [Validation (k)](#k-s4-adversarial-approve-with-changes)
+
+Size: L (more than one PR across Home, Members, Follow-up, Insights and the member card). This plan covers all slices; slice 1 (S1) was built in PR 640, slice 2 (S2) in PR 646, slice 3 (S3) in PR 651, **slice 4 (S4) is built in `feat/585-home-first-screen`** (its own size: M, a flow across Follow-up and Members). Part of #585 (findings F3, F14, F15, F21, F29).
 
 ## Problem
 
@@ -127,6 +131,119 @@ New: nothing - read only.
 
 **S2 validation:** the plan review is under [Validation (e) to (g)](#e-s2-officer-panel-first-glance-test-and-review).
 
+## S3 plan: Follow-up's rows (built in `feat/585-follow-up-rows`)
+
+**S3 problem.** Measured on `dev` at `f5d3658a` with the invented e2e seed (production build, Sun 22 Nov), shots in the orchestrator's scratchpad `s3-shots/before/`:
+
+- Each row has three controls: "Talked to them", "Add a note" and "Members ›". The name does not look tappable, although a tap on it opens the same panel as "Add a note" (F29). Nobody in the officer panel saw that the name opens the panel.
+- "Members ›" opens the Members list searched by name (`?q=`), not the member's card (`?m=`, D122).
+- Moss Hollow's six rows each say "Quiet for 3 days. Worth a hello."; a group of new members says the same "Still to ask: Main squad might, Troops, AD Tech, Time zone, Languages" on every row.
+- The head's two help sentences push the first row down; at 360 × 780 Lantern Keep's second group ("New · 1") is below the fold, and one officer concluded "one person, Galen" (wrong).
+- At 1280 the page keeps the old 960 px width while Home and Members use the wide frame.
+- Members shows "Follow-up: 6 to look at" (Follow-up's rule) above a list group "To check in with or help" (Members' status rule, no week), two numbers for one question; after S2 they differ by every Needs help member noted this week.
+
+What is different for an officer when S3 ships: each row is the person's name (a link to their panel) and the reasons, with one button, "Talked to them", and "Card ›"; a line every row shares is said once; the head is the week, the numbers and "How this list works"; Members' group says its own status words and points at Follow-up for the week.
+
+**S3 shape.** No new route, table, field or query. Reuses `groupsOf` (`follow-up-groups.ts`), the panel (`FollowUpSheet.tsx`, unchanged but for the row type), `MasterDetail` and `SignedInFrame`'s `wide` (D122), Members' `<details>` style ("What the labels mean") and the first-use cookie's pattern (`lap_ws_intro`, D73).
+
+1. officer opens `/w/[slug]/follow-up` -> `openRollCall` / `requireWorkspace` (exists), `followUpView` (exists, unchanged)
+2. `groupsOf` (exists, changed): per group, `sharedOf` (new, pure) takes the plain lines (reasons, "Still to ask", the tip) every row of a group of two or more holds; the group gets `shared` ("Same for all {n}:" and the lines) and each row `own` (its lines without the shared ones); `lines` stays whole for the panel
+3. page (exists): `SignedInFrame wide`; the head (`FollowUpHead`) shows the title, week, count, jumps, then `HowItWorks` (new, client): a `<details>` open when the cookie `lap_ws_fu_help` is absent (read on the server), which writes it once shown
+4. `FollowUpList` `Row` (exists, changed): one button (name in link style, rank, `own` lines) opening the panel; "Talked to them"; "Card ›" to `?m=<uid>`. `Group` shows the shared lines after the hint, inside `ph-no-capture`, and each row's description (`aria-describedby`) names them
+5. Members (exists): `MembersList` `Sections` titles the first group "Check in or Needs help" and, while the head shows Follow-up's numbers (`followUpCounts` not null: the tab on, D126, and the first daily update in), adds "This week’s list: Follow-up ›"
+
+```mermaid
+flowchart LR
+    R["1. requireWorkspace (exists)"] --> V["1. followUpView (exists)"]
+    V --> G["2. groupsOf (exists, changed)"]
+    G --> S["2. sharedOf (new)"]
+    P["3. Follow-up page (exists)"] --> H["3. HowItWorks (new)"]
+    P --> L["4. FollowUpList Row (exists, changed)"]
+    M["5. Members list (exists, changed)"]
+```
+
+**Changes underneath (S3)**
+
+| Front       | What changes                                                                                                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| domain      | none: who is on the list, the counts and the panel's saves are unchanged                                                                           |
+| stored data | nothing in the database; one browser cookie, `lap_ws_fu_help=1` (one year, `path=/`, `SameSite=Lax`), only "the help was shown here" (D73 amended) |
+| readers     | Follow-up (rows, groups, head, frame), Members (the list's first group title and its line), the e2e flows                                          |
+| cost        | none: no new read; `sharedOf` compares a few short strings per group                                                                               |
+
+New: nothing - no entity.
+
+**S3 assumptions**
+
+| Assumption                      | Chosen default                                                                                                    | Rationale                                                                                                                                                           | Confirmed? |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| The Needs help row's action     | "Talked to them", as every row; "No longer needs help" stays in the panel                                         | 4 of 6 officers, product and designer: clearing a mark is a deliberate step beside its context, and a stray tap on the row would clear it                           | n          |
+| Which lines a group says once   | Any plain line (reason, "Still to ask", tip) every row holds; never a mark, last week or a note                   | 5 of 6 officers and product: six "Quiet for 3 days" is noise; designer MUST: a mark or history line stays with its note                                             | n          |
+| "How this list works" open when | On the officer's first visit on that browser, decided on the server from a cookie                                 | The task's wording, 5 of 6 officers and product; designer MUST: never open after the page has drawn (the content would jump under a thumb)                          | n          |
+| The card link's words           | "Card ›" ("Cartão ›", "Fiche ›")                                                                                  | Product and designer: the app's own word (the member card); "Profile" (3 of 6 officers) reads as something the member sees. PT keeps "cartão" as the card's tabs do | n          |
+| Members' group                  | "Check in or Needs help" and, while the head shows Follow-up's numbers, "This week’s list: Follow-up ›"; no count | 4 of 6 officers, product and designer; a count would be a third number                                                                                              | n          |
+| "Add a note"                    | Removed; the help's summary says, in sight, "Tap a name to write down what they said."                            | 4 of 6 officers, product, designer; 2 of 6 worried the name tap is missed: the help's new line and the answer-mix measure (Validation (b)) watch it                 | n          |
+
+**S3 validation:** the plan review is under [Validation (h) to (k)](#h-s3-officer-panel-first-glance-test-and-review).
+
+## S4 plan: Home's first screen (built in `feat/585-home-first-screen`)
+
+**S4 problem.** Measured on the S1 walk (invented 585 seed, `585-worklist/after2/home--360*`, server clock Sat 21 Nov 16:30 ST) and in the code at `f5d3658a`:
+
+- At 360 × 780 Home's first screen holds the tracker key card and "Today and tomorrow". Follow-up's two numbers ("Follow-up: 12 to look at · 4 noted this week", S1) are in the margin note "Members this week", which is the last block on a phone, about 2,600 px down. In the S1 panel, 5 of 6 officers could not tell from Home's first screen who needs them, and 1 read the Home badge "1" as one check-in (Validation (a)).
+- "Recent activity" opens with 16 "finished the roll call" lines: five officers each finished "Cheese Trap", "Undead Siege" and "Elixir Scramble". Each officer's "the rest" save is its own line (`marksWritten`, D108); a run only joins one officer's lines, and roll calls are never folded.
+- "Send screenshots", the help line and the "Nothing to review." line share the "To review" card, whose number counts only what waits. The button is the biggest thing in the card.
+- An entry of "Today and tomorrow" whose day is over keeps its two lines (time and "your time", then the title and "· Ended").
+
+What is different for an officer when S4 ships: Home's first phone screen has a "Follow-up" card saying "12 members to look at this week · 4 already noted by officers" as a link to Follow-up, and "1 waiting in “To review” ↓" when something waits; the activity says "Wren, Tomas, and 3 others finished the roll call “Cheese Trap”" once per roll call; "To review" holds only what waits for a person, and "Send screenshots" has a card of its own; a finished entry is one line.
+
+**S4 shape.** Reuses `followUpCounts` (S1, no new read), `checkInLink` (the margin's line while the tab is off), the activity's runs (`runs`, `feedLine`, the `<details>` run line) and `Ended`'s rule (`end` from `endOf`). No new route, table, field or migration.
+
+1. officer opens `/w/[slug]` -> `requireWorkspace` (exists)
+2. `cards` (exists) -> `followUpCounts` (exists): `{ toLook, noted }`, or null while the Follow-up tab is off (D126) or before the first daily update; nothing new read
+3. Home's main column (exists, changed): the tracker key card; `HomeFollowUp` (new, `HomeMembers.tsx`): a "Follow-up" card with "12 members to look at this week · 4 already noted by officers" (Home's own words, `followUpWords`; panel MUST 2) as one link, only while the numbers exist; "{n} waiting in “To review” ↓" (new, a jump to "To review", only while something waits: the Home tab's own number; panel MUST 1 and round 2); "Today and tomorrow", the pictures due, "To review" without the upload, and `SendCard` (new, `ToReview.tsx`): a "Screenshots" card with "Send screenshots" and its help line
+4. `HomeMembers` (exists, changed): no check-in line while Follow-up's numbers exist (they moved); while the tab is off, the old line and link, as today
+5. `marksWritten` (exists, changed) also returns the roll call's id; `runs` (exists, changed, `joins`) joins consecutive "finished the roll call" lines on the same roll call and server day, whatever the officer; `feedLine` names the officers, newest first, each once, with `Intl.ListFormat`: "Wren and Tomas", "Wren, Tomas, and Lucien", "Wren, Tomas, and 3 others" (FR and PT with the plural verb); the line opens to each officer's line, as a run does; `activityPage` keeps a folded line when its newest officer's account has no name (adversarial MUST 1)
+6. `HomeNext` (exists, changed): an entry whose end has passed is one line, "12:00 ST · KvK · Ended", still the 44 px link to its day in the Calendar
+
+```mermaid
+flowchart LR
+    R["1. requireWorkspace (exists)"] --> C["2. cards (exists)"] --> FC[("2. followUpCounts (exists)")]
+    C --> HF["3. HomeFollowUp (new)"]
+    R --> TR["3. ToReview (exists, changed)"]
+    R --> SC["3. SendCard (new)"]
+    C --> HM["4. HomeMembers (exists, changed)"]
+    R --> A["5. activityPage (exists)"] --> M[("5. marksWritten (exists, changed)")]
+    A --> RU["5. runs / feedLine (exist, changed)"]
+    R --> HN["6. HomeNext (exists, changed)"]
+```
+
+**Changes underneath (S4)**
+
+| Front       | What changes                                                                                                                                                                                                                  |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| domain      | D108's runs: "finished the roll call" lines by several officers on one roll call fold into one line (was: one officer's runs only; roll calls never folded). D108's order on Home and D110's Home button get dated amendments |
+| stored data | nothing to migrate; nothing new written                                                                                                                                                                                       |
+| readers     | Home (main column, margin, activity), the activity route's later pages (`GET /api/w/[slug]/activity`, same `activityPage`)                                                                                                    |
+| cost        | none: the roll call's id comes from the query that already groups by it; Home's Follow-up numbers are the ones `cards` already reads                                                                                          |
+
+New: nothing - read only.
+
+**S4 assumptions**
+
+| Assumption                         | Chosen default                                                                       | Rationale                                                                                                                                                                         | Confirmed? |
+| ---------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Where the line goes                | After the tracker key card, before "Today and tomorrow"                              | The key card is rare and blocks everything; the line is "who needs me this week"                                                                                                  | n          |
+| The card's words                   | Heading "Follow-up"; "12 members to look at this week · 4 already noted by officers" | Panel: 4 of 6 misread "12 to look at · 4 noted this week" on Home; Members keeps S1's line (S3 owns it)                                                                           | n          |
+| What waits in "To review"          | "1 waiting in “To review” ↓" after the Follow-up card; "To review" stays put         | Panel MUST 1 (5 of 6): the badge pointed at nothing visible; round 2 (3 of 6) read "1 to review ↓" above the key card as its label; moving the card would push today's events off | n          |
+| The line in "Members this week"    | Removed while Follow-up's numbers show above; kept while the tab is off              | One number in one place; D126: a turned-off tab's line stays as it was                                                                                                            | n          |
+| Which activity lines fold          | Consecutive "finished the roll call" lines on one roll call and server day           | The finding (16 lines); a line in between keeps its place (D108: a run never hides another line); paging stays                                                                    | n          |
+| Single taps ("took the roll call") | Not folded                                                                           | The brief and the finding name "finished"; noted as a follow-up                                                                                                                   | n          |
+| Where "Send screenshots" goes      | Its own card, right after "To review"                                                | Drafts it makes land in the card above; the door stays near the queue (PD-4)                                                                                                      | n          |
+| A finished entry                   | One line: start time, title, "Ended"; no "your time"                                 | Over is over: its time on the officer's clock no longer helps                                                                                                                     | n          |
+
+**S4 validation:** the plan review is under [Validation (h) to (k)](#h-s4-officer-panel-first-glance-test).
+
 ## Criteria
 
 ### S1: Follow-up says who is left and who was noted; Home and Members say the same (P1) - built in this PR
@@ -155,30 +272,56 @@ Shape, problem and plan review: [S2 plan](#s2-plan-needs-help-on-the-list-built-
 12. Each "Needs help" row SHALL say since when and who added the mark, "Since {day} · added by {officer}" ("Since {day}" with no officer known), and the officer's note in quotes on its own line, clamped to two lines (the panel shows it whole), all inside `ph-no-capture`. The mark is the trailing run of `help` versions of the `status` fact: who, when and the note come from the newest Follow-up `help` record still counting whose `fact_version` is in that run, else from the run's first version (its writer and time, no note)
     - "They need help" with a note → that officer, day and note; set in Edit info → its writer and day, no note; Ana marks, Tomas marks again, Tomas undoes → Ana, her day, her note; cleared then set again → the new run's writer
 13. The "Needs help" group SHALL say under its title how a member leaves it: "They stay here each week until someone taps “No longer needs help”."; WHEN an officer taps "No longer needs help" in that member's panel THEN the app SHALL save the `status` fact as cleared through the facts route (`POST /api/w/[slug]/members/[uid]/facts`, the version the page saw), close the panel, read the list again and say "Saved. {name} no longer needs help."; IF the save is refused (409, another officer changed it) THEN the panel SHALL say "Could not save. Try again." and the list SHALL be read again. "All fine" stays a weekly answer and clears nothing (product strategy)
-14. Home's and Members' Follow-up numbers SHALL count the "Needs help" group through `followUpCounts` / `weekLists` (no count of their own), so they equal Follow-up's for the same data and time
+
+S2 continues at 24 (14 to 23 belong to S3 to S6; prettier renumbers one list, so the two parts are separate lists):
+
+24. Home's and Members' Follow-up numbers SHALL count the "Needs help" group through `followUpCounts` / `weekLists` (no count of their own), so they equal Follow-up's for the same data and time
     - two Needs help members and nobody else → "Follow-up: 2 to look at"; one of them noted this week → "Follow-up: 1 to look at · 1 noted this week"
-15. WHILE a member's status is Needs help, the member card's header SHALL say under "Needs help" since when and who added it ("Since Thu, Nov 19 · added by Tomas") and the note in quotes on its own line, on every tab, inside `ph-no-capture`, from the same rule as criterion 12
-16. The card's History tab SHALL keep listing each Follow-up record still counting, a Needs help one included ("Needs help, Thu, Nov 19: {note} · Tomas") (no change; F14 checked: History lists records and earlier values only, so a mark set in Edit info, the newest version with no record, leaves it empty by design; criterion 25 is the fix)
-17. IF a member on this week's list has a record still counting from last game week (Monday 00:00 ST of last week up to this Monday 00:00 ST; a `withdrawn` this week cancels it) THEN their row SHALL show its newest one as context, "Last week: {officer} · {day}: {what}" ("Last week: {day}: {what}" with no officer), its note in quotes on its own line, clamped to two lines; never "again", and not when that record is the one the row's Needs help line already names
+25. WHILE a member's status is Needs help, the member card's header SHALL say under "Needs help" since when and who added it ("Since Thu, Nov 19 · added by Tomas") and the note in quotes on its own line, on every tab, inside `ph-no-capture`, from the same rule as criterion 12
+26. The card's History tab SHALL keep listing each Follow-up record still counting, a Needs help one included ("Needs help, Thu, Nov 19: {note} · Tomas") (no change; F14 checked: History lists records and earlier values only, so a mark set in Edit info, the newest version with no record, leaves it empty by design; criterion 25 is the fix)
+27. IF a member on this week's list has a record still counting from last game week (Monday 00:00 ST of last week up to this Monday 00:00 ST; a `withdrawn` this week cancels it) THEN their row SHALL show its newest one as context, "Last week: {officer} · {day}: {what}" ("Last week: {day}: {what}" with no officer), its note in quotes on its own line, clamped to two lines; never "again", and not when that record is the one the row's Needs help line already names
     - talked on Thu, Nov 12 with "on holiday", still quiet this week → "Last week: Tomas · Thu, Nov 12: Talked to them" and "“on holiday”"; a record two weeks back only → no line; talked Sun 23:50 ST, undone Mon 00:05 ST → no line
-18. Follow-up SHALL take this week's list, its Noted card and Home's and Members' numbers from this week's records only (Monday 00:00 ST on); last week's records, read in the same query, SHALL only give the context line
-19. The desk dictionary SHALL hold every new string in EN, PT-BR and FR
-20. D104 and D80 SHALL each get an amendment dated 2026-11-22 for the Needs help group, how it ends (cleared; paused by a break), the card's line, and that "stays until cleared" is a deliberate choice to revisit after S3 with the mark-age measure
-21. The Home e2e SHALL assert Follow-up's number with the seed's Needs help member counted, and Follow-up's "Needs help · 1" row with the officer, day, note and last week's context, all from the seed's exports; the seed SHALL write the `status` fact and its Follow-up record as `recordFollowUp` does (same officer and time, `fact_version` 1), the week before last, and a Talked last week; and a Follow-up e2e SHALL tap "No longer needs help" on a second seeded Needs help member (written the same way, in a workspace of its own per repeat so Home's count stays put): first refused after another officer saved the status, with "Could not save. Try again.", then cleared, the member gone from "Needs help" on screen and after a reload (review of PR 646)
+28. Follow-up SHALL take this week's list, its Noted card and Home's and Members' numbers from this week's records only (Monday 00:00 ST on); last week's records, read in the same query, SHALL only give the context line
+29. The desk dictionary SHALL hold every new string in EN, PT-BR and FR
+30. D104 and D80 SHALL each get an amendment dated 2026-11-22 for the Needs help group, how it ends (cleared; paused by a break), the card's line, and that "stays until cleared" is a deliberate choice to revisit after S3 with the mark-age measure
+31. The Home e2e SHALL assert Follow-up's number with the seed's Needs help member counted, and Follow-up's "Needs help · 1" row with the officer, day, note and last week's context, all from the seed's exports; the seed SHALL write the `status` fact and its Follow-up record as `recordFollowUp` does (same officer and time, `fact_version` 1), the week before last, and a Talked last week; and a Follow-up e2e SHALL tap "No longer needs help" on a second seeded Needs help member (written the same way, in a workspace of its own per repeat so Home's count stays put): first refused after another officer saved the status, with "Could not save. Try again.", then cleared, the member gone from "Needs help" on screen and after a reload (review of PR 646)
 
-### S3: Follow-up's rows: one action, tappable names, the card one tap away (P1) - later PR (F29, F14 link)
+### S3: Follow-up's rows: one action, tappable names, the card one tap away (P1) - built in `feat/585-follow-up-rows` (F29, F14 link)
 
-14. Each row SHALL have one visible action ("Talked to them"); the name and reasons open the panel, styled as a link; "Members ›" becomes "Card ›" opening `/w/[slug]/members?m=<uid>`
-15. A line repeated on every row of a group ("Still to ask: …" with all five facts, the coins tip) SHALL be said once under the group title, and a row says only what differs
-16. Follow-up SHALL use the wide frame (D122, `wide`) like Home and Members
-17. D140's "what to do" line and D104's help line SHALL become one in-place help ("How this list works ▾"), open on a first visit (the owner's words kept, moved)
-18. Members' list group "To check in with or help" SHALL be renamed or pointed at Follow-up, so the Members head and its group do not give two numbers for one question (panel SHOULD 2)
+Shape, problem and plan review: [S3 plan](#s3-plan-follow-ups-rows-built-in-feat585-follow-up-rows).
 
-### S4: Home leads with the week's follow-up, and its activity reads in one screen (P2) - later PR (F3 on Home, F21)
+14. Each Follow-up row SHALL have one visible action, "Talked to them", in every group (Needs help too; "No longer needs help" stays in the panel); the name, rank and the row's lines SHALL stay one button that opens the member's panel, with only the name styled as a link (plum, semibold, underlined); "Add a note" SHALL go; "Members ›" SHALL become "Card ›" ("Cartão ›", "Fiche ›"), a 44 px link to `/w/[slug]/members?m=<uid>` named "{name}’s card" ("Cartão de {name}", "Fiche de {name}"); the Needs help group's line SHALL say "They stay here each week until someone taps their name, then “No longer needs help”."
+15. WHEN every row of a group of two or more holds the same plain line (a reason, "Still to ask: …" or the coins tip) THEN the group SHALL say it once under its title (after the hint), headed "Same for all {n}:" ("Vale para os {n}:", "Pour les {n} :"), and the rows SHALL leave it out; a Needs help mark line, last week's line and an officer's note SHALL never be said for the group; the panel's "Why they’re on the list" SHALL keep every line; the shared lines SHALL sit inside `ph-no-capture` as the rows' do (issue 549), and each row's button SHALL name them in its description (`aria-describedby`), since a row may show only the name (adversarial SHOULD)
+    - six rows each "Quiet for 3 days. Worth a hello." → said once, each row shows its name and rank; five rows with all five facts to ask and one with Troops only → each row keeps its own; a group of one → on the row; two Needs help rows marked the same day by the same officer → each keeps its mark line
+16. Follow-up SHALL use the wide frame (D122, `wide`) like Home and Members: from 1024 the list and the member's panel side by side
+17. D140's "what to do" line and D104's help line SHALL move, word for word, into one disclosure under the head's numbers and jumps, "How this list works" ("Como esta lista funciona", "Comment fonctionne cette liste"), 44 px, its summary saying, always in sight, "Tap a name to write down what they said." ("Toque em um nome para anotar o que a pessoa disse.", "Touchez un nom pour noter ce qu’on vous a dit.") before the label (officer panel after the build: 5 of 6 did not find the panel without it); it SHALL be open on an officer's first visit on that browser and closed after, decided on the server from the cookie `lap_ws_fu_help`, which the page writes once the help was shown open (not while the first-use cards cover the page, adversarial SHOULD), so nothing moves after the page is drawn; the open state SHALL be taken once, when the page is first drawn, so a save's refresh (which reads the new cookie) never closes it under the officer's thumb
+18. Members' list group "To check in with or help" SHALL be titled "Check in or Needs help" ("Ver como está ou Precisa de ajuda", "À contacter ou Besoin d’aide"), the Who column's words, with no count; WHILE the Members head shows Follow-up's numbers (the tab on, D126, and the first daily update in: the case where the two numbers met), a line under its title SHALL say "This week’s list:" ("Lista desta semana:", "Liste de la semaine :") and link "Follow-up ›" to `/w/[slug]/follow-up` (44 px)
 
-19. Home SHALL show Follow-up's two numbers in its main column near the top (product persona: the only fix for Home's first glance)
-20. Recent activity SHALL fold the same action on the same roll call by several officers into one line ("Cheese Trap roll call finished · Wren, Tomas and 3 others · yesterday")
+S3 continues at 32 (19 to 31 are taken):
+
+32. The desk dictionary SHALL hold every new or changed string in EN, PT-BR and FR, and drop the keys nothing reads any more ("Add a note", "Members ›")
+33. D104, D140, D98 and D73 SHALL each get an amendment dated 2026-11-22 for what they quote or rule that changes (the row, the help, the Needs help line, the Members group, the cookie)
+34. The Follow-up e2e flow SHALL assert that the quiet member's row has one button besides the name ("Talked to them"), no "Add a note", and "Card ›" linking to `/w/[slug]/members?m=<their uid>`, which opens that member's card (adversarial SHOULD); the quiet reason on the group, whether said once or on the row (adversarial MUST: other runs change the group's size); that "How this list works" is open on a first visit and closed after a reload; the Home e2e SHALL assert the Needs help group's new line; and a Members e2e SHALL assert the "Check in or Needs help" title and its "Follow-up ›" link
+
+### S4: Home leads with the week's follow-up, and its activity reads in one screen (P2) - built in `feat/585-home-first-screen` (F3 on Home, F21; M: Home's main flow)
+
+Shape, problem and plan review: [S4 plan](#s4-plan-homes-first-screen-built-in-feat585-home-first-screen).
+
+19. Home SHALL show Follow-up's two numbers in its main column near the top (product persona: the only fix for Home's first glance): WHILE the Follow-up tab is on and the alliance has had its first daily update, a card titled "Follow-up" after the tracker key card and before "Today and tomorrow" SHALL hold the numbers (S1's `followUpCounts`) as one 44 px link to `/w/[slug]/follow-up`, or "Everyone looks fine this week." (not a link) at 0 and 0; "Members this week" SHALL then show no check-in line
+    - 12 and 4 → "12 members to look at this week · 4 already noted by officers", nothing in "Members this week"; 1 and 0 → "1 member to look at this week"; 0 and 4 → "Nobody to look at this week · 4 already noted by officers"; 0 and 0 → "Everyone looks fine this week."
+20. Recent activity SHALL fold the same action on the same roll call by several officers into one line: consecutive "finished the roll call" lines (one action wrote several marks) on the same roll call (its id) and server day, whatever the officer, SHALL be one line at the newest time naming each officer once, newest first, that opens to each officer's line
+    - five officers finish "Cheese Trap" → "Wren, Tomas, and 3 others finished the roll call “Cheese Trap”" (FR "Wren, Tomas et 3 autres ont terminé l’appel …", PT "… concluíram a chamada …"); two → "Wren and Tomas finished …"; three → "Wren, Tomas, and Lucien finished …"; the newest officer's account without a name → the line stays with the others; another roll call of the same kind, a line in between, or another server day → separate lines; one officer twice → their name once
 21. The screenshot upload SHALL leave "To review" for a card of its own; a finished event on "Today and tomorrow" SHALL take one line
+    - "Send screenshots" and its help line in a card titled "Screenshots" right after "To review"; "To review" keeps its number, its items and "Nothing to review."
+    - an entry whose end (`endOf`) has passed on the viewer's clock: one 44 px link line, "{time} · {title} · Ended", no "your time"; an entry not over keeps its two lines
+
+S4 continues at 35 (19–21 above are S4's own; 24–31 are S2's; 32–34 are S3's, PR 651):
+
+35. WHILE the Follow-up tab is off (D126), Home SHALL read no follow-up record, show no Follow-up card, and keep today's line in "Members this week" ("{n} people to check in with or help", linked to the Members group); WHILE the alliance has no daily update yet (`early`), Home SHALL show no Follow-up card, as today
+36. The desk dictionary SHALL hold every new string in EN, PT-BR and FR
+37. D108 (the fold, the order on Home) and D110 (Home's "Send screenshots" in its own card) SHALL each get an amendment dated 2026-11-22
+38. The Home e2e SHALL assert the Follow-up card's line in Home's main column (before "Today and tomorrow", none in "Members this week") from the seed's numbers, its link to Follow-up, and "Send screenshots" outside "To review"
+39. WHILE something waits in "To review" (the Home tab's number: drafts, notice reviews for this officer, "This is me" claims), Home's main column SHALL show "{n} waiting in “To review” ↓" right after the Follow-up card (first when there is no card), a 44 px link to the "To review" card (`#to-review`); with nothing waiting it SHALL show nothing (panel MUST 1, round 2)
 
 ### S5: "After KvK, offer help" in Follow-up (P2) - later PR (F3; M: a rule change)
 
@@ -240,7 +383,8 @@ No access in this build. What we would query (HogQL, read-only):
 - Coordination (the main metric): members with two or more `ws_action` `follow_up` `record` events from different officers in the same game week. The event carries no uid (D71), so take the baseline from `member_follow_ups` read-only on the database (count of `(workspace_id, uid, week)` with 2+ distinct `written_by`), before and after.
 - Work done: `ws_action` `follow_up` `record` per workspace per week, and the share of Monday's list noted by Sunday (database, read-only).
 - Needs help (S2, database, read-only, per workspace and game week, no names): members whose newest `status` is `help`, the median age of those marks, and the share of them noted that week; then the two-officers-on-one-member count again.
-- Scroll: `$pageleave` `$prev_pageview_max_scroll_percentage` on Follow-up at < 640 px (does anyone reach the Noted card?), and clicks on the jump link (`$autocapture`, `href="#follow-up-noted"`).
+- Scroll: `$pageleave` `$prev_pageview_max_scroll_percentage` on Follow-up at < 640 px (does anyone reach the Noted card?), and clicks on the jump link (`$autocapture`, `href="#follow-up-noted"`). Corrected 2026-11-22 (S3 product review): click autocapture is off on `/w` (`NO_AUTOCAPTURE` in `lib/analytics/posthog.ts`) and `before_send` drops query strings, so the jump-link clicks and the Path bullet's line clicks have no data; the scroll depth and the pageview paths stay.
+- Rows (S3, database, read-only, per workspace and week, no names): the share of records that are not "Talked" (On a break, They need help, All fine: in the panel only once "Add a note" is gone) and the share with a note, before and after; and `ws_message_copied` `where=follow_up` per `ws_action` `follow_up` `record` (a floor on panel opens).
 
 ### (c) Product strategy: approve with changes
 
@@ -292,11 +436,122 @@ No one-way door: no migration, nothing deleted, nothing new written, no privacy 
 - NOTE, follow-ups: Undo of a "They need help" saved over another officer's standing mark puts the status back to empty (pre-existing); the card shows "Needs help" during a break while Follow-up leaves the member out (`statusOf` reads the officer's status first, stated in the amendment); a rejoining former member (D107) or a matched pending member (D106) comes back under Needs help with the old date; Members' group still counts noted Needs help members (S3 criterion 18); the ready message says nothing about the mark (kept).
 - Patch notes: past marks whose reasons cleared appear under "Needs help" on release (handoff, for the release's patch notes).
 
+### (h) S3: officer panel, first-glance test and review
+
+Six officer personas (R5 40s UK, war lead 30s US, diplomat early 20s FR, Discord-upkeep officer 50s PH, officer early 20s UA, architect 30s CH; AI personas on invented data) saw the 360 × 780 first viewport for about 5 seconds: before, `dev`'s screenshots of Lantern Keep (2 to look at: one Needs help, one new) and Moss Hollow (6 quiet); after, text wireframes of the proposal. Question: "Who do I need to check in with this week, and what do I do for each?"
+
+| Screen               | Right | Partial | Wrong | Can't tell |
+| -------------------- | ----- | ------- | ----- | ---------- |
+| Lantern Keep, before | 0     | 4       | 1     | 1          |
+| Moss Hollow, before  | 4     | 2       | 0     | 0          |
+| Lantern Keep, after  | 4     | 2       | 0     | 0          |
+| Moss Hollow, after   | 6     | 0       | 0     | 0          |
+
+Before, nobody saw that the name opens the panel; the wrong answer missed "New · 1" below the fold ("one person, Galen"). Votes: A (a) 4, (b) 1, (c) 1; B (a) 5, (b) 1; C (a) 5, (b) 1; D "Card" 2, "Their card" 1, "Profile" 3; E (a) 4, (b) 1, (d) 1; F drop "Add a note" 4, keep a second way in 2. Findings and what was done:
+
+- MUST, not taken here (follow-up): "Last week: Officer LNK · Fri, Nov 13: Talked to them" was read as "already done, skip him" by 2 of 6 (the two partial answers after), because the line repeats the button's words. It is S2's line, chosen by S2's panel (5 of 6) in the Noted card's shape; a sentence form ("Last week, Officer LNK talked to them (Fri, Nov 13)") needs its own copy test and changes S2's checks C17 and C19.
+- SHOULD, taken: the shared line's head on its own line, so "Same for all 6:" and "Still to ask: …" do not run as two colons in one sentence (3 of 6); the Members line shortened to "This week’s list: Follow-up ›" (3 of 6).
+- SHOULD, taken in part: a second way into the panel (2 of 6): a line on tapping a name, not a second button (first in the help, then, after the test below, in its summary).
+- SHOULD, not taken: "Profile ›" (3 of 6; product and designer: "card" is the app's word, and "profile" reads as something the member sees); PT "Ficha ›" (2 of 6 and the designer: "cartão" reads as a bank card; kept, because the card's own PT words say "cartão", `card.tabs`); "Nothing is sent on your behalf" (3 of 6 read "for you" as "to you"; D140's words, kept as the owner wrote them, reported); a line after "Talked to them" on a Needs help row saying the mark stays (3 of 6; follow-up); the reassurance kept visible outside the disclosure (2 of 6; product: one tap away is enough, never removed).
+- COULD, not taken: drop "Worth a hello." from a shared quiet line under "Worth a hello · 6" (2 of 6; the reason's words are Follow-up's own, D104).
+
+**After the build** (the same six, real 360 × 780 shots of the build on the invented e2e seed, `s3-shots/after/` and `after2/`):
+
+| Screen and question                                                 | Right | Partial | Wrong | Can't tell |
+| ------------------------------------------------------------------- | ----- | ------- | ----- | ---------- |
+| Lantern Keep, return visit, the question above (round 1)            | 3     | 2       | 1     | 0          |
+| Moss Hollow, return visit (round 1)                                 | 6     | 0       | 0     | 0          |
+| Lantern Keep, first visit, the help open (round 1)                  | 3     | 2       | 1     | 0          |
+| "How would you write down what Galen said?" (round 1)               | 1     | 1       | 4     | 0          |
+| Lantern Keep and Moss Hollow, the question above (round 2, tap cue) | 3     | 3       | 0     | 0          |
+| "How would you write down what Galen said?" (round 2, tap cue)      | 4     | 0       | 2     | 0          |
+
+- MUST, taken (round 1, 5 of 6): with one button per row, nothing on a return visit said that the name opens the panel; 4 of 6 tapped "Talked to them" or "Card ›" to write a note. The help's summary now says, always in sight, "Tap a name to write down what they said." before "How this list works" (round 2: 4 right, 2 wrong). The two still wrong (the war lead taps "Talked to them" expecting a note box; the Ukrainian officer opens "Card ›") are an open question for the owner, not built: the remaining fix the designer named is "Add a note" back on the row, which criterion 14 (one visible action, from the S1 handoff) rules out.
+- MUST, reported, not built: in round 1 one officer (UA) counted "1 other already noted this week ↓" as one of "2 to look at", on both Lantern Keep screens. It is S1's jump line (6 of 6 right in S1's round 2); with one or more noted it showed here only because the e2e card flow notes a member in parallel. Round 2 had nobody noted and no wrong answer. A follow-up for S1's words ("{m} more already noted"; the S1 handoff already lists it).
+- SHOULD, reported: "Talked to them" right under "Last week: … Talked to them" reads as a status (2 to 3 of 6, both rounds; S2's line, see above); on a phone Nyla's "Still to ask" is under the bottom bar, so the New row reads as "say hi" (3 of 6); "Nothing is sent for you" read as odd, and "Nothing is sent" twice when the help is open (3 of 6; the owner's and D140's words); on Members, the "Missing info 8" chip reads as a second to-do list (3 of 6) and "Check in" differs from Follow-up's "Worth a hello" (2 of 6).
+- Members: "Does the Members page give one answer to who to check in with this week?" mostly yes; "This week’s list: Follow-up ›" understood by 5 of 6.
+
+### (i) S3: product strategy: approve with changes
+
+- Picks: A (a), B (a), C (a), D "Card ›", E (a), F drop "Add a note".
+- SHOULD, taken: the Needs help line no longer points at a button that is not on the row: "…until someone taps their name, then “No longer needs help”."
+- MUST, taken: Validation (b)'s "clicks on the jump link (`$autocapture`)" has no data: click autocapture is off on `/w` (`NO_AUTOCAPTURE`, `lib/analytics/posthog.ts`), and `before_send` drops query strings, so `?m=` and `?q=` never reach PostHog. Corrected in (b).
+- MUST, taken: a dated "Changed" line in the tracking plan ("Add a note" gone, the name opens the panel, "Members ›" is "Card ›" to `?m=`; Members page views after Follow-up may move). No event changes.
+- What to measure (database, read-only, per workspace and week, no names): the share of records that are not "Talked" (On a break, They need help, All fine: only in the panel now, so a drop means the name tap is not found); the share of records with a note; `ws_message_copied` `where=follow_up` per `ws_action` `follow_up` `record` (a floor on panel opens); the mark age after release (A (a) adds a step to clearing).
+- D75: the shared line stays visible above its rows, never folded; "nobody is removed" stays one tap away, never removed; no count per officer or "not yet noted" line, in any slice.
+- COULD, not taken: a `card: true` flag on `$pageview` when `m` is in the URL.
+
+### (j) S3: designer: approve with changes
+
+- MUST, taken: one button over the name and the lines (a large target), only the name in the link style (plum, semibold, underlined), "· R2" ink/75, the lines in ink; `tint-button` and `OPEN_ROW` as today.
+- MUST, taken: only the plain lines (reason, "Still to ask", tip) are said once; never "Since … added by", "Last week: …" or a note.
+- MUST, taken: the disclosure never opens after the page is drawn: open or closed is decided on the server from a cookie. (The designer's own pick was closed always; the panel and product chose the first visit, so the cookie.)
+- MUST, taken: `wide` with `MasterDetail` 7/5, "Card ›" at every width.
+- SHOULD, taken: under the button, "Talked to them" left and "Card ›" right; the shared line in ink with its head semibold, after the hint; each row's description also names the shared lines (`aria-describedby`), so a screen reader hears why; a line on tapping a name (now the help's summary, see (h) after the build).
+- COULD, follow-up: on "Noted this week" a plum name opens the card, on the list it opens the panel (same look, two places); from 768, the chip row beside the name.
+
+### (k) S3: adversarial: approve with changes
+
+No one-way door: no migration, nothing deleted, no route or contract change, no privacy widening; the cookie holds no personal data and needs no consent (a preference like `lap_ws_intro`; D77's "no cookie" is about PostHog); the page is already dynamic (`cookies()` in `Frame`), so no shared-cache or hydration risk.
+
+- MUST, taken: the Follow-up e2e asserted "Quiet for 3 days. Worth a hello." on the row; every quiet seed member has the same days and other runs change the group's size, so the line is now checked on the group (criterion 34).
+- MUST, taken: the shared lines inside `ph-no-capture` (criterion 15).
+- SHOULD, taken: the help's cookie is not written while the first-use cards cover the page; the open state is taken once, so a save's refresh never closes it (criterion 17); each row's description names the shared lines (criterion 15); the e2e taps "Card ›" and sees the member's card (criterion 34).
+- NOTE, taken: D104's amendment says the owner's help line moved behind the disclosure (its words unchanged); the deviation "only the name styled as the link" (the S1 handoff said "the name and reasons") is in the handoff; `sharedOf` compares exact strings, so "Quiet for 3 days" and "for 4 days" stay on their rows; a save that shrinks a group to one row brings that row's line back (a small jump, accepted); privacy improves (`?q=<name>` becomes `?m=<uid>`); a screenshot at 1024 with the rail.
+- Changed after it, while building: the Members line shows while the head shows Follow-up's numbers (`followUpCounts` not null: the tab on and the first daily update in), not on the tab switch alone. That is the case where the two numbers met; before the first daily update the head says nothing about check-ins (criterion 8).
+
+### (h) S4: officer panel, first-glance test
+
+Six officer personas (R5 40s UK, war lead 30s US, diplomat early 20s FR, Discord-upkeep officer 50s PH, officer early 20s UA, architect 30s CH; AI personas on invented data) saw the 360 × 780 first viewport for about 5 seconds: today's screen (`585-worklist/after2/home--360-light-en-fold.png` and a text wireframe of it), then text wireframes of S4. Question: "What needs me today?" Truth: the tracker key needs re-entering, 1 "This is me" claim waits (the Home badge "1"), Follow-up has 12 to look at and 4 already noted, two events today.
+
+| Screen                                                  | Right | Partial | Wrong | Can't tell |
+| ------------------------------------------------------- | ----- | ------- | ----- | ---------- |
+| Before (today)                                          | 0     | 6       | 0     | 0          |
+| S4 round 1, A: card with no heading, S1's line          | 4     | 0       | 2     | 0          |
+| S4 round 1, B: card with a heading, S1's line           | 4     | 1       | 1     | 0          |
+| S4 round 2: heading "Follow-up", Home's words, the jump | 3     | 3       | 0     | 0          |
+
+Round 1 graded "right" on the key and the 12; round 2 also asked for the waiting claim. Before, nobody saw Follow-up's numbers or what the badge counts. Findings and what was done:
+
+- MUST, taken: the badge "1" pointed at nothing on the first screen (5 of 6): "{n} waiting in “To review” ↓", a jump to the card. Round 2 MUST, taken: "1 to review ↓" above the key card read as that card's label (3 of 6), so the jump sits after the Follow-up card and names the card.
+- MUST, taken: "Follow-up: 12 to look at · 4 noted this week" was misread on Home (4 of 6: "noted" as 4 more tasks, or as part of the key alert): Home says "12 members to look at this week · 4 already noted by officers" (round 2 SHOULD "by officers", taken). Members keeps S1's line (S3's files).
+- SHOULD, taken: a heading on the card (4 of 6 for B; the designer and product persona preferred A for its height, but A's two wrong answers came from the card reading as the alert's tail); a heading "Screenshots" on the upload's card (4 of 6, designer); wording 1, subject first, for the fold (4 of 6, designer, product).
+- SHOULD, not taken: "need a check-in" instead of "to look at" (round 2, 3 of 6): D104 keeps the owner's "to look at"; "1 claim to approve" naming the kind (round 2): three kinds share the count, the card says which; cutting the tracker key card's second sentence and renaming "Your tracker key needs you" (2 to 4 of 6): another card's copy, follow-up.
+- COULD, reported: "ST" never spelled out; "Alliance settings" twice; the ▾ glyph is small (the whole run line is already the 44 px `<summary>`).
+
+### (i) S4: product strategy: approve with changes
+
+- MUST, taken: D108's amendment says the fold's unit is the roll call, names go newest first and are not a ranking, "and 3 others" counts the officers on one action, never an officer's total (D75), and the line opens to each officer's line with its time.
+- SHOULD, taken: what waits in "To review" reaches the first screen (as the jump line, not by moving the card, so today's events keep their place); version A or B and wording 1 (B chosen on the panel's wrong answers, see (h)); the line stays out of "Members this week"; single taps not folded.
+- SHOULD, not taken: fold across other roll calls' "finished" lines. A fold that is not consecutive breaks D108's page cursor (a page's cursor is its last line's oldest action; an earlier line could then hold actions older than it, shown twice on the next page) and its "a run never hides another line". Follow-up, with the measure below.
+- COULD, reported: the "(R5)" in the wireframe's names is the seed's chosen name, not a tag (D108); two cards on a quiet day ("Nothing to review." and "Screenshots"): follow-up.
+- Measure (team level, no per-officer numbers): Home → Follow-up within 10 minutes, before and after, by width; `$autocapture` clicks on the card's link; Home scroll depth at < 640 px; `GET /api/w/[slug]/activity` and "Show more" per Home view (should fall); claim asked → answered time from the database; `ws_screenshot_sent` per workspace per week must not drop.
+
+### (j) S4: designer: approve with changes
+
+- MUST, taken: the card's link in the Home link style (semibold plum, underlined, 44 px); "Everyone looks fine this week." plain text, not a link; the Screenshots card after "To review"; wording 1; a finished entry one line, muted, keeping "ST" and its 44 px link.
+- MUST, already so: the run line's disclosure is the whole 44 px `<summary>` row, with ▾ turning ▴ when open and the lines indented.
+- SHOULD, not taken: move the card to the margin at 1280 (criterion 19 puts it in the main column, where the cards to act on are); fold the screenshot help under a disclosure; a "›" after the link.
+
+### (k) S4: adversarial: approve with changes
+
+No one-way door: no schema, no migration, nothing written, no privacy widening, no quota, no dependency.
+
+- MUST, taken: a folded line was dropped whole when its newest officer's account had no name (the head was that officer's line); `activityPage` now keeps the others' lines, and one left alone is a plain line (test).
+- MUST, taken: the criteria now carry the built words and order (19, 20, 39).
+- SHOULD, taken: English lists have the serial comma ("Wren, Tomas, and 3 others", `Intl.ListFormat`, as `namesList` already wrote); `followUpWords` takes a `WorkspaceLanguage`.
+- SHOULD, reported: on real data an officer's single taps ("took the roll call") between two "finished" lines end the fold, so the gain may be smaller than on the seed; folding the "took" lines of the same roll call in too is a criteria change, a follow-up. The id also reached `sameKey`, which showed one officer's identical lines on two roll calls of the same name four times in the e2e walk; `sameKey` now leaves the id out, so the same words in a row stay one line as before (in D108's amendment and the test).
+- NOTE: `followUpCounts` is null both with the tab off and before the first daily update; Home tells them apart through `view.early`, so criterion 35 holds. Two officers with the same desk name are named once in a fold (names are deduplicated as text).
+
 ## Analytics plan
 
 No new event, no change to an event. The count line on Home and Members becomes a link to Follow-up (was the Members group); pageviews already show it. A dated line in the tracking plan's "Changed" section says that from this release Home and Members link to Follow-up, so Follow-up pageviews from Home may rise. Remove: nothing. PostHog side: no insight or Endpoint reads these; nothing to change.
 
+S4: no new event, no change to an event. Home's Follow-up link moves from the margin note to a card near the top of the main column, with new words; "Send screenshots" (`ws_screenshot_sent` comes from its reads) moves from "To review" into its own card; the new "{n} waiting in “To review” ↓" is an in-page jump. A dated "Changed" line in the tracking plan says Home → Follow-up clicks and `$autocapture` on the line may rise from this release, and that autocapture on the old "Follow-up:" text on Home ends. Remove: nothing. PostHog side: no insight or Endpoint reads these.
+
 S2: no new event, no change to an event. "No longer needs help" saves through the facts route, which already counts `ws_action` `member_facts` `save`. A dated line in the tracking plan's "Changed" section says that from this release Home's and Members' "Follow-up: n to look at" also counts members marked Needs help, so the number can rise on release day. Remove: nothing. PostHog side: nothing reads these.
+
+S3: no new event, no change to an event. Changed (a dated line in the tracking plan): "Add a note" is gone (the name opens the panel), "Members ›" (`?q=<name>`) is "Card ›" (`?m=<uid>`), and Members' group heading is "Check in or Needs help" with a "Follow-up ›" link; read Members page views after Follow-up as card opens, and watch the share of non-Talked records and of records with a note (database, read-only). Click autocapture is off on `/w`, so no link click is counted. Remove: nothing. PostHog side: no insight or Endpoint reads these.
 
 ## Differences from the source
 

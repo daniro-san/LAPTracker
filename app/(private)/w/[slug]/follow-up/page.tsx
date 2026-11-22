@@ -1,13 +1,18 @@
 // /w/[slug]/follow-up (issue 340, D104): the leadership's weekly worklist. The members to look at this
 // week under "Check in", "New" and "A tip to share" (D140), alphabetical in each, with a warm line for each
-// reason and every fact still to ask by name; each row has one-tap "Talked to them", "Add a note" and a
-// link to Members, and a tap on the person opens their panel (a sheet, beside the list from 1024, D122):
+// reason and every fact still to ask by name; each row has one-tap "Talked to them" and a link to the
+// member's card, and a tap on the person opens their panel (a sheet, beside the list from 1024, D122):
 // why, a ready message in their language, what to fill in, how it went and the last notes. Then the
 // thefts whose follow-up is still open, each linked to its entry in the thefts log. People first (D75):
 // notes for the officers, nothing is sent, no ranking, a warm line when nobody is on it. Issue 585: the head
 // leads with the week's two numbers, and "Noted this week" says who an officer already noted, by whom.
 // Slice 2: "Needs help" comes first, each row saying since when, who and why, and last week's note is context.
+// Slice 3: one action per row and "Card ›", a line every row shares said once, "How this list works", and
+// the wide frame (D122).
+import { cookies } from "next/headers";
+
 import { getEnv } from "@/lib/env";
+import { FOLLOW_UP_HELP_COOKIE, WORKSPACE_INTRO_COOKIE } from "@/lib/private/cookies";
 import { featureOn } from "@/lib/private/features";
 import { followUpView, type FollowUpView } from "@/lib/private/follow-up";
 import { cardFormats } from "@/lib/private/member-card";
@@ -41,6 +46,12 @@ export default async function FollowUpPage({
   const f = cardFormats(language, page.zone, page.now);
   const groups = groupsOf(data.items, t, f, language);
   const open = (await searchParams).m;
+  const jar = await cookies();
+  const help = {
+    seen: jar.has(FOLLOW_UP_HELP_COOKIE),
+    // The first-use cards open over the page until they are skipped or finished (Frame, FirstUse).
+    covered: jar.get(WORKSPACE_INTRO_COOKIE)?.value !== "1",
+  };
   const editor = {
     slug,
     words: editorWords(t),
@@ -56,8 +67,9 @@ export default async function FollowUpPage({
       t={t}
       current="review"
       waiting={page.waiting}
+      wide
     >
-      <FollowUpHead data={data} t={t} language={language} />
+      <FollowUpHead data={data} t={t} language={language} help={help} />
       {/* Always mounted, so the saved line with Undo stays after the last member leaves. */}
       <FollowUpList
         slug={slug}

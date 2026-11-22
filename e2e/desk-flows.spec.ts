@@ -91,9 +91,26 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
     .getByRole("region", { name: /^Noted this week · \d+$/ })
     .getByRole("listitem")
     .filter({ has: page.getByRole("link", { name }) });
-  // D127's offline proxy, in Follow-up's words: no quest points and no donations on the last 3 reads.
+  // D127's offline proxy, in Follow-up's words: no quest points and no donations on the last 3 reads. Every
+  // quiet member of the seed has the same days, so the group may say it once for all its rows (issue 585 S3),
+  // and other runs take their own members off meanwhile: the reason is checked on the group.
+  const quiet = `Quiet for ${IDLE_DAYS} days. Worth a hello.`;
   await sees(checkIn.getByRole("listitem").filter({ has: named(page, "", name) }), name);
-  await sees(row, `Quiet for ${IDLE_DAYS} days. Worth a hello.`);
+  await sees(checkIn, quiet);
+  // Issue 585 S3: one action per row besides the name (which opens the panel), and the member's card.
+  const uid = Number(await named(page, "", name).getAttribute("data-uid"));
+  await expect(row.getByRole("button")).toHaveCount(2);
+  await expect(row.getByRole("button", { name: "Add a note" })).toHaveCount(0);
+  const cardLink = row.getByRole("link", { name: new RegExp(`^${isolated(name)}’s card$`) });
+  await expect(cardLink).toHaveText("Card ›");
+  await expect(cardLink).toHaveAttribute("href", `/w/${B.slug}/members?m=${uid}`);
+  // "How this list works" is open on this browser's first visit, closed after (its cookie).
+  const help = page.locator("details").filter({ hasText: "How this list works" });
+  await expect(help).toHaveAttribute("open", "");
+  await sees(
+    help,
+    "These are notes for you. Nothing is sent and nobody is removed from the alliance.",
+  );
 
   const talked = row.getByRole("button", { name: "Talked to them" });
   const path = `/w/${B.slug}/follow-up`;
@@ -104,7 +121,8 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
     new RegExp(`^Saved\\. ${isolated(name)} is off the list until Monday\\.$`),
   );
   await expect(row).toHaveCount(0);
-  const { uid, requestId } = (await sent).postDataJSON() as { uid: number; requestId: string };
+  const { requestId, ...saved } = (await sent).postDataJSON() as { uid: number; requestId: string };
+  expect(saved.uid).toBe(uid);
   // "Officer MSH · Sat, Nov 21: Talked to them": the officer and today first, the rank after the name.
   const by = new RegExp(`${isolated(`Officer ${B.tag}`)} · ${usDay(daysAgo(0))}: Talked to them`);
   await expect(notedRow).toContainText(by);
@@ -112,6 +130,12 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, B);
+  await expect(help).not.toHaveAttribute("open");
+  // Closed, it still says how to reach the other answers: the name.
+  await sees(
+    help.locator("summary"),
+    "Tap a name to write down what they said. How this list works",
+  );
   await expect(named(page, "", name)).toHaveCount(0);
   await expect(notedRow).toContainText(by);
   // The name opens this member's own card.
@@ -129,8 +153,19 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   expect(undo.status()).toBe(200);
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
-  await sees(row, `Quiet for ${IDLE_DAYS} days. Worth a hello.`);
+  await sees(checkIn, quiet);
+  await expect(row).toHaveCount(1);
   await expect(notedRow).toHaveCount(0);
+
+  // "Card ›" opens this member's card on Members: a sheet below 1024 px, the pane beside the list from 1024.
+  await hydrated(cardLink);
+  await cardLink.click();
+  await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  const card =
+    (page.viewportSize()?.width ?? 0) < 1024
+      ? page.getByRole("dialog", { name })
+      : page.locator("main");
+  await expect(card.getByRole("heading", { name, level: 2 })).toBeVisible();
 });
 
 test("Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too", async ({

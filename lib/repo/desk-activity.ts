@@ -66,8 +66,13 @@ export type EntryDone = Done & {
   level: number | null;
   title: string | null;
 };
-/** Marks one officer wrote in one roll call within an hour; `rest` when written by "the rest". */
-export type MarksDone = Done & { kind: string; variant: string | null; rest: boolean };
+/** Marks one officer wrote in one roll call (`callId`) within an hour; `rest`: by "the rest". */
+export type MarksDone = Done & {
+  callId: number;
+  kind: string;
+  variant: string | null;
+  rest: boolean;
+};
 /** A follow-up record: the choice and, for a break, the last day away; never the note. */
 export type FollowUpDone = Done & {
   kind: "followUp";
@@ -253,13 +258,9 @@ async function marksWritten(
   [from, before]: Span,
   n: number,
 ): Promise<MarksDone[]> {
-  const result = await db.execute<{
-    by: number | string;
-    at: Date | string;
-    kind: string;
-    variant: string | null;
-    rest: boolean;
-  }>(sql`
+  const result = await db.execute<
+    Omit<MarksDone, keyof Done> & { by: number | string; at: Date | string }
+  >(sql`
     with g as (
       select m.roll_call_id, m.written_by, m.written_at, count(*) > 1 as rest
       from roll_call_marks m join roll_calls c on c.id = m.roll_call_id
@@ -268,7 +269,7 @@ async function marksWritten(
         and m.written_at >= ${from.toISOString()}
       group by m.roll_call_id, m.written_by, m.written_at
     )
-    select g.written_by as by, max(g.written_at) as at, c.kind, c.variant, g.rest
+    select g.roll_call_id as "callId", g.written_by as by, max(g.written_at) as at, c.kind, c.variant, g.rest
     from g join roll_calls c on c.id = g.roll_call_id
     group by g.roll_call_id, g.written_by, g.rest, date_trunc('hour', g.written_at), c.kind, c.variant
     having max(g.written_at) < ${before}

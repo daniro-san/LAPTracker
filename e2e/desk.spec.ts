@@ -26,7 +26,7 @@ import {
   WALL_ONLY,
   weekLine,
 } from "./fixtures/seed";
-import { big, deskFrame, expect, hydrated, sees, signIn, test } from "./fixtures/test";
+import { big, deskFrame, expect, hydrated, labelled, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const desk = `/w/${A.slug}`;
@@ -37,8 +37,6 @@ const MARKED_BY = { phone: A.names[6], wide: A.names[7], iphone: A.names[8] } as
   string,
   string
 >;
-/** A label that starts with `prefix` and a name, the name inside Unicode isolates (isolate(), <bdi>). */
-const labelled = (prefix: string, name: string) => new RegExp(`^${prefix}\\u2068?${name}\\u2069?`);
 const cal = calendarOf(seededAt());
 
 test.beforeEach(async ({ context }) => {
@@ -71,32 +69,52 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   );
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
-  // Issue 585: Follow-up's numbers, linked to Follow-up. The seed gives everyone quest points and coins at
-  // the cap (DAILY) and records no facts for its new members, so the list holds the new members, each with
-  // every fact to ask, and the member marked Needs help (slice 2), who has no reason of their own. The noted
-  // part races: the card test below, in this project and the other one running beside it, keeps a Talked
-  // on a member, so 0 or 1 is right at this moment; the exact rule is in follow-up-week.test.ts.
+  // Issue 585: Follow-up's numbers, linked to Follow-up, in a card of Home's main column before "Today and
+  // tomorrow" (slice 4), and no longer in "Members this week". The seed gives everyone quest points and coins
+  // at the cap (DAILY) and records no facts for its new members, so the list holds the new members, each
+  // with every fact to ask, and the member marked Needs help (slice 2), who has no reason of their own. The
+  // noted part races: the card test below, in this project and the other one running beside it, keeps a
+  // Talked on a member, so 0 or 1 is right at this moment; the exact rule is in follow-up-week.test.ts.
   const toLook = newMembers("a").length + 1;
-  const followUp = week.getByRole("link", {
-    name: new RegExp(`^Follow-up: ${toLook} to look at( · 1 noted this week)?$`),
+  const card = page.getByRole("region", { name: "Follow-up" });
+  const followUp = card.getByRole("link", {
+    name: new RegExp(`^${toLook} members? to look at this week( · 1 already noted by officers)?$`),
   });
   await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
+  const next = page.getByRole("region", { name: "Today and tomorrow" });
+  const [cardBox, nextBox] = [await card.boundingBox(), await next.boundingBox()];
+  expect(cardBox && nextBox && cardBox.y < nextBox.y).toBe(true);
+  await expect(week.getByRole("link", { name: /to look at/ })).toHaveCount(0);
   // With someone to look at, "Everyone looks fine" never shows; on Sunday and Monday (server days), while
   // the week is not thanked yet (the seed shares none), the thanks nudge shows too (D114).
-  await expect(week.getByText("Everyone looks fine this week.")).toHaveCount(0);
+  await expect(page.getByText("Everyone looks fine this week.")).toHaveCount(0);
+  // "Send screenshots" is a card of its own, out of "To review", which holds nothing in the seed, so no
+  // "waiting in To review" jump either (slice 4).
+  const review = page.getByRole("region", { name: "To review" });
+  await sees(review, "Nothing to review.");
+  await expect(review.getByRole("button", { name: "Send screenshots" })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("region", { name: "Screenshots" })
+      .getByRole("button", { name: "Send screenshots" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /waiting in “To review”/ })).toHaveCount(0);
   if ([0, 1].includes(new Date(cal.today).getUTCDay())) {
     await sees(week, "Time for the weekly appreciation post");
   }
 
   // The line leads to Follow-up, which lists the marked member first, under "Needs help", with since when,
-  // who added the mark and why, and last week's Talked as context (slice 2).
+  // who added the mark and why, and last week's Talked as context (slice 2); the hint names the way out (S3).
   await hydrated(followUp);
   await followUp.click();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, A);
   const name = A.names[NEEDS_HELP.k] as string;
   const helpGroup = page.getByRole("region", { name: "Needs help · 1" });
-  await sees(helpGroup, "They stay here each week until someone taps “No longer needs help”.");
+  await sees(
+    helpGroup,
+    "They stay here each week until someone taps their name, then “No longer needs help”.",
+  );
   const row = helpGroup
     .getByRole("listitem")
     .filter({ has: page.getByRole("button", { name: labelled("", name) }) });
@@ -120,6 +138,14 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   await deskFrame(page, A);
   await sees(page.locator("main"), `${ROSTER} of ${ROSTER} members`);
+  // Issue 585 S3: the first group (it holds the member marked Needs help) says its status words, no count,
+  // and points at Follow-up for the week's list while that tab is on.
+  const first = page.getByRole("region", { name: "Check in or Needs help" });
+  await sees(first, "This week’s list: Follow-up ›");
+  await expect(first.getByRole("link", { name: "Follow-up ›" })).toHaveAttribute(
+    "href",
+    `/w/${A.slug}/follow-up`,
+  );
   const k = 3;
   const name = A.names[k] as string;
   // A member's line: a card in a list below 1024 px, a table row from 1024 px (D122); its name opens the card.

@@ -32,35 +32,61 @@ const said = (lines: string[]): RowLine[] => lines.map((text, i) => ({ text, quo
 
 /**
  * Why a member is on the list: the Needs help mark (since when, who, the note), the reasons, the facts
- * still to ask, the tip, then last week's newest record as context (issue 585 S2).
+ * still to ask, the tip, then last week's newest record as context (issue 585 S2). `plain` are the middle
+ * lines, the only ones a group can say once for all its rows (issue 585 S3).
  */
-function linesOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats): RowLine[] {
+function partsOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats) {
   const { member, checkIn, toAsk, tip, mark, lastWeek } = item;
   const reasons = checkIn ? member.reasons.map((r) => reasonLine(r, t, f)) : [];
   // Every fact still to ask, by name (issue 460): never only a count.
   const list = toAsk.map((field) => t[`facts.${field}`]).join(", ");
   // A withdrawn record never counts (liveRecords), so last week's is one of the four answers.
   const last = lastWeek && { ...lastWeek, action: lastWeek.action as FollowUpAction };
-  return [
-    ...(mark ? said(markLines(mark, t, f.date)) : []),
-    ...[
+  return {
+    mark: mark ? said(markLines(mark, t, f.date)) : [],
+    plain: [
       ...reasons,
       ...(toAsk.length > 0 ? [fill(t["followup.toAsk"], { list })] : []),
       ...(tip ? [t["followup.reason.coins"]] : []),
-    ].map((text) => ({ text })),
-    ...(last ? said(lastWeekLines(last, t, f.date, f.date)) : []),
-  ];
+    ],
+    last: last ? said(lastWeekLines(last, t, f.date, f.date)) : [],
+  };
 }
 
-/** A member on the list as the browser shows it. */
-function rowOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats, officer: WorkspaceLanguage) {
+type Parts = ReturnType<typeof partsOf>;
+
+/** The row's lines in order, leaving out the plain lines its group says once. */
+const linesOf = (p: Parts, shared: readonly string[] = []): RowLine[] => [
+  ...p.mark,
+  ...p.plain.filter((text) => !shared.includes(text)).map((text) => ({ text })),
+  ...p.last,
+];
+
+/**
+ * The plain lines every row of a group of two or more holds (issue 585 S3, F29): said once under the group's
+ * title, so six "Still to ask: …" become one. A mark or last week's line (with its officer's note) never is.
+ */
+function sharedOf(parts: Parts[]): string[] {
+  const [first, ...rest] = parts;
+  if (!first || rest.length === 0) return [];
+  return first.plain.filter((text) => rest.every((p) => p.plain.includes(text)));
+}
+
+/** A member on the list as the browser shows it; `own`: the lines its group does not say for it. */
+function rowOf(
+  item: FollowUpItem,
+  { parts, shared }: { parts: Parts; shared: readonly string[] },
+  t: WorkspaceDictionary,
+  officer: WorkspaceLanguage,
+) {
   const { member, toAsk } = item;
   return {
     uid: member.uid,
     name: member.name,
     rank: member.rank,
     help: item.help,
-    lines: linesOf(item, t, f),
+    lines: linesOf(parts),
+    own: linesOf(parts, shared),
     ask: toAsk.map((field) => ({ field, label: t[`facts.${field}`] })),
     message: messageOf(item, officer),
     versions: {
@@ -73,7 +99,7 @@ function rowOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats, officer: 
 /**
  * "Needs help · n" (issue 585 S2), "Worth a hello · n", "New · n", then "A tip to share · n" (D140), each
  * alphabetical (the items come by name); a member is in the first group that holds them, empty groups left
- * out. Needs help says how a member leaves it.
+ * out. Needs help says how a member leaves it; a line every row holds is said once (issue 585 S3).
  */
 export function groupsOf(
   items: FollowUpItem[],
@@ -93,10 +119,17 @@ export function groupsOf(
     { id: "tip", key: "followup.group.tip" as const, items: tip },
   ]
     .filter((g) => g.items.length > 0)
-    .map((g) => ({
-      id: g.id,
-      title: fill(t[g.key], { n: g.items.length }),
-      ...(g.id === "help" && { hint: t["followup.group.helpHint"] }),
-      rows: g.items.map((i) => rowOf(i, t, f, officer)),
-    }));
+    .map((g) => {
+      const parts = g.items.map((i) => partsOf(i, t, f));
+      const shared = sharedOf(parts);
+      return {
+        id: g.id,
+        title: fill(t[g.key], { n: g.items.length }),
+        ...(g.id === "help" && { hint: t["followup.group.helpHint"] }),
+        ...(shared.length > 0 && {
+          shared: { head: fill(t["followup.group.shared"], { n: g.items.length }), lines: shared },
+        }),
+        rows: g.items.map((i, k) => rowOf(i, { parts: parts[k] as Parts, shared }, t, officer)),
+      };
+    });
 }

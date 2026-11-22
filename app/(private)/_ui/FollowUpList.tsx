@@ -1,9 +1,10 @@
 "use client";
 
-// The Follow-up tab's list (issue 340, D104): the members to look at under "Check in", "New" and "A tip to
-// share" (D140), each with one-tap "Talked to them", "Add a note" and a link to Members. A tap on the
-// person, or "Add a note", opens their panel (FollowUpSheet.tsx): a sheet below 1024, the pane beside the
-// list from 1024, the open one in the address (`?m=`, D122). Every save carries a request id (D100). After
+// The Follow-up tab's list (issue 340, D104): the members to look at under "Needs help", "Worth a hello",
+// "New" and "A tip to share" (D140), each with one action, one-tap "Talked to them", and "Card ›" to their
+// member card (issue 585 S3). A tap on the person (the name looks like a link) opens their panel
+// (FollowUpSheet.tsx) with the other answers: a sheet below 1024, the pane beside the list from 1024, the
+// open one in the address (`?m=`, D122). Every save carries a request id (D100). After
 // a save the page is read again, the member leaves the list, and a line says until when, with Undo: Undo
 // appends a "withdrawn" record, so the log stays append-only and the member is back on the list.
 import { useRouter } from "next/navigation";
@@ -28,6 +29,8 @@ export interface FollowUpGroup {
   title: string;
   /** Under the title: how a member leaves the group ("Needs help", issue 585 S2). */
   hint?: string;
+  /** The lines every row holds, said once under the title ("For all 6:", issue 585 S3). */
+  shared?: { head: string; lines: string[] };
   rows: FollowUpRow[];
 }
 
@@ -75,6 +78,8 @@ function Row(props: {
   open: boolean;
   /** Below 1024 the panel is a dialog. */
   sheet: boolean;
+  /** The id of the lines the group says for every row, so the row's description holds them too. */
+  shared: string | null;
   onTalked: () => void;
   onOpen: () => void;
 }) {
@@ -91,15 +96,18 @@ function Row(props: {
         data-uid={row.uid}
         aria-haspopup={props.sheet ? "dialog" : undefined}
         aria-current={props.open ? "true" : undefined}
-        aria-describedby={`fu-hint-${row.uid}`}
+        aria-describedby={[props.shared, `fu-hint-${row.uid}`].filter(Boolean).join(" ")}
         onClick={props.onOpen}
         className={`${props.open ? OPEN_ROW : "tint-button"} -mx-2 block min-h-11 w-[calc(100%+1rem)] px-2 pt-3 pb-1 text-left`}
       >
-        <span className="block font-semibold">
-          <bdi translate="no">{row.name}</bdi>
-          {row.rank && <span className="font-normal text-ink/75">{` · ${row.rank}`}</span>}
+        {/* Only the name looks like a link (issue 585 S3, F29): the one way into the panel. */}
+        <span className="block">
+          <bdi translate="no" className="font-semibold text-plum underline underline-offset-4">
+            {row.name}
+          </bdi>
+          {row.rank && <span className="text-ink/75">{` · ${row.rank}`}</span>}
         </span>
-        {row.lines.map((line, i) => (
+        {row.own.map((line, i) => (
           // ph-no-capture (issue 549): the reasons, the tip, the marks and the notes never reach replay.
           // An officer's note is clamped to two lines here; the panel shows it whole (issue 585 S2).
           <span
@@ -110,26 +118,27 @@ function Row(props: {
           </span>
         ))}
       </button>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      {/* One action per row (issue 585 S3); the other answers are in the panel, and the card one tap away. */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <button type="button" disabled={props.busy} onClick={props.onTalked} className={chip()}>
           {words["followup.talkedNow"]}
         </button>
-        <button type="button" onClick={props.onOpen} className={chip()}>
-          {words["followup.record"]}
-        </button>
         <a
-          href={`/w/${props.slug}/members?q=${encodeURIComponent(row.name)}`}
-          aria-label={fill(words["followup.inMembersAria"], { name: isolate(row.name) })}
+          href={`/w/${props.slug}/members?m=${row.uid}`}
+          aria-label={fill(words["followup.cardAria"], { name: isolate(row.name) })}
           className="inline-flex min-h-11 items-center px-1 text-body-sm font-semibold text-plum underline underline-offset-4"
         >
-          {words["followup.inMembers"]}
+          {words["followup.card"]}
         </a>
       </div>
     </li>
   );
 }
 
-/** A group of the week's list, in the drawn card (D116): its title, how a member leaves it, its rows. */
+/**
+ * A group of the week's list, in the drawn card (D116): its title, how a member leaves it, the lines every
+ * row holds (said once, issue 585 S3), its rows.
+ */
 function Group({ group, children }: { group: FollowUpGroup; children: ReactNode }) {
   return (
     <section className="drawn-card mt-4 px-4 pt-3" aria-labelledby={`follow-up-${group.id}`}>
@@ -137,6 +146,15 @@ function Group({ group, children }: { group: FollowUpGroup; children: ReactNode 
         {group.title}
       </h2>
       {group.hint && <p className="text-body-sm text-ink/80">{group.hint}</p>}
+      {group.shared && (
+        // ph-no-capture (issue 549): a reason or the facts to ask, as on the rows.
+        <div id={`fu-shared-${group.id}`} className="ph-no-capture mt-1 text-body-sm">
+          <p className="font-semibold">{group.shared.head}</p>
+          {group.shared.lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+      )}
       <ul className="mt-1">{children}</ul>
     </section>
   );
@@ -243,6 +261,7 @@ export function FollowUpList(props: {
               busy={busy === r.uid}
               open={r.uid === at.open}
               sheet={at.wide !== true}
+              shared={g.shared ? `fu-shared-${g.id}` : null}
               onTalked={() => void talked(r)}
               onOpen={() => {
                 setDone(null);

@@ -1,10 +1,17 @@
-// Home's "On the desk now" and "Recent activity" (D108) in English, Brazilian Portuguese and French: one
-// module that the three workspace dictionaries spread. Lines say who worked on what, never a member's
+// Home's "On the desk now" and "Recent activity" (D108), and its Follow-up card and "waiting in To review"
+// jump (issue 585 slice 4), in English, Brazilian Portuguese and French: one module that the three
+// workspace dictionaries spread. Lines say who worked on what, never a member's
 // values or a note; no counts per officer, no list of who is away (D75). French puts a no-break space
 // before : and inside « ».
 export const activityEn = {
   "desk.now": "On the desk now",
   "activity.head": "Recent activity",
+  "home.followUp.toLook.one": "{n} member to look at this week",
+  "home.followUp.toLook.other": "{n} members to look at this week",
+  "home.followUp.nobody": "Nobody to look at this week",
+  "home.followUp.noted.one": "{n} already noted by officers",
+  "home.followUp.noted.other": "{n} already noted by officers",
+  "home.toReview.jump": "{n} waiting in “To review” ↓",
   "activity.none": "No activity yet. Saved notices, roll calls and calendar changes show up here.",
   "activity.more": "Show more",
   "activity.less": "Show less",
@@ -32,6 +39,8 @@ export const activityEn = {
   "activity.entry": "{who} added “{entry}” to the Calendar",
   "activity.marks": "{who} took the roll call “{call}”",
   "activity.marksRest": "{who} finished the roll call “{call}”",
+  "activity.others": "{n} others",
+  "activity.marksRestMany": "{who} finished the roll call “{call}”",
   "activity.callDeleted": "{who} deleted the roll call “{call}”",
   "activity.callArchived": "{who} archived the roll call “{call}”",
   "activity.garrisonSaved": "{who} changed the garrison plan for “{entry}”",
@@ -61,6 +70,12 @@ type ActivityWords = Record<keyof typeof activityEn, string>;
 export const activityPt: ActivityWords = {
   "desk.now": "Na Mesa agora",
   "activity.head": "Atividade recente",
+  "home.followUp.toLook.one": "{n} membro para acompanhar nesta semana",
+  "home.followUp.toLook.other": "{n} membros para acompanhar nesta semana",
+  "home.followUp.nobody": "Ninguém para acompanhar nesta semana",
+  "home.followUp.noted.one": "{n} já com nota dos oficiais",
+  "home.followUp.noted.other": "{n} já com nota dos oficiais",
+  "home.toReview.jump": "{n} esperando em “Para revisar” ↓",
   "activity.none":
     "Nenhuma atividade ainda. Avisos salvos, chamadas e mudanças na Agenda aparecem aqui.",
   "activity.more": "Mostrar mais",
@@ -89,6 +104,8 @@ export const activityPt: ActivityWords = {
   "activity.entry": "{who} adicionou “{entry}” à Agenda",
   "activity.marks": "{who} fez a chamada “{call}”",
   "activity.marksRest": "{who} concluiu a chamada “{call}”",
+  "activity.others": "mais {n}",
+  "activity.marksRestMany": "{who} concluíram a chamada “{call}”",
   "activity.callDeleted": "{who} apagou a chamada “{call}”",
   "activity.callArchived": "{who} arquivou a chamada “{call}”",
   "activity.garrisonSaved": "{who} alterou o plano de guarnição de “{entry}”",
@@ -116,6 +133,12 @@ export const activityPt: ActivityWords = {
 export const activityFr: ActivityWords = {
   "desk.now": "Au bureau maintenant",
   "activity.head": "Activité récente",
+  "home.followUp.toLook.one": "{n} membre à suivre cette semaine",
+  "home.followUp.toLook.other": "{n} membres à suivre cette semaine",
+  "home.followUp.nobody": "Personne à suivre cette semaine",
+  "home.followUp.noted.one": "{n} déjà noté par les officiers",
+  "home.followUp.noted.other": "{n} déjà notés par les officiers",
+  "home.toReview.jump": "{n} en attente dans « À vérifier » ↓",
   "activity.none":
     "Aucune activité pour l’instant. Les annonces enregistrées, les appels et les changements d’agenda s’affichent ici.",
   "activity.more": "Voir plus",
@@ -144,6 +167,8 @@ export const activityFr: ActivityWords = {
   "activity.entry": "{who} a ajouté « {entry} » à l’agenda",
   "activity.marks": "{who} a fait l’appel « {call} »",
   "activity.marksRest": "{who} a terminé l’appel « {call} »",
+  "activity.others": "{n} autres",
+  "activity.marksRestMany": "{who} ont terminé l’appel « {call} »",
   "activity.callDeleted": "{who} a supprimé l’appel « {call} »",
   "activity.callArchived": "{who} a archivé l’appel « {call} »",
   "activity.garrisonSaved": "{who} a modifié le plan de garnison de « {entry} »",
