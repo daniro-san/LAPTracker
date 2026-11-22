@@ -172,6 +172,18 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.49.0",
+    date: "2026-11-22",
+    title: "/admin opens with what needs you",
+    changes: [
+      '/admin opens with "Needs you": only what waits on you, each with a count and a link: a late scheduler, a daily read to retry, access requests, app errors from the last 24 h, workspaces to set up or with a key to fix, deletions asked, a low API reading that morning, and your to-dos. When nothing waits, it says so.',
+      "The Alliances table flags a workspace with no member role or no read yet, and Activity shows each workspace's setup steps even without PostHog.",
+      "The menu counts app errors from the last 24 hours, /admin/errors shows each error's workspace and can be filtered by it, and a page-error count links straight to its errors.",
+      "The API reading above the 1,000 plan no longer says OK, and the last tick says Late by the same rule as the scheduler watch.",
+    ],
+    prs: [637],
+  },
+  {
     version: "v5.48.0",
     date: "2026-11-22",
     title: "Talk to a member from their card, and quieter, cheaper reads",
