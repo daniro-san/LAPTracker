@@ -26,19 +26,23 @@ import { dayIn } from "./calendar-time";
 import type { WorkspaceLanguage } from "./dictionary";
 import type { FactSource } from "./fact-fields";
 import { featureOn } from "./features";
+import { kvkEvents, kvkHelp, recordsSince } from "./follow-up-kvk";
 import {
   coinsTip,
   helpMark,
+  kvkOpen,
   lastWeekOf,
   notedThisWeek,
   liveRecords,
   resolvedBy,
+  sinceMonday,
   weekStart,
   worklist,
   type FollowUpAction,
   type HelpMark,
   type WorkItem,
 } from "./follow-up-rules";
+import type { AfterKvk } from "./insights-kvk";
 import { lastDays } from "./member-days";
 import { isMember, saveFacts, type FactChange } from "./member-facts";
 import { DAY_MS, gameWeek } from "./member-week";
@@ -55,6 +59,8 @@ export interface FollowUpView {
   items: FollowUpItem[];
   /** The members noted this week (#585): each one's newest record still counting, newest first. */
   noted: NotedItem[];
+  /** The KvK whose heavy hits are offered help (#585 S5): its server day; null outside its week. */
+  kvkDay: string | null;
   /** The time zones the members have, most used first, for the facts editor's picker. */
   zones: string[];
   /** Attackers in the thefts log whose follow-up is Open or Open again (D97). */
@@ -97,22 +103,28 @@ export function tipsOf(members: readonly MemberRow[], reads: readonly RosterRead
 }
 
 /**
- * The week's list and who was noted, from the members view and the week's records: one rule for
- * Follow-up, Home and Members (#585). The coins tip reads the rosters the view already has.
+ * The week's list and who was noted, from the members view, the records from the earlier of Monday and the
+ * KvK's End read (oldest first), and the KvK: one rule for Follow-up, Home and Members (#585). This week's
+ * records make the list and Noted; the KvK's help list leaves out anyone written about since its End read
+ * (`kvkOpen`). The coins tip reads the rosters the view already has.
  */
-function weekLists<T extends Counted>(view: MembersView, rows: readonly T[]) {
-  const items = worklist(view.members, resolvedBy(rows), tipsOf(view.members, view.reads));
+function weekLists<T extends Counted>(
+  view: MembersView,
+  rows: readonly T[],
+  monday: Date,
+  kvk: AfterKvk | null,
+) {
+  const week = rows.filter((r) => r.at >= monday);
+  const open = kvk ? kvkOpen(kvk.help, rows, monday, kvk.afterAt) : new Set<number>();
+  const items = worklist(view.members, resolvedBy(week), tipsOf(view.members, view.reads), open);
   // Current members only: a member who left, or a former member (D107), is not in the view.
   const byUid = new Map(view.members.map((m) => [m.uid, m]));
-  const noted = notedThisWeek(rows).flatMap((record) => {
+  const noted = notedThisWeek(week).flatMap((record) => {
     const member = byUid.get(record.uid);
     return member ? [{ member, record }] : [];
   });
   return { items, noted };
 }
-
-/** Monday 00:00 server time of the game week that holds `now` (not the newest read's week). */
-const sinceMonday = (now: Date, zone: string) => weekStart(dayIn(zone, now.getTime()), zone);
 
 /** Follow-up's two numbers: the members to look at this week, and the members noted. */
 export type WeekCounts = { toLook: number; noted: number };
@@ -120,7 +132,8 @@ export type WeekCounts = { toLook: number; noted: number };
 /**
  * Follow-up's two numbers for Home and Members (#585), by the same rule, week and members view as the
  * Follow-up page. Null, with nothing read, while the Follow-up tab is off (D126) and before the alliance's
- * first daily update (the pages then say nothing about check-ins). Reads uid, action and time only.
+ * first daily update (the pages then say nothing about check-ins). Reads uid, action and time only, from
+ * the earlier of Monday and the oldest day of a KvK still offered help, beside that KvK's read (#585 S5).
  */
 export async function followUpCounts(
   db: Db,
@@ -130,8 +143,12 @@ export async function followUpCounts(
   zone: string,
 ): Promise<WeekCounts | null> {
   if (!featureOn(access, "follow_up") || view.early) return null;
-  const rows = await followedUpSince(db, access.workspaceId, sinceMonday(now, zone));
-  const { items, noted } = weekLists(view, rows);
+  const [rows, events] = await Promise.all([
+    followedUpSince(db, access.workspaceId, recordsSince(now, zone)),
+    kvkEvents(db, access, now, zone),
+  ]);
+  const kvk = kvkHelp(events, view, now, zone);
+  const { items, noted } = weekLists(view, rows, sinceMonday(now, zone), kvk);
   return { toLook: items.length, noted: noted.length };
 }
 
@@ -168,16 +185,15 @@ export async function followUpView(
   const monday = sinceMonday(now, zone);
   // From last Monday (#585 S2): this week's records make the list, last week's only its context.
   const lastMonday = weekStart(dayIn(zone, monday.getTime() - DAY_MS), zone);
-  const [members, window, thefts] = await Promise.all([
+  const [members, window, thefts, events] = await Promise.all([
     membersView(db, access, now, zone),
     notedSince(db, access.workspaceId, lastMonday),
     theftsView(db, access, { now, zone }),
+    kvkEvents(db, access, now, zone),
   ]);
-  // The same rows Home and Members count (`followedUpSince` from this Monday).
-  const { items, noted } = weekLists(
-    members,
-    window.filter((r) => r.at >= monday),
-  );
+  // Last Monday is before the oldest KvK still offered help, so the window holds every row Home counts.
+  const kvk = kvkHelp(events, members, now, zone);
+  const { items, noted } = weekLists(members, window, monday, kvk);
   const lastWeek = lastWeekOf(window, monday);
   // Only the members on the list, and only recent reads (#521).
   const since = new Date(now.getTime() - LANGUAGE_DAYS * DAY_MS);
@@ -204,6 +220,7 @@ export async function followUpView(
       };
     }),
     noted,
+    kvkDay: kvk?.day ?? null,
     zones: members.zones,
     // Every attacker not yet resolved, whatever step they are at (D104, amended 2026-11-19).
     thefts: thefts.groups

@@ -84,37 +84,66 @@ function EventBody({ e, t, noData }: { e: KvkEventWords; t: WorkspaceDictionary;
   );
 }
 
+/**
+ * "Took a heavy hit — maybe offer help": the names, each to their card, and while Follow-up's "After KvK,
+ * offer help" has someone in it, a link to that group (issue 585 S5).
+ */
+function HelpList(props: {
+  kvk: KvkWords;
+  slug: string;
+  t: WorkspaceDictionary;
+  followUp: boolean;
+}) {
+  const { kvk, slug, t } = props;
+  return (
+    <div className="mt-3 border-t-2 border-rule pt-2">
+      <h3 className="font-semibold">{t["insights.kvk.help.head"]}</h3>
+      <p className="text-body-sm text-ink/80">{t["insights.kvk.help.lead"]}</p>
+      {kvk.help.length > 0 ? (
+        <ul className="ph-no-capture mt-1 text-body-sm">
+          {kvk.help.map((p) => (
+            <li key={p.uid} className="border-t border-rule">
+              <a
+                href={`/w/${slug}/members?m=${p.uid}`}
+                className="text-link flex min-h-11 items-center font-semibold"
+              >
+                <bdi translate="no">{p.name}</bdi>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-body-sm">{t["insights.kvk.help.none"]}</p>
+      )}
+      {props.followUp && (
+        <p className="mt-2 text-body-sm">
+          {`${t["insights.kvk.help.followUp"]} `}
+          <a
+            href={`/w/${slug}/follow-up#follow-up-kvk`}
+            className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+          >
+            {t["insights.kvk.help.followUpLink"]}
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function KvkCard(props: {
   kvk: KvkWords;
   slug: string;
   t: WorkspaceDictionary;
   noData: string;
+  /** Follow-up's "After KvK, offer help" has someone in it: the help list links to it (issue 585 S5). */
+  followUp: boolean;
 }) {
   const { kvk, slug, t, noData } = props;
   const [newest, ...older] = kvk.events;
   if (!newest) return <Card id="insights-kvk" title={t["insights.kvk.head"]} based={kvk.based} />;
   return (
     <Card id="insights-kvk" title={t["insights.kvk.head"]} based={kvk.based}>
-      <div className="mt-3 border-t-2 border-rule pt-2">
-        <h3 className="font-semibold">{t["insights.kvk.help.head"]}</h3>
-        <p className="text-body-sm text-ink/80">{t["insights.kvk.help.lead"]}</p>
-        {kvk.help.length > 0 ? (
-          <ul className="ph-no-capture mt-1 text-body-sm">
-            {kvk.help.map((p) => (
-              <li key={p.uid} className="border-t border-rule">
-                <a
-                  href={`/w/${slug}/members?m=${p.uid}`}
-                  className="text-link flex min-h-11 items-center font-semibold"
-                >
-                  <bdi translate="no">{p.name}</bdi>
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1 text-body-sm">{t["insights.kvk.help.none"]}</p>
-        )}
-      </div>
+      <HelpList kvk={kvk} slug={slug} t={t} followUp={props.followUp} />
       <Fold summary={t["insights.more"]} className="mt-2">
         {newest && (
           <div className="pb-2">

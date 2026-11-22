@@ -173,6 +173,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.53.0",
+    date: "2026-11-22",
+    title: "Offer help after a KvK, from Follow-up",
+    changes: [
+      'Follow-up has a new group, "After KvK, offer help": members who lost over a quarter of their might in the latest KvK and are still below 80% of it, for the week after it (from the night read to Friday). Writing down what they said takes them out. The hint and the ready message offer help ("How did KvK go for you?"); no number is shown beside a name.',
+      "Home's and Members' Follow-up numbers count this group, and Insights' KvK help list links to it.",
+      "For whoever builds the site: the daily browser checks now also pass on the iPhone's browser engine (WebKit), which never signed in on GitHub's Linux machines before.",
+    ],
+    prs: [655, 648],
+  },
+  {
     version: "v5.52.0",
     date: "2026-11-22",
     title: "Home says what needs you first, and Follow-up rows are simpler",

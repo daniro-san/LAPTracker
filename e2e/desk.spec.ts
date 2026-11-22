@@ -4,6 +4,7 @@
 // pages' formatter (`big`); none depends on the day the suite runs, except the dates, which follow it.
 import type { Page } from "@playwright/test";
 
+import { toLookOf } from "./fixtures/follow-up-list";
 import {
   ALLIANCES,
   calendarOf,
@@ -15,7 +16,6 @@ import {
   LEAVER,
   NEEDS_HELP,
   needsHelpDays,
-  newMembers,
   lastRosterDay,
   raidOf,
   rosterOf,
@@ -71,14 +71,14 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
   // Issue 585: Follow-up's numbers, linked to Follow-up, in a card of Home's main column before "Today and
   // tomorrow" (slice 4), and no longer in "Members this week". The seed gives everyone quest points and coins
-  // at the cap (DAILY) and records no facts for its new members, so the list holds the new members, each
-  // with every fact to ask, and the member marked Needs help (slice 2), who has no reason of their own. The
-  // noted part races: the card test below, in this project and the other one running beside it, keeps a
-  // Talked on a member, so 0 or 1 is right at this moment; the exact rule is in follow-up-week.test.ts.
-  const toLook = newMembers("a").length + 1;
+  // at the cap (DAILY) and records no facts for its new members, so the list holds `toLookOf`
+  // (e2e/fixtures/follow-up-list.ts). The noted part races: the card test below, in this project and the
+  // other one running beside it, keeps a Talked on a member, so 0 or 1 is right at this moment; the exact
+  // rule is in follow-up-week.test.ts.
   const card = page.getByRole("region", { name: "Follow-up" });
+  const n = toLookOf();
   const followUp = card.getByRole("link", {
-    name: new RegExp(`^${toLook} members? to look at this week( · 1 already noted by officers)?$`),
+    name: new RegExp(`^${n} members? to look at this week( · 1 already noted by officers)?$`),
   });
   await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
   const next = page.getByRole("region", { name: "Today and tomorrow" });

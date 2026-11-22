@@ -1,12 +1,12 @@
 # One worklist (#585 batch 3) checks
 
 Build: `pnpm typecheck`; `pnpm lint`
-Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" "app/(private)/_ui/MembersList.test.ts" lib/private/dictionary.test.ts lib/private/desk-activity-pages.test.ts "app/(private)/_ui/HomeMembers.test.ts" "app/(private)/_ui/HomeNext.test.ts" "app/(private)/_ui/ToReview.test.ts" --reporter=verbose`
+Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" "app/(private)/_ui/MembersList.test.ts" lib/private/dictionary.test.ts lib/private/desk-activity-pages.test.ts "app/(private)/_ui/HomeMembers.test.ts" "app/(private)/_ui/HomeNext.test.ts" "app/(private)/_ui/ToReview.test.ts" lib/private/follow-up-kvk.test.ts --reporter=verbose`
 Plan: `.specs/features/585-one-worklist/plan.md`
 
 profile: light
 
-42 checks in 4 slices built (S1 in PR 640: C1-C14; S2 in PR 646: C15-C24; S3 in PR 651: C25-C34; S4 in `feat/585-home-first-screen`: C35-C42; S6 in PR 643 was checked in its own handoff; S5 is a later PR and gets its own checks) · 0 one-way doors · 0 open, of which 0 block
+52 checks in 5 slices built (S1 in PR 640: C1-C14; S2 in PR 646: C15-C24; S3 in PR 651: C25-C34; S4 in PR 652: C35-C42; S5 in `feat/585-after-kvk-help`: C43-C52; S6 in PR 643 was checked in its own handoff) · 0 one-way doors · 0 open, of which 0 block
 
 ## Checks
 
@@ -118,22 +118,56 @@ Proof: walk - `s3-shots/after2/followup-a-phone-light-fold.png` (the tap cue, Ny
 **C34** - D104, D140, D98 and D73 each carry an amendment dated 2026-11-22 for issue 585 slice 3 (AC 33)
 Proof: `grep -c "2026-11-22 (issue 585 batch 3, slice 3\|2026-11-22, issue 585 S3" docs/decisions/D104-follow-up-weekly-worklist.md docs/decisions/D140-follow-up-panel-ready-messages-and-the-coins-tip.md docs/decisions/D98-members-list-filters-orders-and-the-clock-switch.md docs/decisions/D73-workspace-sign-in-implementation-choices.md`
 
+### S5 - After KvK, offer help (built in `feat/585-after-kvk-help`)
+
+**C43** - KvK Sat 21 Nov: on Sat 22:00 ST, before its night read, nobody is listed for it; on Sun 22 and Fri 27 the two heavy hits are under After KvK; the one marked Needs help stays under Needs help; the one on a break is on no list; on Sat 28 (the next KvK day) the group is gone; Home's numbers equal Follow-up's each time (AC 40, AC 43)
+Proof: run unit | ✓ lib/private/follow-up-kvk.test.ts > Follow-up's After KvK, offer help (#585 slice 5) > lists the KvK's heavy hits from its night read through the Friday after, a member on a break or marked Needs help kept out of the group
+
+**C44** - A "Talked to them" on Sun 22 after the KvK takes the member out of the group (under Noted) and they are not back on Mon 23; a talk undone keeps the member in the group; Home's numbers equal Follow-up's on Sunday and on Monday (AC 40, AC 43)
+Proof: run unit | ✓ lib/private/follow-up-kvk.test.ts > Follow-up's After KvK, offer help (#585 slice 5) > takes a member someone wrote about after the KvK out of the group until its week ends, not back on Monday; an undone note puts them back
+
+**C45** - "After KvK, offer help · 2" is the second group, after Needs help and before Worth a hello; its hint names the KvK's day and the rule; no "Same for all" and no row repeats the KvK line, a quiet line stays on its row; the Needs help row and the panel say "Still rebuilding after the KvK of Sat, Nov 21."; the ready message starts "Hey Cass! How did KvK go for you?" with no number (AC 41)
+Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's groups (issue 585 slice 2) > offers help after the KvK in the second group, its rule said once in the hint, the KvK line on a Needs help row and in every panel (issue 585 S5)
+
+**C46** - The head says "2 to offer help after the KvK ↓" to `#follow-up-kvk`, not counting a Needs help member, and nothing without one (AC 42)
+Proof: run unit | ✓ app/(private)/_ui/FollowUpWeek.test.ts > Follow-up's week around the list (issue 585) > jumps from the head to After KvK, offer help, counting only its own members, and says nothing without them (issue 585 S5)
+
+**C47** - Insights links to the group while someone is in it; not once both are talked to (the others under Needs help or on a break); again after an Undo; never with the Follow-up tab off (AC 44)
+Proof: run unit | ✓ lib/private/follow-up-kvk.test.ts > Follow-up's After KvK, offer help (#585 slice 5) > links Insights' help list to the group only while someone is in it and the Follow-up tab is on
+
+**C48** - Every new key exists in EN, PT-BR and FR (AC 45)
+Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, pt-BR and fr, and no empty value
+
+**C49** - D104, D139 and D140 each carry an amendment dated 2026-11-22 for slice 5 (AC 46)
+Proof: `grep -c "2026-11-22 (issue 585 batch 3, slice 5" docs/decisions/D104-follow-up-weekly-worklist.md docs/decisions/D139-officers-insights-page.md docs/decisions/D140-follow-up-panel-ready-messages-and-the-coins-tip.md`
+
+**C50** - On the seed (phone and wide), Follow-up shows "1 to offer help after the KvK ↓", "After KvK, offer help · 1" with the hint naming the last KvK's day and HEAVY_HIT's row without the KvK line, the jump brings the group into view; Insights' card links HEAVY_HIT to their card and shows "Offer help: Follow-up ›", which opens Follow-up at the group; on a Saturday none of it shows (AC 40, AC 41, AC 42, AC 44, AC 47)
+Proof: `pnpm test:e2e e2e/desk-kvk.spec.ts`
+
+**C51** - Home's and Members' heads say "Follow-up: {new members + 2} to look at" (HEAVY_HIT and the Needs help member counted; + 1 on a Saturday), linked to Follow-up (AC 43, AC 47)
+Proof: `pnpm test:e2e e2e/desk.spec.ts e2e/desk-kvk.spec.ts -g "Home shows the alliance|Members' head says"`
+
+**C52** - At 360 × 780 (e2e seed, Sun 22 Nov) a return visit shows the jump and the group's title in the first screen under Needs help; the group, the jump's landing, Insights' card in light and dark, and the panel at 1280 (AC 40, AC 41, AC 42, AC 44)
+Proof: walk - `s5-shots/followup-360-dark-fold.png`, `followup-360-light-fold.png` (first visit), `followup-360-light-jump.png`, `followup-360-dark-full.png`, `insights-kvk-360-light.png`, `insights-kvk-360-dark.png`, `followup-1280-panel.png`
+
 ## Coverage
 
-| Set (size)                        | Member -> proof                                                                              | Unproven |
-| --------------------------------- | -------------------------------------------------------------------------------------------- | -------- |
-| AC 3 examples (4)                 | Mon 00:05 C1 · Sun 23:59 week before C1 · Talked then Undo C1 · two records → newest C1      | -        |
-| Line shapes, AC 6 (4)             | 12/4 C5 · 12/0 C5 · 0/4 C5 · 0/0 C5                                                          | -        |
-| Record answers in a Noted row (4) | talked C6, C8 · break C6 · help C6 · fine C6                                                 | -        |
-| Readers of the counts (3)         | Follow-up C1, C8 · Home C9 · Members C7 (shared `checkInLink`, same `followUpCounts`)        | -        |
-| Tab switch states (2)             | on C3, C7 · off C4, C7                                                                       | -        |
-| S2: the group's states (4)        | marked, no reason C15 · noted this week C15, C18 · paused by a break C15 · cleared C15, C24  | -        |
-| S2: where the mark comes from (3) | "They need help" with a note C16 · Edit info C16 · Undo of a repeated mark C16               | -        |
-| S2: last week's context (4)       | newest of last week C17 · two weeks back C17 · undone across Monday C17 · the mark's own C17 | -        |
-| S2: readers of the mark (2)       | Follow-up row C16, C21 · card header C16, C22                                                | -        |
-| S3: AC 15 examples (4)            | six alike → once C25 · differing facts → own C25 · group of one C25 · same mark → kept C25   | -        |
-| S3: help states (3)               | first visit open C27, C29 · after closed C27, C29 · first-use cards cover it: walk only      | covered  |
-| S3: Members pointer states (2)    | with Follow-up's numbers C28, C31 · without C28                                              | -        |
+| Set (size)                        | Member -> proof                                                                                              | Unproven |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------- |
+| AC 3 examples (4)                 | Mon 00:05 C1 · Sun 23:59 week before C1 · Talked then Undo C1 · two records → newest C1                      | -        |
+| Line shapes, AC 6 (4)             | 12/4 C5 · 12/0 C5 · 0/4 C5 · 0/0 C5                                                                          | -        |
+| Record answers in a Noted row (4) | talked C6, C8 · break C6 · help C6 · fine C6                                                                 | -        |
+| Readers of the counts (3)         | Follow-up C1, C8 · Home C9 · Members C7 (shared `checkInLink`, same `followUpCounts`)                        | -        |
+| Tab switch states (2)             | on C3, C7 · off C4, C7                                                                                       | -        |
+| S2: the group's states (4)        | marked, no reason C15 · noted this week C15, C18 · paused by a break C15 · cleared C15, C24                  | -        |
+| S2: where the mark comes from (3) | "They need help" with a note C16 · Edit info C16 · Undo of a repeated mark C16                               | -        |
+| S2: last week's context (4)       | newest of last week C17 · two weeks back C17 · undone across Monday C17 · the mark's own C17                 | -        |
+| S2: readers of the mark (2)       | Follow-up row C16, C21 · card header C16, C22                                                                | -        |
+| S3: AC 15 examples (4)            | six alike → once C25 · differing facts → own C25 · group of one C25 · same mark → kept C25                   | -        |
+| S3: help states (3)               | first visit open C27, C29 · after closed C27, C29 · first-use cards cover it: walk only                      | covered  |
+| S3: Members pointer states (2)    | with Follow-up's numbers C28, C31 · without C28                                                              | -        |
+| S5: AC 40 examples (6)            | Sun/Fri listed C43 · Sat gone C43 · talked → not back Mon C44 · undone C44 · break C43 · Needs help C43, C45 | -        |
+| S5: readers of the group (4)      | Follow-up C43, C50 · Home C44, C51 · Members C51 · Insights C47, C50                                         | -        |
 
 ### S4 - Home's first screen: Follow-up's numbers near the top, the activity in one screen (built in `feat/585-home-first-screen`)
 
@@ -226,6 +260,18 @@ S4 swept:
 - dependency failure: n/a - no outside call
 - state transitions: C37 (an entry to come, then over, on the browser's minute after hydration)
 - observability: n/a - no log; the analytics plan's dated "Changed" line covers the moved link
+
+S5 swept:
+
+- validation: n/a - no input; the group reads stored records and snapshots
+- failure modes: existing - a failed read shows the desk's error page; a KvK whose End failed is dropped by `scheduledEventMight`, so no group (adversarial NOTE)
+- idempotency: n/a - nothing new is written
+- authorization: existing - `requireWorkspace` before any read; `scheduledEventMight` filters by the workspace's own `union_id`, `followedUpSince` by `workspace_id`
+- concurrency: n/a - read only; a note by another officer takes the member out on the next read (C44)
+- data lifecycle: C43 (the KvK's week: before its read, in it, the next KvK day), C44 (Undo)
+- dependency failure: n/a - no outside call
+- state transitions: C43, C44 (in the group → written about → out until the week ends; undone → back)
+- observability: n/a - no log; names stay inside `ph-no-capture` (the rows and Insights' list); the links carry no names
 
 ## Handoff
 

@@ -18,6 +18,7 @@ import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
 import { awayUntil } from "./fact-fields";
 import { featureOn } from "./features";
+import { kvkGroupOpen } from "./follow-up-kvk";
 import { KVK_READ_FROM, kvkOf, type KvkView } from "./insights-kvk";
 import {
   bandsOf,
@@ -77,6 +78,8 @@ export interface InsightsView {
   } | null;
   /** KvK cost and recovery: the newest scheduled events inside the reads, and why none may show yet. */
   kvk: KvkView;
+  /** Follow-up's "After KvK, offer help" has someone in it, so the help list links to it (#585 S5). */
+  kvkFollowUp: boolean;
   /** Squads seen, counts only; null with the squads read turned off (D126). */
   squads: SquadsCoverage | null;
   /** Raid Shield history, the newest week first; null with the Raid Shield check turned off (D134). */
@@ -229,6 +232,7 @@ export async function insightsView(
       effort: null,
       flow: null,
       kvk: { events: [], waiting: null, readsFrom: null },
+      kvkFollowUp: false,
       squads: null,
       shield: null,
       labels: new Map(),
@@ -251,12 +255,18 @@ export async function insightsView(
     squadsOn ? latestSquadSightings(db, access.unionId) : [],
     fridays ? shieldPassCounts(db, access.unionId, shieldWindows(fridays, zone)) : [],
   ]);
+  const kvk = kvkOf(events, reads, zone, away, now);
+  // Members marked Needs help sit in Follow-up's Needs help group, not in the KvK one.
+  const marked = new Set(
+    newest.members.filter((m) => facts.get(m.uid)?.status?.value === "help").map((m) => m.uid),
+  );
   return {
     newest: newest.day,
     pulse,
     effort: effortPart(reads, firstSeen, oldest, away),
     flow,
-    kvk: kvkOf(events, reads, zone, away, now),
+    kvk,
+    kvkFollowUp: await kvkGroupOpen(db, access, kvk, marked, now, zone),
     squads: squadsOn
       ? squadsCoverageOf(
           newest.members.map((m) => m.uid),

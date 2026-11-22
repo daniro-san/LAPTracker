@@ -92,4 +92,21 @@ describe("Follow-up's week around the list (issue 585)", () => {
       /<summary[^>]*>Tap a name to write down what they said\. <span[^>]*>How this list works<\/span><\/summary>/,
     );
   });
+
+  it("jumps from the head to After KvK, offer help, counting only its own members, and says nothing without them (issue 585 S5)", () => {
+    const on = (kvk: boolean, help: boolean) => ({ member: wren, kvk, help });
+    const head = (items: unknown[]) =>
+      renderToStaticMarkup(
+        createElement(FollowUpHead, {
+          data: { early: false, week, items, noted: [], zones: [], thefts: [] } as never,
+          t,
+          language: "en",
+          help: { seen: true, covered: false },
+        }),
+      );
+    // Two in the group; the member also marked Needs help is in that group instead.
+    const html = head([on(true, false), on(true, false), on(true, true), on(false, false)]);
+    expect(html).toMatch(/<a href="#follow-up-kvk"[^>]*>2 to offer help after the KvK ↓<\/a>/);
+    expect(head([on(true, true), on(false, false)])).not.toContain("#follow-up-kvk");
+  });
 });

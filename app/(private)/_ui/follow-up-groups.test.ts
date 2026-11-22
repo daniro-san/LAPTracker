@@ -22,6 +22,7 @@ const item = (m: MemberRow, extra: Partial<FollowUpItem>): FollowUpItem => ({
   help: false,
   toAsk: [],
   tip: false,
+  kvk: false,
   language: null,
   mark: null,
   lastWeek: null,
@@ -96,5 +97,47 @@ describe("Follow-up's groups (issue 585 slice 2)", () => {
     ]);
     expect(groups[3]?.shared).toBeUndefined();
     expect(groups[3]?.rows[0]?.own).toEqual([{ text: t["followup.reason.coins"] }]);
+  });
+
+  it("offers help after the KvK in the second group, its rule said once in the hint, the KvK line on a Needs help row and in every panel (issue 585 S5)", () => {
+    const mark = { at: new Date("2026-11-13T14:00:00Z"), by: "Ana", note: null };
+    const groups = groupsOf(
+      [
+        // Marked Needs help and hit in the KvK: stays under Needs help, with the KvK line.
+        item(member(1, "Ash"), { checkIn: false, help: true, kvk: true, mark }),
+        // Hit and also quiet: one row, under After KvK, keeping the quiet line.
+        item(member(2, "Bryn"), { kvk: true }),
+        item(member(3, "Cass"), { checkIn: false, kvk: true }),
+        item(member(4, "Dax"), {}),
+      ],
+      t,
+      f,
+      "en",
+      "2026-11-21",
+    );
+    const kvk = "Still rebuilding after the KvK of Sat, Nov 21.";
+    expect(groups.map((g) => [g.title, g.rows.map((r) => r.name)])).toEqual([
+      ["Needs help · 1", ["Ash"]],
+      ["After KvK, offer help · 2", ["Bryn", "Cass"]],
+      ["Worth a hello · 1", ["Dax"]],
+    ]);
+    expect(groups[0]?.rows[0]?.own.map((l) => l.text)).toEqual([
+      `Since Fri, Nov 13 · added by ${isolate("Ana")}`,
+      kvk,
+    ]);
+    expect(groups[1]?.hint).toBe(
+      "Lost over a quarter of their might in the KvK of Sat, Nov 21, and still below 80% of what they had. Here for the week after it, or until someone writes down what they said.",
+    );
+    // The hint says the KvK line, so no "Same for all 2:" and no row repeats it; other lines stay.
+    expect(groups[1]?.shared).toBeUndefined();
+    expect(groups[1]?.rows.map((r) => r.own.map((l) => l.text))).toEqual([
+      ["Quiet for 3 days. Worth a hello."],
+      [],
+    ]);
+    // The panel's "Why they're on the list" keeps it, and the ready message leads with the KvK, no number.
+    expect(groups[1]?.rows[1]?.lines).toEqual([{ text: kvk }]);
+    expect(groups[1]?.rows[1]?.message.texts.en).toBe(
+      "Hey Cass! How did KvK go for you? Anything we can help with? Just checking in 🙂",
+    );
   });
 });

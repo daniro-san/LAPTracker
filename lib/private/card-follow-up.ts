@@ -105,7 +105,9 @@ export async function cardFollowUp(
     ...weekOf(records, item, at, date),
     message: {
       language: await languageOf(db, access, member, at),
-      texts: readyTexts(inputOf(item ?? { member, checkIn: false, tip: false, toAsk: [] })),
+      texts: readyTexts(
+        inputOf(item ?? { member, checkIn: false, tip: false, toAsk: [], kvk: false }),
+      ),
     },
     words: Object.fromEntries(CARD_KEYS.map((k) => [k, at.t[k]])) as CardFollowUpWords,
   };

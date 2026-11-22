@@ -142,7 +142,8 @@ function Row(props: {
 function Group({ group, children }: { group: FollowUpGroup; children: ReactNode }) {
   return (
     <section className="drawn-card mt-4 px-4 pt-3" aria-labelledby={`follow-up-${group.id}`}>
-      <h2 id={`follow-up-${group.id}`} className="font-subhead text-display-sm">
+      {/* scroll-mt: the head's jump to a group (issue 585 S5) keeps the card's top edge in sight. */}
+      <h2 id={`follow-up-${group.id}`} className="scroll-mt-4 font-subhead text-display-sm">
         {group.title}
       </h2>
       {group.hint && <p className="text-body-sm text-ink/80">{group.hint}</p>}

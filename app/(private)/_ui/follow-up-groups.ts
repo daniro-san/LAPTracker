@@ -1,5 +1,6 @@
 // Follow-up's groups and rows as the browser shows them (issue 340, D104; D140; issue 585), made on the
-// server: "Needs help · n" first (slice 2), then "Worth a hello · n", "New · n" and "A tip to share · n", each
+// server: "Needs help · n" first (slice 2), "After KvK, offer help · n" (slice 5), then "Worth a hello · n",
+// "New · n" and "A tip to share · n", each
 // row with why the member is on the list in the officer's words. Apart from the page so the grouping can be
 // tested with the dictionary's own words.
 import { fill } from "@/lib/copy";
@@ -35,9 +36,13 @@ const said = (lines: string[]): RowLine[] => lines.map((text, i) => ({ text, quo
  * still to ask, the tip, then last week's newest record as context (issue 585 S2). `plain` are the middle
  * lines, the only ones a group can say once for all its rows (issue 585 S3).
  */
-function partsOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats) {
+function partsOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats, kvk: string | null) {
   const { member, checkIn, toAsk, tip, mark, lastWeek } = item;
-  const reasons = checkIn ? member.reasons.map((r) => reasonLine(r, t, f)) : [];
+  // The KvK's heavy hit first (slice 5), with no number beside a name (D139).
+  const reasons = [
+    ...(item.kvk && kvk ? [kvk] : []),
+    ...(checkIn ? member.reasons.map((r) => reasonLine(r, t, f)) : []),
+  ];
   // Every fact still to ask, by name (issue 460): never only a count.
   const list = toAsk.map((field) => t[`facts.${field}`]).join(", ");
   // A withdrawn record never counts (liveRecords), so last week's is one of the four answers.
@@ -97,39 +102,51 @@ function rowOf(
 }
 
 /**
- * "Needs help · n" (issue 585 S2), "Worth a hello · n", "New · n", then "A tip to share · n" (D140), each
- * alphabetical (the items come by name); a member is in the first group that holds them, empty groups left
- * out. Needs help says how a member leaves it; a line every row holds is said once (issue 585 S3).
+ * "Needs help · n" (issue 585 S2), "After KvK, offer help · n" (S5), "Worth a hello · n", "New · n", then "A
+ * tip to share · n" (D140), each alphabetical (the items come by name); a member is in the first group that
+ * holds them, empty groups left out. Needs help and After KvK say how a member leaves them; a line every row
+ * holds is said once (issue 585 S3), and the KvK line by its group's hint. `kvkDay`: the KvK Follow-up offers
+ * help after (`FollowUpView.kvkDay`).
  */
 export function groupsOf(
   items: FollowUpItem[],
   t: WorkspaceDictionary,
   f: Formats,
   officer: WorkspaceLanguage,
+  kvkDay: string | null = null,
 ): FollowUpGroup[] {
+  const date = kvkDay && f.date(kvkDay);
+  const kvkLine = date ? fill(t["followup.reason.kvk"], { date }) : null;
   const help = items.filter((i) => i.help);
-  const rest = items.filter((i) => !i.help);
+  const hit = items.filter((i) => !i.help && i.kvk);
+  const rest = items.filter((i) => !i.help && !i.kvk);
   const checkIn = rest.filter((i) => i.checkIn);
   const fresh = rest.filter((i) => !i.checkIn && i.toAsk.length > 0);
   const tip = rest.filter((i) => !i.checkIn && i.toAsk.length === 0);
   return [
     { id: "help", key: "followup.group.help" as const, items: help },
+    { id: "kvk", key: "followup.group.kvk" as const, items: hit },
     { id: "checkin", key: "followup.group.checkin" as const, items: checkIn },
     { id: "new", key: "followup.group.new" as const, items: fresh },
     { id: "tip", key: "followup.group.tip" as const, items: tip },
   ]
     .filter((g) => g.items.length > 0)
     .map((g) => {
-      const parts = g.items.map((i) => partsOf(i, t, f));
-      const shared = sharedOf(parts);
+      const parts = g.items.map((i) => partsOf(i, t, f, kvkLine));
+      // The KvK group's hint says its line, so neither its rows nor "Same for all" repeat it (slice 5).
+      const said = g.id === "kvk" && kvkLine ? [kvkLine] : [];
+      const shared = sharedOf(parts).filter((text) => !said.includes(text));
       return {
         id: g.id,
         title: fill(t[g.key], { n: g.items.length }),
         ...(g.id === "help" && { hint: t["followup.group.helpHint"] }),
+        ...(g.id === "kvk" && date && { hint: fill(t["followup.group.kvkHint"], { date }) }),
         ...(shared.length > 0 && {
           shared: { head: fill(t["followup.group.shared"], { n: g.items.length }), lines: shared },
         }),
-        rows: g.items.map((i, k) => rowOf(i, { parts: parts[k] as Parts, shared }, t, officer)),
+        rows: g.items.map((i, k) =>
+          rowOf(i, { parts: parts[k] as Parts, shared: [...shared, ...said] }, t, officer),
+        ),
       };
     });
 }
