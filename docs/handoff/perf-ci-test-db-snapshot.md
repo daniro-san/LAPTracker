@@ -104,4 +104,4 @@ All runs were on a 10-core Mac shared with other agents. Load ranged from 4 to 3
 - Local wall time for the next cut: about 46–50 s for the full suite at load ~22, of which imports are about 30 %.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/603
