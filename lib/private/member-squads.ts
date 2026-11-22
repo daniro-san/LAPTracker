@@ -11,7 +11,7 @@ import type { Db } from "../db";
 import { heroNames } from "../repo/hero-catalog";
 import { squadPairs, type StoredSquad } from "../repo/squads";
 import { mainSquad } from "../squads";
-import { fill } from "../words";
+import { fill, plural } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
@@ -223,7 +223,14 @@ function squadCard(
     empty:
       empty === 0
         ? null
-        : fill(t[empty === 1 ? "squads.empty.one" : "squads.empty.other"], { n: empty }),
+        : fill(
+            plural(
+              empty,
+              { one: t["squads.empty.one"], other: t["squads.empty.other"] },
+              f.language,
+            ),
+            { n: empty },
+          ),
   };
 }
 
@@ -243,10 +250,14 @@ export function squadsCardOf(
     head: t["squads.head"],
     help: t["squads.help"],
     summary: last
-      ? fill(t[sorted.length === 1 ? "squads.summary.one" : "squads.summary.other"], {
-          n: sorted.length,
-          date: f.date(last),
-        })
+      ? fill(
+          plural(
+            sorted.length,
+            { one: t["squads.summary.one"], other: t["squads.summary.other"] },
+            f.language,
+          ),
+          { n: sorted.length, date: f.date(last) },
+        )
       : null,
     slotWord: t["squads.slot"],
     emptySlot: t["squads.emptySlot"],

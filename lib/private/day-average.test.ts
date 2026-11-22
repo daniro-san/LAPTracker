@@ -128,7 +128,7 @@ describe("one average for a member on the card, Me and Insights (#663)", () => {
         expect(card[i]?.average, `${uid} ${metric}`).toBe(expected.line);
         expect(week[i]?.average, `${uid} ${metric}`).toBe(`This week: ${expected.line}`);
         // Insights' own average written by the same words: the same line as the card's and Me's.
-        expect(averageLine(insights, t, (n) => String(n))).toBe(expected.line);
+        expect(averageLine(insights, t, (n) => String(n), "en")).toBe(expected.line);
         // Friday had no daily update: the no-data mark on both, never "none" or 0.
         expect([card[i]?.bars[4]?.value, week[i]?.bars[4]?.value]).toEqual(["—", "—"]);
       }

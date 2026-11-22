@@ -1,7 +1,7 @@
 // The words of Home's "On the desk now" and "Recent activity" (D108), made on the server in the officer's
 // language. Every name and title goes through isolate(), so a right-to-left name cannot reorder the line.
 import { isolate } from "../copy";
-import { fill } from "../words";
+import { fill, plural } from "../words";
 import { agoText, calendarDates, titleOf } from "./calendar-words";
 import {
   COUNTED_RUNS,
@@ -102,9 +102,17 @@ function countLine(
   t: WorkspaceDictionary,
   who: string,
   item: Extract<ActivityItem, { kind: "thefts" | "newMember" }>,
+  language: WorkspaceLanguage,
 ): string {
   if (item.kind === "thefts") {
-    return fill(t[`activity.thefts.${item.count === 1 ? "one" : "other"}`], { who, n: item.count });
+    return fill(
+      plural(
+        item.count,
+        { one: t["activity.thefts.one"], other: t["activity.thefts.other"] },
+        language,
+      ),
+      { who, n: item.count },
+    );
   }
   const [name] = item.names;
   return item.names.length === 1
@@ -181,7 +189,7 @@ export function activityLine(
       return draftLine(t, who, item);
     case "thefts":
     case "newMember":
-      return countLine(t, who, item);
+      return countLine(t, who, item, language);
     // D123: a theft's people are never named; a new member's name as typed is.
     case "theftDeleted":
       return fill(t["activity.theftDeleted"], { who });

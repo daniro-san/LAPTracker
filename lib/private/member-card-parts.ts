@@ -29,6 +29,7 @@ export const daysFormats = (t: WorkspaceDictionary, f: CardFormats): DaysFormats
   date: (day) => f.date(day),
   weekday: (day) => t[WEEKDAYS[new Date(`${day}T00:00:00Z`).getUTCDay()] ?? "day.mon"],
   dayOfMonth: (day) => String(Number(day.slice(8))),
+  language: f.language,
 });
 
 const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;

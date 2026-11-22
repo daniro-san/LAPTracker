@@ -63,7 +63,7 @@ export function weekCard(
     rows: card.rows.map((row) => {
       const later = cells(row.metric, week).map((c) => c === "later");
       const show = row.metric === "donations" ? f.compact : f.number;
-      const line = averageLine(dayAverage(cells(row.metric, lastWeek)), t, show);
+      const line = averageLine(dayAverage(cells(row.metric, lastWeek)), t, show, f.language);
       return {
         ...row,
         label: row.metric === "coins" ? t["me.week.coins"] : row.label,

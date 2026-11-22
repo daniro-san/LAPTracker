@@ -207,7 +207,7 @@ export function SignedInFrame({
           language={language}
         />
         <Suspense fallback={null}>
-          <ReadStatusLine access={access} t={t} keyShown={keyShown} />
+          <ReadStatusLine access={access} t={t} language={language} keyShown={keyShown} />
         </Suspense>
         {children}
       </Frame>
@@ -222,14 +222,16 @@ export function SignedInFrame({
 async function ReadStatusLine({
   access,
   t,
+  language,
   keyShown,
 }: {
   access: WorkspaceAccess;
   t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
   keyShown: boolean;
 }) {
   // A failed read renders nothing and logs a code (`frameReadStatus`): never the desk page's error.
-  const status = await frameReadStatus(access, t, new Date());
+  const status = await frameReadStatus(access, t, new Date(), language);
   if (!status?.lines.some((l) => !(keyShown && l.keyCard))) return null;
   const words = {
     label: t["status.label"],

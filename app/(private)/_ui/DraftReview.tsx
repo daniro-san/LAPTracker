@@ -121,6 +121,7 @@ type Props = {
   slug: string;
   view: DraftView;
   w: Words;
+  language: string;
   kinds: Record<ImportKind, string>;
   saveKinds: ImportKind[];
   text: ReviewText;

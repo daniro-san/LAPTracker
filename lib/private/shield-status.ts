@@ -19,7 +19,7 @@ import { getShieldCheck, shieldReadings, type ShieldCheckRow } from "../repo/shi
 import { getSquadRead } from "../repo/squads";
 import { quotaDayRead } from "../schedule";
 import { kvkStart, passWindows, suggestionOf } from "../shield-check";
-import { fill } from "../words";
+import { fill, plural } from "../words";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
 import { featureOn } from "./features";
@@ -44,6 +44,7 @@ export async function shieldStatus(
   env: Env,
   now: Date,
   t: WorkspaceDictionary,
+  language: string,
 ): Promise<ShieldStatus | null> {
   if (!featureOn(access, "shield_check")) return null;
   const day = quotaDayRead(now, env);
@@ -67,7 +68,14 @@ export async function shieldStatus(
   const awayText =
     away === 0
       ? ""
-      : ` · ${fill(t[`status.shield.away.${away === 1 ? "one" : "other"}`], { n: away })}`;
+      : ` · ${fill(
+          plural(
+            away,
+            { one: t["status.shield.away.one"], other: t["status.shield.away.other"] },
+            language,
+          ),
+          { n: away },
+        )}`;
   if (running) {
     const started = (check.morningStartedAt ?? check.nightAt) as Date;
     const at = clock(zone, started);

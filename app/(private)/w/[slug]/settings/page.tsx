@@ -243,6 +243,7 @@ function SettingsCards(props: {
           choices={MORNING_CHOICES}
           channel={summaryChannel(channels)}
           t={t}
+          language={language}
         />
       )}
       {push && <PushSettings slug={slug} view={push} language={language} t={t} />}

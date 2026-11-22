@@ -27,7 +27,7 @@ export async function GET(
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
     const status = await privately("read-status.read", () =>
-      readStatus(db, access, ctx.env, now, WORKSPACE_DICTIONARIES[language]),
+      readStatus(db, access, ctx.env, now, WORKSPACE_DICTIONARIES[language], language),
     );
     return Response.json(status, { headers: NO_STORE });
   });

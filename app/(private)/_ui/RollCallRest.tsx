@@ -9,7 +9,7 @@ import { useRef, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/words";
+import { fill, plural } from "@/lib/words";
 
 import type { MarkWords, RollSheetWords } from "./roll-call-data";
 import type { useMarks } from "./use-marks";
@@ -51,6 +51,7 @@ export function useRest(m: ReturnType<typeof useMarks>, marks: MarkWords, words:
 function countLine(
   p: { left: number; rest: number; away: number; part?: string | undefined },
   words: RollSheetWords,
+  language: string,
 ) {
   // One away or one not seen takes the singular: PT and FR agree the word with the count (issue 585).
   const notSeen = p.left - p.rest;
@@ -60,13 +61,21 @@ function countLine(
     : (["roll.left", "roll.leftAway", "roll.leftAway.one"] as const);
   const counts = [
     p.away > 0
-      ? fill(words[p.away === 1 ? awayOne : away], { n: p.left, away: p.away })
+      ? fill(plural(p.away, { one: words[awayOne], other: words[away] }, language), {
+          n: p.left,
+          away: p.away,
+        })
       : fill(words[left], { n: p.left }),
     ...(notSeen > 0
       ? [
-          fill(words[notSeen === 1 ? "roll.prep.notSeenLeft.one" : "roll.prep.notSeenLeft"], {
-            n: notSeen,
-          }),
+          fill(
+            plural(
+              notSeen,
+              { one: words["roll.prep.notSeenLeft.one"], other: words["roll.prep.notSeenLeft"] },
+              language,
+            ),
+            { n: notSeen },
+          ),
         ]
       : []),
   ].join(" · ");
@@ -98,13 +107,18 @@ export function RestBar(props: {
    */
   offer?: boolean;
   words: RollSheetWords;
+  language: string;
   marks: MarkWords;
   r: ReturnType<typeof useRest>;
   onRest: () => void;
 }) {
   const { words, marks, r, left } = props;
   const rest = props.rest ?? left;
-  const count = countLine({ left, rest, away: props.away, part: props.part }, words);
+  const count = countLine(
+    { left, rest, away: props.away, part: props.part },
+    words,
+    props.language,
+  );
   // "All marked" sits by the counts at the top (issue 412), so with nothing left the bar goes.
   if (left === 0 && !(r.fresh && r.text)) return null;
   const button = offered(marks, rest, props.offer);

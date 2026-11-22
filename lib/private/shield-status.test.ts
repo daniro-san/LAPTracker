@@ -76,7 +76,7 @@ async function night(status: "running" | "done") {
 }
 
 const shieldLine = async (now: Date, on = true, who = access(on)) =>
-  (await readStatus(db, who, TEST_ENV, now, t)).lines.find((l) => l.id === "shield");
+  (await readStatus(db, who, TEST_ENV, now, t, "en")).lines.find((l) => l.id === "shield");
 
 describe("the Raid Shield check's status line (D137)", () => {
   it("Friday's read under way: counts and when it started", async () => {
