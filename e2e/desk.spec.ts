@@ -71,19 +71,36 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   );
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
-  // Issue 585: Follow-up's numbers, linked to Follow-up. The seed gives everyone quest points and coins at
-  // the cap (DAILY) and records no facts for its new members, so the list holds the new members, each with
-  // every fact to ask, and the member marked Needs help (slice 2), who has no reason of their own. The noted
-  // part races: the card test below, in this project and the other one running beside it, keeps a Talked
-  // on a member, so 0 or 1 is right at this moment; the exact rule is in follow-up-week.test.ts.
+  // Issue 585: Follow-up's numbers, linked to Follow-up, in a card of Home's main column before "Today and
+  // tomorrow" (slice 4), and no longer in "Members this week". The seed gives everyone quest points and coins
+  // at the cap (DAILY) and records no facts for its new members, so the list holds the new members, each
+  // with every fact to ask, and the member marked Needs help (slice 2), who has no reason of their own. The
+  // noted part races: the card test below, in this project and the other one running beside it, keeps a
+  // Talked on a member, so 0 or 1 is right at this moment; the exact rule is in follow-up-week.test.ts.
   const toLook = newMembers("a").length + 1;
-  const followUp = week.getByRole("link", {
-    name: new RegExp(`^Follow-up: ${toLook} to look at( · 1 noted this week)?$`),
+  const card = page.getByRole("region", { name: "Follow-up" });
+  const followUp = card.getByRole("link", {
+    name: new RegExp(`^${toLook} members? to look at this week( · 1 already noted by officers)?$`),
   });
   await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
+  const next = page.getByRole("region", { name: "Today and tomorrow" });
+  const [cardBox, nextBox] = [await card.boundingBox(), await next.boundingBox()];
+  expect(cardBox && nextBox && cardBox.y < nextBox.y).toBe(true);
+  await expect(week.getByRole("link", { name: /to look at/ })).toHaveCount(0);
   // With someone to look at, "Everyone looks fine" never shows; on Sunday and Monday (server days), while
   // the week is not thanked yet (the seed shares none), the thanks nudge shows too (D114).
-  await expect(week.getByText("Everyone looks fine this week.")).toHaveCount(0);
+  await expect(page.getByText("Everyone looks fine this week.")).toHaveCount(0);
+  // "Send screenshots" is a card of its own, out of "To review", which holds nothing in the seed, so no
+  // "waiting in To review" jump either (slice 4).
+  const review = page.getByRole("region", { name: "To review" });
+  await sees(review, "Nothing to review.");
+  await expect(review.getByRole("button", { name: "Send screenshots" })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("region", { name: "Screenshots" })
+      .getByRole("button", { name: "Send screenshots" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /waiting in “To review”/ })).toHaveCount(0);
   if ([0, 1].includes(new Date(cal.today).getUTCDay())) {
     await sees(week, "Time for the weekly appreciation post");
   }

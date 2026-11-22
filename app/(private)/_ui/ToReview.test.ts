@@ -15,7 +15,7 @@ import { createSession } from "@/lib/private/session";
 import { dailyReads, dailyRosters, workspaces, workspaceUsers } from "@/lib/schema";
 
 import { CardLink } from "./MemberLinks";
-import { ToReview } from "./ToReview";
+import { ReviewJump, ToReview } from "./ToReview";
 
 // An answer refreshes the page through the router, which a static render has not mounted.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => undefined }) }));
@@ -101,6 +101,13 @@ describe("a claim an officer can check on Home (issue 585)", () => {
 
   it("says the day the member asked, in server time", async () => {
     expect(await home(await claimed())).toContain("Asked on Thu, Nov 19 to see their own page.");
+  });
+
+  it("says on Home's first screen that the claim waits in To review, and nothing once none waits (slice 4)", async () => {
+    const waiting = (await linkReviews(db, await claimed())).length;
+    const jump = (n: number) => renderToStaticMarkup(createElement(ReviewJump, { t, waiting: n }));
+    expect(jump(waiting)).toMatch(/href="#to-review"[^>]*>1 waiting in “To review” ↓<\/a>/);
+    expect(jump(0)).toBe("");
   });
 
   it("offers Not them instead of Reject, on Home and on the card", async () => {

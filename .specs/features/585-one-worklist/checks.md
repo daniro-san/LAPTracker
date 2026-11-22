@@ -1,12 +1,12 @@
 # One worklist (#585 batch 3) checks
 
 Build: `pnpm typecheck`; `pnpm lint`
-Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
+Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts lib/private/desk-activity-pages.test.ts "app/(private)/_ui/HomeMembers.test.ts" "app/(private)/_ui/HomeNext.test.ts" "app/(private)/_ui/ToReview.test.ts" --reporter=verbose`
 Plan: `.specs/features/585-one-worklist/plan.md`
 
 profile: light
 
-24 checks in 2 slices built (S1 in PR 640: C1-C14; S2 in `feat/585-needs-help`: C15-C24; S3-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
+32 checks in 3 slices built (S1 in PR 640: C1-C14; S2 in `feat/585-needs-help`: C15-C24; S4 in `feat/585-home-first-screen`: C25-C32; S6 in PR 643 was checked in its own handoff; S3 and S5 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
 
 ## Checks
 
@@ -86,19 +86,49 @@ Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's g
 **C24** - In a workspace of its own (phone, per repeat), "No longer needs help" on a seeded Needs help member is first refused after another officer saved the status ("Could not save. Try again.", the member still under "Needs help"), then a second tap with the version read again says "Saved. {name} no longer needs help.", the panel closes, the "Needs help" group is gone, and stays gone after a reload (AC 13, AC 31; review of PR 646)
 Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "No longer needs help"`
 
+### S4 - Home's first screen: Follow-up's numbers near the top, the activity in one screen (built in `feat/585-home-first-screen`)
+
+**C25** - While the Follow-up tab is on, Home's main column has a "Follow-up" card whose one link to `/w/ogs/follow-up` reads "12 members to look at this week · 4 already noted by officers" (1 and 0: "1 member to look at this week"; 0 and 4: "Nobody to look at this week · 4 already noted by officers"; FR 1 and 1: "1 membre à suivre cette semaine · 1 déjà noté par les officiers"), or "Everyone looks fine this week." with no link at 0 and 0; "Members this week" then has no Follow-up link and no "Everyone looks fine"; with the tab off (null) there is no card and the margin keeps its own line (AC 19, AC 32)
+Proof: run unit | ✓ app/(private)/_ui/HomeMembers.test.ts > Home's Follow-up card (issue 585 slice 4) > says Follow-up's numbers in the main column while the tab is on, and leaves the margin's line to the tab off
+
+**C26** - Five officers finishing one "Cheese Trap" roll call, Wren again an hour earlier, read as one line "Wren, Tomas, and 3 others finished the roll call “Cheese Trap”" that opens to the six lines, newest first; three on "Undead Siege" read "Tomas, Kira, and Rook …"; a line in between, another "Cheese Trap" roll call and the day before each start a line of their own; "Annelie and Lucien …" for two; the same words in a row stay one line; FR "Wren, Tomas et 3 autres ont terminé l’appel « Cheese Trap »", PT "Annelie e Lucien concluíram …"; once Wren's account has no name the line stays as "Tomas, Lucien, and 2 others …" (AC 20)
+Proof: run unit | ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > folds a roll call finished by several officers into one line naming each once (issue 585)
+
+**C27** - On Sat 16:30 ST, today's KvK at 12:00 ST that ended at 14:00 ST is one line "12:00 ST · KvK · Ended", still the link to its day; the 19:00 ST meeting keeps its time line and its title line (AC 21)
+Proof: run unit | ✓ app/(private)/_ui/HomeNext.test.ts > Home's Today and tomorrow (issue 585 slice 4) > shows an entry that is over on one line, still a link to its day
+
+**C28** - A pending "This is me" claim gives "1 waiting in “To review” ↓", a link to `#to-review`; nothing waiting gives nothing (AC 36)
+Proof: run unit | ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > says on Home's first screen that the claim waits in To review, and nothing once none waits (slice 4)
+
+**C29** - On the seed, Home's "Follow-up" region holds "{new members + 1} members to look at this week" (with "· 1 already noted by officers" or not, as C9 races) linked to `/w/lnk/follow-up`, above "Today and tomorrow"; "Members this week" has no "to look at" link; "To review" says "Nothing to review." and has no "Send screenshots", which is in the "Screenshots" region; no "waiting in To review" link; the link then opens Follow-up's "Needs help · 1" (AC 19, AC 21, AC 35, AC 36)
+Proof: `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance"`
+
+**C30** - Every new key exists in EN, PT-BR and FR (AC 33)
+Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, pt-BR and fr, and no empty value
+
+**C31** - D104, D108 and D110 each end with an amendment dated 2026-11-22 for slice S4 (AC 34)
+Proof: `grep -q "Amendment 2026-11-22 (issue 585 batch 3, slice S4" docs/decisions/D104-follow-up-weekly-worklist.md && grep -q "Amendment 2026-11-22 (issue 585 batch 3, slice S4" docs/decisions/D108-home-desk-presence-and-recent-activity.md && grep -q "Amendment 2026-11-22 (issue 585 batch 3, slice S4" docs/decisions/D110-screenshots-from-anywhere-and-the-android-share-target.md`
+
+**C32** - At 360 × 780 Home's first screen shows the "Follow-up" card with its link and "Today and tomorrow" under it; the "Screenshots" card follows "To review"; light and dark, and at 1280 the card heads the main column beside "Recent activity" (AC 19, AC 21)
+Proof: walk - `585-s4/shots/home-phone-light-fold.png`, `home-phone-dark-full.png`, `home-wide-light-fold.png` (e2e seed, Sun 22 Nov)
+
 ## Coverage
 
-| Set (size)                        | Member -> proof                                                                              | Unproven |
-| --------------------------------- | -------------------------------------------------------------------------------------------- | -------- |
-| AC 3 examples (4)                 | Mon 00:05 C1 · Sun 23:59 week before C1 · Talked then Undo C1 · two records → newest C1      | -        |
-| Line shapes, AC 6 (4)             | 12/4 C5 · 12/0 C5 · 0/4 C5 · 0/0 C5                                                          | -        |
-| Record answers in a Noted row (4) | talked C6, C8 · break C6 · help C6 · fine C6                                                 | -        |
-| Readers of the counts (3)         | Follow-up C1, C8 · Home C9 · Members C7 (shared `checkInLink`, same `followUpCounts`)        | -        |
-| Tab switch states (2)             | on C3, C7 · off C4, C7                                                                       | -        |
-| S2: the group's states (4)        | marked, no reason C15 · noted this week C15, C18 · paused by a break C15 · cleared C15, C24  | -        |
-| S2: where the mark comes from (3) | "They need help" with a note C16 · Edit info C16 · Undo of a repeated mark C16               | -        |
-| S2: last week's context (4)       | newest of last week C17 · two weeks back C17 · undone across Monday C17 · the mark's own C17 | -        |
-| S2: readers of the mark (2)       | Follow-up row C16, C21 · card header C16, C22                                                | -        |
+| Set (size)                        | Member -> proof                                                                                            | Unproven |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------- |
+| AC 3 examples (4)                 | Mon 00:05 C1 · Sun 23:59 week before C1 · Talked then Undo C1 · two records → newest C1                    | -        |
+| Line shapes, AC 6 (4)             | 12/4 C5 · 12/0 C5 · 0/4 C5 · 0/0 C5                                                                        | -        |
+| Record answers in a Noted row (4) | talked C6, C8 · break C6 · help C6 · fine C6                                                               | -        |
+| Readers of the counts (3)         | Follow-up C1, C8 · Home C9 · Members C7 (shared `checkInLink`, same `followUpCounts`)                      | -        |
+| Tab switch states (2)             | on C3, C7 · off C4, C7                                                                                     | -        |
+| S2: the group's states (4)        | marked, no reason C15 · noted this week C15, C18 · paused by a break C15 · cleared C15, C24                | -        |
+| S2: where the mark comes from (3) | "They need help" with a note C16 · Edit info C16 · Undo of a repeated mark C16                             | -        |
+| S2: last week's context (4)       | newest of last week C17 · two weeks back C17 · undone across Monday C17 · the mark's own C17               | -        |
+| S2: readers of the mark (2)       | Follow-up row C16, C21 · card header C16, C22                                                              |
+| S4: the card's states (5)         | 12/4 C25, C29 · 1/0 C25, C29 · 0/4 C25 · 0/0 C25 · tab off C25                                             |
+| S4: the fold, AC 20 examples (7)  | five C26 · two C26 · three C26 · line between C26 · other roll call C26 · other day C26 · account gone C26 |
+| S4: Today and tomorrow rows (2)   | over C27 · to come C27                                                                                     |
+| S4: "To review" jump (2)          | waiting C28 · none C28, C29                                                                                | -        |
 
 ## Swept
 
@@ -124,10 +154,22 @@ S2 swept:
 - state transitions: C15 (needs help → noted → needs help → paused → needs help → cleared)
 - observability: n/a - no log; marks and notes are inside `ph-no-capture` on the row, the panel and the card (walk C22)
 
+S4 swept:
+
+- validation: n/a - no input; Home reads stored rows
+- failure modes: existing - a failed read shows the desk's error page; the activity route's "Show more" failure line is unchanged
+- idempotency: n/a - nothing written
+- authorization: existing - `requireWorkspace` before any read on Home and `/api/w/[slug]/activity`; `followUpCounts` reads one workspace's rows (C3); the fold only joins rows that query already returned
+- concurrency: n/a - read only
+- data lifecycle: C26 (an officer's account without a name; the feed's two weeks unchanged)
+- dependency failure: n/a - no outside call
+- state transitions: C27 (an entry to come, then over, on the browser's minute after hydration)
+- observability: n/a - no log; the analytics plan's dated "Changed" line covers the moved link
+
 ## Handoff
 
 - **Settled mid-build:** none from the owner; the plan review (panel, product, adversarial) changed "Done" to "Noted", renamed "Check in" to "Worth a hello", moved the counts first and kept the Noted card on the page with nobody noted
-- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (rounds 1 and 2, returned); Verifier at cb4928d5 (returned: FAIL on 5 proof gaps, closed in c9a1b963, one accepted); S2 (2026-11-22): officer panel with first-glance test, product strategy, adversarial (plan review, returned: all approve with changes, plan Validation (e) to (g)); S2 Verifier at aa610160 (returned: FAIL on 4 proof gaps, no code bug; 3 closed with C23 and C19, 1 accepted, then closed in the review of PR 646 by C24)
-- **Boundary:** C1-C11 at the commit named in the handoff
+- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (rounds 1 and 2, returned); Verifier at cb4928d5 (returned: FAIL on 5 proof gaps, closed in c9a1b963, one accepted); S2 (2026-11-22): officer panel with first-glance test, product strategy, adversarial (plan review, returned: all approve with changes, plan Validation (e) to (g)); S2 Verifier at aa610160 (returned: FAIL on 4 proof gaps, no code bug; 3 closed with C23 and C19, 1 accepted, then closed in the review of PR 646 by C24); S4 (2026-11-22): officer panel first-glance rounds 1 and 2, product strategy, designer, adversarial (plan review, returned: all approve with changes, plan Validation (h) to (k))
+- **Boundary:** C1-C11 at the commit named in the handoff; S4: C25-C32 at the commit named in `docs/handoff/feat-585-home-first-screen.md`
 - **Abandoned:** "Done this week" (panel and adversarial MUST); one wide `followedUpSince` for every reader (adversarial SHOULD: the counts read uid, action and time only)
-- **Walked:** `585-worklist/after/` at 360 light and dark and 1280, EN, server clock Sat 21 Nov 16:30 ST, invented 585 seed
+- **Walked:** S4: Home at 360 light and dark and 1280 on the e2e seed after the suite (`585-s4/shots/`); the four identical "finished the roll call “Raid prep”" lines in the first dark shot led to keeping the roll call's id out of the repeat rule (C26's last example). Earlier: `585-worklist/after/` at 360 light and dark and 1280, EN, server clock Sat 21 Nov 16:30 ST, invented 585 seed

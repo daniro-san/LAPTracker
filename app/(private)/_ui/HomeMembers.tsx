@@ -1,9 +1,12 @@
-// Home's members box (panel PD-1), rendered on the server: who to thank and how many to check in with, as
-// Follow-up counts them (issue 585); "not yet" before the first end-of-day read, when nothing is computed
-// (D75). Under the week's progress, "Share the thanks" (D114), with a gentle line on Sunday and Monday until
-// it is shared.
+// Home's members box (panel PD-1), rendered on the server: who to thank, and how many to check in with by
+// Members' rule while the Follow-up tab is off (D126); "not yet" before the first end-of-day read, when
+// nothing is computed (D75). Under the week's progress, "Share the thanks" (D114), with a gentle line on
+// Sunday and Monday until it is shared.
 // A margin note of Home's spread (D122): a card below 1024, unframed hairline rows beside the main column.
+// While the Follow-up tab is on, Follow-up's two numbers are a card of Home's main column instead
+// (HomeFollowUp, issue 585 slice 4), so the first phone screen says them.
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
+import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { WeekCounts } from "@/lib/private/follow-up";
@@ -46,6 +49,56 @@ function SayThanks(props: {
   );
 }
 
+/**
+ * Follow-up's two numbers in Home's words (issue 585 slice 4): "12 members to look at this week · 4 already
+ * noted by officers"; null when both are 0. Members keeps S1's line (weekCountLine).
+ */
+export function followUpWords(
+  counts: WeekCounts,
+  t: WorkspaceDictionary,
+  language: WorkspaceLanguage,
+) {
+  if (counts.toLook === 0 && counts.noted === 0) return null;
+  const form = (n: number) =>
+    new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
+  const head =
+    counts.toLook === 0
+      ? t["home.followUp.nobody"]
+      : fill(t[`home.followUp.toLook.${form(counts.toLook)}`], { n: counts.toLook });
+  if (counts.noted === 0) return head;
+  return `${head} · ${fill(t[`home.followUp.noted.${form(counts.noted)}`], { n: counts.noted })}`;
+}
+
+/**
+ * Home's "Follow-up" card, near the top of the main column (issue 585 slice 4): the week's two numbers as
+ * one link to Follow-up, or "Everyone looks fine this week."; nothing while the tab is off (D126) or before
+ * the first daily update, when `followUp` is null.
+ */
+export function HomeFollowUp(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  followUp: WeekCounts | null;
+}) {
+  const { t, followUp } = props;
+  if (followUp === null) return null;
+  const line = followUpWords(followUp, t, props.language);
+  return (
+    <section aria-labelledby="home-follow-up" className="drawn-card mt-4 px-4 py-3 first:mt-0">
+      <h2 id="home-follow-up" className="font-subhead text-display-sm">
+        {t["tab.review"]}
+      </h2>
+      {line === null ? (
+        <p className="py-2">{t["members.checkinNone"]}</p>
+      ) : (
+        <a href={`/w/${props.slug}/follow-up`} className={LINK}>
+          {line}
+        </a>
+      )}
+    </section>
+  );
+}
+
 export function HomeMembers(props: {
   slug: string;
   t: WorkspaceDictionary;
@@ -55,7 +108,7 @@ export function HomeMembers(props: {
   nudge: boolean;
   /** D126: the thanks sheet's switches. */
   switches: ThanksSwitches;
-  /** Follow-up's two numbers (issue 585); null while the Follow-up tab is off (D126). */
+  /** Follow-up's numbers (issue 585), said by HomeFollowUp; null: the tab is off (D126), or no read yet. */
   followUp: WeekCounts | null;
 }) {
   const { slug, t, language, view, nudge } = props;
@@ -67,7 +120,8 @@ export function HomeMembers(props: {
     view.thanks.donors.length > 0
       ? (["thanks.donors", view.thanks.donors] as const)
       : (["thanks.activity", view.thanks.activity] as const);
-  const check = checkInLink(slug, view, props.followUp, t, f);
+  // Members' own count while the Follow-up tab is off; while it is on, HomeFollowUp says its numbers.
+  const check = props.followUp === null ? checkInLink(slug, view, null, t, f) : null;
   const today = serverDay(now, getEnv());
   const sharing = view.thanks.progress.length > 0 || nudge;
   return (
@@ -104,9 +158,11 @@ export function HomeMembers(props: {
             parts={allianceWeekParts(view, t, f, today)}
             className="max-w-sm py-2"
           />
-          {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114). */}
+          {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114), and
+              while the main column's Follow-up card has the week. */}
           {check === null ? (
-            !sharing && <p className="py-2">{t["members.checkinNone"]}</p>
+            !sharing &&
+            props.followUp === null && <p className="py-2">{t["members.checkinNone"]}</p>
           ) : (
             <p>
               <a href={check.href} className={LINK}>
