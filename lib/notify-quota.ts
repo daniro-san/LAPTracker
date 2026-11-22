@@ -1,6 +1,7 @@
 // The Friday check's admin message (plan Phase 6 "Notifications"), split from lib/notify.ts for size.
 // Counts and links only: never member names, never secrets (plan §12.3).
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
+import { fill } from "./words";
 
 export interface QuotaReport {
   at: string;

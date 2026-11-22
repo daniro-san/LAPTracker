@@ -7,8 +7,9 @@ import { useState } from "react";
 
 import { FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { closestFirst, searchRoster } from "@/lib/private/roster-search";
+import { fill } from "@/lib/words";
 
 import type { LifecycleWords } from "./member-lifecycle-data";
 import { sheetWords } from "./sheet-words";

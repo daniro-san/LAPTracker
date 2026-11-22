@@ -1,6 +1,7 @@
 // The /admin run buttons as data (plan Phase 4, D28): what each one calls, what it asks first and what
 // it sends. The component that presses them is AdminActions.
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { forgetPin } from "./PinSheet";
 import { phaseWord } from "./words";

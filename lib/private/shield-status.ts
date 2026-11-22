@@ -11,7 +11,6 @@
 // notification), which Raid prep's grid leaves out by the same rule. The away ones are said as a count
 // ("· 3 away"), and the line links the week's Raid prep (`raidPrepUrl`, the notification's link). Both live in
 // lib/raid-prep-fill.ts, which sends nothing, so lib/private never reaches the Discord or push senders (D71).
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -20,6 +19,7 @@ import { getShieldCheck, shieldReadings, type ShieldCheckRow } from "../repo/shi
 import { getSquadRead } from "../repo/squads";
 import { quotaDayRead } from "../schedule";
 import { kvkStart, passWindows, suggestionOf } from "../shield-check";
+import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
 import { featureOn } from "./features";

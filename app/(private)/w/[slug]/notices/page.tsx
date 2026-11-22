@@ -3,9 +3,9 @@
 // and until when, and who changed it last. The access check runs before anything is read (D71). After a
 // delete, "Notice deleted." with Undo (D118).
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { noticesList, type NoticeSummary } from "@/lib/private/notices";
+import { fill } from "@/lib/words";
 
 import { CalendarNav } from "../../../_ui/CalendarNav";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";

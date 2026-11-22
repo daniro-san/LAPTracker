@@ -11,7 +11,7 @@ import { removeEntry } from "@/lib/private/calendar-delete";
 import { fieldChange, newEntry } from "@/lib/private/calendar-model";
 import { conflictSaid, conflictYours } from "@/lib/private/calendar-words";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
 import {
@@ -70,7 +70,7 @@ export async function POST(
       const made = await privately("calendar.create", () =>
         createEntry(db, access, input.entry, input.requestId),
       );
-      if (made.ok) return counted(ctx, access, "calendar", "add", ok({ id: made.id }));
+      if (made.ok) return withActionEvent(ctx, access, "calendar", "add", ok({ id: made.id }));
       return privateError(made.code === "invalid" ? 400 : 409, made.code);
     }
     if (input.action === "delete") {
@@ -78,10 +78,16 @@ export async function POST(
       if (done === "not_found") return privateError(404, done);
       // The whole entry went (D123): the page offers Undo, counted as undo_delete (D115).
       const answer = done === "deleted" ? ok({ deleted: true }) : ok();
-      return counted(ctx, access, "calendar", input.undo ? "undo_delete" : "delete", answer);
+      return withActionEvent(
+        ctx,
+        access,
+        "calendar",
+        input.undo ? "undo_delete" : "delete",
+        answer,
+      );
     }
     const result = await privately("calendar.edit", () => editEntry(db, access, input, now));
-    if (result.ok) return counted(ctx, access, "calendar", "edit", ok());
+    if (result.ok) return withActionEvent(ctx, access, "calendar", "edit", ok());
     if (result.code !== "stale") return privateError(STATUS[result.code], result.code);
     return stale(result.conflicts, request, now);
   });

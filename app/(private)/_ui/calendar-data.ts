@@ -1,13 +1,14 @@
 // The Calendar tab's words, made on the server (issue 300): each entry of a week as data for the client
 // list (title, server time, the instant for the viewer's own clock, tags, the values its edit form starts
 // from), the week's days and the month overview. Dates and numbers are formatted here, never in the browser.
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { DUEL_DAYS, type Field, type Kind, type Placed } from "@/lib/private/calendar-model";
 import { addDays, hhmm, mondayOf, weekdayIndex, zonedInstant } from "@/lib/private/calendar-time";
 import { calendarDates, endOf, stOf, titleOf } from "@/lib/private/calendar-words";
 import type { Suggestion } from "@/lib/private/caravan-suggest";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
+import { fill, plural } from "@/lib/words";
 
 import type { NextItem } from "./home-digest";
 import type { SHEET_KEYS } from "./sheet-words";
@@ -252,7 +253,6 @@ export function monthCells(
   const first = `${monday.slice(0, 8)}01`;
   const start = mondayOf(first);
   const dates = calendarDates(language);
-  const rules = new Intl.PluralRules(language);
   const cells = Array.from({ length: 42 }, (_, i) => {
     const day = addDays(start, i);
     const on = placed.filter((p) => p.day === day && p.entry.kind !== "duel");
@@ -260,7 +260,11 @@ export function monthCells(
       (p) => `${p.minute === null ? "" : `${hhmm(p.minute)} `}${cellLabel(p.entry, t)}`,
     );
     const count = fill(
-      t[`calendar.month.count.${rules.select(on.length) === "one" ? "one" : "other"}`],
+      plural(
+        on.length,
+        { one: t["calendar.month.count.one"], other: t["calendar.month.count.other"] },
+        language,
+      ),
       { n: on.length },
     );
     return {
@@ -296,16 +300,17 @@ export function suggestionWords(
   list: readonly Suggestion[],
   { t, language }: Pick<CalendarCtx, "t" | "language">,
 ): SuggestedMember[] {
-  const rules = new Intl.PluralRules(language);
   return list.map((s) => {
     const role =
       s.lastRoleDays === null
         ? t["calendar.suggest.never"]
         : fill(
-            t[`calendar.suggest.last.${rules.select(s.lastRoleDays) === "one" ? "one" : "other"}`],
-            {
-              n: s.lastRoleDays,
-            },
+            plural(
+              s.lastRoleDays,
+              { one: t["calendar.suggest.last.one"], other: t["calendar.suggest.last.other"] },
+              language,
+            ),
+            { n: s.lastRoleDays },
           );
     const why = s.activeThisWeek
       ? `${t["calendar.suggest.active"]} · ${role}`

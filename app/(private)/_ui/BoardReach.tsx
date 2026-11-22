@@ -3,11 +3,11 @@
 // inside Suspense, so PostHog never holds up the page. No key, PostHog down, or under 5 members: nothing.
 import { getAppContext } from "@/lib/app-context";
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
-import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { boardReach } from "@/lib/private/board-reach";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { LINK } from "./BoardText";
 

@@ -2,15 +2,14 @@
 // server in the officer's language: names, their facts as lines, and the few numbers a former member
 // keeps (the last roster's public might and kills, the day it was read, and the newest week of Alliance
 // Duel points saved). Nothing else of theirs. Also the pending members an officer deleted (dismissed).
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import { lifecycleEn } from "@/lib/private/dictionary.lifecycle";
 import type { MemberFacts } from "@/lib/private/fact-fields";
 import { NONE } from "@/lib/private/fact-text";
 import type { FormerMember } from "@/lib/private/former-members";
 import { factLines, or, type CardFormats } from "@/lib/private/member-card";
-import { plural } from "@/lib/private/members-sheet";
 import type { Pending } from "@/lib/private/pending-members";
+import { fill, plural } from "@/lib/words";
 
 import type { FactsCard } from "./MemberCards";
 import { SHEET_KEYS } from "./sheet-words";
@@ -129,4 +128,7 @@ export const lifecycleWords = (t: WorkspaceDictionary): LifecycleWords =>
 
 /** "2 new members to match" (Members and Home, 2026-11-17). */
 export const toMatchLine = (n: number, t: WorkspaceDictionary, f: CardFormats) =>
-  fill(plural(t, "pending.toMatch", n, f), { n });
+  fill(
+    plural(n, { one: t["pending.toMatch.one"], other: t["pending.toMatch.other"] }, f.language),
+    { n },
+  );

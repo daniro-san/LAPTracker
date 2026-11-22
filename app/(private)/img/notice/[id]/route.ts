@@ -4,7 +4,7 @@
 // ETag (the bytes' hash), so every view checks access again and an unchanged picture answers 304. The
 // `?v=` in the address only changes the URL when the picture is replaced. `?download=1` (officers only, the
 // cleanup's review list) sends it as a file to save, and counts as `notice` / `picture_download`.
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { requestCookies } from "@/lib/private/http";
 import { servablePicture, servedBytes } from "@/lib/private/notice-picture";
 import { withContext } from "@/lib/route";
@@ -48,7 +48,7 @@ export async function GET(
       },
     });
     return download && picture.officer
-      ? counted(ctx, picture.officer, "notice", "picture_download", response)
+      ? withActionEvent(ctx, picture.officer, "notice", "picture_download", response)
       : response;
   });
 }

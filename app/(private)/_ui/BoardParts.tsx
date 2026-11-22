@@ -7,9 +7,9 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
-import { fill } from "@/lib/copy";
 import { clockIn, offsetLabel } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
+import { fill } from "@/lib/words";
 
 import { useViewerZone } from "./YourTime";
 

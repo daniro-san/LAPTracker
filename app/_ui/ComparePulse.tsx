@@ -3,9 +3,10 @@
 // minutes are named in a sentence. When either event has no samples the section is a muted frame with the
 // reason and nothing is drawn. The window picker (a part of the events) is the next build; the read model
 // already gives each event's slots and `bothCover` the slots both cover.
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { clockColumns } from "@/lib/fight-clock";
 import type { EventComparison, EventPulse } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { eventHead } from "./EventCompare";
 import type { Clock } from "./format";

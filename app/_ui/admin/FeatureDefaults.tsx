@@ -7,7 +7,8 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 import {
   ALLOWANCES,
   FEATURE_GROUPS,

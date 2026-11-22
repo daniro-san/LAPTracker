@@ -3,9 +3,9 @@
 // (D75): only their own numbers, never another member's, a rank, an average of others or a "below" word;
 // a day with no read is "No reading" and never counts (D127); "none" is a read that lists them with nothing
 // that day.
-import { fill } from "../copy";
 import type { OwnDay } from "../repo/me";
 import { KVK_MINUTE, raidOf } from "../shield-check";
+import { fill } from "../words";
 import { addDays, DAY_MS, hhmm, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";

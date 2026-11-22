@@ -17,11 +17,11 @@ import { sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { greatestShareUp, parseBlocs, TOP_N, topShare } from "@/lib/balance";
-import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, powerBalance } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 

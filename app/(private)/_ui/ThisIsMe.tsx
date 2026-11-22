@@ -10,6 +10,7 @@ import { compactLarge } from "@/lib/compact";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { Player, Profile } from "@/lib/private/profile";
 import { searchRoster } from "@/lib/private/roster-search";
+import { fill } from "@/lib/words";
 
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
@@ -88,9 +89,7 @@ function detailOf(p: Player, t: Words, language: WorkspaceLanguage): string {
       : Math.abs(p.might) < 1000
         ? String(p.might)
         : compactLarge(p.might, language);
-  return [p.rank, might && t["members.meta.might"].replace("{v}", might)]
-    .filter(Boolean)
-    .join(" · ");
+  return [p.rank, might && fill(t["members.meta.might"], { v: might })].filter(Boolean).join(" · ");
 }
 
 /** Players to choose from, each confirmed with its own "That’s me". */

@@ -4,7 +4,7 @@
 // with a line saying so (issue 585, F12). English only (D48).
 import { LABEL } from "@/app/_ui/StatTable";
 import { getAppContext } from "@/lib/app-context";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import {
   ACTIVITY_TOTALS,
@@ -14,6 +14,7 @@ import {
   type AllianceActivity,
 } from "@/lib/queries/admin-activity";
 import { SETUP_STEPS, type AllianceUsage, type StepTime } from "@/lib/queries/admin-alliances";
+import { fill } from "@/lib/words";
 
 import { AdminSection } from "./parts";
 

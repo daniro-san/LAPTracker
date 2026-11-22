@@ -6,8 +6,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { HistoryCardBody } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { CopyRoster } from "./CopyRoster";
 import { useCopy } from "./LocaleProvider";

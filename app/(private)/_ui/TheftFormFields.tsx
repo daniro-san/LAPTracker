@@ -7,10 +7,11 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { searchRoster } from "@/lib/private/roster-search";
 import type { AttackerOption } from "@/lib/private/thefts";
 import { matchName } from "@/lib/screenshot/match-name";
+import { fill } from "@/lib/words";
 
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import type { TheftWords } from "./theft-data";

@@ -9,7 +9,8 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Notice } from "@/lib/brand/components/Notice";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
 

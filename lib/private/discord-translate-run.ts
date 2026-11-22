@@ -6,6 +6,7 @@
 // can ping anyone.
 import { ChatError, type ChatModel } from "../ai/groq";
 import { translateText, type WritingLanguage } from "../ai/notice-writing";
+import { fill } from "../words";
 import {
   WORKSPACE_DICTIONARIES,
   type WorkspaceDictionary,
@@ -120,7 +121,7 @@ const failureLine = (t: WorkspaceDictionary, failure: ChatError | null) =>
 
 /** The small "Asked by @name" line on every public post; mentions are off, so it pings no one. */
 const askedBy = (t: WorkspaceDictionary, userId: string) =>
-  `-# ${t["translate.discord.askedBy"].replace("{user}", `<@${userId}>`)}`;
+  `-# ${fill(t["translate.discord.askedBy"], { user: `<@${userId}>` })}`;
 
 /**
  * The bot's thread on the message: a new one, or the one it already has; Discord's error code when the
@@ -218,9 +219,9 @@ function placeLine(
   if (inThread === null) return t[NO_THREAD_LINE[refused] ?? "translate.discord.noThread"];
   if (rest.length === 0) return t["translate.discord.postedThread"];
   if (inThread.length === 0) return t["translate.discord.threadStopped"];
-  const first = t["translate.discord.inThreadList"].replace("{languages}", names(inThread));
+  const first = fill(t["translate.discord.inThreadList"], { languages: names(inThread) });
   const second = channelOk
-    ? t["translate.discord.restInChannel"].replace("{languages}", names(rest))
+    ? fill(t["translate.discord.restInChannel"], { languages: names(rest) })
     : t["translate.discord.failed"];
   return `${first} ${second}`;
 }
@@ -265,7 +266,7 @@ const missingLine = (
   failed: WritingLanguage[],
   failure: ChatError | null,
 ) =>
-  `${t["translate.discord.missing"].replace("{languages}", languageList(language, failed))} ${failureLine(t, failure)}`;
+  `${fill(t["translate.discord.missing"], { languages: languageList(language, failed) })} ${failureLine(t, failure)}`;
 
 /**
  * "For me": the private reply becomes the translation with a button for each other language, or a line

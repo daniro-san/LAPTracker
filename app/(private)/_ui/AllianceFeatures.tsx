@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { CheckField } from "@/lib/brand/components/CheckField";
-import { fill } from "@/lib/copy";
 import type { AllianceFeaturesView } from "@/lib/private/alliance-features";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { SaveRow } from "./SaveRow";
 import {

@@ -8,7 +8,7 @@
 // channel names and command names. Each write that went through counts as `ws_action` `discord`.
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { WORKSPACE_DICTIONARIES, pickWorkspaceLanguage } from "@/lib/private/dictionary";
 import { checkBot } from "@/lib/private/discord-setup";
 import {
@@ -62,7 +62,13 @@ export async function POST(
       const checked = await checkBot(db, access, deps);
       if (checked.ok) {
         const body = { firstSeen: checked.firstSeen, commands: checked.commands };
-        return counted(ctx, access, "discord", "check", Response.json(body, { headers: NO_STORE }));
+        return withActionEvent(
+          ctx,
+          access,
+          "discord",
+          "check",
+          Response.json(body, { headers: NO_STORE }),
+        );
       }
       const firstSeen = "firstSeen" in checked ? { firstSeen: checked.firstSeen } : {};
       const body = { code: checked.code, ...firstSeen };
@@ -70,7 +76,7 @@ export async function POST(
     }
     if (input.action === "remove_webhook") {
       const views = await removeWebhook(db, access, ctx.env, input.channel);
-      return counted(ctx, access, "discord", "delete", channels(views));
+      return withActionEvent(ctx, access, "discord", "delete", channels(views));
     }
     if (input.action === "test") {
       const language = pickWorkspaceLanguage(
@@ -87,10 +93,10 @@ export async function POST(
       );
       if (!tested.ok) return privateError(STATUS[tested.code], tested.code);
       const body = Response.json({ ok: true }, { headers: NO_STORE });
-      return counted(ctx, access, "discord", "test", body);
+      return withActionEvent(ctx, access, "discord", "test", body);
     }
     const saved = await saveWebhook(db, access, deps, input);
     if (!saved.ok) return privateError(STATUS[saved.code], saved.code);
-    return counted(ctx, access, "discord", "save", channels(saved.views));
+    return withActionEvent(ctx, access, "discord", "save", channels(saved.views));
   });
 }

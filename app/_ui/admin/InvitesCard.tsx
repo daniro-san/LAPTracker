@@ -10,7 +10,8 @@ import { useState, useTransition } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { ConfirmSheet } from "./ConfirmSheet";
 import { Result } from "./outcome";

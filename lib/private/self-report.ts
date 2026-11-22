@@ -6,7 +6,6 @@
 // member's own page, the member card and the workspace download.
 import { z } from "zod";
 
-import { fill } from "../copy";
 import type { Db } from "../db";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
 import {
@@ -21,6 +20,7 @@ import {
   type ReportRow,
 } from "../repo/self-reports";
 import { anyRoster } from "../repo/workspace-any-roster";
+import { fill } from "../words";
 import type { BoardAccess, MeAccess, WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
 import { selfReportCardWords, type SelfReportCardWords } from "./dictionary.self-report";

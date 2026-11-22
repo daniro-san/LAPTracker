@@ -7,9 +7,9 @@ import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import type { CardFollowUp, MessageWords } from "@/lib/private/card-follow-up";
 import { discordLiteral, gameMail } from "@/lib/private/notice-formats";
+import { fill } from "@/lib/words";
 
 import { FIELD } from "./CalendarFields";
 import { CopyButton } from "./CopyButton";

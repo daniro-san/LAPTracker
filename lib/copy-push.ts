@@ -96,7 +96,3 @@ export const PUSH_WORDS: Record<PushLanguage, PushWords> = {
     },
   },
 };
-
-/** "{n} waiting" with its values. */
-export const fill = (text: string, values: Record<string, string | number>) =>
-  text.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ""));

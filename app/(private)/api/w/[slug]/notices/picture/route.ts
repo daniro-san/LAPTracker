@@ -6,7 +6,7 @@
 // same bytes writes nothing (D100) and is not counted again. Answers the picture's address and size; a
 // notice in the trash answers 410 notice_deleted (D118).
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginPicture,
@@ -56,6 +56,6 @@ export async function POST(
     );
     if (!result.ok) return privateError(STATUS[result.code], result.code);
     const saved = Response.json(result.picture, { headers: NO_STORE });
-    return result.changed ? counted(ctx, access, "notice", "picture_add", saved) : saved;
+    return result.changed ? withActionEvent(ctx, access, "notice", "picture_add", saved) : saved;
   });
 }

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { getAppContext } from "@/lib/app-context";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { agoText } from "@/lib/private/calendar-words";
@@ -14,6 +14,7 @@ import { NOTICE_LANGUAGES } from "@/lib/private/notice-rules";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { START_HERE_MAX, startHereEdit } from "@/lib/private/start-here";
+import { fill } from "@/lib/words";
 
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";

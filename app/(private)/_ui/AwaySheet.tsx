@@ -9,10 +9,10 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import type { AwayNote } from "@/lib/private/fact-fields";
 import { searchRoster } from "@/lib/private/roster-search";
+import { fill } from "@/lib/words";
 
 import { FIELD, Labeled, TextInput } from "./CalendarFields";
 import type { MarkRowView, RollSheetWords } from "./roll-call-data";

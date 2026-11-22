@@ -11,7 +11,8 @@ import {
   type Blocs,
   type Side,
 } from "@/lib/balance";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { allianceLabel, sharePreciseText } from "./format";
 import { Num } from "./Num";

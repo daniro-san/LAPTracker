@@ -5,11 +5,12 @@
 // keep D89's counts.
 import { asc, and, eq } from "drizzle-orm";
 
-import { fill, isolate } from "../copy";
+import { isolate } from "../copy";
 import type { Db } from "../db";
 import { rosterSightings } from "../queries/roster-stays";
 import { allianceLabels, type AllianceLabel } from "../repo/alliances";
 import { playerHistory } from "../schema-squads";
+import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";

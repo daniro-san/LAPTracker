@@ -8,9 +8,10 @@ import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { errorsSlug, listErrorGroups } from "@/lib/queries/admin-errors";
+import { fill } from "@/lib/words";
 
 export default async function ErrorsPage({
   searchParams,

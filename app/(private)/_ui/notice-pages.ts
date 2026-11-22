@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
@@ -23,6 +23,7 @@ import type { NoticeDetail } from "@/lib/private/notices";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
 import type { ReviewProps } from "./NoticeReviews";

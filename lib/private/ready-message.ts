@@ -4,7 +4,7 @@
 // in, the Alliance Help coins tip, the facts still to ask by name, and a warm end (never a thanks for the
 // tip alone, which would read as praise for doing better). Copied by an officer,
 // never sent by the app. People first (D75): no number, no "you didn't", a missing fact is a question.
-import { fill } from "../copy";
+import { fill } from "../words";
 import type { WorkspaceLanguage } from "./dictionary";
 import { READY_MESSAGE, type ReadyWords } from "./dictionary.ready";
 import type { WorkItem } from "./follow-up-rules";

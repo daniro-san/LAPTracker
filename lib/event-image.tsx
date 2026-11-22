@@ -13,7 +13,7 @@ import { MarkLine } from "./brand/components/Logo";
 import { KillsMark, MightMark } from "./brand/components/MoverMarks";
 import { tokenColor, TOKENS } from "./brand/palette";
 import { delta } from "./compute";
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
 import { compact, signedCompact, type DiscordClock } from "./discord-format";
 import { kvkBlock, type KvkLine } from "./event-image-kvk";
 import { drawable, label, ROW, Section, SECTION, u, type Colors } from "./event-image-parts";
@@ -22,6 +22,7 @@ import { topGains, usable, type PublicAlliance } from "./notify";
 import type { TurnoutLists } from "./queries";
 import type { Phase } from "./repo";
 import { isGeneratedName } from "./schedule";
+import { fill } from "./words";
 
 export { drawable };
 

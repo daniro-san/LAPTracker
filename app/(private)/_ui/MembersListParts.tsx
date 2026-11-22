@@ -4,8 +4,8 @@
 // labels), the count line naming every filter on, with Clear filters and Copy, the "Not shown" lines, the
 // empty states and "Show more".
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import { keepMembers, NO_QUERY, sheetFilters } from "@/lib/private/members-list";
+import { fill } from "@/lib/words";
 
 import { CopyButton } from "./CopyButton";
 import type { ListRow, ListWords } from "./member-list-data";

@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import type { AgendaItem, CalendarSheetWords, Member, SuggestedMember } from "./calendar-data";
 import { refusalText, sendCalendar, type Stale } from "./calendar-send";

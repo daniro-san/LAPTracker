@@ -6,7 +6,7 @@
 // one button that opens the member's sheet; nothing is hover-only. Below 640 it is the list's card; from
 // 640 `MemberCell` is the name cell of the table (D122), whose row opens the member.
 import { PlayerAvatar } from "@/app/_ui/Pictures";
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import type { ListRow, ListWords } from "./member-list-data";
 import { STATUS_TONE } from "./MemberCards";

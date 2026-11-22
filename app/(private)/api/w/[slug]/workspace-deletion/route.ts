@@ -3,7 +3,7 @@
 // session (a member's answers 401). Asking needs the workspace's own address, typed; the deletion happens
 // 14 days later, and any officer can cancel it until then. Answers when the workspace will be deleted.
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { askToDelete, cancelToDelete, deletionInput } from "@/lib/private/workspace-deletion";
@@ -32,7 +32,7 @@ export async function POST(
       { purgeAfter: result.purgeAfter?.toISOString() ?? null },
       { headers: NO_STORE },
     );
-    return counted(
+    return withActionEvent(
       ctx,
       access,
       "workspace_data",

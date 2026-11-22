@@ -5,7 +5,8 @@
 // question's request id, and the list then says "Removed …" with Undo for a short while.
 import { useRouter } from "next/navigation";
 
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { DeleteButton, UndoLine } from "./DeleteRecord";
 import type { LifecycleWords, PendingRow } from "./member-lifecycle-data";

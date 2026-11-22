@@ -182,19 +182,6 @@ export const COLUMN_LABEL = {
   timeZone: "facts.timeZone",
 } as const satisfies Record<string, keyof ImportWords>;
 
-/** The singular or plural form of a counted phrase (`key.one` / `key.other`), by the language's rule. */
-export const counted = (
-  words: Readonly<Record<string, string>>,
-  key: string,
-  n: number,
-  language: string,
-): string =>
-  words[`${key}.${new Intl.PluralRules(language).select(n) === "one" ? "one" : "other"}`] ?? "";
-
-/** lib/copy's `fill` for client components, which do not load lib/copy (the public pages' words). */
-export const say = (text: string, values: Record<string, string | number>) =>
-  text.replace(/\{(\w+)\}/g, (all, key: string) => String(values[key] ?? all));
-
 export const SOURCE_KEY = {
   message: "src.message",
   officer: "src.officer",

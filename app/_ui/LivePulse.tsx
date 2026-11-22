@@ -6,8 +6,9 @@
 // `chart-details` flag is on, D91). Its bars are HTML boxes, which D68 allows by its amendment of
 // 2026-11-16 (PR 319); a line chart stays SVG.
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { EventProgress } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { compact, shareText, type Clock } from "./format";
 import { Num } from "./Num";

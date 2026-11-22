@@ -5,8 +5,8 @@
 // beside the text it replaced, and "Restore this version" puts the whole notice as it stood then into the
 // editor as a draft: changed languages get Accept and Undo, and nothing is saved until Save.
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import { before, fieldsAt } from "@/lib/private/notice-history";
+import { fill } from "@/lib/words";
 
 import { fieldName, valueWords, type HistoryItem } from "./notice-client";
 import type { Editor, EditorProps } from "./notice-editor-state";

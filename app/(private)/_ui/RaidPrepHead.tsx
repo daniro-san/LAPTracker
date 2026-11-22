@@ -9,8 +9,8 @@ import { useRef, useState } from "react";
 
 import { track, type RaidPrepSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import { PREP_MESSAGE } from "@/lib/private/dictionary.raidprep";
+import { fill } from "@/lib/words";
 
 import type { PrepHeadView } from "./prep-data";
 import { remindAll, remindNames } from "./prep-message";

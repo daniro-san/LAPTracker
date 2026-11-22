@@ -10,8 +10,8 @@
 import { useLayoutEffect, useRef } from "react";
 
 import { FIELD } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { DraftMark } from "./LanguageEditorParts";
 import { LANGUAGE_NAME } from "./languages";

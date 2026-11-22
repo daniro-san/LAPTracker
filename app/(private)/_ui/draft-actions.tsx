@@ -9,9 +9,10 @@ import { useState } from "react";
 import { track, type ScreenshotKind } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { isolate } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { AskSheet } from "./AskSheet";
-import { fillIn, type Words } from "./draft-known";
+import { type Words } from "./draft-known";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
 export type Answer = { ok: boolean; data: Record<string, unknown> };
@@ -41,7 +42,7 @@ export function useDraftActions(
       else if (!res.ok) {
         const template = w[`shots.e.${String(data.code)}`] ?? w["shots.e.failed"];
         const name = (data.by as string | null) ?? w["shots.someone"] ?? "";
-        setMessage(fillIn(template, { name: isolate(name) }));
+        setMessage(fill(template ?? "", { name: isolate(name) }));
       }
       return { ok: res.ok, data };
     } catch {

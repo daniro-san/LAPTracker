@@ -8,9 +8,9 @@
 import { useRef, type KeyboardEvent } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
 import type { TabState } from "./notice-draft";

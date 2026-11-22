@@ -5,11 +5,11 @@
 // value answers 409 with it in the officer's words. The lib call runs in `privately`; nothing is logged.
 import { z } from "zod";
 
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { requireWorkspace } from "@/lib/private/access";
 import { isDay } from "@/lib/private/calendar-time";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import type { FactValues } from "@/lib/private/fact-fields";
 import { factText } from "@/lib/private/fact-text";
@@ -26,6 +26,7 @@ import {
 import { cardFormats } from "@/lib/private/member-card";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
+import { fill } from "@/lib/words";
 
 const uid = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 /** Issue 516: a member card's record says so, and whether the member was on the week's list (analytics). */
@@ -75,7 +76,7 @@ export async function POST(
       const done = Response.json({ ok: true }, { headers: NO_STORE });
       // The Follow-up tab sends no place: its members are on the list.
       const at = { from: input.from ?? "follow_up", on_list: input.onList ?? true } as const;
-      return counted(
+      return withActionEvent(
         ctx,
         access,
         "follow_up",

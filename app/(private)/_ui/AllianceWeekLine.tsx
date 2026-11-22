@@ -2,13 +2,13 @@
 // Members week line: "Alliance Help: 62 of 100 reached 1,000 yesterday · daily quest points yesterday,
 // median 540 · donations this week 1.2M", then the days with no read, not in the total (D75). Alliance-level numbers from the reads `membersView`
 // already holds: no query, no name, no ranking. Nothing before the first end-of-day read.
-import { fill } from "@/lib/copy";
 import { allianceWeek } from "@/lib/private/alliance-week";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { CardFormats } from "@/lib/private/member-card";
 import { COINS_MAX } from "@/lib/private/member-days";
 import { DAY_MS, gameWeek, isoDay } from "@/lib/private/member-week";
 import type { MembersView } from "@/lib/private/members";
+import { fill } from "@/lib/words";
 
 const back = (day: string, days: number) => isoDay(Date.parse(`${day}T00:00:00Z`) - days * DAY_MS);
 

@@ -4,7 +4,8 @@
 // reason), shown under Check in or under Needs help (`needsAWord`), and the facts still to ask are
 // Members' "Missing info" (`factsToAsk`). No donation reason, no ranking: the list is by name. D140 adds
 // one tip of Follow-up's own: Alliance Help coins below 1,000 on most days with data (`coinsTip`).
-import { fill, isolate } from "../copy";
+import { isolate } from "../copy";
+import { fill, plural } from "../words";
 import { dayIn, mondayOf, zonedInstant } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 import { COINS_MAX, type DayCell } from "./member-days";
@@ -220,8 +221,12 @@ export function weekCountLine(
       ? t["followup.week.nobody"]
       : fill(t["followup.week.toLook"], { n: counts.toLook });
   if (counts.noted === 0) return head;
-  const form = new Intl.PluralRules(language).select(counts.noted) === "one" ? "one" : "other";
-  return `${head} · ${fill(t[`followup.week.noted.${form}`], { n: counts.noted })}`;
+  const noted = plural(
+    counts.noted,
+    { one: t["followup.week.noted.one"], other: t["followup.week.noted.other"] },
+    language,
+  );
+  return `${head} · ${fill(noted, { n: counts.noted })}`;
 }
 
 export interface HistoryRow {

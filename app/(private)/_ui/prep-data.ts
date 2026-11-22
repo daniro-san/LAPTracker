@@ -5,11 +5,11 @@
 // the Discord summary's state, who "Mark ✓ the n seen with a shield" would mark, and
 // the tick's marks still to check. Times are server time. People first (D75): no reading is no line. A seen
 // shield's length is never shown: the tracker does not give it.
-import { fill } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import { hhmm } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { MessageLanguage, PrepView, SummaryState, TrackerHint } from "@/lib/private/raid-prep";
+import { fill } from "@/lib/words";
 
 export interface PrepTrackerView {
   /** The newest reading saw a shield. */

@@ -8,7 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { FIELD } from "@/lib/brand/components/controls";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { copy, fill, isolate } from "@/lib/copy";
+import { copy, isolate } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 const s = copy.admin.workspaces.signOutUsers;
 /** Above this many people, the list gets a search field. */

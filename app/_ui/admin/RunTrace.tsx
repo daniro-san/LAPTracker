@@ -5,8 +5,9 @@ import type { ReactNode } from "react";
 
 import { LABEL } from "@/app/_ui/StatTable";
 import { Chip } from "@/lib/brand/components/Chip";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { RunTrace as Trace, TraceCall } from "@/lib/queries/admin";
+import { fill } from "@/lib/words";
 
 import { AdminSection } from "./parts";
 

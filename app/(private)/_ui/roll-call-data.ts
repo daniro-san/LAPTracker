@@ -1,7 +1,6 @@
 // The Roll call pages' data in the officer's words, made on the server (issue 298): each occasion of the week
 // as a card, each row of a roll call, and each member of an Elixir Scramble team with why they are
 // suggested. Dates and numbers are formatted here, never in the browser.
-import { fill } from "@/lib/copy";
 import { addDays, hhmm, zonedInstant } from "@/lib/private/calendar-time";
 import { calendarDates, stOf } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -24,6 +23,7 @@ import {
   tallyParts,
   type TallySet,
 } from "@/lib/private/roll-call-words";
+import { fill } from "@/lib/words";
 
 import type { GridFilter } from "./roll-call-grid";
 import type { SHEET_KEYS } from "./sheet-words";

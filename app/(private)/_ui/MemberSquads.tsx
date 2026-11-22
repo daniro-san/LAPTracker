@@ -11,7 +11,6 @@
 // one unit (owner, 2026-11-21); the strongest one is tinted plum and tagged "Strongest".
 import { HeroPicture } from "@/app/_ui/Pictures";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill } from "@/lib/copy";
 import { joinAt } from "@/lib/date-words";
 import { clockIn } from "@/lib/private/calendar-time";
 import type {
@@ -21,6 +20,7 @@ import type {
   SquadsCard,
   StarIcon,
 } from "@/lib/private/member-squads";
+import { fill } from "@/lib/words";
 
 import { useViewerZone } from "./YourTime";
 

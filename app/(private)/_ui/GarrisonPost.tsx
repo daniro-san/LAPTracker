@@ -8,8 +8,8 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import type { GarrisonKey, GarrisonWords } from "@/lib/private/dictionary.garrison";
+import { fill } from "@/lib/words";
 
 import { Choice } from "./CalendarFields";
 import { newRequestId } from "./request-id";

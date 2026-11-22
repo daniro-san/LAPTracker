@@ -1,7 +1,7 @@
 // The month overview beside the week (issue 300), from 640 px only: six Monday-to-Sunday rows, each day a
 // link to its week, with up to three of its entries as text (server time, "(ST)" in the heading) and how many more. Below 640 px
 // the week list is the calendar.
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import type { MonthCell } from "./calendar-data";
 

@@ -14,7 +14,7 @@ import {
   ResponsiveTable,
   type Column as TableColumn,
 } from "@/lib/brand/components/layout/ResponsiveTable";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { clockIn, hhmm } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import {
@@ -24,6 +24,7 @@ import {
   type Order,
   type Who,
 } from "@/lib/private/members-list";
+import { fill } from "@/lib/words";
 
 import type { ListRow, ListWords } from "./member-list-data";
 import { MemberCell, MemberListRow, toAskText, type Column, type RowProps } from "./MemberListRow";

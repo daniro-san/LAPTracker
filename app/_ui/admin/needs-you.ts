@@ -4,10 +4,11 @@
 // Counts and times only (D71). English only (D48).
 import type { PageIndexItem } from "@/lib/brand/components/layout/PageIndex";
 import { DAILY_QUOTA } from "@/lib/budget";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { CleanupJob } from "@/lib/queries/admin-page";
 import { QUOTA_WARN_BELOW } from "@/lib/run";
 import { heartbeatBoundary } from "@/lib/tick-gate";
+import { fill } from "@/lib/words";
 
 import type { Look } from "./alliances-view";
 

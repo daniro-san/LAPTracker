@@ -3,8 +3,8 @@
 // T + 1M), what each helper can lend (every squad but their strongest, which stays home), the suggested
 // pairs, the check of an officer's edited pairs, and the text shared to the game and Discord. People first
 // (D75): the order is only a suggestion, no score or rank is shown, and missing data counts against nobody.
-import { fill } from "../copy";
 import type { GarrisonPair } from "../schema-calendar";
+import { fill } from "../words";
 
 export type { GarrisonPair };
 

@@ -2,10 +2,10 @@
 // each with its state in words. A row needs a look (yarn) only when something stops working: a key the
 // tracker refuses, out of quota or to enter again; a webhook to paste again; the Raid Shield summary switched
 // on with no channel to post to; a deletion asked. No key is a choice (D134), so it is no alarm (D75).
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { WebhookState } from "@/lib/private/discord-webhooks";
 import type { KeyState } from "@/lib/private/tracker-key";
+import { fill } from "@/lib/words";
 
 export interface IndexRow {
   /** The card's heading id, the row's `#` target. */

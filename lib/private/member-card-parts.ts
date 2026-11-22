@@ -1,8 +1,8 @@
 // Parts of the member card's words (issue 461, D136), apart from member-card.ts for its size: the last 7
 // days' date formats, this week's Alliance Duel, what is still to ask, and every earlier value of a fact.
 // Also the line a quiet day gives (D127).
-import { fill } from "../copy";
 import type { FactRow } from "../repo/member-facts";
+import { fill } from "../words";
 import type { WorkspaceDictionary } from "./dictionary";
 import { FACT_FIELDS, type FactField, type FactValues, type MemberFacts } from "./fact-fields";
 import { factText, NONE } from "./fact-text";

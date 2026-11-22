@@ -17,8 +17,9 @@ import {
   zonesAtLocalTime,
   type Zone,
 } from "@/lib/private/time-zones";
+import { fill } from "@/lib/words";
 
-import { say, type EditorWords } from "./facts-form";
+import { type EditorWords } from "./facts-form";
 import { sheetWords } from "./sheet-words";
 import { TimeInput } from "./TimeInput";
 
@@ -98,7 +99,7 @@ function ZoneSheet(props: Props & { onPick: (zone: string) => void; onClose: () 
           className={`${FIELD} mt-1`}
         />
       </label>
-      <p className="mt-1 text-body-sm text-ink/75">{say(words["tz.st"], { offset: st })}</p>
+      <p className="mt-1 text-body-sm text-ink/75">{fill(words["tz.st"], { offset: st })}</p>
       <label className="mt-2 flex min-h-11 items-center justify-between gap-3">
         <span>{words["tz.theirTime"]}</span>
         <TimeInput value={theirTime} onChange={setTheirTime} className="w-32" />
@@ -146,7 +147,7 @@ function ZoneList(props: {
                 </span>
               </span>
               <span className="shrink-0 text-right text-body-sm tabular-nums">
-                <span className="block">{say(words["tz.now"], { time: clock(z.id) })}</span>
+                <span className="block">{fill(words["tz.now"], { time: clock(z.id) })}</span>
                 <span className="block text-ink/75">{offsetLabel(offsetMinutes(z.id, now))}</span>
               </span>
             </button>
@@ -154,7 +155,7 @@ function ZoneList(props: {
         ))}
       </ul>
       {results.length > SHOWN && (
-        <p className="mt-2 text-body-sm">{say(words["tz.more"], { n: results.length - SHOWN })}</p>
+        <p className="mt-2 text-body-sm">{fill(words["tz.more"], { n: results.length - SHOWN })}</p>
       )}
     </>
   );

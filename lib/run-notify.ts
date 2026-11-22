@@ -2,7 +2,7 @@
 // first phase and edited by the next, so each message shows the event so far.
 import type { AppContext } from "./app-context";
 import type { RunSummary } from "./collector";
-import { copy, fill } from "./copy";
+import { copy } from "./copy";
 import type { Db } from "./db";
 import { eventImage } from "./event-image";
 import { flagsOf } from "./flags";
@@ -24,6 +24,7 @@ import { setDiscordMessageId, type EventInfo } from "./repo/events";
 import { loadVerdictInput } from "./repo/rehearsals";
 import { listPhaseReports, otherShortSample, type PhaseReport } from "./repo/snapshots";
 import { reportError } from "./report-error";
+import { fill } from "./words";
 
 interface Request {
   event: EventInfo;

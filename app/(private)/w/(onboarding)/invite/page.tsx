@@ -7,11 +7,11 @@ import { cookies } from "next/headers";
 import { getAppContext } from "@/lib/app-context";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Measure } from "@/lib/brand/components/layout/Measure";
-import { fill } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import { withPageDb } from "@/lib/page";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import { inviteView, type InviteView } from "@/lib/private/invite";
+import { fill } from "@/lib/words";
 
 import { Frame, workspaceWords } from "../../../_ui/Frame";
 import { InviteOpened } from "../../../_ui/invite-client";

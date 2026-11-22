@@ -10,8 +10,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
+import { fill } from "@/lib/words";
 
 import type { AgendaItem } from "./calendar-data";
 import { refusalText, sendCalendar } from "./calendar-send";

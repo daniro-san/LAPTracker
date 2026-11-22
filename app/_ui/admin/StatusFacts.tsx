@@ -8,9 +8,10 @@ import { Chip } from "@/lib/brand/components/Chip";
 import { PageIndex } from "@/lib/brand/components/layout/PageIndex";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { DAILY_QUOTA } from "@/lib/budget";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { recentTicks } from "@/lib/queries/admin";
 import { QUOTA_WARN_BELOW } from "@/lib/run";
+import { fill } from "@/lib/words";
 
 import { quotaState, tickLate, type NeedRow, type QuotaState } from "./needs-you";
 import { AdminSection, Fact } from "./parts";

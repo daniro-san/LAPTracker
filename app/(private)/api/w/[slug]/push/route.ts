@@ -5,7 +5,7 @@
 // the site's push keys; 404 not_found for a device with no row; 429 rate_limited. Counted as `ws_action`
 // `push` / `add`, `save` or `delete`. The subscription is never logged or answered.
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -37,6 +37,6 @@ export async function POST(
     const done = await privately("push.save", () => savePush(db, access, input, ctx.env, now));
     if (!done.ok) return privateError(STATUS[done.code], done.code);
     const body = Response.json({ ok: true }, { headers: NO_STORE });
-    return counted(ctx, access, "push", ACTION[input.action], body);
+    return withActionEvent(ctx, access, "push", ACTION[input.action], body);
   });
 }

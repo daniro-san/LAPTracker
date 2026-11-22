@@ -8,9 +8,9 @@
 // tones, where one tap asks for the draft; Fit says it keeps the key points. Under them: why they are off,
 // the last error, or that the other languages' text becomes a draft (D81). The buttons, the tones and the
 // line under them are shared with Start here (LanguageEditorParts.tsx, D116).
-import { fill } from "@/lib/copy";
 import type { WorkspaceKey } from "@/lib/private/dictionary";
 import { DRAFT_LIMIT, NOTICE_LIMIT } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { ActionButton, ActionNote, AI_REASON_ID, ImproveButton } from "./LanguageEditorParts";
 import { LANGUAGE_CODE } from "./languages";

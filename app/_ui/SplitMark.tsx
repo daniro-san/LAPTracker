@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { DrilldownLink } from "./DrilldownLink";
 import { MEMBER_MARK, signOf } from "./format";

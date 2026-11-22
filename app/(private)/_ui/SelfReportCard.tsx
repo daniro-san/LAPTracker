@@ -10,8 +10,8 @@ import { useState } from "react";
 import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
 import type { CardSelfReport, CardReportLine } from "@/lib/private/self-report";
+import { fill } from "@/lib/words";
 
-import { say } from "./facts-form";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 type Done = "used" | "marked";
@@ -110,7 +110,7 @@ function useAnswer(
     setError(
       r === "changed"
         ? w["self.card.changed"]
-        : say(w["self.card.conflict"], { field: line.label }),
+        : fill(w["self.card.conflict"], { field: line.label }),
     );
     props.onChanged?.();
   };

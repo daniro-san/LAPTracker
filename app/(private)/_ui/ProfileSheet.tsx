@@ -13,10 +13,10 @@ import { Gear } from "@/lib/brand/components/Gear";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { Moon, setTheme, Sun, useThemeChoice } from "@/lib/brand/components/ThemeSwitch";
-import { fill } from "@/lib/copy";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { Profile } from "@/lib/private/profile";
+import { fill } from "@/lib/words";
 
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT, SignedOutNote } from "./SignedOut";

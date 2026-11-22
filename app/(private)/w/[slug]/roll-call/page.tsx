@@ -5,12 +5,12 @@
 // leaves the week and shows under `?archived=1`, the newest first; after a delete the week says "Roll call
 // deleted." with Undo (D120). Its "Not set", ✓ and ✗ counts open the marking page on that chip.
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { isDay, mondayOf, offsetLabel } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { archivedInWeek, archivedItems, weekItems } from "@/lib/private/roll-call-view";
+import { fill } from "@/lib/words";
 
 import { AddRollCall } from "../../../_ui/AddRollCall";
 import { calendarWords, type CalendarSheetWords } from "../../../_ui/calendar-data";

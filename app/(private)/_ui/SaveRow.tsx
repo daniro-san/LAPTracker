@@ -4,8 +4,8 @@
 // nothing differs from what is saved; "Not saved yet: n changes" in yarn while something does; "Saved." after
 // a save; the refusal otherwise. While changes wait, the browser asks before the page is reloaded or closed.
 import { Button } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { useLeaveWarning } from "./notice-editor-state";
 import { RefusalLine } from "./SignedOut";

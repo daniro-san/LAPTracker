@@ -2,7 +2,7 @@
 // pastes into in-game mail to a player of our own server who took from our members. The player's language
 // is not known, so the message is made in English, Portuguese and French at once, whatever the officer's
 // own language. Polite and factual (D75): what was reported, that we share a server, and what to do instead.
-import { fill } from "../copy";
+import { fill } from "../words";
 
 export const WARNING_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WarningLanguage = (typeof WARNING_LANGUAGES)[number];

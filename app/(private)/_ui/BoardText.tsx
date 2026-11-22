@@ -4,13 +4,13 @@
 import type { ReactNode } from "react";
 
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill } from "@/lib/copy";
 import type {
   WorkspaceDictionary,
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { LanguageTabs, type LanguagePanel } from "./BoardParts";
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";

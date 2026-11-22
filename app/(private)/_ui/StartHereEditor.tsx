@@ -12,13 +12,13 @@
 import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
-import { fill } from "@/lib/copy";
 import type {
   WorkspaceDictionary,
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import { DRAFT_LIMIT, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { SaveBar } from "./EditorSaveBar";
 import {

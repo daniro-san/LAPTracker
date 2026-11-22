@@ -8,8 +8,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { AskSheet } from "./AskSheet";
 import { newRequestId } from "./request-id";

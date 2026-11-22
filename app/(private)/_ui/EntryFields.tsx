@@ -5,10 +5,10 @@
 // officer's own time under it, and whether it repeats.
 import type { ReactNode } from "react";
 
-import { fill } from "@/lib/copy";
 import { ELIXIR_WINDOWS, LEVEL_MAX, type Kind } from "@/lib/private/calendar-kinds";
 import { hhmm, parseTime, zonedInstant } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
+import { fill } from "@/lib/words";
 
 import type { AgendaItem } from "./calendar-data";
 import type { Draft, problems } from "./calendar-draft";

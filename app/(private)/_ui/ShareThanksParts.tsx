@@ -6,8 +6,8 @@ import { useLayoutEffect, useRef, type ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip, FIELD } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { LANGUAGE_CHOICES } from "./languages";
 import type { ShareThanksProps } from "./share-thanks-data";

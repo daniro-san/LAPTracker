@@ -12,8 +12,8 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import type { DraftSummary, Outcome } from "@/lib/private/import";
 import type { ImportKind, Scope, Screen } from "@/lib/private/import-kinds";
+import { fill, plural } from "@/lib/words";
 
-import { fillIn } from "./draft-known";
 import { isSignedOut, post, readAll } from "./screenshot-upload";
 import { FilePicker, type Preset } from "./ScreenshotPicker";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
@@ -121,7 +121,7 @@ function useSend(props: SendProps) {
     setResult(null);
     setUnsent(null);
     if (files.length > maxPictures)
-      return setError(fillIn(w["shots.tooMany"] ?? "", { n: maxPictures }));
+      return setError(fill(w["shots.tooMany"] ?? "", { n: maxPictures }));
     const { pages, signedOut } = await readAll(files, slug, props.statusBar, setProgress);
     setProgress(null);
     if (signedOut) return setError(SIGNED_OUT);
@@ -149,7 +149,7 @@ export function SendScreenshots(props: SendProps) {
       />
       {!props.presets && <p className="mt-2 text-body-sm text-ink/80">{w["shots.help"]}</p>}
       <div aria-live="polite" className="mt-2">
-        {progress && <p>{fillIn(w["shots.reading"] ?? "", progress)}</p>}
+        {progress && <p>{fill(w["shots.reading"] ?? "", progress)}</p>}
         {error && <RefusalLine text={error} className="border-l-4 border-seal pl-3" />}
         {unsent && (
           <button
@@ -176,10 +176,50 @@ export function SendScreenshots(props: SendProps) {
   );
 }
 
-function plural(w: SendWords, language: string, key: string, n: number) {
-  const form = new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
-  return fillIn(w[`${key}.${form}`] ?? "", { n });
-}
+/** The draft's type, with its tab when read ("Alliance Duel · Monday"), or "maybe" when unsure. */
+const draftLabel = (w: SendWords, kinds: Record<ImportKind, string>, d: DraftSummary) =>
+  !d.scope
+    ? kinds[d.kind]
+    : d.scopeSure
+      ? (w[`shots.kindScope.${d.kind}.${d.scope}`] ?? kinds[d.kind])
+      : fill(w["shots.kindUnsure"] ?? "", { kind: kinds[d.kind] });
+
+/** "8 rows, 1 doubtful": a draft's rows and the ones that need a person. */
+const draftCounts = (w: SendWords, language: string, d: DraftSummary) =>
+  [
+    fill(
+      plural(
+        d.rows,
+        { one: w["shots.rows.one"] ?? "", other: w["shots.rows.other"] ?? "" },
+        language,
+      ),
+      { n: d.rows },
+    ),
+    ...(d.doubtful
+      ? [
+          fill(
+            plural(
+              d.doubtful,
+              { one: w["shots.doubtful.one"] ?? "", other: w["shots.doubtful.other"] ?? "" },
+              language,
+            ),
+            { n: d.doubtful },
+          ),
+        ]
+      : []),
+    ...(d.notFound
+      ? [
+          fill(
+            plural(
+              d.notFound,
+              { one: w["shots.notFound.one"] ?? "", other: w["shots.notFound.other"] ?? "" },
+              language,
+            ),
+            { n: d.notFound },
+          ),
+        ]
+      : []),
+  ].join(", ");
 
 function Results(props: {
   slug: string;
@@ -192,25 +232,13 @@ function Results(props: {
   onDiscard: () => void;
 }) {
   const { w, language, kinds, result } = props;
-  const label = (d: DraftSummary) =>
-    !d.scope
-      ? kinds[d.kind]
-      : d.scopeSure
-        ? (w[`shots.kindScope.${d.kind}.${d.scope}`] ?? kinds[d.kind])
-        : fillIn(w["shots.kindUnsure"], { kind: kinds[d.kind] });
-  const counts = (d: DraftSummary) =>
-    [
-      plural(w, language, "shots.rows", d.rows),
-      ...(d.doubtful ? [plural(w, language, "shots.doubtful", d.doubtful)] : []),
-      ...(d.notFound ? [plural(w, language, "shots.notFound", d.notFound)] : []),
-    ].join(", ");
   const notes = new Set(
     result.outcomes.flatMap((o) =>
       o.status === "map"
         ? [w["shots.map"] ?? ""]
         : o.status === "soon" || o.status === "empty"
           ? [
-              fillIn(w[o.status === "soon" ? "shots.soon" : "shots.empty"] ?? "", {
+              fill(w[o.status === "soon" ? "shots.soon" : "shots.empty"] ?? "", {
                 what: kinds[o.kind],
               }),
             ]
@@ -221,9 +249,23 @@ function Results(props: {
     <ul className="space-y-2">
       {result.drafts.map((d) => (
         <li key={d.id} className="border border-rule px-3 py-2">
-          <p>{fillIn(w["shots.reply.read"] ?? "", { what: label(d), counts: counts(d) })}</p>
+          <p>
+            {fill(w["shots.reply.read"] ?? "", {
+              what: draftLabel(w, kinds, d),
+              counts: draftCounts(w, language, d),
+            })}
+          </p>
           {d.leftOut > 0 && (
-            <p className="text-body-sm">{plural(w, language, "shots.leftOut", d.leftOut)}</p>
+            <p className="text-body-sm">
+              {fill(
+                plural(
+                  d.leftOut,
+                  { one: w["shots.leftOut.one"] ?? "", other: w["shots.leftOut.other"] ?? "" },
+                  language,
+                ),
+                { n: d.leftOut },
+              )}
+            </p>
           )}
           <a
             href={`/w/${props.slug}/shots/${d.id}`}
@@ -240,7 +282,16 @@ function Results(props: {
       ))}
       {result.unrecognised.length > 0 && <PickType {...props} />}
       {result.lost > 0 && (
-        <li className="px-3 py-2">{plural(w, language, "shots.lost", result.lost)}</li>
+        <li className="px-3 py-2">
+          {fill(
+            plural(
+              result.lost,
+              { one: w["shots.lost.one"] ?? "", other: w["shots.lost.other"] ?? "" },
+              language,
+            ),
+            { n: result.lost },
+          )}
+        </li>
       )}
     </ul>
   );

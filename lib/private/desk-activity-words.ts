@@ -1,6 +1,7 @@
 // The words of Home's "On the desk now" and "Recent activity" (D108), made on the server in the officer's
 // language. Every name and title goes through isolate(), so a right-to-left name cannot reorder the line.
-import { fill, isolate } from "../copy";
+import { isolate } from "../copy";
+import { fill } from "../words";
 import { agoText, calendarDates, titleOf } from "./calendar-words";
 import {
   COUNTED_RUNS,

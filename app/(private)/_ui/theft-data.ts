@@ -2,11 +2,12 @@
 // counts and labels. The client list (TheftCards.tsx) only lays them out, and adds the viewer's own clock
 // after hydration, so server and browser HTML never differ.
 import { SERVER } from "@/config/alliances";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import type { AllianceGroup, AttackerGroup, FollowUpState } from "@/lib/private/theft-groups";
 import { theftWarnings, type WarningLanguage } from "@/lib/private/theft-warning";
 import type { Contact } from "@/lib/private/thefts";
+import { fill } from "@/lib/words";
 
 type TheftKey = Extract<WorkspaceKey, `thefts.${string}` | `sheet.${string}`>;
 export type TheftWords = Record<TheftKey | "time.server" | "src.photo", string>;

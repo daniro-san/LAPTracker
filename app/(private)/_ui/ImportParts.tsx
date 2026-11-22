@@ -8,8 +8,9 @@ import type { FactField, FactValues } from "@/lib/private/fact-fields";
 import { dayFormat, factText } from "@/lib/private/fact-text";
 import { fillPlan } from "@/lib/private/import-plan";
 import type { ImportPreview, ImportResult, ImportRow } from "@/lib/private/sheet-import";
+import { fill, plural } from "@/lib/words";
 
-import { COLUMN_LABEL, counted, say, type ImportWords } from "./facts-form";
+import { COLUMN_LABEL, type ImportWords } from "./facts-form";
 
 /** "First Squad → Main squad (10.7 → 10.7M)", in the officer's language. */
 function columnText(
@@ -41,13 +42,13 @@ export function Columns(props: { preview: ImportPreview; words: ImportWords; lan
   return (
     <>
       <p className="text-body-sm">
-        {say(words["import.columns"], {
+        {fill(words["import.columns"], {
           list: read.map((c) => columnText(c, words, props.language)).join(", "),
         })}
       </p>
       {ignored.length > 0 && (
         <p className="text-body-sm text-ink/75">
-          {say(words["import.ignored"], { list: ignored.map((c) => c.header).join(", ") })}
+          {fill(words["import.ignored"], { list: ignored.map((c) => c.header).join(", ") })}
         </p>
       )}
     </>
@@ -59,7 +60,7 @@ export function Matched(props: { preview: ImportPreview; rows: ImportRow[]; word
   return (
     <details className="mt-3 border border-rule px-3 py-2">
       <summary className="flex min-h-11 cursor-pointer items-center font-semibold">
-        {say(props.words["import.matched"], { n: props.rows.length })}
+        {fill(props.words["import.matched"], { n: props.rows.length })}
       </summary>
       <ul translate="no" className="text-body-sm">
         {props.rows.map((r) => (
@@ -85,11 +86,19 @@ export function FillCount(props: {
   const uidOf = (r: ImportRow) =>
     r.match.status === "matched" ? r.match.uid : (answers.get(r.line) ?? null);
   const has = (uid: number, field: string) => preview.filled[uid]?.includes(field) ?? false;
-  const { fill, kept } = fillPlan(preview.rows, uidOf, has);
+  const { fill: planned, kept } = fillPlan(preview.rows, uidOf, has);
   return (
     <p className="text-body-sm">
-      {say(counted(words, "import.fill", fill.length, language), { n: fill.length })}
-      {kept > 0 && ` ${say(counted(words, "import.stay", kept, language), { m: kept })}`}
+      {fill(
+        plural(
+          planned.length,
+          { one: words["import.fill.one"] ?? "", other: words["import.fill.other"] ?? "" },
+          language,
+        ),
+        { n: planned.length },
+      )}
+      {kept > 0 &&
+        ` ${fill(plural(kept, { one: words["import.stay.one"] ?? "", other: words["import.stay.other"] ?? "" }, language), { m: kept })}`}
     </p>
   );
 }
@@ -104,10 +113,36 @@ export function Done(props: {
 }) {
   const { words, language, result } = props;
   const line = [
-    say(counted(words, "import.saved", result.saved, language), { n: result.saved }),
-    say(counted(words, "import.for", result.members, language), { m: result.members }),
+    fill(
+      plural(
+        result.saved,
+        { one: words["import.saved.one"] ?? "", other: words["import.saved.other"] ?? "" },
+        language,
+      ),
+      { n: result.saved },
+    ),
+    fill(
+      plural(
+        result.members,
+        { one: words["import.for.one"] ?? "", other: words["import.for.other"] ?? "" },
+        language,
+      ),
+      { m: result.members },
+    ),
     ...(result.kept > 0
-      ? [say(counted(words, "import.skipped", result.kept, language), { k: result.kept })]
+      ? [
+          fill(
+            plural(
+              result.kept,
+              {
+                one: words["import.skipped.one"] ?? "",
+                other: words["import.skipped.other"] ?? "",
+              },
+              language,
+            ),
+            { k: result.kept },
+          ),
+        ]
       : []),
   ].join(" ");
   return (

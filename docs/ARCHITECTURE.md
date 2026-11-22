@@ -13,7 +13,7 @@ app/(private)/      the workspace (D71): pages under w/[slug], handlers under ap
                     Outside api/w: api/discord/interactions (public, checked by Discord's signature, D96),
                     w/[slug]/manifest.webmanifest and share (D110), img/notice/[id] (D119).
                     Reaches data only through lib/private, after requireWorkspace.
-lib/ (top level)    the domain and the plumbing: collector*, compute, budget, compact, schedule, run, tick,
+lib/ (top level)    the domain and the plumbing: collector*, compute, budget, compact, words, schedule, run, tick,
                     rehearsal, notify*, discord-*, push*, squads*, shield-*, kvk*, copy*, app-context, report-error.
 lib/sources/        adapters: v1.ts (documented API, primary), internal.ts (site API: ranks board and live-roster
                     fallback, unofficial, read-only). One output type.
@@ -27,14 +27,14 @@ lib/i18n/           one translation file per public language (D48, D88).
 config/ drizzle/ scripts/ e2e/   alliance config, migrations, scripts and hooks, Playwright specs.
 ```
 
-Pure modules take the clock and every input as arguments: `lib/compute`, `lib/budget`, `lib/compact` (the one compact-number format, D78), `lib/schedule`.
+Pure modules take the clock and every input as arguments: `lib/compute`, `lib/budget`, `lib/compact` (the one compact-number format, D78), `lib/schedule`. `lib/words` (the one `fill` and `plural`, issue 592) is pure except that `fill` reads `NODE_ENV` for its missing-placeholder rule.
 
 ## Dependency rule
 
 - `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai, flags}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/{app-errors, report-error, app-context} → lib/analytics/server` (route errors and `$ai_generation`, D115); `lib/report-error → lib/analytics/{sanitise, events}` (the exception's scrubbed message, D115 2026-11-21); `lib/{app-errors, run, run-notify, tick, push, app-context} → lib/report-error` (an error's redacted detail and a handled `$exception`; `lib/report-error` imports neither `lib/notify*` nor `lib/discord-*`, so `lib/private` reaches it through `lib/push` and `AppContext.report` within D71, D115 2026-11-21); `lib/analytics/sanitise → lib/redact` (the private-field redactor in the browser's scrubber); `lib/{redact, sources/shared} → lib/queries/blocked-keys` (the private keys and the photo host, which import nothing); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries, flags}` (queries: the public Discord message's numbers; flags: its war-turnout line, D91).
 - Upstream only through `lib/run`, `lib/tick` or `lib/rehearsal`. A page or handler also calls the `lib/` modules of its own feature (the Features table below); a new cross-module edge is added to the list above.
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
-- `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
+- `lib/compute`, `lib/budget`, `lib/compact` and `lib/words` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
 - `lib/screenshot` imports nothing from the project.
 - `lib/ai` imports nothing from the project: a request carries only the officer's text (D81).
@@ -47,7 +47,7 @@ No DI container, no base classes, no event bus, no generic repository. `Deps` is
 
 | Rule                                                                                       | Enforced by                                                               |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `lib/compute`, `lib/budget`, `lib/screenshot`, `lib/ai` import nothing                     | ESLint `import-x/no-restricted-paths` zones (eslint.config.mjs, D34, D81) |
+| `lib/compute`, `lib/budget`, `lib/words`, `lib/screenshot`, `lib/ai` import nothing        | ESLint `import-x/no-restricted-paths` zones (eslint.config.mjs, D34, D81) |
 | `lib/schedule` imports only the `Env` type                                                 | ESLint zone                                                               |
 | Nothing in `lib/` or `config/` imports `app/`                                              | ESLint zone                                                               |
 | `app` does not import `lib/sources`                                                        | ESLint zone                                                               |

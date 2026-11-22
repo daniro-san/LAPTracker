@@ -12,9 +12,10 @@ import { track } from "@/lib/analytics/events";
 import { FIELD } from "@/lib/brand/components/controls";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
+import { fill } from "@/lib/words";
 
 import { Actions, confirmRetype, Message, useDraftActions, type Why } from "./draft-actions";
-import { fillIn, type Words } from "./draft-known";
+import type { Words } from "./draft-known";
 import { DraftHeader, type ReviewText } from "./DraftHeader";
 
 interface Entry {
@@ -34,6 +35,10 @@ const NO_ROWS = { scope: null, day: null, weekBefore: false, rows: [] };
 
 const KIND_WORD = { theft: "shots.entry.theft", help: "shots.entry.help" } as const;
 
+/** "Theft · 14:02": the entry's kind and, when read, its time. */
+const entryHead = (w: Words, kind: keyof typeof KIND_WORD | null, at: string | null | undefined) =>
+  `${w[kind ? KIND_WORD[kind] : "shots.entry.unknown"] ?? ""}${at ? ` · ${fill(w["shots.at"] ?? "", { at })}` : ""}`;
+
 function EntryCard(props: {
   i: number;
   row: DraftView["rows"][number];
@@ -44,13 +49,9 @@ function EntryCard(props: {
 }) {
   const { row, entry, w } = props;
   const kind = row.entry?.kind ?? null;
-  const at = row.entry?.at;
   return (
     <li className={`border border-rule px-3 py-3 ${entry.dropped ? "border-dashed" : ""}`}>
-      <p className="text-body-sm">
-        {w[kind ? KIND_WORD[kind] : "shots.entry.unknown"]}
-        {at && ` · ${fillIn(w["shots.at"], { at })}`}
-      </p>
+      <p className="text-body-sm">{entryHead(w, kind, row.entry?.at)}</p>
       {!entry.dropped && kind !== "help" && (
         <>
           <label className="mt-1 block text-body-sm" htmlFor={`entry-${props.i}`}>
@@ -107,13 +108,13 @@ function SavedThefts({
   const n = saved.saved;
   const list = (["help", "own", "duplicate"] as const)
     .filter((k) => saved.left[k] > 0)
-    .map((k) => fillIn(w[`shots.left.${k}`], { n: saved.left[k] }))
+    .map((k) => fill(w[`shots.left.${k}`] ?? "", { n: saved.left[k] }))
     .join(", ");
   return (
     <div role="status" className="mt-3 border-l-4 border-plum pl-3">
       <p className="font-semibold">
-        {fillIn(w[n === 1 ? "shots.theftsSaved.one" : "shots.theftsSaved.other"], { n })}
-        {list && ` ${fillIn(w["shots.leftOut.list"], { list })}`}
+        {fill(w[n === 1 ? "shots.theftsSaved.one" : "shots.theftsSaved.other"] ?? "", { n })}
+        {list && ` ${fill(w["shots.leftOut.list"] ?? "", { list })}`}
       </p>
       {link && (
         <a

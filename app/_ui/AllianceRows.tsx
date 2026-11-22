@@ -3,8 +3,9 @@
 // beside their words, compact or exact by the page's switch; no chart.
 import Link from "next/link";
 
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { BoardAlliance, DetailsState } from "@/lib/queries/alliance-list";
+import { fill } from "@/lib/words";
 
 import type { DetailsView } from "./AllianceDetails";
 import { allianceLabel, compact, dayDate, type Clock } from "./format";

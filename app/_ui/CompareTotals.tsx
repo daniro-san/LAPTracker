@@ -1,8 +1,9 @@
 // The compare page's totals band (D57): Might, Kills, Members changed during each event, and the
 // difference between the two, over one set of alliances.
 import { changeDifference } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { EventComparison } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { dash, Difference, eventHead, MUTED, versus } from "./EventCompare";
 import type { Clock } from "./format";
