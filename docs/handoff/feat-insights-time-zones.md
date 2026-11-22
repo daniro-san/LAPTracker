@@ -105,4 +105,4 @@ Analytics plan: none. The card adds no event or property. Its two links are ordi
 
 What was missing from the task prompt? Whether "KvK start" should come from the events table (a row exists only a day ahead) or from the schedule config, and that `nextEvent` returns a KvK already running.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/680
