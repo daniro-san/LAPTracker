@@ -50,4 +50,26 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...valid, SAMPLE_EVERY_MIN: "7" })).toThrow(/SAMPLE_EVERY_MIN/);
     expect(() => parseEnv({ ...valid, SAMPLE_EVERY_MIN: "61" })).toThrow(/SAMPLE_EVERY_MIN/);
   });
+
+  it.each([
+    ["CRON_SECRET", "local-placeholder-cron-secret-0123456789"],
+    ["EDIT_PIN", "000000"],
+  ])(
+    "refuses the public %s placeholder in production, naming the key and not the value",
+    (key, value) => {
+      const production = {
+        ...valid,
+        [key]: value,
+        NODE_ENV: "production",
+        VERCEL_ENV: "production",
+      };
+      expect(() => parseEnv(production)).toThrow(new RegExp(`${key}: .*not allowed in production`));
+      expect(() => parseEnv(production)).not.toThrow(new RegExp(value));
+      // The same value is fine on a preview, locally and in tests.
+      expect(() => parseEnv({ ...production, VERCEL_ENV: "preview" })).not.toThrow();
+      expect(() =>
+        parseEnv({ ...production, NODE_ENV: "development", VERCEL_ENV: undefined }),
+      ).not.toThrow();
+    },
+  );
 });
