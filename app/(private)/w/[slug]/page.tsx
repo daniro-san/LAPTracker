@@ -23,7 +23,7 @@ import { calendarDays } from "@/lib/private/calendar";
 import { ACTIVITY_FIRST, activityPage, onDeskNow } from "@/lib/private/desk-activity";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
-import { toReview, type ReviewItem } from "@/lib/private/import-view";
+import { homeBadge, toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersWithProgress, type MembersView } from "@/lib/private/members";
 import { reviewsForMe } from "@/lib/private/notice-reviews";
@@ -277,7 +277,8 @@ export default async function WorkspacePage({
   }
   // The Home tab's number: drafts, the notice reviews for this officer (D113), the links to approve (D142),
   // counted once here for the tab, the jump and the "To review" heading.
-  const frame = { access, language, t, waiting: items.length + reviews.length + desk.links.length };
+  const waiting = homeBadge(items.length, reviews.length, desk.links.length);
+  const frame = { access, language, t, waiting };
   return (
     <SignedInFrame {...frame} current="home" wide keyShown>
       <Home

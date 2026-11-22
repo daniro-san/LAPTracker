@@ -62,9 +62,13 @@ export async function toReview(db: Db, access: WorkspaceAccess, now: Date): Prom
 }
 
 /**
- * The Home tab's number on every desk page: screenshot drafts, the notice reviews waiting for this officer
- * (D113) and the "This is me" claims to approve (D142).
+ * The Home tab's number: screenshot drafts, the notice reviews waiting for this officer (D113) and the
+ * "This is me" claims to approve (D142). The one sum: Home adds up its lists, every other desk page its counts.
  */
+export const homeBadge = (drafts: number, reviews: number, links: number) =>
+  drafts + reviews + links;
+
+/** The Home tab's number on every desk page, counted in SQL. */
 export const toReviewCount = async (db: Db, access: WorkspaceAccess, now: Date) => {
   const [drafts, reviews, links] = await Promise.all([
     countOpenDrafts(db, access.workspaceId, now),
@@ -72,7 +76,7 @@ export const toReviewCount = async (db: Db, access: WorkspaceAccess, now: Date) 
     featureOn(access, "notices") ? reviewsForMeCount(db, access) : 0,
     countLinksToReview(db, access.workspaceId),
   ]);
-  return drafts + reviews + links;
+  return homeBadge(drafts, reviews, links);
 };
 
 export interface ViewRow extends StoredRow {

@@ -189,6 +189,8 @@ describe("Home's number of what waits for a person (issue 585 slice 4)", () => {
       searchParams: Promise.resolve({}),
     });
     const html = await new Response((await prerender(page)).prelude).text();
+    // The other desk pages' tab number is the same sum as Home's (issue 592).
+    expect(await toReviewCount(db, access, NOW)).toBe(2);
     expect(html).toContain('<span class="sr-only">, 2 to review</span>');
     expect(html).toContain("2 waiting in “To review” ↓");
     expect(html).toMatch(/id="to-review"[^>]*>To review<span[^>]*>2<\/span><\/h2>/);
