@@ -173,6 +173,18 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.52.0",
+    date: "2026-11-22",
+    title: "Home says what needs you first, and Follow-up rows are simpler",
+    changes: [
+      'Home opens with a Follow-up card near the top: how many members to look at this week and how many officers already noted, as one link. A line under it jumps to "To review" when something waits there.',
+      '"Send screenshots" has its own card, a finished calendar entry takes one line ("KvK · Ended"), and Recent activity folds officers finishing the same roll call into one line you can open.',
+      'Follow-up: each row has one button, "Talked to them"; tap the name to write a note (the summary says so), and "Card ›" opens the member\'s card. A line every row of a group shares is said once under the title, and the page uses the wide layout on a computer.',
+      "Members' first group is now \"Check in or Needs help\" and points to Follow-up for the week's list.",
+    ],
+    prs: [652, 651],
+  },
+  {
     version: "v5.51.0",
     date: "2026-11-22",
     title: "Members marked Needs help stay on Follow-up until someone clears it",
