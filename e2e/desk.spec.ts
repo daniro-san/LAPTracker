@@ -2,8 +2,11 @@
 // closed, #573), a roll call mark that is kept, and Raid prep's "To mark", which counts the Shield mark only
 // (#590 F1); the drilldowns are in desk-drilldown.spec.ts. Expected figures are computed from the seed's rows (e2e/fixtures/seed.ts) and written with the
 // pages' formatter (`big`); none depends on the day the suite runs, except the dates, which follow it.
+import { randomUUID } from "node:crypto";
+
 import type { Page } from "@playwright/test";
 
+import { BASE_URL } from "./env";
 import { toLookOf } from "./fixtures/follow-up-list";
 import {
   ALLIANCES,
@@ -33,6 +36,7 @@ import {
   deskFrame,
   expect,
   hydrated,
+  isolated,
   labelled,
   sees,
   showMoreUntil,
@@ -50,8 +54,6 @@ const MARKED_BY = { phone: A.names[6], wide: A.names[7], iphone: A.names[8] } as
   string
 >;
 const cal = calendarOf(seededAt());
-/** A name inside Unicode isolates, as isolate() writes it into a line. */
-const isolated = (name: string) => `\\u2068?${name}\\u2069?`;
 
 test.beforeEach(async ({ context }) => {
   await signIn(context, "a", "officer");
@@ -213,7 +215,7 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   const change = rosterOf("a", k).might - rosterOf("a", k, 7).might;
   await sees(card, `Might +${big(change)} since ${usDay(daysAgo(7))}`);
   // Issue 516: "Talked to them" on the card records it; the card is read again and its week line names it
-  // instead of the seed's "All fine". Its Undo puts the "All fine" back, kept after a reload (below).
+  // instead of the seed's "All fine". The card's Undo puts the "All fine" back at once.
   const today = usDay(daysAgo(0));
   const fine = new RegExp(`^This week: All fine, ${today} · ${isolated("Officer LNK")}$`);
   const week = new RegExp(`^This week: Talked ${today} · ${isolated("Officer LNK")}$`);
@@ -228,6 +230,13 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(card.getByText(fine)).toBeVisible();
   await expect(card.getByText(week)).toHaveCount(0);
   await expect(talked).toBeEnabled();
+  // Tapped again, the Talked is kept after a reload (below), then undone there.
+  const path = `/api/w/${A.slug}/follow-up`;
+  const sent = page.waitForRequest((r) => r.url().endsWith(path) && r.method() === "POST");
+  await talked.click();
+  await expect(card.getByRole("status").filter({ hasText: /^Saved\./ })).toBeVisible();
+  await expect(card.getByText(week)).toBeVisible();
+  const { uid, requestId } = (await sent).postDataJSON() as { uid: number; requestId: string };
   // "Message to send" opens Follow-up's ready message with its two copies (D140).
   const message = card.getByRole("button", { name: "Message to send" });
   await message.click();
@@ -263,11 +272,27 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   await sees(page.locator("main"), `${ROSTER} of ${ROSTER} members`);
   await expect(page.getByRole("heading", { name, level: 2 })).toBeHidden();
-  // The Undo is kept: the card opened again after the reload names the "All fine" again and no Talked (it
-  // opens on the last tab picked, Info, D136).
-  await hydrated(row);
-  await row.click();
-  await card.getByRole("tab", { name: "Overview" }).click();
+  // The Talked is kept: the card opened again after the reload names it (it opens on the last tab picked,
+  // Info, D136).
+  const reopen = async () => {
+    await hydrated(row);
+    await row.click();
+    await card.getByRole("tab", { name: "Overview" }).click();
+  };
+  await reopen();
+  await expect(card.getByText(week)).toBeVisible();
+  // Put back: the card offers Undo only until it is read again from a new page, so this is the Undo it
+  // sends, for the record the tap made; after a reload the card names the seed's "All fine" again.
+  const undo = await page.request.post(path, {
+    headers: { origin: BASE_URL },
+    data: { uid, action: "undo", target: requestId, requestId: randomUUID() },
+  });
+  expect(undo.status()).toBe(200);
+  await card.getByRole("button", { name: "Close" }).click();
+  await expect(page).not.toHaveURL(/[?&]m=/);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  await reopen();
   await expect(card.getByText(fine)).toBeVisible();
   await expect(card.getByText(week)).toHaveCount(0);
 });

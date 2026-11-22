@@ -246,5 +246,8 @@ export const test = base.extend<{ guards: undefined }>({
 
 export { expect };
 
+/** A name inside Unicode isolates, as isolate() writes it into a label or a line (a RegExp source). */
+export const isolated = (name: string) => `\\u2068?${name}\\u2069?`;
+
 /** A label that starts with `prefix` and a name, the name inside Unicode isolates (isolate(), <bdi>). */
 export const labelled = (prefix: string, name: string) => new RegExp(`^${prefix}\\u2068?${name}\\u2069?`);

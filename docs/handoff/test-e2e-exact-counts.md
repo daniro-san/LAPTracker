@@ -5,7 +5,10 @@ Part of #592 (test audit 2, batch 2).
 ## Built
 
 - Seed (`e2e/fixtures/seed-people.ts`, `seed-help.ts`): `CARD_TALKED` gives each project its own Lantern Keep member for the card's "Talked to them" (phone 6, wide 7, iphone 8), and `NOTED` is their count. Each of them has an "All fine" record by Officer LNK this week, 30 s before the seed.
-- `desk.spec.ts`, card test: it taps Talked on its own member and sees the week line change from "All fine" to "Talked". It then taps the UI's Undo, sees "Undone." and the "All fine" line, and sees Talked enabled again. After the reload, the reopened card shows "All fine" and no Talked.
+- `desk.spec.ts`, card test, on its own member:
+  - It taps Talked and sees the week line change from "All fine" to "Talked". It taps the UI's Undo and sees "Undone.", the "All fine" line and Talked enabled again.
+  - It taps Talked a second time. After a reload, the reopened card still names the Talked. It then sends the Undo the card sends, for that tap's request id. After another reload, the card shows "All fine" and no Talked.
+- `isolated()` (a name inside Unicode isolates, as a RegExp source) moved to `e2e/fixtures/test.ts`. `desk.spec.ts` and `desk-flows.spec.ts` import it.
 - Exact noted counts: Home's "3 already noted by officers" link (`desk.spec.ts`), Members' "Follow-up: n to look at · 3 noted this week" (`desk-kvk.spec.ts`, which used to accept the noted part as optional), and the drilldown (`desk-drilldown.spec.ts`). The drilldown no longer returns early when nobody is noted. It always taps through to "Noted this week · 3" and checks that each CARD_TALKED member is listed.
 - `desk.spec.ts` Recent activity (the always-passing check): the feed now has to list "Officer LNK noted <this project's member> is fine". It taps "Show more" until that line shows. The loop moved to `showMoreUntil` in `e2e/fixtures/test.ts`, and the drilldown uses it too.
 - Thanks nudge: on days other than Sunday and Monday, the Home test asserts the nudge is absent. `thanks.test.ts` also checks Saturday, the day before the window.
@@ -24,7 +27,8 @@ Part of #592 (test audit 2, batch 2).
 
 - The thanks nudge cannot be checked on both branches in one run. The server's clock cannot be moved in e2e (`page.clock` moves only the browser's), and the server renders the nudge. Each run checks the branch for its own day, and `lib/private/thanks.test.ts` covers the rule for Saturday, Sunday, Monday and Tuesday. The board's Monday branch has the same limit.
 - Left out of the sweep: calendar/garrison and roll-call/team answer 404 without an entry the seed does not have, and how-to reads nothing and shows no officer marker. Pages with an id in the path (notices/[id], shots/[id]) are left out too.
-- The card test no longer checks that a Talked survives a reload. The task asked for Undo and then a reload, and a reload drops Undo from the card. It still checks that the card is read again after the save, and that the line shows the stored Talked.
+- Review of PR #706 asked for this order: Talked, reload, check the Talked line, the UI's Undo, reload, check "All fine". The card offers Undo only until the page is reloaded (`CardFollowUp` keeps it in component state), so the UI's Undo cannot come after a reload. The test therefore taps the UI's Undo on a first Talked, without a reload in between. The second Talked is the one kept across a reload, and it is undone by the same request the card's Undo sends, as `desk-flows.spec.ts` already does for Follow-up.
+- The card is closed before the second reload. A card left open keeps `?m=` in the address, and on the phone its sheet would then cover the member's row.
 
 ## Verified
 
@@ -44,6 +48,11 @@ Part of #592 (test audit 2, batch 2).
   - Branch flipped in the spec: the nudge-absent check fails on a Sunday, and the board's "no average yet" check fails on a Sunday.
   - `appreciationDay` including Saturday: thanks.test.ts fails at :237.
 - `pnpm vitest related --run` on the changed files: 12 passed. `pnpm check`: passes.
+- After the review fixes, rebased on `origin/dev` 618f0b6a:
+  - Mutation: `recordFollowUp` returns ok for a Talked without writing. The card test fails at desk.spec.ts:228 (the Talked week line after the first tap, read again from the server), before either Undo. Reverted.
+  - Desk specs (desk, desk-flows, desk-drilldown, desk-kvk, desk-insights): 31 passed, 3 skipped.
+  - Full suite (with build): 70 passed, 4 skipped.
+  - `pnpm check`: passes.
 
 ## Open issues
 
