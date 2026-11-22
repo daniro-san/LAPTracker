@@ -52,11 +52,11 @@ Size: S. No migration, no new decision, no private-field flow change, no quota u
 
 ## Next
 
-- Model/effort: keep. The change was S and mechanical once `tickJobFailed` and the run log were read.
-- The owner must do nothing first. The plan needs no change.
+- Follow-up: a test for `failedCleanups` itself (a failure older than 7 days; one job failed then succeeded beside another that still failed).
+- Follow-up: tests for the workspace purge failing (whole run, or one workspace) and the app_errors purge failing, so their codes cannot drift.
+- Follow-up: an /admin e2e assertion for the row once the seed carries a `run_logs` failure line.
+- A new daily job that adds its own pair of codes to `CLEANUP_CODES` and to `copy.admin.needs.cleanupFailed` gets the "Needs you" row with no other change.
 
-<adjustments>
-- The tick's daily jobs write their outcomes into the run log of the day's read (`workspaces.purged` / `workspaces.purge_failed`, `players.raw_cleared` / `players.raw_clear_failed`, `app_errors.purged` / `app_errors.purge_failed`). `failedCleanups` (`lib/queries/admin-page.ts`) reads them. A new daily job that adds its own pair of codes to `CLEANUP_CODES` and to `copy.admin.needs.cleanupFailed` gets the "Needs you" row with no other change.
-</adjustments>
+What was missing from the task prompt? Which log codes the jobs should write; I named them `<job>.<done>` / `<job>.<failed>` after the existing run log codes.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/642
