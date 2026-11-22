@@ -16,5 +16,15 @@ export default defineConfig({
     include: ["**/*.test.ts"],
     // .claude/worktrees: agent worktrees inside the main checkout have their own tests and node_modules.
     exclude: ["node_modules/**", ".next/**", ".claude/worktrees/**"],
+    // `--changed` (pnpm check:fast) runs every test when one of these changed: tests read them from disk or
+    // share them, so the import graph does not see them. Matched against absolute paths, hence the `**/`.
+    forceRerunTriggers: [
+      "**/package.json",
+      "**/vitest.config.*",
+      "**/vitest.global-setup.ts",
+      "**/pnpm-lock.yaml",
+      "**/drizzle/**",
+      "**/fixtures/**",
+    ],
   },
 });
