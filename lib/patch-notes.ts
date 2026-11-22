@@ -24,11 +24,15 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
+    text: "Guide: after v5.47.0, retake the new-alliance guide's Alliance settings screenshots (the page now opens with an index and saves Features with a button), with names and channels blurred.",
+    issue: 527,
+  },
+  {
     text: "Before the next release reaches production: check in Vercel that EDIT_PIN and CRON_SECRET are not the public placeholders from the repo's env template (000000 and the local cron placeholder). Then ask Claude for the guard that refuses them in production.",
     issue: 592,
   },
   {
-    text: "On your Mac: take every production secret out of your local env file (use local Postgres or the Neon preview role), and restart open Claude sessions so they load the new env guard. Rotating the old secrets is optional and listed in the handoff of #612.",
+    text: "On your Mac: take every production secret out of your local env file (use local Postgres or the Neon preview role), and restart open Claude sessions so they load the new env guard. Rotating the old secrets is optional.",
     issue: 592,
   },
   {
@@ -165,7 +169,7 @@ export const patchNotes: PatchNote[] = [
     title: "KvK says Ended on time, Me says what to do, and a clearer Alliance settings",
     changes: [
       'KvK reads "Ended" from its End read (16:15 ST) on the board, Home, Calendar and Me, instead of "Started" all evening.',
-      'Me: a Raid prep "No shield" or "On the wall" mark shows the next step from the raid\'s eve (turn the shield on before the reset, then before KvK starts at 12:00 ST); once KvK starts only the mark stays. A "no" on other roll calls gets no step: it is the member\'s own answer.',
+      'Me: a Raid prep "No shield" or "On the wall" mark shows the next step from the raid\'s eve (turn the shield on, or take the squads off the wall, before the reset, then before KvK starts at 12:00 ST); once KvK starts only the mark stays. A "no" on other roll calls gets no step: it is the member\'s own answer.',
       "Alliance settings opens with an index of every card and its state, Features save with a Save button (with \"Not saved yet\" until then), the Discord card says one thing when the site's bot is off, and the Raid Shield channel's privacy line is easy to read.",
       "The leaders' Raid Shield summary no longer names away members under \"Not seen yet\"; it shows how many are away instead, like the desk's Copy names.",
       "Error reports from the server show readable stack traces in PostHog, and errors the desk used to swallow are now reported, with private fields removed first.",
