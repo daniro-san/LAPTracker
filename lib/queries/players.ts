@@ -192,7 +192,7 @@ function eventRow(before: Sighting | undefined, after: Sighting | undefined): Pl
           lv: diff(before.lv, after.lv),
         }
       : null,
-    step: { power: null, kills: null, lv: null, changed: noChange },
+    step: { power: null, kills: null, lv: null, members: null, changed: noChange },
     previous: null,
     before: freshOf(before),
     after: freshOf(after),
@@ -210,6 +210,7 @@ function eventRows(sightings: Sighting[]): PlayerEventRow[] {
       power: r.power,
       kills: r.kills,
       lv: r.lv,
+      members: null,
       name: r.name,
       tag: r.tag,
       unionId: r.unionId,

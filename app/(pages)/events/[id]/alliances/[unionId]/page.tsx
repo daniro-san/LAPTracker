@@ -30,7 +30,7 @@ import { SplitMark } from "@/app/_ui/SplitMark";
 import { AllianceStanding } from "@/app/_ui/Standing";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
-import { rankDelta } from "@/lib/compute";
+import { comparable, rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -45,8 +45,6 @@ import {
   memberMovers,
   rosterChanges,
 } from "@/lib/queries";
-
-const usable = (a: AllianceRow | null) => a !== null && a.isFresh && !a.failed;
 
 const fresh = (a: AllianceRow | null): FreshState | null =>
   a ? { isFresh: a.isFresh, updatedAt: a.sourceUpdatedAt, failed: a.failed } : null;
@@ -253,7 +251,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
     data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
-  const canDelta = usable(detail.before) && usable(detail.after);
+  const canDelta = comparable(detail.before, detail.after);
   const metrics = totalsMetrics(detail, canDelta, change, copy);
   return (
     <>

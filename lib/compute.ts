@@ -132,12 +132,14 @@ export function nameHistory(rows: readonly NameSighting[]): NameHistoryEntry[] {
   return [...byPair.values()];
 }
 
-/** One event's reference value (Phase 5e): `lv` is the player's level (alliance rows pass null, #181); players carry `unionId`. */
+/** One event's reference value (Phase 5e): `lv` is the player's level (alliance rows pass null, #181);
+ * `members` the alliance's member count (player rows pass null); players carry `unionId`. */
 export interface SeriesRow {
   isFresh: boolean;
   power: number | null;
   kills: number | null;
   lv: number | null;
+  members: number | null;
   name: string | null;
   tag: string | null;
   unionId: number | null;
@@ -147,8 +149,19 @@ export interface SeriesStep {
   power: number | null;
   kills: number | null;
   lv: number | null;
+  members: number | null;
   changed: { name: boolean; tag: boolean; alliance: boolean; lv: boolean };
 }
+
+/**
+ * Whether two rows may be compared: both exist, are fresh and did not fail.
+ * INVARIANT freshness.no-stale-delta: every delta, rank move and roster diff between two rows asks this.
+ */
+export const comparable = (
+  a: { isFresh: boolean; failed?: boolean } | null | undefined,
+  b: { isFresh: boolean; failed?: boolean } | null | undefined,
+): boolean =>
+  a != null && b != null && a.isFresh && b.isFresh && a.failed !== true && b.failed !== true;
 
 const diff = (a: number | null, b: number | null) => (a === null || b === null ? null : b - a);
 
@@ -159,11 +172,12 @@ const diff = (a: number | null, b: number | null) => (a === null || b === null ?
 export function seriesDeltas(rows: readonly SeriesRow[]): SeriesStep[] {
   return rows.map((row, i) => {
     const prev = i > 0 ? rows[i - 1] : undefined;
-    const both = prev !== undefined && prev.isFresh && row.isFresh;
+    const both = prev !== undefined && comparable(prev, row);
     return {
       power: both ? diff(prev.power, row.power) : null,
       kills: both ? diff(prev.kills, row.kills) : null,
       lv: both ? diff(prev.lv, row.lv) : null,
+      members: both ? diff(prev.members, row.members) : null,
       changed: {
         name: prev !== undefined && prev.name !== row.name,
         tag: prev !== undefined && prev.tag !== row.tag,
