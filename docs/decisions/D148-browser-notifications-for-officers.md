@@ -75,3 +75,5 @@ Why: officers learn about the Raid Shield check, a failed night read, a member's
 - The member-session suite has the new route's fixture.
 
 **Amendment (2026-11-21, issue 585):** the Raid Shield notification names the check as the desk does: "Night check: 11 not seen with a shield yet", "Morning check: …". See D137's amendment of that date.
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S2):** the `night_read` notification reads "Daily update failed" · "Tonight’s daily update and its retry failed. Nothing to do: the desk keeps the last numbers and tries again tomorrow." (it read "Roster read failed" · "The read and its retry failed. … reads again tomorrow."), and its setting is labelled "Daily update failed". The stored use `night_read`, when it fires and its default are unchanged.

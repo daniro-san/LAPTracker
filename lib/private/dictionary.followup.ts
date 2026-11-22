@@ -17,8 +17,7 @@ export const followUpEn = {
   "followup.reason.idle.other": "Quiet for {n} days. Worth a hello.",
   "followup.reason.might.one": "Might the same for {n} day. Maybe ask how it’s going.",
   "followup.reason.might.other": "Might the same for {n} days. Maybe ask how it’s going.",
-  "followup.todo":
-    "Say hello, write down what they said, mark how it went. Nothing is sent for you.",
+  "followup.todo": "Say hello, write down what they said, mark how it went.",
   "followup.group.tip": "A tip to share · {n}",
   "followup.reason.coins":
     "Alliance Help coins below 1,000 most days. Maybe share that helping gives coins.",
@@ -107,8 +106,7 @@ export const followUpPt: FollowUpWords = {
   "followup.reason.idle.other": "Sem aparecer há {n} dias. Vale um oi.",
   "followup.reason.might.one": "Might igual há {n} dia. Vale perguntar como vai.",
   "followup.reason.might.other": "Might igual há {n} dias. Vale perguntar como vai.",
-  "followup.todo":
-    "Deem um oi, anotem o que a pessoa disse e marquem como foi. O app não envia nada.",
+  "followup.todo": "Deem um oi, anotem o que a pessoa disse e marquem como foi.",
   "followup.group.tip": "Uma dica para passar · {n}",
   "followup.reason.coins":
     "Moedas de Ajuda da aliança abaixo de 1.000 na maioria dos dias. Vale contar que ajudar dá moedas.",
@@ -193,15 +191,14 @@ export const followUpFr: FollowUpWords = {
   "followup.count": "{n} à suivre · tous les autres vont bien",
   "followup.empty": "Personne à suivre cette semaine.",
   "followup.early":
-    "Les raisons de prendre des nouvelles arrivent avec la première mise à jour du jour.",
+    "Les raisons de prendre des nouvelles arrivent avec la première mise à jour quotidienne.",
   "followup.group.checkin": "Un petit mot · {n}",
   "followup.group.new": "Nouveaux · {n}",
   "followup.reason.idle.one": "Calme depuis {n} jour. Un petit mot ?",
   "followup.reason.idle.other": "Calme depuis {n} jours. Un petit mot ?",
   "followup.reason.might.one": "Might stable depuis {n} jour. Demander comment ça va ?",
   "followup.reason.might.other": "Might stable depuis {n} jours. Demander comment ça va ?",
-  "followup.todo":
-    "Dites bonjour, notez ce qu’on vous a dit, indiquez comment ça s’est passé. Rien n’est envoyé à votre place.",
+  "followup.todo": "Dites bonjour, notez ce qu’on vous a dit et indiquez comment ça s’est passé.",
   "followup.group.tip": "Une astuce à partager · {n}",
   "followup.reason.coins":
     "Pièces d’Aide d’alliance sous 1 000 la plupart des jours. Rappeler qu’aider rapporte des pièces ?",

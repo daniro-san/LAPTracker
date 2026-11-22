@@ -123,5 +123,5 @@ export const membersPt: MembersWords = {
   "week.this": "nesta semana",
   "week.last": "na semana passada",
   "week.of": "na semana de {date}",
-  "week.noRead": "sem leitura em {days}, fora do total",
+  "week.noRead": "sem atualização diária em {days}, fora do total",
 };

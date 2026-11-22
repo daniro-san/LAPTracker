@@ -3,7 +3,7 @@ export const changesAdminCopy = {
   title: "Patch notes",
   todo: {
     title: "Your to-do",
-    help: "Steps only you can do. Done ones are at the bottom.",
+    help: "Every step only you can do, from every release, in one list. Done ones are at the bottom.",
     open: "{n} open",
     none: "Nothing open.",
     done: "Done",
@@ -11,7 +11,6 @@ export const changesAdminCopy = {
   releases: {
     title: "Releases",
     help: "Newest first. Tap a release to open or close it.",
-    needsYou: "Needs you",
     prs: "Pull requests",
   },
 } as const;

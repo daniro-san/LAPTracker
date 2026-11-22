@@ -200,7 +200,7 @@ describe("readStatus (D135)", () => {
       {
         id: "roster",
         tone: "attention",
-        text: "Today’s roster is late · the cards keep the last numbers · squads wait for it",
+        text: "Today’s daily update is late · the cards keep the last numbers · squads wait for it",
       },
     ]);
     // Inside the read's window it is not late yet.
@@ -213,7 +213,7 @@ describe("readStatus (D135)", () => {
       {
         id: "roster",
         tone: "attention",
-        text: "Today’s roster read failed · the cards keep the last numbers · squads wait for it",
+        text: "Today’s daily update failed · the cards keep the last numbers · squads wait for it",
       },
     ]);
   });

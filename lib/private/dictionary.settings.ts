@@ -86,7 +86,7 @@ export const settingsEn = {
   // D132: today's squads read, under the key.
   "squads.today": "Squads today: {read} of {members} read · {retrying} waiting to try again",
   "squads.todayNext": "next try at {at} ST",
-  "squads.todayNone": "Squads today: not started yet. They are read after the daily roster.",
+  "squads.todayNone": "Squads today: not started yet. They are read after the daily update.",
   "squads.todayStopped": "Squads today: {read} of {members} read · stopped: {why}",
   "squads.todayStoppedNone": "Squads today: stopped: {why}",
   "squads.stop.key": "the tracker refused the key",
@@ -181,7 +181,8 @@ export const settingsPt: typeof settingsEn = {
   "squads.today":
     "Esquadrões hoje: {read} de {members} lidos · {retrying} esperando nova tentativa",
   "squads.todayNext": "próxima tentativa às {at} ST",
-  "squads.todayNone": "Esquadrões hoje: ainda não começou. Eles são lidos depois da lista diária.",
+  "squads.todayNone":
+    "Esquadrões hoje: ainda não começou. Eles são lidos depois da atualização diária.",
   "squads.todayStopped": "Esquadrões hoje: {read} de {members} lidos · parado: {why}",
   "squads.todayStoppedNone": "Esquadrões hoje: parado: {why}",
   "squads.stop.key": "o tracker recusou a chave",
@@ -283,7 +284,7 @@ export const settingsFr: typeof settingsEn = {
   "squads.stop.limit": "la limite est atteinte jusqu’à 00:00 UTC",
   "squads.stop.cap": "les 120 lectures du jour sont utilisées",
   "squads.todayNone":
-    "Escouades aujourd’hui : pas encore commencé. Elles sont lues après la liste quotidienne.",
+    "Escouades aujourd’hui : pas encore commencé. Elles sont lues après la mise à jour quotidienne.",
   // D129: Alliance settings → Discord.
   ...discordFr,
   ...inviteFr,
