@@ -65,4 +65,4 @@
 - The release PR's `check` comes only from the dispatch on `dev`. If `release-prepare` ever stops dispatching `ci`, the release PR has no `check` and cannot merge.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/602
