@@ -27,6 +27,7 @@ import type { Feature } from "@/lib/workspace-features";
 import { AnalyticsPerson } from "./AnalyticsPerson";
 import { DeletionBanner } from "./DeletionBanner";
 import { type DeskView, SideNav, Tabs, VIEW_TAB } from "./DeskNav";
+import { Feedback } from "./Feedback";
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { ProfileSheet } from "./ProfileSheet";
@@ -210,6 +211,7 @@ export function SignedInFrame({
           <ReadStatusLine access={access} t={t} language={language} keyShown={keyShown} />
         </Suspense>
         {children}
+        <Feedback slug={access.slug} area="desk" language={language} t={t} />
       </Frame>
     </SignedOutProvider>
   );

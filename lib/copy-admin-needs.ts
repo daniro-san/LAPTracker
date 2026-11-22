@@ -19,6 +19,7 @@ export const needsAdminCopy = {
     workspaces: "A workspace deletion failed on {day}",
     players: "The 90-day clean-up failed on {day}",
     errors: "The 30-day error clean-up failed on {day}",
+    feedback: "The 180-day feedback clean-up failed on {day}",
   },
   workspaces: "Workspaces",
   setup: "{n} to set up",

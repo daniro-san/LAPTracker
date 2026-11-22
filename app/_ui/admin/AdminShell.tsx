@@ -28,6 +28,7 @@ const NAV = [
   { href: "/admin", label: copy.admin.nav.overview },
   { href: "/admin/runs", label: copy.admin.nav.runs },
   { href: "/admin/errors", label: copy.admin.nav.errors },
+  { href: "/admin/feedback", label: copy.admin.feedback.title },
   { href: "/admin/changes", label: copy.admin.changes.title },
 ] as const;
 

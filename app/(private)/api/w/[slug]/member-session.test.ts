@@ -33,11 +33,19 @@ type Fixture = { body?: unknown; query?: string; picture?: true; officer?: false
  * Not officer routes, so not here. login: where every sign-in starts, with no session yet. logout: ends a
  * session of either tier (D105). me: a member's own "This is me" (D142), behind the board's door
  * (requireBoard), tested in me/route.test.ts; me/facts: a member tells their officers their own facts
- * (D154), behind the same door and an approved link, tested in me/facts/route.test.ts. The board and how-to
+ * (D154), behind the same door and an approved link, tested in me/facts/route.test.ts; feedback: "Send
+ * feedback" (D155), which members send from the board behind its door (requireBoard) and officers from the
+ * desk behind requireWorkspace, tested in feedback/route.test.ts. The board and how-to
  * are pages, not API routes: the board
  * has its own door (requireBoard) and how-to reads nothing.
  */
-const EXCLUDED = new Set(["login/route.ts", "logout/route.ts", "me/route.ts", "me/facts/route.ts"]);
+const EXCLUDED = new Set([
+  "login/route.ts",
+  "logout/route.ts",
+  "me/route.ts",
+  "me/facts/route.ts",
+  "feedback/route.ts",
+]);
 
 const ID = "00000000-0000-4000-8000-000000000001";
 const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {

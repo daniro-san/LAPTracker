@@ -47,6 +47,7 @@ const PUBLIC_OR_OTHER_GATE: Record<string, string> = {
 /** Calls no /v1 method, directly or through what it calls. */
 const NOT_QUOTA: Record<string, string> = {
   "admin/discord-command/route.ts": "registers Discord commands (D96); Discord only",
+  "admin/feedback/route.ts": "the owner's status on a feedback item (D155); database only",
   "admin/invites/route.ts": "invite links (D130); database only",
   "admin/session/route.ts": "the /admin PIN cookie",
   "admin/workspaces/allowlist/route.ts": "a sign-in allowlist row; database only",

@@ -10,6 +10,7 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import * as schema from "../schema";
 import * as board from "../schema-board";
 import * as features from "../schema-features";
+import * as feedbackSchema from "../schema-feedback";
 import * as imports from "../schema-import";
 import * as keys from "../schema-keys";
 import * as notices from "../schema-notices";
@@ -54,7 +55,18 @@ async function rowsOf(ws: { id: number; unionId: number }) {
 
 describe("the workspace purge (D125)", () => {
   it("lists every table with a workspace_id column, or a foreign key into a listed table", () => {
-    const modules = [schema, board, features, imports, keys, notices, retention, squads, thefts];
+    const modules = [
+      schema,
+      board,
+      feedbackSchema,
+      features,
+      imports,
+      keys,
+      notices,
+      retention,
+      squads,
+      thefts,
+    ];
     const tables = [
       ...new Set(modules.flatMap((m) => Object.values(m).filter((v) => is(v, PgTable)))),
     ];

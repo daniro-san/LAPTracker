@@ -19,6 +19,7 @@ export default defineConfig({
     "./lib/schema-shield.ts",
     "./lib/schema-push.ts",
     "./lib/schema-kvk.ts",
+    "./lib/schema-feedback.ts",
   ],
   out: "./drizzle",
 });

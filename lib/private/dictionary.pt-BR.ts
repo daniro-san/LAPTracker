@@ -6,6 +6,7 @@ import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { dataPt } from "./dictionary.data";
 import { featuresPt } from "./dictionary.features";
+import { feedbackPt } from "./dictionary.feedback";
 import { followUpPt } from "./dictionary.followup";
 import { followUpHelpPt } from "./dictionary.followup-help";
 import { garrisonPt } from "./dictionary.garrison";
@@ -299,4 +300,5 @@ export const pt: WorkspaceDictionary = {
   ...settingsPt,
   ...dataPt,
   ...featuresPt,
+  ...feedbackPt,
 };

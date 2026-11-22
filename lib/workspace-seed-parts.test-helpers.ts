@@ -4,6 +4,7 @@ import type { Db } from "./db";
 import { memberFollowUps, rollCallMarks, rollCalls, rollCallTeam } from "./schema";
 import { workspaceDiscord, workspacePostTouches, workspaceWebhooks } from "./schema-discord";
 import { workspaceFeatures, workspaceUsage } from "./schema-features";
+import { feedback } from "./schema-feedback";
 import {
   allianceDuelPoints,
   discordPictures,
@@ -283,4 +284,15 @@ async function seedPush(db: Db, ws: number, officer: number) {
   await db
     .insert(pushMarks)
     .values({ workspaceId: ws, key: `night:${DAY}`, value: "failed", sentAt: SEED_AT });
+  // D155: feedback sent from the workspace's desk to the site's owner (deleted with it, never downloaded).
+  await db.insert(feedback).values({
+    area: "desk",
+    kind: "idea",
+    text: "A calendar view by month",
+    path: `/w/ws-${ws}`,
+    language: "en",
+    workspaceId: ws,
+    tier: "officer",
+    createdAt: SEED_AT,
+  });
 }
