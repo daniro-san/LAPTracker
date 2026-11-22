@@ -21,6 +21,7 @@ import {
   eventWorkspaces,
   type Ids,
   idsOf,
+  SEED_AT,
   seedTwo,
   theft,
   type Two,
@@ -75,7 +76,7 @@ function attacks(ours: number): Step[] {
       ],
       ["roll-call", { body: { action: "accept", occasion, uids: [202] } }],
       // D137 (2026-11-21): "Checked" on the tracker's marks.
-      ["roll-call", { body: { action: "check", occasion, seen: Date.now() } }],
+      ["roll-call", { body: { action: "check", occasion, seen: SEED_AT.getTime() } }],
     ]),
     ["roll-call", { body: { action: "delete", id: call0, requestId: id() } }],
     ["roll-call", { body: { action: "archive", id: call0, on: true } }],
@@ -168,9 +169,13 @@ describe("Alpha's officer naming Bravo's records (issue 471)", () => {
       expect((await call(two, "notices/picture/remove", { body: { id: n } })).status).toBe(200);
     }
     expect(await ownedRows(db, b.workspace)).toEqual(before);
-    await new Promise((r) => setTimeout(r, 0));
+    // One write of Alpha's own: once its event is sent, one a refusal had queued would be too.
+    expect((await call(two, "features", { body: { feature: "thefts", on: false } })).status).toBe(
+      200,
+    );
+    await vi.waitFor(() => expect(eventWorkspaces(two)).toEqual(["ws_action:alpha"]));
     // Nothing was posted to Discord, and no refusal was counted (D115).
-    expect(two.posts).toEqual([]);
+    expect(two.posts).toHaveLength(1);
   });
 
   it("under Bravo's request ids, makes Alpha's own records and leaves Bravo's", async () => {
@@ -215,9 +220,8 @@ describe("Alpha's officer naming Bravo's records (issue 471)", () => {
     expect(a.thefts).toHaveLength(3);
     expect(await ownedRows(db, b.workspace)).toEqual(before);
     // Each write is counted for Alpha, and none for Bravo (issue 452).
-    await new Promise((r) => setTimeout(r, 0));
+    await vi.waitFor(() => expect(eventWorkspaces(two)).toHaveLength(6));
     expect(new Set(eventWorkspaces(two))).toEqual(new Set(["ws_action:alpha"]));
-    expect(eventWorkspaces(two)).toHaveLength(6);
   });
 
   it("turns Alpha's own features on or off, never Bravo's (D134)", async () => {
@@ -233,8 +237,7 @@ describe("Alpha's officer naming Bravo's records (issue 471)", () => {
     expect(await ownedRows(db, alpha.workspace)).toMatchObject({
       workspace_features: [{ allianceSwitches: expect.objectContaining({ thefts: false }) }],
     });
-    await new Promise((r) => setTimeout(r, 0));
-    expect(eventWorkspaces(two)).toEqual(["ws_action:alpha"]);
+    await vi.waitFor(() => expect(eventWorkspaces(two)).toEqual(["ws_action:alpha"]));
   });
 
   it("cannot save a webhook of Bravo's server, and Check asks about Alpha's server only (D129)", async () => {

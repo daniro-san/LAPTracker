@@ -93,9 +93,10 @@ export async function openTestDb(): Promise<Db> {
   return db as unknown as Db;
 }
 
+/** Empties the tables tests write, the site-wide feature defaults and pauses (D134) included. */
 export async function truncateAll(db: Db): Promise<void> {
   await db.execute(
-    sql`truncate workspace_sessions, workspace_users, workspaces, player_frames, daily_rosters, daily_reads, run_logs, member_snapshots, alliance_snapshots, snapshots, events, auth_attempts, app_errors, app_alerts, tick_log, member_squads, player_reads, player_history, hero_catalog, workspace_tombstones, access_requests, alliance_invites, alliance_board, tracked_sets, alliance_lookups restart identity cascade`,
+    sql`truncate workspace_sessions, workspace_users, workspaces, player_frames, daily_rosters, daily_reads, run_logs, member_snapshots, alliance_snapshots, snapshots, events, auth_attempts, app_errors, app_alerts, tick_log, member_squads, player_reads, player_history, hero_catalog, workspace_tombstones, access_requests, alliance_invites, alliance_board, tracked_sets, alliance_lookups, feature_defaults, allowance_pauses restart identity cascade`,
   );
 }
 

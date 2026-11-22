@@ -5,6 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
 import { TEST_PIN, testContext } from "@/lib/app-context.test-helpers";
+import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { insertRequest } from "@/lib/repo/alliance-invites";
@@ -62,7 +63,7 @@ describe("POST /api/admin/invites (D130)", () => {
       rosterRank: null,
       rosterSeenAt: null,
     };
-    await insertRequest(db, request, new Date());
+    await insertRequest(db, request, T0);
     const [row] = await db.select().from(accessRequests);
     const approved = await post(TEST_PIN, { action: "approve", request_id: row?.id });
     expect(approved.status).toBe(200);
@@ -90,9 +91,9 @@ describe("POST /api/admin/invites (D130)", () => {
       claimedRole: "r4" as const,
       rosterMatch: "found" as const,
       rosterRank: "R4",
-      rosterSeenAt: new Date(),
+      rosterSeenAt: T0,
     };
-    await insertRequest(db, request, new Date());
+    await insertRequest(db, request, T0);
     const [row] = await db.select().from(accessRequests);
     const both = await Promise.all([
       post(TEST_PIN, { action: "approve", request_id: row?.id }),

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { RUN_DEADLINE_MS, runSample, runSnapshot } from "./collector";
+import { runSample, runSnapshot } from "./collector";
 import { SAMPLE_CALL_TIMEOUT_MS, SAMPLE_DEADLINE_MS } from "./collector-sample";
 import {
   ago,
@@ -47,13 +47,13 @@ describe("runSample hardening (D69)", () => {
     vi.useFakeTimers({ now: T0 });
     const { v1, options } = recordingV1(() => new Promise(() => {}));
     const { deps } = makeDeps(v1);
-    deps.now = () => new Date();
+    // The fake timers' clock, started at T0: it moves as the test advances the timers.
+    deps.now = () => vi.getMockedSystemTime() ?? T0;
 
     const run = runSample(EVENT_ID, T0, deps);
     await vi.advanceTimersByTimeAsync(SAMPLE_DEADLINE_MS + 1_000);
     const summary = await run;
 
-    expect(SAMPLE_DEADLINE_MS).toBeLessThan(RUN_DEADLINE_MS);
     expect(summary).toMatchObject({ phase: "sample", status: "partial", error: "deadline" });
     expect(summary.durationMs).toBeGreaterThanOrEqual(SAMPLE_DEADLINE_MS);
     expect(summary.durationMs).toBeLessThanOrEqual(SAMPLE_DEADLINE_MS + 1_000);

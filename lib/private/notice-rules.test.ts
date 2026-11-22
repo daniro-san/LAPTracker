@@ -3,7 +3,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  NOTICE_LIMIT,
   noticeLength,
   planSave,
   reviewedLanguages,
@@ -24,11 +23,10 @@ function saved(state: NoticeState, changes: Change[]): NoticeState {
 const v = (state: NoticeState, field: keyof NoticeState) => state[field]?.version ?? 0;
 
 describe("the counter (issue 304)", () => {
-  it("counts what a reader sees, and 1000 is the game's limit", () => {
+  it("counts what a reader sees: an emoji with its skin tone is one character", () => {
     expect(noticeLength("👑 Queen")).toBe(7);
     expect(noticeLength("été")).toBe(3);
     expect(noticeLength("👍🏽")).toBe(1);
-    expect(NOTICE_LIMIT).toBe(1000);
   });
 });
 

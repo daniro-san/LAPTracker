@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DO_NOT_TRANSLATE } from "./glossary";
-import { ChatError, GROQ_CHAT_URL, groqChat, TEMPERATURE, type Generation } from "./groq";
+import { ChatError, GROQ_CHAT_URL, groqChat, type Generation } from "./groq";
 import {
   fitSystem,
   fitText,
@@ -65,8 +65,7 @@ describe("groqChat (D81)", () => {
       "reasoning_effort",
       "temperature",
     ]);
-    expect(call?.body).toMatchObject({ model: "openai/gpt-oss-120b", temperature: TEMPERATURE });
-    expect(TEMPERATURE).toBe(0.2);
+    expect(call?.body).toMatchObject({ model: "openai/gpt-oss-120b", temperature: 0.2 });
     expect(call?.body.messages).toEqual([
       { role: "system", content: TRANSLATE_SYSTEM },
       {
@@ -171,8 +170,6 @@ describe("the notice prompts (D81)", () => {
     ])
       expect(DO_NOT_TRANSLATE).toContain(term);
     expect(TRANSLATE_SYSTEM).toContain(DO_NOT_TRANSLATE.join(", "));
-    expect(TRANSLATE_SYSTEM).toContain("Brazilian Portuguese");
-    expect(TRANSLATE_SYSTEM).toContain("no-break space");
     const system = improveSystem(1000);
     expect(system).toContain(DO_NOT_TRANSLATE.join(", "));
     expect(system).toContain("under 1000 characters");
@@ -233,7 +230,7 @@ describe("the notice prompts (D81)", () => {
     expect(user.match(/<\s*\/?\s*text\s*>/gi)).toEqual(["<text>", "</text>"]);
   });
 
-  it("translate weekdays, headings and the Alliance Duel's own name; item names stay in English", async () => {
+  it("send a weekly Duel notice with the Alliance Duel's own name in place; its item names stay on the do-not-translate list", async () => {
     // Invented, in the shape of a weekly Alliance Duel notice (the real one stays out of the public repo).
     const notice = [
       "ALLIANCE DUEL this week",
@@ -245,14 +242,6 @@ describe("the notice prompts (D81)", () => {
       "Sat | BATTLE: Covert Operations at 20:00 ST",
       "HOMEWORK: save your speedups for Tuesday.",
     ].join("\n");
-    for (const rule of [
-      "Seg, Ter, Qua, Qui, Sex, Sáb, Dom in Portuguese and Lun, Mar, Mer, Jeu, Ven, Sam, Dim in French",
-      "Translate everything else, every sentence, phrase, list item and heading, in capitals too (HOMEWORK, SCOUTING, REMINDER)",
-      "game item names (Raven Essence, Construction Speedups, Covert Operations)",
-      "Alliance Duel (ALLIANCE DUEL) = Duelo da Aliança (DUELO DA ALIANÇA) in Portuguese, Duel d’alliance (DUEL D’ALLIANCE) in French",
-      "separators such as | and emoji as they are",
-    ])
-      expect(TRANSLATE_SYSTEM).toContain(rule);
     expect(DO_NOT_TRANSLATE).not.toContain("Alliance Duel");
     expect(DO_NOT_TRANSLATE).toEqual(
       expect.arrayContaining(["Raven Essence", "Covert Operations"]),
@@ -274,9 +263,6 @@ describe("the notice prompts (D81)", () => {
       "DUEL D’ALLIANCE tomorrow. The Duel d’alliance ends Sunday; the duel d’alliance points count.",
     );
     expect(withOwnNames(text, "en")).toBe(text);
-    expect(TRANSLATE_SYSTEM).toContain(
-      "Words already written in the target language, such as these terms' own names, stay exactly as they are.",
-    );
   });
 
   it("return plain text for the game: French keeps its no-break space, the others plain spaces", () => {

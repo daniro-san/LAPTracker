@@ -14,7 +14,7 @@ import {
   setSwitch,
 } from "../repo/workspace-features";
 import { saveWorkspace } from "../repo/workspaces";
-import { allowancePauses, workspaceUsage } from "../schema-features";
+import { workspaceUsage } from "../schema-features";
 import {
   FEATURES,
   NO_DEFAULTS,
@@ -34,7 +34,6 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   await truncateAll(db);
-  await db.delete(allowancePauses);
   await saveWorkspace(db, {
     unionId: OWN_ALLIANCE_ID,
     slug: "ogs",

@@ -93,7 +93,7 @@ describe("sendPush", () => {
   it("reads 201 as ok, 404 and 410 as gone, anything else or no answer as failed", async () => {
     const answer = (status: number) =>
       vi.fn<typeof fetch>(async () => new Response(null, { status }));
-    const now = new Date();
+    const now = new Date("2026-11-21T01:31:00Z"); // Fri 23:31 ST
     expect(await sendPush(answer(201), vapid, sub, "{}", now)).toBe("ok");
     expect(await sendPush(answer(404), vapid, sub, "{}", now)).toBe("gone");
     expect(await sendPush(answer(410), vapid, sub, "{}", now)).toBe("gone");

@@ -54,9 +54,15 @@ async function start(path: string, stored: string | null) {
   const ph = m.startPostHog("phc_test");
   return { m, ph, store };
 }
-const settle = () => new Promise((r) => setTimeout(r, 0));
+/** The recorder starts once its dynamic import resolves. */
+const recorded = () =>
+  vi.waitFor(() => expect(sdk.startSessionRecording).toHaveBeenCalledWith(true));
 
-beforeEach(() => vi.restoreAllMocks());
+// Each test is a new device: no consent record from another test.
+beforeEach(() => {
+  vi.restoreAllMocks();
+  sdk.records.clear();
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe("public page loads (D115)", () => {
@@ -70,7 +76,8 @@ describe("public page loads (D115)", () => {
     expect(sdk.opt_in_capturing).not.toHaveBeenCalled();
     m.followPath(ph, "/players");
     m.followPath(ph, "/w/ogs/members");
-    await settle();
+    // The recorder's import, had either path asked for it, has resolved by now.
+    await vi.dynamicImportSettled();
     expect(sdk.startSessionRecording).not.toHaveBeenCalled();
   });
 
@@ -79,8 +86,7 @@ describe("public page loads (D115)", () => {
     expect(sdk.opt_in_capturing).toHaveBeenCalled();
     expect(sdk.init.mock.calls[0]?.[1]).toMatchObject({ api_host: "/ingest" });
     m.followPath(ph, "/players");
-    await settle();
-    expect(sdk.startSessionRecording).toHaveBeenCalledWith(true);
+    await recorded();
   });
 
   it("answering on the bar: Allow opts in and is kept; No thanks opts out and stops recording", async () => {
@@ -98,15 +104,13 @@ describe("public page loads (D115)", () => {
 
 describe("one browser, public page first (D115)", () => {
   it("a No thanks on a public page leaves the next desk load capturing and recording", async () => {
-    sdk.records.clear();
     const first = await start("/players", null);
     first.m.answerConsent(first.ph, "denied");
     expect([...sdk.records.keys()]).toEqual(["lap_ph_public_consent"]);
     const desk = await start("/w/ogs/members", "denied");
     expect(sdk.is_capturing()).toBe(true);
     desk.m.followPath(desk.ph, "/w/ogs/members");
-    await settle();
-    expect(sdk.startSessionRecording).toHaveBeenCalledWith(true);
+    await recorded();
   });
 });
 
@@ -128,8 +132,7 @@ describe("desk and /admin page loads (D115)", () => {
     expect(config).toMatchObject({ persistence: "memory", api_host: "/ingest" });
     expect(config).not.toHaveProperty("cookieless_mode");
     m.followPath(ph, "/w/ogs/members");
-    await settle();
-    expect(sdk.startSessionRecording).toHaveBeenCalledWith(true);
+    await recorded();
   });
 
   it("drop the workspace and alliance on a page outside the workspace; a public load is never touched (issue 452)", async () => {

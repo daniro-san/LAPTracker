@@ -1,8 +1,9 @@
 // rosterSightings reads one player's rows with `@>`, which the member_uids GIN index serves (issue 521): the
 // same rows, in the same order, as the `= any` it replaced.
 import { and, asc, sql } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
+import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { dailyRosters } from "../schema";
 import { dailyFit } from "./history-readings";
@@ -20,9 +21,13 @@ const roster = (readDay: string, unionId: number, uids: number[], more = {}) => 
   ...more,
 });
 
+let db: Db;
+beforeAll(async () => {
+  db = await openTestDb();
+});
+
 describe("rosterSightings (issue 521)", () => {
   it("returns the rows `= any` returned: usable rosters listing the player, oldest first", async () => {
-    const db = await openTestDb();
     await db
       .insert(dailyRosters)
       .values([

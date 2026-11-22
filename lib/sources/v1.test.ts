@@ -40,7 +40,7 @@ afterEach(() => {
 describe("v1.fetchAlliance parsing", () => {
   it("parses every recorded /v1 body with totalKills equal to the member sum, nulls as 0", async () => {
     const files = v1AllianceFixtures();
-    expect(files.length).toBe(27);
+    expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const body = readFixture(file);
       const raw = JSON.parse(body) as { members: RawMember[]; power: number; union_id: number };

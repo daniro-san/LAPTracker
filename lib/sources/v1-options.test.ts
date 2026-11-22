@@ -1,31 +1,39 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { mockFetch, readFixture, respond, stubSourceEnv } from "./test-helpers";
+import { mockFetch, respond, stubSourceEnv } from "./test-helpers";
 import { fetchAlliance } from "./v1";
 
-const OGS = "v1-20261104T155902Z/alliance-67111155.json";
-
-beforeEach(() => {
-  stubSourceEnv();
-  vi.useFakeTimers();
-});
+beforeEach(() => stubSourceEnv());
 afterEach(() => {
-  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
-it("uses a call's own timeout and retry count instead of the defaults", async () => {
-  const timeout = vi.spyOn(AbortSignal, "timeout");
-  const mock = mockFetch(respond("error code: 503", 503), respond(readFixture(OGS)));
-  const error = await fetchAlliance(67111155, undefined, undefined, {
-    timeoutMs: 12_000,
-    maxRetries: 0,
-  }).catch((e: unknown) => e);
-
+it("stops at a call's own retry count instead of the default", async () => {
+  const mock = mockFetch(respond("error code: 503", 503), respond("error code: 503", 503));
+  const error = await fetchAlliance(67111155, undefined, undefined, { maxRetries: 0 }).catch(
+    (e: unknown) => e,
+  );
   expect(error).toMatchObject({ status: 503 });
   expect(mock).toHaveBeenCalledTimes(1);
-  expect(timeout).toHaveBeenCalledWith(12_000);
-  expect(timeout).not.toHaveBeenCalledWith(30_000);
+});
+
+it("ends a call that never answers at its own timeout, not the 30 s default", async () => {
+  // A request that hangs until its signal aborts, as fetch does. The 30 s default would outlast the
+  // test's 10 s, so only the call's own 50 ms can end it.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_, reject) =>
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
+        ),
+    ),
+  );
+  const error = await fetchAlliance(67111155, undefined, undefined, {
+    timeoutMs: 50,
+    maxRetries: 0,
+  }).catch((e: unknown) => e);
+  expect(error).toMatchObject({ name: "TimeoutError", detail: { timeoutMs: 50 } });
 });

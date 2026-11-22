@@ -24,10 +24,11 @@ describe("counted (D115, issue 452)", () => {
       env: { CRON_SECRET: SECRET, VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" },
       fetch: fetcher,
     } as unknown as Parameters<typeof counted>[0];
+    // The refusal first: once the success's event is sent, one the refusal had queued would be too.
+    counted(ctx, ACCESS, "calendar", "add", Response.json({ code: "x" }, { status: 409 }));
     const ok = Response.json({ ok: true });
     expect(counted(ctx, ACCESS, "calendar", "add", ok)).toBe(ok);
-    counted(ctx, ACCESS, "calendar", "add", Response.json({ code: "x" }, { status: 409 }));
-    await new Promise((r) => setTimeout(r, 0));
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
     expect(fetcher).toHaveBeenCalledTimes(1);
     const sent = JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)) as {
       batch: { event: string; distinct_id: string; properties: Record<string, unknown> }[];
