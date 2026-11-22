@@ -89,4 +89,4 @@ Not run: Neon itself (not reachable here), so no cold-wake timing. Measure after
 - To count statements in a PGlite test, wrap `db.$client.query` for the test's span (`lib/squads-newcomers.test.ts`, `queueInserts`).
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/631
