@@ -10,6 +10,7 @@ import { counted, type Formats } from "./insights-format";
 import type { BarRow } from "./insights-words";
 import {
   busiestHours,
+  cityOf,
   knownOf,
   usualHours,
   zoneGroups,
@@ -52,13 +53,11 @@ type ZoneFormats = Formats & { serverZone: string; today: string };
 
 /** "Paris, Zurich and 1 more": the group's IANA cities; a fixed-offset zone (Etc/…) names none. */
 function citiesOf(g: ZoneGroup, f: Formats): string | null {
-  const cities = g.zones
-    .filter((z) => !z.startsWith("Etc/"))
-    .map((z) => (z.split("/").at(-1) ?? z).replaceAll("_", " "));
+  const cities = g.zones.map(cityOf).filter((c) => c !== null);
   if (cities.length === 0) return null;
   const shown = cities.slice(0, CITIES).join(", ");
   return cities.length > CITIES
-    ? fill(f.t["insights.zones.more"], { cities: shown, n: cities.length - CITIES })
+    ? counted(f.t, "insights.zones.more", cities.length - CITIES, f.language, { cities: shown })
     : shown;
 }
 
@@ -69,13 +68,22 @@ function nameOf(g: ZoneGroup, f: Formats, key: "insights.zones.row" | "insights.
   return cities === null ? offset : fill(f.t[key], { cities, offset });
 }
 
-/** `at` on the group's clock; its weekday when asked, or when its date is not the server's date then. */
+/** `at` on the group's clock: its time, and its weekday when asked or when its date is not the server's then. */
 function clockOf(g: ZoneGroup, at: Date, f: ZoneFormats, weekday: boolean) {
   const zone = g.zones[0] as string;
   const words = dateWords(f.language, zone);
   const otherDay = dayIn(zone, at.getTime()) !== dayIn(f.serverZone, at.getTime());
-  return weekday || otherDay ? `${words.weekday(at)} ${words.time(at)}` : words.time(at);
+  return { day: weekday || otherDay ? words.weekday(at) : null, time: words.time(at) };
 }
+
+/** "Sun 21:00" in a row's line. */
+const clockText = (c: ReturnType<typeof clockOf>) => (c.day ? `${c.day} ${c.time}` : c.time);
+
+/** "às 02:00", "dom. às 21:00": a time inside a sentence, as each language joins it. */
+const clockInSentence = (c: ReturnType<typeof clockOf>, f: Formats) =>
+  c.day
+    ? fill(f.t["insights.zones.atDay"], { day: c.day, time: c.time })
+    : fill(f.t["insights.zones.at"], { time: c.time });
 
 /** "Clocks change before KvK" or "… before the reset": the earlier moment whose offset is not now's. */
 function changeOf(g: ZoneGroup, m: Moments, f: Formats): string | null {
@@ -109,7 +117,9 @@ function headline(groups: ZoneGroup[], known: number, m: Moments, f: ZoneFormats
           : counted(t, "insights.zones.tie", top, language, {
               groups: largest.map(named).join(", "),
             });
-  const resets = [...new Set(largest.map((g) => clockOf(g, m.reset, f, false)))];
+  const resets = [
+    ...new Set(largest.map((g) => clockInSentence(clockOf(g, m.reset, f, false), f))),
+  ];
   return `${first} ${fill(t["insights.zones.reset"], { times: listOf(resets, language) })}`;
 }
 
@@ -119,11 +129,10 @@ function usualLine(c: ZoneCounts, known: number, f: ZoneFormats): Usual | null {
   if (!first) return null;
   const hours = runs.map((r) => `${hhmm(r.from * 60)}–${hhmm(r.to * 60 + 59)}`);
   return {
-    line: fill(f.t["insights.zones.usual"], {
+    line: counted(f.t, "insights.zones.usual", c.members - known, f.language, {
       hours: listOf(hours, f.language),
-      n: first.n,
+      count: first.n,
       known,
-      missing: c.members - known,
     }),
     hour: first.from,
   };
@@ -153,9 +162,9 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
         value: String(g.n),
         share: g.n / known,
         times: fill(t["insights.zones.times"], {
-          now: clockOf(g, m.now, f, false),
-          reset: clockOf(g, m.reset, f, false),
-          kvk: clockOf(g, m.kvk, f, true),
+          now: clockText(clockOf(g, m.now, f, false)),
+          reset: clockText(clockOf(g, m.reset, f, false)),
+          kvk: clockText(clockOf(g, m.kvk, f, true)),
         }),
         change: changeOf(g, m, f),
       })),

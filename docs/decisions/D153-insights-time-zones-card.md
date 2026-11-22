@@ -8,7 +8,7 @@ Why: the owner asked (2026-11-22) for "in the officers' Insights, something grou
 
 **Groups.** Members whose zones have the same UTC offset at three moments share a row: now, the next 00:00 ST reset, and the first KvK start after now. Grouping by the offset now alone would put zones that change clocks on different dates in one row, and that row would then need two times for one moment (adversarial reviewer).
 
-- **Label.** Up to 2 of the row's cities (the IANA city, most members first, then by name), "and N more" for the rest, then the offset now in the one offset form: "Paris, Zurich and 1 more · UTC+1". A fixed-offset zone (`Etc/GMT-1`) counts but names no city. A row of only such zones reads "UTC+1".
+- **Label.** Up to 2 of the row's cities (the IANA city, most members first, then by city name; IANA names carry no accents, so "Sao Paulo", and no other source of city names is used), "and N more" for the rest, then the offset now in the one offset form: "Paris, Zurich and 1 more · UTC+1". A fixed-offset zone (`Etc/GMT-1`) counts but names no city. A row of only such zones reads "UTC+1".
 - **Order.** West to east: by the offset now, then at the reset, then at KvK. The headline already answers "most".
 - **A clock change ahead.** When a row's offset at the reset or at KvK is not its offset now, the row says "Clocks change before the reset" or "Clocks change before KvK", naming whichever of those two moments comes first. It gives no date.
 

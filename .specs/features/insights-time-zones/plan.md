@@ -66,7 +66,7 @@ The last card on Insights says where the members with a time zone are and what t
 1. WHILE the Insights switch is on and the alliance has a daily update the page SHALL show a card titled "Time zones" as the last card, after Raid Shield check (or after the last card shown when that one is off).
 2. The card SHALL count only the members of the newest daily update; a former member's time zone SHALL NOT count, and a latest version that cleared the fact (null) SHALL count as not recorded.
    - 5 members in the newest daily update, 3 with a zone, a fourth cleared, plus a former member with a zone → "Time zone recorded for 3 of the 5 members in the newest daily update."
-3. The card SHALL put members whose zones have the same UTC offset now, at the next reset and at the next KvK start in one row, labelled by up to 2 of its zones' cities (most members first, then by name), "and N more" for the rest, then the offset now ("Paris, Zurich and 1 more · UTC+1"); a fixed-offset zone (`Etc/GMT-1`) counts and names no city, and a row of only such zones reads "UTC+1".
+3. The card SHALL put members whose zones have the same UTC offset now, at the next reset and at the next KvK start in one row, labelled by up to 2 of its zones' cities (most members first, then by city name, so "Amsterdam, Lagos" and never "Lagos, Amsterdam"), "and N more" for the rest, then the offset now ("Paris, Zurich and 1 more · UTC+1"); a fixed-offset zone (`Etc/GMT-1`) counts and names no city, and a row of only such zones reads "UTC+1".
    - Europe/Paris ×3, Europe/Zurich ×3, Europe/Berlin ×1 on 2026-11-22 → one row "Paris, Zurich and 1 more · UTC+1", 7.
 4. The rows SHALL run west to east by their offset now, then at the reset, then at KvK.
 5. IF zones share an offset now but not at the next reset or KvK (a summer-time change before it) THEN they SHALL be separate rows, each with its own times, and each changing row SHALL name the earlier of the two moments whose offset is not now's: "Clocks change before KvK" or "Clocks change before the reset".
@@ -86,7 +86,10 @@ The last card on Insights says where the members with a time zone are and what t
     - counts peak at hours 11 and 12 → "11:00–12:59 ST"; at 23 and 0 → "23:00–00:59 ST"; at 6 and 9 → "06:00–06:59 ST and 09:00–09:59 ST".
 13. The legend SHALL say what the times are: "Times on their own clock: now (13:05 ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK (Sat, Nov 28, 12:00 ST). Bar: share of the 29 members with a time zone."
 14. The card SHALL name no member and carry no uid; its rows SHALL be `ph-no-capture`; nothing of it goes to analytics, logs, Discord, AI or translation, exports or a shared cache; the page stays per request (D143).
-15. The copy SHALL exist in EN, PT-BR and FR (the workspace dictionary).
+15. The copy SHALL exist in EN, PT-BR and FR (the workspace dictionary), with singular and plural forms where a count is shown, and a time inside a sentence joined as each language joins it.
+
+- New York and Manila tied: PT "Para eles, o reset das 00:00 ST é dom. às 21:00 e às 10:00.", FR "Pour eux, le reset de 00:00 ST est dim. à 21:00 et à 10:00."; one member not recorded: FR "(1 non noté)", PT "(1 sem registro)"; FR "et 1 autre", "et 2 autres".
+
 16. The card SHALL draw its bars and muted lines, in light and dark mode, with the token pairs the other Insights cards use (`Bars`: `bg-plum/60` on `bg-ink/10`; muted text `text-ink/70`–`/80`), so the bar fill reaches 3:1 against its track and the muted time line 4.5:1 as theirs do; no colour literal.
 
 ## Out of scope

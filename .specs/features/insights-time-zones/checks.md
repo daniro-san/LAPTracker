@@ -6,7 +6,7 @@ Plan: `.specs/features/insights-time-zones/plan.md`
 
 profile: light
 
-11 checks in 1 slice · 0 one-way doors · 0 open
+14 checks in 1 slice · 0 one-way doors · 0 open
 
 ## Checks
 
@@ -21,11 +21,20 @@ Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zon
 **C3** - Paris and Lagos on Sat 2027-03-27 20:00 UTC, reset after the EU change: two rows "Lagos · UTC+1" "Now 21:00 · Reset 03:00 · KvK Sat 15:00" and "Paris · UTC+1" "Now 21:00 · Reset 04:00 · KvK Sat 16:00" with "Clocks change before the reset", headed "Largest groups, 1 member each: Lagos (UTC+1), Paris (UTC+1). The 00:00 ST reset is 03:00 and 04:00 for them."; on 2026-11-25 one row "Lagos, Paris · UTC+1", headed "All 2 members with a time zone are in one group: Lagos, Paris (UTC+1). …" (AC 5, AC 7)
 Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > splits zones whose clocks change before the reset, each on its own clock, and joins them after
 
-**C4** - At Sun 2026-11-22 13:00 ST: New York "Now 10:00 · Reset Sun 21:00 · KvK Sat 09:00", Manila "Now 23:00 · Reset 10:00 · KvK Sat 22:00", Kiritimati "Now Mon 05:00 · Reset 16:00 · KvK Sun 04:00", and the legend with "now (13:00 ST)" and "KvK (Sat, Nov 28, 12:00 ST)" (AC 6, AC 13)
+**C4** - At Sun 2026-11-22 13:00 ST: New York "Now 10:00 · Reset Sun 21:00 · KvK Sat 09:00", Kolkata "Kolkata · UTC+5:30" "Now 20:30 · Reset 07:30 · KvK Sat 19:30", Manila "Now 23:00 · Reset 10:00 · KvK Sat 22:00", Kiritimati "Now Mon 05:00 · Reset 16:00 · KvK Sun 04:00", and the legend with "now (13:00 ST)" and "KvK (Sat, Nov 28, 12:00 ST)" (AC 6, AC 13)
 Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > says the reset and KvK on each zone's clock, with its weekday when its date is not the server's
 
 **C11** - New York and London at Sun 2027-03-14 03:00 ST with a Sunday KvK before the reset: New York "Now 00:00 · Reset Sun 22:00 · KvK Sun 10:00" with "Clocks change before KvK", London "Now 05:00 · Reset 02:00 · KvK Sun 14:00" with none, and the tie named west to east: "Largest groups, 1 member each: New York (UTC−5), London (UTC+0). The 00:00 ST reset is Sun 22:00 and 02:00 for them." (AC 5, AC 7)
 Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > says the clocks change before KvK when KvK comes first, and names a tie west to east
+
+**C12** - Etc/GMT-1 ×2, Lagos and Amsterdam read one row "Amsterdam, Lagos · UTC+1" 4 (city order, not IANA id; the fixed zones counted, no city), Etc/GMT-5 alone reads "UTC+5"; with Paris FR reads "Amsterdam, Lagos et 1 autre · UTC+1", with Berlin too "Amsterdam, Berlin and 2 more" and FR "et 2 autres" (AC 3, AC 15)
+Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > counts fixed-offset zones with no city, and names a row's cities by name
+
+**C13** - New York and Manila tied, one member unrecorded: PT "Para eles, o reset das 00:00 ST é dom. às 21:00 e às 10:00.", FR "Pour eux, le reset de 00:00 ST est dim. à 21:00 et à 10:00.", FR "(1 non noté).", PT "(1 sem registro)." (AC 15, AC 12)
+Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > joins the reset's times as each language does, with and without a weekday
+
+**C14** - Manila ×2, one row: no usual-hours line (AC 12)
+Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > gives no usual-hours line with a single group
 
 **C5** - At Sat 2026-11-28 11:00 ST the KvK shown is that day's 12:00 ST; at 13:00 ST, an hour into it, the next Saturday's (AC 6)
 Proof: run unit | ✓ lib/private/insights-zones.test.ts > the Insights Time zones card (owner, 2026-11-22) > shows the next KvK start, never one already running
@@ -47,16 +56,18 @@ Proof: `PATH=/opt/homebrew/opt/postgresql@18/bin:$PATH E2E_NO_BUILD=1 pnpm test:
 
 ## Coverage
 
-| Set (size)                  | Member -> proof                                               | Unproven |
-| --------------------------- | ------------------------------------------------------------- | -------- |
-| headline forms, AC 7 (4)    | largest C1, C9 · tie C3, C11 · one group C3 · one member C7   | -        |
-| who counts, AC 2 (4)        | newest member with zone C2 · cleared C2 · none C2 · former C2 | -        |
-| clocks, AC 6 (3)            | west of ST C4 · east, same date C4 · east, next date C4       | -        |
-| moments, AC 6 (3)           | now C4 · reset C4, C3 · KvK C4, C5, C11                       | -        |
-| clock-change note, AC 5 (2) | before the reset C3 · before KvK C11                          | -        |
-| usual hours, AC 12 (3)      | one run C9 · two runs C6 · through midnight C6                | -        |
-| languages, AC 15 (3)        | en C1-C9 · pt-BR C8 · fr C8                                   | -        |
-| widths (2)                  | 360 C9 · 1280 C9                                              | -        |
+| Set (size)                  | Member -> proof                                                                                                      | Unproven |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------- |
+| headline forms, AC 7 (4)    | largest C1, C9 · tie C3, C11 · one group C3 · one member C7                                                          | -        |
+| who counts, AC 2 (4)        | newest member with zone C2 · cleared C2 · none C2 · former C2                                                        | -        |
+| clocks, AC 6 (4)            | west of ST C4 · east, same date C4 · east, next date C4 · half-hour offset C4                                        | -        |
+| moments, AC 6 (3)           | now C4 · reset C4, C3 · KvK C4, C5, C11                                                                              | -        |
+| clock-change note, AC 5 (2) | before the reset C3 · before KvK C11                                                                                 | -        |
+| usual hours, AC 12 (4)      | one run C9 · two runs C6 · through midnight C6 · one group, no line C14                                              | -        |
+| languages, AC 15 (3)        | en C1-C9 · pt-BR C8, C13 · fr C8, C12, C13                                                                           | -        |
+| widths (2)                  | 360 C9 · 1280 C9                                                                                                     | -        |
+| row labels, AC 3 (4)        | cities by city name C12 · fixed zone counted, no city C12 · fixed zones only C12 · and N more, one and other C1, C12 | -        |
+| plural forms, AC 15 (2)     | one C12, C13 · other C12                                                                                             | -        |
 
 ## Swept
 

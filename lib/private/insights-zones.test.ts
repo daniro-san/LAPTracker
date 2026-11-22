@@ -8,7 +8,7 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters, memberFacts } from "../schema";
 import { requireWorkspace } from "./access";
-import { WORKSPACE_DICTIONARIES } from "./dictionary";
+import { WORKSPACE_DICTIONARIES, type WorkspaceLanguage } from "./dictionary";
 import { insightsView } from "./insights";
 import { busiestHours, nextKvk, nextReset, type Moments } from "./insights-zones";
 import { zonesWords } from "./insights-zones-words";
@@ -19,7 +19,6 @@ const ZONE = "Etc/GMT+2";
 /** Sunday 2026-11-22, 13:00 ST. */
 const NOW = new Date("2026-11-22T15:00:00Z");
 const TODAY = "2026-11-22";
-const t = WORKSPACE_DICTIONARIES.en;
 
 let db: Db;
 beforeAll(async () => {
@@ -79,6 +78,7 @@ async function card(
   now: Date,
   today: string,
   m?: Moments,
+  language: WorkspaceLanguage = "en",
 ) {
   const view = await insightsView(db, access, now, ZONE);
   const moments = m ?? {
@@ -86,7 +86,8 @@ async function card(
     reset: nextReset(today, ZONE),
     kvk: nextKvk(now, today, ZONE, 6, "12:00"),
   };
-  return zonesWords(view.zones, moments, { t, language: "en", serverZone: ZONE, today });
+  const words = WORKSPACE_DICTIONARIES[language];
+  return zonesWords(view.zones, moments, { t: words, language, serverZone: ZONE, today });
 }
 
 describe("the Insights Time zones card (owner, 2026-11-22)", () => {
@@ -184,21 +185,77 @@ describe("the Insights Time zones card (owner, 2026-11-22)", () => {
   });
 
   it("says the reset and KvK on each zone's clock, with its weekday when its date is not the server's", async () => {
-    await roster("2026-11-21", [101, 102, 103, 104]);
+    await roster("2026-11-21", [101, 102, 103, 104, 105]);
     const { access, zone } = await officer();
     await zone(101, "America/New_York");
     await zone(102, "Asia/Manila");
     await zone(103, "Asia/Manila");
     await zone(104, "Pacific/Kiritimati");
+    await zone(105, "Asia/Kolkata");
     const words = await card(access, NOW, TODAY);
-    expect(words.details?.rows.map((r) => r.times)).toEqual([
-      "Now 10:00 · Reset Sun 21:00 · KvK Sat 09:00",
-      "Now 23:00 · Reset 10:00 · KvK Sat 22:00",
-      "Now Mon 05:00 · Reset 16:00 · KvK Sun 04:00",
+    expect(words.details?.rows.map((r) => [r.label, r.times])).toEqual([
+      ["New York · UTC−5", "Now 10:00 · Reset Sun 21:00 · KvK Sat 09:00"],
+      ["Kolkata · UTC+5:30", "Now 20:30 · Reset 07:30 · KvK Sat 19:30"],
+      ["Manila · UTC+8", "Now 23:00 · Reset 10:00 · KvK Sat 22:00"],
+      ["Kiritimati · UTC+14", "Now Mon 05:00 · Reset 16:00 · KvK Sun 04:00"],
     ]);
     expect(words.details?.legend).toBe(
-      "Times on their own clock: now (13:00 ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK (Sat, Nov 28, 12:00 ST). Bar: share of the 4 members with a time zone.",
+      "Times on their own clock: now (13:00 ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK (Sat, Nov 28, 12:00 ST). Bar: share of the 5 members with a time zone.",
     );
+  });
+
+  it("counts fixed-offset zones with no city, and names a row's cities by name", async () => {
+    await roster("2026-11-21", [101, 102, 103, 104, 105, 106, 107]);
+    const { access, zone } = await officer();
+    await zone(101, "Etc/GMT-1");
+    await zone(102, "Etc/GMT-1");
+    await zone(103, "Africa/Lagos");
+    await zone(104, "Europe/Amsterdam");
+    await zone(105, "Etc/GMT-5");
+    const rows = async (language: WorkspaceLanguage = "en") =>
+      (await card(access, NOW, TODAY, undefined, language)).details?.rows.map((r) => [
+        r.label,
+        r.value,
+      ]);
+    expect(await rows()).toEqual([
+      ["Amsterdam, Lagos · UTC+1", "4"],
+      ["UTC+5", "1"],
+    ]);
+    await zone(106, "Europe/Paris");
+    expect((await rows("fr"))?.[0]).toEqual(["Amsterdam, Lagos et 1 autre · UTC+1", "5"]);
+    await zone(107, "Europe/Berlin");
+    expect((await rows())?.[0]).toEqual(["Amsterdam, Berlin and 2 more · UTC+1", "6"]);
+    expect((await rows("fr"))?.[0]).toEqual(["Amsterdam, Berlin et 2 autres · UTC+1", "6"]);
+  });
+
+  it("joins the reset's times as each language does, with and without a weekday", async () => {
+    await roster("2026-11-21", [101, 102, 103]);
+    const { access, zone } = await officer();
+    await zone(101, "America/New_York");
+    await zone(102, "Asia/Manila");
+    const pt = await card(access, NOW, TODAY, undefined, "pt-BR");
+    const fr = await card(access, NOW, TODAY, undefined, "fr");
+    expect(pt.based[0]).toBe(
+      "Maiores grupos, 1 membro cada: New York (UTC−5), Manila (UTC+8). Para eles, o reset das 00:00 ST é dom. às 21:00 e às 10:00.",
+    );
+    expect(fr.based[0]).toBe(
+      "Groupes les plus nombreux, 1 membre chacun : New York (UTC−5), Manila (UTC+8). Pour eux, le reset de 00:00 ST est dim. à 21:00 et à 10:00.",
+    );
+    // One member with no time zone: the singular.
+    expect(fr.details?.usual?.line).toContain(
+      "2 des 2 membres avec un fuseau horaire (1 non noté).",
+    );
+    expect(pt.details?.usual?.line).toContain("2 dos 2 membros com fuso horário (1 sem registro).");
+  });
+
+  it("gives no usual-hours line with a single group", async () => {
+    await roster("2026-11-21", [101, 102]);
+    const { access, zone } = await officer();
+    await zone(101, "Asia/Manila");
+    await zone(102, "Asia/Manila");
+    const words = await card(access, NOW, TODAY);
+    expect(words.details?.rows).toHaveLength(1);
+    expect(words.details?.usual).toBeNull();
   });
 
   it("shows the next KvK start, never one already running", () => {

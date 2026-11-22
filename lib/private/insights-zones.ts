@@ -26,9 +26,13 @@ export interface ZoneGroup {
   /** Minutes east of UTC at each moment (UTC−3 is −180); every zone of the group has these. */
   offsets: { now: number; reset: number; kvk: number };
   n: number;
-  /** The group's IANA zones, most members first, then by name. */
+  /** The group's IANA zones, most members first, then by city name. */
   zones: string[];
 }
+
+/** The IANA city of a zone ("Sao Paulo" for America/Sao_Paulo); null for a fixed-offset Etc zone. */
+export const cityOf = (zone: string): string | null =>
+  zone.startsWith("Etc/") ? null : (zone.split("/").at(-1) ?? zone).replaceAll("_", " ");
 
 /** How many of `uids` (the newest daily update's members) have each time zone; a cleared fact has none. */
 export function zoneCountsOf(uids: number[], facts: Map<number, MemberFacts>): ZoneCounts {
@@ -40,7 +44,7 @@ export function zoneCountsOf(uids: number[], facts: Map<number, MemberFacts>): Z
   return {
     members: uids.length,
     zones: [...perZone]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .sort((a, b) => b[1] - a[1] || (cityOf(a[0]) ?? a[0]).localeCompare(cityOf(b[0]) ?? b[0]))
       .map(([zone, n]) => ({ zone, n })),
   };
 }
@@ -80,7 +84,7 @@ export function zoneGroups(c: ZoneCounts, m: Moments): ZoneGroup[] {
     const key = `${offsets.now} ${offsets.reset} ${offsets.kvk}`;
     const g = groups.get(key) ?? { offsets, n: 0, zones: [] };
     g.n += n;
-    // `c.zones` is most members first, then by name, so the group's zones keep that order.
+    // `c.zones` is most members first, then by city name, so the group's zones keep that order.
     g.zones.push(zone);
     groups.set(key, g);
   }

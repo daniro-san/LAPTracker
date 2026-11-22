@@ -24,10 +24,16 @@ The owner asked for this on 2026-11-22: "in the officers' Insights, something gr
 - **`dateWords` gains `weekday`** ("Sat"), in `lib/date-words.ts`.
 - **Copy** is `insights.zones.*` in `lib/private/dictionary.insights-zones.ts` (EN, PT-BR, FR), spread by `dictionary.insights.ts`. `Fold` in `InsightsMore.tsx` is now exported.
 - **Tests.**
-  - `lib/private/insights-zones.test.ts` (PGlite, 8 tests): grouping and order (no name or uid in the words), who counts, a summer-time split (Paris and Lagos across the EU change), a change before KvK with a tie named west to east, the reset and KvK in New York, Manila and Kiritimati, the next KvK never a running one, usual-hour ranges, and no zone.
-  - `e2e/desk-insights.spec.ts`: the card on the seed and the add link to Members.
+  - `lib/private/insights-zones.test.ts` (PGlite, 11 tests): grouping and order (no name or uid in the words), fixed-offset zones and cities in name order, who counts, a summer-time split (Paris and Lagos across the EU change), a change before KvK with a tie named west to east, the reset and KvK in New York, Kolkata (UTC+5:30), Manila and Kiritimati, the next KvK never a running one, usual-hour ranges and no line with one group, the PT and FR reset sentence and singular forms, and no zone.
+  - `e2e/desk-insights.spec.ts`: the card on the seed and the add link to Members. Its expected values are computed from `ZONE_FACTS`, the seed's calendar and `LEAVER`, with Intl as the clock, and it finds elements by role and text.
   - `e2e/fixtures/seed-facts.ts` (new) holds the seed's fact rows: the Troops rows moved out of `seed.ts` for its 300-line limit, plus `ZONE_FACTS` (seed-people.ts: k=0 and k=3 Manila, k=5 São Paulo).
-- **Docs.** D153, D139's dated amendment, and the README index line.
+- **Docs.** D153, D139's dated amendment, and the README index line. D153 skips D152 because the #306 branch (`feat/306-kvk-matchup`) holds D152.
+- **PR #680 review fixes.**
+  - The reset sentence joins each time as the language does: PT "é dom. às 21:00 e às 10:00", FR "est dim. à 21:00 et à 10:00" (`insights.zones.at`, `atDay`).
+  - Singular and plural forms: "(1 non noté)" / "(2 non notés)", PT the same way, and FR "et 1 autre" / "et 2 autres" (`insights.zones.usual.*`, `insights.zones.more.*`).
+  - A group's zones are ordered by city name, not by IANA id ("Amsterdam, Lagos", never "Lagos, Amsterdam").
+  - City names stay as IANA writes them ("Sao Paulo"): IANA ids carry no accents, and no other source of city names is used (panel: labels only from IANA names).
+  - `verification.md` says PASS with the Verifier's FAIL round recorded, and `proofs.md` is re-run.
 
 ## Decisions
 
@@ -72,8 +78,14 @@ Local: Node 26.5.0, Postgres 18 (worktree `.pglocal` on 54320), Playwright Chrom
   | no run through midnight | usual hours |
   | not-recorded in the share | who counts |
   | rows with no zone | no zone |
+  | zones sorted by IANA id | fixed offsets and city order |
+  | a fixed zone named as a city | fixed offsets and city order |
+  | "and N more" always plural | fixed offsets and city order |
+  | the reset's times without the joining word | PT and FR reset sentence |
+  | "not recorded" always plural | PT and FR reset sentence |
+  | the usual-hours line with one group | no line with one group |
 
-  For e2e, the add link pointed at `?ask=1`, which fails at `toHaveURL(…?ask=timeZone)`.
+  For e2e, the add link pointed at `?ask=1` (fails at `toHaveURL(…?ask=timeZone)`), and the reset with no weekday for another date (fails at "Reset Sun 23:00").
 - **Screenshots** at 360×780 (Chromium, e2e seed), light and dark, the card closed and open. They were taken on the build machine and are not committed; the build agent's report gives their paths.
 - **Plan review.** The panel ran on invented data:
   - the six officers, with the first-glance test;
@@ -99,7 +111,8 @@ Follow-ups:
 - "night" beside night-time values (designer, NICE);
 - names per group behind a tap, or a `members?tz=` filter, only if officers ask (officers, NICE);
 - a region subtotal ("Europe: 14");
-- a PT-BR and FR copy review of `insights.zones.*`.
+- a PT-BR and FR copy review of `insights.zones.*`;
+- the PR #680 review's findings #10 to #13 and #15, left for later as the orchestrator asked.
 
 Analytics plan: none. The card adds no event or property. Its two links are ordinary page views of Members (click autocapture is off on `/w`), and no number in the tracking plan changes meaning.
 
