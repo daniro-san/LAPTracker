@@ -138,4 +138,4 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 - The 585 seed's follow-up rows do not write the away and status facts; a seed for S2 must write them as the app does, or the Members and Follow-up lists disagree for seed reasons.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/640
