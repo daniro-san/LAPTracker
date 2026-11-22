@@ -195,6 +195,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.59.0",
+    date: "2026-11-22",
+    title: "Members can tell their officers their own details",
+    changes: [
+      'A member whose "This is me" link an officer approved can now tell their officers three things from their own page (Me → "Tell your officers"): their Alliance Duel tech %, their time zone (one tap uses the phone\'s) and the languages they read.',
+      'Officers see it on that member\'s card under "Sent by the member", beside what the card holds, and answer with "Put on the card" or "Seen, keep the card". Nothing on the card changes until an officer puts it there; Home\'s "To review" lists who sent something.',
+      "A member sees only their own sends and whether an officer has seen them, never the card's value or anything about anyone else. Up to 20 sends a day.",
+    ],
+    prs: [684],
+  },
+  {
     version: "v5.58.0",
     date: "2026-11-22",
     title: "The KvK opponent, time zones on Insights, and the shield on the member card",
