@@ -47,7 +47,7 @@ The owner asked for this on 2026-11-22: "in the officers' Insights, something gr
 
 - **The clock-change note has no date.** The adversarial reviewer asked for the date; it says "Clocks change before KvK" instead. The reviewer accepted this in the second round.
 - **The card is a new file**, `InsightsZones.tsx`, not part of `InsightsMore.tsx`, to keep that file under 300 lines.
-- **The Verifier** (an independent sub-agent) found 4 issues, all fixed in the second commit (`verification.md`): the clock-change note named the reset when KvK came first; a tie was named west to east while the plan's example put London first (the plan now says west to east); the e2e did not check that the card is last and folded; the "no name" claim rested on a scan that cannot see own-member names (now a unit assertion).
+- **The Verifier** (an independent sub-agent) found 4 issues, all fixed in `fix(insights): name the first moment …` (`verification.md`): the clock-change note named the reset when KvK came first; a tie was named west to east while the plan's example put London first (the plan now says west to east); the e2e did not check that the card is last and folded; the "no name" claim rested on a scan that cannot see own-member names (now a unit assertion).
 
 ## Verified
 
@@ -55,6 +55,7 @@ Local: Node 26.5.0, Postgres 18 (worktree `.pglocal` on 54320), Playwright Chrom
 
 - `pnpm vitest related --run` on the 9 changed source files: 76 files, 387 tests passed.
 - `pnpm check`: exit 0 (prettier, eslint, tsc, Vitest 1761 passed and 4 skipped, drift, i18n). It failed twice first (formatting; then the page's function length and `seed.ts`'s line limit), and passed after the fixes and again after the Verifier's fixes.
+- Rebased onto `origin/dev` at 835294b7 (one conflict: D139's amendments, both kept); `pnpm check` and `pnpm test:e2e` were run again after it.
 - `pnpm test:e2e`, with the build: 53 passed, 3 skipped. This includes `desk-insights.spec.ts` on `phone` and `wide`, and `isolation.spec.ts` with the new facts seeded.
 - **Deliberate breaks.** Each was run against `insights-zones.test.ts`, then reverted. Every one failed at least the test named for its rule:
 
