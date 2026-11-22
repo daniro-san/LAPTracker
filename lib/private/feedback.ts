@@ -37,9 +37,14 @@ export const FEEDBACK_SEND = z
   .strict();
 export type FeedbackSend = z.infer<typeof FEEDBACK_SEND>;
 
-/** The IP as a day counter's key: an HMAC under the server's secret, so the key cannot be turned back. */
-export const feedbackIpKey = (ip: string, secret: string) =>
-  `${DAY_KEY_PREFIX}feedback:ip:${createHmac("sha256", secret).update(ip).digest("hex").slice(0, 32)}`;
+/**
+ * The IP as a day counter's key: an HMAC under the server's secret, labelled for this one use, so the key
+ * cannot be turned back and serves nothing else.
+ */
+export const feedbackIpKey = (ip: string, secret: string) => {
+  const mac = createHmac("sha256", secret).update(`feedback-ip:${ip}`).digest("hex");
+  return `${DAY_KEY_PREFIX}feedback:ip:${mac.slice(0, 32)}`;
+};
 
 export interface FeedbackSender {
   workspaceId: number;

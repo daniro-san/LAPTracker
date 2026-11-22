@@ -51,6 +51,8 @@ function FeedbackSheet(props: Props & { onClose: () => void }) {
         website,
       }),
     }).catch(() => null);
+    // Read to its end, so the browser finishes the answer.
+    await res?.json().catch(() => null);
     if (res?.ok) {
       track("feedback_sent", { feedback_area: props.area, kind });
       return setState("received");
@@ -66,15 +68,14 @@ function FeedbackSheet(props: Props & { onClose: () => void }) {
       title={w["feedback.open"]}
       words={props.sheet}
       dirty={!received && (kind !== null || text !== "")}
-      primary={
-        received
-          ? { label: props.sheet.close, onClick: props.onClose, focus: true }
-          : {
-              label: state === "busy" ? w["feedback.sending"] : w["feedback.send"],
-              onClick: () => void send(),
-              disabled: state === "busy" || kind === null || text.trim() === "",
-            }
-      }
+      // After a send, no bar: only Close, so nothing reads as "undo".
+      {...(!received && {
+        primary: {
+          label: state === "busy" ? w["feedback.sending"] : w["feedback.send"],
+          onClick: () => void send(),
+          disabled: state === "busy" || kind === null || text.trim() === "",
+        },
+      })}
       note={
         error && (
           <p role="alert" className="mb-2 font-semibold text-seal">
@@ -84,9 +85,7 @@ function FeedbackSheet(props: Props & { onClose: () => void }) {
       }
     >
       {received ? (
-        <p role="status" className="font-semibold">
-          {w["feedback.received"]}
-        </p>
+        <Received text={w["feedback.received"]} close={props.sheet.close} onClose={props.onClose} />
       ) : (
         <Fields
           words={w}
@@ -100,6 +99,25 @@ function FeedbackSheet(props: Props & { onClose: () => void }) {
         />
       )}
     </Sheet>
+  );
+}
+
+/** After a send: "Received, thank you." and Close only, so nothing reads as "undo". */
+function Received(props: { text: string; close: string; onClose: () => void }) {
+  return (
+    <>
+      <p role="status" className="font-semibold">
+        {props.text}
+      </p>
+      <button
+        type="button"
+        data-initial-focus
+        onClick={props.onClose}
+        className={buttonClass("primary", "mt-4 w-full")}
+      >
+        {props.close}
+      </button>
+    </>
   );
 }
 
@@ -126,6 +144,9 @@ function Fields(props: {
         options={KINDS.map((k) => ({ value: k, label: w[`feedback.kind.${k}`] }))}
         onChange={props.onKind}
       />
+      {props.kind === null && props.text.trim() !== "" && (
+        <p className="mt-1 text-body-sm font-semibold">{w["feedback.pickKind"]}</p>
+      )}
       <div className="mt-4">
         <label htmlFor="feedback-text" className="block text-body-sm font-semibold">
           {w["feedback.text"]}
@@ -140,10 +161,10 @@ function Fields(props: {
           className={`${FIELD} mt-1`}
         />
         <p id="feedback-text-note" className="mt-1 text-body-sm text-ink/75">
-          {w["feedback.limit"]}{" "}
-          <span className="tabular-nums">
-            {fill(w["feedback.count"], { n: number(props.text.length), max: number(MAX) })}
-          </span>
+          {w["feedback.limit"]}
+        </p>
+        <p className="mt-1 text-right text-body-sm text-ink/75 tabular-nums">
+          {fill(w["feedback.count"], { n: number(props.text.length), max: number(MAX) })}
         </p>
       </div>
       {/* The honeypot: off screen, out of the tab order and hidden from screen readers. */}

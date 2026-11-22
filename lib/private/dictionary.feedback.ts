@@ -4,11 +4,12 @@
 export const feedbackEn = {
   "feedback.open": "Send feedback",
   "feedback.lead":
-    "An idea, a problem, or something that works well: tell the site owner. They read it without your name and do not reply.",
+    "An idea, a problem, or something that works well: tell the people who make this site, not your officers. They read it without your name and do not reply.",
   "feedback.kind": "What is it about?",
   "feedback.kind.idea": "Idea",
   "feedback.kind.problem": "Problem",
   "feedback.kind.good": "Something good",
+  "feedback.pickKind": "Choose what it is about first.",
   "feedback.text": "Your message",
   "feedback.limit": "Up to 1,000 characters. Leave out members’ map positions and online times.",
   "feedback.count": "{n} of {max} characters",
@@ -25,11 +26,12 @@ export type FeedbackWords = Record<keyof typeof feedbackEn, string>;
 export const feedbackPt: FeedbackWords = {
   "feedback.open": "Enviar feedback",
   "feedback.lead":
-    "Uma ideia, um problema ou algo que funciona bem: conte ao dono do site. Ele lê sem o seu nome e não responde.",
+    "Uma ideia, um problema ou algo que funciona bem: conte a quem faz este site, não aos seus oficiais. Eles leem sem o seu nome e não respondem.",
   "feedback.kind": "Sobre o que é?",
   "feedback.kind.idea": "Ideia",
   "feedback.kind.problem": "Problema",
   "feedback.kind.good": "Algo bom",
+  "feedback.pickKind": "Escolha antes sobre o que é.",
   "feedback.text": "Sua mensagem",
   "feedback.limit":
     "Até 1.000 caracteres. Não inclua posições no mapa nem horários online de membros.",
@@ -43,13 +45,14 @@ export const feedbackPt: FeedbackWords = {
 };
 
 export const feedbackFr: FeedbackWords = {
-  "feedback.open": "Donner votre avis",
+  "feedback.open": "Envoyer un retour",
   "feedback.lead":
-    "Une idée, un problème ou quelque chose qui marche bien : dites-le au propriétaire du site. Il le lit sans votre nom et ne répond pas.",
+    "Une idée, un problème ou quelque chose qui marche bien : dites-le aux personnes qui font ce site, pas à vos officiers. Elles le lisent sans votre nom et ne répondent pas.",
   "feedback.kind": "C’est à propos de quoi ?",
   "feedback.kind.idea": "Idée",
   "feedback.kind.problem": "Problème",
   "feedback.kind.good": "Quelque chose de bien",
+  "feedback.pickKind": "Choisissez d’abord de quoi il s’agit.",
   "feedback.text": "Votre message",
   "feedback.limit":
     "Jusqu’à 1 000 caractères. N’indiquez pas la position sur la carte ni les heures de connexion des membres.",
