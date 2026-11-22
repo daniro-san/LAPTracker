@@ -9,7 +9,6 @@ export interface PatchNote {
   date: string;
   title: string;
   changes: string[];
-  needsYou?: string[];
   prs?: number[];
 }
 
@@ -24,8 +23,16 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
-    text: 'Decide #663: one average rule. Should a "none" day count as 0 on the member card and Me, as on Insights? Recommendation: yes, with the line naming the none days ("Average 400 · 6 days, 2 none"), and a week of only none days reading "None on all 7 days".',
-    issue: 663,
+    text: "After the next Raid Shield window (Friday 23:30 ST), check that the leaders' Discord summary appears as a forum post in the Raid Shield channel.",
+    issue: 527,
+  },
+  {
+    text: "After the next raid, compare the two shield shares on the desk with Raid prep's own counts for that week.",
+    issue: 527,
+  },
+  {
+    text: 'After the next KvK, check Follow-up\'s "After KvK, offer help" list and the recovery days on Insights against what officers know; both were tested on invented data only.',
+    issue: 527,
   },
   {
     text: "PostHog → your personal API keys: create one with only the error-tracking write scope for project 741657, then add it in Vercel → Production as POSTHOG_PERSONAL_API_KEY (Sensitive). The v5.47.0 build uploaded no source map because the key is missing, so PostHog shows minified stack traces for browser and server errors; the maps are still deleted from every deploy.",
@@ -70,6 +77,11 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "Decide whether to drop the GitHub-side tick schedule. It fired in about 4% of its slots; cron-job.org is the real scheduler, and D30 keeps GitHub's as a second path, so dropping it needs an amendment. The monthly keep-alive must stay while any GitHub schedule is kept (uptime, the daily browser checks), or GitHub turns them off after 60 days.",
     issue: 592,
+  },
+  {
+    text: 'Decided #663: a "none" day counts as 0 in every average, and the line names the none days ("Average 400 · 6 days, 2 none"). Built in batch 4.',
+    issue: 663,
+    done: true,
   },
   {
     text: "Confirm the test rule: a change to a desk flow, or to the numbers a public page shows, updates its end-to-end test in the same PR (orchestrator recommendation).",
@@ -197,9 +209,6 @@ export const patchNotes: PatchNote[] = [
       'The Home tab\'s number counts "This is me" claims waiting for an officer on every desk page, as Home already did; it read 0 on the other pages.',
       "For whoever builds the site: Follow-up's group rules and Home's waiting count each come from one place, the Needs help read is lighter, and the batch 3 checks have the tests they lacked.",
     ],
-    needsYou: [
-      'Decide #663: should a "none" day count as 0 in averages on the member card and Me, as it does on Insights? Recommendation: yes, with the line naming the none days ("Average 400 · 6 days, 2 none").',
-    ],
     prs: [664, 661, 659],
   },
   {
@@ -271,9 +280,6 @@ export const patchNotes: PatchNote[] = [
       "The daily read and the squads read do less database work: an index for the 90-day clean-up, no re-queueing of the whole roster after every answer, and one query less on every desk page.",
       "For whoever builds the site: more end-to-end checks (sign-out, Follow-up, member facts, a feature switch), and tests for the Follow-up and feature-switch rules.",
     ],
-    needsYou: [
-      "Add the PostHog key for source maps in Vercel, and one decision (#634), on the to-do list below.",
-    ],
     prs: [629, 630, 631, 632, 633],
   },
   {
@@ -288,9 +294,6 @@ export const patchNotes: PatchNote[] = [
       "Error reports from the server can show readable stack traces in PostHog (once the source-map key is set, see the to-do list), and errors the desk used to swallow are now reported, with private fields removed first.",
       "/admin → Runs no longer lists an alliance someone looked up as a stale alliance of the daily read.",
       "For whoever builds the site: agents are blocked from reading local secret files by accident, recording fixtures (which spends quota) is the owner's, and the tests were cleaned of fakes and now pass in any order.",
-    ],
-    needsYou: [
-      "Check production's EDIT_PIN and CRON_SECRET, clean your local env file, and three decisions (#617, #621, #516) are on the to-do list below.",
     ],
     prs: [612, 615, 619, 620, 622, 623, 624],
   },
@@ -307,9 +310,6 @@ export const patchNotes: PatchNote[] = [
       "Every change to the site's code is now checked in a real browser before it can merge: 28 checks of what the public pages, the desk and the Me page show, including that one alliance never sees another's data. Each release also runs the desk checks in the iPhone browser engine.",
       "Checks run about 3 minutes faster per change, a release no longer runs them twice, and Dependabot waits 7 days before proposing a new version (14 for major ones).",
       "For whoever builds the site: issue and PR templates with testable criteria, a rule to keep the analytics plan current with every change, and rules on what and how to test, so every test checks real behaviour.",
-    ],
-    needsYou: [
-      "GitHub Actions settings and three CI decisions are on the to-do list below (issue #592).",
     ],
     prs: [596, 597, 598, 599, 600, 601, 602, 603, 604, 605, 608, 609, 610, 613],
   },
@@ -349,9 +349,6 @@ export const patchNotes: PatchNote[] = [
       'Alliance totals only, no names. A week or check with no reading shows "no reading", never 0%; a check still running shows "under way".',
       "The section explains that these are the tracker's map scans, so the night share is usually low: most shields turned on for the raid show only in the morning.",
     ],
-    needsYou: [
-      "After the next raid, compare the two shares with Raid prep's own counts for that week.",
-    ],
     prs: [582],
   },
   {
@@ -363,9 +360,6 @@ export const patchNotes: PatchNote[] = [
       '"Took a heavy hit — maybe offer help": members who lost more than 25% and are still under 80% of their might before the KvK, names only, never a ranking. Members on a break are left out.',
       "A Squads seen section (when the squads read is on): how many members have 1, 2 or 3+ squads seen, how fresh the sightings are, and the strongest squad's might in four groups. Counts only, no lineups.",
       "Both sections use stored data only, with no extra calls to the tracker.",
-    ],
-    needsYou: [
-      "After the next KvK, check the help list and the recovery days on the desk; they were tested on invented data only.",
     ],
     prs: [579],
   },
@@ -403,9 +397,6 @@ export const patchNotes: PatchNote[] = [
       "On iPhone and iPad they work only after adding the desk to the Home Screen and opening it from that icon; the card explains how.",
       "Nothing changes until the VAPID keys are set in Vercel: the card stays hidden until then.",
     ],
-    needsYou: [
-      "Set the VAPID keys in Vercel (or ask Claude to), redeploy, then test on a real iPhone and on Android.",
-    ],
     prs: [570],
   },
   {
@@ -431,10 +422,6 @@ export const patchNotes: PatchNote[] = [
       "A summary posted before this change is not edited again. The next shield window posts a fresh one in the Raid Shield channel.",
       "Member card squads: the 2 front heroes (the tanks) sit on top and the 3 back heroes below, the same on a phone and on a computer. The old staggered shape is gone.",
     ],
-    needsYou: [
-      'Before Friday 23:30 server time: in the OGs alliance\'s Alliance settings → Discord → Raid Shield channel, paste the webhook of #laptracker-ledger, then tap "Send a test message".',
-      "Open one of your squads on the member card and check that the 2 heroes on top are your front row (tanks). If not, tell Claude which positions are swapped.",
-    ],
     prs: [563, 564],
   },
   {
@@ -458,9 +445,6 @@ export const patchNotes: PatchNote[] = [
       "The leaders' Raid Shield summary was not posted on KvK Saturday, 2026-11-21. The leaders' channel is a Discord forum, and Discord refuses a forum post that has no title.",
       'The first post now has the title "Raid Shield check". Later updates edit that same post.',
       "The shield readings were saved correctly the whole time, and the Raid prep page showed them. Only the Discord message was missing.",
-    ],
-    needsYou: [
-      'At the next shield window (Friday 2026-11-27, 23:30 server time), check that the summary appears as a forum post titled "Raid Shield check".',
     ],
     prs: [555],
   },
@@ -513,10 +497,6 @@ export const patchNotes: PatchNote[] = [
       'Desk Home shows officers "Board reach": at least how many members opened the members\' board in the last 7 days.',
       "Only totals are shown, never names. A total under 5 is not shown.",
       "The numbers are read from PostHog, so the database gets no new tables.",
-    ],
-    needsYou: [
-      "Check that the PostHog key (POSTHOG_QUERY_API_KEY) has the Endpoint: Read scope. When /admin shows Activity with numbers, close #484.",
-      'Decide: should /admin show the four action counts (notices, roll call marks, thanks, screenshots) exactly, with 0 as "none", instead of hiding totals under 5? It is a one-line change.',
     ],
     prs: [546],
   },
@@ -608,9 +588,6 @@ export const patchNotes: PatchNote[] = [
       "A heartbeat runs every 3 hours, and GitHub checks the site and the scheduler right after it. A stopped scheduler is now noticed within about 3 hours.",
       "The site's functions run in iad1 (Virginia), next to the database, instead of São Paulo.",
     ],
-    needsYou: [
-      "About 7 days after this release (around 2026-11-28), look at Neon's compute graph and decide on the plan (#527).",
-    ],
     prs: [520, 522, 523, 524, 525, 528, 529, 530],
   },
   {
@@ -623,9 +600,6 @@ export const patchNotes: PatchNote[] = [
       "Every desk page shows officers a thin status bar when a tracker read needs attention: the key needs pasting again, a roster read failed or is late, or the squads read is running or stopped.",
       'Raid prep for the night before KvK: the Raid Shield check reads every member on Friday night and again on Saturday. Officers mark "Shield" and "Squads off the wall", and each member gets a ready private message.',
       "An optional summary goes to the leaders' channel only.",
-    ],
-    needsYou: [
-      "Check Raid prep once for OGs: allowed on /admin, turned on in Alliance settings → Features (#527).",
     ],
     prs: [514, 515, 517],
   },
@@ -654,9 +628,6 @@ export const patchNotes: PatchNote[] = [
       "A new alliance gets its Officers' Desk from a one-time invite link, or by requesting one at /w/request.",
       "/admin → New alliances lists the requests with a roster check, and makes invite links that work for 7 days.",
       "The invite takes 4 steps: sign in with Discord, pick the server, add the bot, then pick or create the roles.",
-    ],
-    needsYou: [
-      'For OGs: in Alliance settings → Discord, tap Check, save both webhooks and send a test message. When /admin shows both channels as "set", delete WORKSPACE_DISCORD_WEBHOOKS in Vercel (#527).',
     ],
     prs: [497, 499],
   },
