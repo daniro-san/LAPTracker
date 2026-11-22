@@ -13,7 +13,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { featureOn } from "@/lib/private/features";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
-import { draftView, toReview, type DraftView } from "@/lib/private/import-view";
+import { draftView, toReview, toReviewCount, type DraftView } from "@/lib/private/import-view";
 import { counted, kindLabel } from "@/lib/private/import-words";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
@@ -82,14 +82,16 @@ export default async function DraftPage({
   const jar = await cookies();
   const now = new Date();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, open } = await withPageDb(async (db) => {
+  const { access, view, open, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok) return { access, open: [], view: null };
-    const [open, view] = await Promise.all([
+    if (!access.ok) return { access, open: [], view: null, waiting: 0 };
+    // The Home tab's number, the same rule as every desk page (drafts, notice reviews, claims; issue 660).
+    const [open, view, waiting] = await Promise.all([
       toReview(db, access, now),
       draftView(db, access, Number(id), now),
+      toReviewCount(db, access, now),
     ]);
-    return { access, open, view };
+    return { access, open, view, waiting };
   });
   if (!access.ok) {
     refuse(slug, access.reason, `/w/${slug}/shots/${id}`);
@@ -103,7 +105,7 @@ export default async function DraftPage({
   // The other drafts waiting, in Home's order: once this one is saved or discarded, the next is one tap.
   const others = open.filter((d) => d.id !== Number(id));
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home" waiting={open.length}>
+    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting}>
       <p>
         <a
           href={`/w/${slug}`}

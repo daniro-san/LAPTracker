@@ -1,6 +1,8 @@
 # fix-660-badge-claims
 
 ## Built
+
+- The draft review screen (`/w/[slug]/shots/[id]`) passed `open.length` as the badge and now uses `toReviewCount` too (review of PR 661).
 - `toReviewCount` (lib/private/import-view.ts) now adds the pending "This is me" claims (D142) to drafts and notice reviews, so the Home tab badge reads the same on every desk page that calls it (Members, Follow-up, Calendar, Notices, Roll call, Thefts, Settings, Import, Start here).
 - `countLinksToReview` (lib/repo/player-links.ts): a count of the rows `linksToReview` lists, so the claims are counted without loading the roster.
 - One test in app/(private)/_ui/ToReview.test.ts: with one pending claim on PGlite, Home's list holds 1 claim and `toReviewCount` returns 1.
@@ -20,6 +22,8 @@
 - DB cost (D149): each non-Home desk page runs one more indexed count query (drafts, reviews, claims: 2 to 3), in the same `Promise.all`, so no added round-trip latency. Home's query count is unchanged.
 
 ## Open issues
+
+- Follow-up (review of PR 661): `countLinksToReview` repeats `linksToReview`'s where clause, so the two could drift; `lib/push-uses.ts` loads every pending row only to take `.length` and could use the count.
 - None. Rebased onto dev after #659 merged (no conflicts).
 
 ## Next
