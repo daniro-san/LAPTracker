@@ -11,10 +11,12 @@ import type { Page } from "@playwright/test";
 import { BASE_URL } from "./env";
 import {
   ALLIANCES,
+  clearHelpOf,
   daysAgo,
   FACT_SEEDED,
   factMemberOf,
   IDLE_DAYS,
+  NEEDS_HELP,
   idleOf,
   signOutToken,
   switchWorkspaceOf,
@@ -129,6 +131,60 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await sees(row, `Quiet for ${IDLE_DAYS} days. Worth a hello.`);
   await expect(notedRow).toHaveCount(0);
+});
+
+test("Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too", async ({
+  context,
+  page,
+}, info) => {
+  // Phone only, on the repeat's own feature-switch workspace: Lantern Keep's counts never move meanwhile.
+  test.skip(info.project.name !== "phone", "one project clears a mark");
+  const w = switchWorkspaceOf(info.repeatEachIndex);
+  const member = clearHelpOf(info.repeatEachIndex);
+  await signIn(context, "a", "officer", `__Host-lap_ws.${w.slug}`, w.token);
+  const path = `/w/${w.slug}/follow-up`;
+  const group = page.getByRole("region", { name: /^Needs help · \d+$/ });
+  const facts = (version: number, value: "help" | null) =>
+    page.request.post(`/api/w/${w.slug}/members/${member.uid}/facts`, {
+      headers: { origin: BASE_URL },
+      data: { changes: [{ field: "status", version, value, source: "officer" }] },
+    });
+  await page.goto(path);
+  await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
+  await deskFrame(page, w);
+  await sees(group, `“${NEEDS_HELP.note}”`);
+  const open = named(page, "", member.name);
+  await hydrated(open);
+  await open.click();
+  const panel = page.getByRole("dialog", { name: member.name });
+  const clear = panel.getByRole("button", { name: "No longer needs help" });
+  await expect(clear).toBeVisible();
+
+  // Another officer saves the status meanwhile (Needs help again, version 2): the page's version 1 is refused.
+  expect((await facts(1, "help")).status()).toBe(200);
+  await savedAndRefreshed(page, path, () => clear.click());
+  await expect(panel.getByRole("alert")).toHaveText("Could not save. Try again.");
+  await expect(group).toHaveCount(1);
+
+  // The list was read again with the newer version, so the second tap clears the mark.
+  await savedAndRefreshed(page, path, () => clear.click());
+  await expect(page.getByRole("status")).toContainText(
+    new RegExp(`^Saved\\. ${isolated(member.name)} no longer needs help\\.$`),
+  );
+  await expect(panel).toHaveCount(0);
+  await expect(group).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
+  await deskFrame(page, w);
+  await expect(group).toHaveCount(0);
+  await expect(named(page, "", member.name)).toHaveCount(0);
+
+  // Put back (Edit info's write, version 3 → 4), checked on screen: a later repeat finds the mark again.
+  expect((await facts(3, "help")).status()).toBe(200);
+  await page.reload();
+  await expect(group).toContainText(
+    new RegExp(`Since ${usDay(daysAgo(0))} · added by ${isolated(`Officer ${w.tag}`)}`),
+  );
 });
 
 test("Member facts: a Troops edit shows on the card, stays after a reload, and History keeps the earlier value", async ({

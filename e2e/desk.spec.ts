@@ -13,6 +13,8 @@ import {
   JOINER,
   KVK_ENTRY,
   LEAVER,
+  NEEDS_HELP,
+  needsHelpDays,
   newMembers,
   lastRosterDay,
   raidOf,
@@ -70,11 +72,11 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
   // Issue 585: Follow-up's numbers, linked to Follow-up. The seed gives everyone quest points and coins at
-  // the cap (DAILY) and records no facts for its new members, so the list holds the new members alone, each
-  // with every fact to ask. The noted part races: the card test below, in this project and the other one
-  // running beside it, keeps a Talked on a member, so 0 or 1 is right at this moment; the exact rule is in
-  // follow-up-week.test.ts.
-  const toLook = newMembers("a").length;
+  // the cap (DAILY) and records no facts for its new members, so the list holds the new members, each with
+  // every fact to ask, and the member marked Needs help (slice 2), who has no reason of their own. The noted
+  // part races: the card test below, in this project and the other one running beside it, keeps a Talked
+  // on a member, so 0 or 1 is right at this moment; the exact rule is in follow-up-week.test.ts.
+  const toLook = newMembers("a").length + 1;
   const followUp = week.getByRole("link", {
     name: new RegExp(`^Follow-up: ${toLook} to look at( · 1 noted this week)?$`),
   });
@@ -85,6 +87,28 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   if ([0, 1].includes(new Date(cal.today).getUTCDay())) {
     await sees(week, "Time for the weekly appreciation post");
   }
+
+  // The line leads to Follow-up, which lists the marked member first, under "Needs help", with since when,
+  // who added the mark and why, and last week's Talked as context (slice 2).
+  await hydrated(followUp);
+  await followUp.click();
+  await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
+  await deskFrame(page, A);
+  const name = A.names[NEEDS_HELP.k] as string;
+  const helpGroup = page.getByRole("region", { name: "Needs help · 1" });
+  await sees(helpGroup, "They stay here each week until someone taps “No longer needs help”.");
+  const row = helpGroup
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("button", { name: labelled("", name) }) });
+  const days = needsHelpDays(seededAt());
+  const officer = "\\u2068?Officer LNK\\u2069?";
+  await expect(row).toContainText(new RegExp(`Since ${usDay(days.marked)} · added by ${officer}`));
+  await sees(row, `“${NEEDS_HELP.note}”`);
+  await expect(row).toContainText(
+    new RegExp(`Last week: ${officer} · ${usDay(days.talked)}: Talked to them`),
+  );
+  await sees(row, `“${NEEDS_HELP.said}”`);
+  await expect(page.getByRole("region", { name: /^Worth a hello/ })).toHaveCount(0);
 });
 
 test("Members: a card opens from the list and stays closed once closed, after a reload too", async ({

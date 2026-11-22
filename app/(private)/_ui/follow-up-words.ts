@@ -27,6 +27,9 @@ export const FOLLOW_UP_KEYS = [
   "followup.undone",
   "followup.undoFailed",
   "followup.failed",
+  // Needs help (issue 585 S2).
+  "followup.helpDone",
+  "followup.helpCleared",
   // The panel (issue 460, D140).
   "followup.openHint",
   "followup.pick",

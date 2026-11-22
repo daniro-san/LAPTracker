@@ -1,12 +1,12 @@
 # One worklist (#585 batch 3) checks
 
 Build: `pnpm typecheck`; `pnpm lint`
-Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
+Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
 Plan: `.specs/features/585-one-worklist/plan.md`
 
 profile: light
 
-14 checks in 1 slice built here (S1; S2-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
+24 checks in 2 slices built (S1 in PR 640: C1-C14; S2 in `feat/585-needs-help`: C15-C24; S3-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
 
 ## Checks
 
@@ -54,15 +54,51 @@ Proof: run unit | ✓ app/(private)/_ui/FollowUpWeek.test.ts > Follow-up's week 
 **C14** - Before the alliance's first daily update, Home's and Members' counts read nothing and give no numbers (AC 8; review of PR 640)
 Proof: run unit | ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers before the alliance's first daily update
 
+### S2 - "Needs help" on the list, with since when, who and why (built in `feat/585-needs-help`)
+
+**C15** - A member marked Needs help last week with no reason is under "Needs help" this week; a Talked this week moves them to "Noted this week" and they are back on Monday; an away note Mon 23 - Wed 25 Nov leaves them out on Tue 24 and they are back on Thu 26; once the mark is cleared they are on no list (AC 11, AC 13's effect)
+Proof: run unit | ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > keeps a member marked Needs help on the list each week until the mark is cleared, paused by a break
+
+**C16** - The mark says the officer, day and note of "They need help"; set in Edit info, its writer and day with no note; Ana marks, Bo marks again and undoes, still Ana with her day and note; the member card says "Since Fri, Nov 13 · added by Ana" and "“Lost the main squad, asked for help rebuilding”" under "Needs help" (AC 12, AC 25)
+Proof: run unit | ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > says since when and who added the mark and why, from the mark that stands, on the row and the card
+
+**C17** - Last week's newest record still counting is the row's context (Thu 12 Nov "on holiday", not Thu 5 Nov "Busy"); a record two weeks back, a Talked on Sun 23:50 ST undone Mon 00:05 ST, and the record that wrote the row's own mark give no context (AC 27)
+Proof: run unit | ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > shows last week's newest record as context, never one from two weeks back, one undone across Monday or the mark's own
+
+**C18** - A Talked last week neither takes a member off this week's list nor counts as noted; Home's and Members' numbers equal Follow-up's with the Needs help member counted (3 and 0), then 2 and 1 after an "All fine" this week (AC 24, AC 28)
+Proof: run unit | ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > takes this week's list and Home's numbers from this week's records only, the Needs help group counted
+
+**C19** - The mark reads "Since {day} · added by {officer}" ("Since {day}" with no officer), last week's line "Last week: {officer} · {day}: {what}" ("Last week: {day}: {what}" with no officer), each note in quotes; in French « » with no-break spaces and one before each colon (AC 12, AC 27, AC 29)
+Proof: run unit | ✓ lib/private/follow-up-rules.test.ts > Follow-up's Needs help in words (#585 slice 2) > says since when and who added the mark, last week's record as context, each officer's note in quotes
+
+**C20** - Every new key exists in EN, PT-BR and FR (AC 29)
+Proof: run unit | ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, pt-BR and fr, and no empty value
+
+**C21** - On the seed, Home says "Follow-up: {new members + 1} to look at", its link opens Follow-up, which shows "Needs help · 1" with "They stay here each week until someone taps “No longer needs help”.", and the marked member's row with "Since {day} · added by Officer LNK", the note in quotes, "Last week: Officer LNK · {day}: Talked to them" and its note; no "Worth a hello" group (AC 24, AC 31, AC 13's line)
+Proof: `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance"`
+
+**C22** - At 360 × 780, "Needs help · 1" is the first group inside the first viewport with the row's mark, note and last week's line; the panel shows "No longer needs help" under "Why they’re on the list"; a tap says "Saved. Galen Thorne no longer needs help.", the group leaves, and stays gone after a reload; the card's header says since when, who and the note, light and dark (AC 11, AC 25, AC 13)
+Proof: walk - `s2-shots/followup-360-fold.png`, `followup-360-full.png`, `followup-360-dark-full.png`, `panel-360.png`, `cleared-360.png`, `card-360-light.png`, `card-360-dark.png`, `followup-1280-after-clear.png` (invented e2e seed, Sun 22 Nov)
+
+**C23** - A member marked Needs help who also has a reason is in the first group, "Needs help · 1", with "They stay here each week until someone taps “No longer needs help”." under its title and one row holding the mark, the note in quotes and the reason line; they are not under "Worth a hello", which holds the unmarked member alone (AC 11; Verifier findings 1 and 3)
+Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's groups (issue 585 slice 2) > puts a member marked Needs help first, with the mark and their reasons on one row, and not under Worth a hello
+
+**C24** - In a workspace of its own (phone, per repeat), "No longer needs help" on a seeded Needs help member is first refused after another officer saved the status ("Could not save. Try again.", the member still under "Needs help"), then a second tap with the version read again says "Saved. {name} no longer needs help.", the panel closes, the "Needs help" group is gone, and stays gone after a reload (AC 13, AC 31; review of PR 646)
+Proof: `pnpm test:e2e e2e/desk-flows.spec.ts -g "No longer needs help"`
+
 ## Coverage
 
-| Set (size)                        | Member -> proof                                                                         | Unproven |
-| --------------------------------- | --------------------------------------------------------------------------------------- | -------- |
-| AC 3 examples (4)                 | Mon 00:05 C1 · Sun 23:59 week before C1 · Talked then Undo C1 · two records → newest C1 | -        |
-| Line shapes, AC 6 (4)             | 12/4 C5 · 12/0 C5 · 0/4 C5 · 0/0 C5                                                     | -        |
-| Record answers in a Noted row (4) | talked C6, C8 · break C6 · help C6 · fine C6                                            | -        |
-| Readers of the counts (3)         | Follow-up C1, C8 · Home C9 · Members C7 (shared `checkInLink`, same `followUpCounts`)   | -        |
-| Tab switch states (2)             | on C3, C7 · off C4, C7                                                                  | -        |
+| Set (size)                        | Member -> proof                                                                              | Unproven |
+| --------------------------------- | -------------------------------------------------------------------------------------------- | -------- |
+| AC 3 examples (4)                 | Mon 00:05 C1 · Sun 23:59 week before C1 · Talked then Undo C1 · two records → newest C1      | -        |
+| Line shapes, AC 6 (4)             | 12/4 C5 · 12/0 C5 · 0/4 C5 · 0/0 C5                                                          | -        |
+| Record answers in a Noted row (4) | talked C6, C8 · break C6 · help C6 · fine C6                                                 | -        |
+| Readers of the counts (3)         | Follow-up C1, C8 · Home C9 · Members C7 (shared `checkInLink`, same `followUpCounts`)        | -        |
+| Tab switch states (2)             | on C3, C7 · off C4, C7                                                                       | -        |
+| S2: the group's states (4)        | marked, no reason C15 · noted this week C15, C18 · paused by a break C15 · cleared C15, C24  | -        |
+| S2: where the mark comes from (3) | "They need help" with a note C16 · Edit info C16 · Undo of a repeated mark C16               | -        |
+| S2: last week's context (4)       | newest of last week C17 · two weeks back C17 · undone across Monday C17 · the mark's own C17 | -        |
+| S2: readers of the mark (2)       | Follow-up row C16, C21 · card header C16, C22                                                | -        |
 
 ## Swept
 
@@ -76,10 +112,22 @@ Proof: run unit | ✓ lib/private/follow-up-week.test.ts > who was noted this we
 - state transitions: C1 (noted → undone → not noted), C8 (on the list → noted → back after Undo)
 - observability: n/a - no log; names and notes are inside `ph-no-capture` (walk C10)
 
+S2 swept:
+
+- validation: existing - "No longer needs help" posts to the facts route, whose body schema (`FACT_CHANGE`) and member check are unchanged
+- failure modes: C24 - the panel's refusal (409: "Could not save. Try again.", the list read again with the newer version) and the clear after it; the 409 itself is the facts route's, tested in its route test
+- idempotency: existing - a second clear with the same version is refused by D80's version check; nothing else is written
+- authorization: existing - the facts route and every read require the workspace session; `helpMarkRows` filters both selects by `workspace_id` (C16 reads one workspace's rows)
+- concurrency: existing - another officer's status change meanwhile is refused (409, D80), and the list is read again
+- data lifecycle: C15 (mark, noted, break, cleared), C17 (week boundary, Undo across Monday)
+- dependency failure: n/a - no outside call
+- state transitions: C15 (needs help → noted → needs help → paused → needs help → cleared)
+- observability: n/a - no log; marks and notes are inside `ph-no-capture` on the row, the panel and the card (walk C22)
+
 ## Handoff
 
 - **Settled mid-build:** none from the owner; the plan review (panel, product, adversarial) changed "Done" to "Noted", renamed "Check in" to "Worth a hello", moved the counts first and kept the Noted card on the page with nobody noted
-- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (rounds 1 and 2, returned); Verifier at cb4928d5 (returned: FAIL on 5 proof gaps, closed in c9a1b963, one accepted)
+- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (rounds 1 and 2, returned); Verifier at cb4928d5 (returned: FAIL on 5 proof gaps, closed in c9a1b963, one accepted); S2 (2026-11-22): officer panel with first-glance test, product strategy, adversarial (plan review, returned: all approve with changes, plan Validation (e) to (g)); S2 Verifier at aa610160 (returned: FAIL on 4 proof gaps, no code bug; 3 closed with C23 and C19, 1 accepted, then closed in the review of PR 646 by C24)
 - **Boundary:** C1-C11 at the commit named in the handoff
 - **Abandoned:** "Done this week" (panel and adversarial MUST); one wide `followedUpSince` for every reader (adversarial SHOULD: the counts read uid, action and time only)
 - **Walked:** `585-worklist/after/` at 360 light and dark and 1280, EN, server clock Sat 21 Nov 16:30 ST, invented 585 seed
