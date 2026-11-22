@@ -173,6 +173,19 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.50.0",
+    date: "2026-11-22",
+    title: "Follow-up says who was already noted, and claims are easier to check",
+    changes: [
+      'Follow-up opens with the week\'s two numbers, how many to look at and how many others were already noted this week, and a new "Noted this week" card lists who an officer talked to since Monday, with the note. "Check in" is now "Worth a hello".',
+      "Home and Members show Follow-up's two numbers by Follow-up's own rule, linked to it, so the three pages no longer disagree.",
+      'A "This is me" claim on Home\'s "To review" links the player to their member card and says the day it was asked, so an officer can check who it is first. "Reject" is now "Not them".',
+      '/admin\'s "Needs you" shows a nightly clean-up that failed (old member data, deleted workspaces or old app errors) until it next runs fine.',
+      "Library updates, among them Next.js 16.4.6.",
+    ],
+    prs: [640, 643, 642, 618],
+  },
+  {
     version: "v5.49.0",
     date: "2026-11-22",
     title: "/admin opens with what needs you",
