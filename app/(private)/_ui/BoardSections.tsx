@@ -54,7 +54,7 @@ function Entry(props: {
           ) : (
             <Ended
               at={at}
-              end={endOf(entry.kind, item.day, item.minute, zone)}
+              end={endOf(entry.kind, item.day, item.minute, zone, getEnv().SNAPSHOT_AFTER)}
               words={{ started: t["calendar.started"], ended: t["calendar.ended"] }}
               since={props.now}
               bold

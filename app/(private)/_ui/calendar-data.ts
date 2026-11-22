@@ -69,6 +69,8 @@ export interface CalendarCtx {
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   zone: string;
+  /** The KvK's End read, "16:15" (SNAPSHOT_AFTER), when a KvK is "Ended" (`endOf`). */
+  endRead: string;
   /** The workspace's notices' titles by id, for an entry's linked notice (D102). */
   noticeTitles?: ReadonlyMap<number, string>;
 }
@@ -161,7 +163,7 @@ export function agendaItem(p: Placed, ctx: CalendarCtx): AgendaItem {
     title: titleOf(e, t),
     st: minute === null ? null : stOf(e.kind, minute, t),
     at: minute === null ? null : zonedInstant(p.day, minute, zone),
-    end: endOf(e.kind, p.day, minute, zone),
+    end: endOf(e.kind, p.day, minute, zone, ctx.endRead),
     roles: rolesLine(p, t),
     notes: e.notes,
     link: e.link,

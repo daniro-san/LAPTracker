@@ -44,7 +44,14 @@ export type MeView =
 export async function meView(
   db: Db,
   me: MeAccess,
-  at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
+  at: {
+    now: Date;
+    zone: string;
+    /** The KvK's End read, "16:15" (SNAPSHOT_AFTER), when its Raid prep line is "Ended". */
+    endRead: string;
+    language: WorkspaceLanguage;
+    t: WorkspaceDictionary;
+  },
 ): Promise<MeView> {
   const { now, zone, t } = at;
   const today = dayIn(zone, now.getTime());
@@ -77,9 +84,16 @@ export async function meView(
     week: weekCard(days, today, t, d),
     squads: { ...squadsCardOf(pairs, heroes, t, f), none: t["me.squads.none"] },
     // An event with no time of its own starts and ends with its day, so it is only ever "Ended".
-    needed: neededLines({ team, seats, marks }, week, t, d.date, (kind, day, minute) => {
-      const end = endOf(kind, day, minute, zone);
-      return { at: minute === null ? end : zonedInstant(day, minute, zone), end };
-    }),
+    needed: neededLines(
+      { team, seats, marks },
+      week,
+      t,
+      d.date,
+      (kind, day, minute) => {
+        const end = endOf(kind, day, minute, zone, at.endRead);
+        return { at: minute === null ? end : zonedInstant(day, minute, zone), end };
+      },
+      now.getTime(),
+    ),
   };
 }

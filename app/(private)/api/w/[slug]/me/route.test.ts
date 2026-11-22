@@ -33,7 +33,7 @@ const ORIGIN = "https://laptracker.test";
 const ALPHA = 900_001;
 const BRAVO = 900_002;
 const t = WORKSPACE_DICTIONARIES.en;
-const at = { now: T0, zone: "Etc/GMT+2", language: "en" as const, t };
+const at = { now: T0, zone: "Etc/GMT+2", endRead: "16:15", language: "en" as const, t };
 
 let db: Db;
 const tokens: Record<string, string> = {};

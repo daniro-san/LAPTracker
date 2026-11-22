@@ -5,7 +5,8 @@
 // that day.
 import { fill } from "../copy";
 import type { OwnDay } from "../repo/me";
-import { addDays, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
+import { KVK_MINUTE } from "../shield-check";
+import { addDays, DAY_MS, hhmm, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";
 import {
@@ -164,12 +165,37 @@ export interface Needed {
 export interface NeededLine {
   line: string;
   when: { at: number; end: number } | null;
+  /** What to do next, for a Raid prep ✗ still ahead of KvK ("Next step: turn on your shield …"). */
+  step?: string | undefined;
+}
+
+/**
+ * The next step for a Raid prep ✗ (D137): "No shield" or "On the wall", from the raid's eve (the day before)
+ * until the reset (00:00 ST, the raid's start), then until KvK starts; none before the eve or once KvK has
+ * started, nor for any other mark. Raid prep's own deadlines and words, said to the member (people first,
+ * D75: what to do, never a reproach).
+ */
+function stepOf(
+  m: Needed["marks"][number],
+  t: WorkspaceDictionary,
+  now: number,
+  startOf: (minute: number) => number,
+): string | undefined {
+  if (m.kind !== "shield" || m.mark !== "no") return undefined;
+  const what = m.part === "wall" ? "wall" : "shield";
+  const reset = startOf(0);
+  // From the raid's eve only, so "the reset" is always tonight's, never a later week's.
+  if (now < reset - DAY_MS) return undefined;
+  if (now < reset) return t[`me.step.${what}.reset`];
+  if (now < startOf(KVK_MINUTE)) return fill(t[`me.step.${what}.kvk`], { time: hhmm(KVK_MINUTE) });
+  return undefined;
 }
 
 /**
  * The member's week in plain lines, the soonest first: Elixir team, caravan seats, roll call marks. A mark
- * reads "your mark: “Shield up”", a record and not an order (issue 585). `timeOf` gives each event's start
- * and end from its kind, day and time, so the page can say "Started" and "Ended".
+ * reads "your mark: “Shield up”", a record and not an order (issue 585); a Raid prep ✗ adds its next step
+ * while it is still ahead at `now`. `timeOf` gives each event's start and end from its kind, day and time,
+ * so the page can say "Started" and "Ended".
  */
 export function neededLines(
   n: Needed,
@@ -177,6 +203,7 @@ export function neededLines(
   t: WorkspaceDictionary,
   date: (day: string) => string,
   timeOf: (kind: string, day: string, minute: number | null) => { at: number; end: number },
+  now: number,
 ): NeededLine[] {
   const seats = n.seats.map((s) => {
     const day = s.movedTo ?? addDays(week, weekdayIndex(s.planned));
@@ -185,6 +212,7 @@ export function neededLines(
       day,
       line: fill(t[`me.caravan.${seat}`], { day: date(day) }),
       when: timeOf("caravan", day, s.minute),
+      step: undefined,
     };
   });
   const marks = n.marks.map((m) => {
@@ -201,6 +229,7 @@ export function neededLines(
         mark: wall ? wallWord : markWord(mark, kind, t),
       }),
       when: timeOf(m.kind, m.day, m.minute),
+      step: stepOf(m, t, now, (minute) => timeOf(m.kind, m.day, minute).at),
     };
   });
   const team = n.team ? [{ line: fill(t["me.elixir"], { team: n.team }), when: null }] : [];
@@ -208,6 +237,6 @@ export function neededLines(
     ...team,
     ...[...seats, ...marks]
       .sort((a, b) => a.day.localeCompare(b.day))
-      .map(({ line, when }) => ({ line, when })),
+      .map(({ line, when, step }) => ({ line, when, step })),
   ];
 }

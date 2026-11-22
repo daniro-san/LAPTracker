@@ -69,13 +69,23 @@ export function stOf(kind: string, minute: number, t: WorkspaceDictionary): stri
 
 /**
  * When an event is surely over (epoch ms), for "Ended" (issue 585): an Elixir Scramble window's own end;
- * any other entry has only a start, so the end of its server day. Between the start and this it is
- * "Started".
+ * a KvK, and its Raid prep roll call (`shield`), at its End read (`endRead`, the schedule's
+ * SNAPSHOT_AFTER, "16:15"); any other entry has only a start, so the end of its server day. Between the
+ * start and this it is "Started".
  */
-export function endOf(kind: string, day: string, minute: number | null, zone: string): number {
-  return kind === "elixir" && minute !== null
-    ? zonedInstant(day, minute + ELIXIR_MINUTES, zone)
-    : zonedInstant(addDays(day, 1), 0, zone);
+export function endOf(
+  kind: string,
+  day: string,
+  minute: number | null,
+  zone: string,
+  endRead: string,
+): number {
+  if (kind === "elixir" && minute !== null) return zonedInstant(day, minute + ELIXIR_MINUTES, zone);
+  if (kind === "kvk" || kind === "shield") {
+    const [h = 0, m = 0] = endRead.split(":").map(Number);
+    return zonedInstant(day, h * 60 + m, zone);
+  }
+  return zonedInstant(addDays(day, 1), 0, zone);
 }
 
 const UNITS = [
