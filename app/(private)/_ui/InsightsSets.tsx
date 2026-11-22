@@ -33,8 +33,8 @@ export function Names({ set, slug, label }: { set: MemberSet; slug: string; labe
       {set.people.map((p, i) => (
         <li key={`${p.uid}-${i}`} className="min-w-0">
           <a href={cardHref(slug, p)} className="text-link flex min-h-11 min-w-0 items-center">
-            {/* A long name wraps inside its column, never past the card's edge (issue 720). */}
-            <bdi translate="no" className="min-w-0 break-words">
+            {/* A long name wraps between words inside its column, never past the card's edge (issue 720, .name-fit). */}
+            <bdi translate="no" className="name-fit min-w-0">
               {p.name}
             </bdi>
           </a>

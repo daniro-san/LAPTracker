@@ -14,7 +14,7 @@ export interface NavProps {
   items: readonly NavItem[];
   /** The open destination; null on a page outside them (Alliance settings, Start here). */
   current: string | null;
-  /** The open view of the current destination (sidebar only). */
+  /** The open view of the current destination (the sidebar and, since issue 720, the rail). */
   view?: string;
   icons: Readonly<Record<string, ReactNode>>;
   /** A count beside a destination's icon (Home's waiting drafts), with its own screen-reader words. */
