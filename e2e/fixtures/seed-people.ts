@@ -94,7 +94,7 @@ export const KVK_ENTRY = 1;
 export const PROJECTS = ["phone", "wide", "iphone"];
 export const REPEATS = 3;
 /** The slot of a project and repeat (up to three repeats), for rows a test of each writes on its own. */
-const slotOf = (project: string, repeat: number) =>
+export const slotOf = (project: string, repeat: number) =>
   Math.max(0, PROJECTS.indexOf(project)) * REPEATS + (repeat % REPEATS);
 /**
  * The weekly cheese entry a roll call test marks: one per project and repeat (up to three repeats), so each
