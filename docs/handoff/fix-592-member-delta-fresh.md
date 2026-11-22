@@ -41,4 +41,4 @@
 
 What was missing from the task prompt? Nothing blocking. It did not say whether `usable` on the event alliance page (which also checks `failed`) should share the predicate. I folded `failed` into `comparable`.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/674
