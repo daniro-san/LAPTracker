@@ -99,4 +99,4 @@ Part of #585 (F3). Size M: a rule change across Follow-up, Insights, Home and Me
 
 What was missing from the task prompt? Whether Insights' names should stay: S1's criterion 22 said "instead of a list of its own", the task said "Insights links to the group", and the panel decided.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/655
