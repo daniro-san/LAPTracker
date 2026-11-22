@@ -27,6 +27,7 @@ import {
   SENTINELS,
   SHIELD_MARKED,
   signOutToken,
+  slotOf,
   switchWorkspaceOf,
   TOKENS,
   uidOf,
@@ -45,6 +46,15 @@ export function raidOf(now: Date, repeat: number) {
   const { raid } = calendarOf(now);
   const shift = (day: string) => iso(Date.parse(day) + 7 * (1 + (repeat % REPEATS)) * DAY_MS);
   return { day: shift(raid.day), week: shift(raid.week) };
+}
+/**
+ * The Calendar entry the calendar flow adds, deletes and brings back, on Moss Hollow's workspace: one per
+ * project and repeat, its own title on a Monday of its own 5 to 13 weeks ahead, which no other test reads.
+ */
+export function calendarAddOf(now: Date, project: string, repeat: number) {
+  const n = slotOf(project, repeat);
+  const day = iso(Date.parse(calendarOf(now).week) + 7 * (5 + n) * DAY_MS);
+  return { title: `Bear hunt drill ${project} ${repeat % REPEATS}`, day, time: "20:00" };
 }
 export const DAY_MS = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
