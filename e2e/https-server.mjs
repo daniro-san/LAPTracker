@@ -21,12 +21,20 @@ const made = spawnSync(
     "-nodes",
     "-keyout",
     "/dev/stdout",
+    "-config",
+    "/dev/stdin",
     "-subj",
     "/CN=localhost",
     "-days",
     "1",
   ],
-  { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  // Its own minimal config, so a runner's system openssl.cnf (whose includes may be missing) is never read.
+  {
+    encoding: "utf8",
+    env: { ...process.env, OPENSSL_CONF: "/dev/null" },
+    input: "[req]\ndistinguished_name = dn\n[dn]\n",
+    stdio: ["pipe", "pipe", "pipe"],
+  },
 );
 if (made.status !== 0 || !made.stdout.includes("PRIVATE KEY"))
   throw new Error(
