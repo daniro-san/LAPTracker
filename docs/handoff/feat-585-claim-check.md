@@ -18,13 +18,13 @@ Part of #585 (finding F15). Size S. Slice S6 of `.specs/features/585-one-worklis
 
 ## Deviations
 
-- None from S6. The analytics row's wording changed only to match the new label.
+- None from S6. The analytics row's wording changed only to match the new label. D142 quotes the claim's copy, so it gets a dated amendment (review of PR 643).
 
 ## Verified
 
 - `pnpm vitest related --run` on the changed files: 63 files, 318 tests passed.
 - Mutation check: with the asked line hidden and the link pointed at `/members`, two of the three new tests fail. Restored, all three pass.
-- The asked instant is 01:00Z on Fri 20 Nov, which is Thu 23:00 ST, so the date test fails if the code formats in UTC. The adversarial reviewer asked for this.
+- The asked instant is 01:00Z on Fri 20 Nov, which is Thu 23:00 ST, so the date test fails if `ToReview` formats the date it is given in UTC. It passes its own server-time formatter, so it does not cover the page passing `f.date` (`page.tsx`); production builds `f` from `SERVER_TZ`. The adversarial reviewer asked for this.
 - `pnpm check`: passed (prettier, eslint, tsc, vitest 1712 passed / 4 skipped, drift, i18n).
 - Persona check on invented data, at 360 px, before and after:
   - Alliance officer: adopt with changes. Adopted: merge the two "Asked" lines. Not adopted: the others are listed under Open issues.
