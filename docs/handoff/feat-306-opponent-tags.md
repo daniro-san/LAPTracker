@@ -34,7 +34,8 @@
 - **One successful read per (KvK, server), up to 3 attempts.** A `read` row is never claimed again. A `failed` row, or a `running` claim older than 2 minutes, can be claimed again only by the press, up to 3 attempts in all. A save never retries.
 - **The wrong server: the answer's `sid` must match.** The fixture shows the board answer carries `sid`. I first excluded alliances on our own newest board. I dropped that because it would also drop an alliance that has moved to the opponent's server; the `sid` check covers the same risk exactly.
 - **An alliance whose board tag cannot be read by tag is skipped**: no tag, a space, `/`, more than 12 characters. The next one by might takes its place.
-- **The read runs inside the save request.** It is not deferred, so the refreshed card shows the result. `fetchRanks` keeps its 30 s timeout. The route has no `maxDuration`, the same as before.
+- **The read runs inside the save request.** It is not deferred, so the refreshed card shows the result. `fetchRanks` keeps its 30 s timeout. The route sets no `maxDuration`, on purpose: Vercel's default function timeout is 300 s, far above the read's 30 s timeout (review of PR 717).
+- **The form keeps what was typed across a board read** (review of PR 717). The chips and "Other tags" are the form's state. A new suggestion moves any typed tag it contains onto its chip, ticked, and leaves the rest typed. The form resets only on another KvK or a save of its tags.
 - **No PostHog flag.** The suggestion is admin-only, and D91 covers public features.
 - **Persona check, run on the built code with invented data:**
   - **Owner as admin user, 360 px phone: approve.**
@@ -58,6 +59,7 @@
 - Each new test was shown to fail when its rule breaks:
   - a claim that always succeeds fails the one-read test and the attempt-cap test;
   - storing the board's labels unfiltered fails the top-15 test and the stored-fields test.
+- Review of PR 717 added tests: `lib/queries/admin-kvk.test.ts` (4, `canSuggest`), plus three in `lib/opponent-suggest.test.ts` (two saves at once make one call, the stale `running` reclaim, a missing `sid`). It also split the bundled route test into four. Seven mutations each failed at least one test: attempts `<=`, stale at exactly 2 minutes, no war check, no Start-read check, a claim that always succeeds, no stale reclaim, and a missing `sid` accepted.
 - No network call and no upstream call were made. The stored-fields test runs the real `fetchRanks` parser over `fixtures/ranks-325-20261104T201831Z/ranks.json`, with `fetch` mocked and `sid` rewritten to 326. It then checks that no player uid, avatar, badge or URL reaches the row.
 
 ## Open issues

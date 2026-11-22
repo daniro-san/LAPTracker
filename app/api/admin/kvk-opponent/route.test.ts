@@ -91,9 +91,13 @@ describe("POST /api/admin/kvk-opponent (D152)", () => {
       result: null,
     });
   });
+});
 
-  it("saves the typed tags when the board read fails, and Suggest tags answers 404 with no server", async () => {
-    const calls: number[] = [];
+describe("POST /api/admin/kvk-opponent: the ranks board suggestion (D155)", () => {
+  /** The board's calls, each failing as a fetch with no answer does. */
+  let calls: number[];
+  beforeEach(() => {
+    calls = [];
     const ctx = holder.ctx;
     if (!ctx) throw new Error("no context");
     ctx.internal = {
@@ -103,19 +107,38 @@ describe("POST /api/admin/kvk-opponent (D152)", () => {
         throw new Error("fetch failed");
       },
     };
-    expect((await save({ event_at: NEXT, suggest: true })).status).toBe(404);
+  });
+
+  it("saves the typed tags when the board read fails, and marks the read failed", async () => {
     const res = await save({ event_at: NEXT, server: 326, tags: ["AAA", "BBB"] });
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ server: 326, tags: ["AAA", "BBB"] });
     expect(calls).toEqual([326]);
     expect(await db.select().from(kvkSuggestions)).toMatchObject([{ status: "failed" }]);
-    // The press tries again; at the war it is refused with no call.
+  });
+
+  it("answers Suggest tags with 404 no_opponent and no call while no server is saved", async () => {
+    const res = await save({ event_at: NEXT, suggest: true });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ code: "no_opponent" });
+    expect(calls).toEqual([]);
+  });
+
+  it("reads the board again on Suggest tags after a failed read", async () => {
+    await save({ event_at: NEXT, server: 326, tags: [] });
     expect((await save({ event_at: NEXT, suggest: true })).status).toBe(200);
     expect(calls).toEqual([326, 326]);
+    expect(await db.select().from(kvkSuggestions)).toMatchObject([{ attempts: 2 }]);
+  });
+
+  it("answers Suggest tags at the war with 409 war_started and no call", async () => {
+    await save({ event_at: NEXT, server: 326, tags: [] });
+    const ctx = holder.ctx;
+    if (!ctx) throw new Error("no context");
     ctx.now = () => new Date(NEXT);
-    expect(await (await save({ event_at: NEXT, suggest: true })).json()).toEqual({
-      code: "war_started",
-    });
-    expect(calls).toHaveLength(2);
+    const res = await save({ event_at: NEXT, suggest: true });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ code: "war_started" });
+    expect(calls).toEqual([326]);
   });
 });

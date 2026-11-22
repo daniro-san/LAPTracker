@@ -91,9 +91,28 @@ function usePress() {
   return { busy, press, answer, clear: () => setAnswer(null), sheet };
 }
 
-/** The board's suggestion (D155): where it comes from, its chips (checked when no tags are saved, else when
- * saved), and "Suggest tags" while the board may be read. */
-function Suggestion({ c, busy, press }: { c: KvkChoice; busy: boolean; press: Press }) {
+/** Which chips are ticked and what stays in "Other tags": with no tags saved every chip, else the saved and
+ * typed ones; a typed tag the board suggests moves onto its chip. */
+function split(chips: string[], saved: string[], typed: string[]) {
+  const picked = chips.filter((x) => saved.length === 0 || saved.includes(x) || typed.includes(x));
+  return { picked: new Set(picked), text: typed.filter((x) => !chips.includes(x)).join(" ") };
+}
+
+/** The board's suggestion (D155): where it comes from, its chips, and "Suggest tags" while the board may be
+ * read. The chips are the form's state, so a board read after a press keeps what was typed. */
+function Suggestion({
+  c,
+  busy,
+  press,
+  picked,
+  toggle,
+}: {
+  c: KvkChoice;
+  busy: boolean;
+  press: Press;
+  picked: Set<string>;
+  toggle: (tag: string) => void;
+}) {
   const chips = c.suggestion?.chips ?? [];
   return (
     <>
@@ -106,10 +125,9 @@ function Suggestion({ c, busy, press }: { c: KvkChoice; busy: boolean; press: Pr
               <li key={x.tag}>
                 <CheckField
                   variant="chip"
-                  name="pick"
-                  value={x.tag}
                   label={x.label}
-                  defaultChecked={c.tags.length === 0 || c.tags.includes(x.tag)}
+                  checked={picked.has(x.tag)}
+                  onChange={() => toggle(x.tag)}
                   disabled={c.locked}
                 />
               </li>
@@ -132,24 +150,30 @@ function Suggestion({ c, busy, press }: { c: KvkChoice; busy: boolean; press: Pr
 }
 
 function OpponentFields({ c, busy, press }: { c: KvkChoice; busy: boolean; press: Press }) {
-  const suggested = new Set(c.suggestion?.chips.map((x) => x.tag));
-  const others = suggested.size > 0 ? c.tags.filter((tag) => !suggested.has(tag)) : c.tags;
+  const chips = (c.suggestion?.chips ?? []).map((x) => x.tag);
+  const [state, setState] = useState(() => split(chips, c.tags, c.tags));
+  // A new board read (after a press or a save) merges what is typed into its chips: nothing typed is lost.
+  const [seen, setSeen] = useState(chips.join(" "));
+  if (seen !== chips.join(" ")) {
+    setSeen(chips.join(" "));
+    setState(split(chips, c.tags, tagsOf(state.text)));
+  }
+  const toggle = (tag: string) =>
+    setState((s) => {
+      const picked = new Set(s.picked);
+      if (!picked.delete(tag)) picked.add(tag);
+      return { ...s, picked };
+    });
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const server = Number(String(form.get("server") ?? "").trim());
-    // The checked chips in board order, then the other tags as typed; the route drops duplicates.
-    const picked = form.getAll("pick").map(String);
-    const tags = [...picked, ...tagsOf(String(form.get("tags") ?? ""))];
+    // The ticked chips in board order, then the other tags as typed; the route drops duplicates.
+    const tags = [...chips.filter((x) => state.picked.has(x)), ...tagsOf(state.text)];
     press({ event_at: c.at, server, tags });
   };
   return (
-    // Keyed by what the page read, so a refresh after a save or a board read shows the new defaults.
-    <form
-      key={`${c.at}|${c.suggestion?.line ?? ""}|${c.tags.join(" ")}`}
-      onSubmit={save}
-      className="grid gap-3 sm:max-w-md"
-    >
+    <form onSubmit={save} className="grid gap-3 sm:max-w-md">
       <Field label={t.server}>
         <input
           name="server"
@@ -162,13 +186,17 @@ function OpponentFields({ c, busy, press }: { c: KvkChoice; busy: boolean; press
           className={FIELD}
         />
       </Field>
-      <Suggestion c={c} busy={busy} press={press} />
-      <Field label={suggested.size > 0 ? t.suggest.other : t.tags}>
+      <Suggestion c={c} busy={busy} press={press} picked={state.picked} toggle={toggle} />
+      <Field label={chips.length > 0 ? t.suggest.other : t.tags}>
         <input
           name="tags"
           autoComplete="off"
           spellCheck={false}
-          defaultValue={others.join(" ")}
+          value={state.text}
+          onChange={(e) => {
+            const text = e.target.value;
+            setState((s) => ({ ...s, text }));
+          }}
           disabled={c.locked}
           className={FIELD}
         />
@@ -245,7 +273,8 @@ export function KvkForm({ choices }: { choices: KvkChoice[] }) {
           ))}
         </select>
       </Field>
-      <OpponentFields c={c} busy={busy} press={press} />
+      {/* Reset by another KvK or a save of its tags; a board read alone keeps what was typed. */}
+      <OpponentFields key={`${c.at}|${c.tags.join(" ")}`} c={c} busy={busy} press={press} />
       {c.server !== null && <ResultAndReads c={c} busy={busy} press={press} />}
       {answer && <Notice tone={answer.ok ? "ok" : "fail"}>{answer.text}</Notice>}
       {sheet}

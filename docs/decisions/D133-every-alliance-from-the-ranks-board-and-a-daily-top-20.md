@@ -100,3 +100,5 @@ A normal day before: about 21 for the daily read plus about 100 for OGs' squads.
 - **D130**: the request form lists every known alliance. An invite may be made for any known alliance. The roles' `[TAG]` and the address come from the board's tag.
 
 **Amendment 2026-11-22 (orchestrator, issue 509):** `isSameOriginJson` now lives in `lib/same-origin.ts` (no imports), not `lib/route.ts`; the public lookup route imports it from there and `lib/private/http.ts` re-exports it (#631).
+
+**Amendment 2026-11-22 (orchestrator, issue 306, D155):** `fetchRanks` may also read the KvK opponent's server, once per (KvK, server), only from `POST /api/admin/kvk-opponent` (a save of the server or the "Suggest tags" press), and it now returns the answer's `sid` as `RanksBoard.server`. Only alliance tags, names and might are kept, for /admin only. Every other use above is unchanged. See [D155](D155-opponent-tags-from-its-servers-ranks-board.md).

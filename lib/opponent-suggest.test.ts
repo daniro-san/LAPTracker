@@ -6,7 +6,7 @@ import { T0 } from "./collector.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { suggestTags } from "./opponent-suggest";
-import { saveOpponent } from "./repo/kvk";
+import { claimSuggestion, saveOpponent, SUGGEST_STALE_AFTER_MS } from "./repo/kvk";
 import { events, snapshots } from "./schema";
 import { kvkOpponents, kvkReads, kvkSuggestions } from "./schema-kvk";
 import { fetchRanks } from "./sources/internal";
@@ -71,6 +71,28 @@ describe("suggestTags (D155)", () => {
     expect(s.calls).toEqual([SERVER, 327]);
   });
 
+  it("makes one call when two saves of the same server claim it at once", async () => {
+    const s = stub((server) => board({ server }));
+    const outcomes = await Promise.all([
+      suggestTags(s, db, WAR, NOW, false),
+      suggestTags(s, db, WAR, NOW, false),
+    ]);
+    expect(outcomes.sort()).toEqual(["kept", "read"]);
+    expect(s.calls).toEqual([SERVER]);
+  });
+
+  it("claims a running read again on the press only once it is more than 2 minutes old", async () => {
+    // A claim whose request died before its answer: still running.
+    expect(await claimSuggestion(db, { eventAt: WAR, server: SERVER }, NOW, false)).toBe(true);
+    const s = stub((server) => board({ server }));
+    const after = (ms: number) => new Date(NOW.getTime() + ms);
+    expect(await suggestTags(s, db, WAR, after(SUGGEST_STALE_AFTER_MS), true)).toBe("kept");
+    expect(s.calls).toEqual([]);
+    expect(await suggestTags(s, db, WAR, after(SUGGEST_STALE_AFTER_MS + 1000), true)).toBe("read");
+    expect(s.calls).toEqual([SERVER]);
+    expect(await rows(db)).toMatchObject([{ status: "read", attempts: 2 }]);
+  });
+
   it("suggests the 15 alliances with the most might, skipping a tag the Start could not read", async () => {
     const labels = board().labels;
     labels.set(IDS[0] ?? 0, { tag: null, name: "No tag", badgeId: null });
@@ -110,6 +132,12 @@ describe("suggestTags (D155)", () => {
       NOW,
       false,
     );
+    expect(await rows(db)).toMatchObject([{ status: "failed", alliances: null }]);
+  });
+
+  it("treats a board that does not say its server as a failed read", async () => {
+    const s = stub(() => board({ server: null }));
+    expect(await suggestTags(s, db, WAR, NOW, false)).toBe("failed");
     expect(await rows(db)).toMatchObject([{ status: "failed", alliances: null }]);
   });
 

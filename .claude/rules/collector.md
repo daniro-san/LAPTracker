@@ -24,6 +24,6 @@ Invariants (docs/IMPLEMENTATION_PLAN.md §3.4, §3.7, Phase 3, "Logging guarante
 - [ ] Adapters branch on `response.status`, never `statusText` (empty over HTTP/2 on Node 26).
 - [ ] `User-Agent: laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)` on every request.
 
-`lib/sources/internal.ts` is unofficial and read-only: the ranks board (a cross-check, since D133 the daily tracked set and the public board numbers, and since D155 the KvK opponent's server once per KvK from /admin) and the `live: true` roster fallback. Never add a refresh call, never send Origin/Referer/cookies, never widen its use without an entry in docs/decisions/.
+`lib/sources/internal.ts` is unofficial and read-only: the ranks board (a cross-check, since D133 the daily tracked set and the public board numbers, and since D155 the KvK opponent's server: one successful read per (KvK, server), at most 3 attempts, from /admin only) and the `live: true` roster fallback. Never add a refresh call, never send Origin/Referer/cookies, never widen its use without an entry in docs/decisions/.
 
 Errors are classes (`QuotaExhaustedError`, `NotFoundError`, `NotLiveError`, ...); callers match with `instanceof`, never on message text.

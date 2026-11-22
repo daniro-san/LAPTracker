@@ -23,12 +23,14 @@ const canRetry = (
 
 export async function adminKvk(db: Db, next: Date, now: Date) {
   const times = await kvkEventTimes(db, next);
-  const opponents = await opponentsAt(db, times);
+  const [opponents, suggestions] = await Promise.all([
+    opponentsAt(db, times),
+    suggestionsAt(db, times),
+  ]);
   const reads = await opponentReads(
     db,
     opponents.map((o) => o.id),
   );
-  const suggestions = await suggestionsAt(db, times);
   return times.map((at) => {
     const opponent = opponents.find((o) => o.eventAt.getTime() === at.getTime()) ?? null;
     const suggestion = suggestions.find(
