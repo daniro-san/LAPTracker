@@ -18,6 +18,10 @@ export const cardEn = {
   "card.days.donations": "Donations",
   "card.days.average.one": "Average {v} · {n} day",
   "card.days.average.other": "Average {v} · {n} days",
+  // Owner, 2026-11-22 (#663): a "none" day counts as 0, so the line says how many there were.
+  "card.days.withNone": "{line}, of which {k} none",
+  "card.days.allNone.one": "None on 1 day",
+  "card.days.allNone.other": "None on all {n} days",
   "card.days.might": "Might {delta} since {date}",
   "card.days.mightSame": "Might unchanged since {date}",
   "card.days.early": "The last 7 days come with the first daily update.",
@@ -36,6 +40,11 @@ export const cardEn = {
   "card.followup.undone": "Undone.",
   "card.followup.undoChanged": "Could not undo: the notes changed since.",
   "card.followup.undoFailed": "Could not undo. Try again.",
+  // Issue 634: the Raid Shield block, from Friday's night check until KvK starts (server time).
+  "card.shield.head": "Raid Shield",
+  "card.shield.mark": "Raid prep: {mark}",
+  "card.shield.notRead": "Tracker: not read yet",
+  "card.shield.away": "Away on raid day",
 };
 
 type CardWords = Record<keyof typeof cardEn, string>;
@@ -57,6 +66,9 @@ export const cardPt: CardWords = {
   "card.days.donations": "Doações",
   "card.days.average.one": "Média {v} · {n} dia",
   "card.days.average.other": "Média {v} · {n} dias",
+  "card.days.withNone": "{line}, dos quais {k} sem nada",
+  "card.days.allNone.one": "Nada enviado em 1 dia",
+  "card.days.allNone.other": "Nada enviado nos {n} dias",
   "card.days.might": "Might {delta} desde {date}",
   "card.days.mightSame": "Might igual desde {date}",
   "card.days.early": "Os últimos 7 dias vêm com a primeira atualização diária.",
@@ -74,6 +86,10 @@ export const cardPt: CardWords = {
   "card.followup.undone": "Desfeito.",
   "card.followup.undoChanged": "Não foi possível desfazer: as notas mudaram desde então.",
   "card.followup.undoFailed": "Não foi possível desfazer. Tente de novo.",
+  "card.shield.head": "Escudo de raid",
+  "card.shield.mark": "Preparação do raid: {mark}",
+  "card.shield.notRead": "Tracker: ainda sem leitura",
+  "card.shield.away": "Ausente no dia do raid",
 };
 
 export const cardFr: CardWords = {
@@ -93,6 +109,9 @@ export const cardFr: CardWords = {
   "card.days.donations": "Dons",
   "card.days.average.one": "Moyenne {v} · {n} jour",
   "card.days.average.other": "Moyenne {v} · {n} jours",
+  "card.days.withNone": "{line}, dont {k} sans rien",
+  "card.days.allNone.one": "Rien sur 1 jour",
+  "card.days.allNone.other": "Rien sur les {n} jours",
   "card.days.might": "Might {delta} depuis le {date}",
   "card.days.mightSame": "Might inchangé depuis le {date}",
   "card.days.early": "Les 7 derniers jours arrivent avec la première mise à jour quotidienne.",
@@ -110,6 +129,10 @@ export const cardFr: CardWords = {
   "card.followup.undone": "Annulé.",
   "card.followup.undoChanged": "Impossible d’annuler : les notes ont changé depuis.",
   "card.followup.undoFailed": "Impossible d’annuler. Réessayez.",
+  "card.shield.head": "Bouclier de raid",
+  "card.shield.mark": "Préparation du raid : {mark}",
+  "card.shield.notRead": "Tracker : pas encore lu",
+  "card.shield.away": "Absent le jour du raid",
 };
 
 /** The card's four tabs, in their order; each one's name is `card.tab.<tab>`. */

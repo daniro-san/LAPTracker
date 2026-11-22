@@ -79,7 +79,12 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 592,
   },
   {
-    text: 'Decided #663: a "none" day counts as 0 in every average, and the line names the none days ("Average 400 · 6 days, 2 none"). Built in batch 4.',
+    text: 'PostHog "Discard client IP data" is on (checked 2026-11-22).',
+    issue: 592,
+    done: true,
+  },
+  {
+    text: 'Decided #663: a "none" day counts as 0 in every average, and the line names the none days ("Average 400 · 6 days, of which 2 none"). Built in batch 4.',
     issue: 663,
     done: true,
   },
@@ -119,10 +124,7 @@ export const ownerTodo: OwnerTodo[] = [
     text: "PostHog → Error tracking → Alerts: connect the admin Discord channel as a destination (paste its webhook there yourself), then ask Claude to send the error alert to it.",
     issue: 527,
   },
-  {
-    text: 'PostHog → Project settings: check that "Discard client IP data" is on. Nothing in the app uses a visitor\'s location, so keep it on.',
-    issue: 592,
-  },
+
   {
     text: "cron-job.org: on the /api/tick job, turn on Notify on failure by email.",
     issue: 527,
@@ -188,6 +190,18 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.57.0",
+    date: "2026-11-22",
+    title: "One average rule, and two fixes on the public alliance pages",
+    changes: [
+      'The member card, Me and Insights now average a member\'s days the same way: a "none" day counts as 0, and the line names those days ("Average 400 · 6 days, of which 2 none"). A week of only "none" days reads "None on all 7 days", never "Average 0". A day with no daily update is never counted.',
+      'An alliance\'s "Across events" table no longer shows a change in members against an event whose roster was stale; it shows a dash, as it already did for might and kills.',
+      'A name the tracker read wrong once is no longer shown as an alliance\'s former name: YAHO was read once as "PKM / POKEMON" on Nov 7 and as YAHO before and after. Real renames still show.',
+      "For whoever builds the site: lint, format and type checks keep a local cache, and the end-of-turn check runs only the tests a change touches, plus every guard test.",
+    ],
+    prs: [672, 674, 676, 677],
+  },
   {
     version: "v5.56.0",
     date: "2026-11-22",

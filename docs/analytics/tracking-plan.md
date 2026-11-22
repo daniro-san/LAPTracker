@@ -180,6 +180,8 @@ One dated line for each change in what a number means, newest last. The first th
 
 - 2026-11-22 (issue 585, batch 4, slice S2, D104, D140 and D73 amended): Follow-up's "How this list works" is closed on every visit, the first too, and the cookie `lap_ws_fu_help` is retired. No event or property changes. Read across this date (database, read-only, per workspace and week, no names): the share of Follow-up records that are not "Talked to them", and the share with a note (a fall would say officers miss that a name opens the panel); the share of "After KvK, offer help" with a record inside its week (should hold or rise). In masked session replays of an officer's first Follow-up views, count how many open the help. The same release words the end-of-day read "daily update" on the desk, Me and the officers' notification; no event, property or page changes with it. Remove: nothing.
 
+- 2026-11-22 (issue 585, batch 4, slice S1b, owner's decision on #663, D136, D139, D142 and D127 amended): the member card's and Me's averages count a "none" day as 0 and name it ("Average 400 · 6 days, of which 2 none"), as Insights already did. Nothing is tracked about them: no event or property carries an average, and the bars and lines are in `ph-no-capture` on Me. Add, change, remove: nothing. If officers report that the card's numbers "dropped", read it as the rule, not as less effort.
+
 ## Not tracked, on purpose
 
 - Who marked, saved, thanked or was thanked; any member's value; anything typed.

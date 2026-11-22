@@ -3,7 +3,7 @@
 // the time its figures are from, so the fallback reads as `10:00` without a word (07c S1). Under each
 // change, `since 10:00` gives the change inside the event, as on the player page (issue 191). The rank is
 // the ledger rank by might, moved event over event; kills and server ranks are under Details.
-import { rankDelta, type NameHistoryEntry } from "@/lib/compute";
+import { comparable, rankDelta, type NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { HistoryRow } from "@/lib/queries";
 
@@ -69,18 +69,9 @@ export const inEventMarked = (history: HistoryRow[]) =>
       e !== null && (fellWithLeavers(e.power, e.left) || fellWithLeavers(e.kills, e.left)),
   );
 
-function metrics(
-  r: HistoryRow,
-  prevMembers: number | null,
-  clock: Clock,
-  copy: Dictionary,
-): StatMetric[] {
+function metrics(r: HistoryRow, clock: Clock, copy: Dictionary): StatMetric[] {
   const l = copy.ledger;
   const vs = (figure: "power" | "kills" | "members") => inEventLine(r, figure, clock, copy);
-  const memberDelta =
-    r.isFresh && r.memberCount !== null && prevMembers !== null
-      ? r.memberCount - prevMembers
-      : null;
   return [
     {
       label: l.might,
@@ -99,8 +90,8 @@ function metrics(
     {
       label: l.members,
       value: r.memberCount,
-      delta: memberDelta,
-      base: prevMembers,
+      delta: r.step.members,
+      base: baseOf(r.memberCount, r.step.members),
       ...rosterNote(r, copy),
       ...vs("members"),
     },
@@ -119,7 +110,7 @@ function changes(r: HistoryRow, copy: Dictionary): string | null {
 }
 
 function rankPairs(r: HistoryRow, prev: HistoryRow | undefined) {
-  const canMove = prev !== undefined && prev.isFresh && r.isFresh;
+  const canMove = comparable(prev, r);
   const pair = (from: number | null | undefined, to: number | null): RankPair => ({
     before: from ?? null,
     after: to,
@@ -160,7 +151,7 @@ function toRow(
         {change && <span className="block text-xs">{change}</span>}
       </>
     ),
-    metrics: metrics(r, prev?.memberCount ?? null, clock, copy),
+    metrics: metrics(r, clock, copy),
     summary: (
       <FreshDots
         before={null}

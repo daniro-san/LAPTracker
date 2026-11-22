@@ -32,6 +32,7 @@ const row: HistoryRow = {
     power: null,
     kills: null,
     lv: null,
+    members: null,
     changed: { name: false, tag: false, alliance: false, lv: false },
   },
   joined: null,
@@ -51,6 +52,30 @@ describe("AcrossEvents", () => {
     const l = en.ledger;
     expect(heads).toEqual([l.event, l.might, l.kills, l.members]);
     expect(html).not.toContain(l.level);
+  });
+
+  it("shows no member change when the previous event's roster is stale (issue 592)", async () => {
+    const stale: HistoryRow = { ...row, isFresh: false, memberCount: 90 };
+    const next: HistoryRow = {
+      ...row,
+      eventId: 2,
+      eventAtUtc: new Date("2026-11-14T14:00:00Z"),
+      updatedAt: new Date("2026-11-14T14:00:00Z"),
+    };
+    const { prelude } = await prerender(
+      await AcrossEvents({
+        unionId: 7,
+        history: [stale, next],
+        clock: makeClock("en", "Etc/GMT+2"),
+      }),
+    );
+    const html = await new Response(prelude).text();
+    // The newest event's Members cell, from its label to the next cell's label: its change is the dash.
+    const cell = html.split(`sm:sr-only">${en.ledger.members}</span>`)[1]?.split("sm:sr-only")[0];
+    expect(cell).toContain("97");
+    expect(cell).toMatch(
+      /<span class="text-sm tabular-nums sm:block"><span class="text-ink\/70">—<\/span><\/span>/,
+    );
   });
 
   it("gives both times their day when the End falls on the day after the Start (issue 473)", async () => {

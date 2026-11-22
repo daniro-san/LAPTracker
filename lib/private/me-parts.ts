@@ -10,6 +10,8 @@ import { addDays, DAY_MS, hhmm, weekDays, weekdayIndex, mondayOf } from "./calen
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";
 import {
+  averageLine,
+  dayAverage,
   daysCard,
   DAY_METRICS,
   type DayCell,
@@ -35,15 +37,10 @@ function cellOf(days: readonly OwnDay[], day: string, metric: DayMetric): DayCel
   return numberOf(d.daily[FIELD[metric]]) ?? "none";
 }
 
-const averageOf = (cells: readonly (DayCell | "later")[]) => {
-  const numbers = cells.filter((c): c is number => typeof c === "number");
-  if (numbers.length === 0) return null;
-  return { v: Math.round(numbers.reduce((a, b) => a + b, 0) / numbers.length), n: numbers.length };
-};
-
 /**
  * This game week (Monday to Sunday, server days, holding `today`) as the card's day bars, each row with
- * the same row's average over the member's own last week beside it. Null before any read.
+ * the same row's average over the member's own last week beside it, both by the card's rule
+ * (`dayAverage`: a "none" day counts as 0 and the line names it). Null before any read.
  */
 export function weekCard(
   days: readonly OwnDay[],
@@ -65,14 +62,8 @@ export function weekCard(
     noData: t["me.week.noRead"],
     rows: card.rows.map((row) => {
       const later = cells(row.metric, week).map((c) => c === "later");
-      const last = averageOf(cells(row.metric, lastWeek));
       const show = row.metric === "donations" ? f.compact : f.number;
-      const line = last
-        ? fill(t[last.n === 1 ? "card.days.average.one" : "card.days.average.other"], {
-            v: show(last.v),
-            n: last.n,
-          })
-        : null;
+      const line = averageLine(dayAverage(cells(row.metric, lastWeek)), t, show);
       return {
         ...row,
         label: row.metric === "coins" ? t["me.week.coins"] : row.label,

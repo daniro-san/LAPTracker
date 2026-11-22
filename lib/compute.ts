@@ -110,6 +110,8 @@ export interface NameSighting {
   tag: string;
   name: string;
   at: Date;
+  /** Its order inside one event, where Before comes before After although both carry the event's time; `at` when absent. */
+  seenAt?: Date;
 }
 
 export interface NameHistoryEntry {
@@ -117,6 +119,28 @@ export interface NameHistoryEntry {
   name: string;
   firstSeen: Date;
   lastSeen: Date;
+}
+
+/**
+ * The sightings without the source's misreads. A misread is a (tag, name) seen in one snapshot only, while
+ * another name of the same alliance was seen both earlier and at the same time or later: a glitch, not a
+ * rename. For example, YAHO was read once as "PKM / POKEMON" on 2026-11-07 and as YAHO before and after.
+ * A rename seen once, in the newest snapshot, stays.
+ */
+export function withoutMisreads(rows: readonly NameSighting[]): NameSighting[] {
+  const key = (r: NameSighting) => JSON.stringify([r.tag, r.name]);
+  const time = (r: NameSighting) => (r.seenAt ?? r.at).getTime();
+  const count = new Map<string, number>();
+  for (const r of rows) count.set(key(r), (count.get(key(r)) ?? 0) + 1);
+  const misread = (r: NameSighting) => {
+    if (count.get(key(r)) !== 1) return false;
+    const t = time(r);
+    return rows.some(
+      (o) =>
+        key(o) !== key(r) && time(o) < t && rows.some((p) => key(p) === key(o) && time(p) >= t),
+    );
+  };
+  return rows.filter((r) => !misread(r));
 }
 
 /** Distinct (tag, name) pairs in order of first appearance, each with first and last sighting (§3.8). */
@@ -132,12 +156,14 @@ export function nameHistory(rows: readonly NameSighting[]): NameHistoryEntry[] {
   return [...byPair.values()];
 }
 
-/** One event's reference value (Phase 5e): `lv` is the player's level (alliance rows pass null, #181); players carry `unionId`. */
+/** One event's reference value (Phase 5e): `lv` is the player's level (alliance rows pass null, #181);
+ * `members` the alliance's member count (player rows pass null); players carry `unionId`. */
 export interface SeriesRow {
   isFresh: boolean;
   power: number | null;
   kills: number | null;
   lv: number | null;
+  members: number | null;
   name: string | null;
   tag: string | null;
   unionId: number | null;
@@ -147,8 +173,19 @@ export interface SeriesStep {
   power: number | null;
   kills: number | null;
   lv: number | null;
+  members: number | null;
   changed: { name: boolean; tag: boolean; alliance: boolean; lv: boolean };
 }
+
+/**
+ * Whether two rows may be compared: both exist, are fresh and did not fail.
+ * INVARIANT freshness.no-stale-delta: every delta, rank move and roster diff between two rows asks this.
+ */
+export const comparable = (
+  a: { isFresh: boolean; failed?: boolean } | null | undefined,
+  b: { isFresh: boolean; failed?: boolean } | null | undefined,
+): boolean =>
+  a != null && b != null && a.isFresh && b.isFresh && a.failed !== true && b.failed !== true;
 
 const diff = (a: number | null, b: number | null) => (a === null || b === null ? null : b - a);
 
@@ -159,11 +196,12 @@ const diff = (a: number | null, b: number | null) => (a === null || b === null ?
 export function seriesDeltas(rows: readonly SeriesRow[]): SeriesStep[] {
   return rows.map((row, i) => {
     const prev = i > 0 ? rows[i - 1] : undefined;
-    const both = prev !== undefined && prev.isFresh && row.isFresh;
+    const both = prev !== undefined && comparable(prev, row);
     return {
       power: both ? diff(prev.power, row.power) : null,
       kills: both ? diff(prev.kills, row.kills) : null,
       lv: both ? diff(prev.lv, row.lv) : null,
+      members: both ? diff(prev.members, row.members) : null,
       changed: {
         name: prev !== undefined && prev.name !== row.name,
         tag: prev !== undefined && prev.tag !== row.tag,

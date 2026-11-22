@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   changeDifference,
+  comparable,
   delta,
   killsTurnout,
   type Measured,
@@ -119,7 +120,19 @@ describe("nameHistory", () => {
   });
 });
 
-type Field = "power" | "kills" | "lv";
+type Field = "power" | "kills" | "lv" | "members";
+
+describe("comparable", () => {
+  it("is true only when both rows exist, are fresh and did not fail", () => {
+    const ok = { isFresh: true, failed: false };
+    expect(comparable(ok, { isFresh: true })).toBe(true);
+    expect(comparable(ok, { isFresh: false })).toBe(false);
+    expect(comparable({ isFresh: true, failed: true }, ok)).toBe(false);
+    expect(comparable(ok, { isFresh: true, failed: true })).toBe(false);
+    expect(comparable(undefined, ok)).toBe(false);
+    expect(comparable(ok, null)).toBe(false);
+  });
+});
 
 describe("seriesDeltas", () => {
   it("sums consecutive deltas to last − first when no row is stale", () => {
@@ -128,6 +141,7 @@ describe("seriesDeltas", () => {
       power: fc.nat({ max: 5_000_000_000 }),
       kills: fc.nat({ max: 100_000_000 }),
       lv: fc.nat({ max: 50 }),
+      members: fc.nat({ max: 100 }),
       name: fc.constantFrom("OldGrandmas", "OGs"),
       tag: fc.constantFrom("OGs", "OG"),
       unionId: fc.constantFrom(67111155, 67110320),
@@ -136,12 +150,27 @@ describe("seriesDeltas", () => {
       fc.property(fc.array(freshRow, { minLength: 1, maxLength: 26 }), (rows) => {
         const steps = seriesDeltas(rows).slice(1);
         const value = (i: number, f: Field) => rows.at(i)?.[f] ?? NaN;
-        for (const f of ["power", "kills", "lv"] as const) {
+        for (const f of ["power", "kills", "lv", "members"] as const) {
           const sum = steps.reduce((t, s) => t + (s[f] ?? NaN), 0);
           expect(sum).toBe(value(-1, f) - value(0, f));
         }
       }),
     );
+  });
+
+  it("gives no member change when either event's row is stale (issue 592)", () => {
+    const at = (isFresh: boolean, members: number): SeriesRow => ({
+      isFresh,
+      power: 1000,
+      kills: 50,
+      lv: null,
+      members,
+      name: "OldGrandmas",
+      tag: "OGs",
+      unionId: 67111155,
+    });
+    const steps = seriesDeltas([at(false, 90), at(true, 97), at(true, 95), at(false, 99)]);
+    expect(steps.map((s) => s.members)).toEqual([null, null, -2, null]);
   });
 });
 
