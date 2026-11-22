@@ -1,6 +1,6 @@
 # feat/insights-time-zones: a Time zones card on the officers' Insights
 
-The owner asked for this on 2026-11-22: "in the officers' Insights, something grouped by time zones, showing which time zones have more players, and what the server time is for those time zones, etc." Size M: a new Insights section and a new decision (D152). Planned with `/tlc-spec-lean` in `.specs/features/insights-time-zones/plan.md` (criteria, panel verdicts) and `checks.md`.
+The owner asked for this on 2026-11-22: "in the officers' Insights, something grouped by time zones, showing which time zones have more players, and what the server time is for those time zones, etc." Size M: a new Insights section and a new decision (D153). Planned with `/tlc-spec-lean` in `.specs/features/insights-time-zones/plan.md` (criteria, panel verdicts) and `checks.md`.
 
 ## Built
 
@@ -27,11 +27,11 @@ The owner asked for this on 2026-11-22: "in the officers' Insights, something gr
   - `lib/private/insights-zones.test.ts` (PGlite, 8 tests): grouping and order (no name or uid in the words), who counts, a summer-time split (Paris and Lagos across the EU change), a change before KvK with a tie named west to east, the reset and KvK in New York, Manila and Kiritimati, the next KvK never a running one, usual-hour ranges, and no zone.
   - `e2e/desk-insights.spec.ts`: the card on the seed and the add link to Members.
   - `e2e/fixtures/seed-facts.ts` (new) holds the seed's fact rows: the Troops rows moved out of `seed.ts` for its 300-line limit, plus `ZONE_FACTS` (seed-people.ts: k=0 and k=3 Manila, k=5 São Paulo).
-- **Docs.** D152, D139's dated amendment, and the README index line.
+- **Docs.** D153, D139's dated amendment, and the README index line.
 
 ## Decisions
 
-- Every choice the panel settled is in D152 and in the plan's Assumptions:
+- Every choice the panel settled is in D153 and in the plan's Assumptions:
   - groups by the offset at three instants;
   - west to east;
   - the card last;

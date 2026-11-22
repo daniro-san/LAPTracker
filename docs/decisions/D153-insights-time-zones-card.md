@@ -1,4 +1,4 @@
-## D152 — Insights' Time zones card: the members' recorded time zones grouped by offset, with the reset and KvK on their clocks, counts only (2026-11-22, owner's request, persona panel under the standing approval; amends D139)
+## D153 — Insights' Time zones card: the members' recorded time zones grouped by offset, with the reset and KvK on their clocks, counts only (2026-11-22, owner's request, persona panel under the standing approval; amends D139)
 
 Why: the owner asked (2026-11-22) for "in the officers' Insights, something grouped by time zones, showing which time zones have more players, and what the server time is for those time zones, etc." Officers plan events across UTC−8 to UTC+8, mostly on phones. Each member's time zone is an officer-entered fact (D80): it shows on that member's card and drives Members' "Within their usual hours at HH ST" filter, but nothing showed the alliance as a whole. Plan, criteria and the panel's verdicts: `.specs/features/insights-time-zones/plan.md`.
 
