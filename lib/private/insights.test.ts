@@ -187,9 +187,9 @@ describe("the Insights read (issue 489)", () => {
 
     const view = await insightsView(db, access, NOW, ZONE);
 
-    expect(view.kvk).toHaveLength(1);
-    expect(view.kvk[0]).toMatchObject({ members: 1, before: 20_000_000, after: 5_000_000 });
-    expect(view.kvk[0]?.help).toEqual([{ uid: 101, name: "P101" }]);
+    expect(view.kvk.events).toHaveLength(1);
+    expect(view.kvk.events[0]).toMatchObject({ members: 1, before: 20_000_000, after: 5_000_000 });
+    expect(view.kvk.events[0]?.help).toEqual([{ uid: 101, name: "P101" }]);
     // 101: 2 squads, seen 2 h ago; 102: 1 squad, 4 days ago; 103's only row is another alliance's.
     expect(view.squads).toMatchObject({ counts: [1, 1, 0], none: 1, fresh: [1, 0, 1] });
     // Fewer than 4 members with squads make no might groups.

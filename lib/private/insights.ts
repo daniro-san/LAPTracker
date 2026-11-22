@@ -18,7 +18,7 @@ import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
 import { awayUntil } from "./fact-fields";
 import { featureOn } from "./features";
-import { kvkOf, type KvkEvent } from "./insights-kvk";
+import { kvkOf, type KvkView } from "./insights-kvk";
 import {
   bandsOf,
   cameFrom,
@@ -75,8 +75,8 @@ export interface InsightsView {
     firstRead: string;
     newcomers: ReturnType<typeof newcomersOf>;
   } | null;
-  /** KvK cost and recovery: the newest scheduled events inside the reads, the newest first. */
-  kvk: KvkEvent[];
+  /** KvK cost and recovery: the newest scheduled events inside the reads, and why none may show yet. */
+  kvk: KvkView;
   /** Squads seen, counts only; null with the squads read turned off (D126). */
   squads: SquadsCoverage | null;
   /** Raid Shield history, the newest week first; null with the Raid Shield check turned off (D134). */
@@ -228,7 +228,7 @@ export async function insightsView(
       pulse: null,
       effort: null,
       flow: null,
-      kvk: [],
+      kvk: { events: [], waiting: null, readsFrom: null },
       squads: null,
       shield: null,
       labels: new Map(),
@@ -241,8 +241,9 @@ export async function insightsView(
   const today = serverDay(now, { SERVER_TZ: zone });
   const away = awayOf(newest, facts, today);
   const fridays = featureOn(access, "shield_check") ? shieldFridays(today, now, zone) : null;
-  // Events from the day before the oldest read: their End read may sit on that read's day.
-  const since = new Date(Date.parse(`${addDays(reads[0]?.day ?? newest.day, -1)}T00:00:00Z`));
+  // Events from the day before the oldest read (their End read may sit on that read's day), and one KvK
+  // week before it, so the card can say the KvK just before the reads is not shown.
+  const since = new Date(Date.parse(`${addDays(reads[0]?.day ?? newest.day, -8)}T00:00:00Z`));
   const [{ flow, labels }, events, sightings, passes] = await Promise.all([
     flowPart(db, access, reads, weeks, firstSeen, oldest, zone),
     scheduledEventMight(db, access.unionId, since),
@@ -254,7 +255,7 @@ export async function insightsView(
     pulse,
     effort: effortPart(reads, firstSeen, oldest, away),
     flow,
-    kvk: kvkOf(events, reads, zone, away),
+    kvk: kvkOf(events, reads, zone, away, now),
     squads: squadsOn
       ? squadsCoverageOf(
           newest.members.map((m) => m.uid),

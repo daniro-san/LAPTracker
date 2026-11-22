@@ -135,3 +135,9 @@ The issue's "74 of 98 at the coin cap" left out the members with no coin count. 
   - Tests: `lib/private/insights-kvk.test.ts` covers the Fridays, a check with no reading, a partial reading and a running morning. `lib/private/insights.test.ts` (PGlite) covers each week's counts over Friday's roster, a night-only week, a week with no check, another alliance's reading left out, and no card while the check is off.
 
 **Amendment (2026-11-21, issue 585):** the Raid Shield card is titled "Raid Shield check", each week is dated by its raid's Saturday ("Last raid, Sat, Nov 21: 89% seen with a shield at the morning check (night check: 29%)."), and its explanation is two sentences. See D137's amendment of that date.
+
+**Amendment (2026-11-21, issue 585): the KvK card says why it is empty.** On KvK Saturday at 22:35 ST an officer read "No KvK in these weeks has both a Start and an End read yet." as "nothing was recorded". The KvK's Start and End were read; the card was waiting for the 23:30 ST daily read, and the alliance's daily reads began after the KvK before it. `kvkOf` now also returns `waiting` (an event whose End is read with no daily read after it yet) and `readsFrom` (the first read's day, when a KvK before the reads has both reads). The page reads events from one KvK week before its reads to know the latter; such an event is still not shown. The card's top lines:
+
+- **Waiting, KvK day:** "Today's KvK is recorded: its Start and End reads are in. Its cost and recovery show here after tonight's daily read at 23:30 ST." Another day: "The KvK of Sat, Nov 21 is recorded: …after the next daily read at 23:30 ST." The time is `DAILY_ROSTER_AT`. It leads, and the last KvK's summary and help list stay below it.
+- **A KvK before the reads, none inside:** "This page's daily reads start on Tue, Nov 17, so earlier KvKs are not shown here. The next KvK shows here after the daily read at 23:30 ST on its day."
+- **No KvK at all:** the line above, unchanged.
