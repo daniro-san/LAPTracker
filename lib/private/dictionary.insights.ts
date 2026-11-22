@@ -3,9 +3,11 @@
 // a day with no read never counts, and every section says what it rests on. French puts a no-break space
 // before : ; ? !.
 import { insightsMoreEn, insightsMoreFr, insightsMorePt } from "./dictionary.insights-more";
+import { insightsZonesEn, insightsZonesFr, insightsZonesPt } from "./dictionary.insights-zones";
 
 export const insightsEn = {
   ...insightsMoreEn,
+  ...insightsZonesEn,
   "members.view.insights": "Insights",
   "insights.lead":
     "How the alliance is doing, from the daily updates. Nobody is ranked here, and a day with no daily update never counts.",
@@ -93,6 +95,7 @@ type InsightsWords = Record<keyof typeof insightsEn, string>;
 
 export const insightsPt: InsightsWords = {
   ...insightsMorePt,
+  ...insightsZonesPt,
   "members.view.insights": "Análises",
   "insights.lead":
     "Como a aliança está, pelas atualizações diárias. Ninguém é ranqueado aqui, e um dia sem atualização diária nunca conta.",
@@ -179,6 +182,7 @@ export const insightsPt: InsightsWords = {
 
 export const insightsFr: InsightsWords = {
   ...insightsMoreFr,
+  ...insightsZonesFr,
   "members.view.insights": "Analyses",
   "insights.lead":
     "Où en est l’alliance, d’après les mises à jour quotidiennes. Personne n’est classé ici, et un jour sans mise à jour quotidienne ne compte jamais.",

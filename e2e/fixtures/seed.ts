@@ -5,13 +5,12 @@
 // private roster fields, so a test can tell a leak, and whose it is, from any page or answer.
 import { createHash } from "node:crypto";
 
+import { factRows } from "./seed-facts";
 import { helpDays, needsHelpRows } from "./seed-help";
 import {
   ALLIANCES,
   AVATAR_SENTINEL,
   cheeseOf,
-  FACT_MEMBERS,
-  FACT_SEEDED,
   FILLERS,
   HEAVY_HIT,
   fillerNames,
@@ -321,17 +320,6 @@ function workspaceRows(): string[] {
   return lines;
 }
 
-/** Troops T10 for each member the member-facts test edits, saved by Lantern Keep's officer FACT_SEEDED.daysAgo days ago. */
-function factRows(cal: ReturnType<typeof calendarOf>): string[] {
-  const at = `${iso(cal.today - FACT_SEEDED.daysAgo * DAY_MS)}T12:00:00-02:00`;
-  const rows = Object.values(FACT_MEMBERS)
-    .flat()
-    .map((k) => `(${ALLIANCES.a.id}, ${uidOf("a", k)}, 'troopTier', 1, '${FACT_SEEDED.tier}', 'officer', 1, '${at}')`);
-  return [
-    `insert into member_facts (workspace_id, uid, field, version, value, source, written_by, written_at) values ${rows.join(", ")};`,
-  ];
-}
-
 /** The days of NEEDS_HELP's two records (seed-help.ts), from the seed's week. */
 export const needsHelpDays = (now: Date) => helpDays(calendarOf(now).week);
 
@@ -377,7 +365,7 @@ export function seedSql(now: Date): string {
     ...eventRows(cal.events),
     ...workspaceRows(),
     ...rollCallRows(cal),
-    ...factRows(cal),
+    ...factRows(cal.today),
     ...needsHelpRows(cal.week),
     "select setval('events_id_seq', 100), setval('snapshots_id_seq', 100), setval('workspaces_id_seq', 100), setval('workspace_users_id_seq', 100), setval('calendar_entries_id_seq', 100), setval('roll_calls_id_seq', 100);",
     "commit;",
