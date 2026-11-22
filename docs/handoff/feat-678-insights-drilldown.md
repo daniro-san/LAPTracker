@@ -83,4 +83,4 @@
 
 What was missing from the task prompt? That three of the inventoried sets (squads, origins, newcomers) are held as counts only by earlier owner decisions, which the owner's own words did not lift.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/688
