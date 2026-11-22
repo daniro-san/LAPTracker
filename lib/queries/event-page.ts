@@ -10,6 +10,7 @@ import {
   previousEventTotals,
   type EventSummary,
 } from "./events";
+import { eventMatchup } from "./kvk";
 import { allianceMovers, memberMovers } from "./movers";
 import { allianceNames } from "./names";
 import { eventRanks } from "./ranks";
@@ -19,7 +20,10 @@ import { memberTurnout, memberTurnoutSoFar } from "./turnout";
 /** The page's reads of one event, shared between requests (the page passes the public cache, D143): `key`
  * is the event's id and the section flags. `load` gets the connection to read with: a shared read can run
  * after this request's connection is closed. */
-type Shared = <T>(key: [number, boolean, boolean], load: (db: Db) => Promise<T>) => Promise<T>;
+type Shared = <T>(
+  key: [number, boolean, boolean, boolean],
+  load: (db: Db) => Promise<T>,
+) => Promise<T>;
 
 type Phases = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 
@@ -35,6 +39,8 @@ function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"]) {
 interface Sections {
   turnout: boolean;
   carried: boolean;
+  /** The KvK matchup (D152). */
+  matchup?: boolean;
 }
 
 /**
@@ -51,7 +57,7 @@ async function eventReads(db: Db, id: number, sections: Sections) {
   const turnoutRead = Promise.resolve(
     sections.turnout ? turnoutOf(db, id, detail.snapshots) : null,
   );
-  const [names, ranks, changes, members, turnout, carried, previous] = await Promise.all([
+  const [names, ranks, changes, members, turnout, carried, previous, matchup] = await Promise.all([
     allianceNames(db, unionIds),
     eventRanks(db, id),
     before && after
@@ -61,6 +67,7 @@ async function eventReads(db: Db, id: number, sections: Sections) {
     turnoutRead,
     sections.carried ? whoCarried(db, detail, turnoutRead) : null,
     previousEventTotals(db, detail),
+    sections.matchup ? eventMatchup(db, id) : null,
   ]);
   return {
     detail,
@@ -71,6 +78,7 @@ async function eventReads(db: Db, id: number, sections: Sections) {
     turnout,
     carried,
     previous,
+    matchup,
   };
 }
 
@@ -105,9 +113,11 @@ export async function getEventPage(
   // never read, so a crawl of made-up ids costs nothing.
   if (id === null || !events.some((e) => e.id === id)) return { events, homeId, page: null };
   const on = await sections;
-  const read = await shared([id, on.turnout, on.carried], (own) => eventReads(own, id, on));
+  const read = await shared([id, on.turnout, on.carried, on.matchup === true], (own) =>
+    eventReads(own, id, on),
+  );
   if (!read) return { events, homeId, page: null };
-  const { detail, members, turnout, carried } = read;
+  const { detail, members, turnout, carried, matchup } = read;
   const ranks = new Map(read.ranks);
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
@@ -121,6 +131,6 @@ export async function getEventPage(
   return {
     events,
     homeId,
-    page: { detail, names, ranks, changes, movers, turnout, carried, previous },
+    page: { detail, names, ranks, changes, movers, turnout, carried, previous, matchup },
   };
 }

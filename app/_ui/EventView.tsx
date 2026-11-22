@@ -28,6 +28,7 @@ import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { LiveSections, LiveStrip } from "./LiveProgress";
 import { requestClock, requestCopy, requestLocale } from "./locale";
+import { Matchup } from "./Matchup";
 import { allianceScope, memberScope } from "./mover-lists";
 import { Movers } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
@@ -228,6 +229,7 @@ export async function EventView({
   turnout,
   carried,
   previous,
+  matchup,
 }: Page & { events: Events; homeId: number | null }) {
   const now = new Date();
   const [clock, copy, locale, progress] = await Promise.all([
@@ -285,6 +287,7 @@ export async function EventView({
           clock={clock}
           copy={copy}
         />
+        {matchup && <Matchup data={matchup} endAt={detail.afterAt} />}
         <Movers scopes={moverScopes} />
         {progress && <LiveSections {...liveProps} progress={progress} placement="below" />}
         {turnout && <WhoFought eventId={detail.id} lists={turnout} />}

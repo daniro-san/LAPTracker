@@ -16,6 +16,7 @@ import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import type { Env } from "./env";
 import { refreshHeroCatalog } from "./heroes";
+import { opponentReserve } from "./kvk-reserve";
 import { createRunLogger, type LogData, type RunLogger } from "./logger";
 import { getDailyRead } from "./repo/daily-reads";
 import { insertRunLog } from "./repo/run-logs";
@@ -158,7 +159,10 @@ async function targetBatch(
     return { kind: "idle" };
   }
   // A workspace key funds none of our event reads: it keeps the safety margin only (D124).
-  const reserve = target.key ? SQUADS_SAFETY_MARGIN : squadsReserve(now, deps.env, TRACKED_COUNT);
+  // D152: the KvK opponent's calls still due, on its quota day only.
+  const reserve = target.key
+    ? SQUADS_SAFETY_MARGIN
+    : squadsReserve(now, deps.env, TRACKED_COUNT, await opponentReserve(db, now, deps.env));
   // Counted from before the claim and the catalog, so the whole batch stays well inside maxDuration.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deps.deadlineMs ?? SQUADS_BATCH_MS);

@@ -35,6 +35,11 @@ describe("the squads read's quota guard (D117)", () => {
   it("counts no samples when they are off", () => {
     expect(eventReserve(FRI_NIGHT, { ...CFG, SAMPLE_EVERY_MIN: 0 }, 20)).toBe(requiredQuota(20));
   });
+
+  it("keeps the KvK opponent's calls still due on its quota day only (D152)", () => {
+    expect(eventReserve(FRI_NIGHT, CFG, 20, 30)).toBe(KVK_READS + 30);
+    expect(squadsReserve(THU_NIGHT, CFG, 20, 30)).toBe(SQUADS_SAFETY_MARGIN);
+  });
 });
 
 describe("the main squad and its version (D117)", () => {

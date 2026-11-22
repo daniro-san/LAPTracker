@@ -29,9 +29,11 @@ import { sharedEvents, sharedRead } from "./public-reads";
 // The event's reads (detail, names, ranks, roster changes, movers, turnout, kill share) are one entry of the
 // public cache (D143, issue 538), shared until the next write: every run that claimed a row invalidates it.
 export const loadEventPage = cache(async (id: number | null) => {
-  const sections = Promise.all([isOn("war-turnout"), isOn("kill-vs-might")]).then(
-    ([turnout, carried]) => ({ turnout, carried }),
-  );
+  const sections = Promise.all([
+    isOn("war-turnout"),
+    isOn("kill-vs-might"),
+    isOn("kvk-matchup"),
+  ]).then(([turnout, carried, matchup]) => ({ turnout, carried, matchup }));
   return withPageDb((db) =>
     getEventPage(
       db,

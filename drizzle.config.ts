@@ -18,6 +18,7 @@ export default defineConfig({
     "./lib/schema-alliances.ts",
     "./lib/schema-shield.ts",
     "./lib/schema-push.ts",
+    "./lib/schema-kvk.ts",
   ],
   out: "./drizzle",
 });

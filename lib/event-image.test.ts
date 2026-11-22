@@ -105,6 +105,26 @@ describe("the event picture (D58)", () => {
     },
   );
 
+  it(
+    "adds the KvK block to the End's picture only, 106 px (2×: 212) taller, and none when a side counts no alliance (D152)",
+    { timeout: 40_000 },
+    async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("no network"));
+      const height = async (e: EventImageInput) => {
+        const png = await eventImage(e, DRAW);
+        return png && new DataView(png.buffer).getUint32(20);
+      };
+      const side = (counted: number) => ({ counted, might: -2_000_000_000, kills: 40_000_000 });
+      const kvk = { server: 326, us: side(14), them: side(12) };
+      const without = await height(input());
+      // Section 36 + 2 rows of 35, drawn at 2×.
+      expect(await height(input({ kvk }))).toBe((without ?? 0) + 2 * 106);
+      expect(await height(input({ kvk: { ...kvk, them: side(0) } }))).toBe(without);
+      const before = input({ phase: "before", alliances: BEFORE, before: [], beforeAt: null });
+      expect(await height({ ...before, kvk })).toBe(await height(before));
+    },
+  );
+
   it("gives null and logs no name when the picture cannot be drawn", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const clock = {

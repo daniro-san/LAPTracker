@@ -26,12 +26,13 @@ describe("internal.fetchAlliance", () => {
     mockFetch(respond(readFixture("v1-20261104T155902Z/alliance-67111155.json")));
     const fromV1 = await v1.fetchAlliance(67111155);
 
-    expect({ cached: internal.cached, quota: internal.quota }).toEqual({
+    expect({ cached: internal.cached, quota: internal.quota, sid: internal.sid }).toEqual({
       cached: null,
       quota: null,
+      sid: null,
     });
-    // Same keys and same value types; cached/quota are null on internal by design.
-    const comparable = (o: object) => ({ ...shape(o), cached: "-", quota: "-" });
+    // Same keys and same value types; cached, quota and sid (D152) are null on internal by design.
+    const comparable = (o: object) => ({ ...shape(o), cached: "-", quota: "-", sid: "-" });
     expect(comparable(internal)).toEqual(comparable(fromV1));
     expect(shape(internal.members[0] ?? {})).toEqual(shape(fromV1.members[0] ?? {}));
 

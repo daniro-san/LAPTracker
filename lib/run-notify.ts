@@ -17,6 +17,7 @@ import {
   type Notifier,
 } from "./notify";
 import { getEventDetail, memberTurnout } from "./queries";
+import { eventMatchup } from "./queries/kvk";
 import { rehearsalVerdict } from "./rehearsal";
 import type { Phase } from "./repo";
 import { setDiscordMessageId, type EventInfo } from "./repo/events";
@@ -67,6 +68,24 @@ async function endTurnout(
   });
 }
 
+/** The End picture's KvK block (D152): each side's Start to End, while the `kvk-matchup` flag is on; null
+ * otherwise, for the Start, or when the read fails (the picture goes without it). */
+async function endKvk(
+  db: Db,
+  eventId: number,
+  phase: Phase,
+  ctx: Pick<AppContext, "env" | "fetch">,
+) {
+  if (phase !== "after" || !(await flagsOf(ctx.env, ctx.fetch)).has("kvk-matchup")) return null;
+  const m = await eventMatchup(db, eventId).catch((error: unknown) => {
+    reportError(ctx, { route: "lib/run-notify.ts", kind: "notify.kvk_failed", error });
+    return null;
+  });
+  const { us, them } = m?.matchup ?? {};
+  if (!m || !us?.change || !them?.change) return null;
+  return { server: m.server, us: us.change, them: them.change };
+}
+
 async function notifyPublic(db: Db, s: Shared, ctx: Pick<AppContext, "env" | "fetch">) {
   const { event, phase, origin } = s.req;
   // getEventDetail reads real events only: the public message never sees a rehearsal.
@@ -81,7 +100,10 @@ async function notifyPublic(db: Db, s: Shared, ctx: Pick<AppContext, "env" | "fe
   const nextAt = phase === "before" && !event.manual ? event.afterAt : null;
   const beforeAt =
     phase === "after" ? (s.reports.find((r) => r.phase === "before")?.finishedAt ?? null) : null;
-  const turnout = await endTurnout(db, event.id, phase, detail, ctx);
+  const [turnout, kvk] = await Promise.all([
+    endTurnout(db, event.id, phase, detail, ctx),
+    endKvk(db, event.id, phase, ctx),
+  ]);
   // The picture (D58) needs this phase's rows; a failed run or an unread detail sends the text alone.
   const image =
     alliances && alliances.length > 0 && s.run.summary.status !== "failed"
@@ -97,6 +119,7 @@ async function notifyPublic(db: Db, s: Shared, ctx: Pick<AppContext, "env" | "fe
           alliances,
           before: before ?? [],
           turnout,
+          kvk,
         })
       : null;
   const id = await s.notifier.public(

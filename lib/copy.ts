@@ -12,6 +12,7 @@ import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
 import { errorsCopy } from "./copy-errors";
 import { flowCopy } from "./copy-flow";
+import { kvkCopy } from "./copy-kvk";
 import { liveCopy } from "./copy-live";
 import { mergeCopy } from "./copy-merge";
 import { splitCopy } from "./copy-split";
@@ -229,6 +230,8 @@ export const en = {
     membersTap: "Includes member changes: tap * for the split",
   },
   split: splitCopy,
+  /** The event page's KvK matchup (D152). */
+  kvk: kvkCopy,
   members: {
     search: "Member name",
     sort: "Sort",

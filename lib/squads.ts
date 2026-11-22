@@ -27,29 +27,45 @@ export type SquadsConfig = ScheduleConfig & Pick<Env, "SAMPLE_EVERY_MIN">;
 
 const utcDate = (at: Date) => at.toISOString().slice(0, 10);
 
-/**
- * The calls the scheduled event still needs on `now`'s quota day (a UTC day): its Before and After with
- * their reserve, and one quota call plus one read per alliance for every sample between them (D69). Zero
- * when the event does not fall on that UTC day or is over. The read of Friday 23:37 server time is
- * Saturday 01:37 UTC, so it spends from the KvK's own quota day.
- */
-export function eventReserve(now: Date, cfg: SquadsConfig, alliances: number): number {
+/** The scheduled event whose reads spend from `now`'s quota day (a UTC day), or null: none, or it is over. The
+ * read of Friday 23:37 server time is Saturday 01:37 UTC, so it spends from the KvK's own quota day. */
+export function eventOnQuotaDay(now: Date, cfg: ScheduleConfig) {
   const event = nextEvent(now, cfg);
-  if (event.afterAt <= now) return 0;
+  if (event.afterAt <= now) return null;
   const day = utcDate(now);
-  if (utcDate(event.beforeAt) !== day && utcDate(event.afterAt) !== day) return 0;
+  return utcDate(event.beforeAt) === day || utcDate(event.afterAt) === day ? event : null;
+}
+
+/**
+ * The calls the scheduled event still needs on `now`'s quota day: its Before and After with their reserve, one
+ * quota call plus one read per alliance for every sample between them (D69), and `opponentCalls`, the KvK
+ * opponent's calls still due (D152; 0 with no opponent saved, `opponentReserve`). Zero when the event does
+ * not fall on that UTC day or is over.
+ */
+export function eventReserve(
+  now: Date,
+  cfg: SquadsConfig,
+  alliances: number,
+  opponentCalls = 0,
+): number {
+  const event = eventOnQuotaDay(now, cfg);
+  if (!event) return 0;
   const every = cfg.SAMPLE_EVERY_MIN * 60_000;
   const span = event.afterAt.getTime() - event.beforeAt.getTime();
   const samples = every > 0 ? Math.max(0, Math.ceil(span / every) - 1) : 0;
-  return requiredQuota(alliances) + samples * (alliances + 1);
+  return requiredQuota(alliances) + opponentCalls + samples * (alliances + 1);
 }
 
 /**
  * What must remain after the squads read (INVARIANT squads.keeps-event-reserve): the safety margin, plus
  * the event's reads when the event falls on the same quota day.
  */
-export const squadsReserve = (now: Date, cfg: SquadsConfig, alliances: number): number =>
-  SQUADS_SAFETY_MARGIN + eventReserve(now, cfg, alliances);
+export const squadsReserve = (
+  now: Date,
+  cfg: SquadsConfig,
+  alliances: number,
+  opponentCalls = 0,
+): number => SQUADS_SAFETY_MARGIN + eventReserve(now, cfg, alliances, opponentCalls);
 
 /**
  * The day whose queue a batch reads at `now` (D132): the daily read of `now`'s quota day (`quotaDayRead`),

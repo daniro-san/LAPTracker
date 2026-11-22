@@ -12,6 +12,7 @@
 import { TRACKED_COUNT } from "../config/alliances";
 import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
+import { opponentReserve } from "./kvk-reserve";
 import { createRunLogger, type RunLogger } from "./logger";
 import { getDailyRead } from "./repo/daily-reads";
 import { insertRunLog } from "./repo/run-logs";
@@ -208,9 +209,15 @@ async function readMorning(
 ): Promise<Batch> {
   const { target, signal } = run;
   const q = { day: run.day, unionId: run.unionId };
+  // D152: the KvK opponent's calls still due, on its quota day only.
   const reserve = target.key
     ? SQUADS_SAFETY_MARGIN
-    : squadsReserve(deps.now(), deps.env, TRACKED_COUNT);
+    : squadsReserve(
+        deps.now(),
+        deps.env,
+        TRACKED_COUNT,
+        await opponentReserve(db, deps.now(), deps.env),
+      );
   const b: Batch = {
     calls: 0,
     read: 0,

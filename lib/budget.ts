@@ -22,22 +22,31 @@ export const MAX_RETRIES = 3;
 /** A read's attempts at most: the first call and its retries. */
 const ATTEMPTS_PER_READ = MAX_RETRIES + 1;
 
+/** The most alliance tags a KvK opponent has (D152): each is read once at the Start and once at the End. */
+export const MAX_OPPONENT_TAGS = 15;
+
 /**
  * Minimum `remaining` before a sample of `allianceCount` alliances (D69): the After's reserve
  * (`requiredQuota`) plus the sample's own worst case, its quota call and every read retried to the
  * limit (81 calls for 20). A sample that cannot leave the After its reserve is skipped, so the middle
- * samples always give way before the After could be starved.
+ * samples always give way before the After could be starved. `opponentReads`: the KvK opponent's End reads
+ * still due (D152), counted in the After's reserve; samples never read the opponent.
  * INVARIANT budget.samples-yield-to-after
  */
-export function sampleQuota(allianceCount: number): number {
-  return requiredQuota(allianceCount) + 1 + ATTEMPTS_PER_READ * allianceCount;
+export function sampleQuota(allianceCount: number, opponentReads = 0): number {
+  return requiredQuota(allianceCount + opponentReads) + 1 + ATTEMPTS_PER_READ * allianceCount;
 }
 
 /**
  * Minimum `remaining` before a daily read of `alliances` rosters (D60): its own reserve plus a whole
- * event run's, so a daily read never takes the quota a scheduled event needs that UTC day.
+ * event run's, so a daily read never takes the quota a scheduled event needs that UTC day; `opponentCalls`:
+ * the KvK opponent's calls still due on that day (D152, `opponentReserve`).
  * INVARIANT budget.daily-keeps-event-reserve
  */
-export function dailyReadQuota(alliances: number, eventAlliances: number): number {
-  return requiredQuota(alliances) + requiredQuota(eventAlliances);
+export function dailyReadQuota(
+  alliances: number,
+  eventAlliances: number,
+  opponentCalls = 0,
+): number {
+  return requiredQuota(alliances) + requiredQuota(eventAlliances) + opponentCalls;
 }

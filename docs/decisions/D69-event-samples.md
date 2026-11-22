@@ -43,3 +43,5 @@ Why: the owner wants charts of the busiest moments of an event (heatmaps, who fo
     - Who carried and kill share vs might share (D83): the members in both the Start and End rosters, as #271's `gained`.
     - The help lines say so (`ledger.liveStandingsHelp`, `ledger.livePulseHelp`, `ledger.carriedHelp`).
     - `memberGains` (`lib/queries/live.ts`) does this in SQL. Two numbers per row leave the database. Measured on event 263: 66 ms per cache miss.
+
+- **Amended 2026-11-22 (D152, issue 306).** A sample of an event with a KvK opponent keeps the opponent's End reads in the After's reserve: `sampleQuota(n, k) = requiredQuota(n + k) + 1 + 4n`, k the opponent's End reads still due (161 for 20 alliances and 15 due; 131 with none). Samples never read the opponent.
