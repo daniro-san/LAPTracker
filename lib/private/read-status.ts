@@ -6,7 +6,8 @@
 // - today's roster read failed, or is not in after its window closed: the cards keep the last numbers;
 // - the squads read (D132), while its feature is on and a key reads it (`squadsReader`): running, paused,
 //   done (for 30 minutes), stopped or skipped (until the quota day ends);
-// - the Raid Shield check (D137), while it is on: running, then done until KvK starts (shield-status.ts).
+// - the Raid Shield check (D137), while it is on: running, then done until KvK starts (shield-status.ts),
+//   with its way to Raid prep.
 import { getAppContext } from "../app-context";
 import { fill } from "../copy";
 import { dateWords } from "../date-words";
@@ -40,6 +41,8 @@ export interface StatusLine {
   keyCard?: true;
   /** When the line goes (ms): a finished read's, 30 minutes after it ended. */
   until?: number;
+  /** The shield line's way to the week's Raid prep, and how many it saw with a shield (sent as a bucket). */
+  raidPrep?: { href: string; on: number };
 }
 
 export interface ReadStatus {
@@ -145,7 +148,12 @@ function rosterLine(
 /** The Raid Shield check's line (D137): under way, or done until KvK starts. */
 const shieldLine = (s: NonNullable<Awaited<ReturnType<typeof shieldStatus>>>): Dated => ({
   at: s.at,
-  line: { id: "shield", text: s.text, tone: s.running ? "progress" : "quiet" },
+  line: {
+    id: "shield",
+    text: s.text,
+    tone: s.running ? "progress" : "quiet",
+    raidPrep: { href: s.href, on: s.on },
+  },
 });
 
 type Day = NonNullable<SquadsToday["day"]>;

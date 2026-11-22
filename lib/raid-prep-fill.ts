@@ -223,3 +223,46 @@ export async function fillRaidPrep(
   );
   return written.length;
 }
+
+/**
+ * The alliance's members and, of them, the uids away on the raid's Saturday (Friday `day` + 1), by the roll
+ * call's rule (D103), as Raid prep's fill leaves them out. The summary and the officers' notification
+ * (lib/push-uses.ts) both read them here, so their counts agree, and so does the desk's status bar
+ * (lib/private/shield-status.ts), which counts Raid prep's set: these members, the away ones left out.
+ */
+export async function membersOfRaid(
+  db: Db,
+  target: { unionId: number; workspaceId: number | null },
+  day: string,
+  zone: string,
+) {
+  const [roster, facts] = await Promise.all([
+    anyRoster(db, target.unionId),
+    awayFacts(db, target.workspaceId as number),
+  ]);
+  const members = (roster?.members ?? []).map((m) => ({ uid: m.uid, name: m.name }));
+  const saturday = addDays(day, 1);
+  const away = new Set(
+    members.filter((m) => awayOn(facts.get(m.uid), saturday, zone) !== null).map((m) => m.uid),
+  );
+  return { members, away };
+}
+
+/**
+ * The Raid prep roll call of the week holding Friday `day`: the week's KvK Calendar entry, else the one the
+ * tracker's fill added (D137), else the week's Roll call page. The status bar's shield line links it too.
+ */
+export async function raidPrepUrl(db: Db, ws: { id: number; slug: string }, day: string) {
+  const monday = mondayOf(day);
+  const sunday = addDays(monday, 6);
+  const cal = await calendarRows(db, ws.id, monday, monday, sunday);
+  const kvks = cal.entries.filter((e) => e.kind === "kvk");
+  const [kvk] = layOut(kvks, cal.rows, monday, sunday);
+  if (kvk) return `/w/${ws.slug}/roll-call/mark?entry=${kvk.entry.id}&week=${kvk.week}`;
+  const own = (await callsOfWeeks(db, ws.id, [monday])).find(
+    (c) => c.kind === "shield" && !c.archivedAt && c.day >= monday && c.day <= sunday,
+  );
+  return own
+    ? `/w/${ws.slug}/roll-call/mark?id=${own.id}`
+    : `/w/${ws.slug}/roll-call?week=${monday}`;
+}

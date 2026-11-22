@@ -17,6 +17,7 @@ import { serverDay } from "@/lib/schedule";
 import { AllianceWeekLine, allianceWeekParts } from "./AllianceWeekLine";
 import { LINK } from "./BoardText";
 import { checkInLink } from "./CheckInLine";
+import { HomeNotedLink } from "./HomeNotedLink";
 import { shareThanksProps, type ShareThanksProps, type ThanksSwitches } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
 
@@ -50,8 +51,8 @@ function SayThanks(props: {
 }
 
 /**
- * Follow-up's two numbers in Home's words (issue 585 slice 4): "12 members to look at this week · 4 already
- * noted by officers"; null when both are 0. Members keeps S1's line (weekCountLine).
+ * Follow-up's two numbers in Home's words (issue 585 slice 4): "12 members to look at this week" and "4
+ * already noted by officers" (null when 0); null when both are 0. Members keeps S1's line (weekCountLine).
  */
 export function followUpWords(
   counts: WeekCounts,
@@ -65,14 +66,18 @@ export function followUpWords(
     counts.toLook === 0
       ? t["home.followUp.nobody"]
       : fill(t[`home.followUp.toLook.${form(counts.toLook)}`], { n: counts.toLook });
-  if (counts.noted === 0) return head;
-  return `${head} · ${fill(t[`home.followUp.noted.${form(counts.noted)}`], { n: counts.noted })}`;
+  const noted =
+    counts.noted === 0
+      ? null
+      : fill(t[`home.followUp.noted.${form(counts.noted)}`], { n: counts.noted });
+  return { head, noted };
 }
 
 /**
- * Home's "Follow-up" card, near the top of the main column (issue 585 slice 4): the week's two numbers as
- * one link to Follow-up, or "Everyone looks fine this week."; nothing while the tab is off (D126) or before
- * the first daily update, when `followUp` is null.
+ * Home's "Follow-up" card, near the top of the main column (issue 585 slice 4): the week's two numbers, or
+ * "Everyone looks fine this week."; nothing while the tab is off (D126) or before the first daily update,
+ * when `followUp` is null. Two stacked links (drilldown batch C): the head to Follow-up, and "n already
+ * noted by officers ›" to its "Noted this week", which lists exactly those n.
  */
 export function HomeFollowUp(props: {
   slug: string;
@@ -91,9 +96,13 @@ export function HomeFollowUp(props: {
       {line === null ? (
         <p className="py-2">{t["members.checkinNone"]}</p>
       ) : (
-        <a href={`/w/${props.slug}/follow-up`} className={LINK}>
-          {line}
-        </a>
+        <div className="flex flex-col items-start">
+          <a href={`/w/${props.slug}/follow-up`} className={LINK}>
+            {line.head}
+            <span aria-hidden="true">&nbsp;›</span>
+          </a>
+          {line.noted && <HomeNotedLink slug={props.slug} n={followUp.noted} text={line.noted} />}
+        </div>
       )}
     </section>
   );

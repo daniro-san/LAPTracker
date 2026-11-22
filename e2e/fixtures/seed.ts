@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { factRows } from "./seed-facts";
 import { helpDays, needsHelpRows, selfReportRows } from "./seed-help";
 import {
+  ADDED_BY_HAND,
   ALLIANCES,
   AVATAR_SENTINEL,
   cheeseOf,
@@ -374,6 +375,8 @@ export function seedSql(now: Date): string {
     ...eventRows(cal.events),
     ...workspaceRows(),
     ...rollCallRows(cal),
+    // ADDED_BY_HAND, a minute before the seed and one second apart, each already matched to their member.
+    `insert into pending_members (workspace_id, name, name_key, created_by, created_at, matched_uid, matched_at) values ${ADDED_BY_HAND.map((name, i) => `(${ALLIANCES.a.id}, ${q(name)}, ${q(name.toLowerCase())}, 1, now() - interval '${60 - i} seconds', ${uidOf("a", ALLIANCES.a.names.indexOf(name))}, now())`).join(", ")};`,
     ...factRows(cal.today),
     ...needsHelpRows(cal.week),
     "select setval('events_id_seq', 100), setval('snapshots_id_seq', 100), setval('workspaces_id_seq', 100), setval('workspace_users_id_seq', 100), setval('calendar_entries_id_seq', 100), setval('roll_calls_id_seq', 100);",

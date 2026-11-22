@@ -3,10 +3,13 @@
 // Home's "Recent activity" lines (D108, 2026-11-18). The first page comes from the server; "Show more"
 // reads the next page from /api/w/[slug]/activity with the cursor, "Show less" goes back to the first page
 // and puts the focus on "Show more", so the page does not jump. A run ("Rook added 6 entries to the
-// Calendar") is a <details> that opens its lines in place, without script; every control is 44 px.
+// Calendar") is a <details> that opens its lines in place, without script; every control is 44 px. A run of
+// new members added opens their names instead (drilldown batch C).
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+import { countBucket } from "@/lib/analytics/count-bucket";
+import { track } from "@/lib/analytics/events";
 import type { ActivityPageView, ActivityView } from "@/lib/private/desk-activity-words";
 
 import { collapsed, listOf, withPage } from "./activity-list";
@@ -19,7 +22,23 @@ const Ago = ({ line }: { line: Pick<ActivityView, "at" | "ago"> }) => (
   </span>
 );
 
-function Line({ line }: { line: ActivityView }) {
+/**
+ * "Rook added 3 new members" opens its names in name order, two columns at 360 px, each wrapping in full
+ * (drilldown batch C): the count's own array. Typed names with no card yet, so plain text.
+ */
+const Names = ({ names }: { names: string[] }) => (
+  <ul className="ph-no-capture mb-2 ml-1 grid grid-cols-2 gap-x-4 border-l-2 border-rule pl-3 sm:grid-cols-3">
+    {names.map((name, i) => (
+      <li key={`${name}-${i}`} className="flex min-h-11 min-w-0 items-center break-words">
+        <bdi translate="no" className="min-w-0">
+          {name}
+        </bdi>
+      </li>
+    ))}
+  </ul>
+);
+
+function Line({ line, onNames }: { line: ActivityView; onNames: (n: number) => void }) {
   if (line.run.length === 0) {
     return (
       <li className="py-2">
@@ -28,9 +47,15 @@ function Line({ line }: { line: ActivityView }) {
       </li>
     );
   }
+  const { names } = line;
   return (
     <li>
-      <details className="group">
+      <details
+        className="group"
+        onToggle={(e) => {
+          if (names && e.currentTarget.open) onNames(names.length);
+        }}
+      >
         <summary className="flex min-h-11 cursor-pointer list-none items-start gap-2 py-2 [&::-webkit-details-marker]:hidden">
           <span className="min-w-0 flex-1">
             {line.text}
@@ -40,17 +65,35 @@ function Line({ line }: { line: ActivityView }) {
             ▾
           </span>
         </summary>
-        <ul className="mb-2 ml-1 border-l-2 border-rule pl-3">
-          {line.run.map((one, i) => (
-            <li key={`${one.at}-${i}`} className="py-1 text-body-sm">
-              {one.text}
-              <Ago line={one} />
-            </li>
-          ))}
-        </ul>
+        {names ? (
+          <Names names={names} />
+        ) : (
+          <ul className="mb-2 ml-1 border-l-2 border-rule pl-3">
+            {line.run.map((one, i) => (
+              <li key={`${one.at}-${i}`} className="py-1 text-body-sm">
+                {one.text}
+                <Ago line={one} />
+              </li>
+            ))}
+          </ul>
+        )}
       </details>
     </li>
   );
+}
+
+/** A new-members line opened: `ws_drilldown_opened` once per page view, a bucket of the names only. */
+function useNamesOpened() {
+  const sent = useRef(false);
+  return (n: number) => {
+    if (sent.current) return;
+    sent.current = true;
+    track("ws_drilldown_opened", {
+      surface: "home",
+      kind: "new_members",
+      count_bucket: countBucket(n),
+    });
+  };
 }
 
 const TEXT_BUTTON =
@@ -67,6 +110,7 @@ export function ActivityFeed(props: {
   const [error, setError] = useState<string | null>(null);
   const moreButton = useRef<HTMLButtonElement>(null);
   const lessButton = useRef<HTMLButtonElement>(null);
+  const onNames = useNamesOpened();
 
   const more = async () => {
     const cursor = list.next;
@@ -99,7 +143,7 @@ export function ActivityFeed(props: {
     <>
       <ul className="mt-1 divide-y divide-rule">
         {[...list.first, ...list.more].map((line, i) => (
-          <Line key={`${line.at}-${i}`} line={line} />
+          <Line key={`${line.at}-${i}`} line={line} onNames={onNames} />
         ))}
       </ul>
       {/* From 1024, in the sticky margin that scrolls on its own, the two buttons stay in view at its

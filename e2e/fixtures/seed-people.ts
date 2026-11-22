@@ -44,6 +44,13 @@ export const ALLIANCES = {
   a: { id: 1, slug: "lnk", unionId: 900101, tag: "LNK", name: "Lantern Keep", names: A_NAMES },
   b: { id: 2, slug: "msh", unionId: 900202, tag: "MSH", name: "Moss Hollow", names: B_NAMES },
 } as const;
+
+/**
+ * Three members Lantern Keep's officer added by hand, as typed (drilldown batch C), each matched to their
+ * roster member, so Members and Follow-up show no extra card. Home's Recent activity says "Officer LNK
+ * added 3 new members" and opens these names in name order.
+ */
+export const ADDED_BY_HAND = [9, 3, 6].map((k) => A_NAMES[k] as string);
 export const FILLERS = [
   { unionId: 900303, tag: "IRT", name: "Iron Thistle" },
   { unionId: 900404, tag: "MNW", name: "Moonwake" },
