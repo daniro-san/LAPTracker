@@ -8,6 +8,7 @@ import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy } from "@/lib/copy";
+import { FEEDBACK_KINDS, FEEDBACK_STATUSES } from "@/lib/feedback-words";
 import { withPageDb } from "@/lib/page";
 import {
   FEEDBACK_SHOWN,
@@ -15,7 +16,6 @@ import {
   listFeedback,
   type FeedbackFilter,
 } from "@/lib/queries/admin-feedback";
-import { FEEDBACK_KINDS, FEEDBACK_STATUSES } from "@/lib/schema-feedback";
 import { fill } from "@/lib/words";
 
 const t = copy.admin.feedback;

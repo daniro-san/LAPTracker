@@ -3,14 +3,13 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
+import {
+  FEEDBACK_AREAS,
+  FEEDBACK_KINDS,
+  FEEDBACK_STATUSES,
+  FEEDBACK_TIERS,
+} from "./feedback-words";
 import { workspaces } from "./schema";
-
-export const FEEDBACK_AREAS = ["desk", "board"] as const;
-export const FEEDBACK_KINDS = ["idea", "problem", "good"] as const;
-export const FEEDBACK_STATUSES = ["new", "read", "issue", "dropped"] as const;
-export const FEEDBACK_TIERS = ["officer", "member"] as const;
-export type FeedbackKind = (typeof FEEDBACK_KINDS)[number];
-export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
 
 /**
  * One send, kept 180 days (purged by the daily job) and deleted with its workspace (D125). Never who sent it:

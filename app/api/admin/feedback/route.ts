@@ -3,9 +3,9 @@
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
+import { FEEDBACK_STATUSES } from "@/lib/feedback-words";
 import { setFeedbackStatus } from "@/lib/repo/feedback";
 import { errorResponse, withContext } from "@/lib/route";
-import { FEEDBACK_STATUSES } from "@/lib/schema-feedback";
 
 const body = z
   .object({ id: z.number().int().positive().max(2_147_483_647), status: z.enum(FEEDBACK_STATUSES) })

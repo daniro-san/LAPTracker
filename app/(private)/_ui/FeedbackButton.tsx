@@ -140,7 +140,7 @@ function Fields(props: {
       <Choice
         legend={w["feedback.kind"]}
         name="feedback-kind"
-        value={props.kind ?? ("" as Kind)}
+        value={props.kind}
         options={KINDS.map((k) => ({ value: k, label: w[`feedback.kind.${k}`] }))}
         onChange={props.onKind}
       />

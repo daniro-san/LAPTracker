@@ -190,13 +190,20 @@ describe("/admin pages, unlocked", () => {
       .values([sent("idea", "A month view, please", 2), sent("problem", "Send stays grey", 1)]);
     const all = await html(await FeedbackPage({ searchParams: Promise.resolve({}) }));
     expect(all).toContain(">Feedback</h1>");
+    // Both are listed before their order is compared (indexOf is -1 for a missing one).
+    expect(all).toContain("Send stays grey");
+    expect(all).toContain("A month view, please");
     expect(all.indexOf("Send stays grey")).toBeLessThan(all.indexOf("A month view, please"));
     expect(all).toContain("/w/amber · desk · member · pt-BR");
-    const ideas = await html(
-      await FeedbackPage({ searchParams: Promise.resolve({ kind: "idea" }) }),
-    );
+    // Each kind filter keeps its own item and leaves out the other.
+    const of = async (kind: string) =>
+      html(await FeedbackPage({ searchParams: Promise.resolve({ kind }) }));
+    const ideas = await of("idea");
     expect(ideas).toContain("A month view, please");
     expect(ideas).not.toContain("Send stays grey");
+    const problems = await of("problem");
+    expect(problems).toContain("Send stays grey");
+    expect(problems).not.toContain("A month view, please");
   });
 
   it("/admin/runs/<unknown id> still calls notFound", async () => {

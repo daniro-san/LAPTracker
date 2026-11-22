@@ -3,7 +3,8 @@
 import { eq, lt } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { feedback, type FeedbackStatus } from "../schema-feedback";
+import type { FeedbackStatus } from "../feedback-words";
+import { feedback } from "../schema-feedback";
 import { DAY_KEY_PREFIX } from "./auth-attempts";
 
 export type FeedbackRow = Omit<typeof feedback.$inferInsert, "id" | "status">;

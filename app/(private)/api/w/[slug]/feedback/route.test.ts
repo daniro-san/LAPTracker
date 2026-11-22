@@ -1,6 +1,7 @@
 // "Send feedback" (D157, issue 713): the door and the same-origin rule come first; then a send is stored
 // redacted and without its sender, a filled honeypot stores and counts nothing, and the day's limits hold at
 // their edges (5 per IP hash, 20 per workspace). Invented workspaces, people and text only.
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -10,6 +11,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { authAttempts, workspaces, workspaceUsers } from "@/lib/schema";
+import { workspaceFeatures } from "@/lib/schema-features";
 import { feedback } from "@/lib/schema-feedback";
 
 import { POST } from "./route";
@@ -106,6 +108,23 @@ describe("Send feedback: who may send (D157, D105)", () => {
       ["board", "member"],
       ["desk", "officer"],
     ]);
+  });
+
+  it("refuses a board send with 403 turned_off while the owner has the board off, and still takes the desk's", async () => {
+    const [alpha] = await db
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.slug, "alpha"));
+    await db
+      .insert(workspaceFeatures)
+      .values({ workspaceId: alpha?.id ?? 0, switches: { board: false } });
+    const board = { ...IDEA, area: "board", path: "/w/alpha/board" };
+    expect(await send("alpha:member", board)).toEqual({
+      status: 403,
+      body: { code: "turned_off" },
+    });
+    expect(await rows()).toEqual([]);
+    expect((await send("alpha:officer", IDEA)).status).toBe(200);
   });
 });
 

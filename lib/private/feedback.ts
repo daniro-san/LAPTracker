@@ -7,10 +7,10 @@ import { createHmac } from "node:crypto";
 import { z } from "zod";
 
 import type { Db } from "../db";
+import { FEEDBACK_AREAS, FEEDBACK_KINDS } from "../feedback-words";
 import { redactPrivate } from "../redact";
 import { DAY_KEY_PREFIX, recordFailure } from "../repo/auth-attempts";
 import { feedbackLimitKey, insertFeedback } from "../repo/feedback";
-import { FEEDBACK_AREAS, FEEDBACK_KINDS } from "../schema-feedback";
 import { WORKSPACE_LANGUAGES } from "./dictionary";
 
 /** The text's limit, in characters, as the sheet counts them. */

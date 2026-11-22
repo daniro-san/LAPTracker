@@ -3,14 +3,14 @@
 import { and, desc, eq, type SQL } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { workspaces } from "../schema";
 import {
-  feedback,
   FEEDBACK_KINDS,
   FEEDBACK_STATUSES,
   type FeedbackKind,
   type FeedbackStatus,
-} from "../schema-feedback";
+} from "../feedback-words";
+import { workspaces } from "../schema";
+import { feedback } from "../schema-feedback";
 
 /** The newest rows the page shows; at most 20 a day per workspace for 180 days exist (D149). */
 export const FEEDBACK_SHOWN = 200;

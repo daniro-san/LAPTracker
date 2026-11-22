@@ -90,6 +90,20 @@ Part of #713 (part H, the feedback form). Size M. Plan: `.specs/features/713-fee
 - `redactPrivate` catches only key-value shapes (`x: 512`). A position or online time written as prose is stored as typed. The sheet asks to leave them out. A narrow coordinate pattern for feedback text would be a follow-up.
 - One member switching IPs (mobile data, VPN) can use up the workspace's 20 a day for everyone (adversarial reviewer). A follow-up could count per session or keep part of the 20 for officers.
 - In a small alliance, the workspace, tier and language shown to the owner can point to one person. Only the owner reads them.
+- CLAUDE.md and `.claude/rules/private.md` do not yet name feedback text as the second stored free text that may hold a private value (after `app_errors.detail`). D157 and D115 say so. The edit is the owner's: an agent message cannot authorize a change to CLAUDE.md or harness rules. The sentence proposed for both: "Feedback text (`feedback.text`) may keep what a sender typed, for the owner's /admin/feedback only, after `redactPrivate`, and is purged after 180 days; it never goes to logs, analytics, AI or Discord (D157, owner, 2026-11-22)."
+
+## Review of PR #723 (2026-11-22)
+
+- Fixed, all seven warnings except the CLAUDE.md and rules edit above:
+  - /admin/feedback's order check asserts both items first; both kind filters have a positive control;
+  - `Choice` takes `null` for "nothing chosen", so there is no `"" as Kind` cast;
+  - a test for `403 turned_off` on a board send while the board is off;
+  - the closed lists moved to `lib/feedback-words.ts` (no Drizzle), imported by the schema, the page, the client and the routes;
+  - D115's amendment says what the redactor misses, matching D157;
+  - a D125 purge test: the feedback day counter goes with its workspace, another's stays;
+  - tick-level tests in `app/api/tick/daily-jobs.test.ts`: the night read deletes feedback past 180 days, and a failed purge shows "The 180-day feedback clean-up failed on Sun, Nov 8" in Needs you.
+- Each new test failed when its rule was broken (no purge call in the tick, no counter in the D125 purge, no board switch check), then the code was restored.
+- `pnpm vitest related --run`: 163 passed. `pnpm check`: exit 0 (1937 passed, 4 skipped; drift and i18n clean).
 
 ## Next
 

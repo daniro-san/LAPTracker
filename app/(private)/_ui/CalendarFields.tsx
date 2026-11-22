@@ -14,7 +14,8 @@ import type { Stale } from "./calendar-send";
 export function Choice<V extends string>(props: {
   legend: string;
   name: string;
-  value: V;
+  /** null: nothing chosen yet, so no option is checked. */
+  value: V | null;
   options: readonly { value: V; label: string }[];
   onChange: (value: V) => void;
 }) {

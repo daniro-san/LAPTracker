@@ -8,7 +8,7 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy } from "@/lib/copy";
-import { FEEDBACK_STATUSES, type FeedbackStatus as Status } from "@/lib/schema-feedback";
+import { FEEDBACK_STATUSES, type FeedbackStatus as Status } from "@/lib/feedback-words";
 
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
 
