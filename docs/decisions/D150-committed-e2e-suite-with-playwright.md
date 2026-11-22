@@ -61,3 +61,16 @@ Public pages and the members' board show none. A workspace's desk shows only its
 **Amendment 2026-11-22 (orchestrator, issue 477):** The global setup no longer refuses to start within 10 minutes of 02:00 UTC: it waits until 10 minutes after the day change, then seeds with the time after the wait. A required check must not fail on the clock; the first refusal blocked a docs-only PR at 01:58 UTC. The job's timeout is 35 minutes to fit the wait (at most 20).
 
 **Amendment 2026-11-22 (orchestrator, issue 592):** Prepare release no longer starts `ci` on `dev` (D29, 2026-11-22), so it dispatches only e2e there; the release PR into `main` gets its `check` from its own `pull_request` run of `ci`.
+
+**Amendment 2026-11-22 (orchestrator, issue 477, PR 632): four flows, and workspaces for the filler alliances.**
+
+- **Flows added** (`e2e/desk-flows.spec.ts`), so they leave "Not done here": sign-out (its own session; sign-in itself is still not covered), Follow-up's "Talked to them", member facts, and a feature switch (phone only).
+- **The seed:**
+  - The filler alliances (Iron Thistle `irt`, Moonwake `mnw`, Glass Wolves `glw`) now have a workspace each, with an officer and a session. The feature-switch test turns Thefts off and on in one of them per repeat.
+  - Lantern Keep's officer has 9 more sessions, one per project and repeat, which the sign-out test ends.
+  - Six Moss Hollow members have no quest points or donations on the last 3 reads.
+  - Six Lantern Keep members have Troops T10 saved 3 days ago.
+  - The invented people and these per-run slots are in `e2e/fixtures/seed-people.ts`; `seed.ts` re-exports them.
+- **Another workspace's names:** a private answer of any seeded workspace (all five) is now checked for every other seeded workspace's member names, with a positive control per workspace in `isolation.spec.ts`.
+- **Sign-out reads its answer:** `SignOutButton` now reads the logout answer to the end. Left unread, Chromium never finished the request, so the guard could not read it and failed the test as "unreadable answer". The sign-out test goes through the real button under the automatic guard, with no exemption. A sentinel planted in the logout answer fails it (`a.x in /api/w/lnk/logout`).
+- **Put back:** each writing test puts back what it changed, checked on screen. Follow-up records an Undo of the Talked; because the page offers Undo only until it is left, the test sends the same request the page sends, for the tap's own request id. Troops goes back to T10. Thefts is turned back on. The ended session cannot come back, so it has its own slot per project and repeat.

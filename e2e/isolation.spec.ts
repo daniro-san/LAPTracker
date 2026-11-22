@@ -15,6 +15,7 @@ import {
   SENTINELS,
   TOKENS,
   type Side,
+  WORKSPACES,
 } from "./fixtures/seed";
 import { expect, leaksIn, noError, sees, signIn, test } from "./fixtures/test";
 
@@ -278,5 +279,18 @@ test.describe("no answer carries a private roster field", () => {
     expect(leaksIn(publicPage, `name,joined\nEsk Vale,${s.joined.slice(0, 10)}`)).toContain(
       "a.joined_at",
     );
+  });
+
+  // Every seeded workspace, the filler alliances' too: a private answer of one that names another's member
+  // is a leak; its own members are not.
+  test("the scan sees another seeded workspace's member on each workspace's private answers", () => {
+    for (const w of WORKSPACES) {
+      const url = `${BASE_URL}/w/${w.slug}/settings`;
+      for (const o of WORKSPACES.filter((x) => x !== w)) {
+        const name = o.names[0] as string;
+        expect(leaksIn(url, `<p>${name}</p>`), `${o.slug} on ${w.slug}`).toContain(name);
+      }
+      expect(leaksIn(url, `<p>${w.names.join(", ")}</p>`), w.slug).toEqual([]);
+    }
   });
 });
