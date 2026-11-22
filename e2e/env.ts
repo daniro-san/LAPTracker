@@ -5,9 +5,12 @@
 
 export const APP_PORT = Number(process.env.E2E_APP_PORT ?? 3477);
 export const BRIDGE_PORT = Number(process.env.E2E_BRIDGE_PORT ?? 54377);
-// localhost, not 127.0.0.1: browsers keep the session's Secure __Host- cookie for localhost only, and the
+// localhost, not 127.0.0.1: Chromium keeps the session's Secure __Host- cookie for localhost only, and the
 // app checks a write's Origin against its own origin, which `next start` names localhost.
 export const BASE_URL = `http://localhost:${APP_PORT}`;
+/** The `iphone` project's server (e2e/https-server.mjs): WebKit on Linux sends a Secure cookie over https only. */
+export const HTTPS_PORT = Number(process.env.E2E_HTTPS_PORT ?? 3478);
+export const HTTPS_BASE_URL = `https://localhost:${HTTPS_PORT}`;
 
 /** A local Postgres; the global setup drops and recreates this database, so its name must contain "e2e". */
 export const DATABASE_URL =
