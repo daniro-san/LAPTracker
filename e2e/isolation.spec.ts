@@ -4,6 +4,7 @@
 // sentinels. Runs on the phone project only: none of it depends on the window.
 import { request, type APIRequestContext, type Page } from "@playwright/test";
 
+import { BLOCKED_ROSTER_KEYS } from "../lib/queries/blocked-keys";
 import { unzip } from "../lib/zip.test-helpers";
 import { BASE_URL } from "./env";
 import {
@@ -63,6 +64,14 @@ const PRIVATE_KEYS = new Set([
   "joinedAt",
   "avatarUrl",
 ]);
+
+/** Columns no exported CSV may have (D125, as lib/repo/workspace-data.ts NEVER drops them). */
+const EXPORT_NEVER = new Set<string>([...BLOCKED_ROSTER_KEYS, "avatar_url"]);
+/** The banned columns in an exported CSV's header (English files use ","; a BOM may lead). */
+const bannedColumns = (csv: string) =>
+  (csv.replace(/^\uFEFF/, "").split("\r\n")[0] ?? "")
+    .split(",")
+    .filter((column) => EXPORT_NEVER.has(column));
 
 /** Every key at any depth of a parsed JSON answer. */
 const keysOf = (v: unknown): string[] =>
@@ -252,10 +261,9 @@ test.describe("no answer carries a private roster field", () => {
     });
   }
 
-  // "Download our data" (D125): every file of the ZIP, scanned as the desk's own answer, so joined_at and
-  // the daily fields may be in it and x, y, online, last_online_at and the photo URL may not (D71, D22); no
-  // CSV has a column named after one of those, and no file names Moss Hollow's members or carries its
-  // sentinels.
+  // "Download our data" (D125 "Never in it"): no file of the ZIP carries any private roster field or the
+  // photo URL, by sentinel or as a key; no CSV has a column named after one of them; no file names Moss
+  // Hollow's members.
   test("the export ZIP", async () => {
     const path = `/api/w/${slug("a")}/data-export`;
     const ctx = await api(`${cookiesOf("a", "officer")[0]}; lap_ws_lang=en`);
@@ -267,24 +275,14 @@ test.describe("no answer carries a private roster field", () => {
     // The real file: the README's title names the alliance, the people file its officer, and the former
     // members' file the member who left at the last event.
     expect(files.get("README.txt")?.toString("utf8")).toContain(ALLIANCES.a.name);
-    expect(files.get("people.csv")?.toString("utf8")).toContain("Officer LNK");
+    expect(files.get("people.csv")?.toString("utf8")).toContain(officer);
     expect(files.get("former-members.csv")?.toString("utf8")).toContain(
       ALLIANCES.a.names[LEAVER] as string,
     );
-    const banned = new Set([...PRIVATE_KEYS].filter((k) => k !== "joined_at" && k !== "joinedAt"));
     for (const [name, data] of files) {
       const body = data.toString("utf8");
       expect(leaksIn(`${BASE_URL}${path}`, body), name).toEqual([]);
-      if (!name.endsWith(".csv")) continue;
-      const header =
-        body
-          .replace(/^\uFEFF/, "")
-          .split("\r\n")[0]
-          ?.split(",") ?? [];
-      expect(
-        header.filter((column) => banned.has(column)),
-        name,
-      ).toEqual([]);
+      if (name.endsWith(".csv")) expect(bannedColumns(body), name).toEqual([]);
     }
   });
 
@@ -335,9 +333,20 @@ test.describe("no answer carries a private roster field", () => {
       "b.active",
     );
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/settings`, daily)).toEqual([]);
+    // The export allows none of them (D125), the desk's own joined_at and daily fields included.
     const exported = `${BASE_URL}/api/w/${slug("a")}/data-export`;
-    expect(leaksIn(exported, `uid,joined\n1,${a.joined.slice(0, 10)}`)).toEqual([]);
+    expect(leaksIn(exported, `uid,joined\n1,${a.joined.slice(0, 10)}`)).toEqual(["a.joined_at"]);
     expect(leaksIn(exported, `uid,map\n1,${a.x}`)).toEqual(["a.x"]);
+    expect(leaksIn(exported, daily)).toEqual(
+      expect.arrayContaining(["a.active", "a.daily_tech", "daily_honor (as a key)"]),
+    );
+    // The CSV header check flags a column named after a private field, after the BOM and at any place.
+    expect(bannedColumns("\uFEFFid,online,name,joined_at\r\n1,true,Esk Vale,")).toEqual([
+      "online",
+      "joined_at",
+    ]);
+    expect(bannedColumns("\uFEFFid,daily_tech\r\n")).toEqual(["daily_tech"]);
+    expect(bannedColumns("\uFEFFid,name,joined\r\n")).toEqual([]);
   });
 
   // The scan's two weak spots the review found, each proved on its own: a private field's name as a key

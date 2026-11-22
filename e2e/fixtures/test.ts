@@ -6,7 +6,7 @@
 //    is `daily_honor`'s, whose seeded value is its cap). Public pages and the members' board show none.
 //    A workspace's desk shows only its own alliance's: joined_at, daily quest points, coins and donations on
 //    its pages (CLAUDE.md: the desk may; the Members copy for a spreadsheet carries joined_at; D71 keeps x, y,
-//    online and last_online_at out of copies and exports), and the map position and last online only in an
+//    online and last_online_at out of copies; the export ZIP holds none of the fields, D125), and the map position and last online only in an
 //    officer's member card (/api/w/<slug>/members/<uid>, read when the card opens). The member's own page
 //    (/w/<slug>/board/me) shows their own quest points, coins and donations (D142). No answer carries the
 //    photo URL, and a private answer of one seeded workspace never names another's members. The D76
@@ -79,8 +79,9 @@ function allowedAt(path: string): { side: Side; fields: string[] } | null {
     // D142: the member's own figures, for the link's uid only. Every member of an alliance has the same
     // seeded figures, so whose they are is not told apart here; another alliance's still is.
     if (path === `/w/${slug}/board/me`) return { side, fields: DAILY_FIELDS };
-    // The desk's pages and answers, the export ZIP's files too (/api/w/<slug>/data-export): D71 leaves x, y,
-    // online and last_online_at out of copies and exports, so joined_at and the daily fields remain.
+    // The export ZIP's files (D125 "Never in it"): no private roster field at all, the desk's own included.
+    if (path === `/api/w/${slug}/data-export`) return { side, fields: [] };
+    // The desk's pages and answers.
     if (new RegExp(`^(/api)?/w/${slug}(/|$)`).test(path) && !path.startsWith(`/w/${slug}/board`)) {
       return { side, fields: ["joined_at", ...DAILY_FIELDS] };
     }
