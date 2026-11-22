@@ -1,6 +1,6 @@
 # feat/585-words-1b: one average rule for the member card, Me and Insights (#585 batch 4, slice S1b, F19)
 
-Part of #585 (F19). Closes #663. The owner's decision on #663 (2026-11-22): "yes, go with the recommendation". Planned in `.specs/features/585-words/plan.md` (S1b, criteria 20 to 25) and `checks.md` (C17 to C21).
+Part of #585 (F19). Closes #663. The owner's decision on #663 (2026-11-22): "yes, go with the recommendation". Planned in `.specs/features/585-words/plan.md` (S1b, criteria 20 to 25) and `checks.md` (C18 to C22).
 
 ## Built
 
@@ -34,16 +34,16 @@ Part of #585 (F19). Closes #663. The owner's decision on #663 (2026-11-22): "yes
 
 ## Deviations
 
-- Plan S1b criterion 2 said "Me's last week". The PGlite test uses Me's this week, because that week is the same seven days as the card's on a Sunday. Last week's line is covered by `me-parts.test.ts` (C20).
+- Plan S1b criterion 2 said "Me's last week". The PGlite test uses Me's this week, because that week is the same seven days as the card's on a Sunday. Last week's line is covered by `me-parts.test.ts` (C21).
 
 ## Verified
 
 - `pnpm vitest related --run <changed files>`: 75 files, 375 tests passed.
 - Mutation checks, each reverted afterwards:
-  - "none" left out of `dayAverage`: C17 to C21 failed (5 tests);
-  - a no-update day counted as "none": C17, C18 and C20 failed;
-  - the all-"none" line removed: C17, C19 and C20 failed, printing "Average 0 · 7 days, of which 7 none";
-  - Insights alone treating "none" as no update: C17 and C21 failed.
+  - "none" left out of `dayAverage`: C18 to C22 failed (5 tests);
+  - a no-update day counted as "none": C18, C19 and C21 failed;
+  - the all-"none" line removed: C18, C20 and C21 failed, printing "Average 0 · 7 days, of which 7 none";
+  - Insights alone treating "none" as no update: C18 and C22 failed.
 - `pnpm test:e2e` (local, `next build`, own cluster on 54396, ports 3496/3497/54397): 51 passed, 3 skipped. No e2e assertion changes: the e2e seed sends a number every day, so its average lines read as before.
 - `pnpm check`: exit 0 (prettier, eslint, tsc, 1754 tests passed and 4 skipped, drift, i18n) after two fix rounds: prettier on three files, then the new test's complexity (its setup moved into two helpers).
 - `validate_checks.py`: 0 errors, 10 warnings (selector warnings like S1's).

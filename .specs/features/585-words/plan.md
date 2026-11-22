@@ -2,7 +2,7 @@
 
 **Approved**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (c)](#c-product-strategy-approve-with-changes); adversarial verdict: [Validation (d)](#d-adversarial-approve-with-changes). Covers S1. S1b (F19) reverses a rule D136 states and both verdicts asked for the owner's own yes; the owner gave it on 2026-11-22 (#663, see S1b).
 
-Size: L (more than one PR: seven slices across the desk, the members' board, Me and /admin). This plan covers every slice; **slice 1 (S1) is built in `feat/585-words-1`**. Part of #585 (findings F19, F25, F30, F31, F35, F43, F44, F45, F46, F47) and the "first-visit fold" item of #656.
+Size: L (more than one PR: seven slices across the desk, the members' board, Me and /admin). This plan covers every slice; **slice 1 (S1) is built in `feat/585-words-1`, slice 2 (S2) in `feat/585-words-2`**. Part of #585 (findings F19, F25, F30, F31, F35, F43, F44, F45, F46, F47) and the "first-visit fold" item of #656.
 
 ## Problem
 
@@ -132,7 +132,23 @@ Quick review, 2026-11-22, on invented data at 360 px (the rendered strings of cr
 
 ### S2: one word for the daily update, and Follow-up's help on one screen (F25, #656) (P2)
 
-"read" as a noun becomes "daily update" in UI copy (the glossary's UI word), with one Portuguese and one French word for it; Follow-up's "How this list works" is shortened so the "After KvK, offer help" title stays in the first 360 × 780 screen on a first visit. Criteria when the slice starts.
+"read" as a noun becomes "daily update" in UI copy (the glossary's UI word), with one Portuguese and one French word for it; Follow-up's "How this list works" is closed on every visit, so a first visit's first screen is a return visit's. Built in `feat/585-words-2`.
+
+**Approved (S2)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (g)](#g-s2-product-strategy-approve-with-changes); adversarial verdict: [Validation (h)](#h-s2-adversarial-approve-with-changes).
+
+Scope of the word: the end-of-day read of the alliance (glossary "daily read"). Not this word, kept: the Raid Shield check's "reading", the tracker's "squad reads", a KvK's "Start read" / "End read" and its "KvK read", the tracker's per-member "read" in the export's file list, the status bar's label "Reads from the tracker", and every verb ("could not be read", "Read from a screenshot", Insights' "the alliances we read"). Stored keys keep their names (`night_read`, `insights.pulse.noRead`, `daily_reads`). Out of scope: /admin and the owner's Discord lines (`lib/copy-admin*.ts`, `lib/copy-discord.ts`: English only, D48; /admin's words are S7's) and the public pages (their own reviewed copy, as in S1).
+
+Decisions amended (Copy rule): D104, D140 and D73 (the help and its cookie); D139, D142, D146, D148, D135, D132 and D106 (the word).
+
+**Acceptance Criteria**
+
+14. The system SHALL name the end-of-day read "daily update" in every desk, board and Me line that names it as a noun, PT-BR "atualização diária", FR "mise à jour quotidienne", and never "read", "reading", "leitura" or "relevé"/"lecture" for it
+    - Members' week line: "no daily update on Tue, Wed, not in the total"; Me: "No daily update that day: it never counts."; Insights: "Based on 3 daily updates this week: Mon, Tue, Thu."; the status bar: "Today’s daily update failed · the cards keep the last numbers" and "Today’s daily update is late · the cards keep the last numbers" (it said "roster"); Alliance settings: "They are read after the daily update."; a new member: "New · waiting for the daily update" and "Their notes attach to their player after the next daily update ({time} ST)." (they said "the nightly roster", PT "lista da noite", FR "liste de la nuit"; added in the PR review)
+15. The Insights week bars SHALL note a week's count as "{n} daily updates" ("1 daily update"), and a week with none as "no daily update"; never "{n} days", which 3 of 7 officers read as days played (S1b's panel)
+16. WHEN tonight's daily update and its retry both fail THEN the officer's notification SHALL read "Daily update failed" with "Tonight’s daily update and its retry failed. Nothing to do: the desk keeps the last numbers and tries again tomorrow."; the Notifications setting's label SHALL read "Daily update failed"; the stored use `night_read` is unchanged
+17. WHEN an officer opens Follow-up, on a first visit as on any other, THEN "How this list works" SHALL be closed, its summary "Tap a name to write down what they said. How this list works" in sight; one tap SHALL show D140's line, "Say hello, write down what they said, mark how it went." (it no longer repeats "Nothing is sent for you."), and the owner's line word for word: "These are notes for you. Nothing is sent and nobody is removed from the alliance."
+18. WHEN an officer opens Follow-up for the first time on a browser, at 360 × 780 in English, with one member under "Needs help" and one under "After KvK, offer help" THEN the "After KvK, offer help" title's box SHALL end above the tab bar's top, as on a return visit; in every language the "{n} to offer help after the KvK ↓" jump SHALL be in the first screen (in PT and FR the title is below the fold on every visit with this seed: the header and the jump wrap; a follow-up)
+19. The cookie `lap_ws_fu_help` SHALL no longer be read or written (a cookie already in a browser is left to expire; it holds no identifier)
 
 ### S3: Notices and Thefts words (F30, F43) (P2)
 
@@ -216,3 +232,35 @@ Adopted: split F19 out to S1b for the owner's yes; /admin's date forms to S7; "S
 ### (d) Adversarial: approve with changes
 
 Adopted: F19 waits for the owner (finding 1); S1b's criteria take findings 2 to 5; Me's squads line gets an `order` and its viewer-day dates from the server, so no ST form is formatted in the browser (6); the picture date is built on the server (7, criterion 4); machine formats excluded (8); criterion 8 limited to the zone row (9); a test that no PT or FR date-ending line prints ".." (10); the board e2e heading and D105 change in the same PR (11); date tests compare with `Intl` output, not typed literals, where ICU spacing may vary (13).
+
+### S2 validation
+
+Plan review, 2026-11-22, on invented data only (the e2e seed; no private field reached any persona). Screens: 360 × 780 screenshots of Follow-up from a production build, in EN, PT and FR, on a first and a return visit, and option B mocked in the page.
+
+### (e) S2 officer panel and member: approve with changes
+
+Six officers (20s to 50s; UK, Philippines, France, US, Ukraine, Switzerland; four read the desk in English, two in French) and a member (Brazil, Portuguese).
+
+First-glance test, "Who should I offer help to after this KvK?" (truth: the member in "After KvK, offer help"; the Needs help member above it has an officer's note about rebuilding a squad):
+
+| Screen                                     | Right | Partial | Wrong |
+| ------------------------------------------ | ----- | ------- | ----- |
+| Before: first visit, help open             | 4     | 1       | 1     |
+| Option B: open, the owner's line only      | 4     | 1       | 1     |
+| After (option A): first visit, help closed | 6     | 0       | 0     |
+
+- Help: A 4, C 2 (the owner's line also at the page's foot), B 0. 6 of 6: D140's line should drop "Nothing is sent for you." (the owner's line says it; "for you" reads as "on your behalf?" to a second-language reader).
+- The word: 3 approve, 4 approve with changes, 0 reject. Adopted: the week bar note "{n} daily updates", not "{n} days" (2 officers read "5 days" as the week's length or days left). Reported, not changed: "Daily update failed" can read as an app update at a glance (the line's second half clears it); Me's "nothing sent" in the "none" legend (unchanged wording, a follow-up).
+- SHOULD, follow-up: in FR the jump's "↓" wraps onto its own line.
+
+### (f) S2 PT-BR and FR copy experts: approve with changes
+
+Adopted: one term each, PT "atualização diária" (already in about eight lines) and FR "mise à jour quotidienne" (already in about seven; "relevé" is left to the KvK's Start and End and the squads, "mise à jour du jour" read like a typo); every PT and FR string of criterion 14; FR feminine agreement ("la dernière", "la première", "la plus récente"); "fora da conta" / "hors du compte" where "fica de fora" / "laissé de côté" did not agree with several days; « rien » in FR; the setting's label and the notification title the same string; EN "A member listed in the daily update …"; the late line aligned with the failed one; the trimmed D140 line ("… e marquem como foi.", "… et indiquez comment ça s’est passé."). Not adopted: "{n} dias" / "{n} jours" for the week bar note (officers and product strategy, criterion 15); "a day without one" in EN (kept "a day with no daily update", clearer to a second-language reader). Follow-ups: KvK's gender between Me and Insights, straight apostrophes in three EN KvK lines, FR "might" vs "puissance", "na última atualização" (ambiguous bare "update").
+
+### (g) S2 product strategy: approve with changes
+
+Option A: fixes the measured failure in EN, keeps the tap cue in sight and the owner's line word for word one tap away; B keeps the cookie and still fails; C prints the line twice where few officers scroll. Retiring the cookie is right; a first-time officer may tap "Talked to them" before reading "Nothing is sent", which Undo covers. No one-way door. MUSTs adopted: "{n} daily updates" (criterion 15); `night_read` keeps its key (criterion 16); the scope line above; D73 and D104 amended; the analytics plan says "change" with a dated line. Measure (read-only): the share of non-Talked records and of records with a note, the KvK group's share with a record in its week, and masked replays of first Follow-up views. Proposed follow-ups: the owner's line as a Follow-up card in the first-use steps; a shorter PT and FR head (a no-break space before "↓"), then the KvK first-glance test again in PT and FR.
+
+### (h) S2 adversarial: approve with changes
+
+Adopted: the amendments listed under the criteria (finding 1); the scratch screenshot spec and dump script are not committed (2); Alliance settings' "after the daily roster" takes the word, D132 amended (3); the late line in criterion 14 (4); criterion 18 defined by the title's box against the tab bar, proven by a screenshot, not a committed test (5); FR Insights' week bars checked at 360 px: the value and note wrap under the label, nothing overflows (6); "the alliances we read" kept as a verb (7); /admin and Discord lines listed as out of scope. No one-way door: `night_read`, the dictionary keys and the `use` property are unchanged; the retired cookie held no identifier.

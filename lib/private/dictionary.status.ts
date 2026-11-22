@@ -21,8 +21,8 @@ export const statusEn = {
   "status.squads.skipped": "Squads not read today: {why}",
   "status.why.quotaUnknown": "tracker limit unknown",
   "status.why.other": "the tracker did not answer",
-  "status.roster.failed": "Today’s roster read failed · the cards keep the last numbers",
-  "status.roster.late": "Today’s roster is late · the cards keep the last numbers",
+  "status.roster.failed": "Today’s daily update failed · the cards keep the last numbers",
+  "status.roster.late": "Today’s daily update is late · the cards keep the last numbers",
   "status.roster.squadsWait": "squads wait for it",
   "status.key.invalid": "Tracker key refused · paste a new key in Alliance settings",
   "status.key.reenter": "Tracker key: paste it again in Alliance settings",
@@ -52,8 +52,9 @@ export const statusPt: typeof statusEn = {
   "status.why.quotaUnknown": "limite do tracker desconhecido",
   "status.why.other": "o tracker não respondeu",
   "status.roster.failed":
-    "A leitura da lista de hoje falhou · os cartões mostram os últimos números",
-  "status.roster.late": "A lista de hoje está atrasada · os cartões mostram os últimos números",
+    "A atualização diária de hoje falhou · os cartões mostram os últimos números",
+  "status.roster.late":
+    "A atualização diária de hoje está atrasada · os cartões mostram os últimos números",
   "status.roster.squadsWait": "os esquadrões esperam por ela",
   "status.key.invalid":
     "Chave do tracker recusada · cole uma chave nova em Configurações da aliança",
@@ -87,8 +88,9 @@ export const statusFr: typeof statusEn = {
   "status.why.quotaUnknown": "limite du tracker inconnue",
   "status.why.other": "le tracker n’a pas répondu",
   "status.roster.failed":
-    "La lecture de la liste du jour a échoué · les cartes gardent les derniers chiffres",
-  "status.roster.late": "La liste du jour est en retard · les cartes gardent les derniers chiffres",
+    "La mise à jour quotidienne d’aujourd’hui a échoué · les cartes gardent les derniers chiffres",
+  "status.roster.late":
+    "La mise à jour quotidienne d’aujourd’hui est en retard · les cartes gardent les derniers chiffres",
   "status.roster.squadsWait": "les escouades l’attendent",
   "status.key.invalid":
     "Clé du tracker refusée · collez une nouvelle clé dans Réglages de l’alliance",

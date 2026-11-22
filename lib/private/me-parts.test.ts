@@ -26,7 +26,7 @@ const day = (d: string, active: unknown, power: number | null = 1000, listed = t
 });
 
 describe("a member's own week (D142)", () => {
-  it("says none, no data and not read yet apart, and puts their own last week beside it", () => {
+  it("says none, no data and no daily update yet apart, and puts their own last week beside it", () => {
     // Today is Thursday 2026-11-05; the newest read is Wednesday's.
     const days = [
       day("2026-10-27", 300),
@@ -38,7 +38,7 @@ describe("a member's own week (D142)", () => {
     const card = weekCard(days, "2026-11-05", t, f);
     const quests = card?.rows.find((r) => r.metric === "quests");
     expect(quests?.bars.map((b) => b.value)).toEqual(["600", "none", "400", "", "", "", ""]);
-    expect(quests?.bars[3]?.said).toBe("2026-11-05: not read yet");
+    expect(quests?.bars[3]?.said).toBe("2026-11-05: no daily update yet");
     // Owner, 2026-11-22 (#663): "none" counts as 0 and is named; days still to come never count.
     expect(quests?.average).toBe("This week: Average 333 · 3 days, of which 1 none");
     expect(quests?.last).toBe("Last week: Average 400 · 2 days");

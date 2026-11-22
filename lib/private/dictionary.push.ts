@@ -9,9 +9,9 @@ export const pushEn = {
   "push.use.shield": "Raid Shield check",
   "push.use.shield.help":
     "After the night check and the morning check: how many members were not seen with a shield yet.",
-  "push.use.night_read": "Night roster read failed",
+  "push.use.night_read": "Daily update failed",
   "push.use.night_read.help":
-    "When tonight’s roster read and its retry both fail. Nothing to do then: off unless you want to know.",
+    "When tonight’s daily update and its retry both fail. Nothing to do then: off unless you want to know.",
   "push.about": "Notify this device about:",
   "push.use.claim": "“This is me” to approve",
   "push.use.claim.help": "When a member asks to link their player.",
@@ -51,9 +51,9 @@ export const pushPt: Record<keyof typeof pushEn, string> = {
   "push.use.shield": "Conferência do Escudo de raid",
   "push.use.shield.help":
     "Depois da conferência da noite e da conferência da manhã: quantos membros ainda estão sem escudo visto.",
-  "push.use.night_read": "Leitura noturna da lista falhou",
+  "push.use.night_read": "Falha na atualização diária",
   "push.use.night_read.help":
-    "Quando a leitura da lista desta noite e a nova tentativa falham. Não há nada a fazer: desligado, a não ser que você queira saber.",
+    "Quando a atualização diária desta noite e a nova tentativa falham. Não há nada a fazer: desligado, a não ser que você queira saber.",
   "push.about": "Notificar este aparelho sobre:",
   "push.use.claim": "“Este sou eu” para aprovar",
   "push.use.claim.help": "Quando um membro indica qual jogador é.",
@@ -93,9 +93,9 @@ export const pushFr: Record<keyof typeof pushEn, string> = {
   "push.use.shield": "Vérification du Bouclier de raid",
   "push.use.shield.help":
     "Après la vérification du soir et la vérification du matin : combien de membres n’ont pas encore de bouclier vu.",
-  "push.use.night_read": "Échec de la lecture de nuit",
+  "push.use.night_read": "Échec de la mise à jour quotidienne",
   "push.use.night_read.help":
-    "Quand la lecture de la liste de ce soir et sa nouvelle tentative échouent. Rien à faire alors : désactivé, sauf si vous voulez le savoir.",
+    "Quand la mise à jour quotidienne de ce soir et sa nouvelle tentative échouent. Rien à faire alors : désactivé, sauf si vous voulez le savoir.",
   "push.about": "Notifier cet appareil pour :",
   "push.use.claim": "« C’est moi » à approuver",
   "push.use.claim.help": "Quand un membre choisit son joueur.",

@@ -14,8 +14,6 @@ import { inKvkGroup, notedLine, type FollowUpAction } from "@/lib/private/follow
 import type { Formats } from "@/lib/private/members-sheet";
 import type { AttackerGroup } from "@/lib/private/theft-groups";
 
-import { FollowUpHelp } from "./FollowUpHelp";
-
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
 
@@ -31,15 +29,14 @@ const weekRange = (week: string[], language: string) =>
 
 /**
  * The title, then the week's two numbers: who is left to look at and who was already noted, with jumps to
- * the noted and the thefts; then "How this list works" (issue 585 S3): what to do (issue 460), the D104
- * promise and how to open a member's panel, open on the first visit.
+ * the noted and the thefts; then "How this list works" (issue 585 S3): what to do (issue 460) and the D104
+ * promise, one tap away, its summary always saying how to open a member's panel. Closed on every visit
+ * (issue 585 batch 4 S2): open, it pushed the groups below a phone's first screen.
  */
 export function FollowUpHead(props: {
   data: FollowUpView;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
-  /** "How this list works" was shown open on this browser before; the first-use cards cover the page. */
-  help: { seen: boolean; covered: boolean };
 }) {
   const { data, t, language } = props;
   // "After KvK, offer help" (issue 585 S5): the members in it, not those under Needs help.
@@ -75,14 +72,18 @@ export function FollowUpHead(props: {
           </a>
         )}
       </div>
-      <FollowUpHelp
-        {...props.help}
-        words={{
-          tap: t["followup.howTap"],
-          head: t["followup.how"],
-          lines: [t["followup.todo"], t["followup.help"]],
-        }}
-      />
+      <details className="mt-1 text-body-sm">
+        <summary className="min-h-11 cursor-pointer py-2.5">
+          {t["followup.howTap"]}{" "}
+          <span className="font-semibold text-plum underline underline-offset-4">
+            {t["followup.how"]}
+          </span>
+        </summary>
+        <div className="space-y-1 pb-2 text-ink/80">
+          <p>{t["followup.todo"]}</p>
+          <p>{t["followup.help"]}</p>
+        </div>
+      </details>
     </>
   );
 }

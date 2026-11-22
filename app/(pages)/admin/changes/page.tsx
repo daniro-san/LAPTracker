@@ -1,5 +1,5 @@
 // /admin/changes: the owner's patch notes (lib/patch-notes.ts). Static: no database read and no fetch. The
-// owner's open steps first, then each release, the newest open and the rest closed <details> (nothing
+// owner's open steps first (the only place for them: a release names none of its own), then each release, the newest open and the rest closed <details> (nothing
 // hover-only). PR and issue numbers link to the public repository.
 import { Fragment } from "react";
 
@@ -89,7 +89,6 @@ function Release({ note, open, clock }: { note: PatchNote; open: boolean; clock:
       <summary className="tint-button flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2 [&::-webkit-details-marker]:hidden">
         <span className="font-subhead text-display-sm">{note.version}</span>
         <span className="text-body-sm text-ink/70">{clock.weekday(dayDate(note.date))}</span>
-        {note.needsYou && <Chip tone="seal">{t.releases.needsYou}</Chip>}
         <span
           aria-hidden="true"
           className="ml-auto transition-transform duration-150 group-open/note:rotate-180 motion-reduce:transition-none"
@@ -106,18 +105,6 @@ function Release({ note, open, clock }: { note: PatchNote; open: boolean; clock:
             </li>
           ))}
         </ul>
-        {note.needsYou && (
-          <div className="border-l-2 border-seal pl-3">
-            <h3 className="font-semibold">{t.releases.needsYou}</h3>
-            <ul className="mt-1 flex list-disc flex-col gap-2 pl-5">
-              {note.needsYou.map((n) => (
-                <li key={n} className="break-words">
-                  <Linked text={n} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         {note.prs && (
           <p className="flex flex-wrap items-center text-body-sm">
             <span className="mr-1 text-ink/70">{t.releases.prs}:</span>

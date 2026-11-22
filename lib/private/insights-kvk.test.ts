@@ -154,7 +154,7 @@ describe("KvK cost and recovery (issue 489)", () => {
     // Last week's KvK still shows below it.
     expect(kvk.events.map((e) => e.day)).toEqual(["2026-11-14"]);
     expect(kvkWords(kvk, "2026-11-20", f, "23:30").based).toEqual([
-      "Today's KvK is recorded: its Start and End reads are in. Its cost and recovery show here after tonight's daily read at 23:30 ST.",
+      "Today's KvK is recorded: its Start and End reads are in. Its cost and recovery show here after tonight's daily update at 23:30 ST.",
       "Last KvK, Sat, Nov 14: the alliance lost 20% of its might, and 50% of that is back.",
     ]);
   });
@@ -165,7 +165,7 @@ describe("KvK cost and recovery (issue 489)", () => {
 
     expect(kvk.waiting).toEqual({ day: "2026-11-21", today: false });
     expect(kvkWords(kvk, "2026-11-20", f, "23:30").based[0]).toBe(
-      "The KvK of Sat, Nov 21 is recorded: its Start and End reads are in. Its cost and recovery show here after the next daily read at 23:30 ST.",
+      "The KvK of Sat, Nov 21 is recorded: its Start and End reads are in. Its cost and recovery show here after the next daily update at 23:30 ST.",
     );
   });
 
@@ -187,7 +187,7 @@ describe("KvK cost and recovery (issue 489)", () => {
 
     expect(kvk).toEqual({ events: [], waiting: null, readsFrom: "2026-11-17" });
     expect(kvkWords(kvk, "2026-11-19", f, "23:30").based).toEqual([
-      "This page's daily reads start on Tue, Nov 17, so earlier KvKs are not shown here. The next KvK shows here after the daily read at 23:30 ST on its day.",
+      "This page's daily updates start on Tue, Nov 17, so earlier KvKs are not shown here. The next KvK shows here after the daily update at 23:30 ST on its day.",
     ]);
     // With no KvK at all, the line says none has both reads yet.
     expect(
