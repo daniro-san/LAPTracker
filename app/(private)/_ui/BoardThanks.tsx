@@ -93,12 +93,12 @@ export function BoardThanks(props: {
           {/* The ball of yarn rests in the corner, its thread running towards the signature. */}
           <div className="mt-3 flex items-end justify-between gap-3">
             <YarnCorner className="-mb-2 -ml-2 h-14 w-32 shrink-0 text-yarn" />
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               {/* The alliance's emblem, served by /img/badge/[id] (D22); nothing when none is known. */}
               {props.alliance?.badgeId != null && (
                 <AllianceBadge badgeId={props.alliance.badgeId} size="md" />
               )}
-              <p className="text-right font-display text-[1.125rem]">
+              <p className="min-w-0 text-right font-display text-[1.125rem] break-words">
                 {thanks.by ? (
                   <>
                     {before}

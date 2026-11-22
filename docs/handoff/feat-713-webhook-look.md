@@ -7,7 +7,7 @@
 ## Decisions
 - `git grep` found no post that sets `username` or `avatar_url` (lib/notify.ts says so in a comment), so the help line is true.
 - The badge id was already on `BoardAccess.alliance.badgeId` (from `alliances.badge_id`). The card did not show it. No new query, no new field served.
-- `BoardThanks` takes an optional `badgeId` prop; the board page passes `alliance?.badgeId ?? null`.
+- `BoardThanks` takes an optional `alliance` prop (the board's alliance label, holding `badgeId`); the board page passes it.
 - The badge is left out when there is none, rather than showing the drawn placeholder, so a card without a badge looks as before.
 
 ## Deviations
@@ -16,7 +16,8 @@
 ## Verified
 - `pnpm vitest related --run` on the four changed source files: 78 files, 411 tests passed.
 - New tests: `DiscordChannels.test.ts` (help line on all three cards), and one case in `BoardThanks.test.ts` (badge on the card, absent without an id).
-- `pnpm check`: see the PR.
+- `pnpm check`: exit 0 (after a rebase onto dev, orchestrator).
+- Review of PR 714: the signature row gets `min-w-0` and `break-words`, so a long officer name wraps at 360 px beside the badge; the help-line test no longer asserts a dictionary value.
 - The desk e2e has no flow for the Discord section or the board card, so none was changed.
 
 ## Open issues

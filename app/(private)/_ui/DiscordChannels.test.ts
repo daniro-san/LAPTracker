@@ -26,7 +26,6 @@ describe("the Discord channel cards", () => {
         ],
       }),
     );
-    expect(t["discord.channel.look"]).toContain("Server Settings → Integrations → Webhooks");
-    expect(html.split("Posts show this webhook").length - 1).toBe(3);
+    expect(html.split(t["discord.channel.look"]).length - 1).toBe(3);
   });
 });
