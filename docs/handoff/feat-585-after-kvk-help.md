@@ -28,8 +28,8 @@ Part of #585 (F3). Size M: a rule change across Follow-up, Insights, Home and Me
   - `lib/private/follow-up-kvk.test.ts`, new, 3 PGlite tests: the week and who is in the group; the noted rule across Monday, with Undo and Home's numbers; Insights' link.
   - `follow-up-groups.test.ts`: 1 new test.
   - `FollowUpWeek.test.ts`: 1 new test.
-  - `e2e/desk-kvk.spec.ts`, new, 1 test: the group, the jump, Insights' link.
-  - `e2e/desk.spec.ts`: Home's number with the member counted, and the Members head's number.
+  - `e2e/desk-kvk.spec.ts`, new, 2 tests: the group, the jump and Insights' link; and Members' head with the member counted (moved here in the merge with S4).
+  - `e2e/desk.spec.ts`: Home's Follow-up card (S4) with the member counted, through `toLookOf` (`e2e/fixtures/follow-up-list.ts`).
   - The e2e seed gives Lantern Keep's k=4 (Fennick Lowe) a 10M heavier loss at the last KvK and on every read after it (`HEAVY_HIT`, `hitOf`). `atEvent`, `eventTotals` and `rosterOf` include the loss.
 
 ## Decisions
@@ -94,7 +94,7 @@ Part of #585 (F3). Size M: a rule change across Follow-up, Insights, Home and Me
   - the member card reads the KvK, or says nothing about the week for such a member;
   - "{n} already offered help since {date}" under the group (product SHOULD);
   - measure, read-only, per workspace and KvK, no names: the share of the group with a record inside its week, by answer; the median time from the night read to the first record; members with records from two or more officers.
-- Merge note: PR 652 (S4) also edits `e2e/desk.spec.ts` and the spec files. This PR's `desk.spec.ts` change is the `TO_LOOK`/`followUpLine` constants and two assertions. Rebase whichever lands second and run `pnpm check`.
+- Merge note: PR 652 (S4) also edits `e2e/desk.spec.ts` and the spec files. Done: `dev` was merged in after S4; `desk.spec.ts` keeps S4's Home card with S5's count from `toLookOf`.
 - Plan change: none to `docs/IMPLEMENTATION_PLAN.md`.
 
 What was missing from the task prompt? Whether Insights' names should stay: S1's criterion 22 said "instead of a list of its own", the task said "Insights links to the group", and the panel decided.

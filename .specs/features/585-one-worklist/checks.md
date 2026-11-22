@@ -145,7 +145,7 @@ Proof: `grep -c "2026-11-22 (issue 585 batch 3, slice 5" docs/decisions/D104-fol
 Proof: `pnpm test:e2e e2e/desk-kvk.spec.ts`
 
 **C51** - Home's and Members' heads say "Follow-up: {new members + 2} to look at" (HEAVY_HIT and the Needs help member counted; + 1 on a Saturday), linked to Follow-up (AC 43, AC 47)
-Proof: `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance|Members: a card opens"`
+Proof: `pnpm test:e2e e2e/desk.spec.ts e2e/desk-kvk.spec.ts -g "Home shows the alliance|Members' head says"`
 
 **C52** - At 360 × 780 (e2e seed, Sun 22 Nov) a return visit shows the jump and the group's title in the first screen under Needs help; the group, the jump's landing, Insights' card in light and dark, and the panel at 1280 (AC 40, AC 41, AC 42, AC 44)
 Proof: walk - `s5-shots/followup-360-dark-fold.png`, `followup-360-light-fold.png` (first visit), `followup-360-light-jump.png`, `followup-360-dark-full.png`, `insights-kvk-360-light.png`, `insights-kvk-360-dark.png`, `followup-1280-panel.png`
