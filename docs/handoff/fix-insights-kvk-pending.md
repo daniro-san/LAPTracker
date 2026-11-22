@@ -97,4 +97,4 @@ Branch `fix/insights-kvk-pending` from `origin/dev` (e996cb5e). Size S: a bug fi
 - The insights page reads KvK events from 8 days before its first daily read. Only events from the day before that read are shown.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/604
