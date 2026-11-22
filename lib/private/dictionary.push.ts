@@ -26,6 +26,8 @@ export const pushEn = {
   "push.off": "Off for this device.",
   "push.saved": "Saved.",
   "push.failed": "Not saved. Try again.",
+  "push.serviceRefused":
+    "This browser’s push service refused. In Brave: Settings → Privacy and security → turn on “Use Google services for push messaging”, then restart Brave and try again.",
   "push.blocked":
     "Notifications are blocked for this site. Allow them in your browser’s or phone’s settings, then tap “Enable on this device” again.",
   "push.unsupported": "This browser can’t show notifications from the desk.",
@@ -37,6 +39,10 @@ export const pushEn = {
     "The Home Screen icon may ask you to sign in with Discord once more: it keeps its own sign-in.",
   "push.android":
     "Android: Chrome asks once. If you said no, allow notifications in the site’s settings (the icon beside the address).",
+  "push.timedOut":
+    "This browser didn’t answer. Restart it fully and try again; in Brave, also turn on “Use Google services for push messaging”.",
+  "push.brave":
+    "Brave: if “Enable on this device” says the push service refused, turn on “Use Google services for push messaging” in Settings → Privacy and security, then restart Brave.",
   "push.session":
     "They come while you are signed in to the desk. A sign-in lasts 7 days; after that, sign in again and they come back.",
   "push.hint": "Get notifications on this phone",
@@ -68,6 +74,8 @@ export const pushPt: Record<keyof typeof pushEn, string> = {
   "push.off": "Desativadas neste aparelho.",
   "push.saved": "Salvo.",
   "push.failed": "Não foi salvo. Tente de novo.",
+  "push.serviceRefused":
+    "O serviço de notificações deste navegador recusou. No Brave: Configurações → Privacidade e segurança → ative “Usar serviços do Google para mensagens push”, reinicie o Brave e tente de novo.",
   "push.blocked":
     "As notificações estão bloqueadas para este site. Permita nas configurações do navegador ou do celular e toque em “Ativar neste aparelho” de novo.",
   "push.unsupported": "Este navegador não consegue mostrar notificações da mesa.",
@@ -79,6 +87,10 @@ export const pushPt: Record<keyof typeof pushEn, string> = {
     "O ícone da Tela de Início pode pedir para entrar com o Discord mais uma vez: ele tem o próprio login.",
   "push.android":
     "Android: o Chrome pergunta uma vez. Se você disse não, permita as notificações nas configurações do site (o ícone ao lado do endereço).",
+  "push.timedOut":
+    "Este navegador não respondeu. Feche-o por completo e tente de novo; no Brave, ative também “Usar serviços do Google para mensagens push”.",
+  "push.brave":
+    "Brave: se “Ativar neste aparelho” disser que o serviço de notificações recusou, ative “Usar serviços do Google para mensagens push” em Configurações → Privacidade e segurança e reinicie o Brave.",
   "push.session":
     "Elas chegam enquanto você está conectado à mesa. O login vale por 7 dias; depois, entre de novo e elas voltam.",
   "push.hint": "Receba notificações neste celular",
@@ -110,6 +122,8 @@ export const pushFr: Record<keyof typeof pushEn, string> = {
   "push.off": "Désactivées sur cet appareil.",
   "push.saved": "Enregistré.",
   "push.failed": "Non enregistré. Réessayez.",
+  "push.serviceRefused":
+    "Le service de notifications de ce navigateur a refusé. Dans Brave : Paramètres → Confidentialité et sécurité → activez « Utiliser les services Google pour la messagerie push », redémarrez Brave et réessayez.",
   "push.blocked":
     "Les notifications sont bloquées pour ce site. Autorisez-les dans les réglages du navigateur ou du téléphone, puis touchez « Activer sur cet appareil » à nouveau.",
   "push.unsupported": "Ce navigateur ne peut pas afficher les notifications du bureau.",
@@ -121,6 +135,10 @@ export const pushFr: Record<keyof typeof pushEn, string> = {
     "L’icône de l’écran d’accueil peut vous demander de vous connecter avec Discord une fois de plus : elle garde sa propre connexion.",
   "push.android":
     "Android : Chrome demande une fois. Si vous avez refusé, autorisez les notifications dans les réglages du site (l’icône à côté de l’adresse).",
+  "push.timedOut":
+    "Ce navigateur n’a pas répondu. Redémarrez-le complètement et réessayez ; dans Brave, activez aussi « Utiliser les services Google pour la messagerie push ».",
+  "push.brave":
+    "Brave : si « Activer sur cet appareil » indique que le service de notifications a refusé, activez « Utiliser les services Google pour la messagerie push » dans Paramètres → Confidentialité et sécurité, puis redémarrez Brave.",
   "push.session":
     "Elles arrivent tant que vous êtes connecté au bureau. Une connexion dure 7 jours ; reconnectez-vous ensuite pour les recevoir à nouveau.",
   "push.hint": "Recevez les notifications sur ce téléphone",
