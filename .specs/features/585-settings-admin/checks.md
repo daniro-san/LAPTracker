@@ -22,7 +22,7 @@ Proof: `pnpm vitest run "app/(private)/_ui/settings-index.test.ts" -t "lists eve
 Proof: `pnpm vitest run "app/(private)/_ui/settings-index.test.ts" -t "needs a look"`
 
 **C4** - At 360 × 780 the index ends inside the first viewport for `ogs` in EN, FR and PT; at 1280 it is in the margin column (walk)
-Proof: walk - `585-2b/shots/after/settings--360-light-{en,fr,pt-BR}-fold.png`, `settings--1280-light-en-fold.png`
+Proof: walk - `585-2b/shots/after/settings--360-light-{en,fr,pt-BR}-fold.png`, `settings--1280-light-en-fold.png`; measured 2026-11-22 (`585-2b/e2e/walk2.mjs`, PR #620 review): the index ends at 633 px (EN), 686 px (PT) and 686 px (FR), the bottom tabs start at 723 px, so it fits in all three; every row is 44 px or taller, wrapped rows included (EN Discord 52; PT and FR Raid Shield check 52 and Discord 73)
 
 **C5** - Ticking or unticking changes only the draft and the count of changes; a switch ticked and unticked back is no change (AC 5, AC 6 example)
 Proof: `pnpm vitest run "app/(private)/_ui/settings-save.test.ts" -t "only what the officer changed"`
@@ -86,7 +86,8 @@ Proof: `pnpm vitest run lib/private/dictionary.test.ts -t "has the same keys"`
 ## Handoff
 
 - **Settled mid-build:** none
-- **Dispatched:** none - the orchestrator dispatches the Verifier
+- **Dispatched:** none by the builder; the orchestrator's /pr-review and Verifier on PR #620 returned Approve with comments (C4 not reproducible from code alone), fixed in the review commit
+- **Review fixes (PR #620):** the Raid Shield Save refreshes the page, so its index row updates (walk); `not_allowed` names the switch Save stopped at and keeps the rest of the draft (`settings-save.test.ts` "names the switch the owner turned off"); the save bookkeeping is pure (`afterSave`, `shownOn`; "shows what a Save stored"); `DiscordBot` draws exactly `botLines().keys`; the page uses `siteBotOff`; `discord.bot.unset` removed
 - **Boundary:** C1-C16 at the slice-1 commit
 - **Abandoned:** none
 - **Walked:** see the handoff `docs/handoff/feat-585-settings-admin.md`

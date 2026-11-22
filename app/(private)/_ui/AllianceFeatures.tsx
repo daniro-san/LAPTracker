@@ -13,7 +13,14 @@ import type { AllianceFeaturesView } from "@/lib/private/alliance-features";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 
 import { SaveRow } from "./SaveRow";
-import { featureChanges, sendChanges, type SwitchPost } from "./settings-save";
+import {
+  afterSave,
+  featureChanges,
+  refusalWords,
+  sendChanges,
+  shownOn,
+  type SwitchPost,
+} from "./settings-save";
 import { SIGNED_OUT } from "./SignedOut";
 
 /**
@@ -59,23 +66,20 @@ function useFeatureDraft(slug: string, view: AllianceFeaturesView, t: WorkspaceD
   const save = async () => {
     setBusy(true);
     setError(null);
-    const { code, unsent } = await sendChanges(changes, postSwitch(slug));
+    const result = await sendChanges(changes, postSwitch(slug));
     setBusy(false);
     // What went through is stored now; what was not sent stays in the draft as "Not saved yet".
-    const done = changes.slice(0, changes.length - unsent.length);
-    setSent({
-      view,
-      on: { ...through, ...Object.fromEntries(done.map((c) => [c.feature, c.on])) },
-    });
-    setDraft(Object.fromEntries(unsent.map((c) => [c.feature, c.on])));
-    setSaved(code === null);
+    const next = afterSave(changes, result, through);
+    setSent({ view, on: next.through });
+    setDraft(next.draft);
+    setSaved(result.code === null);
     // not_allowed: the owner changed it meanwhile; the refreshed page leaves it out.
     router.refresh();
+    const { code } = result;
     if (code === null) return;
-    if (code === SIGNED_OUT) return setError(SIGNED_OUT);
-    setError(t[code === "rate_limited" ? "switches.rateLimited" : "switches.failed"]);
+    setError(code === SIGNED_OUT ? SIGNED_OUT : refusalWords(code, result.unsent[0], t));
   };
-  const checked = (feature: string, on: boolean) => draft[feature] ?? through[feature] ?? on;
+  const checked = (feature: string, on: boolean) => shownOn(feature, on, draft, through);
   return { checked, tick, changes: changes.length, busy, saved, error, save };
 }
 

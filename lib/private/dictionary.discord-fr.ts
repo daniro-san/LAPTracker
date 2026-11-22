@@ -11,8 +11,6 @@ export const discordFr: typeof discordEn = {
   "discord.bot.tip":
     "Il vous faut la permission Gérer le serveur sur Discord. Le lien s’ouvre seulement sur le serveur de votre alliance.",
   "discord.bot.add": "Ajouter LAPTracker à Discord",
-  "discord.bot.unset":
-    "Discord n’est pas encore configuré sur ce site. Demandez au propriétaire du site.",
   "discord.check.head": "2. Vérifiez le bot et activez les commandes",
   "discord.check.lead":
     "Après avoir ajouté le bot, revenez ici et touchez Vérifier. Les commandes apparaissent alors sur n’importe quel message : appui long dessus (sur ordinateur, clic droit) → Applications.",

@@ -37,6 +37,9 @@ export const switchesEn = {
   "switches.name.export": "Download our data",
   "switches.rateLimited": "Too many changes just now. Wait 15 minutes, then try again.",
   "switches.failed": "That didn’t save. Try again.",
+  // Issue 585: Save stopped at a switch the site's owner turned off meanwhile.
+  "switches.notAllowed":
+    "Save stopped at {name}: the site’s owner no longer allows it, so it is gone from the list. The changes after it are not saved yet: tap Save again.",
 };
 
 export const switchesPt: typeof switchesEn = {
@@ -76,6 +79,8 @@ export const switchesPt: typeof switchesEn = {
   "switches.name.export": "Baixar nossos dados",
   "switches.rateLimited": "Mudanças demais agora. Espere 15 minutos e tente de novo.",
   "switches.failed": "Não foi salvo. Tente de novo.",
+  "switches.notAllowed":
+    "O salvamento parou em {name}: o dono do site não permite mais esse recurso, então ele saiu da lista. As mudanças depois dele ainda não foram salvas: toque em Salvar de novo.",
 };
 
 export const switchesFr: typeof switchesEn = {
@@ -116,4 +121,6 @@ export const switchesFr: typeof switchesEn = {
   "switches.rateLimited":
     "Trop de changements pour l’instant. Attendez 15 minutes, puis réessayez.",
   "switches.failed": "Ce n’est pas enregistré. Réessayez.",
+  "switches.notAllowed":
+    "L’enregistrement s’est arrêté à {name} : le propriétaire du site ne l’autorise plus, elle a donc quitté la liste. Les modifications suivantes ne sont pas encore enregistrées : touchez Enregistrer à nouveau.",
 };

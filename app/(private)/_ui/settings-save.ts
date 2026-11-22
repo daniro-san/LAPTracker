@@ -1,6 +1,8 @@
 // Alliance settings → Features saves on Save (issue 585, F28; D134 amended 2026-11-22): a tick changes only the
 // draft; Save sends one POST per switch that differs from what is stored, one after another (the route takes
 // one switch and counts one `ws_action` per switch), and stops at the first refusal, keeping the rest.
+import { fill } from "@/lib/copy";
+import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 
 export interface SwitchChange {
   feature: string;
@@ -32,4 +34,43 @@ export async function sendChanges(
     if (saved === null) return { code: code ?? "failed", unsent: changes.slice(i) };
   }
   return { code: null, unsent: [] };
+}
+
+type Switches = Record<string, boolean>;
+
+/**
+ * The card's bookkeeping after a Save. `through`: the switches stored so far (earlier saves' too), shown until
+ * the refreshed page brings them. `draft`: the switches not sent, still "Not saved yet"; a switch the owner
+ * no longer allows (`not_allowed`) is dropped, since the refreshed page leaves it out.
+ */
+export function afterSave(
+  changes: SwitchChange[],
+  result: { code: string | null; unsent: SwitchChange[] },
+  through: Switches,
+): { through: Switches; draft: Switches } {
+  const done = changes.slice(0, changes.length - result.unsent.length);
+  const kept = result.code === "not_allowed" ? result.unsent.slice(1) : result.unsent;
+  return {
+    through: { ...through, ...Object.fromEntries(done.map((c) => [c.feature, c.on])) },
+    draft: Object.fromEntries(kept.map((c) => [c.feature, c.on])),
+  };
+}
+
+/** A box shows the officer's draft first, then what a Save just stored, then what the page read. */
+export function shownOn(feature: string, read: boolean, draft: Switches, through: Switches) {
+  return draft[feature] ?? through[feature] ?? read;
+}
+
+/** The words for a refusal other than signed out; `stoppedAt` is the switch Save stopped at. */
+export function refusalWords(
+  code: string,
+  stoppedAt: SwitchChange | undefined,
+  t: WorkspaceDictionary,
+): string {
+  if (code === "rate_limited") return t["switches.rateLimited"];
+  if (code === "not_allowed" && stoppedAt) {
+    const key = `switches.name.${stoppedAt.feature}` as WorkspaceKey;
+    return fill(t["switches.notAllowed"], { name: t[key] ?? stoppedAt.feature });
+  }
+  return t["switches.failed"];
 }

@@ -2,7 +2,16 @@
 // sends one request per switch that differs from what is stored, and a refusal stops it with the rest kept.
 import { describe, expect, it } from "vitest";
 
-import { featureChanges, sendChanges, type SwitchPost } from "./settings-save";
+import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+
+import {
+  afterSave,
+  featureChanges,
+  refusalWords,
+  sendChanges,
+  shownOn,
+  type SwitchPost,
+} from "./settings-save";
 
 /** What the server stores for an alliance with every tab on and squads off. */
 const stored = { roll_call: true, thefts: true, insights: true, notices: true, squads: false };
@@ -60,5 +69,45 @@ describe("Features in Alliance settings", () => {
     // No answer at all reads as "failed", and nothing after it is sent.
     const offline: SwitchPost = async () => ({ saved: null, code: "failed" });
     expect((await sendChanges(changes, offline)).unsent).toHaveLength(3);
+  });
+
+  it("names the switch the owner turned off meanwhile, drops it and keeps the rest as the draft", async () => {
+    // The officer saves Thefts off, Insights off and Squads on; the owner stopped allowing Insights meanwhile.
+    const changes = featureChanges(stored, {
+      ...stored,
+      thefts: false,
+      insights: false,
+      squads: true,
+    });
+    const ownerOff: SwitchPost = async ({ feature, on }) =>
+      feature === "insights" ? { saved: null, code: "not_allowed" } : { saved: on, code: null };
+    const result = await sendChanges(changes, ownerOff);
+    expect(result.code).toBe("not_allowed");
+    for (const language of ["en", "pt-BR", "fr"] as const) {
+      const t = WORKSPACE_DICTIONARIES[language];
+      const words = refusalWords("not_allowed", result.unsent[0], t);
+      expect(words, language).toContain(t["switches.name.insights"]);
+      expect(words, language).not.toBe(t["switches.failed"]);
+    }
+    expect(afterSave(changes, result, {}).draft).toEqual({ squads: true });
+  });
+
+  it("shows what a Save stored until the page refreshes, and keeps what was not sent as the draft", () => {
+    // A first Save stored Notices off; this one stored Thefts off, then the limit stopped Squads on.
+    const changes = [
+      { feature: "thefts", on: false },
+      { feature: "squads", on: true },
+    ];
+    const next = afterSave(
+      changes,
+      { code: "rate_limited", unsent: [{ feature: "squads", on: true }] },
+      { notices: false },
+    );
+    expect(next).toEqual({ through: { notices: false, thefts: false }, draft: { squads: true } });
+    // The box shows the draft first, then what was stored, then what the page read.
+    expect(shownOn("squads", false, next.draft, next.through)).toBe(true);
+    expect(shownOn("thefts", true, next.draft, next.through)).toBe(false);
+    expect(shownOn("roll_call", true, next.draft, next.through)).toBe(true);
+    expect(shownOn("thefts", true, { thefts: true }, next.through)).toBe(true);
   });
 });

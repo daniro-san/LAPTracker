@@ -4,6 +4,7 @@
 // Discord summary (only to the Raid Shield channel, D147), opt-in, in a language the officers pick. Shown
 // only while the check is on (D134). One Save, in the settings' save row (issue 585): off while nothing
 // changed, "Not saved yet" while something did; a refusal or no answer says so and keeps what was typed.
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { CheckField } from "@/lib/brand/components/CheckField";
@@ -33,6 +34,7 @@ function helpKey(channel: "ok" | "reenter" | "none", on: boolean): keyof Workspa
 
 /** The card's values, how many differ from what the server has, and Save. */
 function useShieldSettings(slug: string, view: ShieldSettingsView, t: WorkspaceDictionary) {
+  const router = useRouter();
   const [v, setV] = useState(view);
   // What the server has: the page's view, then each save that went through.
   const [kept, setKept] = useState(view);
@@ -57,7 +59,9 @@ function useShieldSettings(slug: string, view: ShieldSettingsView, t: WorkspaceD
     setBusy(false);
     if (res?.ok) {
       setKept(v);
-      return setSaved(true);
+      setSaved(true);
+      // The page's "On this page" row reads the stored value ("Summary to Discord: on").
+      return router.refresh();
     }
     setError(res?.status === 401 ? SIGNED_OUT : t["prep.settings.failed"]);
   };

@@ -25,7 +25,6 @@ describe("the Discord card's bot steps", () => {
       "discord.check.never",
       "discord.check.lead",
       "discord.check.off",
-      "discord.bot.unset",
     ])
       expect(lines.keys, never).not.toContain(never);
 

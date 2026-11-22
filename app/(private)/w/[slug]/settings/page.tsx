@@ -39,6 +39,7 @@ import { trackerKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
+import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { PushSettings } from "../../../_ui/PushSettings";
@@ -156,7 +157,7 @@ function indexInput(
       : null,
     shield: shield && { discord: shield.discord, channel: summaryChannel(channels) },
     push: Boolean(push),
-    discord: { channels: channels.map((c) => c.state), botOff: bot.installUrl === null },
+    discord: { channels: channels.map((c) => c.state), botOff: siteBotOff(bot) },
     data,
   };
 }

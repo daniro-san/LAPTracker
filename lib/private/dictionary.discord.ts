@@ -11,7 +11,6 @@ export const discordEn = {
   "discord.bot.tip":
     "You need the Manage Server permission in Discord. The link opens on your alliance’s server only.",
   "discord.bot.add": "Add LAPTracker to Discord",
-  "discord.bot.unset": "Discord is not set up on this site yet. Ask the site’s owner.",
   "discord.check.head": "2. Check the bot and turn on the commands",
   "discord.check.lead":
     "After adding the bot, come back here and tap Check. The commands then show on any message: press and hold it (on a computer, right-click it) → Apps.",
@@ -112,7 +111,6 @@ export const discordPt: typeof discordEn = {
   "discord.bot.tip":
     "Você precisa da permissão Gerenciar servidor no Discord. O link abre só no servidor da sua aliança.",
   "discord.bot.add": "Adicionar o LAPTracker ao Discord",
-  "discord.bot.unset": "O Discord ainda não está configurado neste site. Fale com o dono do site.",
   "discord.check.head": "2. Confira o bot e ligue os comandos",
   "discord.check.lead":
     "Depois de adicionar o bot, volte aqui e toque em Conferir. Os comandos aparecem em qualquer mensagem: toque e segure nela (no computador, clique com o botão direito) → Apps.",

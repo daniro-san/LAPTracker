@@ -17,13 +17,16 @@ export interface BotFacts {
 
 export type BotStep = "off" | "noCheck" | "ready";
 
+/** The site has no Discord app (no install link), so there is no bot to add or check. */
+export const siteBotOff = (bot: { installUrl: string | null }) => !bot.installUrl;
+
 export function botLines(bot: BotFacts): {
   step: BotStep;
-  /** The bot part's lines, in the order shown. */
+  /** The bot part's lines, in the order shown: `DiscordBot` renders exactly these. */
   keys: WorkspaceKey[];
   hooksHead: WorkspaceKey;
 } {
-  if (!bot.installUrl)
+  if (siteBotOff(bot))
     return {
       step: "off",
       keys: ["discord.bot.siteOffHead", "discord.bot.siteOff"],
