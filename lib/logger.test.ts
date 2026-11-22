@@ -80,6 +80,16 @@ describe("createRunLogger", () => {
     });
   });
 
+  it("keeps no private roster value in run_logs or its console mirror (D115, 2026-11-21)", async () => {
+    const { logger, lines } = recordingLogger();
+    const mirror = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await logger.error("v1.fetch", { x: 98765, error: 'bad row {"y":54321,"daily_tech":4321}' });
+
+    expect(lines[0]?.data).toEqual({ x: "…", error: 'bad row {"y":…,"daily_tech":…}' });
+    expect(JSON.stringify(mirror.mock.calls)).not.toMatch(/98765|54321|4321/);
+  });
+
   it("redacts DATABASE_URL, which carries the database password", async () => {
     const { logger, lines } = recordingLogger();
 

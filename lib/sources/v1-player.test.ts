@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockFetch, respond, stubSourceEnv } from "./test-helpers";
-import { SchemaError } from "./types";
+import { type NotFoundError, SchemaError } from "./types";
 import { fetchPlayer } from "./v1";
 
 const QUOTA = { limit: 1000, used: 120, remaining: 880 };
@@ -24,6 +24,23 @@ const body = (extra: Record<string, unknown>) =>
   respond(JSON.stringify({ uid: 501, ...REST, ...extra, quota: QUOTA }));
 
 describe("v1.fetchPlayer (D117)", () => {
+  it("names no uid in a failed read's message, which reaches logs and PostHog (D115, 2026-11-21)", async () => {
+    mockFetch(respond('{"detail":"not found"}', 404));
+    const error = (await fetchPlayer(501).catch((e: unknown) => e)) as Error;
+
+    expect(error.message).toBe("404 on /players/[uid]");
+  });
+
+  it("keeps no private roster value in a failed read's detail, which run_logs store (D115, 2026-11-21)", async () => {
+    const page = `{"detail":"bad row","uid":501,"x":98765,"last_online_at":"2026-11-20 10:00:00","avatar_url":"https://phs-image.globallap.com/a.png"}`;
+    mockFetch(respond(page, 404));
+    const { detail } = (await fetchPlayer(501).catch((e: unknown) => e)) as NotFoundError;
+
+    expect(detail?.body).toBe(
+      '{"detail":"bad row","uid":501,"x":…,"last_online_at":…,"avatar_url":…}',
+    );
+  });
+
   it("reads the squads with their heroes and troops, from the cached copy", async () => {
     const fetch = mockFetch(
       body({

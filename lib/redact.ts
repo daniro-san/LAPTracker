@@ -17,18 +17,25 @@ const KEY = `(?:${[...new Set(BLOCKED_ROSTER_KEYS.flatMap((k) => [k, camel(k)]))
   .sort((a, b) => b.length - a.length)
   .map(escape)
   .join("|")})`;
-const IS_KEY = new RegExp(`^${KEY}$`, "i");
 /** Quoted text up to this long is one value; past it a quote has no end (keeps every match linear). */
 const Q = "{0,500}";
+/** A date with its time when one follows, with a space or a T: `2026-11-20 10:00:00+00`, `2026-11-20T10:00Z`. */
+const TIME =
+  "\\d{4}-\\d{2}-\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?: ?(?:Z|[+-]\\d{2}(?::?\\d{2})?))?)?";
+/** A JavaScript Date as text: `Fri Nov 20 2026 10:00:00 GMT+0000 (Coordinated Universal Time)`. */
+const JS_DATE =
+  "(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} \\d{2} \\d{4} \\d{2}:\\d{2}:\\d{2} GMT[+-]\\d{4}(?: \\([^)\\n]{0,80}\\))?";
 /**
- * One value: an (escaped) quoted string, a short array, or a bare run up to a delimiter (a number, true,
- * an ISO time, a URL); never a SQL placeholder (`= $1`). Quoted forms are bounded, so a quote with no end
- * costs at most Q characters at each key; an escaped string's text holds no backslash, so its closing `\"`
- * never rescans a run of them.
+ * One value: an (escaped) quoted string, a short array, a time, or a bare run up to a delimiter (a number,
+ * true, a URL); never a SQL placeholder (`= $1`). Fails closed: a quote with no end within Q characters (a
+ * longer value, or one cut short) takes the rest of its line. Quoted forms are bounded, so each key costs at
+ * most Q characters before that; an escaped string's text holds no backslash, so its closing `\"` never
+ * rescans a run of them.
  */
 const VALUE =
   `(?!\\$\\d)(?:\\\\+"[^"\\\\\\n]${Q}\\\\+"|"(?:[^"\\\\\\n]|\\\\.)${Q}"|'[^'\\n]${Q}'|` +
-  `\`[^\`\\n]${Q}\`|\\[[^\\]\\n]${Q}\\]|[^\\s,;&)}\\]"'\`<>\\\\]+)`;
+  `\`[^\`\\n]${Q}\`|\\[[^\\]\\n]${Q}\\]|${TIME}|${JS_DATE}|\\\\*["'\`][^\\n]*|` +
+  `[^\\s,;&)}\\]"'\`<>\\\\]+)`;
 /** `"x":123`, `\"x\":123`, `x=123`, `X: 123`, `members.3.x: 123`; never `max: 3` or `is_online=1`. */
 const KEY_VALUE = new RegExp(`(?<![\\w$])(${KEY})(\\\\*["'\`]?\\s*[:=]\\s*)${VALUE}`, "gi");
 /** The text between braces: one Zod issue, or the rest of a union's issue after its nested `errors`. */
@@ -37,8 +44,8 @@ const ZOD_SEGMENT = /[^{}]+/g;
 // `"path":[` costs one pass.
 const ZOD_PATH = /(?<!\\)\\*"path\\*"\s*:\s*\[([^\]]{0,500})\]/;
 const ZOD_ECHO = new RegExp(`(?<!\\\\)(\\\\*"(?:input|received)\\\\*"\\s*:\\s*)${VALUE}`, "g");
-/** Postgres' detail line: `Key (union_id, x)=(5, 123) already exists.` */
-const PG_KEY = /Key \(([^()]*)\)=\(([^()]*)\)/g;
+/** Postgres' detail line: `Key (union_id, x)=(5, 123) already exists.`, or one cut before its `)`. */
+const PG_KEY = /Key \(([^()]*)\)=\(([^()]*)(\)?)/g;
 /**
  * Drizzle's `Failed query: … \nparams: …`: the parameters are the row (names, an officer's text, raw_json), so
  * everything from `params:` on goes. The query text says what failed.
@@ -50,24 +57,24 @@ const LABEL_CHAR = /[\w.-]/;
 const SCHEME_CHAR = /[a-z\d+.-]/i;
 const URL_END = /[\s"'`<>,;)\]}\\]/;
 
-const isPrivateKey = (name: string) =>
-  IS_KEY.test(
-    name
-      .replace(/\\[nrt]/g, " ")
-      .trim()
-      .replace(/^[\\"'`]+|[\\"'`]+$/g, ""),
-  );
+/** A key with its quotes or escapes around it (`"x"`, `\"x\"`): one anchored pattern, linear. */
+const IS_WRAPPED_KEY = new RegExp(`^[\\\\"'\`]*${KEY}[\\\\"'\`]*$`, "i");
 
-/** Postgres names its columns and values in order; when the counts differ, every value goes. */
-function pgKey(all: string, columns: string, values: string): string {
+const isPrivateKey = (name: string) => IS_WRAPPED_KEY.test(name.replace(/\\[nrt]/g, " ").trim());
+
+/**
+ * Postgres names its columns and values in order; when the counts differ, or the line was cut before its
+ * `)`, every value goes.
+ */
+function pgKey(all: string, columns: string, values: string, close: string): string {
   const cols = columns.split(/,\s*/);
   if (!cols.some(isPrivateKey)) return all;
   const vals = values.split(/,\s*/);
   const kept =
-    vals.length === cols.length
+    close && vals.length === cols.length
       ? vals.map((v, i) => (isPrivateKey(cols[i] ?? "") ? PRIVATE_VALUE : v)).join(", ")
       : PRIVATE_VALUE;
-  return `Key (${columns})=(${kept})`;
+  return `Key (${columns})=(${kept}${close}`;
 }
 
 function zodIssue(issue: string): string {

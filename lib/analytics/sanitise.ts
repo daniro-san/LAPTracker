@@ -119,8 +119,10 @@ export function areaOf(path: string): { area: Area; workspace?: string; section?
 /** An exception message without what could name or locate a person (D115); see the header. */
 export function scrubMessage(text: string): string {
   const held: string[] = [];
-  // Cut first: every rule below then works on at most MESSAGE_CHARS, on the browser's main thread too.
-  const quoted = redactPrivate(text.slice(0, MESSAGE_CHARS))
+  // The redactor (linear) reads it whole; then the cut, so every rule below works on at most MESSAGE_CHARS,
+  // on the browser's main thread too.
+  const quoted = redactPrivate(text)
+    .slice(0, MESSAGE_CHARS)
     .replaceAll(MARK, "")
     .replace(URL_IN_TEXT, "$1")
     .replace(EMAIL, "[email]")

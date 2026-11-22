@@ -40,7 +40,8 @@ Owner rule (2026-11-21), and its scope extension the same day: replace private r
     - every shape;
     - what must stay (`max: 3`, `daily_read`, `= $1`);
     - params, escaped and union Zod issues, and object keys;
-    - 100 kB of adversarial text in under 50 ms each;
+    - fail closed: no closing quote, a cut `Key (…)=(…`, a time with a space, a JavaScript Date's text;
+    - 100 kB of each once-quadratic shape, checked by output;
   - `lib/app-errors.test.ts`:
     - stored, alerted and PostHog payload redacted, with the other text intact and no name in PostHog;
     - a real Drizzle failure, whose parameters reach none of the three;
@@ -70,7 +71,15 @@ Owner rule (2026-11-21), and its scope extension the same day: replace private r
 
 ## Verified
 
-- `pnpm check` exits 0 after the PR #598 review fixes: prettier, eslint, tsc, vitest (296 files passed and 2 skipped; 1,545 tests passed and 4 skipped), drift (no schema change, no migration) and i18n (17 languages up to date).
+- `pnpm check` exits 0 after the PR #598 re-review fixes: prettier, eslint, tsc, vitest (297 files passed and 2 skipped; 1,551 tests passed and 4 skipped), drift (no schema change, no migration) and i18n (17 languages up to date).
+- PR #598 re-review, every item fixed:
+  - MUST, fail closed: a quoted value with no closing quote within 500 characters takes the rest of its line, and a `Key (…)=(…` cut before its `)` loses every value. Every cut now comes after the redaction: `appErrorDetail` (whole message and cause, then 500), the `/v1` detail (whole body, then 1,000) and `scrubMessage` (whole message, then 2,000).
+  - MUST, times: a date with a space-separated time, an offset, or a JavaScript Date's text after a private key goes whole.
+  - MUST, names: our own thrown and logged messages name no member, uid or user text. Audited every `new …Error(` with a template and every log call. The one hit, `/v1`'s `404 on /players/<uid>` (and `429`), is now `/players/[uid]`. D115 has a dated amendment stating the rule; the bare-name exception is gone. The stale "under 50 ms (tested)" is removed from D115 and here.
+  - Tests: the run_logs logger (stored row and console mirror) and the `/v1` detail and message now have one test each.
+  - An eslint zone stops `lib/push.ts` and `lib/report-error.ts` from importing `lib/notify*` or `lib/discord-*`; a test import of `./notify` in `lib/report-error.ts` fails lint.
+  - `isPrivateKey` uses one anchored pattern, so it is linear.
+  - README's PostHog section says server errors go to Error Tracking and `/admin` → App errors keeps 30 days.
 - PR #598 review (`/pr-review`), every item fixed:
   - MUST, frames: officer text in a query's `params:` (for example "at 8pm in the hall") passed the old `startsWith("at ")` filter. The stack is now read only after the message, and only real V8 frame shapes are kept. The Drizzle test uses that input; with the old filter it fails.
   - Quadratic regexes: the escaped-string value excludes backslashes, and `ZOD_PATH`/`ZOD_ECHO` start only at a run's first backslash and read at most 500 characters of path. 100 kB backslash runs and unclosed `"path":[` inputs are in the test, which asserts outputs.
@@ -83,7 +92,7 @@ Owner rule (2026-11-21), and its scope extension the same day: replace private r
 - Zod 4.6.7's real `error.message` shapes were checked (`"path": [...]`, `"input"` only with `reportInput`). The test uses a real `ZodError` as the cause.
 - Adversarial review (one subagent; its result was relayed by the orchestrator), all addressed:
   - MUST: Drizzle's `params:` sent user text and names to PostHog's `value`. Fixed: the params are cut everywhere (row, alert, PostHog, run_logs), and a real Drizzle failure is tested.
-  - MUST: the photo-URL regex was quadratic: 15 s at 100 kB in the browser. Fixed: it is replaced by a host search, `scrubMessage` cuts to 2,000 characters first, and quoted values are bounded to 500 characters. Tested at under 50 ms for 100 kB.
+  - MUST: the photo-URL regex was quadratic: 15 s at 100 kB in the browser. Fixed: it is replaced by a host search, `scrubMessage` cuts to 2,000 characters first, and quoted values are bounded to 500 characters. Linearity is checked by output on 100 kB inputs.
   - SHOULD, fixed: object keys in `redact()`; Zod issues in escaped JSON and in unions.
   - NITs, applied: any-case keys; `daily_` limited to the real fields; `$n` placeholders kept.
   - Double-reporting: clean. Payload shape and frames: correct.
@@ -96,8 +105,8 @@ Owner rule (2026-11-21), and its scope extension the same day: replace private r
 - `lib/private` catches (`w.import.discord_failed`, `w.pending.match_failed`, `w.read_status.failed`) are not reported. They could now use `reportError` from `lib/report-error.ts`, which imports no `lib/notify`. Not done here: what those errors carry should get a D71 look first.
 - `instrumentation.ts` `register()` prints the env validation message with `console.error`. It names env variables only, not roster data, so it is left as it is.
 - Follow-up (review): Next.js prints a request error to Vercel's runtime log itself, unredacted, apart from `onRequestError`. Our code does not control that line.
-- Follow-up (review): `httpDetail` in `lib/sources/v1.ts` cuts the upstream body to 1,000 characters before `redact()`, so a value cut at the edge can slip past. `appErrorDetail` now does the opposite (redact, then cut).
-- Known limit: a bare name in our own error text (not quoted, not a parameter) still reaches PostHog, as on the browser side (D115's scrubber keeps bare words). A Postgres cause that quotes a value (`invalid input syntax …: "…"`) is kept in `app_errors.detail.cause` for the owner, and is not sent to PostHog (PostHog gets no cause).
+- Follow-up (PR #598 re-review): tests for `tickJobFailed`'s failure path (a daily job that rejects: the day's answer unchanged, one handled `$exception` with the job's `kind`) and for the other `reportError` callers in `lib/run.ts`, `lib/run-notify.ts` and `lib/push.ts`.
+- A Postgres cause that quotes a value (`invalid input syntax …: "…"`) is kept in `app_errors.detail.cause` for the owner, and is not sent to PostHog (PostHog gets no cause).
 
 ## Next
 

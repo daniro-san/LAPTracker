@@ -80,6 +80,23 @@ describe("redactPrivate", () => {
     });
   });
 
+  it("fails closed on a value with no end, and takes a time written with a space whole", () => {
+    const long = "9".repeat(600);
+    const cases: [string, string][] = [
+      ['{"uid":7,"last_online_at":"2026-11-20T10:0', '{"uid":7,"last_online_at":…'],
+      [`{"x":"${long}","power":1}`, '{"x":…'],
+      ['{\\"y\\":\\"54321', '{\\"y\\":…'],
+      ["Key (union_id, x)=(67111155, 987", "Key (union_id, x)=(…"],
+      ["last_online_at=2026-11-20 10:00:00+00 then", "last_online_at=… then"],
+      ["joined_at: 2026-11-20 10:00:00.123Z.", `joined_at: ${PRIVATE_VALUE}.`],
+      [
+        "lastOnlineAt: Fri Nov 20 2026 10:00:00 GMT+0000 (Coordinated Universal Time), power 1",
+        "lastOnlineAt: …, power 1",
+      ],
+    ];
+    for (const [text, out] of cases) expect(redactPrivate(text)).toBe(out);
+  });
+
   // 100 kB of each shape that made an earlier version quadratic: a quadratic redactor would not finish inside
   // the test's timeout. Outputs, not times, are asserted.
   it("reads adversarial text in one pass and redacts it as it would short text", () => {
@@ -91,7 +108,7 @@ describe("redactPrivate", () => {
         "a.".repeat(n / 2) + "phs-image.globallap.co",
       ],
       ["phs-image.globallap.com ".repeat(n / 24), "… ".repeat(n / 24)],
-      [`x:\\"${backslashes}`, `x:\\"${backslashes}`],
+      [`x:\\"${backslashes}`, "x:…"],
       [`${backslashes}"path":["x"],"input":"98765"`, `${backslashes}"path":["x"],"input":…`],
       ['"path":['.repeat(n / 8), '"path":['.repeat(n / 8)],
       ["{".repeat(n), "{".repeat(n)],

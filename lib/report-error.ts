@@ -9,8 +9,6 @@ import { secretsOf, type AppContext } from "./app-context";
 import { redact } from "./redact";
 
 const MESSAGE_CHARS = 500;
-/** How much of a message is redacted before it is cut to MESSAGE_CHARS; bounds the redactor's work. */
-const REDACT_CHARS = 4 * MESSAGE_CHARS;
 const STACK_LINES = 12;
 /** A V8 frame: `at fn (file:line:col)`, `at file:line:col`, `at fn (native)`, `at fn (<anonymous>)`. */
 const FRAME_LINE = /^at (?:async )?(?:[^()]+ \()?(?:[^()]+:\d+:\d+|native|<anonymous>)\)?$/;
@@ -44,14 +42,14 @@ function framesOf(e: Error): string | undefined {
 export function appErrorDetail(error: unknown, secrets: readonly string[]): AppErrorDetail {
   const e = error instanceof Error ? error : null;
   const stack = e && framesOf(e);
-  // Redacted before the cut: a value, a Zod issue or a `Key (…)=(…)` line cut in half would not be recognised.
+  // Redacted whole, then cut: the redactor is linear, and a value cut in half is never left to recognise.
   // INVARIANT app-errors.private-redacted: redact() passes every string through redactPrivate.
   const detail = redact(
     {
       name: e?.name ?? "unknown",
-      message: (e?.message ?? String(error)).slice(0, REDACT_CHARS),
+      message: e?.message ?? String(error),
       ...(stack && { stack }),
-      ...(e?.cause !== undefined && { cause: line(e.cause).slice(0, REDACT_CHARS) }),
+      ...(e?.cause !== undefined && { cause: line(e.cause) }),
     },
     secrets,
   ) as AppErrorDetail;
