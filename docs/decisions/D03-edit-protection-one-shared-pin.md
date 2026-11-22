@@ -12,4 +12,4 @@ The only write action exposed to people is "Run snapshot now", gated by `EDIT_PI
 - An action answered 401 drops the saved PIN, so a stale PIN is never sent again and does not use up the limiter's attempts.
 - There is no automatic renewal: renewing without the PIN would let in whoever knows only the old one. When this ships, every existing cookie (old format) counts as expired, once.
 
-**Amendment 2026-11-22 (orchestrator, #592):** `.env.example` now holds a local placeholder `EDIT_PIN` (and `CRON_SECRET`), which is public. `lib/env.ts` refuses either placeholder when `VERCEL_ENV` is `production`, so production never runs on a PIN anyone can read in the repo.
+**Amendment 2026-11-22 (orchestrator, #592):** `.env.example` now holds a local placeholder `EDIT_PIN` (and `CRON_SECRET`), which is public. Production must never use them; the owner checks Vercel's values (a guard in `lib/env.ts` that refuses them in production waits for that check, so a matching value cannot take the site down unannounced).

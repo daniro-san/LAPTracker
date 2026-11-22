@@ -36,7 +36,7 @@ The real protection is that the local env file holds no production secret, which
   - the optional secrets: empty.
 
   Line 1 says Vercel uses its own values, never these. `QUOTA_CHECK_AT` is now quoted, so a shell can source the file. A closing comment names what is deliberately not set (Vercel's system variables, `LAP_LIVE_TEST`, `LAP_SMOKE_OUT`, `OCR_TEST`).
-- **`lib/env.ts`**: `parseEnv` refuses the template's `EDIT_PIN` and `CRON_SECRET` placeholders when `VERCEL_ENV` is `production`. The error names the key only. Test in `lib/env.test.ts`: the template parses locally and is refused in production.
+- **`lib/env.ts`**: unchanged. A production guard that refused the template's placeholders was built and then taken out by the orchestrator: nobody can read production's values while the owner is away, and a match would have stopped every request on the next deploy. It goes in after the owner's check (Next).
 - **record-fixture**:
   - new `pnpm fixture:record` (`scripts/record-fixture.ts`, `tsx --env-file-if-exists=.env.local`). It takes `<path under /v1> <output file>` lines on stdin and calls the upstream default base URL from `lib/env.ts`. It neutralises every output except `/tmp/` paths (D76) and stops at 401/403/429;
   - `.claude/skills/record-fixture/SKILL.md` §2 and §3 now use the script. The agent no longer greps the env file for the key.
@@ -45,11 +45,11 @@ The real protection is that the local env file holds no production secret, which
   - "Local setup without production secrets": the hook is a guard against accidental reads, not a sandbox; the owner creates `.env.local` from `.env.example`; how a fresh worktree runs the app without one;
   - the hook's line in "How the harness works";
   - a `pnpm fixture:record` row in Scripts.
-- **D03**: a dated amendment for the production refusal of the placeholder PIN.
+- **D03**: a dated amendment: the template's placeholders are public and must never be production's values.
 
 ## Decisions
 
-- **Required secrets get placeholders.** `EDIT_PIN` and `CRON_SECRET` are required by `lib/env.ts`, so the template gives them local placeholders. Now that these are public, production refuses them.
+- **Required secrets get placeholders.** `EDIT_PIN` and `CRON_SECRET` are required by `lib/env.ts`, so the template gives them local placeholders. Now that these are public, production must not use them (owner check first, then a guard).
 - **Quoted mentions are blocked too.** The guard blocks a mention of a secret env file name in a shell command even inside quotes, commit messages included. Stripping quotes would let `echo "$(cat .env.local)"` through.
 - **Recursive searches use a path rule.** A recursive search counts only when a path it searches contains the repo root's top level, where the env files are, so `grep -r X lib` passes. A command that `cd`s into `lib` and then searches `.` is blocked (false positive).
 - **The fixture script always uses the real upstream URL** (lib/env.ts's default). A local `LAP_API_BASE_URL` points at `127.0.0.1:9`, and the skill always meant the real API.
@@ -117,7 +117,7 @@ Follow-ups for the owner:
 - Model/effort: keep. The review round's findings were text-matching gaps, and the fixes are covered by mutation-checked cases.
 - Owner first, on his own machine:
   1. Remove the production secrets from `.env.local`. Either start again from `cp .env.example .env.local` with `pnpm db:local`, or point `DATABASE_URL` at the Neon `preview` branch's role and password, never production's.
-  2. Check that production's `EDIT_PIN` and `CRON_SECRET` are not the template's placeholders. If they are, the next production deploy refuses to start.
+  2. Check that production's `EDIT_PIN` and `CRON_SECRET` are not the template's placeholders; then ask for the `lib/env.ts` guard that refuses them in production.
   3. If he wants, rotate everything that was ever in `.env.local`: the upstream API key, the Neon password, `CRON_SECRET`, `EDIT_PIN`, the Discord webhooks, client secret and bot token, the PostHog personal keys, `GROQ_API_KEY`, `WORKSPACE_KEYS_SECRET` (every saved workspace tracker key must then be entered again) and the VAPID private key. Then update Vercel, the GitHub secret and the cron-job.org header (D30).
   4. To record a fixture, provide the real key for that run: in the environment, or in `.env.local` for the run only. The agent runs `pnpm fixture:record` and never sees the key.
   5. Restart running Claude Code sessions so they load the hook.
