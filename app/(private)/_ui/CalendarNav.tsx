@@ -49,8 +49,9 @@ export function CalendarNav({
 }) {
   const views = VIEWS.filter((v) => !v.feature || on.has(v.feature));
   return (
-    // From 1280 the sidebar lists these views and "See what members see" (D122), so this copy is hidden.
-    <nav aria-label={t["calendar.nav.aria"]} className="mt-3 xl:hidden">
+    // From 768 the rail and the sidebar list these views and "See what members see" (D122, issue 720), so
+    // this copy is hidden there.
+    <nav aria-label={t["calendar.nav.aria"]} className="mt-3 md:hidden">
       <ul
         className="grid border border-plum"
         style={{ gridTemplateColumns: `repeat(${views.length}, minmax(0, 1fr))` }}
