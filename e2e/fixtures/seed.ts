@@ -343,12 +343,13 @@ function workspaceRows(): string[] {
   lines.push(
     `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ${signOuts.join(", ")};`,
   );
-  // A workspace per filler alliance, with its officer's session, for the feature-switch test.
+  // A workspace per filler alliance, with its officer's session, for the feature-switch, tracker key and
+  // notice tests. The owner allows Translate there (D126: a feature that spends Groq starts off).
   for (let r = 0; r < REPEATS; r++) {
     const w = switchWorkspaceOf(r);
     lines.push(
       `insert into workspaces (id, slug, union_id, discord_guild_id, leader_role_ids, member_role_ids) values (${w.id}, '${w.slug}', ${w.unionId}, '70000000000000010${w.id}', '{70000000000000020${w.id}}', '{70000000000000030${w.id}}');`,
-      `insert into workspace_features (workspace_id, switches) values (${w.id}, '{}');`,
+      `insert into workspace_features (workspace_id, switches) values (${w.id}, '{"notice_translate": true}');`,
       `insert into workspace_users (id, workspace_id, discord_user_id, display_name, allowlisted, last_login_at) values (${5 + r}, ${w.id}, '70000000000000040${5 + r}', 'Officer ${w.tag}', true, now());`,
       `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ('${hash(w.token)}', ${w.id}, ${5 + r}, now(), now() + interval '6 days', now(), 'officer');`,
       // D154: the member who sends their own time zone from Me.

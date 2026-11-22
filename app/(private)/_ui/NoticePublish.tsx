@@ -45,7 +45,12 @@ async function send(slug: string, body: object): Promise<string> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (res.ok) return "ok";
+    // Read whole, as the other desk writes read theirs: an answer the page leaves unread never finishes
+    // loading in the browser, so the e2e guards could not read it either (issue 477).
+    if (res.ok) {
+      await res.json().catch(() => null);
+      return "ok";
+    }
     const { code } = (await res.json().catch(() => ({}))) as { code?: string };
     return code ?? "failed";
   } catch {

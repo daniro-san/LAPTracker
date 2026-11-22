@@ -5,7 +5,9 @@
 //   through node:dns);
 // - a socket opened to an IP address that is not loopback (tls and every client above open theirs through
 //   net.Socket.prototype.connect), so an address that needs no lookup is caught too.
-// The configured upstream, Discord and PostHog hosts are 127.0.0.1:9, which is loopback.
+// The configured Discord API and PostHog hosts are 127.0.0.1:9, which is loopback; the tracker is the stub
+// (e2e/stub-server.mjs). Groq's chat endpoint and Discord's webhooks have fixed https URLs in the app, so
+// fetch sends those to the stub at E2E_STUB_URL instead: the app's code and its URLs are unchanged.
 import dns from "node:dns";
 import { appendFileSync } from "node:fs";
 import { syncBuiltinESMExports } from "node:module";
@@ -52,3 +54,18 @@ net.Socket.prototype.connect = function (...args) {
   return connect.apply(this, args);
 };
 syncBuiltinESMExports();
+
+const STUB = process.env.E2E_STUB_URL;
+const TO_STUB = [
+  ["https://api.groq.com/", `${STUB}/groq/`],
+  ["https://discord.com/api/webhooks/", `${STUB}/discord/webhooks/`],
+];
+const send = globalThis.fetch;
+const { Request } = globalThis;
+globalThis.fetch = function (input, init) {
+  const url = input instanceof Request ? input.url : String(input);
+  const route = TO_STUB.find(([from]) => url.startsWith(from));
+  if (!route) return send.call(this, input, init);
+  const to = route[1] + url.slice(route[0].length);
+  return send.call(this, input instanceof Request ? new Request(to, input) : to, init);
+};
