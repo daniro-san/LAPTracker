@@ -154,11 +154,13 @@ async function helpRuns(db: Db, workspaceId: number, uids: readonly number[]) {
 }
 
 /**
- * The Follow-up records (oldest first) of each member in `starts` written from when their run of Needs help
- * versions began: a record that wrote a version in the run, and every Undo after it. A record from before
- * cannot have written one, and leaving it out keeps the records after it counting as they did.
+ * The Follow-up records (oldest first) of each member in `starts` (uid → the run's first version), from the
+ * first "help" record that wrote a version in the run on, by id: those records and every Undo after them.
+ * By id, not time: a request that started first may commit second and reuse the version the other wrote, so
+ * its record's time is before the run's. An earlier record cannot be the mark's, and leaving it out keeps
+ * the records after it counting as they did. Through `member_follow_ups_workspace_uid_idx`.
  */
-async function helpRecords(db: Db, workspaceId: number, starts: ReadonlyMap<number, Date>) {
+async function helpRecords(db: Db, workspaceId: number, starts: ReadonlyMap<number, number>) {
   if (starts.size === 0) return [];
   const rows = await db
     .select({
@@ -176,8 +178,16 @@ async function helpRecords(db: Db, workspaceId: number, starts: ReadonlyMap<numb
       and(
         eq(memberFollowUps.workspaceId, workspaceId),
         or(
-          ...[...starts].map(([uid, at]) =>
-            and(eq(memberFollowUps.uid, uid), gte(memberFollowUps.writtenAt, at)),
+          ...[...starts].map(([uid, version]) =>
+            and(
+              eq(memberFollowUps.uid, uid),
+              gte(
+                memberFollowUps.id,
+                sql`(select min(r.id) from member_follow_ups r
+                  where r.workspace_id = ${workspaceId} and r.uid = ${uid}
+                    and r.action = 'help' and r.fact_version >= ${version})`,
+              ),
+            ),
           ),
         ),
       ),
@@ -188,7 +198,7 @@ async function helpRecords(db: Db, workspaceId: number, starts: ReadonlyMap<numb
 
 /**
  * What a Needs help mark is read from (#585 S2), for `uids` of one workspace, bounded by what the rule needs
- * (D149): each member's trailing run of Needs help versions, and their records from the run's start. Both
+ * (D149): each member's trailing run of Needs help versions, and their records from the run's first. Both
  * selects are filtered by `workspace_id`; only the few members marked Needs help are asked for.
  * `records` false: the caller already has the records (the member card), so they are not read.
  */
@@ -199,8 +209,8 @@ export async function helpMarkRows(
   records = true,
 ) {
   const versions = await helpRuns(db, workspaceId, uids);
-  const starts = new Map<number, Date>();
-  for (const v of versions) if (!starts.has(v.uid)) starts.set(v.uid, v.at);
+  const starts = new Map<number, number>();
+  for (const v of versions) if (!starts.has(v.uid)) starts.set(v.uid, v.version);
   return { versions, records: records ? await helpRecords(db, workspaceId, starts) : [] };
 }
 
