@@ -207,6 +207,16 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.64.0",
+    date: "2026-11-22",
+    title: "Your own line on our posts, and feedback from officers and members",
+    changes: [
+      'Alliance settings → "Your line on our posts": officers can add one line of their own (up to 120 characters, never translated) on top of the Raid Shield summary, the weekly thanks and the garrison post. It pings no one and makes no links. Home says who changed it, not what it says. You can turn this off per alliance on /admin.',
+      "Send feedback: every desk page, the members' board and Me end with a button to send an idea, a problem or something good. Nothing says who sent it; the text has members' private values removed and is kept 180 days. You read it on /admin/feedback and mark each item read, an issue or dropped.",
+    ],
+    prs: [721, 723],
+  },
+  {
     version: "v5.63.0",
     date: "2026-11-22",
     title: "Opponent tags suggested, and the desk at every width",
