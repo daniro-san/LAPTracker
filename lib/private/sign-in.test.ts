@@ -68,6 +68,13 @@ describe("workspace sign-in (D71)", () => {
     expect(access.ok && access.user.displayName).toBe("Nick");
   });
 
+  it("names the workspace's alliance by its board tag on the desk and on the board (D133)", async () => {
+    const { token } = await signIn("ogs", "officer");
+    const label = { tag: "OGs", name: "OldGrandmas" };
+    expect(await requireWorkspace(db, "ogs", jar(token), T0)).toMatchObject({ alliance: label });
+    expect(await requireBoard(db, "ogs", jar(token), T0)).toMatchObject({ alliance: label });
+  });
+
   it("marks the redirect #signed-in for analytics only on production with a PostHog key (D77)", async () => {
     const on = { VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" };
     expect(location((await signIn("ogs", "officer", T0, on)).step)).toBe("/w/ogs#signed-in");

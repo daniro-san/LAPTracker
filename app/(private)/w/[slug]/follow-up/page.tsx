@@ -8,7 +8,6 @@
 import { fill, isolate } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import {
-  WORKSPACE_LANGUAGES,
   type WorkspaceDictionary,
   type WorkspaceKey,
   type WorkspaceLanguage,
@@ -18,7 +17,7 @@ import { followUpView, type FollowUpItem, type FollowUpView } from "@/lib/privat
 import { cardFormats } from "@/lib/private/member-card";
 import type { Reason } from "@/lib/private/members";
 import { reasonText, type Formats } from "@/lib/private/members-sheet";
-import { readyMessage, readyWords } from "@/lib/private/ready-message";
+import { inputOf, readyTexts } from "@/lib/private/ready-message";
 import type { AttackerGroup } from "@/lib/private/theft-groups";
 
 import { editorWords } from "../../../_ui/facts-form";
@@ -47,18 +46,7 @@ function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
  * officer's).
  */
 function messageOf(item: FollowUpItem, officer: WorkspaceLanguage) {
-  const { member, checkIn, toAsk, tip } = item;
-  const input = {
-    name: member.name,
-    isNew: member.isNew,
-    reasons: checkIn ? member.reasons.map((r) => r.kind) : [],
-    tip,
-    toAsk,
-  };
-  const texts = Object.fromEntries(
-    WORKSPACE_LANGUAGES.map((l) => [l, readyMessage(readyWords(l), input)]),
-  ) as Record<WorkspaceLanguage, string>;
-  return { language: item.language ?? officer, texts };
+  return { language: item.language ?? officer, texts: readyTexts(inputOf(item)) };
 }
 
 /** A member on the list as the browser shows it. */

@@ -229,6 +229,24 @@ async function deliver(
   return edited === "ok";
 }
 
+/**
+ * The alliance's members and, of them, the uids away on the raid's Saturday (Friday `day` + 1), by the roll
+ * call's rule (D103), as Raid prep's fill leaves them out. The summary and the officers' notification
+ * (lib/push-uses.ts) both read them here, so their counts agree.
+ */
+export async function membersOfRaid(db: Db, target: ShieldTarget, day: string, zone: string) {
+  const [roster, facts] = await Promise.all([
+    anyRoster(db, target.unionId),
+    awayFacts(db, target.workspaceId as number),
+  ]);
+  const members = (roster?.members ?? []).map((m) => ({ uid: m.uid, name: m.name }));
+  const saturday = addDays(day, 1);
+  const away = new Set(
+    members.filter((m) => awayOn(facts.get(m.uid), saturday, zone) !== null).map((m) => m.uid),
+  );
+  return { members, away };
+}
+
 /** The message's text from the stored readings of both reads. */
 async function messageOf(
   deps: PostDeps,
@@ -237,18 +255,7 @@ async function messageOf(
 ) {
   const { target, day } = run;
   const windows = passWindows(day, deps.env);
-  const [roster, facts] = await Promise.all([
-    anyRoster(db, target.unionId),
-    awayFacts(db, target.workspaceId as number),
-  ]);
-  const members = (roster?.members ?? []).map((m) => ({ uid: m.uid, name: m.name }));
-  // Away on the raid's Saturday, by the roll call's rule (D103), as Raid prep's fill leaves them out.
-  const saturday = addDays(day, 1);
-  const away = new Set(
-    members
-      .filter((m) => awayOn(facts.get(m.uid), saturday, deps.env.SERVER_TZ) !== null)
-      .map((m) => m.uid),
-  );
+  const { members, away } = await membersOfRaid(db, target, day, deps.env.SERVER_TZ);
   const night = summarize(
     members,
     await shieldReadings(db, target.unionId, windows.night.from, windows.night.to),

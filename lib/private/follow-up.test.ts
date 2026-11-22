@@ -188,6 +188,37 @@ describe("the Follow-up list (issue 340, D104)", () => {
     expect(items.find((i) => i.member.uid === 101)).toMatchObject({ tip: false, language: null });
   });
 
+  it("holds the coins tip back from a newcomer until 7 days after they were first seen (D127, D140)", async () => {
+    const ana = await signedIn("Ana");
+    // 104 joins on Fri 20 Nov and gives 400 coins on every read from then on.
+    const days = ["20", "21", "22", "23", "24", "25", "26"].map((d) => `2026-11-${d}`);
+    for (const day of days) await endOfDay(day, { 104: 10 }, { 104: 400 });
+    const tipOf104 = async (now: Date) =>
+      (await followUpView(db, ana, now, CLOCK.zone)).items.find((i) => i.member.uid === 104)?.tip;
+    // Thu 26 Nov is 6 days after: 7 reads below 1,000, still settling in. Fri 27 Nov 10:00 ST.
+    expect(await tipOf104(new Date("2026-11-27T12:00:00Z"))).toBe(false);
+    await endOfDay("2026-11-27", { 104: 10 }, { 104: 400 });
+    // Fri 27 Nov is 7 days after. Sat 28 Nov 10:00 ST.
+    expect(await tipOf104(new Date("2026-11-28T12:00:00Z"))).toBe(true);
+  });
+
+  it("leaves a member on a break off the list for the coins tip (D75, D140)", async () => {
+    const ana = await signedIn("Ana");
+    for (const day of ["2026-11-13", "2026-11-14", "2026-11-15", "2026-11-16"]) {
+      await endOfDay(day, { 102: 10 }, { 102: 400 });
+    }
+    await saveFacts(
+      db,
+      ana,
+      102,
+      [{ field: "status", version: 0, value: "break", source: "officer" }],
+      NOW,
+      CLOCK.zone,
+    );
+    const items = (await followUpView(db, ana, NOW, CLOCK.zone)).items;
+    expect(items.map((i) => i.member.uid)).not.toContain(102);
+  });
+
   it("drops a member whose signal clears, with nothing recorded", async () => {
     const ana = await signedIn("Ana");
     await endOfDay("2026-11-20", { 101: 9, 102: 40, 103: 3 });

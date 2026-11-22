@@ -210,18 +210,30 @@ export function storedSettings(
 }
 
 /**
+ * D134: an owner value equal to the workspace's own default is no override. It is stored as no value, so
+ * the workspace follows that default when the default changes.
+ */
+export const isDefaultSwitch = (defaults: OwnerSettings, f: Feature, on: boolean) =>
+  on === !defaults.off.includes(f);
+export const isDefaultCap = (defaults: OwnerSettings, a: Allowance, cap: number | null) =>
+  cap === defaults.caps[a];
+
+/**
  * "Copy settings from": the owner overrides that give the target the source's owner values as served, so
  * only what differs from the target's own defaults is stored. The alliance's own switches are not copied.
  */
 export function copiedOverrides(source: OwnerSettings, target: OwnerSettings): StoredDefaults {
   const switches = Object.fromEntries(
-    FEATURES.filter((f) => source.off.includes(f) !== target.off.includes(f)).map((f) => [
+    FEATURES.filter((f) => !isDefaultSwitch(target, f, !source.off.includes(f))).map((f) => [
       f,
       !source.off.includes(f),
     ]),
   );
   const caps = Object.fromEntries(
-    ALLOWANCES.filter((a) => source.caps[a] !== target.caps[a]).map((a) => [a, source.caps[a]]),
+    ALLOWANCES.filter((a) => !isDefaultCap(target, a, source.caps[a])).map((a) => [
+      a,
+      source.caps[a],
+    ]),
   );
   return { switches, caps };
 }

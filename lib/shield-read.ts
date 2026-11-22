@@ -236,7 +236,14 @@ async function readMorning(
           m,
         );
       // A far `rosterAt`: the morning read queues no newcomer into the squads queue.
-      const call = { ...member, target, signal, day: run.day, rosterAt: new Date(8.64e15) };
+      const call = {
+        ...member,
+        target,
+        signal,
+        day: run.day,
+        rosterAt: new Date(8.64e15),
+        queued: new Set<number>(),
+      };
       const outcome = await readOne(deps, db, call, b, save);
       if (outcome !== "done" || b.stop) return b;
       await sleep(deps.paceMs ?? PACE_MS, signal);

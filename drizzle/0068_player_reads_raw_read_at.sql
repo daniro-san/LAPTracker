@@ -1,0 +1,1 @@
+CREATE INDEX "player_reads_raw_read_at_idx" ON "player_reads" USING btree ("read_at") WHERE "player_reads"."raw_json" is not null;

@@ -31,11 +31,13 @@ export function SignOutButton({
     try {
       // D148: this device's notifications for this workspace end with the session.
       const endpoint = await dropDevice(slug);
-      await fetch(`/api/w/${slug}/logout`, {
+      const res = await fetch(`/api/w/${slug}/logout`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(endpoint ? { endpoint } : {}),
       });
+      // Read to the end: an answer left unread keeps the request open in the browser.
+      await res.json().catch(() => null);
     } finally {
       router.refresh();
       setBusy(false);

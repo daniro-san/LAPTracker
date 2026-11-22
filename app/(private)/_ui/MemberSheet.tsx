@@ -98,6 +98,7 @@ export function MemberSheet(props: {
             zoneNow={zoneNow}
             mode={mode}
             onEditorClose={() => setMode(null)}
+            onChanged={() => setAttempt((n) => n + 1)}
           />
         )}
       </div>

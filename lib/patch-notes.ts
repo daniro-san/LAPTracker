@@ -24,6 +24,14 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
+    text: "PostHog → your personal API keys: create one with only the error-tracking write scope for project 741657, then add it in Vercel → Production as POSTHOG_PERSONAL_API_KEY (Sensitive). The v5.47.0 build uploaded no source map because the key is missing, so PostHog shows minified stack traces for browser and server errors; the maps are still deleted from every deploy.",
+    issue: 592,
+  },
+  {
+    text: "Decide #634: show the Raid Shield reading on the member card? Recommendation: only from Friday's night check until KvK starts, in server time.",
+    issue: 634,
+  },
+  {
     text: "Guide: after v5.47.0, retake the new-alliance guide's Alliance settings screenshots (the page now opens with an index and saves Features with a button), with names and channels blurred.",
     issue: 527,
   },
@@ -164,6 +172,21 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.48.0",
+    date: "2026-11-22",
+    title: "Talk to a member from their card, and quieter, cheaper reads",
+    changes: [
+      "Member card: officers can tap \"Talked to them\" and open the ready message to send (in the member's language, for game mail or Discord) without leaving the card. The card says whether this week's follow-up was noted.",
+      "The officers' Raid Shield phone notification now leaves away members out of its count, so it gives the same number as the leaders' Discord summary.",
+      "The daily read and the squads read do less database work: an index for the 90-day clean-up, no re-queueing of the whole roster after every answer, and one query less on every desk page.",
+      "For whoever builds the site: more end-to-end checks (sign-out, Follow-up, member facts, a feature switch), and tests for the Follow-up and feature-switch rules.",
+    ],
+    needsYou: [
+      "Add the PostHog key for source maps in Vercel, and one decision (#634), on the to-do list below.",
+    ],
+    prs: [629, 630, 631, 632, 633],
+  },
+  {
     version: "v5.47.0",
     date: "2026-11-22",
     title: "KvK says Ended on time, Me says what to do, and a clearer Alliance settings",
@@ -172,7 +195,7 @@ export const patchNotes: PatchNote[] = [
       'Me: a Raid prep "No shield" or "On the wall" mark shows the next step from the raid\'s eve (turn the shield on, or take the squads off the wall, before the reset, then before KvK starts at 12:00 ST); once KvK starts only the mark stays. A "no" on other roll calls gets no step: it is the member\'s own answer.',
       "Alliance settings opens with an index of every card and its state, Features save with a Save button (with \"Not saved yet\" until then), the Discord card says one thing when the site's bot is off, and the Raid Shield channel's privacy line is easy to read.",
       "The leaders' Raid Shield summary no longer names away members under \"Not seen yet\"; it shows how many are away instead, like the desk's Copy names.",
-      "Error reports from the server show readable stack traces in PostHog, and errors the desk used to swallow are now reported, with private fields removed first.",
+      "Error reports from the server can show readable stack traces in PostHog (once the source-map key is set, see the to-do list), and errors the desk used to swallow are now reported, with private fields removed first.",
       "/admin → Runs no longer lists an alliance someone looked up as a stale alliance of the daily read.",
       "For whoever builds the site: agents are blocked from reading local secret files by accident, recording fixtures (which spends quota) is the owner's, and the tests were cleaned of fakes and now pass in any order.",
     ],

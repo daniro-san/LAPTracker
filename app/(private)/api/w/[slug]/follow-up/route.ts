@@ -28,6 +28,8 @@ import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
 const uid = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+/** Issue 516: a member card's record says so, and whether the member was on the week's list (analytics). */
+const place = { from: z.literal("card").optional(), onList: z.boolean().optional() };
 const record = z
   .object({
     uid,
@@ -36,11 +38,12 @@ const record = z
     until: z.string().refine(isDay).nullable(),
     version: z.number().int().min(0),
     requestId: z.uuid(),
+    ...place,
   })
   .strict();
 /** Undo: `target` is the request id of the record to withdraw. */
 const undo = z
-  .object({ uid, action: z.literal("undo"), target: z.uuid(), requestId: z.uuid() })
+  .object({ uid, action: z.literal("undo"), target: z.uuid(), requestId: z.uuid(), ...place })
   .strict();
 const body = z.union([record, undo]);
 
@@ -70,7 +73,16 @@ export async function POST(
     );
     if (result.ok) {
       const done = Response.json({ ok: true }, { headers: NO_STORE });
-      return counted(ctx, access, "follow_up", input.action === "undo" ? "undo" : "record", done);
+      // The Follow-up tab sends no place: its members are on the list.
+      const at = { from: input.from ?? "follow_up", on_list: input.onList ?? true } as const;
+      return counted(
+        ctx,
+        access,
+        "follow_up",
+        input.action === "undo" ? "undo" : "record",
+        done,
+        at,
+      );
     }
     if (result.code === "not_found") return privateError(409, result.code);
     if (result.code !== "stale") return privateError(400, result.code);

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import type { MemberRow } from "./members";
-import { reasonText, sheetHeader, sheetRow, type Formats } from "./members-sheet";
+import { reasonText, sheetHeader, sheetRow, statusText, type Formats } from "./members-sheet";
 
 const t = WORKSPACE_DICTIONARIES.en;
 const f: Formats = { date: (at) => String(at), number: String, language: "en", zone: "Etc/GMT+2" };
@@ -37,6 +37,7 @@ const m: MemberRow = {
   duel: {},
   seenSince: "2026-11-02",
   isNew: false,
+  settling: false,
   reasons: [{ kind: "might", days: 9 }],
   missing: ["donations"],
   missingDays: 1,
@@ -97,6 +98,15 @@ describe("Copy for spreadsheet (D71)", () => {
     const joined = { ...m, joinedAt: new Date("2026-11-10T01:30:00Z") };
 
     expect(sheetRow(joined, t, f).split("\t")[14]).toBe("2026-11-09");
+  });
+});
+
+describe("a member's status (D75)", () => {
+  it("says No data when the newest read left something out, and Fine when it told everything", () => {
+    const quiet: MemberRow = { ...m, reasons: [], missing: [], missingDays: 0 };
+
+    expect(statusText(quiet, t, f)).toBe("Fine");
+    expect(statusText({ ...quiet, missing: ["might"] }, t, f)).toBe("No data: might");
   });
 });
 

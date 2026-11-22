@@ -10,6 +10,7 @@ import { settingsById } from "@/lib/repo/workspace-features";
 import { saveWorkspace } from "@/lib/repo/workspaces";
 import { workspaceDiscord } from "@/lib/schema-discord";
 import { workspaceFeatures } from "@/lib/schema-features";
+import { CODE_DEFAULTS } from "@/lib/workspace-features";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -56,6 +57,23 @@ const post = (pin: string, body: unknown) =>
     }),
   );
 const settingsOf = async (id: number) => (await settingsById(db, id))?.settings;
+
+/** Discord with the app's credentials: the token call answers, and every command PUT is kept, in order. */
+function discordCalls() {
+  const ctx = testContext(db, {
+    ...TEST_ENV,
+    DISCORD_CLIENT_ID: "900000000000000505",
+    DISCORD_CLIENT_SECRET: "client-secret-for-tests",
+  }).ctx;
+  const puts: { url: string; body: unknown }[] = [];
+  ctx.fetch = async (input, init) => {
+    if (String(input).endsWith("/oauth2/token")) return Response.json({ access_token: "b" });
+    puts.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+    return Response.json([]);
+  };
+  holder.ctx = ctx;
+  return puts;
+}
 
 describe("POST /api/admin/workspaces/features (D126)", () => {
   it("changes nothing without the PIN", async () => {
@@ -116,19 +134,29 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     ).toBe(401);
   });
 
+  it("stores a cap equal to the default as none, so the alliance follows a new default (D134)", async () => {
+    const atDefault = CODE_DEFAULTS.caps.ai ?? 0;
+    await post(TEST_PIN, { action: "cap", workspace_id: 2, allowance: "ai", cap: atDefault });
+    expect((await settingsById(db, 2))?.stored?.caps).toEqual({});
+    await post(TEST_PIN, { action: "default_cap", allowance: "ai", cap: atDefault + 10 });
+    expect((await settingsOf(2))?.caps.ai).toBe(atDefault + 10);
+  });
+
+  it("re-registers a server that had commands after a default for new alliances changes (D129, D134)", async () => {
+    const puts = discordCalls();
+    // nse's server has the one command its features allow; OGs keeps everything on, whatever the default.
+    await db.insert(workspaceDiscord).values({ workspaceId: 2, commands: ["Send to LAPTracker"] });
+    const on = { action: "default_switch", feature: "discord_translate_me", on: true };
+    expect((await post(TEST_PIN, on)).status).toBe(200);
+    expect(puts.map((p) => p.url.split("/guilds/")[1])).toEqual(["2/commands"]);
+    expect(puts[0]?.body).toEqual([
+      { name: "Send to LAPTracker", type: 3 },
+      { name: "Translate for me", type: 3 },
+    ]);
+  });
+
   it("re-registers a server that had commands without the one turned off; leaves others alone (D129)", async () => {
-    const ctx = testContext(db, {
-      ...TEST_ENV,
-      DISCORD_CLIENT_ID: "900000000000000505",
-      DISCORD_CLIENT_SECRET: "client-secret-for-tests",
-    }).ctx;
-    const puts: { url: string; body: unknown }[] = [];
-    ctx.fetch = async (input, init) => {
-      if (String(input).endsWith("/oauth2/token")) return Response.json({ access_token: "b" });
-      puts.push({ url: String(input), body: JSON.parse(String(init?.body)) });
-      return Response.json([]);
-    };
-    holder.ctx = ctx;
+    const puts = discordCalls();
     // OGs' server had all three commands; nse's never had any.
     const all = ["Send to LAPTracker", "Translate for me", "Translate for everyone"];
     await db.insert(workspaceDiscord).values({ workspaceId: 1, commands: all });

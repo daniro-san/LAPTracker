@@ -1,26 +1,20 @@
 "use client";
 
 // The parts of a member's Follow-up panel (issue 460, D140) that show what the card and the row hold: the
-// card read when the panel opens, the ready message with its two copies, "Fill in what they told you" and
-// the last notes. Nothing here sends anything: the copies go to the clipboard only.
+// card read when the panel opens, "Fill in what they told you" and the last notes. The ready message with
+// its two copies is `Message` (FollowUpMessage.tsx, shared with the member card). Nothing here sends
+// anything.
 import { useEffect, useState } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
-import { WORKSPACE_LANGUAGES } from "@/lib/private/dictionary";
 import type { FactField } from "@/lib/private/fact-fields";
-import { discordLiteral, gameMail } from "@/lib/private/notice-formats";
 
-import { FIELD } from "./CalendarFields";
-import { CopyButton } from "./CopyButton";
 import { panelCard, type CardRead } from "./follow-up-card";
 import type { FollowUpWords } from "./follow-up-words";
+import { HEAD, SECTION } from "./FollowUpMessage";
 import type { FollowUpRow } from "./FollowUpSheet";
 import { readCard } from "./MemberSheet";
 import { SignedOutNote } from "./SignedOut";
-
-export const HEAD = "text-body-sm font-semibold";
-export const SECTION = "mt-4 border-t border-rule pt-3";
 
 /**
  * The member's card (origin lines, stored facts, last notes), read when the panel opens and again by
@@ -63,54 +57,6 @@ export function CardStatus({ card, words }: { card: HeldCard; words: FollowUpWor
         {words["followup.retry"]}
       </button>
     </div>
-  );
-}
-
-/** The ready message, which language it is in, and its two copies. Nothing is sent from here. */
-export function Message({ row, words }: { row: FollowUpRow; words: FollowUpWords }) {
-  // The member's language first; the officer may pick another (persona panel, D140).
-  const [language, setLanguage] = useState(row.message.language);
-  const text = row.message.texts[language];
-  const labels = (copy: string) => ({
-    copy,
-    copied: words["followup.copied"],
-    failed: words["followup.copyFailed"],
-  });
-  return (
-    <section className={SECTION} aria-labelledby="follow-up-message-h">
-      <h3 id="follow-up-message-h" className={HEAD}>
-        {words["followup.message"]}
-      </h3>
-      <div role="group" aria-label={words["followup.messageLang"]} className="mt-1 flex gap-2">
-        {WORKSPACE_LANGUAGES.map((l) => (
-          <button
-            key={l}
-            type="button"
-            aria-pressed={l === language}
-            aria-label={words[`followup.lang.${l}`]}
-            onClick={() => setLanguage(l)}
-            className={chip(l === language)}
-          >
-            {l.slice(0, 2).toUpperCase()}
-          </button>
-        ))}
-      </div>
-      <p id="follow-up-message-note" className="mt-1 text-body-sm text-ink/80">
-        {fill(words["followup.messageHelp"], { language: words[`followup.lang.${language}`] })}
-      </p>
-      <textarea
-        readOnly
-        value={text}
-        rows={6}
-        aria-labelledby="follow-up-message-h"
-        aria-describedby="follow-up-message-note"
-        className={`${FIELD} mt-1 field-sizing-content py-2 text-[16px]`}
-      />
-      <div className="mt-2 flex flex-wrap gap-2">
-        <CopyButton text={gameMail(text)} labels={labels(words["followup.copyGame"])} />
-        <CopyButton text={discordLiteral(text)} labels={labels(words["followup.copyDiscord"])} />
-      </div>
-    </section>
   );
 }
 

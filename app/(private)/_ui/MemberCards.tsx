@@ -14,6 +14,7 @@ import type { SheetAction } from "@/lib/brand/components/Sheet";
 import { Tag } from "@/lib/brand/components/Tag";
 import type { CardData } from "@/lib/private/member-card";
 
+import { CardFollowUp } from "./CardFollowUp";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
 import { CardTabs, panelId, tabId, useCardTab } from "./MemberCardTabs";
@@ -44,8 +45,16 @@ export type FactsMode = "edit" | "paste" | null;
 /** The editor's mode, held by the sheet that shows the facts, and how to close it. */
 type Editing = { mode: FactsMode; onEditorClose: () => void };
 
-/** The card, its editor's shared context, and "their time now 22:33" for the time-zone line. */
-type CardProps = { card: CardData; editor: EditorContext; zoneNow: string | null } & Editing;
+/**
+ * The card, its editor's shared context, "their time now 22:33" for the time-zone line, and how to read
+ * the card again after a Follow-up save (issue 516).
+ */
+type CardProps = {
+  card: CardData;
+  editor: EditorContext;
+  zoneNow: string | null;
+  onChanged?: () => void;
+} & Editing;
 
 /** The sheet bar's two ways into the editor: "Edit info" the main action, "Paste what they told you" second. */
 export function factsActions(
@@ -203,7 +212,7 @@ function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | nul
   );
 }
 
-function Overview({ card }: { card: CardData }) {
+function Overview({ card, editor, onChanged }: CardProps) {
   return (
     <>
       {card.statusLines.length > 0 && (
@@ -213,6 +222,15 @@ function Overview({ card }: { card: CardData }) {
             <li key={line}>{line}</li>
           ))}
         </ul>
+      )}
+      {/* Issue 516: this week's follow-up, Talked and the ready message, without leaving the card. */}
+      {card.followUp && (
+        <CardFollowUp
+          slug={editor.slug}
+          uid={card.uid}
+          data={card.followUp}
+          onChanged={onChanged}
+        />
       )}
       {card.days ? (
         // ph-no-capture (issue 549): session replay records the bars as an empty box, so no bar height or
@@ -316,7 +334,7 @@ export function MemberCard(props: CardProps) {
         tabIndex={0}
         className="px-3 pb-3"
       >
-        {tab === "overview" && <Overview card={card} />}
+        {tab === "overview" && <Overview {...props} />}
         {tab === "info" && <Info card={card} editor={props.editor} />}
         {tab === "squads" && card.squads && <MemberSquads squads={card.squads} />}
         {tab === "history" && <History card={card} />}

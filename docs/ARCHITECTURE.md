@@ -191,14 +191,22 @@ lib/repo/workspace-data.ts  everything a workspace owns (D125), in one list (`WO
                     cancel in lib/private/workspace-deletion.ts; tables in lib/schema-retention.ts; Home's lines in
                     lib/repo/desk-activity-data.ts.
 lib/zip.ts          pure: a ZIP writer with no dependency (deflate and CRC-32 from node:zlib), for D125's download.
-lib/workspace-features.ts the owner's per-workspace feature switches and daily caps (D126): the catalog by group, which
-                    are paid and which allowance each spends, each workspace's defaults (OGs everything on, others
-                    the paid ones off), the global pause, and the pure changes /admin makes. Shared by /admin,
-                    lib/private and the squads read (`squadTargets`). Tables in lib/schema-features.ts, read and
-                    written in lib/repo/workspace-features.ts (the daily count is one atomic insert … on
-                    conflict … where used + units <= cap); /admin's read in lib/queries/workspace-features.ts;
-                    lib/private/features.ts holds `featureOn` and `useAllowance`, on the features
-                    `requireWorkspace`, `requireBoard` and the Discord commands read with the workspace.
+lib/workspace-features.ts the feature switches and daily caps (D126), in two layers (D134): the owner allows a feature
+                    per workspace on /admin, and the alliance's officers turn an allowed one on or off. Pure: the
+                    catalog by group, which are paid and which allowance each spends, the tracker calls each
+                    spends on the alliance's key (`TRACKER_CALLS`, `trackerEstimate`), the global pause, and
+                    the defaults. /admin's "Defaults for new alliances" are editable and stored over
+                    `CODE_DEFAULTS` (OGs keeps everything on whatever they say). A workspace stores only its
+                    overrides: a value equal to its default is no override (`isDefaultSwitch`,
+                    `isDefaultCap`, also used by `copiedOverrides`), so it follows the default when the default
+                    changes. Shared by /admin, lib/private and the squads read (`squadTargets`). Tables in
+                    lib/schema-features.ts, read and written in lib/repo/workspace-features.ts (the daily count
+                    is one atomic insert … on conflict … where used + units <= cap); /admin's read in
+                    lib/queries/workspace-features.ts; lib/private/features.ts holds `featureOn` and
+                    `useAllowance`, on the features `requireWorkspace`, `requireBoard` and the Discord commands
+                    read with the workspace. lib/private/alliance-features.ts is the officers' layer in Alliance
+                    settings → Features: the allowed features with their tracker-call estimate, and the
+                    rate-limited switch, which registers the server's Discord commands again (D129).
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot and the tick's executeSample (D69) (finalise + logger
@@ -207,6 +215,8 @@ lib/route.ts, lib/app-context.ts, lib/app-errors.ts, lib/report-error.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
                     the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors
                     and its admin alert; an error's redacted detail and PostHog's `$exception` (`reportError`).
+lib/same-origin.ts  `isSameOriginJson`, the one same-origin rule for JSON writes: public routes import it, lib/private/http.ts
+                    re-exports it (D71). It imports nothing.
 config/alliances.ts the server, TRACKED_COUNT (20), LOOKUPS_PER_DAY (30) and the own alliance (D133: no fixed list).
 lib/tracked.ts      the day's ranks board and tracked set before the daily read (D133): the board stored, its top 20 by
                     might claimed once a day, the admin line on a change; `dayTargets` adds the workspaces' alliances

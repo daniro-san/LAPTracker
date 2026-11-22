@@ -21,8 +21,10 @@ import { FOLLOW_UP_ACTIONS, type FollowUpAction } from "@/lib/private/follow-up-
 import { FIELD, Labeled, TextInput } from "./CalendarFields";
 import { focusField } from "./FactFields";
 import { FactsEditor } from "./FactsEditor";
+import { send } from "./follow-up-send";
 import type { FollowUpWords } from "./follow-up-words";
-import { Fill, HEAD, Message, Notes, SECTION, useCard, type Editing } from "./FollowUpPanelParts";
+import { HEAD, Message, SECTION } from "./FollowUpMessage";
+import { Fill, Notes, useCard, type Editing } from "./FollowUpPanelParts";
 import type { EditorContext } from "./MemberCards";
 import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
@@ -48,17 +50,7 @@ export interface FollowUpRow {
 const versionOf = (row: FollowUpRow, action: FollowUpAction) =>
   action === "break" ? row.versions.away : action === "help" ? row.versions.status : 0;
 
-type Sent = { status: number; body: { version?: number; said?: string } };
-
-export async function send(slug: string, body: object): Promise<Sent | null> {
-  const res = await fetch(`/api/w/${slug}/follow-up`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  }).catch(() => null);
-  if (!res) return null;
-  return { status: res.status, body: (await res.json().catch(() => ({}))) as Sent["body"] };
-}
+type Sent = Awaited<ReturnType<typeof send>>;
 
 type PanelProps = {
   slug: string;
@@ -258,7 +250,7 @@ export function FollowUpPanel(props: PanelProps) {
           ))}
         </ul>
       </section>
-      <Message row={row} words={words} />
+      <Message message={row.message} words={words} where="follow_up" />
       <Fill row={row} words={words} card={card} onOpen={setEditing} />
       <Answers value={f.action} words={words} onChange={f.choose} />
       {f.action === "break" && (
