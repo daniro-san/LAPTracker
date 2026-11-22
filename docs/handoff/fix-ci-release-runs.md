@@ -29,7 +29,7 @@
 ## Deviations
 
 - The report's batch 3 suggested `trustPolicy: no-downgrade` alongside `minimumReleaseAge`. Neither is in, for the reasons above.
-- `docs/IMPLEMENTATION_PLAN.md` line 572 still lists the `actions/runs/*/approve` POST among the allow rules. It was not edited (CLAUDE.md: do not edit the plan).
+- `docs/IMPLEMENTATION_PLAN.md` is now stale in four places: line 572 lists the `actions/runs/*/approve` POST among the allow rules, line 562 says `ci` runs once per PR, and lines ~444 and ~617 describe Dependabot auto-merge without the cooldown or the lint-format group. It was not edited (CLAUDE.md: do not edit the plan).
 
 ## Verified
 
@@ -53,11 +53,15 @@
 - **Renumbered to D151** by the orchestrator: PR #600 holds D150.
 - **Security updates still target `main`** (report S7). This change does not touch that; R8 does.
 
+## What was missing from the task prompt?
+
+The prompt did not cover a PR merging into `dev` after Prepare release: the release PR's new head then has no `check`. Found in review; step 4 now says to dispatch `ci` on `dev` again, and `.claude/settings.json` allows exactly that.
+
 ## Next
 
 - Model/effort: keep. The work was config plus evidence reads, and the one surprise (pnpm checking the lockfile against policy on frozen installs) came from running it, not from reasoning.
 - Owner first: on the first release after this merges, check that the release PR shows only the dispatch `check` (no `action_required` run), that it is green, and merge with `--match-head-commit`. After that release, check that Dependabot rebuilt #420 without prettier.
-- Plan change: `docs/IMPLEMENTATION_PLAN.md` §11 (line 572, the allow-rule list) still names the `actions/runs/*/approve` POST; it should drop it.
+- Plan change: `docs/IMPLEMENTATION_PLAN.md` §11 (lines 444, 562, 572, ~617) should drop the approve allow rule, say `ci` runs once per PR into `dev`, and describe the Dependabot cooldown and lint-format group.
 
 <adjustments>
 - pnpm 12.16.1 verifies every lockfile entry against `minimumReleaseAge` and `trustPolicy` on `pnpm install --frozen-lockfile` ("Verifying lockfile against supply-chain policies"). A policy that the committed lockfile violates breaks CI, Vercel and the SessionStart hook at once. Test any such setting with a clean frozen install in a scratch copy first.

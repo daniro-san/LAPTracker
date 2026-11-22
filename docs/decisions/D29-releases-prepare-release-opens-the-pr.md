@@ -21,4 +21,5 @@ Why: a release was three manual steps (PR, merge, `gh release create`) and the t
 - `ci` and `dependabot-automerge` run on `pull_request` into `dev` only. The release PR (`dev → main`) starts neither, so it has no held `action_required` run, and nobody approves one.
 - The Run workflow that Prepare release starts on `dev` posts `check` on the release PR's head commit. Checked on PR #593 (head `fab5252f`): run 44957284752 (`workflow_dispatch`, `dev`) posted `check` = success from `github-actions`, the integration the `main` ruleset requires (id 15368). PR #589 (head `b509ad32`) shows the same. The approved `pull_request` run on that SHA was a second, identical run.
 - The orchestrator waits for that `check` to be green, then merges with `--merge --match-head-commit <sha>`. The `actions/runs/*/approve` allow rule is gone from `.claude/settings.json`.
-- Saves about 2,500 Actions minutes a month at the 2026-11-20/21 release rate, and one manual step per release.
+- Saves about 2,500 Actions minutes a month at the 2026-11-20/21 release rate (13 releases a day × one ~6-minute `check` run × 30 days ≈ 2,300–2,500), and one manual step per release.
+- If `dev` moves after Prepare release, the release PR's new head has no `check`: dispatch `ci` (and `e2e`) on `dev` again before merging (CONTRIBUTING, How to cut a release, step 4).
