@@ -48,7 +48,7 @@
 ## Open issues
 
 - **Dependabot reads `dependabot.yml` from the default branch (`main`).** The cooldown and the `lint-format` group take effect only after the next release. Then Dependabot rebuilds #420 without prettier, and prettier arrives in its own `lint-format` PR, which needs `pnpm exec prettier --write lib/i18n/th.ts lib/i18n/glossary/th.md` by hand.
-- **`lefthook@2.2.2` trust downgrade** reported by pnpm's `trustPolicy`. Look at its provenance on npm before turning on `trustPolicy: no-downgrade`, or before the next lefthook bump.
+- **`lefthook@2.2.2` trust downgrade:** checked by the orchestrator and judged benign (see D151). Turn on `trustPolicy: no-downgrade` once a lefthook release with provenance replaces 2.2.2.
 - **`minimumReleaseAge: 10080`** can go into `pnpm-workspace.yaml` once `@posthog/core@1.68.0` is 7 days old (2026-11-22T14:18Z), if nothing younger lands first. Re-run a clean `pnpm install --frozen-lockfile` with it set before committing. In strict mode it also makes `pnpm add`/`update` fail when no version in range is 7 days old.
 - **Renumbered to D151** by the orchestrator: PR #600 holds D150.
 - **Security updates still target `main`** (report S7). This change does not touch that; R8 does.
