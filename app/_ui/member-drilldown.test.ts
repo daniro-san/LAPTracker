@@ -19,6 +19,7 @@ import {
   memberViews,
   mightSteps,
   type MemberView,
+  type SortKey,
 } from "./member-views";
 import { toRow } from "./MembersExplorer";
 import { StatTable } from "./StatTable";
@@ -94,9 +95,9 @@ async function listed(eventId: number, query: { show?: string; sort?: string }) 
   return { detail, members, uids: members.map((m) => m.uid) };
 }
 
-/** One member's card as the list sorted by ± Kills shows it, as text. */
-function card(m: MemberView) {
-  const row = toRow(m, { canDelta: true, compared: true, sort: "killsDelta" }, en);
+/** One member's card as the list sorted by `sort` (± Kills unless given) shows it, as text. */
+function card(m: MemberView, sort: SortKey = "killsDelta") {
+  const row = toRow(m, { canDelta: true, compared: true, sort }, en);
   const html = renderToStaticMarkup(
     createElement(StatTable, { leadLabel: "Member", columns: [], rows: [row], copy: en }),
   );
@@ -186,25 +187,35 @@ describe("War turnout and Kill share open the list by kills gained", () => {
     expect(text).toContain("Kills2.10M2,100,000— · Start unknown · counted as 0");
     expect(text).not.toMatch(/[▲+]2[.,]1/);
     expect(card(members[1] as MemberView)).not.toContain("unknown");
+    // Under any other sort the reason stays, without the order's "counted as 0".
+    const byMight = card(members[0] as MemberView, "might");
+    expect(byMight).toContain("— · Start unknown");
+    expect(byMight).not.toContain("counted as 0");
   });
 
-  it("ranks a member whose kills are unknown at End last, below a fall, and the row says so (D15, #692)", async () => {
+  it("ranks a member whose kills are unknown at End as a fall of their whole Start kills, and the row says so (D15, #692)", async () => {
     const { eventId } = await event(
       [
         { uid: 4401, name: "Pia Holt", kills: 1_000_000 },
         { uid: 4402, name: "Quin Ashe", kills: 3_200_000 },
         { uid: 4403, name: "Rue Dell", kills: 500_000 },
+        { uid: 4404, name: "Sia Mott", kills: 5_000_000 },
       ],
       [
         { uid: 4401, name: "Pia Holt", kills: 1_050_000 },
+        // End counts as 0: a fall of 3.2M.
         { uid: 4402, name: "Quin Ashe", kills: null },
-        // A fall of 10K: still above the member whose End counts as 0 (−3.2M).
+        // A fall of 10K ranks above that; a read fall of 4M ranks below it.
         { uid: 4403, name: "Rue Dell", kills: 490_000 },
+        { uid: 4404, name: "Sia Mott", kills: 1_000_000 },
       ],
     );
     const { members, uids } = await listed(eventId, { sort: "killsDelta" });
 
-    expect(uids).toEqual([4401, 4403, 4402]);
+    expect(uids).toEqual([4401, 4403, 4402, 4404]);
     expect(card(members[2] as MemberView)).toContain("— · End unknown · counted as 0");
+    const byMight = card(members[2] as MemberView, "might");
+    expect(byMight).toContain("— · End unknown");
+    expect(byMight).not.toContain("counted as 0");
   });
 });

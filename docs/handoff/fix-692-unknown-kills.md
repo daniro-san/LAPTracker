@@ -8,7 +8,7 @@
 - `toRow` in `MembersExplorer.tsx` is exported for the test. `Mode` carries the list's sort.
 - Copy: `members.startUnknown`, `members.endUnknown`, `members.countedAsZero` (`lib/copy.ts`), translated in 17 languages (translate-copy skill, stamped).
 - D15: dated amendment (2026-11-22, issue 692).
-- Tests (`app/_ui/member-drilldown.test.ts`, PGlite): one for an unknown at Start (ranks by the whole End kills above a read gain, and the row shows the End figure, then `— · Start unknown · counted as 0`, with no arrow or sign), and one for an unknown at End (ranks last, below a read fall, and the row says `— · End unknown · counted as 0`).
+- Tests (`app/_ui/member-drilldown.test.ts`, PGlite): one for an unknown at Start (ranks by the whole End kills above a read gain, and the row shows the End figure, then `— · Start unknown · counted as 0`, with no arrow or sign), and one for an unknown at End (ranks as a fall of their whole Start kills, `killsGain` with End as 0: below a read fall of 10K, above a read fall of 4M; the row says `— · End unknown · counted as 0`). Both tests also render the row under the Might sort: the plain "Start unknown" / "End unknown" stays and "counted as 0" is absent.
 
 ## Decisions
 
@@ -33,6 +33,11 @@
   - With the row note removed, both new tests fail.
   - With ± Kills ordered by the shown change, the Start test (and the existing War turnout test) fail.
   - With the End case removed from `killsUnknownAt`, the End test fails.
+- Review fixes (PR 708):
+  - With "counted as 0" made unconditional, both new tests fail on their Might-sort assertions.
+  - With ± Kills ordered by the shown change, the End test also fails: the unknown-at-End member would sit last, below the 4M read fall.
+  - `pnpm vitest related --run app/_ui/member-drilldown.test.ts`: 4 passed.
+  - `pnpm check`: green (vitest 1,877 passed, 4 skipped; i18n 17 languages up to date).
 
 ## Open issues
 
