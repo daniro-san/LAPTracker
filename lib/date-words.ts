@@ -22,6 +22,8 @@ export interface DateWords {
   sentence: (at: When) => string;
   /** "November 20, 2026": a date that may be months away. */
   withYear: (at: When) => string;
+  /** "Sat": a weekday beside a time ("Sat 22:00"). */
+  weekday: (at: When) => string;
   /** "18:54", on the 24-hour clock. */
   time: (at: Date) => string;
   /** "Fri, Nov 20, 18:54". */
@@ -51,6 +53,7 @@ function make(language: string, zone: string): DateWords {
     };
   };
   const day = both({ weekday: "short", day: "numeric", month: "short" });
+  const weekday = both({ weekday: "short" });
   const dayMonth = both({ day: "numeric", month: "short" });
   const long = both({ weekday: "long", day: "numeric", month: "long" });
   const sentence = both({ day: "numeric", month: "long" });
@@ -62,6 +65,7 @@ function make(language: string, zone: string): DateWords {
     long: long.format,
     sentence: sentence.format,
     withYear: withYear.format,
+    weekday: weekday.format,
     time: (at) => clock.format(at),
     at: (at) => joinAt(language, day.format(at), clock.format(at)),
     range: dayMonth.range,

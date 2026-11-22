@@ -1,7 +1,8 @@
 // /w/[slug]/insights (issue 489): the officers' analysis of their own alliance, a view of Members. The
 // week's pulse, effort at every might level with "Quiet contributors", the membership flow, KvK cost and
-// recovery, squads seen and the Raid Shield history, all from data already stored (0 upstream calls). The
-// access check runs before anything is read (D71); a page turned off for the alliance goes to Home (D126).
+// recovery, squads seen, the Raid Shield history and the members' time zones (counts only), all from data
+// already stored (0 upstream calls). The access check runs before anything is read (D71); a page turned
+// off for the alliance goes to Home (D126).
 // Nobody is ranked, the only names are a thanks list and a help list (D75, D114), and every section says
 // what it rests on.
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
@@ -17,6 +18,7 @@ import { insightsWords } from "@/lib/private/insights-words";
 import { SignedInFrame } from "../../../_ui/Frame";
 import { KvkCard, ShieldCard, SquadsCard } from "../../../_ui/InsightsMore";
 import { EffortCard, FlowCard, PulseCard } from "../../../_ui/InsightsSections";
+import { ZonesCard } from "../../../_ui/InsightsZones";
 import { ViewSwitch } from "../../../_ui/MembersHead";
 import { openRollCall } from "../../../_ui/roll-call-page";
 import { sharePropsFor } from "../../../_ui/share-thanks-data";
@@ -26,11 +28,12 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
     params,
     "insights",
     async (db, access, _today, _language, zone) => {
+      const now = new Date();
       const [view, channels] = await Promise.all([
-        insightsView(db, access, new Date(), zone),
+        insightsView(db, access, now, zone),
         channelNames(db, access, getEnv()),
       ]);
-      return { view, channel: channels.members };
+      return { view, channel: channels.members, now };
     },
     "insights",
   );
@@ -69,6 +72,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
       {data.view.shield && (
         <ShieldCard shield={shieldWords(data.view.shield, { t, language })} t={t} noData={noData} />
       )}
+      <ZonesCard counts={data.view.zones} now={data.now} {...{ today, slug, t, language }} />
     </>
   );
   return (

@@ -126,6 +126,17 @@ export const factMemberOf = (project: string, repeat: number) =>
 export const FACT_SEEDED = { tier: 10, daysAgo: 3 } as const;
 
 /**
+ * Lantern Keep's recorded time zones (Insights' Time zones card, owner 2026-11-22), by member k: zones with
+ * no summer time, so the card's offsets and reset times hold on any seed date. Read-only; no other test
+ * reads these members' time zones.
+ */
+export const ZONE_FACTS: Record<number, string> = {
+  0: "Asia/Manila",
+  3: "Asia/Manila",
+  5: "America/Sao_Paulo",
+};
+
+/**
  * The Lantern Keep member an officer marked Needs help the week before last ("They need help" with a note)
  * and talked to last week (issue 585 slice 2): read-only, so Home counts them and Follow-up lists them under
  * "Needs help" with since when, who, why and last week's note. k=5 has no fact the facts tests edit.
