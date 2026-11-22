@@ -13,6 +13,7 @@ const quiet: NeedsInput = {
   dailyRetry: false,
   requests: 0,
   errors24h: 0,
+  cleanups: [],
   // A page error and a used-up limit: App errors' row, and 00:00 UTC, deal with those.
   workspaces: [{ attention: ["errors", "cap"] }, { attention: [] }],
   deletions: 0,

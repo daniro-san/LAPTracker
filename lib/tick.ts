@@ -8,6 +8,7 @@ import { RUN_DEADLINE_MS } from "./compute";
 import { autoRetryDailyRead, runDailyRead, type DailyReadSummary } from "./daily-read";
 import { databaseDown } from "./data-unavailable";
 import type { Db } from "./db";
+import { consoleLogger, createRunLogger, type LogData, type Logger } from "./logger";
 import {
   createNotifier,
   discordClock,
@@ -27,6 +28,7 @@ import {
 import { pruneEndedPictures } from "./repo/notice-picture-cleanup";
 import { clearOldPlayerRaw } from "./repo/player-reads";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
+import { insertRunLog } from "./repo/run-logs";
 import { latestTickAt } from "./repo/ticks";
 import { purgeDueWorkspaces } from "./repo/workspace-purge";
 import { reportError } from "./report-error";
@@ -96,7 +98,7 @@ async function dailyRead(
   const first = await readThenInvalidate(ctx, () => runDailyRead(deps, db, due.day, targets));
   // D125: once a day, after the day's first read, the workspaces whose 14 days ended are deleted; D132:
   // and the player reads' raw bodies older than 90 days are cleared; D115: app_errors past 30 days go.
-  if (first) await purgeWorkspaces(ctx, db, ctx.now());
+  if (first) await purgeWorkspaces(ctx, db, ctx.now(), due.day);
   const summary =
     first ?? (await readThenInvalidate(ctx, () => autoRetryDailyRead(deps, db, due.day, targets)));
   if (!summary) return null;
@@ -138,30 +140,43 @@ async function invalidateOnThrow<T>(ctx: AppContext, write: () => Promise<T>): P
 /**
  * The daily jobs of D125, D132 (raw bodies past 90 days) and D115 (app_errors past 30 days): counts only in
  * the log, and a failure never fails the day's read. A job that throws is one code-only line and a handled
- * PostHog exception (D115's 2026-11-21 amendment).
+ * PostHog exception (D115's 2026-11-21 amendment). Each outcome is also a line in the run log of the day's
+ * read (`day`), so /admin's "Needs you" shows a job whose newest outcome failed until a later one succeeds
+ * (issue 507, `failedCleanups`).
  */
-async function purgeWorkspaces(ctx: AppContext, db: Db, now: Date): Promise<void> {
+async function purgeWorkspaces(ctx: AppContext, db: Db, now: Date, day: string): Promise<void> {
+  const log = createRunLogger(
+    { insertRunLog: (line) => insertRunLog(db, line) },
+    { readDay: day, secrets: secretsOf(ctx.env), now: ctx.now },
+  );
+  const done = (code: string, data: LogData) => {
+    console.info(code, data);
+    return log.info(code, data);
+  };
   await purgeDueWorkspaces(db, now)
-    .then(({ workspaces, rows, failed }) => {
-      console.info("workspaces.purged", { workspaces, rows, failed: failed.length });
+    .then(async ({ workspaces, rows, failed }) => {
+      await done("workspaces.purged", { workspaces, rows, failed: failed.length });
       // One workspace's failure stops none of the others: each is logged by its error class.
       for (const code of failed)
-        console.error("workspaces.purge_failed", { code, workspaces, rows });
+        await log.error("workspaces.purge_failed", { code, workspaces, rows });
     })
-    .catch(tickJobFailed(ctx, "workspaces.purge_failed"));
+    .catch(tickJobFailed(ctx, "workspaces.purge_failed", log));
   await clearOldPlayerRaw(db, now)
-    .then((reads) => console.info("players.raw_cleared", { reads }))
-    .catch(tickJobFailed(ctx, "players.raw_clear_failed"));
+    .then((reads) => done("players.raw_cleared", { reads }))
+    .catch(tickJobFailed(ctx, "players.raw_clear_failed", log));
   await purgeOldAppErrors(db, now)
-    .then((rows) => console.info("app_errors.purged", { rows }))
-    .catch(tickJobFailed(ctx, "app_errors.purge_failed"));
+    .then((rows) => done("app_errors.purged", { rows }))
+    .catch(tickJobFailed(ctx, "app_errors.purge_failed", log));
 }
 
-/** A tick job's failure: a code-only line, and PostHog's handled exception. */
-const tickJobFailed = (ctx: AppContext, code: string) => (error: unknown) => {
-  console.error(code, { code: error instanceof Error ? error.name : "unknown" });
-  reportError(ctx, { route: "/api/tick", kind: code, error });
-};
+/** A tick job's failure: a code-only line (also in `log`, which mirrors it to the console), and PostHog's
+ * handled exception. */
+const tickJobFailed =
+  (ctx: AppContext, code: string, log: Logger = consoleLogger) =>
+  (error: unknown) => {
+    reportError(ctx, { route: "/api/tick", kind: code, error });
+    return log.error(code, { code: error instanceof Error ? error.name : "unknown" });
+  };
 
 /** The due sample of the slot holding now (D69), or null: a slot no tick took is not caught up.
  * SAMPLE_EVERY_MIN=0 is off. */

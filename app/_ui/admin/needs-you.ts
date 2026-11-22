@@ -5,6 +5,7 @@
 import type { PageIndexItem } from "@/lib/brand/components/layout/PageIndex";
 import { DAILY_QUOTA } from "@/lib/budget";
 import { copy, fill } from "@/lib/copy";
+import type { CleanupJob } from "@/lib/queries/admin-page";
 import { QUOTA_WARN_BELOW } from "@/lib/run";
 import { heartbeatBoundary } from "@/lib/tick-gate";
 
@@ -50,6 +51,9 @@ export interface NeedsInput {
   requests: number;
   /** app_errors rows in the last 24 h. */
   errors24h: number;
+  /** The daily jobs whose newest outcome failed (`failedCleanups`), newest first: the day's read and the
+   * failure's day in words. */
+  cleanups: readonly { job: CleanupJob; readDay: string; dayText: string }[];
   /** The Alliances rows' reasons (`attention`, D144): only setup and a key to fix count here. */
   workspaces: readonly { attention: readonly Look[] }[];
   /** Workspaces whose deletion is asked (D125): the owner can still cancel it. */
@@ -102,6 +106,15 @@ export function needsYou(input: NeedsInput): NeedRow[] {
     ["need-daily", "#run", t.daily, input.dailyRetry ? t.retry : null],
     ["need-requests", "#new-alliances", t.requests, counted(input.requests, t.waiting)],
     ["need-errors", "/admin/errors", t.errors, counted(input.errors24h, t.errors24h)],
+    // Linked to the newest failure's run log, which holds the failed job's line (issue 507).
+    [
+      "need-cleanup",
+      `/admin/runs/daily/${input.cleanups[0]?.readDay ?? ""}`,
+      t.cleanup,
+      input.cleanups.length > 0
+        ? input.cleanups.map((c) => fill(t.cleanupFailed[c.job], { day: c.dayText })).join(" · ")
+        : null,
+    ],
     ["need-workspaces", "#alliances", t.workspaces, workspacesState(input.workspaces)],
     ["need-deletions", "#workspaces", t.deletions, counted(input.deletions, t.asked)],
     ["need-quota", "#status", t.quota, quotaLowState(input.morningQuota, input.now)],

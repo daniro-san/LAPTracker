@@ -1,5 +1,5 @@
 // What /admin reads in one go: the target event (UX review S8) and everything the page shows about it.
-import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm";
 
 import { RUN_DEADLINE_MS } from "../compute";
 import type { Db } from "../db";
@@ -87,6 +87,44 @@ export async function latestQuota(db: Db) {
   return { newest, morning };
 }
 
+/** The tick's daily jobs (lib/tick.ts) by their run log codes: the success line, then the failure line. */
+const CLEANUP_CODES = {
+  workspaces: ["workspaces.purged", "workspaces.purge_failed"],
+  players: ["players.raw_cleared", "players.raw_clear_failed"],
+  errors: ["app_errors.purged", "app_errors.purge_failed"],
+} as const;
+
+export type CleanupJob = keyof typeof CLEANUP_CODES;
+
+/** How far back the daily jobs' outcomes are read: a week of daily reads (`run_logs_read_day_idx`, D149). */
+const CLEANUP_WINDOW_DAYS = 7;
+
+/**
+ * The daily jobs whose newest outcome in the last week's read logs is a failure (issue 507), newest first,
+ * with the day's read (its run log holds the line) and the failure's time. A later success clears a job.
+ */
+export async function failedCleanups(db: Db, now: Date) {
+  const since = new Date(now.getTime() - CLEANUP_WINDOW_DAYS * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const lines = await db
+    .select({ code: runLogs.code, readDay: runLogs.readDay, at: runLogs.at })
+    .from(runLogs)
+    .where(
+      and(gte(runLogs.readDay, since), inArray(runLogs.code, Object.values(CLEANUP_CODES).flat())),
+    )
+    .orderBy(desc(runLogs.at), desc(runLogs.id));
+  return (Object.keys(CLEANUP_CODES) as CleanupJob[])
+    .flatMap((job) => {
+      const [ok, failed] = CLEANUP_CODES[job];
+      const newest = lines.find((l) => l.code === ok || l.code === failed);
+      return newest?.code === failed
+        ? [{ job, readDay: newest.readDay as string, at: newest.at }]
+        : [];
+    })
+    .sort((a, b) => b.at.getTime() - a.at.getTime());
+}
+
 /** The target event first: the nearest one until both its snapshots are done, then the next one. */
 export async function loadAdminPage(db: Db, now: Date, env: Env) {
   const done = await scheduledEventDone(db, currentEvent(now, env).eventAtUtc);
@@ -102,6 +140,7 @@ export async function loadAdminPage(db: Db, now: Date, env: Env) {
       scheduledEvent(db, target.eventAtUtc),
       recentTicks(db),
       getDailyRead(db, serverDay(now, env)),
+      failedCleanups(db, now),
     ])),
   ] as const;
 }
