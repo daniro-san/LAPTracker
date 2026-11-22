@@ -7,14 +7,9 @@ import { drilldownOf, openSetId } from "./InsightsSetMemory";
 describe("Insights' open set (issue 678)", () => {
   it("reopens only its own sets, and a fragment it does not own, a stray % too, never stops the page", () => {
     expect(openSetId("#who-range-0")).toBe("who-range-0");
-    for (const hash of ["#100%", "#signed-in", "#%E0%A4%A", ""])
+    for (const hash of ["#5%", "#signed-in", "#%E0%A4%A", ""])
       expect(() => openSetId(hash)).not.toThrow();
-    expect(["#100%", "#signed-in", "#%E0%A4%A", ""].map(openSetId)).toEqual([
-      null,
-      null,
-      null,
-      null,
-    ]);
+    expect(["#5%", "#signed-in", "#%E0%A4%A", ""].map(openSetId)).toEqual([null, null, null, null]);
   });
 
   it("sends ws_drilldown_opened with the page, the kind and a count bucket only, never the exact count", () => {
