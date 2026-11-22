@@ -4,6 +4,7 @@ import { and, asc, desc, eq, gt, inArray, lt, sql } from "drizzle-orm";
 
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
+import { opponentCallsDue } from "../kvk";
 import { events, snapshots } from "../schema";
 import { kvkOpponents, kvkReads } from "../schema-kvk";
 import type { Phase } from "./index";
@@ -88,17 +89,39 @@ export async function opponentReads(db: Db, opponentIds: number[]): Promise<Oppo
     .orderBy(asc(kvkReads.id));
 }
 
-/** One row per call sent (INVARIANT kvk.one-call-per-row); a second row for the same tag and phase is dropped. */
-export async function insertOpponentRead(db: Db, row: OpponentRead): Promise<void> {
-  // Drizzle types the elements as numbers; a null stays null in the array (D15).
-  const arrays = {
-    memberPower: row.memberPower as number[] | null,
-    memberKills: row.memberKills as number[] | null,
-  };
-  await db
+/** Drizzle types the elements as numbers; a null stays null in the array (D15). */
+const arraysOf = (row: OpponentRead) => ({
+  memberPower: row.memberPower as number[] | null,
+  memberKills: row.memberKills as number[] | null,
+});
+
+/** Claims (opponent, phase, tag) before its call (INVARIANT kvk.one-call-per-row): false when a row exists. */
+export async function insertOpponentRead(db: Db, row: OpponentRead): Promise<boolean> {
+  const inserted = await db
     .insert(kvkReads)
-    .values({ ...row, ...arrays })
-    .onConflictDoNothing();
+    .values({ ...row, ...arraysOf(row) })
+    .onConflictDoNothing()
+    .returning({ id: kvkReads.id });
+  return inserted.length > 0;
+}
+
+/** The call's answer over its claim. */
+export async function updateOpponentRead(db: Db, row: OpponentRead): Promise<void> {
+  const { opponentId, phase, tag, ...rest } = row;
+  await db
+    .update(kvkReads)
+    .set({ ...rest, ...arraysOf(row) })
+    .where(
+      and(eq(kvkReads.opponentId, opponentId), eq(kvkReads.phase, phase), eq(kvkReads.tag, tag)),
+    );
+}
+
+/** The opponent's calls still due for the war at `eventAt` (D152): 0 with no opponent saved. */
+export async function opponentCallsDueAt(db: Db, eventAt: Date, now: Date): Promise<number> {
+  const [o] = await opponentsAt(db, [eventAt]);
+  if (!o) return 0;
+  const reads = await opponentReads(db, [o.id]);
+  return opponentCallsDue({ ...o, eventAtUtc: o.eventAt }, reads, now);
 }
 
 export type SaveRefusal = "war_started" | "opponent_read" | "snapshot_running";

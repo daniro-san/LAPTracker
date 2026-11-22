@@ -49,6 +49,31 @@
 - Screenshots at 360 px and wide, light and dark, reviewed by a designer persona: ship with changes, all six adopted.
 - No upstream quota spent. No `pnpm fixture:record`. Invented data only.
 
+## Review fixes (PR 679, deep review, 2026-11-22)
+
+- **Finding 1 and finding 7 (critical): the reserves.**
+  - `eventReserve`, `squadsReserve` and `dailyReadQuota` take `opponentCalls`, the opponent's calls still due. Each read at the Start still due counts 2 (it is read again at the End); each read at the End still due counts 1.
+  - `opponentReserve` (`lib/kvk-reserve.ts`) gives it only on the KvK's quota day (`eventOnQuotaDay`, the condition `eventReserve` already used) and only with an opponent saved. On any other day it makes no query.
+  - It is passed in by the squads read, lookups and the Raid Shield checks. The tick and /admin's Retry pass it to the daily read.
+  - With no opponent saved, every reserve is as before D152. A test checks this, and the dev tests' old numbers are back unchanged.
+- **Finding 5: the cap is hard.**
+  - Each call first claims its row (error `sent: no answer stored`), then the answer replaces it. A run that dies in between never sends that tag again.
+  - Workers are awaited with `Promise.allSettled`, and one worker's failure stops the others before their next call.
+  - Found while writing the tests: each call is now counted against `MAX_UPSTREAM_CALLS` in the same synchronous step as the check. Before, four workers could pass the cap together, because each awaited its claim between the check and the call.
+- **Finding 4:** a 429 sets the stop flag before the log write.
+- **Finding 6:** a sample's opponent count (`opponentEndsDue`) is guarded. A failure is logged as `opponent.failed` and counts 0, so the opponent never changes our sample's outcome. With no opponent, the reads query is not made.
+  - The review suggested falling back to 15. I used 0, because the orchestrator asked that an opponent failure never change our sample. The cost: if that query fails, a sample does not keep room for the opponent's End reads. The End's own quota check still never lets the opponent's reads take ours.
+- **Finding 3:** new tests in `lib/collector-opponent-limits.test.ts`:
+  - the 5 s floor;
+  - `MAX_UPSTREAM_CALLS` with four workers;
+  - a crash between the call and its stored answer, with no re-send;
+  - an End answer from another alliance id;
+  - `opponent.failed` keeping our Start complete and our sample read.
+  - `lib/kvk-reserve.test.ts` checks that the reserves are unchanged with no opponent, are 2 per Start read before the Start, make no query on another day, and count only End reads once the Start has read. `lib/squads.test.ts` and `lib/daily-read.test.ts` have one test each for `opponentCalls`.
+- **Finding 3 (docs):** D152, the D132 amendment and the plan say the reserve applies only on the KvK's quota day with an opponent saved. D152 also describes the claim-first rows and the sample guard.
+
+- **Verified after the fixes:** `pnpm vitest related --run` on the changed files: 200 files, 1,136 passed, 1 skipped. `pnpm check`: exit 0. `pnpm test:e2e` (full suite, with `next build`, own database `lap_e2e_k306`, dropped afterwards, ports 3577/54477): 53 passed, 3 skipped.
+
 ## Open issues
 
 - **No owner reply on the plan itself.** It rests on the owner's 2026-11-19 comment on #306 (quota, privacy, views) and the standing approval. One-way doors for the owner to see:
@@ -56,7 +81,7 @@
   2. Up to 30 more `/v1` calls per KvK.
   3. Another server's member uids, might and kills stored, kept like every roster (D2).
   4. A new public section and Discord block behind a flag.
-  5. 30 calls more reserved on every KvK quota day by `eventReserve` and the daily read, whether or not an opponent is saved.
+  5. The reserves outside the run (squads read, lookups, Raid Shield checks, daily read) keep the opponent's calls still due, at most 30, only on the KvK's quota day and only while an opponent is saved.
 - **A failed tag at a complete Start stays unread for that KvK**, unless the owner forces a Start re-run. A forced re-run also reads our 20 again (about 20 calls).
 - **A Start that already ran before the opponent was saved reads no opponent.** The owner must save it before Saturday 10:00 ST.
 
@@ -68,7 +93,17 @@ Follow-ups:
 - tag discovery from the opponent's ranks board (needs a decision on `internal.ts`);
 - a "read the opponent now" press;
 - the D69 `*` member-change mark on Start to End rows;
-- an admin Discord line listing tags that failed at the Start.
+- an admin Discord line listing tags that failed at the Start;
+- review of PR 679, left for later:
+  - finding 2: move the tag rule, the save-or-result branching and the offered-KvK check from the route handler into lib. The Start read could then check the tags it reads back too.
+  - finding 8: test the `manual = false` condition of `opponentFor`; today's test seeds a rehearsal only.
+  - finding 10: test the End picture block's flag and phase gate, its read failure, and the event page with the flag off.
+  - finding 11: add the kvk modules and their edges to `docs/ARCHITECTURE.md`'s module map.
+  - finding 12: derive the e2e expected strings (server 325, the labels) from seed and copy exports instead of literals.
+  - finding 13: use `HEAVY_MIGHT` in the SQL instead of `60000000`.
+  - finding 14: `opponentReads` for /admin selects the member arrays it does not need.
+
+Owner question (review finding 9): a past KvK with no opponent saved before its war cannot get one now. The route refuses a server or tag change at or after the war, and the result needs an opponent row. Should a past KvK, such as the 2026-11-14 one, be recordable after the fact, with its server and result only (no tags, no reads)? Today it cannot.
 
 Owner steps before 2026-11-28:
 

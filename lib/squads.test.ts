@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TEST_ENV } from "./app-context.test-helpers";
-import { MAX_OPPONENT_TAGS, requiredQuota } from "./budget";
+import { requiredQuota } from "./budget";
 import {
   eventReserve,
   mainSquad,
@@ -17,8 +17,7 @@ const CFG = { ...TEST_ENV, SAMPLE_EVERY_MIN: 15 };
 const THU_NIGHT = new Date("2026-11-20T01:39:00Z"); // Thursday 23:39 server time
 const FRI_NIGHT = new Date("2026-11-21T01:39:00Z"); // Friday 23:39 server time = Saturday UTC
 const SAT_NIGHT = new Date("2026-11-22T01:39:00Z"); // Saturday 23:39 server time = Sunday UTC
-// Before + After with the KvK opponent's 15 tags at Start and End (D152), and 15 samples of 1 + 20 calls.
-const KVK_READS = requiredQuota(20 + MAX_OPPONENT_TAGS) + 15 * 21;
+const KVK_READS = requiredQuota(20) + 15 * 21; // Before + After, and 15 samples of 1 + 20 calls
 
 describe("the squads read's quota guard (D117)", () => {
   it("keeps the KvK's reads on its quota day: Friday night's read spends from Saturday UTC", () => {
@@ -34,9 +33,12 @@ describe("the squads read's quota guard (D117)", () => {
   });
 
   it("counts no samples when they are off", () => {
-    expect(eventReserve(FRI_NIGHT, { ...CFG, SAMPLE_EVERY_MIN: 0 }, 20)).toBe(
-      requiredQuota(20 + MAX_OPPONENT_TAGS),
-    );
+    expect(eventReserve(FRI_NIGHT, { ...CFG, SAMPLE_EVERY_MIN: 0 }, 20)).toBe(requiredQuota(20));
+  });
+
+  it("keeps the KvK opponent's calls still due on its quota day only (D152)", () => {
+    expect(eventReserve(FRI_NIGHT, CFG, 20, 30)).toBe(KVK_READS + 30);
+    expect(squadsReserve(THU_NIGHT, CFG, 20, 30)).toBe(SQUADS_SAFETY_MARGIN);
   });
 });
 

@@ -1,14 +1,14 @@
 // The KvK opponent's reads (D152, issue 306): after a scheduled event's own Start or End reads have settled, in
 // the time the run has left, one /v1 call per opponent alliance. Split from lib/collector.ts. Nothing here
 // changes the snapshot's status or error: those come from our own alliances' rows only.
-import { MAX_OPPONENT_TAGS, requiredQuota } from "./budget";
+import { requiredQuota } from "./budget";
 import type { Deps } from "./collector";
 import { sameMembers } from "./collector-identity";
 import { logV1Fetch } from "./collector-log";
 import { FRESH_MAX_AGE_MS, MAX_UPSTREAM_CALLS } from "./collector-rows";
 import { SAMPLE_CALL_TIMEOUT_MS } from "./collector-sample";
 import { isFresh } from "./compute";
-import { usableStart } from "./kvk";
+import { opponentDue } from "./kvk";
 import type { OpponentInfo, OpponentRead, Phase, SnapshotPhase } from "./repo";
 import {
   type AllianceSnapshotInput,
@@ -20,6 +20,9 @@ import { describe } from "./upstream-errors";
 
 /** No opponent call starts with less of the run's time left: it must end before the run answers. */
 export const OPPONENT_MIN_LEFT_MS = 5_000;
+/** The row a call claims before it is sent (INVARIANT kvk.one-call-per-row); the answer replaces it. A run
+ * that dies in between leaves it, so that tag is never sent again. */
+export const SENT = "sent: no answer stored";
 const CONCURRENCY = 4;
 
 /** The run's state this reads and adds its calls to; never its `abort`, `capped` or `deadlineHit`. */
@@ -30,26 +33,6 @@ export interface OpponentRun {
   deadlineMs: number;
   calls: number;
   lowest: { remaining: number | null; calls: number };
-}
-
-/**
- * What this phase still reads. Start: saved tags with no Start row, while the opponent has fewer than
- * MAX_OPPONENT_TAGS Start rows; rows are never deleted, so no tag is called twice (INVARIANT
- * kvk.one-call-per-row) and edited tags cannot pass the cap. End: each usable Start row whose tag is still
- * saved and has no End row, by its union id.
- */
-export function opponentDue(o: OpponentInfo, reads: readonly OpponentRead[], phase: Phase) {
-  const done = new Set(reads.filter((r) => r.phase === phase).map((r) => r.tag));
-  if (phase === "before") {
-    const left = MAX_OPPONENT_TAGS - done.size;
-    return o.tags
-      .filter((tag) => !done.has(tag))
-      .slice(0, Math.max(0, left))
-      .map((tag) => ({ tag, start: null }));
-  }
-  return reads
-    .filter((r) => usableStart(r, o.eventAtUtc) && o.tags.includes(r.tag) && !done.has(r.tag))
-    .map((start) => ({ tag: start.tag, start }));
 }
 
 type Due = ReturnType<typeof opponentDue>[number];
@@ -139,17 +122,18 @@ function mayCall(p: Pass): boolean {
 }
 
 /** One opponent call, one attempt, and the row it leaves, data or error. */
-async function readOne(p: Pass, due: Due): Promise<OpponentRead> {
+async function callOne(p: Pass, due: Due, sent: OpponentRead): Promise<OpponentRead> {
   const { run, o } = p;
   const { deps } = run;
   const options = {
     maxRetries: 0,
     timeoutMs: Math.min(SAMPLE_CALL_TIMEOUT_MS, timeLeft(run) - 1_000),
   };
-  const hook = () => void run.calls++;
-  const started = deps.now();
+  // The one attempt was counted when the worker reserved it (`reserve`): no retry adds another.
+  const hook = () => {};
+  const started = sent.readAt;
   const call = { endpoint: "alliance", unionId: due.start?.unionId ?? null } as const;
-  const row = emptyRow(o, run, p.phase, due, started);
+  const row = { ...sent, error: null };
   try {
     const a = due.start
       ? await deps.v1.fetchAlliance(due.start.unionId as number, hook, undefined, options)
@@ -164,10 +148,34 @@ async function readOne(p: Pass, due: Due): Promise<OpponentRead> {
     p.known.add(a.unionId);
     return dataRow(read, a);
   } catch (e) {
-    await logV1Fetch(run, started, call, { error: e });
+    // A 429 stops the other calls before anything else is awaited.
     if (e instanceof QuotaExhaustedError) p.stopped = true;
+    await logV1Fetch(run, started, call, { error: e });
     return { ...row, error: errorText(e) };
   }
+}
+
+/** Claim the tag's row, then call, then store the answer over the claim. A claim another run holds is skipped. */
+async function readOne(p: Pass, due: Due): Promise<void> {
+  const { deps } = p.run;
+  const sent = { ...emptyRow(p.o, p.run, p.phase, due, deps.now()), error: SENT };
+  // INVARIANT kvk.one-call-per-row: the row exists before the call is sent.
+  const claimed = await deps.repo.insertOpponentRead(sent).catch((e: unknown) => {
+    p.run.calls--;
+    throw e;
+  });
+  // Another run holds the row: no call, so its reserved count is given back.
+  if (!claimed) return void p.run.calls--;
+  await deps.repo.updateOpponentRead(await callOne(p, due, sent));
+}
+
+/** Whether the next call may go, and if so its count taken now, in the same synchronous step as the check:
+ * the workers await their claims in between, so a count taken at the call would let four pass the cap
+ * together (INVARIANT calls.max-upstream). */
+function reserve(p: Pass): boolean {
+  if (!mayCall(p)) return false;
+  p.run.calls++;
+  return true;
 }
 
 /**
@@ -204,11 +212,19 @@ export async function collectOpponent(
     stopped: false,
   };
   const worker = async () => {
-    for (let due = queue.shift(); due && mayCall(pass); due = queue.shift())
-      await deps.repo.insertOpponentRead(await readOne(pass, due));
+    try {
+      for (let due = queue.shift(); due && reserve(pass); due = queue.shift())
+        await readOne(pass, due);
+    } catch (e) {
+      // One worker's failure stops the others before their next call.
+      pass.stopped = true;
+      throw e;
+    }
   };
   await deps.logger.info("opponent.start", { phase, alliances: queue.length });
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  const settled = await Promise.allSettled(Array.from({ length: CONCURRENCY }, worker));
+  const failed = settled.find((r) => r.status === "rejected");
+  if (failed) throw failed.reason;
 }
 
 /** The opponent's reads of a Before or an After, never a sample's; their failure is logged and never fails or
@@ -226,8 +242,14 @@ export async function readOpponent(
   }
 }
 
-/** A sample's count of the opponent's End reads still due (D152), for its quota rule. */
+/** A sample's count of the opponent's End reads still due (D152), for its quota rule. Its failure is logged
+ * and counts none, so the opponent never changes a sample's outcome (INVARIANT kvk.never-changes-status). */
 export async function opponentEndsDue(deps: Deps, eventId: number): Promise<number> {
-  const o = await deps.repo.opponentFor(eventId);
-  return o ? opponentDue(o, await deps.repo.opponentReads(o.id), "after").length : 0;
+  try {
+    const o = await deps.repo.opponentFor(eventId);
+    return o ? opponentDue(o, await deps.repo.opponentReads(o.id), "after").length : 0;
+  } catch (e) {
+    await deps.logger.error("opponent.failed", { error: describe(e) });
+    return 0;
+  }
 }

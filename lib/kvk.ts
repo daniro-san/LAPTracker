@@ -1,6 +1,9 @@
 // The KvK matchup's rules (D152, issue 306), pure: which alliances each side compares, their figures at the
 // Start, and Start to End over the members in both readings. No IO, no clock.
 
+import { MAX_OPPONENT_TAGS } from "./budget";
+import type { OpponentInfo, OpponentRead } from "./repo/kvk";
+
 /** A KvK opponent's Start row the End and the matchup may use: data, fresh, and read before the war. */
 export const usableStart = (
   r: {
@@ -138,4 +141,41 @@ export function matchupOf(
   if (n === 0) return null;
   const top = (xs: readonly SideAlliance[]) => [...xs].sort(byMight).slice(0, n);
   return { n, us: sideOf(top(ours), ended), them: sideOf(top(theirs), ended) };
+}
+
+/**
+ * What a phase of the opponent still reads (D152). Start: saved tags with no Start row, while the opponent has
+ * fewer than MAX_OPPONENT_TAGS Start rows; rows are never deleted, so no tag is called twice (INVARIANT
+ * kvk.one-call-per-row) and edited tags cannot pass the cap. End: each usable Start row whose tag is still
+ * saved and has no End row, by its union id.
+ */
+export function opponentDue(
+  o: OpponentInfo,
+  reads: readonly OpponentRead[],
+  phase: "before" | "after",
+) {
+  const done = new Set(reads.filter((r) => r.phase === phase).map((r) => r.tag));
+  if (phase === "before") {
+    const left = MAX_OPPONENT_TAGS - done.size;
+    return o.tags
+      .filter((tag) => !done.has(tag))
+      .slice(0, Math.max(0, left))
+      .map((tag) => ({ tag, start: null }));
+  }
+  return reads
+    .filter((r) => usableStart(r, o.eventAtUtc) && o.tags.includes(r.tag) && !done.has(r.tag))
+    .map((start) => ({ tag: start.tag, start }));
+}
+
+/**
+ * The opponent's calls still due at `now` (D152), for the reserves outside the run: each Start read still due
+ * counts twice (it is read again at the End), each End read due once; no Start read at or after the war.
+ */
+export function opponentCallsDue(
+  o: OpponentInfo,
+  reads: readonly OpponentRead[],
+  now: Date,
+): number {
+  const start = now < o.eventAtUtc ? opponentDue(o, reads, "before").length : 0;
+  return 2 * start + opponentDue(o, reads, "after").length;
 }

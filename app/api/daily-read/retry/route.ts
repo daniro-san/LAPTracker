@@ -9,6 +9,7 @@ import { secretsOf } from "@/lib/app-context";
 import { authorize } from "@/lib/auth";
 import { retryDailyRead } from "@/lib/daily-read";
 import { databaseDown } from "@/lib/data-unavailable";
+import { opponentReserve } from "@/lib/kvk-reserve";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { serverDay } from "@/lib/schedule";
 import { dayTargets } from "@/lib/tracked";
@@ -22,7 +23,9 @@ export function POST(request: Request): Promise<Response> {
     const auth = await authorize(request.headers, db, ctx, { cron: false, pin: true });
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
-    const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
+    // D152: the KvK opponent's calls still due, on its quota day only.
+    const opponentCalls = await opponentReserve(db, ctx.now(), ctx.env);
+    const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env), opponentCalls };
     // D133: today's tracked set (read from the board if the tick has not yet) and the workspaces' alliances.
     const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };
     // INVARIANT cache.write-invalidates-reads (D143): the board, the set and the rosters it wrote, even

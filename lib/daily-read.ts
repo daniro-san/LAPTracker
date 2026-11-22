@@ -6,7 +6,7 @@
 // (D5 covers event snapshots only): a missed alliance is a gap in the history. It writes run_logs lines
 // under its day (`read_day`) with the collector's codes, so /admin/runs/daily/[day] shows its calls.
 import { TRACKED_COUNT } from "../config/alliances";
-import { dailyReadQuota, MAX_OPPONENT_TAGS } from "./budget";
+import { dailyReadQuota } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
 import { checkIdentity } from "./collector-identity";
 import { logRosterCheck } from "./collector-log";
@@ -51,8 +51,14 @@ class CallCapError extends Error {
   override name = "CallCapError";
 }
 
-/** `secrets` (secretsOf(env)) are masked in the run_logs lines; tests may leave them out. */
-type Deps = { v1: V1Source; now: () => Date; secrets?: readonly string[] };
+/** `secrets` (secretsOf(env)) are masked in the run_logs lines; tests may leave them out. `opponentCalls`: the
+ * KvK opponent's calls still due on the read's quota day (D152, `opponentReserve`); none when left out. */
+type Deps = {
+  v1: V1Source;
+  now: () => Date;
+  secrets?: readonly string[];
+  opponentCalls?: number;
+};
 
 interface Read {
   deps: Deps;
@@ -158,8 +164,8 @@ async function checkQuota(read: Read, n: number): Promise<string | null> {
     return `quota: ${describe(e)}`;
   }
   // INVARIANT budget.daily-keeps-event-reserve
-  // The event's reserve counts the KvK opponent's reads at their worst too (D152).
-  const needed = dailyReadQuota(n, TRACKED_COUNT + MAX_OPPONENT_TAGS);
+  // The KvK opponent's calls still due that day count too (D152); the caller passes 0 on other days.
+  const needed = dailyReadQuota(n, TRACKED_COUNT, read.deps.opponentCalls ?? 0);
   if (read.remaining >= needed) return null;
   await read.log.error("quota", { remaining: read.remaining, required: needed });
   return `quota: remaining ${read.remaining} < required ${needed}`;

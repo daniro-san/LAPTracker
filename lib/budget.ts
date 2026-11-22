@@ -39,9 +39,14 @@ export function sampleQuota(allianceCount: number, opponentReads = 0): number {
 
 /**
  * Minimum `remaining` before a daily read of `alliances` rosters (D60): its own reserve plus a whole
- * event run's, so a daily read never takes the quota a scheduled event needs that UTC day.
+ * event run's, so a daily read never takes the quota a scheduled event needs that UTC day; `opponentCalls`:
+ * the KvK opponent's calls still due on that day (D152, `opponentReserve`).
  * INVARIANT budget.daily-keeps-event-reserve
  */
-export function dailyReadQuota(alliances: number, eventAlliances: number): number {
-  return requiredQuota(alliances) + requiredQuota(eventAlliances);
+export function dailyReadQuota(
+  alliances: number,
+  eventAlliances: number,
+  opponentCalls = 0,
+): number {
+  return requiredQuota(alliances) + requiredQuota(eventAlliances) + opponentCalls;
 }

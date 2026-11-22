@@ -60,12 +60,21 @@ const opponentMethods = (tables: MemoryTables) =>
     opponentFor: async (eventId) => tables.opponents.get(eventId) ?? null,
     opponentReads: async (id) => tables.opponentReads.filter((r) => r.opponentId === id),
     insertOpponentRead: async (row) => {
-      const taken = tables.opponentReads.some(
-        (r) => r.opponentId === row.opponentId && r.phase === row.phase && r.tag === row.tag,
-      );
-      if (!taken) tables.opponentReads.push(row);
+      if (tables.opponentReads.some((r) => sameKey(r, row))) return false;
+      tables.opponentReads.push(row);
+      return true;
     },
-  }) satisfies Pick<Repo, "opponentFor" | "opponentReads" | "insertOpponentRead">;
+    updateOpponentRead: async (row) => {
+      const i = tables.opponentReads.findIndex((r) => sameKey(r, row));
+      if (i >= 0) tables.opponentReads[i] = row;
+    },
+  }) satisfies Pick<
+    Repo,
+    "opponentFor" | "opponentReads" | "insertOpponentRead" | "updateOpponentRead"
+  >;
+
+const sameKey = (a: OpponentRead, b: OpponentRead) =>
+  a.opponentId === b.opponentId && a.phase === b.phase && a.tag === b.tag;
 
 /** The tables of a new repo; a test sets an event's opponent in `opponents` (D152). */
 const newTables = (seedEvents: EventRow[]): MemoryTables => ({

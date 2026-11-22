@@ -11,6 +11,7 @@ import { logRosterCheck } from "./collector-log";
 import { dataRow } from "./daily-rows";
 import type { Db } from "./db";
 import type { Env } from "./env";
+import { opponentReserve } from "./kvk-reserve";
 import { consoleLogger } from "./logger";
 import { claimLookup, finishLookup, type QuotaGate } from "./repo/alliance-lookups";
 import { isKnownAlliance } from "./repo/alliances";
@@ -51,7 +52,13 @@ export async function lookupAlliance(deps: Deps, db: Db, unionId: number): Promi
   if (daily.includes(unionId)) return "daily";
   // INVARIANT lookups.not-in-event-window
   if (inEventWindow(now, deps.env)) return "event_window";
-  const reserve = squadsReserve(now, deps.env, TRACKED_COUNT);
+  // D152: the KvK opponent's calls still due, on its quota day only.
+  const reserve = squadsReserve(
+    now,
+    deps.env,
+    TRACKED_COUNT,
+    await opponentReserve(db, now, deps.env),
+  );
   // INVARIANT lookups.keeps-event-reserve: inside the claim's lock, this read and every lookup still in
   // flight, then D117's reserve, must fit in what the quota call says.
   const gate: QuotaGate = async (inFlight) => {

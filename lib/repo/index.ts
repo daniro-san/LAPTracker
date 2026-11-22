@@ -18,6 +18,7 @@ import {
   opponentReads,
   type OpponentInfo,
   type OpponentRead,
+  updateOpponentRead,
 } from "./kvk";
 import { findSnapshot, finishSnapshot, startSample, startSnapshot } from "./snapshots";
 
@@ -128,7 +129,10 @@ export interface Repo {
   opponentFor(eventId: number): Promise<OpponentInfo | null>;
   /** The opponent's rows so far, both phases. */
   opponentReads(opponentId: number): Promise<OpponentRead[]>;
-  insertOpponentRead(row: OpponentRead): Promise<void>;
+  /** Claims the row before its call (INVARIANT kvk.one-call-per-row): false when another holds it. */
+  insertOpponentRead(row: OpponentRead): Promise<boolean>;
+  /** The call's answer over its claim. */
+  updateOpponentRead(row: OpponentRead): Promise<void>;
 }
 
 export type { OpponentInfo, OpponentRead };
@@ -154,5 +158,6 @@ export function createRepo(db: Db): Repo {
     opponentFor: (eventId) => opponentFor(db, eventId),
     opponentReads: (id) => opponentReads(db, [id]),
     insertOpponentRead: (row) => insertOpponentRead(db, row),
+    updateOpponentRead: (row) => updateOpponentRead(db, row),
   };
 }
