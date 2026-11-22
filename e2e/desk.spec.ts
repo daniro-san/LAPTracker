@@ -104,14 +104,17 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   }
 
   // The line leads to Follow-up, which lists the marked member first, under "Needs help", with since when,
-  // who added the mark and why, and last week's Talked as context (slice 2).
+  // who added the mark and why, and last week's Talked as context (slice 2); the hint names the way out (S3).
   await hydrated(followUp);
   await followUp.click();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, A);
   const name = A.names[NEEDS_HELP.k] as string;
   const helpGroup = page.getByRole("region", { name: "Needs help · 1" });
-  await sees(helpGroup, "They stay here each week until someone taps “No longer needs help”.");
+  await sees(
+    helpGroup,
+    "They stay here each week until someone taps their name, then “No longer needs help”.",
+  );
   const row = helpGroup
     .getByRole("listitem")
     .filter({ has: page.getByRole("button", { name: labelled("", name) }) });
@@ -135,6 +138,14 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   await deskFrame(page, A);
   await sees(page.locator("main"), `${ROSTER} of ${ROSTER} members`);
+  // Issue 585 S3: the first group (it holds the member marked Needs help) says its status words, no count,
+  // and points at Follow-up for the week's list while that tab is on.
+  const first = page.getByRole("region", { name: "Check in or Needs help" });
+  await sees(first, "This week’s list: Follow-up ›");
+  await expect(first.getByRole("link", { name: "Follow-up ›" })).toHaveAttribute(
+    "href",
+    `/w/${A.slug}/follow-up`,
+  );
   const k = 3;
   const name = A.names[k] as string;
   // A member's line: a card in a list below 1024 px, a table row from 1024 px (D122); its name opens the card.
