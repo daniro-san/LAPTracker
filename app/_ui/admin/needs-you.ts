@@ -8,6 +8,8 @@ import { copy, fill } from "@/lib/copy";
 import { QUOTA_WARN_BELOW } from "@/lib/run";
 import { heartbeatBoundary } from "@/lib/tick-gate";
 
+import type { Look } from "./alliances-view";
+
 const t = copy.admin.needs;
 
 type Reading = { remaining: number | null; at: Date } | null;
@@ -49,10 +51,11 @@ export interface NeedsInput {
   /** app_errors rows in the last 24 h. */
   errors24h: number;
   /** The Alliances rows' reasons (`attention`, D144): only setup and a key to fix count here. */
-  workspaces: readonly { attention: readonly string[] }[];
+  workspaces: readonly { attention: readonly Look[] }[];
   /** Workspaces whose deletion is asked (D125): the owner can still cancel it. */
   deletions: number;
-  /** The daily read's reading, taken before the day's spend; the only one "low" counts from here. */
+  /** The newest daily read's first quota check (`morningQuota`), taken before the day's spend; the only
+   * reading "low" counts from. */
   morningQuota: Reading;
   /** Owner to-dos not done (lib/patch-notes.ts). */
   todos: number;
@@ -73,7 +76,7 @@ const counted = (count: number, words: string) => (count > 0 ? fill(words, { n: 
  * limit or a key out of quota mends at 00:00 UTC, so neither counts here (owner and product reviews).
  */
 function workspacesState(rows: NeedsInput["workspaces"]): string | null {
-  const having = (look: string) => rows.filter((r) => r.attention.includes(look)).length;
+  const having = (look: Look) => rows.filter((r) => r.attention.includes(look)).length;
   const parts = [counted(having("setup"), t.setup), counted(having("key"), t.key)].filter(
     (p) => p !== null,
   );

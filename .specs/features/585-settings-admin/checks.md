@@ -2,12 +2,12 @@
 
 Build: `pnpm typecheck`; `pnpm lint`
 Run unit: `pnpm vitest run "app/(private)/_ui/settings-index.test.ts" "app/(private)/_ui/settings-save.test.ts" "app/(private)/_ui/discord-step.test.ts"`
-Run admin: `pnpm vitest run app/_ui/admin/needs-you.test.ts app/_ui/admin/StatusFacts.test.ts app/_ui/admin/alliances-view.test.ts lib/queries/admin-errors.test.ts lib/queries/admin-alliances.test.ts "app/(pages)/admin/gate.test.ts" --reporter=verbose`
+Run admin: `pnpm vitest run app/_ui/admin/needs-you.test.ts app/_ui/admin/StatusFacts.test.ts app/_ui/admin/alliances-view.test.ts lib/queries/admin-errors.test.ts lib/queries/admin-alliances.test.ts lib/queries/admin-page.test.ts "app/(pages)/admin/gate.test.ts" --reporter=verbose`
 Plan: `.specs/features/585-settings-admin/plan.md`
 
 profile: light
 
-16 checks for S1 (PR #620) and 14 for S2 (`feat/585-admin-first-screen`); S3 and S4 are later PRs with their own checks · 0 one-way doors · 0 open, of which 0 block
+16 checks for S1 (PR #620) and 15 for S2 (`feat/585-admin-first-screen`); S3 and S4 are later PRs with their own checks · 0 one-way doors · 0 open, of which 0 block
 
 ## Checks
 
@@ -71,6 +71,9 @@ Proof: run admin | ✓ app/_ui/admin/needs-you.test.ts > Needs you (issue 585, F
 
 **C19** - The API calls row shows only from today's daily-read reading under 900: not 900, not yesterday's, not one above 1,000 (AC 17, AC 21)
 Proof: run admin | ✓ app/_ui/admin/needs-you.test.ts > Needs you (issue 585, F11) > calls the API calls low only from today's reading taken before the day's spend
+Proof: run admin | ✓ lib/queries/admin-page.test.ts > morningQuota (issue 585) > is the daily read's first quota check, kept through a retry that read the quota after the day's spend
+Proof: run admin | ✓ lib/queries/admin-page.test.ts > morningQuota (issue 585) > gives no number when the day's first quota check got none, even if a retry's later did
+Proof: run admin | ✓ lib/queries/admin-page.test.ts > morningQuota (issue 585) > takes no retry's check for the first read's, when the first read's check was cut and left no line
 
 **C20** - /admin renders "Needs you" before Status with the seeded rows, and the nav reads out the App errors count (AC 17, AC 19)
 Proof: run admin | ✓ app/(pages)/admin/gate.test.ts > /admin pages, unlocked > /admin opens with what needs the owner, before Status, and the nav counts the last day's app errors (issue 585)
@@ -86,6 +89,7 @@ Proof: run admin | ✓ app/_ui/admin/alliances-view.test.ts > byAttention > puts
 
 **C24** - The App errors count is the last 24 h only (AC 19)
 Proof: run admin | ✓ lib/queries/admin-errors.test.ts > /admin/errors (issue 585, F34) > counts the app errors of the last 24 h for the nav, not older ones
+Proof: run admin | ✓ app/(pages)/admin/gate.test.ts > /admin pages, unlocked > /admin opens with what needs the owner, before Status, and the nav counts the last day's app errors (issue 585)
 
 **C25** - The alliance select keeps a workspace's own unnamed alliance as "{id} · not read yet" (AC 20)
 Proof: run admin | ✓ app/_ui/admin/alliances-view.test.ts > allianceChoices (F13) > keeps a workspace's own alliance in the select, by its id, when no board or roster names it yet
@@ -105,6 +109,9 @@ Proof: run admin | ✓ app/_ui/admin/StatusFacts.test.ts > Status's Last tick fa
 Proof: run admin | ✓ lib/queries/admin-errors.test.ts > /admin/errors (issue 585, F34) > gives each group the workspace addresses it happened under, and with ?w= that workspace's groups only
 Proof: run admin | ✓ lib/queries/admin-errors.test.ts > /admin/errors (issue 585, F34) > takes ?w= only as one workspace address; anything else lists every error
 Proof: walk - `585-admin/shots/after/admin-errors-w-ogs--360-light-fold.png` ("Errors under /w/ogs only.", "Show all errors", "/w/ogs · …" on each group)
+
+**C31** - With nothing waiting, "Needs you" says "Nothing needs you now." (AC 17; appended after the PR #637 review)
+Proof: run admin | ✓ app/_ui/admin/StatusFacts.test.ts > Needs you (issue 585, F11) > says in one line that nothing needs the owner when no row waits
 
 **C30** - Activity shows the setup steps, with Member role and First read, when PostHog has no totals; waiting requests are counted past the 50 listed (AC 26, AC 17)
 Proof: run admin | ✓ app/(pages)/admin/gate.test.ts > /admin pages, unlocked > /admin's Activity shows each workspace's setup steps when PostHog has no totals (F12)

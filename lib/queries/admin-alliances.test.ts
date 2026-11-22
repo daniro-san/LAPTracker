@@ -249,8 +249,9 @@ describe("allianceUsage (issue 485, D144)", () => {
   });
 
   it("gives the member role, the alliance's first roster that did not fail since the workspace was made, and whether a daily read has finished since (F12)", async () => {
-    // Both made Thu 19 Nov 10:00 UTC; the Thu read (server day 19) started Fri 01:30 UTC and finished.
-    const made = new Date("2026-11-19T10:00:00Z");
+    // Both made Thu 19 Nov 22:30 ST (Fri 00:30 UTC): the Thu read (server day 19) started Fri 01:30 UTC,
+    // after them, and finished. Its read day is a day behind the UTC day they were made on.
+    const made = new Date("2026-11-20T00:30:00Z");
     await db.update(workspaces).set({ createdAt: made });
     await db
       .update(workspaces)
@@ -287,11 +288,17 @@ describe("allianceUsage (issue 485, D144)", () => {
       readSince: true,
     });
 
-    // A workspace made after that read began waits for the next one: no read was due yet.
+    // A workspace made after that read began waits for the next one: no read was due yet, and the Fri read
+    // that started after it is still running.
     await db
       .update(workspaces)
       .set({ createdAt: new Date("2026-11-20T02:00:00Z") })
       .where(eq(workspaces.id, b));
+    await db.insert(dailyReads).values({
+      day: "2026-11-20",
+      startedAt: new Date("2026-11-21T01:30:00Z"),
+      status: "running",
+    });
     expect((await allianceUsage(db, DAY, NOW)).get(b)?.readSince).toBe(false);
   });
 });

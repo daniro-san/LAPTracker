@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Clock } from "@/app/_ui/format";
 
-import { QuotaFact, TickFact } from "./StatusFacts";
+import { NeedsYou, QuotaFact, TickFact } from "./StatusFacts";
 
 // Sun 22 Nov 2026, 11:20 UTC (09:20 ST).
 const NOW = new Date("2026-11-22T11:20:00Z");
@@ -36,6 +36,14 @@ describe("Status's API calls fact (F34)", () => {
     const old = await quota(3869, new Date("2026-11-21T16:00:00Z"));
     expect(old).toContain("3,869 left Not read today");
     expect(old).not.toContain("Above");
+  });
+});
+
+describe("Needs you (issue 585, F11)", () => {
+  it("says in one line that nothing needs the owner when no row waits", async () => {
+    expect(await text(createElement(NeedsYou, { rows: [] }))).toBe(
+      "Needs you Nothing needs you now.",
+    );
   });
 });
 

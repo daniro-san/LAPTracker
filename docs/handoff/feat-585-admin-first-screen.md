@@ -43,6 +43,7 @@ Size L (the #585 batch 2b plan, four slices); this PR builds slice 2. Plan: `.sp
 - **The workspaces count is setup and key only.** Page errors have their own row (the owner persona: one error counted twice). A used-up limit and a key out of quota mend at 00:00 UTC (the product persona).
 - **No Needs you row for a reading above 1,000.** The owner persona: the reading is usually above 1,000, so the row would show every day.
 - **"Low" comes only from the daily read's reading taken before the day's spend.** The adversarial review: a snapshot's reading after the event day's runs is under 900 by design.
+- **That morning reading is the first quota check in the newest daily read's run log** (`morningQuota`, `lib/queries/admin-page.ts`), not `daily_reads.quota_remaining_before`. The PR #637 review found that a Retry (D67, D72) overwrites that column and `started_at` with its own reading, taken after the spend, or with null. The retry only adds run log lines after the first read's, so the first read's `v1.fetch` quota line stays first. It counts only within the read deadline (100 s) of the day's first log line: when the first read's check was cut and left no line, a retry's check is not taken in its place. No migration is needed. If that first check got no number, there is no "Low" row.
 - **No nav count beside Overview.** The owner persona: it repeats the section under it. The adversarial review: on every admin page it would run the whole Alliances read set on each 4-second poll during a run (#521). S3's Workspaces page gets its own count.
 - **The standing approval applies.** There is no one-way door: no schema change, no deletion, no quota spend, no dependency, no new place for a private field. All three reviews approved with changes, and their changes were taken (plan § S2 plan review).
 
@@ -89,6 +90,14 @@ Size L (the #585 batch 2b plan, four slices); this PR builds slice 2. Plan: `.sp
   - After: "Approve the one waiting access request, look at the one app error from the last 24 hours, set up the 2 workspaces, and go through the 25 open to-dos. I'd start with access and the error." Right, with high confidence. His one doubt, "25 open to-dos looks as important as the access request", is fixed: the to-dos row is no longer in yarn.
 - Privacy: /admin's new parts carry counts, words and workspace addresses only. There is no roster field, name, key, webhook or Discord id. `?w=` is checked against the workspace address pattern and escaped by React.
 - Real names: the diff uses only invented names (Juniper Vale, amber, birch, brk, fern, ogs).
+- **PR #637 review fixes** (/pr-review: Approve with comments; tlc-spec-lean Verifier: FAIL on C22 and C24, now closed, `.specs/features/585-settings-admin/verification.md`):
+  - the morning reading survives a Retry (above). `lib/queries/admin-page.test.ts`, 3 tests: the first check kept through a retry that read 819 after the spend; no number when the first check got none; no retry's check taken for a cut first read's;
+  - C22 now bites: a workspace made at 22:30 ST, a read day behind the UTC day, keeps the roster of the read that started after it (the day before counts); and a read still running since a workspace was made is no read;
+  - C24 now bites: the rendered /admin, with page errors 23 h and 25 h old, counts 1 in the nav;
+  - "Nothing needs you now." has a render test (C31);
+  - the unused `TRACKER_QUOTA` is gone, so `DAILY_QUOTA` is the one 1,000;
+  - `alliancesOf` runs once per render (the page passes it to `Workspaces`); `needs-you.ts` matches on the `Look` type; the plan's S2 Assumptions table is one table again.
+  - Breaks after the fixes: 31 mutations, all killed (the 25 above, plus: "read since" counting a running read; first read without the day before; the nav window at 48 h; the morning reading from any read day; a retry's check taken for a cut first read's; "Needs you" with no line when nothing waits). Two more are equivalent and are not counted: dropping the morning query's quota-endpoint filter, and taking the latest check instead of the first. A read's first `v1.fetch` is always its quota check (`readRosters` returns before any alliance call when it fails), and only one read's lines fall within the deadline window.
 
 ## Open issues
 
@@ -104,7 +113,7 @@ Size L (the #585 batch 2b plan, four slices); this PR builds slice 2. Plan: `.sp
 
 ## Next
 
-- Model/effort: keep. Slice 2 fit one session with three reviews, two first-glance rounds and 25 mutations.
+- Model/effort: keep. Slice 2 fit one session with three reviews, two first-glance rounds and 31 mutations, plus one review round.
 - What the owner must do first: nothing for slice 2. Slice 4 (F38) still waits on the owner's decision (#621).
 - Plan change: none to `docs/IMPLEMENTATION_PLAN.md` or `docs/SESSION_PLAYBOOK.md`. S2's criteria were updated in `.specs/features/585-settings-admin/plan.md` (above).
 - Slice 3, the /admin structure (F33): Overview, Runs, Workspaces and one page per workspace. It adds new routes (an M trigger), so it gets its own plan review: the product-strategy persona and the adversarial reviewer.

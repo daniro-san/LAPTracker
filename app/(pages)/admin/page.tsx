@@ -222,7 +222,8 @@ export default async function AdminPage() {
   ].find((c) => c.at > now);
   // No Retry that could run past the server reset (D72): the route refuses it too.
   const dailyRetry = dailyReadEndsInDay(now, env) ? dailyView(daily, now, clock) : null;
-  const { alliances } = alliancesOf(ws, now);
+  const view = alliancesOf(ws, now);
+  const { alliances } = view;
   const needs = needsYou({
     now,
     tick: {
@@ -234,7 +235,7 @@ export default async function AdminPage() {
     errors24h: errors,
     workspaces: alliances,
     deletions: ws.rows.filter((w) => w.deletion).length,
-    morningQuota: quota.daily,
+    morningQuota: quota.morning,
     todos: ownerTodo.filter((x) => !x.done).length,
   });
   return (
@@ -268,7 +269,7 @@ export default async function AdminPage() {
       <Rehearsal r={rehearsal} clock={clock} />
       <TrackedCard now={now} clock={clock} />
       <Schedule env={env} next={next} clock={clock} />
-      <Workspaces now={now} data={ws} />
+      <Workspaces now={now} data={ws} view={view} />
     </AdminShell>
   );
 }

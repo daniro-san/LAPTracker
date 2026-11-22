@@ -25,7 +25,7 @@ const t = copy.admin.workspaces.alliances;
 const n = (x: number) => x.toLocaleString("en");
 
 export type KeyState = "ok" | "paused" | "reenter" | "none";
-type Look = "key" | "errors" | "setup" | "cap";
+export type Look = "key" | "errors" | "setup" | "cap";
 /**
  * A setup step that waits on the owner (F12): no member role, which he sets here (the members' board is
  * closed, D105), and no read of its alliance after a daily read that began once it existed has finished.

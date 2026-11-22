@@ -248,9 +248,18 @@ export function alliancesOf(data: WorkspacesData, now: Date) {
   return { choices, allianceLabel, current, alliances: allianceRows(page) };
 }
 
-export function Workspaces({ now, data }: { now: Date; data: WorkspacesData }) {
+/** `view`: `alliancesOf(data, now)`, which the page has worked out already for "Needs you". */
+export function Workspaces({
+  now,
+  data,
+  view,
+}: {
+  now: Date;
+  data: WorkspacesData;
+  view: ReturnType<typeof alliancesOf>;
+}) {
   const { squadsDay, rows, deleted, features, squads, known, usage } = data;
-  const { choices, allianceLabel, current, alliances } = alliancesOf(data, now);
+  const { choices, allianceLabel, current, alliances } = view;
   const views = rows.map((w) => ({
     id: w.id,
     unionId: w.unionId,

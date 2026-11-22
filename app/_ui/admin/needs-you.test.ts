@@ -54,7 +54,10 @@ describe("Needs you (issue 585, F11)", () => {
 
   it("lists only what waits, and nothing when nothing does", () => {
     expect(needsYou(quiet)).toEqual([]);
-    const workspaces = [{ attention: ["setup"] }, { attention: ["setup", "cap"] }];
+    const workspaces: NeedsInput["workspaces"] = [
+      { attention: ["setup"] },
+      { attention: ["setup", "cap"] },
+    ];
     const some = needsYou({ ...quiet, requests: 1, workspaces, todos: 3 });
     expect(some.map((r) => `${r.label}: ${r.state}`)).toEqual([
       "Access requests: 1 waiting",

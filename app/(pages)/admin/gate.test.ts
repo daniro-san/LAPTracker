@@ -136,14 +136,17 @@ describe("/admin pages, unlocked", () => {
 
   it("/admin opens with what needs the owner, before Status, and the nav counts the last day's app errors (issue 585)", async () => {
     await signedInWithAmber();
-    // One page error under amber's address 3 h ago; one request waiting.
-    await db.insert(appErrors).values({
-      at: new Date(T0.getTime() - 3 * 3_600_000),
+    // Page errors under amber's address 23 h and 25 h ago (only the first is in the nav's 24 h); one
+    // request waiting.
+    const error = {
       route: "/w/[slug]/roll-call",
-      digest: "d1a2",
       message: "roll_call_conflict",
       workspaceSlug: "amber",
-    });
+    };
+    await db.insert(appErrors).values([
+      { ...error, at: new Date(T0.getTime() - 23 * 3_600_000), digest: "d1a2" },
+      { ...error, at: new Date(T0.getTime() - 25 * 3_600_000), digest: "e9f1" },
+    ]);
     await db.insert(accessRequests).values({
       unionId: 910103,
       playerName: "Juniper Vale",
