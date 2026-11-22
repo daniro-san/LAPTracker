@@ -168,3 +168,14 @@ export async function linksToReview(db: Db, workspaceId: number): Promise<LinkRo
     )
     .orderBy(asc(workspaceUsers.playerLinkedAt), asc(workspaceUsers.id));
 }
+
+/** How many links wait for an officer: the number `linksToReview` lists. */
+export async function countLinksToReview(db: Db, workspaceId: number): Promise<number> {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(workspaceUsers)
+    .where(
+      and(eq(workspaceUsers.workspaceId, workspaceId), eq(workspaceUsers.playerLink, "pending")),
+    );
+  return row?.n ?? 0;
+}

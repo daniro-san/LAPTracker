@@ -10,6 +10,7 @@ import {
   openDrafts,
   type StoredRow,
 } from "../repo/import";
+import { countLinksToReview } from "../repo/player-links";
 import { closestNames } from "../screenshot/match-name";
 import type { WorkspaceAccess } from "./access";
 import type { MemberFacts } from "./fact-fields";
@@ -60,14 +61,18 @@ export async function toReview(db: Db, access: WorkspaceAccess, now: Date): Prom
   }));
 }
 
-/** The Home tab's number: screenshot drafts, plus the notice reviews waiting for this officer (D113). */
+/**
+ * The Home tab's number on every desk page: screenshot drafts, the notice reviews waiting for this officer
+ * (D113) and the "This is me" claims to approve (D142).
+ */
 export const toReviewCount = async (db: Db, access: WorkspaceAccess, now: Date) => {
-  const [drafts, reviews] = await Promise.all([
+  const [drafts, reviews, links] = await Promise.all([
     countOpenDrafts(db, access.workspaceId, now),
     // D126: no review requests count while notices are turned off for the alliance.
     featureOn(access, "notices") ? reviewsForMeCount(db, access) : 0,
+    countLinksToReview(db, access.workspaceId),
   ]);
-  return drafts + reviews;
+  return drafts + reviews + links;
 };
 
 export interface ViewRow extends StoredRow {
