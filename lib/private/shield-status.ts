@@ -7,6 +7,7 @@
 // Friday's read is the squads queue (D132): it runs while that queue's day is running and 00:00 ST has not
 // come; Saturday's runs while its `morning_status` is `running`.
 import { fill } from "../copy";
+import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { getShieldCheck, shieldReadings, type ShieldCheckRow } from "../repo/shield-checks";
@@ -24,10 +25,7 @@ export interface ShieldStatus {
   text: string;
 }
 
-const clock = (zone: string, at: Date) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone: zone, hour: "2-digit", minute: "2-digit" }).format(
-    at,
-  );
+const clock = (zone: string, at: Date) => dateWords("en", zone).time(at);
 
 /** The check's line now, or null: off, no read this quota day yet, nothing read, or KvK has started. */
 export async function shieldStatus(

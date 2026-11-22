@@ -132,7 +132,7 @@ export const shotsPt: ShotsWords = {
   "shots.entry.theft": "roubou recompensas de missão",
   "shots.entry.help": "ajudou (não é salvo)",
   "shots.entry.unknown": "frase ilegível",
-  "shots.at": "{at} horário do servidor",
+  "shots.at": "{at} ST",
   "shots.openThefts": "Abrir o registro de roubos",
   "shots.where.pickTab": "Escolha a aba primeiro: ela decide onde isto é salvo.",
   "shots.higher": "o print está {d} acima",

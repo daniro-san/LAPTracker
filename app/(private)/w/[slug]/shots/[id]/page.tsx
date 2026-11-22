@@ -7,6 +7,7 @@ import { notFound, redirect } from "next/navigation";
 import { exact } from "@/app/_ui/format";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { fill, isolate } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -43,14 +44,8 @@ const importWords = (t: WorkspaceDictionary) =>
     Object.entries(t).filter(([k]) => k.startsWith("shots.") || k.startsWith("sheet.")),
   );
 
-/** "Mon 16 Nov": a server day, as a date (the days are UTC dates). */
-const dayOf = (language: WorkspaceLanguage) =>
-  new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
+/** The desk's date forms for server days (the days are UTC dates). */
+const dayOf = (language: WorkspaceLanguage) => dateWords(language, "UTC");
 
 function reviewText(
   view: DraftView,
@@ -58,7 +53,7 @@ function reviewText(
   language: WorkspaceLanguage,
 ): ReviewText {
   const day = dayOf(language);
-  const at = (iso: string, back = 0) => day.format(new Date(Date.parse(`${iso}T00:00:00Z`) - back));
+  const at = (iso: string, back = 0) => day.day(new Date(Date.parse(`${iso}T00:00:00Z`) - back));
   const monday = view.week[0] as string;
   const sixDays = (back: number) => view.week.slice(0, 6).map((d) => at(d, back));
   const index = view.week.indexOf(view.pictureDay);
@@ -191,7 +186,7 @@ function Draft(props: {
       </p>
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t[pasted ? "shots.draft.keptPasted" : "shots.draft.kept"], {
-          date: dayOf(language).format(view.expiresAt),
+          date: dayOf(language).sentence(view.expiresAt),
         })}
       </p>
       {view.leftOut > 0 && (

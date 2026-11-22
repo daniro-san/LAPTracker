@@ -21,7 +21,8 @@ import { isSignedOut, post } from "./screenshot-upload";
 export function KeptMark(props: {
   slug: string;
   id: number;
-  kept: { by: string | null; at: Date };
+  /** `on`: the day it was kept, as words made on the server (its clock, not the viewer's). */
+  kept: { by: string | null; on?: string };
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
 }) {
@@ -29,7 +30,6 @@ export function KeptMark(props: {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<WorkspaceKey | null>(null);
-  const day = new Intl.DateTimeFormat(props.language, { month: "short", day: "numeric" });
   const unkeep = async () => {
     setBusy(true);
     setFailed(null);
@@ -49,7 +49,7 @@ export function KeptMark(props: {
         <span>
           {fill(t["notices.picture.keptBy"], {
             name: isolate(props.kept.by ?? t["notices.picture.someone"]),
-            date: day.format(props.kept.at),
+            date: props.kept.on ?? "",
           })}
         </span>
       </p>

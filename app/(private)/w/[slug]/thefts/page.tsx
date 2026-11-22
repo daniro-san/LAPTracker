@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { SERVER } from "@/config/alliances";
+import { dateWords } from "@/lib/date-words";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
@@ -23,29 +24,24 @@ import { theftCards, theftWords, type TheftFormats } from "../../../_ui/theft-da
 import { TheftsBoard } from "../../../_ui/TheftsBoard";
 import { TabSend } from "../../../_ui/ToReview";
 
-/** Server-time dates in the officer's language ("Sun 15 Nov 13:46"), the server day, and "HH:MM". */
+/** Server-time dates in the officer's language (the desk's one rule), and the form's server day and "HH:MM". */
 function formats(
   language: WorkspaceLanguage,
   zone: string,
 ): TheftFormats & { hhmm: (at: Date) => string } {
-  const date = new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
+  const words = dateWords(language, zone);
+  // Machine values for the form's fields, never shown as words.
+  const field = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
     timeZone: zone,
   });
-  const clock = (locale: string) =>
-    new Intl.DateTimeFormat(locale, {
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone: zone,
-    });
-  const [shown, field] = [clock(language), clock("en-GB")];
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: zone });
   return {
-    when: (at) => `${date.format(at)} ${shown.format(at)}`,
-    date: (at) => date.format(at),
+    when: words.at,
+    date: words.day,
+    sentence: words.sentence,
     day: (at) => day.format(at),
     hhmm: (at) => field.format(at),
   };

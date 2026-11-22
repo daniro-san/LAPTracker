@@ -3,6 +3,7 @@
 // there, before the alliance's first daily update too, so the head's jump always has its card and the
 // Monday rule is always on the page (D104, amended 2026-11-22). People first (D75): nothing is ranked.
 import { fill, isolate } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import type {
   WorkspaceDictionary,
   WorkspaceKey,
@@ -24,15 +25,9 @@ export function counted(t: WorkspaceDictionary, key: string, n: number, language
   return fill(t[`${key}.${form}` as WorkspaceKey], { n });
 }
 
-/** "16 – 22 Nov" in the officer's language. */
-function weekRange(week: string[], language: string) {
-  const at = (day: string | undefined) => new Date(`${day}T00:00:00Z`);
-  return new Intl.DateTimeFormat(language, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).formatRange(at(week[0]), at(week[6]));
-}
+/** "Nov 16 – 22" in the officer's language. */
+const weekRange = (week: string[], language: string) =>
+  dateWords(language, "UTC").range(week[0] as string, week[6] as string);
 
 /**
  * The title, then the week's two numbers: who is left to look at and who was already noted, with jumps to

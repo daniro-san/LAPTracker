@@ -4,10 +4,11 @@
 // bottom sheet on phones. It finds a zone by city, by country in English, Portuguese or French, by
 // PST, CET, BRT, UK … and by "ST +3" (server time + 3). Zones the alliance already uses come first, each
 // row shows its time now, and "Their time now" lists the zones whose clock reads that time.
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { dateWords } from "@/lib/date-words";
 import { hhmm, parseTime } from "@/lib/private/calendar-time";
 import {
   offsetLabel,
@@ -121,24 +122,11 @@ function ZoneList(props: {
   onPick: (zone: string) => void;
 }) {
   const { results, now, language, words } = props;
-  const formats = useRef(new Map<string, Intl.DateTimeFormat>());
   const countries = useMemo(
     () => new Intl.DisplayNames([language], { type: "region" }),
     [language],
   );
-  const clock = (zone: string) => {
-    let f = formats.current.get(zone);
-    if (!f) {
-      f = new Intl.DateTimeFormat(language, {
-        timeZone: zone,
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-      });
-      formats.current.set(zone, f);
-    }
-    return f.format(now);
-  };
+  const clock = (zone: string) => dateWords(language, zone).time(now);
   if (results.length === 0) return <p className="mt-3">{words["tz.none"]}</p>;
   return (
     <>

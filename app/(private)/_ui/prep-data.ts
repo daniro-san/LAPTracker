@@ -6,6 +6,7 @@
 // the tick's marks still to check. Times are server time. People first (D75): no reading is no line. A seen
 // shield's length is never shown: the tracker does not give it.
 import { fill } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import { hhmm } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { MessageLanguage, PrepView, SummaryState, TrackerHint } from "@/lib/private/raid-prep";
@@ -49,15 +50,7 @@ export interface PrepHeadView {
 }
 
 /** "22:33": the server's clock. */
-const clockOf = (zone: string) => {
-  const f = new Intl.DateTimeFormat("en-GB", {
-    timeZone: zone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
-  return (at: number) => f.format(at);
-};
+const clockOf = (zone: string) => (at: number) => dateWords("en", zone).time(new Date(at));
 
 function trackerView(h: TrackerHint, t: WorkspaceDictionary, zone: string): PrepTrackerView {
   const clock = clockOf(zone);

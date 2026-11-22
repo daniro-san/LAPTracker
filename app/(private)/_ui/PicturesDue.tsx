@@ -10,6 +10,7 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
 import { fill, isolate } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import type {
   WorkspaceDictionary,
   WorkspaceKey,
@@ -20,11 +21,9 @@ import type { DueItem } from "@/lib/private/notice-picture-due";
 import { smallButton } from "./NoticeBits";
 import { isSignedOut, post } from "./screenshot-upload";
 
-/** A server day (YYYY-MM-DD) as "Nov 25" / "25 de nov." in the viewer's language. */
+/** A server day (YYYY-MM-DD) as "November 25" / "25 de novembro": it ends the card's sentence. */
 const dayOf = (day: string, language: WorkspaceLanguage) =>
-  new Intl.DateTimeFormat(language, { month: "short", day: "numeric", timeZone: "UTC" }).format(
-    new Date(`${day}T00:00:00Z`),
-  );
+  dateWords(language, "UTC").sentence(day);
 
 /** At most this many titles in the card's sentence; the rest are "and N more". */
 const NAMED = 3;

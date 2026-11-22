@@ -10,6 +10,7 @@ import { useState } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import type { AwayNote } from "@/lib/private/fact-fields";
 import { searchRoster } from "@/lib/private/roster-search";
 
@@ -85,11 +86,7 @@ function Picker(props: {
 }
 
 const dayText = (day: string | null | undefined, language: string) =>
-  day
-    ? new Intl.DateTimeFormat(language, { day: "numeric", month: "short", timeZone: "UTC" }).format(
-        new Date(`${day}T00:00:00Z`),
-      )
-    : "—";
+  day ? dateWords(language, "UTC").day(day) : "—";
 
 type Dates = { from: string; until: string; text: string };
 type Conflict = { value: AwayNote | null; version: number };

@@ -55,7 +55,7 @@ export const followUpEn = {
   "followup.action.break": "On a break",
   "followup.action.help": "They need help",
   "followup.action.fine": "All fine",
-  "followup.until": "Back on (server time)",
+  "followup.until": "Back on (ST)",
   "followup.untilHelp": "We won’t suggest them for check-ins, roll calls or caravans until then.",
   "followup.untilNeed": "Choose the day they’re back: tomorrow or later.",
   "followup.untilDay": "Back on {date}",
@@ -146,7 +146,7 @@ export const followUpPt: FollowUpWords = {
   "followup.action.break": "Em pausa",
   "followup.action.help": "Precisa de ajuda",
   "followup.action.fine": "Tudo bem",
-  "followup.until": "Volta em (horário do servidor)",
+  "followup.until": "Volta em (ST)",
   "followup.untilHelp":
     "Até lá não sugerimos essa pessoa para ver como está, chamadas ou caravanas.",
   "followup.untilNeed": "Escolha o dia da volta: amanhã ou depois.",
@@ -238,7 +238,7 @@ export const followUpFr: FollowUpWords = {
   "followup.action.break": "En pause",
   "followup.action.help": "A besoin d’aide",
   "followup.action.fine": "Tout va bien",
-  "followup.until": "De retour le (heure du serveur)",
+  "followup.until": "De retour le (ST)",
   "followup.untilHelp":
     "D’ici là, nous ne la proposons pas pour les prises de nouvelles, les appels ni les caravanes.",
   "followup.untilNeed": "Choisissez le jour du retour : demain ou plus tard.",

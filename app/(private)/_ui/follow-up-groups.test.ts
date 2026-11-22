@@ -123,7 +123,7 @@ describe("Follow-up's groups (issue 585 slice 2)", () => {
       "en",
       "2026-11-21",
     );
-    const kvk = "Still rebuilding after the KvK of Sat, Nov 21.";
+    const kvk = "Still rebuilding after the KvK of November 21.";
     expect(groups.map((g) => [g.title, g.rows.map((r) => r.name)])).toEqual([
       ["Needs help · 1", ["Ash"]],
       ["After KvK, offer help · 2", ["Bryn", "Cass"]],

@@ -105,10 +105,12 @@ export function clockIn(
   return { time: hhmm(wall.minute), shift: daysBetween(serverDay, wall.day) };
 }
 
-/** "UTC−2", "UTC+5:30": the zone's offset at `at`, with a true minus sign. */
-export function offsetLabel(zone: string, at: number): string {
-  const off = zoneOffset(zone, at);
-  const sign = off < 0 ? "−" : "+";
-  const abs = Math.abs(off);
-  return `UTC${sign}${Math.floor(abs / 60)}${abs % 60 ? `:${String(abs % 60).padStart(2, "0")}` : ""}`;
+/** "UTC−2", "UTC+0", "UTC+5:30": an offset in minutes, with a true minus sign; the one way a zone is named. */
+export function offsetText(minutes: number): string {
+  const abs = Math.abs(minutes);
+  const rest = abs % 60 ? `:${String(abs % 60).padStart(2, "0")}` : "";
+  return `UTC${minutes < 0 ? "−" : "+"}${Math.floor(abs / 60)}${rest}`;
 }
+
+/** The zone's offset at `at`, as `offsetText` writes it. */
+export const offsetLabel = (zone: string, at: number) => offsetText(zoneOffset(zone, at));

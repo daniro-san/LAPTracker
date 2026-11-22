@@ -2,6 +2,7 @@
 // name in English, Portuguese and French, by the abbreviations officers use (PST, CET, BRT, UK …) and
 // by an offset ("Brazil -3", "UTC+1", "ST +3" = server time + 3). The stored value is always an IANA
 // zone. Pure apart from Intl; the client picker, the paste parser and the sheet import share it.
+import { offsetText } from "./calendar-time";
 import { fold } from "./members-list";
 import { ZONE_TABLE } from "./zone-table";
 
@@ -215,12 +216,8 @@ export function offsetMinutes(zone: string, at: Date): number {
   return m ? (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0;
 }
 
-/** "UTC+2", "UTC−3", "UTC+5:30". */
-export function offsetLabel(minutes: number): string {
-  const a = Math.abs(minutes);
-  const rest = a % 60 ? `:${String(a % 60).padStart(2, "0")}` : "";
-  return `UTC${minutes < 0 ? "−" : "+"}${Math.floor(a / 60)}${rest}`;
-}
+/** "UTC+2", "UTC−3", "UTC+5:30": the one offset form (`offsetText`, lib/calendar-time.ts). */
+export const offsetLabel = offsetText;
 
 /** The fixed-offset IANA zone for a whole-hour offset (UTC+1 is Etc/GMT-1); null otherwise. */
 export function fixedZone(minutes: number): Zone | null {

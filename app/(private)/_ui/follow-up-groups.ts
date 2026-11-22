@@ -4,6 +4,7 @@
 // row with why the member is on the list in the officer's words. Apart from the page so the grouping can be
 // tested with the dictionary's own words.
 import { fill } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { FollowUpItem } from "@/lib/private/follow-up";
 import {
@@ -121,7 +122,10 @@ export function groupsOf(
   kvkDay: string | null = null,
 ): FollowUpGroup[] {
   const date = kvkDay && f.date(kvkDay);
-  const kvkLine = date ? fill(t["followup.reason.kvk"], { date }) : null;
+  // The reason ends its sentence with the date: the sentence form, so PT and FR never print "nov..".
+  const kvkLine = kvkDay
+    ? fill(t["followup.reason.kvk"], { date: dateWords(f.language, f.zone).sentence(kvkDay) })
+    : null;
   const help = items.filter((i) => i.help);
   const hit = items.filter(inKvkGroup);
   const rest = items.filter((i) => !i.help && !i.kvk);

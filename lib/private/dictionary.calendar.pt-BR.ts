@@ -11,10 +11,11 @@ export const calendarPt: CalendarWords = {
   "calendar.next": "Próxima semana",
   "calendar.thisWeek": "Esta semana",
   "calendar.today": "hoje (ST)",
-  "calendar.legend": "ST é a hora do servidor, o relógio do jogo ({offset}). A outra hora é a sua.",
+  "calendar.legend":
+    "ST é o horário do servidor, o relógio do jogo ({offset}). O outro horário é o seu.",
   "calendar.st": "{time} ST",
   "calendar.stRange": "{from}–{to} ST",
-  "calendar.yours": "{time} sua hora",
+  "calendar.yours": "{time} seu horário",
   "calendar.nextDay": "dia seguinte",
   "calendar.prevDay": "dia anterior",
   "calendar.started": "Começou",

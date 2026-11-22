@@ -66,10 +66,33 @@ describe("the board's week (D116)", () => {
   it("puts each time on the viewer's clock, server time until the browser knows its zone", () => {
     expect(html).toContain("23:00 ST");
     const at = zonedInstant(TODAY, 1380, SERVER);
-    expect(ownClock(at, TODAY, "America/Sao_Paulo", "en", calendarWords(t))).toMatchObject({
+    expect(ownClock(at, TODAY, "America/Sao_Paulo", calendarWords(t))).toMatchObject({
       time: "22:00",
       label: "your time",
       mark: "",
     });
+  });
+
+  it("names the viewer's zone by its offset on the day shown, summer time included (issue 585 batch 4)", () => {
+    // Tue, Nov 17 23:00 ST (01:00 UTC on the 18th) is 03:00 in Kyiv (UTC+2) the next day; Wed, Jul 15
+    // 23:00 ST is 04:00 there (UTC+3, summer time).
+    const words = calendarWords(t);
+    const winter = ownClock(zonedInstant(TODAY, 1380, SERVER), TODAY, "Europe/Kyiv", words);
+    const summer = ownClock(
+      zonedInstant("2026-07-15", 1380, SERVER),
+      "2026-07-15",
+      "Europe/Kyiv",
+      words,
+    );
+    expect(winter).toMatchObject({ time: "03:00", zone: "(UTC+2)", mark: "the next day" });
+    expect(summer).toMatchObject({ time: "04:00", zone: "(UTC+3)" });
+    expect(
+      ownClock(zonedInstant(TODAY, 1380, SERVER), TODAY, "America/Sao_Paulo", words).zone,
+    ).toBe("(UTC−3)");
+    // Portuguese says "seu horário", not "sua hora".
+    const pt = calendarWords(WORKSPACE_DICTIONARIES["pt-BR"]);
+    expect(ownClock(zonedInstant(TODAY, 1380, SERVER), TODAY, "America/Sao_Paulo", pt).label).toBe(
+      "seu horário",
+    );
   });
 });

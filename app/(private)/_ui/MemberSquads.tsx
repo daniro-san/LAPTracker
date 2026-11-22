@@ -12,6 +12,7 @@
 import { HeroPicture } from "@/app/_ui/Pictures";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
+import { joinAt } from "@/lib/date-words";
 import { clockIn } from "@/lib/private/calendar-time";
 import type {
   HeroCard,
@@ -52,7 +53,14 @@ const SLOT_PLACE = [
 
 type Words = Pick<SquadsCard, "slotWord" | "emptySlot" | "strongestTag" | "clock">;
 
-export function MemberSquads({ squads }: { squads: SquadsCard }) {
+/** `mineFirst`: Me (D142) puts the viewer's own time first, as the board does (issue 585 batch 4). */
+export function MemberSquads({
+  squads,
+  mineFirst = false,
+}: {
+  squads: SquadsCard;
+  mineFirst?: boolean;
+}) {
   return (
     <section className="mt-3">
       <h3 className="text-body-sm font-semibold">{squads.head}</h3>
@@ -64,7 +72,7 @@ export function MemberSquads({ squads }: { squads: SquadsCard }) {
           <p className="text-body-sm text-ink/70">{squads.help}</p>
           <ul className="mt-3 space-y-3">
             {squads.squads.map((s) => (
-              <Squad key={s.squad} s={s} w={squads} />
+              <Squad key={s.squad} s={s} w={squads} mineFirst={mineFirst} />
             ))}
           </ul>
         </>
@@ -73,26 +81,47 @@ export function MemberSquads({ squads }: { squads: SquadsCard }) {
   );
 }
 
-/** "seen Thu, Nov 19 22:32 ST · 00:32 your time (the next day)": the viewer's clock once the page is live. */
-function Seen({ s, w }: { s: SquadCard; w: Words }) {
-  const zone = useViewerZone();
-  if (!s.seen) return null;
-  let mine: string | null = null;
-  if (zone && s.seenAt) {
-    const { time, shift } = clockIn(s.seenAt.at, zone, s.seenAt.day);
-    const mark = shift > 0 ? w.clock.nextDay : shift < 0 ? w.clock.prevDay : "";
-    mine = `${fill(w.clock.yours, { time })}${mark ? ` (${mark})` : ""}`;
+/**
+ * The "seen" line's parts, joined by " · ". The desk card: "seen Thu, Nov 19, 22:32 ST", then "00:32 your
+ * time (the next day)" once the browser knows its zone. Me (`mineFirst`, issue 585 batch 4, as the board):
+ * "seen Fri, Nov 20, 00:32 your time", then "Thu, Nov 19, 22:32 ST"; on one day the date is said once
+ * ("seen Thu, Nov 19, 20:32 your time", "22:32 ST"). The dates come from the server; only the viewer's
+ * "00:32" is worked out here. Before the zone is known, the ST line alone.
+ */
+export function seenParts(
+  s: SquadCard,
+  w: Words,
+  zone: string | null,
+  mineFirst: boolean,
+): string[] {
+  if (!s.seen) return [];
+  if (!zone || !s.seenAt) return [s.seen];
+  const { time, shift } = clockIn(s.seenAt.at, zone, s.seenAt.day);
+  const { clock } = w;
+  if (!mineFirst) {
+    const mark = shift > 0 ? clock.nextDay : shift < 0 ? clock.prevDay : "";
+    return [s.seen, `${fill(clock.yours, { time })}${mark ? ` (${mark})` : ""}`];
   }
+  const { days, time: st } = s.seenAt;
+  const day = days[shift + 1] ?? days[1];
+  const mine = fill(clock.yours, { time: joinAt(clock.language, day, time) });
+  const server = fill(clock.st, { time: shift === 0 ? st : joinAt(clock.language, days[1], st) });
+  return [fill(clock.seenMine, { mine }), server];
+}
+
+function Seen({ s, w, mineFirst }: { s: SquadCard; w: Words; mineFirst: boolean }) {
+  const [first, ...rest] = seenParts(s, w, useViewerZone(), mineFirst);
+  if (!first) return null;
   // At 14 px the line wraps: it breaks only at a " · ", never inside "3 days ago" (issue 585).
   return (
     <p className="text-body-sm text-ink/70 tabular-nums">
-      {s.seen}
-      {mine && (
-        <>
+      {first}
+      {rest.map((part) => (
+        <span key={part}>
           {" · "}
-          <span className="whitespace-nowrap">{mine}</span>
-        </>
-      )}
+          <span className="whitespace-nowrap">{part}</span>
+        </span>
+      ))}
       {s.age && (
         <>
           {" · "}
@@ -103,7 +132,7 @@ function Seen({ s, w }: { s: SquadCard; w: Words }) {
   );
 }
 
-function Squad({ s, w }: { s: SquadCard; w: Words }) {
+function Squad({ s, w, mineFirst }: { s: SquadCard; w: Words; mineFirst: boolean }) {
   // What changed: "+1.20M since Sun, Nov 15 · Heroes changed · 1 slot empty".
   const change = [s.change, s.heroesChanged, s.empty]
     .filter((n): n is string => n !== null)
@@ -119,7 +148,7 @@ function Squad({ s, w }: { s: SquadCard; w: Words }) {
           {s.might}
         </span>
       </p>
-      <Seen s={s} w={w} />
+      <Seen s={s} w={w} mineFirst={mineFirst} />
       {change && <p className="text-body-sm text-ink/70 tabular-nums">{change}</p>}
       {/* The lineup; screen readers get the list below instead. */}
       <div aria-hidden="true" className="mt-2 grid grid-cols-6 gap-x-2 gap-y-2">

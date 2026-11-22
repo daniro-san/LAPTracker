@@ -7,12 +7,13 @@
 // Only the workspace's own alliance (access.unionId, D71). Pictures come from /img/hero/[id], and only for
 // heroes in the catalog; any other id is a plain placeholder.
 import { fill } from "../copy";
+import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { heroNames } from "../repo/hero-catalog";
 import { squadPairs, type StoredSquad } from "../repo/squads";
 import { mainSquad } from "../squads";
 import type { WorkspaceAccess } from "./access";
-import { dayIn } from "./calendar-time";
+import { addDays, dayIn } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 
 export type { StoredSquad };
@@ -90,8 +91,12 @@ export interface SquadCard {
   strongest: boolean;
   /** "seen Tue, Nov 17, 22:32 ST"; null when the tracker sent no time. */
   seen: string | null;
-  /** The sighting's instant (ms) and its server day, for the viewer's own clock beside it; null with no time. */
-  seenAt: { at: number; day: string } | null;
+  /**
+   * The sighting's instant (ms) and its server day, for the viewer's own clock beside it, with the day
+   * before, that day and the day after written on the server ("Wed, Nov 18", …) and its "22:32" on the
+   * server's clock, so the browser never formats a date; null with no time.
+   */
+  seenAt: { at: number; day: string; days: [string, string, string]; time: string } | null;
   /** "8 h ago", "2 days ago": how old the sighting is when the card is made; null with no time. */
   age: string | null;
   /** "+1.20M since Mon, Nov 16" against the row before; null when there is none or the power is the same. */
@@ -112,7 +117,18 @@ export interface SquadsCard {
   /** "Slot {n}" for the list in slot order, and the words of the viewer's clock ("01:32 your time"). */
   slotWord: string;
   emptySlot: string;
-  clock: { yours: string; nextDay: string; prevDay: string };
+  /**
+   * The viewer's clock: "01:32 your time", the next day or the day before, and for Me's own-time-first line
+   * (issue 585 batch 4) "{time} ST", "seen {mine} · {st}" and the language that joins a date to its time.
+   */
+  clock: {
+    yours: string;
+    nextDay: string;
+    prevDay: string;
+    st: string;
+    seenMine: string;
+    language: string;
+  };
   strongestTag: string;
   /** The line shown when the tracker has seen none of their squads. */
   none: string;
@@ -172,6 +188,13 @@ function changeLine(p: SquadPair, t: WorkspaceDictionary, f: SquadFormats): stri
   return fill(t["squads.change"], { delta: `${sign}${f.compact(Math.abs(delta))}`, date });
 }
 
+function seenAtOf(at: Date, f: SquadFormats): NonNullable<SquadCard["seenAt"]> {
+  const day = dayIn(f.zone, at.getTime());
+  const words = dateWords(f.language, f.zone);
+  const days = [addDays(day, -1), day, addDays(day, 1)].map((d) => words.day(d));
+  return { at: at.getTime(), day, days: days as [string, string, string], time: words.time(at) };
+}
+
 function squadCard(
   p: SquadPair,
   strongest: boolean,
@@ -192,7 +215,7 @@ function squadCard(
     might: fill(t["squads.might"], { v: f.compact(s.power) }),
     strongest,
     seen: s.seenAt ? fill(t["squads.seen"], { date: f.time(s.seenAt) }) : null,
-    seenAt: s.seenAt ? { at: s.seenAt.getTime(), day: dayIn(f.zone, s.seenAt.getTime()) } : null,
+    seenAt: s.seenAt ? seenAtOf(s.seenAt, f) : null,
     age: s.seenAt ? ageOf(s.seenAt, t, f.now) : null,
     change: changeLine(p, t, f),
     heroesChanged: changed ? t["squads.heroesChanged"] : null,
@@ -231,6 +254,9 @@ export function squadsCardOf(
       yours: t["calendar.yours"],
       nextDay: t["calendar.nextDay"],
       prevDay: t["calendar.prevDay"],
+      st: t["calendar.st"],
+      seenMine: t["squads.seenMine"],
+      language: f.language,
     },
     strongestTag: t["squads.strongest"],
     none: t["squads.none"],

@@ -23,7 +23,7 @@ const entry = (id: number, kind: TheftEntry["kind"]): TheftEntry => ({
 
 const week = { from: new Date("2026-11-16T02:00:00Z"), to: new Date("2026-11-23T02:00:00Z") };
 const day = (at: Date) => at.toISOString().slice(0, 10);
-const formats = { when: day, date: day, day };
+const formats = { when: day, date: day, sentence: day, day };
 const t = theftWords(WORKSPACE_DICTIONARIES.en);
 const warn = { tag: "OGs", zone: "UTC" };
 

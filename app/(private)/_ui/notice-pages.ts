@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { fill, isolate } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -11,6 +12,7 @@ import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { featureOn, writingOff } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
+import type { PictureView } from "@/lib/private/notice-picture-rules";
 import type { noticeReviews, ReviewView } from "@/lib/private/notice-reviews";
 import {
   NOTICE_LANGUAGES,
@@ -67,28 +69,22 @@ export function editorSwitches<P>(access: WorkspaceAccess, picture: P | null) {
 export function noticeWords(language: WorkspaceLanguage, t: WorkspaceDictionary) {
   const zone = getEnv().SERVER_TZ;
   const today = serverDay(new Date(), { SERVER_TZ: zone });
-  const short = { weekday: "short", day: "numeric", month: "short" } as const;
-  const day = new Intl.DateTimeFormat(language, { ...short, timeZone: "UTC" });
-  const date = new Intl.DateTimeFormat(language, { ...short, timeZone: zone });
-  const hhmm = new Intl.DateTimeFormat(language, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: zone,
-  });
-  const when = (at: Date) =>
-    fill(t["time.server"], { time: `${date.format(at)} ${hhmm.format(at)}` });
+  const words = dateWords(language, zone);
+  const when = (at: Date) => fill(t["time.server"], { time: words.at(at) });
   const by = (name: string | null, at: Date) => ({
     name: name ? isolate(name) : t["notices.someone"],
     when: when(at),
   });
   return {
+    /** The picture with the day it was kept on the server's clock: the client never formats it. */
+    picture: (p: PictureView): PictureView =>
+      p.kept ? { ...p, kept: { ...p.kept, on: words.sentence(p.kept.at) } } : p,
     flags: (n: { forMembers: boolean; endsOn: string | null }) => [
       t[n.forMembers ? "notices.forMembers" : "notices.leadersOnly"],
       ...(n.endsOn
         ? [
             fill(t[n.endsOn < today ? "notices.ended" : "notices.until"], {
-              date: day.format(new Date(`${n.endsOn}T00:00:00Z`)),
+              date: words.day(n.endsOn),
             }),
           ]
         : []),
@@ -110,8 +106,8 @@ export function noticeWords(language: WorkspaceLanguage, t: WorkspaceDictionary)
     written: (name: string | null, at: Date) => fill(t["notices.written"], by(name, at)),
     /** "Rook" (isolated) or "an officer", and the time in server time. */
     by,
-    /** "Tue, Nov 17 19:08": a time where the page says once that times are server time. */
-    clock: (at: Date) => `${date.format(at)} ${hhmm.format(at)}`,
+    /** "Tue, Nov 17, 19:08 ST": every time ends in ST (issue 585 batch 4). */
+    clock: when,
     changed: (name: string | null, at: Date) => fill(t["notices.changed"], by(name, at)),
   };
 }
