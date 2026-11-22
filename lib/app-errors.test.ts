@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 import { sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -181,15 +179,18 @@ describe("app-error alert", () => {
     reportError(ctx, {
       route: "/api/tick",
       kind: "workspaces.purge_failed",
-      error: new TypeError("boom"),
+      error: new TypeError(`boom: x=98765 y=54321 daily_tech=4321 ${AVATAR}`),
     });
     // Outside a request the send starts at once and posts before its first await: one call, one post.
     expect(exceptions(posts)).toHaveLength(1);
     expect(exceptions(posts)[0]).toMatchObject({
-      $exception_list: [{ type: "TypeError", value: "boom", mechanism: { handled: true } }],
+      $exception_list: [
+        { type: "TypeError", value: "boom: x=… y=… daily_tech=… …", mechanism: { handled: true } },
+      ],
       kind: "workspaces.purge_failed",
       route: "/api/tick",
     });
+    for (const leak of LEAKS) expect(JSON.stringify(exceptions(posts))).not.toContain(leak);
     expect(await db.select().from(appErrors)).toHaveLength(0);
     expect(posts.filter((p) => p.url === ADMIN_WEBHOOK)).toHaveLength(0);
   });
@@ -216,35 +217,9 @@ describe("app-error alert", () => {
   });
 });
 
-// INVARIANT app-errors.private-redacted, read off the source like the other invariant checks: the stored
-// detail, the alert and the PostHog payload all pass the private-field redactor.
+// INVARIANT app-errors.private-redacted is enforced by behaviour: the stored detail, the alert and the PostHog
+// payload of a recorded error are checked for leaks in the first test above; a handled error's PostHog payload is checked in "sends a handled error to PostHog once".
 describe("one private-field redactor on every error's way out (D115, 2026-11-21)", () => {
-  /** A top-level function's code without its comments, from its declaration to the line that closes it. */
-  const body = (file: string, name: string) => {
-    const text = readFileSync(new URL(file, import.meta.url), "utf8");
-    const start = text.search(new RegExp(`^(?:export )?(?:async )?function ${name}\\b`, "m"));
-    expect(start, `${name} in ${file}`).toBeGreaterThanOrEqual(0);
-    return text
-      .slice(start, text.indexOf("\n}\n", start))
-      .replace(/\/\*[^]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "");
-  };
-
-  it("redact() passes every string through redactPrivate, and the browser's scrubber does too", () => {
-    expect(body("./redact.ts", "scrubString")).toContain("redactPrivate(");
-    expect(body("./analytics/sanitise.ts", "scrubMessage")).toContain("redactPrivate(");
-  });
-
-  it("appErrorDetail redacts, the alert builder redacts, and every error leaves through them", () => {
-    expect(body("./report-error.ts", "appErrorDetail")).toContain("= redact(");
-    expect(body("./notify.ts", "appErrorMessage")).toContain("message: redactPrivate(");
-    const record = body("./app-errors.ts", "recordAppError");
-    for (const call of ["= appErrorDetail(", "appErrorMessage(", "sendException("])
-      expect(record).toContain(call);
-    expect(body("./report-error.ts", "reportError")).toContain("appErrorDetail(");
-    expect(body("./report-error.ts", "sendException")).toContain("message: scrubMessage(");
-  });
-
   // The type is the guard: `pnpm typecheck` fails if any line marked @ts-expect-error stops being an error.
   it("lib/private's report context takes only a listed module and its own code, nothing else (D71)", () => {
     const report = vi.fn<Report>();

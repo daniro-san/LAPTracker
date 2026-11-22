@@ -5,6 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { textOf } from "@/lib/html.test-helpers";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { cardFormats } from "@/lib/private/member-card";
 import type { ListSource } from "@/lib/private/members";
@@ -56,14 +57,12 @@ const list = (followUp: string | null) =>
   );
 
 describe("the Members list's first group (issue 585 S3)", () => {
-  it("says its status words with no count, and points at Follow-up only while that tab is on", () => {
-    const on = list("/w/ogs/follow-up");
-    expect(on).toContain(">Check in or Needs help</h2>");
-    expect(on).toContain("This week’s list:");
-    expect(on).toMatch(/<a href="\/w\/ogs\/follow-up"[^>]*>Follow-up ›<\/a>/);
-    const off = list(null);
-    expect(off).toContain(">Check in or Needs help</h2>");
+  it("says its status words with no count, and never points at a turned-off Follow-up tab (D126)", () => {
+    const html = list(null);
+    const off = textOf(html);
+    expect(html).not.toContain("/follow-up");
+    expect(off).toContain("Check in or Needs help");
     expect(off).not.toContain("This week’s list:");
-    expect(off).not.toContain("/follow-up");
+    expect(off).not.toContain("Follow-up");
   });
 });

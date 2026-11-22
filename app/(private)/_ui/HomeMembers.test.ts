@@ -5,6 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { textOf } from "@/lib/html.test-helpers";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import type { WeekCounts } from "@/lib/private/follow-up";
 import type { MembersView } from "@/lib/private/members";
@@ -40,29 +41,30 @@ const margin = (followUp: WeekCounts | null, members = view) =>
 describe("Home's Follow-up card (issue 585 slice 4)", () => {
   it("says Follow-up's numbers in the main column while the tab is on, and leaves the margin's line to the tab off", () => {
     const week = card({ toLook: 12, noted: 4 });
-    expect(week).toContain(">Follow-up</h2>");
+    expect(textOf(week)).toBe(
+      "Follow-up 12 members to look at this week · 4 already noted by officers",
+    );
     expect(week).toContain('href="/w/ogs/follow-up"');
-    expect(week).toContain(">12 members to look at this week · 4 already noted by officers</a>");
-    expect(card({ toLook: 1, noted: 0 })).toContain(">1 member to look at this week</a>");
-    expect(card({ toLook: 0, noted: 4 })).toContain(
-      ">Nobody to look at this week · 4 already noted by officers</a>",
+    expect(textOf(card({ toLook: 1, noted: 0 }))).toBe("Follow-up 1 member to look at this week");
+    expect(textOf(card({ toLook: 0, noted: 4 }))).toBe(
+      "Follow-up Nobody to look at this week · 4 already noted by officers",
     );
     const fine = card({ toLook: 0, noted: 0 });
-    expect(fine).toContain("Everyone looks fine this week.");
+    expect(textOf(fine)).toBe("Follow-up Everyone looks fine this week.");
     expect(fine).not.toContain("href");
     expect(followUpWords({ toLook: 1, noted: 1 }, WORKSPACE_DICTIONARIES.fr, "fr")).toBe(
       "1 membre à suivre cette semaine · 1 déjà noté par les officiers",
     );
     // The margin says nothing more about check-ins while the card does.
-    expect(margin({ toLook: 0, noted: 0 })).not.toContain("Everyone looks fine this week.");
+    expect(textOf(margin({ toLook: 0, noted: 0 }))).not.toContain("Everyone looks fine this week.");
     expect(margin({ toLook: 12, noted: 4 })).not.toContain("follow-up");
     // Tab off (D126): no card, nothing read (followUpCounts gives null), and the margin's own line, by
     // Members' rule: "Everyone looks fine", or the count linked to the Members group.
     expect(card(null)).toBe("");
-    expect(margin(null)).toContain("Everyone looks fine this week.");
+    expect(textOf(margin(null))).toContain("Everyone looks fine this week.");
     const quiet = { reasons: [{ kind: "idle", days: 3 }], officerStatus: null, awayUntil: null };
-    expect(margin(null, { ...view, members: [quiet] } as unknown as MembersView)).toMatch(
-      /href="\/w\/ogs\/members\?order=rank#ml-heading"[^>]*>1 person to check in with or help<\/a>/,
-    );
+    const checkIn = margin(null, { ...view, members: [quiet] } as unknown as MembersView);
+    expect(checkIn).toContain('href="/w/ogs/members?order=rank#ml-heading"');
+    expect(textOf(checkIn)).toContain("1 person to check in with or help");
   });
 });
