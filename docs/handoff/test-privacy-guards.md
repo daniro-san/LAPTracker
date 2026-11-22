@@ -79,4 +79,4 @@ Vitest tests for gaps G1, G2, G5, G6, G8 and G9 of the 2026-11-21 test audit. No
 - The audit's harness proposal ("a quota-spending route under `app/api` passes its walker test") can now point at `app/api/quota-gate.test.ts`.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/608
