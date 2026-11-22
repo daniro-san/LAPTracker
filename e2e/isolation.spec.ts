@@ -2,24 +2,50 @@
 // workspace's desk, board or data, by page or by API, whichever cookie carries their session; and no answer of
 // the site carries a private roster field (CLAUDE.md "Roster fields", D71), checked against the seed's
 // sentinels. Runs on the phone project only: none of it depends on the window.
-import { request, type APIRequestContext } from "@playwright/test";
+import { request, type APIRequestContext, type Page } from "@playwright/test";
 
 import { BASE_URL } from "./env";
 import {
   ALLIANCES,
   calendarOf,
-  CHEESE_ENTRY,
   KVK_ENTRY,
   LINKED,
   memberUid,
   seededAt,
+  SENTINELS,
   TOKENS,
   type Side,
 } from "./fixtures/seed";
-import { expect, leaksIn, signIn, test } from "./fixtures/test";
+import { expect, leaksIn, noError, sees, signIn, test } from "./fixtures/test";
 
 const other = (side: Side): Side => (side === "a" ? "b" : "a");
 const slug = (side: Side) => ALLIANCES[side].slug;
+/**
+ * Every might the seed gives the other alliance's members on its newest roster, as the desk writes it
+ * (40M − k·2.5M + 650K): any of them on a refused page would be that alliance's data.
+ */
+const mightsOf = (side: Side) =>
+  ALLIANCES[side].names.map(
+    (_, k) => `${((40_000_000 - k * 2_500_000 + 650_000) / 1e6).toFixed(1)}M`,
+  );
+
+/** The sign-in screen a refused visit gets (D99), and nothing of `side`'s alliance on it. */
+async function signInScreenOnly(page: Page, side: Side) {
+  const screen = page.getByRole("region", { name: "Sign in" });
+  await expect(screen.getByRole("heading", { level: 1, name: "Sign in" })).toBeVisible();
+  await sees(screen, "Sign in with the Discord account you use in the alliance’s server.");
+  await expect(screen.getByRole("link", { name: "Sign in with Discord" })).toBeVisible();
+  await noError(page);
+  const a = ALLIANCES[side];
+  const text = await page.locator("body").innerText();
+  expect(text).not.toMatch(new RegExp(`\\b${a.tag}\\b`));
+  expect(text).not.toContain(a.name);
+  for (const name of a.names) expect(text).not.toContain(name);
+  for (const might of mightsOf(side)) expect(text).not.toContain(might);
+  // The HTML (with its RSC payload) carries none of it either.
+  const html = await page.content();
+  for (const name of [a.name, ...a.names]) expect(html).not.toContain(name);
+}
 const cal = calendarOf(seededAt());
 /** Private fields no JSON answer has as a key, as stored or as the app names them (daily_* and active: D76). */
 const PRIVATE_KEYS = new Set([
@@ -91,14 +117,17 @@ test.describe("one workspace's sessions never open the other's", () => {
     }
   }
 
-  test("a's officer reads none of b's members through a's own workspace", async () => {
+  test("a's officer reads none of b's members through a's own workspace", async ({
+    context,
+    page,
+  }) => {
     const ctx = await api(cookiesOf("a", "officer")[0] as string);
     const card = await ctx.get(`/api/w/${slug("a")}/members/${memberUid("b", 0)}`);
     expect(card.status()).toBe(404);
     const mark = await ctx.post(`/api/w/${slug("a")}/roll-call`, {
       data: {
         action: "mark",
-        occasion: { entry: CHEESE_ENTRY, week: cal.week },
+        occasion: { entry: KVK_ENTRY, week: cal.raid.week },
         uid: memberUid("b", 0),
         mark: "yes",
         version: 0,
@@ -107,6 +136,15 @@ test.describe("one workspace's sessions never open the other's", () => {
     expect(mark.status()).toBe(400);
     expect(await mark.json()).toEqual({ code: "not_member" });
     await ctx.dispose();
+    // On screen: a's Raid prep still has its own roster and marks, and none of b's members.
+    await signIn(context, "a", "officer");
+    await page.goto(`/w/${slug("a")}/roll-call/mark?entry=${KVK_ENTRY}&week=${cal.raid.week}`);
+    await expect(page.getByRole("heading", { level: 1, name: "Raid prep" })).toBeVisible();
+    await noError(page);
+    const ROSTER = ALLIANCES.a.names.length - 1;
+    await sees(page.locator("main"), `4 of ${ROSTER} marked`);
+    await expect(page.getByRole("button", { name: `All ${ROSTER}` })).toBeVisible();
+    for (const name of ALLIANCES.b.names) await expect(page.getByText(name)).toHaveCount(0);
   });
 
   test("a's member gets signed_out from a's own desk API", async () => {
@@ -128,14 +166,7 @@ test.describe("one workspace's sessions never open the other's", () => {
       await signIn(context, "a", tier, name);
       for (const path of ["", "/members", "/roll-call", "/board", "/board/me"]) {
         await page.goto(`/w/${slug("b")}${path}`);
-        await expect(
-          page
-            .getByRole("button", { name: /Sign in with Discord/ })
-            .or(page.getByRole("link", { name: /Sign in with Discord/ })),
-        ).toBeVisible();
-        const text = await page.content();
-        expect(text).not.toContain(ALLIANCES.b.name);
-        for (const name of ALLIANCES.b.names) expect(text).not.toContain(name);
+        await signInScreenOnly(page, "b");
       }
     });
   }
@@ -143,49 +174,64 @@ test.describe("one workspace's sessions never open the other's", () => {
 
 test.describe("no answer carries a private roster field", () => {
   const raid = `/w/${slug("a")}/roll-call/mark?entry=${KVK_ENTRY}&week=${cal.raid.week}`;
-  const sweeps: [string, string | null, string[]][] = [
+  // Each path with a marker of the real page (so a sign-in screen cannot pass the scan): the alliance, the
+  // player, or the signed-in person's name.
+  const officer = "Officer LNK";
+  const member = "Member LNK";
+  const A = ALLIANCES.a.name;
+  const sweeps: [string, string | null, [string, string][]][] = [
     [
       "the public pages",
       null,
       [
-        "/",
-        "/alliances",
-        "/events/1",
-        "/events/2",
-        `/events/2/alliances/${ALLIANCES.a.unionId}`,
-        `/players/${memberUid("a", 0)}`,
-        `/players/${memberUid("b", 0)}`,
-        `/alliances/${ALLIANCES.a.unionId}/history`,
+        ["/", A],
+        ["/alliances", A],
+        ["/events/1", A],
+        ["/events/2", A],
+        [`/events/2/alliances/${ALLIANCES.a.unionId}`, A],
+        [`/players/${memberUid("a", 0)}`, ALLIANCES.a.names[0] as string],
+        [`/players/${memberUid("b", 0)}`, ALLIANCES.b.names[0] as string],
+        [`/alliances/${ALLIANCES.a.unionId}/history`, A],
       ],
     ],
     [
       "a's desk",
       cookiesOf("a", "officer")[0] as string,
       [
-        `/w/${slug("a")}`,
-        `/w/${slug("a")}/members`,
-        `/w/${slug("a")}/members?view=former`,
-        `/w/${slug("a")}/roll-call`,
-        raid,
-        `/w/${slug("a")}/insights`,
-        `/w/${slug("a")}/follow-up`,
-        `/w/${slug("a")}/calendar`,
-        `/api/w/${slug("a")}/activity?before=${Date.now()}`,
+        [`/w/${slug("a")}`, officer],
+        [`/w/${slug("a")}/members`, officer],
+        [`/w/${slug("a")}/members?view=former`, officer],
+        [`/w/${slug("a")}/roll-call`, officer],
+        [raid, officer],
+        [`/w/${slug("a")}/insights`, officer],
+        [`/w/${slug("a")}/follow-up`, officer],
+        [`/w/${slug("a")}/calendar`, officer],
+        [`/api/w/${slug("a")}/activity?before=${Date.now()}`, officer],
       ],
     ],
     [
       "a's board",
       cookiesOf("a", "member")[0] as string,
-      [`/w/${slug("a")}/board`, `/w/${slug("a")}/board/me`],
+      [
+        [`/w/${slug("a")}/board`, member],
+        [`/w/${slug("a")}/board/me`, member],
+      ],
     ],
   ];
   for (const [label, cookie, paths] of sweeps) {
     test(label, async () => {
       const ctx = await api(cookie);
-      for (const path of paths) {
+      for (const [path, marker] of paths) {
         const res = await ctx.get(path);
         expect(res.status(), path).toBe(200);
         const body = await res.text();
+        // The sign-in screen's own heading (its words are also in every page's copy, so not those).
+        expect(body, `${path}: not the sign-in screen`).not.toMatch(/<h1[^>]*>Sign in<\/h1>/);
+        expect(body, `${path}: the real page`).toContain(marker);
+        // proxy.ts: no shared or browser cache keeps a private page or answer (D71).
+        if (/^\/(api\/)?w\//.test(path)) {
+          expect(res.headers()["cache-control"], path).toBe("private, no-store");
+        }
         expect(leaksIn(`${BASE_URL}${path}`, body), path).toEqual([]);
         if (res.headers()["content-type"]?.includes("json")) {
           expect(
@@ -215,5 +261,22 @@ test.describe("no answer carries a private roster field", () => {
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/members`, membersBody)).toEqual([]);
     expect(leaksIn(`${BASE_URL}/`, membersBody)).toContain("a.joined_at");
     await ctx.dispose();
+  });
+
+  // The scan's two weak spots the review found, each proved on its own: a private field's name as a key
+  // (online has no sentinel value), and a sentinel after a comma (a [x,y] pair, a CSV column after the first).
+  test("the scan sees online as a key and a sentinel after a comma", () => {
+    const publicPage = `${BASE_URL}/`;
+    const s = SENTINELS.a;
+    expect(leaksIn(publicPage, '{"members":[{"uid":1,"online":true}]}')).toContain(
+      "online (as a key)",
+    );
+    expect(leaksIn(publicPage, '\\"online\\":false')).toContain("online (as a key)");
+    expect(leaksIn(publicPage, `{"map":[${s.x},${s.y}]}`)).toEqual(
+      expect.arrayContaining(["a.x", "a.y"]),
+    );
+    expect(leaksIn(publicPage, `name,joined\nEsk Vale,${s.joined.slice(0, 10)}`)).toContain(
+      "a.joined_at",
+    );
   });
 });

@@ -8,8 +8,17 @@
 //    position and last online only in an officer's member card (/api/w/<slug>/members/<uid>, read when the
 //    card opens). No answer carries the photo URL, and a private answer of one workspace never names the
 //    other's members.
-import { test as base, expect, type BrowserContext, type Page, type Response } from "@playwright/test";
+import {
+  test as base,
+  expect,
+  type BrowserContext,
+  type Locator,
+  type Page,
+  type Response,
+} from "@playwright/test";
 
+import { compactLarge } from "../../lib/compact";
+import { errorsCopy } from "../../lib/copy-errors";
 import { BASE_URL } from "../env";
 import { ALLIANCES, AVATAR_SENTINEL, SENTINELS, TOKENS, type Side } from "./seed";
 
@@ -119,8 +128,39 @@ export async function signIn(
   ]);
 }
 
-/** Waits until the page's scripts have loaded: a tap on a server-drawn button before hydration does nothing. */
-export const hydrated = (page: Page) => page.waitForLoadState("networkidle");
+/**
+ * `text` is on screen inside `locator` as rendered: innerText, so CSS-hidden exact figures do not count, with
+ * any run of white space for a space and any case (labels are upper-cased by CSS).
+ */
+export const sees = (locator: Locator, text: string) =>
+  expect(locator).toContainText(
+    new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+"), "i"),
+    { useInnerText: true },
+  );
+
+/** The titles of the app's error boundary, not-found page and database-down page, and the generic failure line. */
+const ERROR_SCREENS = new RegExp(
+  [...Object.values(errorsCopy).map((e) => e.title), "Something went wrong"]
+    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|"),
+);
+
+/** No error screen on the page: the app's error boundary, the not-found page, the database-down line. */
+export async function noError(page: Page) {
+  await expect(page.getByText(ERROR_SCREENS)).toHaveCount(0);
+}
+
+/**
+ * Waits until React has hydrated `target` (it then carries React's props key): a tap on a server-drawn button
+ * before hydration does nothing. Not `networkidle`: the desk's read status bar polls (D141).
+ */
+export const hydrated = (target: Locator) =>
+  expect
+    .poll(() => target.evaluate((el) => Object.keys(el).some((k) => k.startsWith("__reactProps$"))))
+    .toBe(true);
+
+/** A figure of 1,000 or more as the pages write it (lib/compact, D78). */
+export const big = (n: number) => compactLarge(n, "en-GB");
 
 export const test = base.extend<{ guards: undefined }>({
   guards: [

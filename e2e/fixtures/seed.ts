@@ -65,9 +65,30 @@ export const memberUid = uidOf;
 /** Raid prep this week: Shield marks for these members, a wall mark only for these (issue 590 F1). */
 export const SHIELD_MARKED = [0, 1, 2, 3];
 export const WALL_ONLY = [4, 5];
-/** Calendar entries: the weekly KvK (Raid prep) and this week's cheese. */
+/** Calendar entries: the weekly KvK (Raid prep), and the cheese entries below. */
 export const KVK_ENTRY = 1;
-export const CHEESE_ENTRY = 2;
+
+/** The projects (playwright.config.ts) and the repeats (--repeat-each) that each get a roll call of their own. */
+const PROJECTS = ["phone", "wide", "iphone"];
+const REPEATS = 3;
+/**
+ * The weekly cheese entry a roll call test marks: one per project and repeat (up to three repeats), so each
+ * run checks its exact counts while the others run. Lv.1 to Lv.9, on this week's days in turn.
+ */
+export function cheeseOf(project: string, repeat: number) {
+  const n = Math.max(0, PROJECTS.indexOf(project)) * REPEATS + (repeat % REPEATS);
+  return { entry: 2 + n, level: 1 + n };
+}
+
+/**
+ * Raid prep for the test that marks it (phone only): the same marks on a later week of its own per repeat
+ * (weeks 1 to 3 after the read-only one), so the read-only checks of this week's never see its marks.
+ */
+export function raidOf(now: Date, repeat: number) {
+  const { raid } = calendarOf(now);
+  const shift = (day: string) => iso(Date.parse(day) + 7 * (1 + (repeat % REPEATS)) * DAY_MS);
+  return { day: shift(raid.day), week: shift(raid.week) };
+}
 
 /** Session tokens: invented, local only; the database keeps their sha256 (lib/private/session.ts). */
 export const TOKENS = {
@@ -108,6 +129,12 @@ export function calendarOf(now: Date) {
 /** The moment the global setup seeded at (E2E_NOW, which Playwright passes to its workers). */
 export const seededAt = () => new Date(Number(process.env.E2E_NOW ?? Date.now()));
 
+/** A seeded day (YYYY-MM-DD) written as a page writes it, e.g. "Sat, Nov 14" (en-US) or "14 Nov" (en-GB). */
+export const shown = (day: string, locale: string, options: Intl.DateTimeFormatOptions) =>
+  new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(Date.parse(day));
+/** The newest daily roster's day: yesterday, server time. */
+export const lastRosterDay = () => new Date(calendarOf(seededAt()).today - DAY_MS).toISOString().slice(0, 10);
+
 type Member = { uid: number; name: string; power: number; kills: number };
 const members = (side: Side, day: number): Member[] =>
   ALLIANCES[side].names.map((name, k) => ({
@@ -127,9 +154,9 @@ function rawMember(side: Side, m: Member, k: number) {
     lv: 25,
     rank_code: k === 0 ? 105 : k < 3 ? 104 : 102,
     rank_label: k === 0 ? "R5" : k < 3 ? "R4" : "R2",
-    active: 400,
-    daily_honor: 1000,
-    daily_tech: 3000,
+    active: DAILY.active,
+    daily_honor: DAILY.honor,
+    daily_tech: DAILY.tech,
     x: s.x,
     y: s.y,
     online: true,
@@ -149,6 +176,63 @@ function rosterRow(side: Side, day: string, list: Member[]) {
 /** Lantern Keep without the joiner before the last event, without the leaver after it. */
 const onRoster = (side: Side, k: number, afterLastEvent: boolean) =>
   side === "b" || (afterLastEvent ? k !== LEAVER : k !== JOINER);
+
+// What the pages show, computed from the rows above (the specs format them with lib/compact, as the pages do).
+
+/** An event member's figures: the Start's are `members(side, 0)`, the End loses 3M might and gains 90K kills. */
+const atEvent = (m: Member, phase: "before" | "after") =>
+  phase === "after" ? { might: m.power - 3_000_000, kills: m.kills + 90_000 } : { might: m.power, kills: m.kills };
+
+/** An alliance's totals at the last event's Start or End. */
+export function eventTotals(side: Side, phase: "before" | "after") {
+  const list = members(side, 0).filter((_, k) => onRoster(side, k, phase === "after"));
+  return list
+    .map((m) => atEvent(m, phase))
+    .reduce((t, f) => ({ might: t.might + f.might, kills: t.kills + f.kills }), { might: 0, kills: 0 });
+}
+
+/** What the members who joined (at the End) and left (at the Start) moved in the last event's might. */
+export function memberChange(side: Side) {
+  const list = members(side, 0);
+  const joined = atEvent(list[JOINER] as Member, "after").might;
+  const left = atEvent(list[LEAVER] as Member, "before").might;
+  return { joined, left };
+}
+
+/** Member k's figures at the last event's End. */
+export const endOf = (side: Side, k: number) => atEvent(members(side, 0)[k] as Member, "after");
+
+/** Member k on the newest daily roster (day 13 of 14), and on the first (day 0). */
+export const rosterOf = (side: Side, k: number, day = 13) => {
+  const m = members(side, day)[k] as Member;
+  return { might: m.power, kills: m.kills };
+};
+
+/** Yesterday's ranks board, in seed order: rank, might, kills. */
+export const boardOf = (n: number) => ({
+  rank: n + 1,
+  might: 300_000_000 - n * 50_000_000,
+  kills: 10_000_000 - n * 1_000_000,
+});
+
+/** Each roster member's daily figures (D146 and the member card): quest points, coins, donations. */
+export const DAILY = { active: 400, honor: 1000, tech: 3000 } as const;
+
+/**
+ * The desk's week line (D146) on the day the suite runs: the newest read is yesterday's, and its game week
+ * (Monday to Sunday) is this week, or last week when today is a Monday; every day of it has a read with the
+ * roster's members (11 on every day: the joiner replaces the leaver).
+ */
+export function weekLine(now: Date) {
+  const { today } = calendarOf(now);
+  const reads = ((new Date(today - DAY_MS).getUTCDay() + 6) % 7) + 1;
+  const n = ALLIANCES.a.names.length - 1;
+  return {
+    members: n,
+    week: new Date(today).getUTCDay() === 1 ? "last week" : "this week",
+    donations: DAILY.tech * n * reads,
+  };
+}
 
 function dailyReads(today: number, lastEvent: string): string[] {
   const lines: string[] = [];
@@ -234,13 +318,20 @@ function workspaceRows(): string[] {
 /** This week's Raid prep (the weekly KvK entry) with its marks, and a cheese entry with no roll call yet. */
 function rollCallRows(cal: ReturnType<typeof calendarOf>): string[] {
   const ws = ALLIANCES.a.id;
-  const marks = [
-    ...SHIELD_MARKED.map((k) => `(1, ${uidOf("a", k)}, 1, 'main', '${k === LINKED_MEMBER ? "no" : "yes"}', 1, false)`),
-    ...WALL_ONLY.map((k) => `(1, ${uidOf("a", k)}, 1, 'wall', 'yes', 1, false)`),
-  ];
+  const cheese = Array.from({ length: PROJECTS.length * REPEATS }, (_, n) => {
+    const c = cheeseOf(PROJECTS[Math.floor(n / REPEATS)] as string, n % REPEATS);
+    return `(${c.entry}, ${ws}, 'cheese', ${c.level}, '${iso(Date.parse(cal.week) + (n % 7) * DAY_MS)}', 1200, true, true, 1)`;
+  }).join(", ");
+  const raids = [cal.raid, ...Array.from({ length: REPEATS }, (_, r) => raidOf(seededAt(), r))];
+  const marks = raids.flatMap((_, n) => [
+    ...SHIELD_MARKED.map(
+      (k) => `(${n + 1}, ${uidOf("a", k)}, 1, 'main', '${k === LINKED_MEMBER ? "no" : "yes"}', 1, false)`,
+    ),
+    ...WALL_ONLY.map((k) => `(${n + 1}, ${uidOf("a", k)}, 1, 'wall', 'yes', 1, false)`),
+  ]);
   return [
-    `insert into calendar_entries (id, workspace_id, kind, level, day, minute, weekly, for_members, created_by) values (${KVK_ENTRY}, ${ws}, 'kvk', null, '${cal.events[0]}', 720, true, true, 1), (${CHEESE_ENTRY}, ${ws}, 'cheese', 6, '${cal.week}', 1200, true, true, 1);`,
-    `insert into roll_calls (id, workspace_id, kind, day, week, entry_id, created_by) values (1, ${ws}, 'shield', '${cal.raid.day}', '${cal.raid.week}', ${KVK_ENTRY}, 1);`,
+    `insert into calendar_entries (id, workspace_id, kind, level, day, minute, weekly, for_members, created_by) values (${KVK_ENTRY}, ${ws}, 'kvk', null, '${cal.events[0]}', 720, true, true, 1), ${cheese};`,
+    `insert into roll_calls (id, workspace_id, kind, day, week, entry_id, created_by) values ${raids.map((r, n) => `(${n + 1}, ${ws}, 'shield', '${r.day}', '${r.week}', ${KVK_ENTRY}, 1)`).join(", ")};`,
     `insert into roll_call_marks (roll_call_id, uid, version, part, mark, written_by, by_tracker, written_at) select *, now() from (values ${marks.join(", ")}) v;`,
   ];
 }

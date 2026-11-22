@@ -18,7 +18,20 @@ function run(command: string, args: string[], input?: string, env?: Record<strin
   }
 }
 
+/** The server's day changes at 02:00 UTC (UTC−2); a run across it would see two different "todays". */
+const DAY_CHANGE_MARGIN_MS = 10 * 60_000;
+
 export default function globalSetup() {
+  const now = new Date();
+  const change = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2);
+  const near = [change - 86_400_000, change, change + 86_400_000].some(
+    (t) => Math.abs(now.getTime() - t) < DAY_CHANGE_MARGIN_MS,
+  );
+  if (near) {
+    throw new Error(
+      "e2e: within 10 minutes of 02:00 UTC, the server's day change; run it again after.",
+    );
+  }
   const url = new URL(DATABASE_URL);
   const name = decodeURIComponent(url.pathname.slice(1));
   if (!name.includes("e2e")) throw new Error("E2E_DATABASE_URL's database name must contain e2e");
@@ -32,8 +45,7 @@ export default function globalSetup() {
     run("psql", [target, "-X", "-q", "-v", "ON_ERROR_STOP=1"], sql);
   psql(admin.href, `drop database if exists "${name}" with (force);\ncreate database "${name}";\n`);
   run("node", ["scripts/db-local.mjs", "migrate"], undefined, local);
-  // The specs lay out their dates from this same moment (seededAt), so a run past server midnight agrees.
-  const now = new Date();
+  // The specs lay out their dates from this same moment (seededAt).
   process.env.E2E_NOW = String(now.getTime());
   psql(url.href, seedSql(now));
 }

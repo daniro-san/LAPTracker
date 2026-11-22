@@ -168,7 +168,7 @@ export default defineConfig(
   },
   {
     // A describe() block is one function by syntax but N test cases by meaning.
-    files: ["**/*.test.ts"],
+    files: ["**/*.test.ts", "e2e/**/*.spec.ts"],
     rules: { "max-lines-per-function": "off" },
   },
   {

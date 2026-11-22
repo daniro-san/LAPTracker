@@ -1,14 +1,18 @@
 # The e2e suite (issue 477, D150): a production build against a Postgres service container, with the
 # invented seed of e2e/fixtures/seed.ts. Actions pinned to commit SHAs; the tag is in the comment. A required
-# check: every PR gets a job named `e2e`, and one that changes nothing the app runs skips the install, build
-# and tests. Daily on `dev` at 03:17 UTC, with WebKit (the schedule runs from the default branch, so it starts
-# once a release has copied this file to main). Needs no secret: the app under test (`next start` and the
+# check: every PR into dev gets a job named `e2e`, and one that changes nothing the app runs skips the install,
+# build and tests. On what ships, with WebKit: release-prepare dispatches it on `dev`, and a daily cron at 03:17
+# UTC runs it too when GitHub fires it (the schedule runs from the default branch, so it starts once a
+# release has copied this file to main). Caches: pull requests only restore them; the dev runs save them, so a
+# PR writes nothing to the repo's Actions cache. Needs no secret: the app under test (`next start` and the
 # browser) points every outside service at 127.0.0.1:9, and a test fails if it tries to reach any other
 # host. `next build` is not guarded: it downloads the Google Fonts that next/font self-hosts.
 name: e2e
 
 on:
+  # Release PRs into main do not run it again: release-prepare's dispatch on dev covers the release.
   pull_request:
+    branches: [dev]
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -41,8 +45,8 @@ jobs:
           --health-retries 30
     env:
       E2E_DATABASE_URL: postgres://lap:lap@127.0.0.1:54320/lap_e2e
-      # D150: WebKit runs in the daily run only.
-      E2E_WEBKIT: ${{ github.event_name == 'schedule' && '1' || '0' }}
+      # D150: WebKit runs on the release dispatch and the cron, not on pull requests.
+      E2E_WEBKIT: ${{ github.event_name != 'pull_request' && '1' || '0' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -56,7 +60,7 @@ jobs:
         run: |
           if [ -z "$BASE" ]; then echo "app=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           git fetch --no-tags --depth=1 origin "$BASE"
-          files=$(git diff --name-only "$BASE" HEAD)
+          files=$(git diff --no-renames --name-only "$BASE" HEAD)
           echo "$files"
           app='^(app|lib|config|drizzle|e2e|public)/|^scripts/db-local[^/]*\.mjs$|^(proxy|instrumentation|next\.config|playwright\.config)\.ts$|^(postcss\.config\.mjs|tsconfig\.json|package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|\.nvmrc|\.github/workflows/e2e\.yml)$'
           if echo "$files" | grep -Eq "$app"; then echo "app=true" >> "$GITHUB_OUTPUT"; else echo "app=false" >> "$GITHUB_OUTPUT"; fi
@@ -73,31 +77,44 @@ jobs:
         if: steps.changes.outputs.app == 'true'
         id: pw
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      # The newest browsers saved from dev for this Playwright version (chromium's shell and webkit).
       - if: steps.changes.outputs.app == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-webkit${{ env.E2E_WEBKIT }}
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-
           restore-keys: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-
-      # The browsers come from the cache when it holds this version; their system libraries come from apt.
+      # A browser the cache holds is not downloaded again; the system libraries come from apt every run.
       - if: steps.changes.outputs.app == 'true'
         run: pnpm exec playwright install --with-deps --only-shell chromium
       - if: steps.changes.outputs.app == 'true' && env.E2E_WEBKIT == '1'
         run: pnpm exec playwright install --with-deps webkit
+      - if: steps.changes.outputs.app == 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-${{ github.run_id }}
       # The runner image's client; global setup drops, creates and seeds the database with it.
       - if: steps.changes.outputs.app == 'true'
         run: psql --version
+      # The newest build cache saved from dev for this lockfile.
       - if: steps.changes.outputs.app == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .next/cache
-          key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('app/**', 'lib/**', 'config/**', '*.ts', '*.mjs') }}
+          key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
           restore-keys: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       # Its own step, so the build's time shows apart and does not count against the web server's timeout.
       - if: steps.changes.outputs.app == 'true'
         run: pnpm exec next build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+      # Saved right after the build, before the tests fill its fetch cache.
+      - if: steps.changes.outputs.app == 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.run_id }}
       - if: steps.changes.outputs.app == 'true'
         run: pnpm test:e2e
         env:
