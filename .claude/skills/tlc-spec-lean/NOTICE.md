@@ -7,8 +7,8 @@ This folder is a copy of the `tlc-spec-lean` skill by **Tech Leads Club**.
 - Pinned commit: `f69e6154b3ac900ea661687479b407cc1be9d4a9` (2026-10-31, "feat(skills-catalog): run the build line before building, name what follows"). Skill version 2.2.0.
 - Author: Tech Leads Club (https://github.com/tech-leads-club). The skill says it is derived from tlc-spec-driven 3.3.0 by Felipe Rodrigues, tlc-plan and tlc-implement.
 - Licence:
-  - `SKILL.md` and `references/`: Creative Commons Attribution 4.0 International (CC-BY-4.0), https://creativecommons.org/licenses/by/4.0/.
-  - `scripts/`: the MIT License of the upstream repository, reproduced below.
+  - `SKILL.md`: Creative Commons Attribution 4.0 International (CC-BY-4.0), https://creativecommons.org/licenses/by/4.0/, as its frontmatter (`license: CC-BY-4.0`) and the dual-licensing note in upstream's `LICENSE` state.
+  - Everything else (`references/`, `scripts/` and `scripts/fixtures/`): the MIT License of the upstream repository, reproduced below. Upstream's `LICENSE` grants MIT to the repository and carves out only the `SKILL.md` files.
 
 ## Changes
 
@@ -21,7 +21,7 @@ Copied into LAPTracker on 2026-11-21. Every upstream file is unmodified and byte
 3. Update the pinned commit, its date and the skill version above. If you change any upstream file, list the change under "Changes".
 4. Before committing, read the new scripts. Never run them before you have read them.
 
-## MIT License (upstream scripts)
+## MIT License (everything except SKILL.md)
 
 MIT License
 

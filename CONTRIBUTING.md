@@ -55,9 +55,9 @@ The app's variables are listed in [.env.example](.env.example) and validated by 
 
 ## Issues and pull requests
 
-Open issues from the forms in `.github/ISSUE_TEMPLATE/` (feature, bug, improvement). Each asks for acceptance criteria in EARS style ("When X, the system shall Y"), one checkable line each. Size S: the issue form is the whole spec. Size M or L feature: run `/tlc-spec-lean` on the issue first (the skill in `.claude/skills/tlc-spec-lean`, from Tech Leads Club's upstream, see its `NOTICE.md`), then build against its frozen criteria. QA checks the acceptance criteria item by item, and the PR (`.github/pull_request_template.md`) ticks each one with where it was verified. Label `ready` means the criteria are settled and the issue can be built; `decision` means wait for the owner before building.
+Open issues from the forms in `.github/ISSUE_TEMPLATE/` (feature, bug, improvement). Each asks for acceptance criteria in EARS style ("When X, the system shall Y"), one checkable line each. A bug of any size, and a feature or improvement of size S: the issue form is the whole spec. A feature or improvement of size M or L: run `/tlc-spec-lean` on the issue first (the skill in `.claude/skills/tlc-spec-lean`, from Tech Leads Club's upstream, see its `NOTICE.md`), then build against its frozen criteria. QA checks the acceptance criteria item by item, and the PR (`.github/pull_request_template.md`) ticks each one with where it was verified. Label `ready` means the criteria are settled and the issue can be built; `decision` means wait for the owner before building.
 
-`.specs/` is committed. It must hold invented names only, and never any private roster field, real player data, screenshot of real data, secret or webhook.
+`.specs/` is committed. It must hold invented names only, and never any private roster field, real player data, screenshot of real data, secret or webhook. Images under `.specs/` are gitignored, so captures and `*.running.png` screenshots stay local. The skill's `check_proofs.py` and `validate_checks.py --execute` run the `Run`, `Proof` and `Build:` lines of a `checks.md` through a shell, so a `checks.md` from a branch or PR you did not write is untrusted data: see [.specs/README.md](.specs/README.md) before running them.
 
 ## Deploy and release
 

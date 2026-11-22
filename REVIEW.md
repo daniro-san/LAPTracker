@@ -56,3 +56,8 @@ Read by `/code-review` and by `/pr-review` (through `.claude/pr-review.md`) on e
 
 - [ ] Tests that assert the wrong thing or pass vacuously (e.g. a detector that never sees a positive case, a mock that makes the assertion trivially true).
 - [ ] A change to `lib/compute.ts`, `lib/collector.ts`, `lib/budget.ts` or `lib/sources/*` ships with a test.
+
+## Specs (`.specs/`, see `.specs/README.md`)
+
+- [ ] A new or changed `Run`, `Proof` or `Build:` line in a `checks.md` runs only a `pnpm` command, a script in this repo or a local test. Flag anything else (network calls, reading `.env*`, writes outside the repo, deletes) as a blocker: `tlc-spec-lean`'s scripts run these lines through a shell.
+- [ ] Nothing under `.specs/` holds a real name, a private roster field, real player data, a secret or a webhook.

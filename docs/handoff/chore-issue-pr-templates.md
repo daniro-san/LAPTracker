@@ -45,10 +45,16 @@
     - `references/`: `build.md`, `checks.md`, `memory.md`, `plan.md`, `verify.md` and `verify-screens.md`;
     - `scripts/`: `check_commit.py`, `check_proofs.py`, `lean_config.py`, `lessons.py`, `selftest.py`, `validate_checks.py`, `validate_plan.py` and `validate_verification.py`;
     - `scripts/fixtures/`: `checks.md`, `plan.md`, `proofs.md` and `verification.md`.
-  - The added `NOTICE.md` holds the source, the pin, the author, the licences, "unmodified", how to re-sync, and the full MIT text. Upstream licenses `SKILL.md` and `references/` under CC-BY-4.0 and the scripts under the repository's MIT License.
+  - The added `NOTICE.md` holds the source, the pin, the author, the licences, "unmodified", how to re-sync, and the full MIT text. Upstream licenses `SKILL.md` under CC-BY-4.0, and everything else in the folder (references, scripts, fixtures) under the repository's MIT License.
   - `.prettierignore` skips the upstream files, so they stay identical to the pin. `NOTICE.md` is still checked.
 
-- `.specs/README.md` and one paragraph in CONTRIBUTING.md carry the same rule: "`.specs/` is committed. It must hold invented names only, and never any private roster field, real player data, screenshot of real data, secret or webhook." The skill does not create a README of its own. `.gitignore` is unchanged.
+- `.specs/README.md` and one paragraph in CONTRIBUTING.md carry the same rule: "`.specs/` is committed. It must hold invented names only, and never any private roster field, real player data, screenshot of real data, secret or webhook." The skill does not create a README of its own.
+- After the second `/pr-review` on #596:
+  - `.gitignore` ignores image files under `.specs/` (png, jpg, jpeg, webp and gif, in any case). The skill's gates read pictures from disk, so they still work.
+  - `.specs/README.md` § "Running the gates on someone else's checks": `check_proofs.py` and `validate_checks.py --execute` run a `checks.md`'s `Run`, `Proof` and `Build:` lines through a shell. A PR's `checks.md` is untrusted data. Read those lines first, and run nothing but `pnpm` commands, repo scripts or local tests. CONTRIBUTING.md points to the README.
+  - REVIEW.md § Specs: flag a `checks.md` command that is not a `pnpm` command, a repo script or a local test, and flag real data under `.specs/`.
+  - CONTRIBUTING.md follows the issue forms on sizes. A bug of any size, and an S feature or improvement, use the form only. An M or L feature or improvement goes through `/tlc-spec-lean`.
+  - NOTICE.md: `SKILL.md` is CC-BY-4.0. Everything else in the folder is MIT, per upstream's `LICENSE`.
 
 ## Decisions
 
