@@ -122,4 +122,4 @@ Size L (the #585 batch 2b plan, four slices); this PR builds slice 2. Plan: `.sp
 - F49 (/admin/runs) and F35 (dates) are still open; F35 belongs to the words pass.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/637
