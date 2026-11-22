@@ -40,4 +40,4 @@ Issue #647: Undo of a repeated "They need help" cleared another officer's standi
 
 What was missing from the task prompt? Nothing needed; it did not say which save path leads to the reuse (a sheet opened before the other officer's save), which the code showed.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/664
