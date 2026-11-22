@@ -10,6 +10,7 @@ import {
   sendLater,
   type DeskAction,
   type DeskFeature,
+  type DeskPlace,
 } from "../analytics/server";
 import type { AppContext } from "../app-context";
 import type { WorkspaceAccess } from "./access";
@@ -27,6 +28,8 @@ export function counted(
   feature: DeskFeature,
   action: DeskAction,
   response: Response,
+  /** Follow-up's records (issue 516): from the tab or a card, and whether the member was on the list. */
+  place?: DeskPlace,
 ): Response {
   if (!response.ok || !analyticsKey(ctx.env)) return response;
   const person = analyticsPersonId(access.user.id, ctx.env.CRON_SECRET);
@@ -35,7 +38,7 @@ export function counted(
       {
         event: "ws_action",
         person,
-        properties: { feature, action },
+        properties: { feature, action, ...place },
         where: eventWorkspace(access),
       },
     ]),

@@ -108,6 +108,8 @@ export interface AnalyticsEvents {
   ws_roll_call_marked: { how: "tap" | "rest" | "tracker"; roll_call: RollCallType };
   /** The weekly thanks shared (D114, issue 404): posted to the board or Discord, or copied for the game. */
   ws_thanks_shared: { to: "game" | "discord" | "board" };
+  /** A ready message copied (D140, issue 516): from a member card or Follow-up's panel, for the game or Discord. */
+  ws_message_copied: { where: "card" | "follow_up"; to: "game" | "discord" };
   /** A members' board section came on screen, once per page load. */
   ws_board_section_viewed: { board_section: BoardSection };
   /** Alliance settings' Check found the bot in the alliance's Discord server for the first time (D129). */
@@ -160,6 +162,7 @@ export const ANALYTICS_EVENTS = [
   "ws_notice_published",
   "ws_roll_call_marked",
   "ws_thanks_shared",
+  "ws_message_copied",
   "ws_board_section_viewed",
   "ws_bot_installed",
   "ws_webhook_set",

@@ -129,6 +129,21 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   ).toBeVisible();
   const change = rosterOf("a", k).might - rosterOf("a", k, 7).might;
   await sees(card, `Might +${big(change)} since ${usDay(daysAgo(7))}`);
+  // Issue 516: "Talked to them" on the card records it; the card is read again and its week line names it.
+  // Both projects tap it for this member, so the line is the same whichever saved last.
+  const week = new RegExp(`^This week: Talked ${usDay(daysAgo(0))} · \\u2068?Officer LNK\\u2069?$`);
+  const talked = card.getByRole("button", { name: "Talked to them" });
+  await talked.click();
+  await expect(card.getByRole("status").filter({ hasText: /^Saved\./ })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Undo" })).toBeVisible();
+  await expect(talked).toBeDisabled();
+  await expect(card.getByText(week)).toBeVisible();
+  // "Message to send" opens Follow-up's ready message with its two copies (D140).
+  const message = card.getByRole("button", { name: "Message to send" });
+  await message.click();
+  await expect(message).toHaveAttribute("aria-expanded", "true");
+  await expect(card.getByRole("heading", { name: "A message you can send" })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Copy for game mail" })).toBeVisible();
   // Info: the map position stays hidden until "Show map position" is tapped (D71: the own alliance only).
   const map = `X ${SENTINELS.a.x} · Y ${SENTINELS.a.y}`;
   await card.getByRole("tab", { name: "Info" }).click();
@@ -149,6 +164,12 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   await sees(page.locator("main"), `${ROSTER} of ${ROSTER} members`);
   await expect(page.getByRole("heading", { name, level: 2 })).toBeHidden();
+  // The Talked from the card is kept: the card opened again after the reload still names it (it opens on
+  // the last tab picked, Info, D136).
+  await hydrated(row);
+  await row.click();
+  await card.getByRole("tab", { name: "Overview" }).click();
+  await expect(card.getByText(week)).toBeVisible();
 });
 
 test("Roll call: a mark shows at once, is kept after a reload and in the list, then clears", async ({

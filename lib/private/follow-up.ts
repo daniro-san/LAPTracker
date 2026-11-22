@@ -52,7 +52,7 @@ export interface FollowUpView {
 }
 
 /** How far back a member's game language is read: the squads read runs every day (D132). */
-const LANGUAGE_DAYS = 14;
+export const LANGUAGE_DAYS = 14;
 
 /** A member on the list and the language of their ready message: null when no language is known. */
 export type FollowUpItem = WorkItem & { language: WorkspaceLanguage | null };
@@ -62,7 +62,7 @@ export type FollowUpItem = WorkItem & { language: WorkspaceLanguage | null };
  * (first seen under OFFLINE_GRACE_DAYS ago, D127). The window is 7 calendar days: a day with no read
  * stays in it and counts as no data, never as a day below 1,000.
  */
-function tipsOf(members: readonly MemberRow[], reads: readonly RosterRead[]): Set<number> {
+export function tipsOf(members: readonly MemberRow[], reads: readonly RosterRead[]): Set<number> {
   return new Set(
     members
       .filter((m) => !m.settling && coinsTip(lastDays(reads, m.uid)?.rows.coins ?? []))

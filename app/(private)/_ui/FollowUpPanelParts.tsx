@@ -5,8 +5,10 @@
 // the last notes. Nothing here sends anything: the copies go to the clipboard only.
 import { useEffect, useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
+import type { MessageWords } from "@/lib/private/card-follow-up";
 import type { FactField } from "@/lib/private/fact-fields";
 import { discordLiteral, gameMail } from "@/lib/private/notice-formats";
 
@@ -66,19 +68,31 @@ export function CardStatus({ card, words }: { card: HeldCard; words: FollowUpWor
   );
 }
 
-/** The ready message, which language it is in, and its two copies. Nothing is sent from here. */
-export function Message({ row, words }: { row: FollowUpRow; words: FollowUpWords }) {
+/**
+ * The ready message, which language it is in, and its two copies, in Follow-up's panel and on the member
+ * card (issue 516, `where`). Nothing is sent from here; a copy is counted (`ws_message_copied`).
+ */
+export function Message({
+  message,
+  words,
+  where,
+}: {
+  message: FollowUpRow["message"];
+  words: MessageWords;
+  where: "card" | "follow_up";
+}) {
   // The member's language first; the officer may pick another (persona panel, D140).
-  const [language, setLanguage] = useState(row.message.language);
-  const text = row.message.texts[language];
+  const [language, setLanguage] = useState(message.language);
+  const text = message.texts[language];
   const labels = (copy: string) => ({
     copy,
     copied: words["followup.copied"],
     failed: words["followup.copyFailed"],
   });
+  const id = `${where}-message`;
   return (
-    <section className={SECTION} aria-labelledby="follow-up-message-h">
-      <h3 id="follow-up-message-h" className={HEAD}>
+    <section className={SECTION} aria-labelledby={`${id}-h`}>
+      <h3 id={`${id}-h`} className={HEAD}>
         {words["followup.message"]}
       </h3>
       <div role="group" aria-label={words["followup.messageLang"]} className="mt-1 flex gap-2">
@@ -95,20 +109,28 @@ export function Message({ row, words }: { row: FollowUpRow; words: FollowUpWords
           </button>
         ))}
       </div>
-      <p id="follow-up-message-note" className="mt-1 text-body-sm text-ink/80">
+      <p id={`${id}-note`} className="mt-1 text-body-sm text-ink/80">
         {fill(words["followup.messageHelp"], { language: words[`followup.lang.${language}`] })}
       </p>
       <textarea
         readOnly
         value={text}
         rows={6}
-        aria-labelledby="follow-up-message-h"
-        aria-describedby="follow-up-message-note"
+        aria-labelledby={`${id}-h`}
+        aria-describedby={`${id}-note`}
         className={`${FIELD} mt-1 field-sizing-content py-2 text-[16px]`}
       />
       <div className="mt-2 flex flex-wrap gap-2">
-        <CopyButton text={gameMail(text)} labels={labels(words["followup.copyGame"])} />
-        <CopyButton text={discordLiteral(text)} labels={labels(words["followup.copyDiscord"])} />
+        <CopyButton
+          text={gameMail(text)}
+          labels={labels(words["followup.copyGame"])}
+          onCopied={() => track("ws_message_copied", { where, to: "game" })}
+        />
+        <CopyButton
+          text={discordLiteral(text)}
+          labels={labels(words["followup.copyDiscord"])}
+          onCopied={() => track("ws_message_copied", { where, to: "discord" })}
+        />
       </div>
     </section>
   );

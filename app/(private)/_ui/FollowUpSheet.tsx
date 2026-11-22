@@ -258,7 +258,7 @@ export function FollowUpPanel(props: PanelProps) {
           ))}
         </ul>
       </section>
-      <Message row={row} words={words} />
+      <Message message={row.message} words={words} where="follow_up" />
       <Fill row={row} words={words} card={card} onOpen={setEditing} />
       <Answers value={f.action} words={words} onChange={f.choose} />
       {f.action === "break" && (
