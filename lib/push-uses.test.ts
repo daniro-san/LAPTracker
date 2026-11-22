@@ -1,7 +1,7 @@
 // The four officers' notifications (D148) against a real Postgres (PGlite) and a push service stub: each fires
-// once per trigger (the Raid Shield count again only when it changed), only to the workspace concerned, and
-// what reaches the device holds counts and a link, never a member's name or uid. Invented names; no real
-// push service.
+// once per trigger (the Raid Shield count again only when it changed, away members left out), only to the
+// workspace concerned, and what reaches the device holds counts and a link, never a member's name or uid.
+// Invented names; no real push service.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { DailyReadSummary } from "./daily-read";
@@ -16,7 +16,14 @@ import {
   saveTestDevice,
   sessionFor,
 } from "./push.test-helpers";
-import { calendarEntries, dailyReads, dailyRosters, workspaces, workspaceUsers } from "./schema";
+import {
+  calendarEntries,
+  dailyReads,
+  dailyRosters,
+  memberFacts,
+  workspaces,
+  workspaceUsers,
+} from "./schema";
 import { workspaceFeatures } from "./schema-features";
 import { PUSH_USES } from "./schema-push";
 import { playerReads } from "./schema-squads";
@@ -115,6 +122,36 @@ describe("the officers' notifications (D148)", () => {
     expect(got[0]?.url).toBe("/w/alpha/roll-call?week=2026-11-16");
     expect(push.received(bravo.device)).toEqual([]);
     countsOnly(got);
+  });
+
+  it("Raid Shield: leaves a member away on the raid's Saturday out of the count, as the summary does", async () => {
+    const target: ShieldTarget = {
+      unionId: alpha.unionId,
+      workspaceId: alpha.workspaceId,
+      slug: "alpha",
+      key: null,
+      settings: null,
+    };
+    // Away from Saturday only: on Friday, the night check's own day, Moss is not away yet.
+    await db.insert(memberFacts).values({
+      ...{ workspaceId: alpha.workspaceId, uid: UIDS[1] as number, field: "away", version: 1 },
+      ...{ value: { text: "Trip", from: "2026-11-21", until: "2026-11-23" } },
+      ...{ source: "officer", writtenAt: FRI },
+    });
+    const reading = { unionId: alpha.unionId, readAt: FRI, shieldType: 0, shielding: 0 };
+    await db.insert(playerReads).values(UIDS.map((uid) => ({ ...reading, uid })));
+    const run = { day: DAY, target, pass: "night" as const };
+    await pushShield(deps(), db, run);
+    // A later tick sees Wren with a shield: only away Moss is not seen, so "every member" would be untrue.
+    const later = new Date(FRI.getTime() + 60_000);
+    await db
+      .insert(playerReads)
+      .values({ ...reading, uid: UIDS[0] as number, readAt: later, shielding: 1 });
+    await pushShield(deps(), db, run);
+    expect(push.received(alpha.device).map((n) => n.body)).toEqual([
+      "Night check: 1 not seen with a shield yet. Tap to review in Raid prep.",
+      "Night check: 0 not seen with a shield yet. Tap to review in Raid prep.",
+    ]);
   });
 
   it("night read failed: once per day, only to the workspace whose alliance failed", async () => {

@@ -206,7 +206,7 @@ async function readingsOf(db: Db, access: WorkspaceAccess, friday: string, zone:
 /**
  * Raid prep's part of a Raid Shield roll call's page: the tracker's hints, the wall marks, the counts and
  * the Discord summary's state. `shieldChannel`: a Raid Shield channel the summary can post to is saved.
- * `loaded`: the roster and facts the page's `callView` already read; read here when not given.
+ * `loaded`: the roster, facts and Shield marks the page's `callRead` already read; read here when not given.
  */
 export async function prepView(
   db: Db,
@@ -219,13 +219,11 @@ export async function prepView(
   const { friday, reset, kvk: kvkAt } = raidOf(opened.day, { SERVER_TZ: clock.zone });
   const tracker = featureOn(access, "shield_check");
   const ids = opened.call ? [opened.call.id] : [];
-  const [{ roster, facts }, main, wall, settings, reads, check] = await Promise.all([
+  const [{ roster, facts, marks: main }, wall, settings, reads, check] = await Promise.all([
     loaded ??
-      Promise.all([rosterOf(db, access), factsOf(db, access)]).then(([r, f]) => ({
-        roster: r,
-        facts: f,
-      })),
-    newestMarks(db, ids),
+      Promise.all([rosterOf(db, access), factsOf(db, access), newestMarks(db, ids)]).then(
+        ([r, f, m]) => ({ roster: r, facts: f, marks: m }),
+      ),
     newestMarks(db, ids, "wall"),
     shieldSettingsOf(db, access.workspaceId),
     tracker
