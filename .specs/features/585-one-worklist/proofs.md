@@ -1,6 +1,6 @@
 # 585-one-worklist proofs
 
-**HEAD**: 3b98f268
+**HEAD**: 24ad4ffc
 **Tree**: clean
 **Shell**: /bin/sh
 **Result**: 34 pass, 0 fail
@@ -47,21 +47,21 @@
 `Run unit` - exit 0
 
 ```
+ ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > offers Not them instead of Reject, on Home and on the card 43ms
+ ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > shows last week's newest record as context, never one from two weeks back, one undone across Monday or the mark's own 77ms
+ ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > takes this week's list and Home's numbers from this week's records only, the Needs help group counted 54ms
  ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > gives Home and Members Follow-up's own numbers from Monday 00:00 ST, before Monday's daily update 63ms
- ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers while the alliance turned the Follow-up tab off (D126) 38ms
- ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers before the alliance's first daily update 33ms
- ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > says on Home's first screen that the claim waits in To review, and nothing once none waits (slice 4) 41ms
- ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > offers Not them instead of Reject, on Home and on the card 32ms
- ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > shows last week's newest record as context, never one from two weeks back, one undone across Monday or the mark's own 57ms
- ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > takes this week's list and Home's numbers from this week's records only, the Needs help group counted 53ms
- ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > never folds two posts in a row into one line 44ms
- ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > folds a roll call finished by several officers into one line naming each once (issue 585) 56ms
- ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > shows a run longer than one read as two lines on two pages, each action once 48ms
+ ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers while the alliance turned the Follow-up tab off (D126) 34ms
+ ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers before the alliance's first daily update 35ms
+ ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > pages two sources together when only one fills its read 93ms
+ ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > never folds two posts in a row into one line 38ms
+ ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > folds a roll call finished by several officers into one line naming each once (issue 585) 54ms
+ ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > shows a run longer than one read as two lines on two pages, each action once 46ms
 
  Test Files  11 passed (11)
       Tests  39 passed (39)
-   Start at  07:54:23
-   Duration  1.77s (import 47%, tests 35%, transform 17%)
+   Start at  07:55:33
+   Duration  1.81s (import 46%, tests 36%, transform 18%)
 ```
 
 `pnpm test:e2e e2e/desk-flows.spec.ts -g "Follow-up: Talked to them"` - exit 0
@@ -69,10 +69,10 @@
 ```
 Running 2 tests using 2 workers
 
-  ✓  2 [phone] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.1s)
-  ✓  1 [wide] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.1s)
+  ✓  1 [phone] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.0s)
+  ✓  2 [wide] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.0s)
 
-  2 passed (4.3s)
+  2 passed (4.0s)
 $ playwright test e2e/desk-flows.spec.ts -g 'Follow-up: Talked to them'
 [WebServer] ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3497". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
 ```
@@ -82,10 +82,10 @@ $ playwright test e2e/desk-flows.spec.ts -g 'Follow-up: Talked to them'
 ```
 Running 2 tests using 2 workers
 
-  ✓  1 [wide] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (648ms)
-  ✓  2 [phone] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (661ms)
+  ✓  1 [phone] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (654ms)
+  ✓  2 [wide] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (661ms)
 
-  2 passed (3.4s)
+  2 passed (3.3s)
 $ playwright test e2e/desk.spec.ts -g 'Home shows the alliance'
 [WebServer] ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3497". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
 ```
@@ -96,10 +96,10 @@ $ playwright test e2e/desk.spec.ts -g 'Home shows the alliance'
 Running 2 tests using 2 workers
 
   -  2 [wide] › e2e/desk-flows.spec.ts:136:1 › Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too
-  ✓  1 [phone] › e2e/desk-flows.spec.ts:136:1 › Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too (925ms)
+  ✓  1 [phone] › e2e/desk-flows.spec.ts:136:1 › Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too (921ms)
 
   1 skipped
-  1 passed (3.7s)
+  1 passed (3.6s)
 $ playwright test e2e/desk-flows.spec.ts -g 'No longer needs help'
 [WebServer] ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3497". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
 ```
