@@ -62,4 +62,4 @@ Size L, planned with `/tlc-spec-lean`: `.specs/features/585-settings-admin/plan.
 - PostHog (orchestrator numbers, 30 days): /admin 42 views / 34 sessions / 14 under 640 px; settings 14 / 14 / 7; `ws_action` features 8, discord save 2, discord check 1, tracker_key save 1.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/620
