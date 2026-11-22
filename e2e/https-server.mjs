@@ -18,7 +18,7 @@ const made = spawnSync(
     "-x509",
     "-newkey",
     "rsa:2048",
-    "-noenc",
+    "-nodes",
     "-keyout",
     "/dev/stdout",
     "-subj",
@@ -26,9 +26,12 @@ const made = spawnSync(
     "-days",
     "1",
   ],
-  { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+  { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
 );
-if (made.status !== 0) throw new Error("e2e: openssl could not make the certificate");
+if (made.status !== 0 || !made.stdout.includes("PRIVATE KEY"))
+  throw new Error(
+    `e2e: openssl could not make the certificate: ${made.error?.message ?? made.stderr}`,
+  );
 
 const app = next({ dev: false, hostname: "localhost", port });
 await app.prepare();
