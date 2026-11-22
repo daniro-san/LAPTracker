@@ -298,6 +298,9 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | free seat                         | boş koltuk                      | `statement.seats`, `statement.seatOne` — a place left under the Members cap                                                       |
 | Ranks board                       | sıralama tablosu                | `alliances.*` — the server's board of alliances by Might, with the Kills rank                                                     |
 | lookup (an alliance's details)    | sorgu                           | `alliances.*` — one fetch of an alliance's details for the day                                                                    |
+| KvK                               | KvK                             | `kvk.title`, `kvk.versus` — the game's server-vs-server event, kept as its name                                                   |
+| matchup                           | karşılaşma                      | `kvk.title` — the two servers' KvK pairing                                                                                        |
+| per 1B might                      | 1B Might başına                 | `kvk.killsPer1B`, `kvk.help` — kills for each billion might; 1B as the numbers write it (D78)                                     |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

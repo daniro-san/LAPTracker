@@ -3,7 +3,7 @@
 // are left out of the effort comparison), and for the people who joined or left, the public daily rosters
 // of the other alliances we read and the alliance tags in our members' own /v1/players history rows (D132,
 // D136). While the Raid Shield check is on (D134), its weekly counts of the night and morning checks'
-// readings (D137), counts only. Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are never used; avatar_url is never read.
+// readings (D137), counts only. The members' recorded time zones, counted (owner, 2026-11-22). Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are never used; avatar_url is never read.
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
@@ -42,6 +42,7 @@ import {
 } from "./insights-rules";
 import { shieldFridays, shieldWeeksOf, shieldWindows, type ShieldWeek } from "./insights-shield";
 import { squadsCoverageOf, type SquadsCoverage } from "./insights-squads";
+import { zoneCountsOf, type ZoneCounts } from "./insights-zones";
 import { factsOf } from "./member-facts";
 import { isNewMember } from "./member-week";
 
@@ -85,6 +86,8 @@ export interface InsightsView {
   squads: SquadsCoverage | null;
   /** Raid Shield history, the newest week first; null with the Raid Shield check turned off (D134). */
   shield: ShieldWeek[] | null;
+  /** The newest daily update's members by their recorded time zone, counts only (owner, 2026-11-22). */
+  zones: ZoneCounts;
   labels: Map<number, AllianceLabel>;
   /** The newest read's members, for the thanks sheet's "Add someone else". */
   roster: { uid: number; name: string }[];
@@ -236,6 +239,7 @@ export async function insightsView(
       kvkFollowUp: false,
       squads: null,
       shield: null,
+      zones: { members: 0, zones: [] },
       labels: new Map(),
       roster: [],
     };
@@ -284,6 +288,10 @@ export async function insightsView(
         )
       : null,
     shield: fridays ? shieldWeeksOf(fridays, passes) : null,
+    zones: zoneCountsOf(
+      newest.members.map((m) => m.uid),
+      facts,
+    ),
     labels,
     roster: newest.members.map((m) => ({ uid: m.uid, name: m.name })),
   };

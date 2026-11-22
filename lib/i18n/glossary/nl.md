@@ -326,6 +326,9 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Sign in                               | Inloggen                                    | `site.signIn`, `site.signInFooter` — the Discord sign-in link for officers and members                  |
 | Ranks board                           | Ranglijst                                   | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the game's ranks board, by might          |
 | lookup (of today's details)           | opvraging                                   | `alliances.get`, `alliances.getNote`, `alliances.usedUp`, `alliances.failed` — one fetch a day          |
+| KvK matchup                           | KvK-matchup                                 | `kvk.title`, `kvk.versus` — the event page's KvK section                                                |
+| Start to End                          | Begin–Einde                                 | `kvk.change`, `kvk.changeLater` — the change from the Start read to the End read                        |
+| Might change                          | Might-verschil                              | `kvk.mightChange`, `kvk.changeLine` — the Might difference from Start to End                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -178,6 +178,8 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Ranks board                           | Rangliste                              | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the game's ranks board, dated                                                  |
 | Read every day / lookup               | Täglich abgerufen / Abruf              | `alliances.tracked`, `alliances.get*`, `alliances.usedUp` — the daily read of an alliance's details                                          |
 | Results                               | Treffer                                | `search.results` — the count of players a name search matched                                                                                |
+| KvK matchup                           | KvK-Duell                              | `kvk.title`, `kvk.versus` — the event page's section: both servers' top alliances at the Start                                               |
+| Start to End                          | Beginn bis Ende                        | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — the same alliances read at the Start and at the End                                      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

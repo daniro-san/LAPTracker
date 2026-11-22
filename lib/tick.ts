@@ -8,6 +8,7 @@ import { RUN_DEADLINE_MS } from "./compute";
 import { autoRetryDailyRead, runDailyRead, type DailyReadSummary } from "./daily-read";
 import { databaseDown } from "./data-unavailable";
 import type { Db } from "./db";
+import { opponentReserve } from "./kvk-reserve";
 import { consoleLogger, createRunLogger, type LogData, type Logger } from "./logger";
 import {
   createNotifier,
@@ -85,7 +86,9 @@ async function dailyRead(
   const due = dailyReadDue(now, ctx.env);
   // INVARIANT daily-read.ends-before-midnight
   if (!due || !endsInServerDay(now, RUN_DEADLINE_MS, ctx.env)) return null;
-  const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
+  // D152: the KvK opponent's calls still due, on its quota day only.
+  const opponentCalls = await opponentReserve(db, now, ctx.env);
+  const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env), opponentCalls };
   // D133: the day's ranks board and tracked set first (no quota), then the set and the
   // workspaces' alliances.
   const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };

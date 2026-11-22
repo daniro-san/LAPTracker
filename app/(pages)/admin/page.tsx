@@ -6,6 +6,7 @@
 
 import { AdminActions } from "@/app/_ui/admin/AdminActions";
 import { AdminShell, errorsLastDay } from "@/app/_ui/admin/AdminShell";
+import { KvkCard } from "@/app/_ui/admin/KvkCard";
 import { needsYou } from "@/app/_ui/admin/needs-you";
 import { AdminSection, Fact, StateChip } from "@/app/_ui/admin/parts";
 import { Rehearsal } from "@/app/_ui/admin/Rehearsal";
@@ -273,6 +274,7 @@ export default async function AdminPage() {
         />
       </AdminSection>
       <Rehearsal r={rehearsal} clock={clock} />
+      <KvkCard now={now} clock={clock} />
       <TrackedCard now={now} clock={clock} />
       <Schedule env={env} next={next} clock={clock} />
       <Workspaces now={now} data={ws} view={view} />

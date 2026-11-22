@@ -23,6 +23,10 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
+    text: "KvK matchup, before Saturday's KvK: on /admin → KvK opponent, save the opponent's server and its alliance tags by Saturday 10:00 ST. After the Start (12:00 ST), check each tag's outcome on that card, then turn the kvk-matchup flag on in PostHog (it exists and is off).",
+    issue: 306,
+  },
+  {
     text: "After the next Raid Shield window (Friday 23:30 ST), check that the leaders' Discord summary appears as a forum post in the Raid Shield channel.",
     issue: 527,
   },
@@ -67,7 +71,7 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 516,
   },
   {
-    text: 'GitHub → Settings → Actions: allow only selected actions (GitHub\'s own, pnpm/action-setup, dependabot/fetch-metadata), require actions pinned to a full commit SHA, and set the default workflow token to read-only. Keep "Allow GitHub Actions to create and approve pull requests" ON: Prepare release opens the release PR with it (D29). Also turn on non-provider secret patterns. The CI/CD panel recommends it; every workflow already pins SHAs and sets its own permissions.',
+    text: 'GitHub → Settings → Actions: allow only selected actions (GitHub\'s own, pnpm/action-setup, dependabot/fetch-metadata), require actions pinned to a full commit SHA, and set the default workflow token to read-only. Keep "Allow GitHub Actions to create and approve pull requests" ON: Prepare release opens the release PR with it (D29). Also turn on non-provider secret patterns. The CI/CD panel recommends it; every workflow already pins SHAs and sets its own permissions. The default token is already read-only; the three commands are in the chat of 2026-11-22.',
     issue: 592,
   },
   {
@@ -190,6 +194,17 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.58.0",
+    date: "2026-11-22",
+    title: "The KvK opponent, time zones on Insights, and the shield on the member card",
+    changes: [
+      "KvK matchup (hidden until you turn the kvk-matchup flag on): on /admin you save the opponent's server, up to 15 of its alliance tags, and later the result. At the Start and the End the tracker reads each of those alliances once (at most 30 calls per KvK, and the quota it keeps back applies only when an opponent is saved). The event page then compares both servers' top alliances at the Start and from the Start to the End, and the End picture gets a short block.",
+      'Insights ends with a "Time zones" card: the largest group of members and what the 00:00 ST reset is for them, how many have a time zone recorded, and, behind a tap, each group west to east with "Now · Reset · KvK" on its own clock and the hours most members are within their usual day. Counts only.',
+      "The member card shows the member's Raid Shield state only from Friday's night check (23:30 ST) until KvK starts: an officer's mark first, otherwise the tracker's checks; a member away on the raid day shows as away.",
+    ],
+    prs: [679, 680, 681],
+  },
   {
     version: "v5.57.0",
     date: "2026-11-22",

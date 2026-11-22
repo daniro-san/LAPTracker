@@ -44,6 +44,18 @@ describe("runDailyRead (D60)", () => {
     expect(await db.select().from(dailyRosters)).toEqual([]);
   });
 
+  it("keeps the KvK opponent's calls still due in the event's reserve (D152)", async () => {
+    // 64 as above, and the opponent's 6 calls still due: 70.
+    const v1 = fakeV1((id) => roster(id, ago(T0, minutes(1))), 69);
+    const summary = await runDailyRead(
+      { ...deps(v1), opponentCalls: 6 },
+      db,
+      "2026-11-10",
+      ours(IDS.slice(0, 2)),
+    );
+    expect(summary?.error).toBe("quota: remaining 69 < required 70");
+  });
+
   it("stores an error row for a failed alliance and closes the read partial, once per day", async () => {
     const [ok = 0, bad = 0] = IDS;
     // D133: a failed row is named by the alliance's newest label.

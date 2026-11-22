@@ -24,7 +24,7 @@ const SUMMARY =
   "text-button flex min-h-11 cursor-pointer list-none items-center font-semibold text-plum [&::-webkit-details-marker]:hidden";
 
 /** A fold: its summary line, a ▾ that turns when open, and what it hides. */
-function Fold(props: { summary: ReactNode; className?: string; children: ReactNode }) {
+export function Fold(props: { summary: ReactNode; className?: string; children: ReactNode }) {
   return (
     <details className={`group border-t border-rule ${props.className ?? ""}`}>
       <summary className={SUMMARY}>

@@ -73,6 +73,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Officers                      | Офицеры                        | `site.signInFooter` — alliance officers, with members                                       |
 | Ranks board                   | доска мест                     | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the server's ranking by might |
 | Lookup                        | запрос                         | `alliances.get*`, `alliances.usedUp`, `alliances.failed` — one fetch of an alliance's data  |
+| Start to End                  | Начало – Конец                 | `kvk.change`, `kvk.changeLater` — the KvK card's change from Start to End and its note      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

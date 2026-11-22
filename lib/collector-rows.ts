@@ -5,6 +5,8 @@ import type { AllianceRow, AllianceRowStatus } from "./repo";
 import type { AllianceSnapshotInput, RanksBoard } from "./sources/types";
 
 export const FRESH_MAX_AGE_MS = 20 * 60_000;
+/** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
+export const MAX_UPSTREAM_CALLS = 120;
 
 export function dataRow(
   board: RanksBoard | null,

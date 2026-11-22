@@ -27,6 +27,8 @@ vi.mock("next/server", async (original) => ({
 
 /** Routes that spend /v1 quota, or make the ticks spend it, each behind the scheduler's secret or the PIN. */
 const QUOTA: Record<string, "GET" | "POST"> = {
+  // The KvK opponent's tags, which the Start and End then read, one call each (D152).
+  "admin/kvk-opponent/route.ts": "POST",
   "admin/squads-read/route.ts": "POST",
   "daily-read/retry/route.ts": "POST",
   "quota/check/route.ts": "GET",

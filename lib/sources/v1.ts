@@ -46,7 +46,13 @@ const quotaSchema = z.object({
 });
 
 // The alliance response is a flat object, no wrapper (plan §2).
-const allianceSchema = z.object({ ...rosterFields, cached: z.boolean(), quota: quotaSchema });
+const allianceSchema = z.object({
+  ...rosterFields,
+  // Optional: only the KvK opponent's reads check it (D152), and a missing one never fails a run.
+  sid: z.number().int().nullish(),
+  cached: z.boolean(),
+  quota: quotaSchema,
+});
 const quotaResponseSchema = z.object({ quota: quotaSchema });
 
 let inFlight = 0;
@@ -190,7 +196,34 @@ export async function fetchAlliance(
   const query = options?.fresh === false ? "" : "?fresh=1";
   const response = await request(`/alliances/${id}${query}`, onAttempt, signal, options);
   const { data, raw } = await readBody(response, allianceSchema, "v1.schema");
-  return toSnapshotInput(data, { cached: data.cached, quota: data.quota, raw });
+  return toSnapshotInput(data, {
+    cached: data.cached,
+    quota: data.quota,
+    raw,
+    sid: data.sid ?? null,
+  });
+}
+
+/**
+ * The KvK opponent's Start read (D152): one alliance of another server by its tag, a live lookup (D64). The tag
+ * is one path segment: encoded, and the caller has refused one of dots only (`..` would leave the segment).
+ */
+export async function fetchAllianceByTag(
+  server: number,
+  tag: string,
+  onAttempt?: OnAttempt,
+  signal?: AbortSignal,
+  options?: CallOptions,
+): Promise<AllianceSnapshotInput> {
+  const path = `/alliances/${server}/${encodeURIComponent(tag)}?fresh=1`;
+  const response = await request(path, onAttempt, signal, options);
+  const { data, raw } = await readBody(response, allianceSchema, "v1.schema");
+  return toSnapshotInput(data, {
+    cached: data.cached,
+    quota: data.quota,
+    raw,
+    sid: data.sid ?? null,
+  });
 }
 
 export async function fetchQuota(

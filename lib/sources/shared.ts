@@ -69,7 +69,7 @@ type Roster = z.infer<z.ZodObject<typeof rosterFields>>;
 
 export function toSnapshotInput(
   roster: Roster,
-  extra: { cached: boolean | null; quota: Quota | null; raw: unknown },
+  extra: { cached: boolean | null; quota: Quota | null; raw: unknown; sid?: number | null },
 ): AllianceSnapshotInput {
   // Issue 481: the tracker once listed 101 of 100, the extra one with an empty rank. Over capacity, a member
   // sent with `rank_code: null` and no `rank_label` is not one of the read's members; the body (`raw`) keeps
@@ -105,6 +105,7 @@ export function toSnapshotInput(
     sourceUpdatedAt: roster.updated_at === null ? null : new Date(roster.updated_at * 1000),
     listed: roster.members.length,
     ...extra,
+    sid: extra.sid ?? null,
   };
 }
 
