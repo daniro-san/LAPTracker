@@ -66,8 +66,9 @@ jobs:
           echo "Opened $url ($latest -> $next, $ahead commits)."
           echo "Opened $url ($latest -> $next, $ahead commits)." >> "$GITHUB_STEP_SUMMARY"
 
-          # ci runs only on pull_request since #444, and a PR opened with GITHUB_TOKEN gets its run held for
-          # approval. workflow_dispatch is allowed from GITHUB_TOKEN and reports the "check" the main ruleset needs.
+          # ci runs only on pull_request into dev and on Run workflow (#444, D29), so the release PR gets no run of
+          # its own. workflow_dispatch is allowed from GITHUB_TOKEN and reports the "check" the main ruleset needs
+          # on the release PR's head commit, which is dev's head.
           gh workflow run ci.yml --ref dev
           # The e2e suite on what ships, with WebKit (D150); its "e2e" check lands on dev's head.
           gh workflow run e2e.yml --ref dev
