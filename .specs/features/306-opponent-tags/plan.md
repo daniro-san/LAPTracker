@@ -74,12 +74,12 @@ D152 makes the owner type up to 15 alliance tags of the opponent's server, copie
 
 ## Out of scope
 
-| Excluded                                                   | Why                                                                          |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Saving the suggestion as the tags without the owner's save | owner: "the owner confirms or edits them before saving"                      |
-| A limit on how many servers a KvK may be read for          | every read is a PIN save of a new server, before the war; see Validation (b) |
-| An e2e flow                                                | no admin e2e spec exists, and `e2e/stub-server.mjs` serves no ranks board    |
-| Kills or emblems on the chips                              | the owner asked for the largest by might                                     |
+| Excluded                                                   | Why                                                                       |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Saving the suggestion as the tags without the owner's save | owner: "the owner confirms or edits them before saving"                   |
+| A limit on how many servers a KvK may be read for          | every read is a PIN save of a new server, before the war; see Validation  |
+| An e2e flow                                                | no admin e2e spec exists, and `e2e/stub-server.mjs` serves no ranks board |
+| Kills or emblems on the chips                              | the owner asked for the largest by might                                  |
 
 ## Assumptions
 
