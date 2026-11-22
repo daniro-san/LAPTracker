@@ -49,4 +49,4 @@ Part of #585 (finding F15). Size S. Slice S6 of `.specs/features/585-one-worklis
 
 What was missing from the task prompt? The task said "workspace copy is English only", but the desk dictionary holds EN, PT-BR and FR (plan criterion 9). All three were updated.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/643
