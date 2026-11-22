@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { CheckField } from "@/lib/brand/components/CheckField";
 import { chip } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
 import { copy } from "@/lib/copy";
@@ -27,10 +28,22 @@ export interface KvkChoice {
   locked: boolean;
   /** One line per tag: what the Start and End read. */
   lines: string[];
+  /** The saved server's ranks board read (D155), or null before any. */
+  suggestion: KvkSuggestion | null;
+  /** "Suggest tags" may read the board now. */
+  canSuggest: boolean;
+}
+
+export interface KvkSuggestion {
+  /** Where the chips come from and when, or why there are none. */
+  line: string;
+  /** In board order, the mightiest first; empty when the read failed. */
+  chips: { tag: string; label: string }[];
 }
 
 type Answer = { ok: boolean; text: string };
-type Press = (body: object) => void;
+/** `ok`: the notice on success; none for the suggest press, whose outcome the card shows. */
+type Press = (body: object, ok?: string | null) => void;
 
 /** The tags as typed: split on spaces and commas, empties dropped. */
 const tagsOf = (text: string) => text.split(/[\s,]+/).filter((s) => s !== "");
@@ -39,9 +52,9 @@ const tagsOf = (text: string) => text.split(/[\s,]+/).filter((s) => s !== "");
 function usePress() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [asking, setAsking] = useState<object | null>(null);
+  const [asking, setAsking] = useState<{ body: object; ok: string | null } | null>(null);
   const [answer, setAnswer] = useState<Answer | null>(null);
-  async function send(body: object, pin: string) {
+  async function send(body: object, ok: string | null, pin: string) {
     setBusy(true);
     try {
       const res = await fetch(URL, {
@@ -51,8 +64,8 @@ function usePress() {
       });
       const got = (await res.json().catch(() => ({}))) as { code?: string };
       if (res.status === 401) forgetPin();
-      const text = res.ok ? t.saved : (ERRORS[got.code ?? ""] ?? t.errors.failed);
-      setAnswer({ ok: res.ok, text });
+      const text = res.ok ? ok : (ERRORS[got.code ?? ""] ?? t.errors.failed);
+      setAnswer(text === null ? null : { ok: res.ok, text });
       if (res.ok) router.refresh();
     } catch {
       setAnswer({ ok: false, text: t.errors.failed });
@@ -60,33 +73,83 @@ function usePress() {
       setBusy(false);
     }
   }
-  const press: Press = (body) => {
+  const press: Press = (body, ok = t.saved) => {
     setAnswer(null);
     const pin = savedPin();
-    if (pin) void send(body, pin);
-    else setAsking(body);
+    if (pin) void send(body, ok, pin);
+    else setAsking({ body, ok });
   };
   const sheet = asking && (
     <PinSheet
       onCancel={() => setAsking(null)}
       onUnlocked={(pin) => {
         setAsking(null);
-        void send(asking, pin);
+        void send(asking.body, asking.ok, pin);
       }}
     />
   );
   return { busy, press, answer, clear: () => setAnswer(null), sheet };
 }
 
+/** The board's suggestion (D155): where it comes from, its chips (checked when no tags are saved, else when
+ * saved), and "Suggest tags" while the board may be read. */
+function Suggestion({ c, busy, press }: { c: KvkChoice; busy: boolean; press: Press }) {
+  const chips = c.suggestion?.chips ?? [];
+  return (
+    <>
+      {c.suggestion && <p className="text-ink/80">{c.suggestion.line}</p>}
+      {chips.length > 0 && (
+        <fieldset>
+          <legend className="font-semibold">{t.suggest.chips}</legend>
+          <ul className="mt-1 flex flex-wrap gap-2">
+            {chips.map((x) => (
+              <li key={x.tag}>
+                <CheckField
+                  variant="chip"
+                  name="pick"
+                  value={x.tag}
+                  label={x.label}
+                  defaultChecked={c.tags.length === 0 || c.tags.includes(x.tag)}
+                  disabled={c.locked}
+                />
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      )}
+      {c.canSuggest && (
+        <button
+          type="button"
+          disabled={busy}
+          className={chip()}
+          onClick={() => press({ event_at: c.at, suggest: true }, null)}
+        >
+          {t.suggest.button}
+        </button>
+      )}
+    </>
+  );
+}
+
 function OpponentFields({ c, busy, press }: { c: KvkChoice; busy: boolean; press: Press }) {
+  const suggested = new Set(c.suggestion?.chips.map((x) => x.tag));
+  const others = suggested.size > 0 ? c.tags.filter((tag) => !suggested.has(tag)) : c.tags;
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const server = Number(String(form.get("server") ?? "").trim());
-    press({ event_at: c.at, server, tags: tagsOf(String(form.get("tags") ?? "")) });
+    // The checked chips in board order, then the other tags as typed; the route drops duplicates.
+    const picked = form.getAll("pick").map(String);
+    const tags = [...picked, ...tagsOf(String(form.get("tags") ?? ""))];
+    press({ event_at: c.at, server, tags });
   };
   return (
-    <form key={c.at} onSubmit={save} className="grid gap-3 sm:max-w-md">
+    // Keyed by what the page read, so a refresh after a save or a board read shows the new defaults.
+    <form
+      key={`${c.at}|${c.suggestion?.line ?? ""}|${c.tags.join(" ")}`}
+      onSubmit={save}
+      className="grid gap-3 sm:max-w-md"
+    >
       <Field label={t.server}>
         <input
           name="server"
@@ -99,12 +162,13 @@ function OpponentFields({ c, busy, press }: { c: KvkChoice; busy: boolean; press
           className={FIELD}
         />
       </Field>
-      <Field label={t.tags}>
+      <Suggestion c={c} busy={busy} press={press} />
+      <Field label={suggested.size > 0 ? t.suggest.other : t.tags}>
         <input
           name="tags"
           autoComplete="off"
           spellCheck={false}
-          defaultValue={c.tags.join(" ")}
+          defaultValue={others.join(" ")}
           disabled={c.locked}
           className={FIELD}
         />
