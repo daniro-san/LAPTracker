@@ -8,7 +8,7 @@ export const theftsEn = {
   "thefts.title": "Secret Operations thefts",
   "thefts.lead":
     "Players from other alliances who took quest rewards from our members. Use it to warn those players or to talk to their alliance’s leaders.",
-  "thefts.timesNote": "Times are server time.",
+  "thefts.timesNote": "Times are in server time (ST).",
   "thefts.add": "Add a theft",
   "thefts.empty": "No thefts logged yet. When a member reports one, add it here.",
   "thefts.week": "{n} this week",
@@ -76,7 +76,7 @@ export const theftsEn = {
   "thefts.form.change": "Change",
   "thefts.form.victim": "Taken from (our member)",
   "thefts.form.noMember": "No one in the alliance has a name like that.",
-  "thefts.form.when": "When, in server time, as the report shows it",
+  "thefts.form.when": "When (ST), as the report shows it",
   "thefts.form.whenHelp":
     "It starts at the server’s current time. Change it to the time on the report.",
   "thefts.form.day": "Day",
@@ -99,7 +99,7 @@ export const theftsPt: TheftsWords = {
   "thefts.title": "Roubos em Secret Operations",
   "thefts.lead":
     "Jogadores de outras alianças que levaram Quest rewards dos nossos membros. Serve para avisar esses jogadores ou conversar com os líderes da aliança deles.",
-  "thefts.timesNote": "Os horários são do servidor.",
+  "thefts.timesNote": "Os horários estão no horário do servidor (ST).",
   "thefts.add": "Registrar um roubo",
   "thefts.empty": "Nenhum roubo registrado ainda. Quando um membro avisar, registre aqui.",
   "thefts.week": "{n} nesta semana",
@@ -167,7 +167,7 @@ export const theftsPt: TheftsWords = {
   "thefts.form.change": "Trocar",
   "thefts.form.victim": "Levado de (nosso membro)",
   "thefts.form.noMember": "Ninguém na aliança tem um nome assim.",
-  "thefts.form.when": "Quando, na hora do servidor, como no relatório",
+  "thefts.form.when": "Quando (ST), como no relatório",
   "thefts.form.whenHelp": "Começa na hora atual do servidor. Troque para a hora do relatório.",
   "thefts.form.day": "Dia",
   "thefts.form.time": "Hora",
@@ -188,7 +188,7 @@ export const theftsFr: TheftsWords = {
   "thefts.title": "Vols en Opération secrète",
   "thefts.lead":
     "Les joueurs d’autres alliances qui ont pris des récompenses de quête à nos membres. Pour prévenir ces joueurs ou parler aux chefs de leur alliance.",
-  "thefts.timesNote": "Les heures sont celles du serveur.",
+  "thefts.timesNote": "Les heures sont à l’heure du serveur (ST).",
   "thefts.add": "Ajouter un vol",
   "thefts.empty": "Aucun vol noté pour l’instant. Quand un membre en signale un, ajoutez-le ici.",
   "thefts.week": "{n} cette semaine",
@@ -256,7 +256,7 @@ export const theftsFr: TheftsWords = {
   "thefts.form.change": "Changer",
   "thefts.form.victim": "Pris à (notre membre)",
   "thefts.form.noMember": "Personne dans l’alliance n’a un nom comme celui-là.",
-  "thefts.form.when": "Quand, en heure serveur, comme dans le rapport",
+  "thefts.form.when": "Quand (ST), comme dans le rapport",
   "thefts.form.whenHelp":
     "L’heure actuelle du serveur est déjà mise. Remplacez-la par l’heure du rapport.",
   "thefts.form.day": "Jour",

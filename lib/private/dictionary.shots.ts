@@ -136,7 +136,7 @@ export const shotsEn = {
   "shots.entry.theft": "stole quest rewards",
   "shots.entry.help": "helped (not saved)",
   "shots.entry.unknown": "sentence not readable",
-  "shots.at": "{at} server time",
+  "shots.at": "{at} ST",
   "shots.openThefts": "Open the thefts log",
   "shots.where.pickTab": "Pick the tab first: it decides where this saves.",
   "shots.higher": "screenshot is {d} higher",

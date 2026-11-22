@@ -2,6 +2,7 @@
 // server day and time, and the sentence a refused edit (409) shows. Dates never end a sentence, so PT and
 // FR never print "nov..". Numbers and dates stay out of client components (no Node/Chrome Intl drift).
 import { fill, isolate } from "../copy";
+import { dateWords } from "../date-words";
 import type { Conflict } from "./calendar";
 import type { EntryRow } from "./calendar-model";
 import { ELIXIR_MINUTES } from "./calendar-model";
@@ -10,19 +11,17 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { CalendarKey } from "./dictionary.calendar";
 
 function datesOf(language: WorkspaceLanguage) {
-  const format = (options: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat(language, { ...options, timeZone: "UTC" });
-  const short = format({ weekday: "short", day: "numeric", month: "short" });
-  const long = format({ weekday: "long", day: "numeric", month: "long" });
-  const weekday = format({ weekday: "short" });
-  const dayMonth = format({ day: "numeric", month: "short" });
-  const at = (day: string) => new Date(`${day}T00:00:00Z`);
+  // The forms are the desk's one date rule (lib/date-words.ts); a server day needs no zone.
+  const words = dateWords(language, "UTC");
+  const weekday = new Intl.DateTimeFormat(language, { weekday: "short", timeZone: "UTC" });
   return {
-    short: (day: string) => short.format(at(day)),
-    long: (day: string) => long.format(at(day)),
-    weekday: (day: string) => weekday.format(at(day)),
+    short: (day: string) => words.day(day),
+    long: (day: string) => words.long(day),
+    weekday: (day: string) => weekday.format(new Date(`${day}T00:00:00Z`)),
     /** "Nov 16", kept on one line (no-break spaces). */
-    dayMonth: (day: string) => dayMonth.format(at(day)).replace(/ /g, "\u00a0"),
+    dayMonth: (day: string) => words.dayMonth(day),
+    /** "November 16": a date that ends a sentence or follows an article. */
+    sentence: (day: string) => words.sentence(day),
   };
 }
 

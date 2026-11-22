@@ -9,7 +9,7 @@ export const lifecycleEn = {
   "pending.head": "New members",
   "pending.add": "Add a new member",
   "pending.addHelp":
-    "For someone who joined today. Their notes attach to their player after the nightly roster ({time} server time).",
+    "For someone who joined today. Their notes attach to their player after the nightly roster ({time} ST).",
   "pending.name": "Name in the game",
   "pending.nameMissing": "Type their name as the game shows it.",
   "pending.tag": "New · waiting for the nightly roster",
@@ -78,7 +78,7 @@ export const lifecyclePt: Record<LifecycleKey, string> = {
   "pending.head": "Membros novos",
   "pending.add": "Adicionar membro novo",
   "pending.addHelp":
-    "Para quem entrou hoje. As anotações vão para o jogador depois da lista da noite ({time}, horário do servidor).",
+    "Para quem entrou hoje. As anotações vão para o jogador depois da lista da noite ({time} ST).",
   "pending.name": "Nome no jogo",
   "pending.nameMissing": "Digite o nome como aparece no jogo.",
   "pending.tag": "Novo · esperando a lista da noite",
@@ -145,7 +145,7 @@ export const lifecycleFr: Record<LifecycleKey, string> = {
   "pending.head": "Nouveaux membres",
   "pending.add": "Ajouter un nouveau membre",
   "pending.addHelp":
-    "Pour quelqu’un arrivé aujourd’hui. Ses notes passent à son joueur après la liste de la nuit ({time}, heure du serveur).",
+    "Pour quelqu’un arrivé aujourd’hui. Ses notes passent à son joueur après la liste de la nuit ({time} ST).",
   "pending.name": "Nom dans le jeu",
   "pending.nameMissing": "Tapez son nom tel que le jeu l’affiche.",
   "pending.tag": "Nouveau · attend la liste de la nuit",

@@ -2,6 +2,7 @@
 // editor's "Another officer saved …" and the import's examples (in the browser), so a value reads the
 // same everywhere: 9.90M, 83%, T9, "Europe/Kyiv · UTC+2", English. Pure; it does not load lib/copy.
 import { compactLarge } from "../compact";
+import { dateWords } from "../date-words";
 import type { FactField, FactValues } from "./fact-fields";
 import { offsetLabel, offsetMinutes } from "./time-zones";
 
@@ -61,12 +62,4 @@ export function factText<F extends FactField>(
 }
 
 /** A server day as the card writes it ("Fri, Nov 20"), for the browser. */
-export const dayFormat = (language: string) => {
-  const format = new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
-  return (iso: string) => format.format(new Date(`${iso}T00:00:00Z`));
-};
+export const dayFormat = (language: string) => dateWords(language, "UTC").day;

@@ -30,6 +30,7 @@ import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { TextLink } from "@/lib/brand/components/TextLink";
+import { offsetLabel } from "@/lib/calendar-time";
 import { copy, fill } from "@/lib/copy";
 import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
@@ -170,7 +171,11 @@ async function Schedule({
     >
       <FactList
         items={[
-          { label: s.timeZone, value: env.SERVER_TZ },
+          // The offset, never the IANA id: "Etc/GMT+2" reads as the opposite sign (issue 585 batch 4).
+          {
+            label: s.timeZone,
+            value: `${offsetLabel(env.SERVER_TZ, next.eventAtUtc.getTime())} (${copy.time.serverTime})`,
+          },
           { label: s.nextEvent, value: clock.stamp(next.eventAtUtc) },
           { label: phaseWord("before"), value: clock.stamp(next.beforeAt) },
           { label: phaseWord("after"), value: clock.stamp(next.afterAt) },

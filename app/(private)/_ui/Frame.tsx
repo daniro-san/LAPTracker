@@ -10,6 +10,7 @@ import { type ReactNode, Suspense } from "react";
 import { analyticsPerson } from "@/lib/analytics/person";
 import { AppShell } from "@/lib/brand/components/layout/AppShell";
 import { fill, isolate } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
@@ -112,10 +113,9 @@ export async function Frame({
   );
 }
 
-/** A deletion's date in the officer's language: "3 December 2026" (UTC, as the daily job counts it). */
+/** A deletion's date in the officer's language: "December 3, 2026" (UTC, as the daily job counts it). */
 export function deletionDate(at: Date, language: WorkspaceLanguage): string {
-  const style = { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" } as const;
-  return new Intl.DateTimeFormat(language, style).format(at);
+  return dateWords(language, "UTC").withYear(at);
 }
 
 /**

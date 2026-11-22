@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import { addDays } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { FactField } from "@/lib/private/fact-fields";
@@ -159,13 +160,7 @@ function Answers(props: {
 }
 
 /** A server day as the rest of the screen writes it ("Wed, Nov 25"). */
-const dayText = (day: string, language: string) =>
-  new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(new Date(`${day}T00:00:00Z`));
+const dayText = (day: string, language: string) => dateWords(language, "UTC").day(day);
 
 function Refusal({ f, words }: { f: ReturnType<typeof useRecord>; words: FollowUpWords }) {
   if (f.stale) {

@@ -6,10 +6,10 @@ import { meEn, meFr, mePt } from "./dictionary.me";
 export const boardEn = {
   ...meEn,
   "board.name": "Members’ board",
-  "board.title": "This week in the alliance",
+  "board.title": "Next 7 days in the alliance",
   "board.lead": "Your officers keep this page. New here?",
   "board.lead.start": "Start here ↓",
-  "board.week": "This week",
+  "board.week": "Next 7 days",
   "board.week.none": "Nothing planned for members in the next 7 days yet.",
   "board.strip.legend":
     "Each dot is one event planned that day, up to three. Choose a day to go to its events.",
@@ -78,10 +78,10 @@ type BoardWords = Record<keyof typeof boardEn, string>;
 export const boardPt: BoardWords = {
   ...mePt,
   "board.name": "Mural dos membros",
-  "board.title": "Esta semana na aliança",
+  "board.title": "Os próximos 7 dias da aliança",
   "board.lead": "Os oficiais cuidam desta página. Chegou agora?",
   "board.lead.start": "Comece aqui ↓",
-  "board.week": "Esta semana",
+  "board.week": "Próximos 7 dias",
   "board.week.none": "Nada marcado para os membros nos próximos 7 dias por enquanto.",
   "board.strip.legend":
     "Cada ponto é um evento planejado naquele dia, até três. Escolha um dia para ir aos eventos dele.",
@@ -147,10 +147,10 @@ export const boardPt: BoardWords = {
 export const boardFr: BoardWords = {
   ...meFr,
   "board.name": "Tableau des membres",
-  "board.title": "Cette semaine dans l’alliance",
+  "board.title": "Les 7 prochains jours de l’alliance",
   "board.lead": "Vos officiers tiennent cette page à jour. Nouveau ici ?",
   "board.lead.start": "Pour commencer ↓",
-  "board.week": "Cette semaine",
+  "board.week": "Les 7 prochains jours",
   "board.week.none": "Rien de prévu pour les membres dans les 7 prochains jours pour l’instant.",
   "board.strip.legend":
     "Chaque point est un événement prévu ce jour-là, jusqu’à trois. Choisissez un jour pour aller à ses événements.",

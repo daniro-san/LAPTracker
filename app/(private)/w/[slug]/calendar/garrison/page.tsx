@@ -5,6 +5,7 @@
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
+import { dateWords } from "@/lib/date-words";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
@@ -52,15 +53,11 @@ export default async function GarrisonPage({
   const { access, slug, t, language } = page;
   const words = garrisonWords(t);
   const day = view.placed.day;
-  const when = new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: page.zone,
-  });
-  const posted = view.posted && fill(t["garrison.postedAt"], { when: when.format(view.posted) });
+  const posted =
+    view.posted &&
+    fill(t["garrison.postedAt"], {
+      when: fill(t["time.server"], { time: dateWords(language, page.zone).at(view.posted) }),
+    });
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
       <p>
@@ -79,7 +76,7 @@ export default async function GarrisonPage({
         week={view.placed.week}
         value={view.enemyMight}
         version={view.version}
-        carriedFrom={view.carriedFrom && calendarDates(language).short(view.carriedFrom)}
+        carriedFrom={view.carriedFrom && calendarDates(language).sentence(view.carriedFrom)}
         words={words}
         // D126: no "Read from a screenshot" while reading screenshots is turned off for the alliance.
         shot={

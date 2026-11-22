@@ -100,6 +100,8 @@ export interface NoticeDetail extends NoticeSummary {
   savedAt: Partial<Record<NoticeLanguage, Date>>;
   /** The notice's picture (D119). */
   picture: PictureView | null;
+  /** Who kept its picture from the weekly cleanup and when (D119); the page writes it as words. */
+  kept: { by: string | null; at: Date } | null;
 }
 
 const stateOf = (rows: FieldRow[]): NoticeState =>
@@ -165,7 +167,8 @@ export async function noticeDetail(
     savedAt: Object.fromEntries(
       record.fields.filter((f) => isNoticeLanguage(f.field) && f.value).map((f) => [f.field, f.at]),
     ),
-    picture: picture ? { ...pictureView(picture), kept } : null,
+    picture: picture ? pictureView(picture) : null,
+    kept: picture ? kept : null,
   };
 }
 

@@ -78,3 +78,5 @@ Why: the owner, 2026-11-19: the member card is one long column of label/value ro
 - Tests: `lib/private/card-follow-up.test.ts`, the follow-up route's test, the issue 471 suite and the desk e2e card flow.
 
 The Shield line ("Shields are not on the card") is still not built: showing the Raid Shield reading on the card changes D137's Privacy rule and how this decision's owner rule of 2026-11-20 ("squads and shields always show when the tracker saw them, on the server's clock and the viewer's") is applied, so it waits for the owner (`.specs/features/516-card-followup-shield/plan.md`, S2).
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S1; personas under the owner's standing approval, `.specs/features/585-words/plan.md`): one way to write dates, times and zones.** The squads' "seen" line joins the date and the time the desk's one way: "seen Thu, Nov 19, 22:32 ST" (PT "visto em qui., 19 de nov. às 22:32 ST", FR "vue le jeu. 19 nov. à 22:32 ST"). On the desk card the viewer's time follows, as before. On a member's own page see D142's amendment of today.

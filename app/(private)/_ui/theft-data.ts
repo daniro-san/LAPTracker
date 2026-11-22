@@ -74,10 +74,12 @@ export interface AllianceCard {
 }
 
 export interface TheftFormats {
-  /** "Sun 15 Nov 13:46" in server time. */
+  /** "Sun, Nov 15, 13:46" in server time (lib/date-words.ts `at`). */
   when: (at: Date) => string;
-  /** "Sun 15 Nov" in server time. */
+  /** "Sun, Nov 15" in server time. */
   date: (at: Date) => string;
+  /** "November 15" in server time: a date that ends a sentence. */
+  sentence: (at: Date) => string;
   /** The server day of an instant, "2026-11-15". */
   day: (at: Date) => string;
 }
@@ -92,7 +94,9 @@ function counts(
   return [
     fill(t["thefts.week"], { n: g.week }),
     fill(t["thefts.total"], { n: g.total }),
-    ...(g.lastAt ? [fill(t["thefts.last"], { when: f.when(g.lastAt) })] : []),
+    ...(g.lastAt
+      ? [fill(t["thefts.last"], { when: fill(t["time.server"], { time: f.when(g.lastAt) }) })]
+      : []),
   ].join(" · ");
 }
 
@@ -166,7 +170,7 @@ function attackerCard(
             fill(t["thefts.reopened"], {
               who: last.by ? isolate(last.by) : t["thefts.someone"],
               state: t[`thefts.state.${last.state}`],
-              day: f.date(last.changedAt),
+              day: f.sentence(last.changedAt),
             }),
           )
         : null,

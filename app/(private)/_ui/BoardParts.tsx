@@ -8,51 +8,38 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode 
 
 import { tabAfter } from "@/app/_ui/Movers";
 import { fill } from "@/lib/copy";
-import { clockIn } from "@/lib/private/calendar-time";
+import { clockIn, offsetLabel } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import { useViewerZone } from "./YourTime";
 
-/** The zone's short name in the viewer's language ("BRT", "GMT-3"); "" when the browser gives none. */
-function zoneName(zone: string, at: number, language: string): string {
-  const parts = new Intl.DateTimeFormat(language, { timeZone: zone, timeZoneName: "short" });
-  return parts.formatToParts(at).find((p) => p.type === "timeZoneName")?.value ?? "";
-}
-
 /**
- * The viewer's clock for a time, in parts for the board's time column (D116): "15:00", "your time (BRT)",
- * and "the next day" or "the day before" when that is another day on the viewer's clock.
+ * The viewer's clock for a time, in parts for the board's time column (D116): "15:00", "your time
+ * (UTC−3)" (the zone's offset at that instant, issue 585 batch 4: never the browser's short name), and "the
+ * next day" or "the day before" when that is another day on the viewer's clock.
  */
-export function ownClock(
-  at: number,
-  day: string,
-  zone: string,
-  language: string,
-  words: CalendarWords,
-) {
+export function ownClock(at: number, day: string, zone: string, words: CalendarWords) {
   const { time, shift } = clockIn(at, zone, day);
-  const name = zoneName(zone, at, language);
   const label = fill(words["calendar.yours"], { time: "" }).trim();
   const mark = shift > 0 ? words["calendar.nextDay"] : shift < 0 ? words["calendar.prevDay"] : "";
-  return { time, label, zone: name ? `(${name})` : "", mark };
+  return { time, label, zone: `(${offsetLabel(zone, at)})`, mark };
 }
 
 /**
  * The board's time column: the viewer's own time large, "the day before" or "the next day" under it when
- * that is another day, "your time (BRT)", then server time. Server
+ * that is another day, "your time (UTC−3)", then server time. Server
  * time alone until the browser knows its zone, so server and browser HTML never differ.
  */
 export function BoardTimeColumn(props: {
   st: string;
   at: number;
   day: string;
-  language: string;
   words: CalendarWords;
 }) {
   const zone = useViewerZone();
   if (!zone)
     return <span className="block text-lg leading-tight font-bold tabular-nums">{props.st}</span>;
-  const own = ownClock(props.at, props.day, zone, props.language, props.words);
+  const own = ownClock(props.at, props.day, zone, props.words);
   return (
     <>
       <span className="block text-lg leading-tight font-bold tabular-nums">{own.time}</span>

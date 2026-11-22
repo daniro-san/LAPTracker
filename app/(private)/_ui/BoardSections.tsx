@@ -42,7 +42,6 @@ function Entry(props: {
             st={stOf(entry.kind, item.minute, t)}
             at={at}
             day={item.day}
-            language={props.language}
             words={calendarWords(t)}
           />
         </p>

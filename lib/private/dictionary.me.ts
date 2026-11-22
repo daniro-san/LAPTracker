@@ -46,7 +46,7 @@ export const meEn = {
   "me.week.early": "Your week shows after the first daily update.",
   "me.squads.none": "The tracker has not seen your squads yet.",
   "me.needed.head": "Where you’re needed",
-  "me.needed.lead": "What your officers planned with you this week.",
+  "me.needed.lead": "What your officers planned with you this week. Times are in server time (ST).",
   "me.needed.none": "Nothing planned with you this week yet.",
   "me.elixir": "Elixir Scramble this week: Team {team}",
   "me.caravan.coach": "Alliance Caravan, {day}: you are the Coachman.",
@@ -147,7 +147,8 @@ export const mePt: MeWords = {
   "me.week.early": "Sua semana aparece depois da primeira atualização diária.",
   "me.squads.none": "O tracker ainda não viu seus esquadrões.",
   "me.needed.head": "Onde precisam de você",
-  "me.needed.lead": "O que seus oficiais planejaram com você esta semana.",
+  "me.needed.lead":
+    "O que seus oficiais planejaram com você esta semana. Os horários estão no horário do servidor (ST).",
   "me.needed.none": "Nada planejado com você esta semana ainda.",
   "me.elixir": "Elixir Scramble esta semana: Team {team}",
   "me.caravan.coach": "Alliance Caravan, {day}: você é o Coachman.",
@@ -227,7 +228,8 @@ export const meFr: MeWords = {
   "me.week.early": "Votre semaine s’affiche après la première mise à jour quotidienne.",
   "me.squads.none": "Le tracker n’a pas encore vu vos escouades.",
   "me.needed.head": "Là où on a besoin de vous",
-  "me.needed.lead": "Ce que vos officiers ont prévu avec vous cette semaine.",
+  "me.needed.lead":
+    "Ce que vos officiers ont prévu avec vous cette semaine. Les heures sont à l’heure du serveur (ST).",
   "me.needed.none": "Rien de prévu avec vous cette semaine pour l’instant.",
   "me.elixir": "Elixir Scramble cette semaine : Team {team}",
   "me.caravan.coach": "Alliance Caravan, {day} : vous êtes le Coachman.",
