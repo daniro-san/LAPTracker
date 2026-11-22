@@ -124,4 +124,4 @@ Branch `fix/kvk-ended-me-no-mark` from `origin/dev` (3ed4302d). **Size S**: two 
 - Local first-glance captures with a moved clock work without code changes: seed with the e2e global setup under a `Date` preload, then move `workspace_sessions` to the scenario time (the seed dates sessions with Postgres `now()`, 6-day expiry). Next's server wraps `Date`, so the preload must define `parse` and `UTC` as the subclass's own statics.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/619
