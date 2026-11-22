@@ -9,9 +9,11 @@ import { sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { usageDay } from "../workspace-features";
 
-/** The setup steps, in order (#486's setup funnel, D145). */
+/** The setup steps, in order (#486's setup funnel, D145; member role and first read, issue 585 F12). */
 export const SETUP_STEPS = [
   "created",
+  "member_role",
+  "first_read",
   "key_saved",
   "webhook",
   "first_roll_call",
@@ -35,6 +37,11 @@ export interface AllianceUsage {
   /** The newest desk request of an officer's session still stored; null when none is. */
   officerSeenAt: Date | null;
   setup: Record<SetupStep, StepTime>;
+  /**
+   * A daily read that started after the workspace was made has finished (F12): its alliance should have a
+   * roster by now, so no first read is a gap. False while none has, since the next one takes it (D133).
+   */
+  readSince: boolean;
 }
 
 const HOUR_MS = 3_600_000;
@@ -52,6 +59,9 @@ interface UsageRow extends Record<string, unknown> {
   key_saved: Date | string | null;
   key_kept: boolean | null;
   webhook: Date | string | null;
+  member_role: boolean;
+  first_read: string | null;
+  read_since: boolean;
   first_roll_call: Date | string | null;
   first_notice: Date | string | null;
 }
@@ -62,6 +72,10 @@ const at = (cell: Date | string | null) => (cell === null ? null : new Date(cell
  * The setup steps' parts of the statement: each step's first time in our own tables (D145, amended
  * 2026-11-21), so a workspace made before the analytics events existed shows its real dates:
  * - created: `workspaces.created_at`;
+ * - member role: "done" while it has one (the members' board is open, D105); no table keeps when;
+ * - first read: the first read day with a roster of its alliance that did not fail (a daily read's, or a
+ *   lookup's, D133), from the day before the workspace was made on (a read day is a server day, a day
+ *   behind UTC late at night), at 00:00 UTC of that day, from `daily_rosters_union_idx`;
  * - key saved: the first `set` in `workspace_key_changes`, once a key was ever stored (`workspace_keys` has
  *   a row): a save's claim is written before the key's test and dropped when the key is refused, but a
  *   request that dies mid-test leaves it. "done" when a key is stored with no such row (only its status is
@@ -94,18 +108,34 @@ const SETUP_PARTS = sql.raw(`key_set as (
       select workspace_id, min(published_at) as at from notice_publishes
       where status = 'posted'
       group by workspace_id
+    ),
+    first_read as (
+      select w.id as workspace_id, r.day
+      from workspaces w cross join lateral (
+        select read_day as day from daily_rosters
+        where union_id = w.union_id and error is null
+          and read_day >= (w.created_at - interval '1 day')::date
+        order by read_day limit 1
+      ) r
     )`);
 const SETUP_COLUMNS = sql.raw(`w.created_at as created,
       case when k.workspace_id is not null then key_set.at end as key_saved,
       k.status <> 'unset' as key_kept,
       hooks.at as webhook,
       marked.at as first_roll_call,
-      published.at as first_notice`);
+      published.at as first_notice,
+      cardinality(w.member_role_ids) > 0 as member_role,
+      first_read.day::text as first_read,
+      exists (
+        select 1 from daily_reads d
+        where d.started_at > w.created_at and d.finished_at is not null
+      ) as read_since`);
 const SETUP_JOINS = sql.raw(`left join key_set on key_set.workspace_id = w.id
     left join workspace_keys k on k.workspace_id = w.id
     left join hooks on hooks.workspace_id = w.id
     left join marked on marked.workspace_id = w.id
-    left join published on published.workspace_id = w.id`);
+    left join published on published.workspace_id = w.id
+    left join first_read on first_read.workspace_id = w.id`);
 
 function usageOf(r: UsageRow): AllianceUsage {
   return {
@@ -117,11 +147,14 @@ function usageOf(r: UsageRow): AllianceUsage {
     officerSeenAt: at(r.seen),
     setup: {
       created: new Date(r.created),
+      member_role: r.member_role ? "done" : null,
+      first_read: r.first_read === null ? null : new Date(`${r.first_read}T00:00:00Z`),
       key_saved: at(r.key_saved) ?? (r.key_kept ? "done" : null),
       webhook: at(r.webhook),
       first_roll_call: at(r.first_roll_call),
       first_notice: at(r.first_notice),
     },
+    readSince: r.read_since,
   };
 }
 

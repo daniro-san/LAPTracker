@@ -34,7 +34,8 @@ export async function scheduledEvent(db: Db, eventAtUtc: Date) {
 }
 
 /** The newest requests-left reading: after a snapshot run, or the daily roster read's quota check
- * (D60), whichever ran last. */
+ * (D60), whichever ran last; and the daily read's own, taken before the day's spend (issue 585: "Needs
+ * you" calls only that one low, since a snapshot's reading after the event day's runs is low by design). */
 export async function latestQuota(db: Db) {
   const [[run], [daily]] = await Promise.all([
     db
@@ -50,8 +51,8 @@ export async function latestQuota(db: Db) {
       .orderBy(desc(dailyReads.startedAt))
       .limit(1),
   ]);
-  if (!run || !daily) return run ?? daily ?? null;
-  return daily.at > run.at ? daily : run;
+  const newest = !run || !daily ? (run ?? daily ?? null) : daily.at > run.at ? daily : run;
+  return { newest, daily: daily ?? null };
 }
 
 /** The target event first: the nearest one until both its snapshots are done, then the next one. */

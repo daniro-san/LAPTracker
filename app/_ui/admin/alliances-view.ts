@@ -1,7 +1,8 @@
 // /admin's Alliances table (issue 485, D144) in words: one row per workspace, from the reads /admin already
 // makes (the key's status, the switches, today's allowance use) and allianceUsage's one statement. The rows
-// that need a look come first: a key that cannot be used, then errors, then a daily limit used up. Counts
-// and times only (D71): no name, no key, its last 4 or its quota, no webhook. English only (D48).
+// that need a look come first: a key that cannot be used, then errors, then a setup step that waits on the
+// owner (issue 585, F12), then a daily limit used up. Counts and times only (D71): no name, no key, its last 4
+// or its quota, no webhook. English only (D48).
 import { OWN_ALLIANCE_ID } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
 import type { AllianceUsage } from "@/lib/queries/admin-alliances";
@@ -18,19 +19,29 @@ import { keyUsable } from "@/lib/workspace-keys";
 
 import { settingsFor } from "./features-view";
 import type { FeaturesView } from "./WorkspaceFeatures";
+import type { AllianceChoice } from "./WorkspaceForm";
 
 const t = copy.admin.workspaces.alliances;
 const n = (x: number) => x.toLocaleString("en");
 
 export type KeyState = "ok" | "paused" | "reenter" | "none";
-type Look = "key" | "errors" | "cap";
+type Look = "key" | "errors" | "setup" | "cap";
+/**
+ * A setup step that waits on the owner (F12): no member role, which he sets here (the members' board is
+ * closed, D105), and no read of its alliance after a daily read that began once it existed has finished.
+ * A channel not set is the alliance's choice, as in Alliance settings (D75), so it is no gap here; Activity
+ * lists it with the other steps.
+ */
+export type SetupGap = "member_role" | "first_read";
 
 export interface AllianceRow {
   id: number;
   slug: string;
   alliance: string;
-  /** Why it comes first, in order: the key, errors, a daily limit used up. Empty: nothing to look at. */
+  /** Why it comes first, in order: the key, errors, setup, a daily limit used up. Empty: nothing to look at. */
   attention: Look[];
+  /** The setup steps that wait on the owner, in order. */
+  gaps: SetupGap[];
   /** The first reason in words, for the "Needs a look" chip; empty when there is none. */
   reason: string;
   calls: { today: string; week: string; planned: string };
@@ -91,15 +102,28 @@ function savedKey(
   return { state: "paused", text: t.key.paused, note: why, which, look: empty ? "cap" : "key" };
 }
 
+/** The setup steps that wait on the owner (`SetupGap`), in order. */
+export function setupGaps(
+  w: Pick<AdminWorkspace, "memberRoleIds">,
+  u: Pick<AllianceUsage, "setup" | "readSince">,
+): SetupGap[] {
+  const gaps: SetupGap[] = [];
+  if (w.memberRoleIds.length === 0) gaps.push("member_role");
+  if (u.setup.first_read === null && u.readSince) gaps.push("first_read");
+  return gaps;
+}
+
 /** The reasons in rank order, and the first one in words. */
 function attentionOf(
   key: ReturnType<typeof keyState>,
   u: Pick<AllianceUsage, "errors24h" | "postsFailed">,
+  gaps: SetupGap[],
   capUsedUp: boolean,
 ): { attention: Look[]; reason: string } {
   const attention: Look[] = [];
   if (key.look === "key") attention.push("key");
   if (u.errors24h > 0 || u.postsFailed > 0) attention.push("errors");
+  if (gaps.length > 0) attention.push("setup");
   if (capUsedUp || key.look === "cap") attention.push("cap");
   const reason = {
     key: fill(t.reason.key, { state: key.text }),
@@ -107,6 +131,7 @@ function attentionOf(
       u.errors24h > 0
         ? fill(t.reason.errors, { n: u.errors24h })
         : fill(t.reason.failed, { n: u.postsFailed }),
+    setup: gaps[0] ? fill(t.reason.setup, { step: t.reason.gap[gaps[0]] }) : "",
     cap: capUsedUp ? t.reason.cap : t.reason.quota,
   };
   const first = attention[0];
@@ -140,11 +165,14 @@ export function allianceRow(input: {
     errors24h: 0,
     setup: {
       created: null,
+      member_role: null,
+      first_read: null,
       key_saved: null,
       webhook: null,
       first_roll_call: null,
       first_notice: null,
     },
+    readSince: false,
   };
   const on = resolveFeatures(settingsFor(features, w), features.paused).on;
   const key = keyState(w, on.has("squads"), input.current, now);
@@ -154,6 +182,7 @@ export function allianceRow(input: {
   ) as AllianceRow["allowances"];
   const changed = view.changed.length + view.changedCaps.length;
   const calls = fill(t.calls[key.which], { today: n(u.callsToday) });
+  const gaps = setupGaps(w, u);
   return {
     id: w.id,
     slug: w.slug,
@@ -161,8 +190,10 @@ export function allianceRow(input: {
     ...attentionOf(
       key,
       u,
+      gaps,
       ALLOWANCES.some((a) => allowances[a].usedUp),
     ),
+    gaps,
     calls: {
       today: calls,
       week: fill(t.calls.week, { n: n(u.calls7d) }),
@@ -184,13 +215,28 @@ export function allianceRow(input: {
   };
 }
 
-const RANK = ["key", "errors", "cap"] as const;
+const RANK = ["key", "errors", "setup", "cap"] as const;
 
-/** Needs a look first, by the first reason (key, then errors, then a cap), then by address. */
+/** Needs a look first, by the first reason (key, then errors, then setup, then a cap), then by address. */
 export function byAttention(a: AllianceRow, b: AllianceRow): number {
   const rank = (r: AllianceRow) => {
     const first = r.attention[0];
     return first ? RANK.indexOf(first) : RANK.length;
   };
   return rank(a) - rank(b) || a.slug.localeCompare(b.slug);
+}
+
+/**
+ * The alliance select's choices (F13): every alliance the board or a daily roster names, then each
+ * workspace's own alliance that nothing names yet, by its id, so editing that workspace shows its own.
+ */
+export function allianceChoices(
+  known: readonly AllianceChoice[],
+  workspaceUnionIds: readonly number[],
+): AllianceChoice[] {
+  const named = new Set(known.map((a) => a.unionId));
+  const unread = [...new Set(workspaceUnionIds)]
+    .filter((id) => !named.has(id))
+    .map((id) => ({ unionId: id, label: fill(copy.admin.workspaces.allianceUnread, { id }) }));
+  return [...known, ...unread];
 }

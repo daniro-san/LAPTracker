@@ -1,7 +1,8 @@
 // /admin's Alliances table (issue 485, D144): one card per workspace below 640, a table from 640 whose
 // columns appear by width (ResponsiveTable, D122); the table puts "Last on the desk" under the alliance, so its
-// 7 columns fit /admin's 960 px. Each row opens its workspace's own section below
-// (`#w-<slug>` in the Workspaces card). Rows are built in alliances-view.ts. English only (D48).
+// 7 columns fit /admin's 960 px. The alliance opens its workspace's own section below (`#w-<slug>` in the
+// Workspaces card); a page error count opens that workspace's errors (/admin/errors?w=<slug>, issue 585,
+// F34). Rows are built in alliances-view.ts. English only (D48).
 import { Suspense, type ReactNode } from "react";
 
 import { LABEL } from "@/app/_ui/StatTable";
@@ -75,9 +76,19 @@ const Limits = ({ row }: { row: AllianceRow }) => (
   </>
 );
 
-const Errors = ({ row }: { row: AllianceRow }) => (
-  <span className={row.errors > 0 ? "font-semibold text-seal" : ""}>{row.errors}</span>
-);
+/** The count; above 0, a link to this workspace's errors on /admin/errors. */
+const Errors = ({ row }: { row: AllianceRow }) =>
+  row.errors > 0 ? (
+    <a
+      href={`/admin/errors?w=${row.slug}`}
+      aria-label={fill(t.errorsLink, { n: row.errors, slug: row.slug })}
+      className="inline-flex min-h-11 min-w-11 items-center font-semibold text-seal underline underline-offset-2"
+    >
+      {row.errors}
+    </a>
+  ) : (
+    <span>{row.errors}</span>
+  );
 
 const COLUMNS: Column<AllianceRow>[] = [
   {
@@ -108,16 +119,13 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** One alliance below 640: the whole card opens its workspace. */
+/** One alliance below 640: its name opens its workspace, a page error count opens its errors. */
 function Card({ row }: { row: AllianceRow }) {
   return (
-    <a
-      href={href(row)}
-      className={`block border p-3 ${row.attention.length > 0 ? "border-seal" : "border-rule"}`}
-    >
+    <div className={`border p-3 ${row.attention.length > 0 ? "border-seal" : "border-rule"}`}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="min-w-0">
-          <NameText row={row} />
+          <Name row={row} />
         </span>
         <Attention row={row} />
       </div>
@@ -138,7 +146,7 @@ function Card({ row }: { row: AllianceRow }) {
         <Fact label={t.head.seen}>{row.seen}</Fact>
         <Fact label={t.head.changed}>{row.changed}</Fact>
       </dl>
-    </a>
+    </div>
   );
 }
 

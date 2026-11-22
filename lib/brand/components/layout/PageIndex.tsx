@@ -5,6 +5,8 @@
 export interface PageIndexItem {
   /** The section's heading id. */
   id: string;
+  /** Where the row goes when it is not `#id`: a section of another page (/admin's "Needs you"). */
+  href?: string;
   label: string;
   state?: string | null;
   attention?: boolean;
@@ -23,7 +25,7 @@ export function PageIndex({
       {items.map((item) => (
         <li key={item.id}>
           <a
-            href={`#${item.id}`}
+            href={item.href ?? `#${item.id}`}
             className="tint-button flex min-h-11 flex-wrap items-center justify-between gap-x-3 py-1"
           >
             <span className="font-medium text-plum underline decoration-plum/40 underline-offset-[3px]">

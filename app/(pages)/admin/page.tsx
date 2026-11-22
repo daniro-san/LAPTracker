@@ -1,12 +1,15 @@
-// /admin (plan Phase 4, #91): four framed sections. Status is facts only (quota, what runs, the next
-// scheduled run, the last result); "Run something now" holds every action with its cost; the last
-// rehearsal; the schedule as read-only reference. Dates through the request's clock like the public
+// /admin (plan Phase 4, #91): "Needs you" first (issue 585, F11: what waits on the owner, with counts and
+// where each is done), then Status, facts only (quota, what runs, the next scheduled run, the last result);
+// "Run something now" holds every action with its cost; the last rehearsal; the schedule as read-only
+// reference; the workspaces. Dates through the request's clock like the public
 // pages (07c S3a): the viewer's locale, server time with the word, no UTC twin.
 
 import { AdminActions } from "@/app/_ui/admin/AdminActions";
-import { AdminShell } from "@/app/_ui/admin/AdminShell";
+import { AdminShell, errorsLastDay } from "@/app/_ui/admin/AdminShell";
+import { needsYou } from "@/app/_ui/admin/needs-you";
 import { AdminSection, Fact, StateChip } from "@/app/_ui/admin/parts";
 import { Rehearsal } from "@/app/_ui/admin/Rehearsal";
+import { NeedsYou, QuotaFact, TickFact } from "@/app/_ui/admin/StatusFacts";
 import { TrackedCard } from "@/app/_ui/admin/TrackedCard";
 import {
   eventWord,
@@ -20,21 +23,21 @@ import {
   dailyView,
   watchViews,
 } from "@/app/_ui/admin/words";
-import { Workspaces } from "@/app/_ui/admin/Workspaces";
+import { alliancesOf, readWorkspaces, Workspaces } from "@/app/_ui/admin/Workspaces";
 import type { Clock } from "@/app/_ui/format";
 import { requestServerClock, requestLocale } from "@/app/_ui/locale";
 import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
-import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy, fill } from "@/lib/copy";
 import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { listRuns, recentTicks } from "@/lib/queries/admin";
+import { ownerTodo } from "@/lib/patch-notes";
+import { listRuns, type recentTicks } from "@/lib/queries/admin";
 import { loadAdminPage } from "@/lib/queries/admin-page";
-import { QUOTA_WARN_BELOW } from "@/lib/run";
+import { countWaitingRequests } from "@/lib/queries/alliance-invites";
 import { isGeneratedName, lastOccurrence, nextEvent } from "@/lib/schedule";
 
 const t = copy.admin;
@@ -59,70 +62,8 @@ async function weekly(slots: string, env: Env, clock: Clock): Promise<string> {
     .join(" · ");
 }
 
-/** Quota: OK at 900 or more, Low under it (plan §3.1, the Friday warning), Unknown before any run. */
-function QuotaFact({
-  quota,
-  now,
-  clock,
-}: {
-  quota: { remaining: number | null; at: Date } | null;
-  now: Date;
-  clock: Clock;
-}) {
-  const n = quota?.remaining ?? null;
-  if (n === null) {
-    return (
-      <Fact
-        label={st.quota}
-        value={<Chip tone="muted">{st.quotaUnknown}</Chip>}
-        note={st.quotaNone}
-      />
-    );
-  }
-  // The quota resets every UTC day: an older reading says when it is from and carries no verdict.
-  if (!quota || quota.at.toISOString().slice(0, 10) !== now.toISOString().slice(0, 10)) {
-    return (
-      <Fact
-        label={st.quota}
-        value={fill(st.quotaValue, { n })}
-        chip={<Chip tone="muted">{st.quotaOld}</Chip>}
-        note={quota && fill(st.quotaNoteOld, { at: clock.stamp(quota.at) })}
-      />
-    );
-  }
-  const low = n < QUOTA_WARN_BELOW;
-  return (
-    <Fact
-      label={st.quota}
-      value={fill(st.quotaValue, { n })}
-      chip={
-        <Chip tone={low ? "seal" : "ink"} icon={low ? <DroppedStitch /> : <StitchedCheck />}>
-          {low ? fill(st.quotaLow, { n: QUOTA_WARN_BELOW }) : st.quotaOk}
-        </Chip>
-      }
-      note={quota && fill(st.quotaNote, { at: clock.stamp(quota.at) })}
-    />
-  );
-}
-
 type Run = Awaited<ReturnType<typeof listRuns>>[number];
 type Tick = Awaited<ReturnType<typeof recentTicks>>[number];
-
-/** The scheduler's heartbeat (D45): the newest tick in server time, and what the last few did. */
-function TickFact({ ticks, clock }: { ticks: Tick[]; clock: Clock }) {
-  const outcome = (o: string | null) =>
-    st.tickOutcome[(o ?? "none") as keyof typeof st.tickOutcome] ?? o;
-  return (
-    <Fact
-      label={st.tick}
-      value={ticks[0] ? clock.stamp(ticks[0].startedAt) : st.noTick}
-      note={
-        ticks.length > 0 &&
-        fill(st.tickNote, { list: ticks.map((k) => outcome(k.outcome)).join(" · ") })
-      }
-    />
-  );
-}
 
 function Status({
   quota,
@@ -183,7 +124,7 @@ function Status({
           }
           note={last && <LastRunNote id={last.id} durations={durations} />}
         />
-        <TickFact ticks={ticks} clock={clock} />
+        <TickFact ticks={ticks} now={now} clock={clock} />
       </div>
     </AdminSection>
   );
@@ -257,8 +198,19 @@ export default async function AdminPage() {
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
-  const [[current, rehearsal, quota, manual, running, runs, row, ticks, daily], clock] =
-    await Promise.all([withPageDb((db) => loadAdminPage(db, now, env)), requestServerClock()]);
+  const [
+    [current, rehearsal, quota, manual, running, runs, row, ticks, daily],
+    clock,
+    ws,
+    requests,
+    errors,
+  ] = await Promise.all([
+    withPageDb((db) => loadAdminPage(db, now, env)),
+    requestServerClock(),
+    readWorkspaces(now),
+    withPageDb(countWaitingRequests),
+    errorsLastDay(),
+  ]);
   // A run left running past RUN_STALE_AFTER_MS is not under "Running now", so not "running" anywhere.
   const recent = runs.map((r) => settledRun(r, now));
   const views = watchViews(running, recent[0], daily, now, clock);
@@ -268,10 +220,28 @@ export default async function AdminPage() {
     { phase: "before" as const, at: next.beforeAt, event: next },
     { phase: "after" as const, at: next.afterAt, event: next },
   ].find((c) => c.at > now);
+  // No Retry that could run past the server reset (D72): the route refuses it too.
+  const dailyRetry = dailyReadEndsInDay(now, env) ? dailyView(daily, now, clock) : null;
+  const { alliances } = alliancesOf(ws, now);
+  const needs = needsYou({
+    now,
+    tick: {
+      last: ticks[0]?.startedAt ?? null,
+      lastText: ticks[0] ? clock.stamp(ticks[0].startedAt) : null,
+    },
+    dailyRetry: dailyRetry !== null,
+    requests,
+    errors24h: errors,
+    workspaces: alliances,
+    deletions: ws.rows.filter((w) => w.deletion).length,
+    morningQuota: quota.daily,
+    todos: ownerTodo.filter((x) => !x.done).length,
+  });
   return (
     <AdminShell section="/admin" title={t.title}>
+      <NeedsYou rows={needs} />
       <Status
-        quota={quota}
+        quota={quota.newest}
         running={views.running}
         next={
           nextRun && {
@@ -291,17 +261,14 @@ export default async function AdminPage() {
           beforeAtText={clock.stamp(current.beforeAt)}
           current={currentView(current, row, now, clock)}
           manual={manual && roundView(manual, clock)}
-          daily={
-            // No Retry that could run past the server reset (D72): the route refuses it too.
-            dailyReadEndsInDay(now, env) ? dailyView(daily, now, clock) : null
-          }
+          daily={dailyRetry}
           running={views.running}
         />
       </AdminSection>
       <Rehearsal r={rehearsal} clock={clock} />
       <TrackedCard now={now} clock={clock} />
       <Schedule env={env} next={next} clock={clock} />
-      <Workspaces now={now} />
+      <Workspaces now={now} data={ws} />
     </AdminShell>
   );
 }

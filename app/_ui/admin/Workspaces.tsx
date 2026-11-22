@@ -21,7 +21,7 @@ import {
 } from "@/lib/workspace-features";
 import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
-import { allianceRow, byAttention, type AllianceRow } from "./alliances-view";
+import { allianceChoices, allianceRow, byAttention, type AllianceRow } from "./alliances-view";
 import { Alliances } from "./AlliancesTable";
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
 import { featuresView, settingsFor } from "./features-view";
@@ -214,7 +214,8 @@ function allianceRows(page: {
     .sort(byAttention);
 }
 
-export async function Workspaces({ now }: { now: Date }) {
+/** What the workspace sections read, once per page: /admin's "Needs you" counts from the same rows. */
+export async function readWorkspaces(now: Date) {
   const squadsDay = quotaDayRead(now, getEnv());
   const [rows, deleted, features, squads, known, usage] = await withPageDb((db) =>
     Promise.all([
@@ -226,12 +227,30 @@ export async function Workspaces({ now }: { now: Date }) {
       allianceUsage(db, squadsDay, now),
     ]),
   );
-  const choices = known.map((a) => ({ unionId: a.unionId, label: choiceLabel(a) }));
+  return { squadsDay, rows, deleted, features, squads, known, usage };
+}
+
+export type WorkspacesData = Awaited<ReturnType<typeof readWorkspaces>>;
+
+/** The alliance choices and labels (F13), the key's master fingerprint, and the Alliances table's rows. */
+export function alliancesOf(data: WorkspacesData, now: Date) {
+  const { rows, known } = data;
+  const choices = allianceChoices(
+    known.map((a) => ({ unionId: a.unionId, label: choiceLabel(a) })),
+    rows.map((w) => w.unionId),
+  );
   const allianceLabel = (id: number) => choices.find((c) => c.unionId === id)?.label ?? String(id);
   // D124: a key sealed under another master key reads "needs to be entered again", worked out from its
   // fingerprint, with no write and no tracker call. /admin never sees a key.
   const secret = getEnv().WORKSPACE_KEYS_SECRET;
   const current = secret ? masterFingerprint(secret) : null;
+  const page = { ...data, current, now, allianceLabel };
+  return { choices, allianceLabel, current, alliances: allianceRows(page) };
+}
+
+export function Workspaces({ now, data }: { now: Date; data: WorkspacesData }) {
+  const { squadsDay, rows, deleted, features, squads, known, usage } = data;
+  const { choices, allianceLabel, current, alliances } = alliancesOf(data, now);
   const views = rows.map((w) => ({
     id: w.id,
     unionId: w.unionId,
@@ -273,7 +292,7 @@ export async function Workspaces({ now }: { now: Date }) {
   const page = { rows, squads, features, usage, current, now, allianceLabel };
   return (
     <>
-      <Alliances rows={allianceRows(page)} />
+      <Alliances rows={alliances} />
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
         <WorkspacesCard

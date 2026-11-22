@@ -1,8 +1,12 @@
 // /admin's Alliances table (issue 485, D144), re-exported as `copy.admin.workspaces.alliances`. English only (D48).
+import { DAILY_QUOTA_TEXT } from "./budget";
+
 export const alliancesAdminCopy = {
   title: "Alliances",
-  help: "What each workspace uses and spends, from our own tables. Counts and times only. Today is the UTC day: the tracker quota and the daily limits reset at 00:00 UTC. Page errors are those of the last 24 hours on the workspace's own pages and requests, from this release on, at most one a second, so they are a lower bound; errors of the nightly reads are on App errors. The ones that need a look come first: a key that cannot be used, errors, a daily limit used up. Tap one to open its workspace below.",
+  help: "What each workspace uses and spends, from our own tables. Counts and times only. Today is the UTC day: the tracker quota and the daily limits reset at 00:00 UTC. Page errors are those of the last 24 hours on the workspace's own pages and requests, from this release on, at most one a second, so they are a lower bound; errors of the nightly reads are on App errors. The ones that need a look come first: a key that cannot be used, errors, a setup step that waits on you (no member role, or no read after a daily read), a daily limit used up. Tap an alliance to open its workspace below, or its page errors to open them.",
   caption: "Each workspace's use and spend",
+  /** The page error count's link (issue 585, F34). */
+  errorsLink: "{n} page errors under /w/{slug}: open them",
   none: "No workspace yet.",
   attention: "Needs a look",
   /** The "Needs a look" chip's first reason. */
@@ -12,6 +16,9 @@ export const alliancesAdminCopy = {
     failed: "Failed Discord posts: {n}",
     cap: "Daily limit used up",
     quota: "No tracker quota left today",
+    setup: "Setup: {step}",
+    /** A setup step that waits on the owner (issue 585, F12). */
+    gap: { member_role: "no member role", first_read: "no read yet" },
   },
   head: {
     alliance: "Alliance",
@@ -25,7 +32,7 @@ export const alliancesAdminCopy = {
   },
   /** The workspace's own reads (squads, Raid Shield check) on the quota day and the 7 quota days to it. */
   calls: {
-    own: "{today} of 1,000 today",
+    own: `{today} of ${DAILY_QUOTA_TEXT} today`,
     site: "{today} today on the site's key",
     none: "{today} today",
     week: "{n} in 7 days",
@@ -73,11 +80,15 @@ export const alliancesAdminCopy = {
       thanks_shared: "Thanks shared",
       screenshots_read: "Screenshots read",
     },
+    /** PostHog has no totals (no key, down, or no workspace answered): the setup steps still show. */
+    noTotals: "No totals from PostHog right now: setup steps only.",
     atLeast: "at least {n}",
     under: "under 5",
     setup: "Setup",
     steps: {
       created: "Created",
+      member_role: "Member role",
+      first_read: "First read",
       key_saved: "Key saved",
       webhook: "Webhook set",
       first_roll_call: "First roll call marked",

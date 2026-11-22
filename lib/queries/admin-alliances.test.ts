@@ -7,6 +7,7 @@ import {
   appErrors,
   calendarEntries,
   dailyReads,
+  dailyRosters,
   garrisonPlans,
   workspaces,
   workspaceSessions,
@@ -232,6 +233,8 @@ describe("allianceUsage (issue 485, D144)", () => {
     const usage = await allianceUsage(db, DAY, NOW);
     expect(usage.get(a)?.setup).toEqual({
       created: day("2026-03-01"),
+      member_role: null,
+      first_read: null,
       key_saved: day("2026-03-02"),
       webhook: day("2026-03-04"),
       first_roll_call: day("2026-03-07"),
@@ -243,5 +246,52 @@ describe("allianceUsage (issue 485, D144)", () => {
       first_roll_call: null,
       first_notice: null,
     });
+  });
+
+  it("gives the member role, the alliance's first roster that did not fail since the workspace was made, and whether a daily read has finished since (F12)", async () => {
+    // Both made Thu 19 Nov 10:00 UTC; the Thu read (server day 19) started Fri 01:30 UTC and finished.
+    const made = new Date("2026-11-19T10:00:00Z");
+    await db.update(workspaces).set({ createdAt: made });
+    await db
+      .update(workspaces)
+      .set({ memberRoleIds: ["700000000000000204"] })
+      .where(eq(workspaces.id, a));
+    await db.insert(dailyReads).values({
+      day: "2026-11-19",
+      startedAt: new Date("2026-11-20T01:30:00Z"),
+      finishedAt: new Date("2026-11-20T01:34:00Z"),
+      status: "partial",
+    });
+    const roster = {
+      isFresh: true,
+      memberUids: [],
+      memberNames: [],
+      memberPower: [],
+      memberKills: [],
+    };
+    await db.insert(dailyRosters).values([
+      // amber: one from long before the workspace (it was in the top 20 then), then the Thu read's.
+      { ...roster, readDay: "2026-09-01", unionId: 101 },
+      { ...roster, readDay: "2026-11-19", unionId: 101 },
+      // birch: the Thu read failed for it.
+      { ...roster, readDay: "2026-11-19", unionId: 202, isFresh: false, error: "upstream 503" },
+    ]);
+
+    const usage = await allianceUsage(db, DAY, NOW);
+    expect(usage.get(a)).toMatchObject({
+      setup: { member_role: "done", first_read: new Date("2026-11-19T00:00:00Z") },
+      readSince: true,
+    });
+    expect(usage.get(b)).toMatchObject({
+      setup: { member_role: null, first_read: null },
+      readSince: true,
+    });
+
+    // A workspace made after that read began waits for the next one: no read was due yet.
+    await db
+      .update(workspaces)
+      .set({ createdAt: new Date("2026-11-20T02:00:00Z") })
+      .where(eq(workspaces.id, b));
+    expect((await allianceUsage(db, DAY, NOW)).get(b)?.readSince).toBe(false);
   });
 });
