@@ -17,7 +17,15 @@ import type { CardData } from "@/lib/private/member-card";
 import { CardFollowUp } from "./CardFollowUp";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
-import { CardTabs, History, panelId, tabId, useCardTab } from "./MemberCardTabs";
+import {
+  CardTabs,
+  Details,
+  History,
+  MapPosition,
+  panelId,
+  tabId,
+  useCardTab,
+} from "./MemberCardTabs";
 import { MemberLastDays } from "./MemberLastDays";
 import { CardLink } from "./MemberLinks";
 import { MemberSquads } from "./MemberSquads";
@@ -286,19 +294,6 @@ function Overview({ card, editor, onChanged }: CardProps) {
   );
 }
 
-function Details({ rows, noData }: { rows: CardData["details"]; noData: string }) {
-  return (
-    <dl className="mt-3 text-body-sm">
-      {rows.map((d) => (
-        <div key={d.label} className="flex justify-between gap-3 border-t border-rule py-2">
-          <dt className="text-ink/75">{d.label}</dt>
-          <dd className="text-right tabular-nums">{withNoData(d.value, noData)}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
 function Info({ card, editor }: Pick<CardProps, "card" | "editor">) {
   const [dates, setDates] = useState(false);
   const dated = card.factLines.some((l) => l.updated);
@@ -323,17 +318,6 @@ function Info({ card, editor }: Pick<CardProps, "card" | "editor">) {
       <Details rows={card.details} noData={card.noData} />
       <MapPosition map={card.map} noData={card.noData} />
     </>
-  );
-}
-
-/** Map position stays hidden until asked for (D136): D71 allows it, people first. */
-function MapPosition({ map, noData }: { map: CardData["map"]; noData: string }) {
-  const [open, setOpen] = useState(false);
-  if (open) return <Details rows={[map]} noData={noData} />;
-  return (
-    <button type="button" onClick={() => setOpen(true)} className={`${chip()} mt-1`}>
-      {map.show}
-    </button>
   );
 }
 
