@@ -113,3 +113,24 @@ S3, at f420a368:
 `pnpm test:e2e` (the whole suite, production build, own Postgres on 127.0.0.1:54393, app on 3493) - exit 0: 47 passed, 3 skipped (by design); after the tap cue, `e2e/desk-flows.spec.ts` and `e2e/desk.spec.ts` again: 17 passed, 3 skipped.
 
 C34 - exit 0: D104 1, D140 1, D98 1, D73 1.
+
+S5, at the branch `feat/585-after-kvk-help` (server clock Sun 22 Nov, so the KvK week branch of C50 and C51 ran):
+
+| Check | Proof                                                                                                    | Result        |
+| ----- | -------------------------------------------------------------------------------------------------------- | ------------- |
+| C43   | `run unit / ✓ lib/private/follow-up-kvk.test.ts > … > lists the KvK's heavy hits from its night read …`  | pass          |
+| C44   | `run unit / ✓ lib/private/follow-up-kvk.test.ts > … > takes a member someone wrote about after the KvK…` | pass          |
+| C45   | `run unit / ✓ app/(private)/_ui/follow-up-groups.test.ts > … > offers help after the KvK in the second…` | pass          |
+| C46   | `run unit / ✓ app/(private)/_ui/FollowUpWeek.test.ts > … > jumps from the head to After KvK, offer help` | pass          |
+| C47   | `run unit / ✓ lib/private/follow-up-kvk.test.ts > … > links Insights' help list to the group only …`     | pass          |
+| C48   | `run unit / ✓ lib/private/dictionary.test.ts > … > has the same keys in en, pt-BR and fr …`              | pass          |
+| C49   | `grep -c "2026-11-22 (issue 585 batch 3, slice 5" … D104 … D139 … D140`                                  | pass (1 each) |
+| C50   | `pnpm test:e2e e2e/desk-kvk.spec.ts`                                                                     | pass          |
+| C51   | `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance\|Members: a card opens"`                     | pass          |
+| C52   | `walk - s5-shots/followup-360-dark-fold.png, followup-360-light-fold.png, …`                             | pass (Walked) |
+
+`Run unit` (now with `lib/private/follow-up-kvk.test.ts`) - exit 0: 9 test files, 35 tests passed.
+
+`pnpm test:e2e` (the whole suite, production build, own Postgres on 127.0.0.1:54395, app on 3495) - exit 0: 49 passed, 3 skipped (by design); then `e2e/desk-kvk.spec.ts`, `e2e/desk.spec.ts` and `e2e/desk-flows.spec.ts` with `--repeat-each=3`: 57 passed, 9 skipped, 0 failed.
+
+`pnpm check` - exit 0: 330 test files passed (2 skipped), 1728 tests.

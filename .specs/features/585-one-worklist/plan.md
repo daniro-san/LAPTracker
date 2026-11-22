@@ -6,6 +6,8 @@
 
 **Approved (S3)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (i)](#i-s3-product-strategy-approve-with-changes); adversarial verdict: [Validation (k)](#k-s3-adversarial-approve-with-changes)
 
+**Approved (S5)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (n)](#n-s5-product-strategy-approve-with-changes); adversarial verdict: [Validation (o)](#o-s5-adversarial-approve-with-changes)
+
 Size: L (more than one PR across Home, Members, Follow-up, Insights and the member card). This plan covers all slices; slice 1 (S1) was built in PR 640, slice 2 (S2) in PR 646, **slice 3 (S3) is built in `feat/585-follow-up-rows`** (its own size: M, a flow across Follow-up and Members). Part of #585 (findings F3, F14, F15, F21, F29).
 
 ## Problem
@@ -240,7 +242,7 @@ New: nothing - read only.
 | Insights                    | Names kept; "Offer help: Follow-up ›" under them while the group has someone in it                                       | 4 of 6 officers and the designer; the names must stay with the tab off anyway (product MUST). Product picked links only (see Validation (n))                       | n          |
 | Copy                        | "After KvK, offer help · n"; row line "Still rebuilding after the KvK of {date}."; hint as criterion 41                  | 4 of 6 officers each; "note"/"noter" reads as grading in French, so the hint says "writes down what they said"                                                     | n          |
 
-**S5 validation:** the plan review is under [Validation (l) to (o)](#l-s5-officer-panel-first-glance-test-and-review).
+**S5 validation:** the plan review is under [Validation (l) to (o)](#l-s5-officer-panel-first-glance-test-and-review); the test after the build under (p).
 
 ## Criteria
 
@@ -537,11 +539,38 @@ Votes (round 1): A (window) (b) 5, (c) 1, (a) 0; B (noted rule) until the next K
 - Measure (database, read-only, per workspace and KvK, no names): the share of the group with a record inside the window, by answer; the median time from the night read to the first record; members with records from 2 or more officers in the window; the group's size and the share also marked Needs help; the share back to 80% by the window's end. PostHog: Insights → Follow-up pageviews within 10 minutes; `ws_message_copied` `where=follow_up` in the window against outside it.
 - Later uses: a "Back on their feet" thanks line; a pre-KvK tip for members still under 80% while the shield check is on; an alliance-level "how concentrated was the hit" note, no names.
 
+### (o) S5: adversarial: approve with changes
+
+No one-way door: no migration, nothing deleted, nothing new written, no new private field (might is public; `lost` and `back` never leave `kvkOf`), no quota spend, no dependency.
+
+- MUST, taken: one `kvk` flag (in the help list, not on a break, not written about since the KvK's End read) drives whether the member is listed, the group, the reason line and the ready message, so a member offered help on Sunday never stays on the list with no group or gets "How did KvK go" again.
+- MUST, taken: inside the KvK group only the KvK line leaves the row (the hint says it); check-in reasons, "Still to ask", the tip and last week's line stay, and "Same for all n:" never repeats the hint.
+- MUST, taken: one helper for the window and the membership in all three readers (`afterKvk`, `kvkOpen` in `lib/private/follow-up-kvk.ts`); Insights uses today's Monday (`sinceMonday`), not the newest read's week, and its own 36 reads end on the same newest read, so its help list equals Follow-up's.
+- SHOULD, taken: Insights reads `followedUpSince` only while the tab is on, the KvK is in its week and its help list is not empty; `since` built with `zonedInstant` at 00:00 ST; the card's blind spot written in D104's amendment; the hint says "for the week after it" (a skipped KvK still ends the group on the 7th day).
+- NOTE, checked: a KvK whose End failed or a skipped KvK leaves no list; Undo across Monday puts the member back (`liveRecords` over the window); members who joined after the KvK or left are not counted; Needs help set or cleared mid-week moves a member between the two groups. Reported: on the KvK's night read "now" is the End read, so a heavy KvK can put many members in the group at 23:30; a member offered help on Sunday is on no card on Monday (product SHOULD, follow-up).
+
+### (p) S5: officer panel after the build
+
+The same six officers, real 360 × 780 screenshots of the build on the invented e2e seed (Sun 22 Nov, `s5-shots/`). Truth: Fennick took a heavy hit; Galen is marked Needs help (not about the KvK).
+
+| Screen and question                                                | Right | Partial | Wrong | Can't tell |
+| ------------------------------------------------------------------ | ----- | ------- | ----- | ---------- |
+| Return visit, Q1 "Who should I offer help to after this KvK?"      | 5     | 1       | 0     | 0          |
+| Return visit, Q2 "Who needs help, and has an officer said so?"     | 6     | 0       | 0     | 0          |
+| First visit ("How this list works" open), Q1                       | 4     | 1       | 1     | 0          |
+| Insights' KvK card, "Where would you go to offer help? Any blame?" | 5     | 1       | 0     | 0          |
+
+- MUST, reported, not built: on a first visit S3's open "How this list works" pushes the group's title below the fold (the jump line stays in sight); one officer took Galen's note "rebuilding the main squad" for the KvK case. The help's first-visit state and its lines are S3's and the owner's (D104, D140); a follow-up with its own copy test.
+- SHOULD, reported: the help's lines ("Nothing is sent" twice, "for you", "nobody is removed", "mark how it went"; 2–3 of 6); Insights' words differ from Follow-up's ("maybe offer help", "under 80%", "a hand may help"; D139's words, 2 of 6); on Insights the name link and "Follow-up ›" look alike (2 of 6).
+- 6 of 6 said nobody is blamed on Insights' card.
+
 ## Analytics plan
 
 No new event, no change to an event. The count line on Home and Members becomes a link to Follow-up (was the Members group); pageviews already show it. A dated line in the tracking plan's "Changed" section says that from this release Home and Members link to Follow-up, so Follow-up pageviews from Home may rise. Remove: nothing. PostHog side: no insight or Endpoint reads these; nothing to change.
 
 S2: no new event, no change to an event. "No longer needs help" saves through the facts route, which already counts `ws_action` `member_facts` `save`. A dated line in the tracking plan's "Changed" section says that from this release Home's and Members' "Follow-up: n to look at" also counts members marked Needs help, so the number can rise on release day. Remove: nothing. PostHog side: nothing reads these.
+
+S5: no new event, no change to an event. Changed (a dated line in the tracking plan): Home's and Members' "Follow-up: n to look at" counts "After KvK, offer help" for the week after a KvK; Follow-up's head and Insights' KvK card link to the group (no click is counted: autocapture is off on `/w`); a card's `on_list` stays false for a member only in that group. Measure from the database, read-only, as Validation (n) lists. Remove: nothing. PostHog side: nothing reads these.
 
 S3: no new event, no change to an event. Changed (a dated line in the tracking plan): "Add a note" is gone (the name opens the panel), "Members ›" (`?q=<name>`) is "Card ›" (`?m=<uid>`), and Members' group heading is "Check in or Needs help" with a "Follow-up ›" link; read Members page views after Follow-up as card opens, and watch the share of non-Talked records and of records with a note (database, read-only). Click autocapture is off on `/w`, so no link click is counted. Remove: nothing. PostHog side: no insight or Endpoint reads these.
 

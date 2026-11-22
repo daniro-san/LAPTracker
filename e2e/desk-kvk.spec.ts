@@ -46,7 +46,7 @@ test("After KvK, offer help: Follow-up offers help to the member who took a heav
   // Insights keeps its help list, the name to the member's card, and links to the group.
   await page.goto(`${desk}/insights`);
   await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
-  const card = page.locator("#insights-kvk");
+  const card = page.getByRole("region", { name: "KvK cost and recovery" });
   await expect(card.getByRole("link", { name })).toHaveAttribute(
     "href",
     `${desk}/members?m=${uidOf("a", HEAVY_HIT.k)}`,
