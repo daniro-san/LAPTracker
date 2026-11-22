@@ -10,33 +10,22 @@ Requires Node 26 (`.nvmrc`) and pnpm 12 (pinned in `packageManager`).
 nvm use                 # reads .nvmrc → newest installed 26.x
 npm i -g pnpm@12
 pnpm install            # also installs the lefthook git hooks
-cp .env.example .env.local   # fill in; never commit it
+cp .env.example .env.local   # local placeholders; never commit it
 ```
+
+**Local setup without production secrets.** Local work needs no production value. The protection is that `.env.local` holds none. `scripts/hooks/env-guard.sh` is a guard against accidental reads, not a sandbox: it refuses an agent tool call whose text names an env file other than `.env.example`, but it matches text, so a name built at runtime or a script that opens the file gets past it.
+
+- The owner creates `.env.local` from `.env.example` (agents can't: the copy names `.env.local`, so the guard blocks it). Its values are local placeholders: `DATABASE_URL` is the cluster below, and the upstream API, Discord and PostHog base URLs point at `127.0.0.1:9`, where nothing answers. `EDIT_PIN` and `CRON_SECRET` there are public, so production must never use them; the owner checks Vercel's values (D03).
+- A fresh worktree has no `.env.local`. There, export the template into each shell command instead: `set -a; . ./.env.example; set +a; pnpm dev:local` (the same prefix for every `db:local` script). It also needs `pnpm install --frozen-lockfile`, the Postgres binaries below, and its own ports if another checkout's cluster is running: override `DATABASE_URL`'s port and `DB_LOCAL_BRIDGE_PORT` after the prefix, and pass `-p <port>` to `pnpm dev:local`. `pnpm db:local:start` creates the worktree's own `.pglocal/`.
+- Use the local database below (`pnpm db:local:start`, `db:local:migrate`, `db:local:seed`), not Neon. If you need hosted data, use the Neon `preview` branch's role, never production's.
+- Leave the webhooks, the Discord keys, the PostHog keys, `GROQ_API_KEY`, `WORKSPACE_KEYS_SECRET` and the VAPID keys empty unless the task needs them. `EDIT_PIN` and `CRON_SECRET` are required, so they keep the local placeholders.
+- What stays off while they are empty: Discord messages; workspace sign-in (`/w/<slug>` says it is not set up) and "Send to LAPTracker"; analytics and PostHog flags (use `LOCAL_FLAGS`); the usage numbers on `/admin` and the desk; Translate and Improve writing; Publish to Discord; saved workspace tracker keys; officers' browser notifications. Upstream reads fail, so pages show the seed's data.
 
 Pre-commit needs [gitleaks](https://github.com/gitleaks/gitleaks) on PATH (`brew install gitleaks`). For cloud sessions (claude.ai/code), paste `scripts/cloud-setup.sh` as the environment's setup script. It installs Node 26, pnpm 12 and gitleaks.
 
 **Local database (no Docker, D47).** A plain Postgres cluster in `.pglocal/` (gitignored), reached by the Neon driver through a small WebSocket bridge. It needs the Postgres server binaries (`initdb`, `pg_ctl`, `postgres`, `psql`) on PATH. macOS: `brew install postgresql@18`, then `export PATH="$(brew --prefix postgresql@18)/bin:$PATH"` (the formula is keg-only, and the `initdb` that Homebrew's `libpq` puts on PATH cannot start a server). Debian or Ubuntu: `apt install postgresql`, then add `/usr/lib/postgresql/<version>/bin` to PATH.
 
-Put these values in `.env.local`. They are placeholders: nothing here reaches Neon or the upstream API, because both upstream base URLs point at `127.0.0.1:9`, where nothing answers.
-
-```bash
-DATABASE_URL=postgres://lap:lap@127.0.0.1:54320/laptracker
-DB_LOCAL_BRIDGE_PORT=54321
-LAP_API_KEY=lap_local-placeholder
-LAP_API_BASE_URL=http://127.0.0.1:9/v1
-LAP_SITE_BASE_URL=http://127.0.0.1:9/api
-CRON_SECRET=local-placeholder-cron-secret-0123456789
-EDIT_PIN=000000
-SERVER_TZ=Etc/GMT+2
-EVENT_WEEKDAY=6
-EVENT_TIME=12:00
-SNAPSHOT_BEFORE=10:00
-SNAPSHOT_AFTER=14:00
-SNAPSHOT_WINDOW_MIN=45
-QUOTA_CHECK_AT=fri 20:00
-```
-
-The user, password, port and database name come from `DATABASE_URL`; the bridge listens on `DB_LOCAL_BRIDGE_PORT` (default 54321). Every `db:local` script refuses to run unless the host of `DATABASE_URL` is exactly `localhost` or `127.0.0.1`, so a `.env.local` that points at Neon is never seeded or migrated by them.
+The placeholders in `.env.example` (above) are set up for it. The user, password, port and database name come from `DATABASE_URL`; the bridge listens on `DB_LOCAL_BRIDGE_PORT` (default 54321). Every `db:local` script refuses to run unless the host of `DATABASE_URL` is exactly `localhost` or `127.0.0.1`, so a `.env.local` that points at Neon is never seeded or migrated by them.
 
 ```bash
 pnpm db:local:start             # first run: initdb; then start the cluster and create the database
@@ -96,22 +85,23 @@ The next version is the latest `v*` tag plus the bump, so `package.json` is neve
 
 ## Scripts
 
-| Command                                      | Does                                                                                                                                                                                                             |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev` / `pnpm build` / `pnpm start`     | Next.js                                                                                                                                                                                                          |
-| `pnpm check`                                 | all gates: `prettier --check`, `eslint`, `tsc --noEmit`, `vitest run`, `scripts/check-drift.ts` (migrations match the schema), `scripts/i18n-check.ts` (translations are current). CI runs this                  |
-| `pnpm test` / `pnpm typecheck`               | Vitest / `tsc --noEmit`                                                                                                                                                                                          |
-| `pnpm test:e2e`                              | the Playwright suite on a production build and the local cluster ("End-to-end tests" above)                                                                                                                      |
-| `pnpm lint` / `pnpm format`                  | ESLint / Prettier (write)                                                                                                                                                                                        |
-| `pnpm db:generate` / `pnpm db:migrate`       | Drizzle migration file from `lib/schema.ts` / apply migrations                                                                                                                                                   |
-| `pnpm db:seed`                               | three invented past Saturdays from `fixtures/`, for local screens. Never against production; `--reset` empties the tables first; `--with-states` adds an empty event a week ahead and one whose After is running |
-| `pnpm db:local:start` / `pnpm db:local:stop` | start (and on first use `initdb`) / stop the local cluster in `.pglocal/`, on 127.0.0.1 at the port of `DATABASE_URL`. Local `DATABASE_URL` only                                                                 |
-| `pnpm db:local:migrate`                      | apply `drizzle/` to the local cluster through `psql`, in journal order; skips what is already applied, by the same journal table as `pnpm db:migrate`. Local `DATABASE_URL` only                                 |
-| `pnpm db:local:bridge`                       | WebSocket → TCP bridge from `DB_LOCAL_BRIDGE_PORT` (default 54321) to the local cluster. Local `DATABASE_URL` only                                                                                               |
-| `pnpm db:local:seed`                         | `pnpm db:seed` (same flags) through the bridge. Local `DATABASE_URL` only                                                                                                                                        |
-| `pnpm dev:local`                             | `pnpm dev` with `scripts/db-local-preload.mjs`, which sends the Neon driver's WebSocket to the bridge when `DATABASE_URL` is local                                                                               |
-| `pnpm snapshot:dry`                          | one snapshot (`--phase before\|after`) through the real adapters with fixtures served instead of the network. No database, no quota                                                                              |
-| `pnpm i18n:todo` / `pnpm i18n:stamp`         | the translation work list as JSON / mark translated keys as current                                                                                                                                              |
+| Command                                      | Does                                                                                                                                                                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm build` / `pnpm start`     | Next.js                                                                                                                                                                                                                         |
+| `pnpm check`                                 | all gates: `prettier --check`, `eslint`, `tsc --noEmit`, `vitest run`, `scripts/check-drift.ts` (migrations match the schema), `scripts/i18n-check.ts` (translations are current). CI runs this                                 |
+| `pnpm test` / `pnpm typecheck`               | Vitest / `tsc --noEmit`                                                                                                                                                                                                         |
+| `pnpm test:e2e`                              | the Playwright suite on a production build and the local cluster ("End-to-end tests" above)                                                                                                                                     |
+| `pnpm lint` / `pnpm format`                  | ESLint / Prettier (write)                                                                                                                                                                                                       |
+| `pnpm db:generate` / `pnpm db:migrate`       | Drizzle migration file from `lib/schema.ts` / apply migrations                                                                                                                                                                  |
+| `pnpm db:seed`                               | three invented past Saturdays from `fixtures/`, for local screens. Never against production; `--reset` empties the tables first; `--with-states` adds an empty event a week ahead and one whose After is running                |
+| `pnpm db:local:start` / `pnpm db:local:stop` | start (and on first use `initdb`) / stop the local cluster in `.pglocal/`, on 127.0.0.1 at the port of `DATABASE_URL`. Local `DATABASE_URL` only                                                                                |
+| `pnpm db:local:migrate`                      | apply `drizzle/` to the local cluster through `psql`, in journal order; skips what is already applied, by the same journal table as `pnpm db:migrate`. Local `DATABASE_URL` only                                                |
+| `pnpm db:local:bridge`                       | WebSocket → TCP bridge from `DB_LOCAL_BRIDGE_PORT` (default 54321) to the local cluster. Local `DATABASE_URL` only                                                                                                              |
+| `pnpm db:local:seed`                         | `pnpm db:seed` (same flags) through the bridge. Local `DATABASE_URL` only                                                                                                                                                       |
+| `pnpm dev:local`                             | `pnpm dev` with `scripts/db-local-preload.mjs`, which sends the Neon driver's WebSocket to the bridge when `DATABASE_URL` is local                                                                                              |
+| `pnpm fixture:record`                        | the `record-fixture` skill's calls: one `<path under /v1> <output file>` per stdin line, key from the environment or the local env file. Spends quota: the owner runs it, with `FIXTURE_RECORD_CONFIRM=spend`; denied to agents |
+| `pnpm snapshot:dry`                          | one snapshot (`--phase before\|after`) through the real adapters with fixtures served instead of the network. No database, no quota                                                                                             |
+| `pnpm i18n:todo` / `pnpm i18n:stamp`         | the translation work list as JSON / mark translated keys as current                                                                                                                                                             |
 
 **Migrations.** Change the schema files `drizzle.config.ts` lists (`lib/schema*.ts`), then run `pnpm db:generate`; never hand-edit `drizzle/meta`. A data backfill may be added by hand to the generated `.sql` (as in `0061`). If a rebase brings in a migration with the same number as yours, set your `.sql` aside, restore `drizzle/meta` from `dev`, run `pnpm db:generate` again, and copy any hand-added statements into the new file.
 
@@ -124,6 +114,7 @@ The code is written mostly by Claude Code sessions with a human reviewing. Every
   - SessionStart → `scripts/install_pkgs.sh` installs deps when the lockfile changed and puts Node 26 on PATH in the cloud.
   - Every Edit/Write → `eslint --fix` on that file; remaining errors go straight back to the agent.
   - Every Bash call → `scripts/hooks/pr-base-guard.sh` refuses a `gh pr create` without `--base dev`.
+  - Every Bash, Monitor, Read, Grep and Glob call → `scripts/hooks/env-guard.sh` refuses one that names an env file other than `.env.example`, a glob that matches one, a dotenv load, or a recursive `grep`/`rg`/`find` that would print env files' lines.
   - Stop → `pnpm check`; the main session's turn can't end while it fails, or while the tree has changes and `node_modules` is missing, until two fix rounds in a row have failed (then the turn ends with a notice to the user). Subagents fire `SubagentStop`, which has no hook.
 - **Enforcement layers** (nobody commits or pushes to `dev` or `main`; `main` changes only by merging the release-prepare PR). The guard is GitHub's: the `dev` and `main` rulesets require a PR and `check`, block force pushes and deletion (`dev` also requires linear history), and have no bypass actors, so `--admin` cannot get past them. Behind it, in order:
   - the lefthook pre-commit job refuses a commit on `dev` or `main`;
