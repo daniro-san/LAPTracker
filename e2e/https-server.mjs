@@ -4,13 +4,24 @@
 // cookie never reached `next start` over http. `next start` takes no certificate (only `next dev` does), so
 // this is Next's own custom server, which goes through the same request handlers as `next start`; it is told
 // its port, so a write's Origin (https://localhost:<port>) is the origin the app computes. The certificate
-// is self-signed and made for this run by openssl; it and its key stay in memory, never on disk.
+// is self-signed and made for this run by openssl; it and its key stay in memory, never on disk (only a
+// minimal openssl config file is written to a temporary directory, and removed once openssl returns).
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:https";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import next from "next";
 
 const port = Number(process.argv[2]);
+// Its own minimal config, in a file: a runner's system openssl.cnf may include directories that do not exist,
+// and /dev/stdin cannot be opened when Node's stdin is a socket (Linux). Only this file is ever on disk.
+const dir = mkdtempSync(join(tmpdir(), "lap-e2e-tls-"));
+const config = join(dir, "openssl.cnf");
+writeFileSync(config, "[req]\ndistinguished_name = dn\n[dn]\n");
+// No -keyout: with no default_keyfile in the config, openssl writes the key, then the certificate, to stdout
+// (a pipe), so the key never touches disk and nothing opens /dev/stdout, which a socket refuses on Linux.
 const made = spawnSync(
   "openssl",
   [
@@ -19,23 +30,16 @@ const made = spawnSync(
     "-newkey",
     "rsa:2048",
     "-nodes",
-    "-keyout",
-    "/dev/stdout",
     "-config",
-    "/dev/stdin",
+    config,
     "-subj",
     "/CN=localhost",
     "-days",
     "1",
   ],
-  // Its own minimal config, so a runner's system openssl.cnf (whose includes may be missing) is never read.
-  {
-    encoding: "utf8",
-    env: { ...process.env, OPENSSL_CONF: "/dev/null" },
-    input: "[req]\ndistinguished_name = dn\n[dn]\n",
-    stdio: ["pipe", "pipe", "pipe"],
-  },
+  { encoding: "utf8", env: { ...process.env, OPENSSL_CONF: config } },
 );
+rmSync(dir, { recursive: true, force: true });
 if (made.status !== 0 || !made.stdout.includes("PRIVATE KEY"))
   throw new Error(
     `e2e: openssl could not make the certificate: ${made.error?.message ?? made.stderr}`,
