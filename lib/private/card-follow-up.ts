@@ -42,6 +42,7 @@ const CARD_KEYS = [
   "card.followup.savedList",
   "card.followup.undone",
   "card.followup.undoChanged",
+  "card.followup.undoFailed",
 ] as const satisfies readonly WorkspaceKey[];
 export type CardFollowUpWords = Pick<WorkspaceDictionary, (typeof CARD_KEYS)[number]>;
 

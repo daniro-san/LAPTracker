@@ -16,6 +16,7 @@ import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { followUpView, recordFollowUp, undoFollowUp } from "./follow-up";
 import { memberCard } from "./member-card";
+import { saveFacts } from "./member-facts";
 import { inputOf, readyTexts, readyWords } from "./ready-message";
 import { createSession } from "./session";
 
@@ -134,6 +135,16 @@ describe("the member card's Follow-up block (issue 516)", () => {
     expect(before?.texts["pt-BR"]).toContain(readyWords("pt-BR").idle);
     await recordFollowUp(db, ana, talked(101), { now: NOW, zone: ZONE });
     expect((await blockOf(ana, 101))?.message).toEqual(before);
+  });
+
+  it("writes the message in the language officers recorded, over the game's (D140)", async () => {
+    await db
+      .insert(playerReads)
+      .values({ unionId: OGS, uid: 101, readAt: new Date("2026-11-19T23:40:00Z"), language: "en" });
+    const ana = await signedIn("Ana");
+    const languages = { field: "languages", version: 0, value: ["fr"], source: "officer" } as const;
+    await saveFacts(db, ana, 101, [{ ...languages, value: [...languages.value] }], NOW, ZONE);
+    expect((await blockOf(ana, 101))?.message.language).toBe("fr");
   });
 
   it("shows none of it while the alliance turned the Follow-up tab off (D126)", async () => {

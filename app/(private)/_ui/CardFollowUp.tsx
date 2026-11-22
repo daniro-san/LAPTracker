@@ -4,52 +4,39 @@
 // noted this week (the note on its own line), "Talked to them" in one tap with Undo, and "Message to send"
 // opening Follow-up's ready message (D140) with its two copies. Every save goes through Follow-up's route
 // with a request id per tap (D100), marked as the card's for analytics; after a save or an undo the card is
-// read again (`onChanged`), so the week line shows what is stored. Nothing is sent for the officer.
+// read again (`onChanged`), so the week line shows what is stored. What a tap led to, and when Undo stays
+// and Talked is off, is `doneView` (card-follow-up-state.ts). Nothing is sent for the officer.
 import { useState } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
 import type { CardFollowUp as Data } from "@/lib/private/card-follow-up";
 
-import { Message } from "./FollowUpPanelParts";
-import { send } from "./FollowUpSheet";
+import { afterTalked, afterUndo, doneView, type Done, type DoneView } from "./card-follow-up-state";
+import { send } from "./follow-up-send";
+import { Message } from "./FollowUpMessage";
 import { newRequestId } from "./request-id";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
-/** The last tap: its record's request id, what came of it, and whether the member was on the list. */
-type Done = {
-  requestId: string;
-  state: "saved" | "undone" | "changed" | "failed" | "signed_out";
-  onList: boolean;
-};
-
-const answerOf = (status: number | undefined, ok: Done["state"]): Done["state"] =>
-  status === 200 ? ok : status === 401 ? "signed_out" : status === 409 ? "changed" : "failed";
-
 function DoneLine(props: {
-  done: Done | null;
+  view: DoneView | null;
   w: Data["words"];
   busy: boolean;
   onUndo: () => void;
 }) {
-  const { done, w } = props;
-  if (!done) return null;
-  if (done.state === "failed" || done.state === "signed_out") {
-    const text = done.state === "failed" ? w["followup.failed"] : SIGNED_OUT;
-    return <RefusalLine text={text} className="mt-2 text-body-sm text-seal" />;
-  }
-  const text = {
-    saved: w[done.onList ? "card.followup.savedList" : "card.followup.saved"],
-    undone: w["card.followup.undone"],
-    changed: w["card.followup.undoChanged"],
-  }[done.state];
+  const { view } = props;
+  if (!view) return null;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-      <p role="status" className="text-body-sm font-semibold text-sage">
-        {text}
-      </p>
-      {done.state === "saved" && (
+      {view.error ? (
+        <RefusalLine text={view.text ?? SIGNED_OUT} className="text-body-sm text-seal" />
+      ) : (
+        <p role="status" className="text-body-sm font-semibold text-sage">
+          {view.text}
+        </p>
+      )}
+      {view.undo && (
         <button type="button" disabled={props.busy} onClick={props.onUndo} className={chip()}>
-          {w["followup.undo"]}
+          {props.w["followup.undo"]}
         </button>
       )}
     </div>
@@ -68,6 +55,7 @@ export function CardFollowUp(props: {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
+  const view = doneView(done, w);
   const talked = async () => {
     const requestId = newRequestId();
     const onList = data.onList;
@@ -75,7 +63,7 @@ export function CardFollowUp(props: {
     const body = { uid, action: "talked", note: "", until: null, version: 0, requestId };
     const r = await send(slug, { ...body, from: "card", onList });
     setBusy(false);
-    setDone({ requestId, onList, state: answerOf(r?.status, "saved") });
+    setDone({ requestId, onList, state: afterTalked(r?.status) });
     if (r?.status === 200) props.onChanged?.();
   };
   const undo = async () => {
@@ -84,7 +72,7 @@ export function CardFollowUp(props: {
     const body = { uid, action: "undo", target: done.requestId, requestId: newRequestId() };
     const r = await send(slug, { ...body, from: "card", onList: done.onList });
     setBusy(false);
-    setDone({ ...done, state: answerOf(r?.status, "undone") });
+    setDone({ ...done, state: afterUndo(r?.status) });
     // A 409: the notes changed since; the card shows what is stored now.
     if (r?.status === 200 || r?.status === 409) props.onChanged?.();
   };
@@ -101,8 +89,8 @@ export function CardFollowUp(props: {
       <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"
-          // Off while saving, and while "Saved." shows: a second tap would write a second record.
-          disabled={busy || done?.state === "saved"}
+          // Off while saving, and while a Talked is stored and not undone: a tap would store a second one.
+          disabled={busy || view?.talkedOff === true}
           onClick={() => void talked()}
           className={chip()}
         >
@@ -119,7 +107,7 @@ export function CardFollowUp(props: {
           <span aria-hidden="true">{open ? " ▴" : " ▾"}</span>
         </button>
       </div>
-      <DoneLine done={done} w={w} busy={busy} onUndo={() => void undo()} />
+      <DoneLine view={view} w={w} busy={busy} onUndo={() => void undo()} />
       <div id={panel} hidden={!open}>
         {open && <Message message={data.message} words={w} where="card" />}
       </div>

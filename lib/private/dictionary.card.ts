@@ -35,6 +35,7 @@ export const cardEn = {
   "card.followup.savedList": "Saved. Off the Follow-up list until Monday.",
   "card.followup.undone": "Undone.",
   "card.followup.undoChanged": "Could not undo: the notes changed since.",
+  "card.followup.undoFailed": "Could not undo. Try again.",
 };
 
 type CardWords = Record<keyof typeof cardEn, string>;
@@ -72,6 +73,7 @@ export const cardPt: CardWords = {
   "card.followup.savedList": "Salvo. Fora da lista de acompanhamento até segunda.",
   "card.followup.undone": "Desfeito.",
   "card.followup.undoChanged": "Não foi possível desfazer: as notas mudaram desde então.",
+  "card.followup.undoFailed": "Não foi possível desfazer. Tente de novo.",
 };
 
 export const cardFr: CardWords = {
@@ -107,6 +109,7 @@ export const cardFr: CardWords = {
   "card.followup.savedList": "Enregistré. Hors de la liste de suivi jusqu’à lundi.",
   "card.followup.undone": "Annulé.",
   "card.followup.undoChanged": "Impossible d’annuler : les notes ont changé depuis.",
+  "card.followup.undoFailed": "Impossible d’annuler. Réessayez.",
 };
 
 /** The card's four tabs, in their order; each one's name is `card.tab.<tab>`. */
