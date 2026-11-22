@@ -1,6 +1,6 @@
 # 585-one-worklist proofs
 
-**HEAD**: 48877a20
+**HEAD**: 3b98f268
 **Tree**: clean
 **Shell**: /bin/sh
 **Result**: 34 pass, 0 fail
@@ -31,14 +31,14 @@
 | C22   | `walk - s2-shots/followup-360-fold.png, followup-360-full.png, followup-360-dark-full.png, panel-360.png, clear` | pass (Walked) |
 | C23   | `run unit / ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's groups (issue 585 slice 2) > puts a memb` | pass          |
 | C24   | `pnpm test:e2e e2e/desk-flows.spec.ts -g "No longer needs help"`                                                 | pass          |
-| C25   | `run unit / ✓ app/(private)/_ui/HomeMembers.test.ts > Home's Follow-up card (issue 585 slice 4) > says Follow-u` | pass          |
-| C26   | `run unit / ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > folds a roll call finished by s` | pass          |
-| C27   | `run unit / ✓ app/(private)/_ui/HomeNext.test.ts > Home's Today and tomorrow (issue 585 slice 4) > shows an ent` | pass          |
-| C28   | `run unit / ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > says on H` | pass          |
-| C29   | `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance"`                                                    | pass          |
-| C30   | `run unit / ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, ` | pass          |
-| C31   | `grep -q "Amendment 2026-11-22 (issue 585 batch 3, slice S4" docs/decisions/D104-follow-up-weekly-worklist.md &` | pass          |
-| C32   | `walk - 585-s4/shots/home-phone-light-fold.png, home-phone-dark-full.png, home-wide-light-fold.png (e2e seed, S` | pass (Walked) |
+| C35   | `run unit / ✓ app/(private)/_ui/HomeMembers.test.ts > Home's Follow-up card (issue 585 slice 4) > says Follow-u` | pass          |
+| C36   | `run unit / ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > folds a roll call finished by s` | pass          |
+| C37   | `run unit / ✓ app/(private)/_ui/HomeNext.test.ts > Home's Today and tomorrow (issue 585 slice 4) > shows an ent` | pass          |
+| C38   | `run unit / ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > says on H` | pass          |
+| C39   | `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance"`                                                    | pass          |
+| C40   | `run unit / ✓ lib/private/dictionary.test.ts > the workspace dictionary (D71, #305) > has the same keys in en, ` | pass          |
+| C41   | `grep -q "Amendment 2026-11-22 (issue 585 batch 3, slice S4" docs/decisions/D104-follow-up-weekly-worklist.md &` | pass          |
+| C42   | `walk - 585-s4/shots/home-phone-light-fold.png, home-phone-dark-full.png, home-wide-light-fold.png (e2e seed, S` | pass (Walked) |
 | Build | `pnpm typecheck`                                                                                                 | pass          |
 | Build | `pnpm lint`                                                                                                      | pass          |
 
@@ -47,21 +47,21 @@
 `Run unit` - exit 0
 
 ```
- ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > says since when and who added the mark and why, from the mark that stands, on the row and the card 124ms
- ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers before the alliance's first daily update 58ms
- ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > says the day the member asked, in server time 36ms
- ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > says on Home's first screen that the claim waits in To review, and nothing once none waits (slice 4) 57ms
- ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > offers Not them instead of Reject, on Home and on the card 37ms
- ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > never folds two posts in a row into one line 58ms
- ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > folds a roll call finished by several officers into one line naming each once (issue 585) 49ms
- ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > shows last week's newest record as context, never one from two weeks back, one undone across Monday or the mark's own 60ms
+ ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > gives Home and Members Follow-up's own numbers from Monday 00:00 ST, before Monday's daily update 63ms
+ ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers while the alliance turned the Follow-up tab off (D126) 38ms
+ ✓ lib/private/follow-up-week.test.ts > who was noted this week, and the two numbers Home and Members show (#585) > reads nothing and gives no numbers before the alliance's first daily update 33ms
+ ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > says on Home's first screen that the claim waits in To review, and nothing once none waits (slice 4) 41ms
+ ✓ app/(private)/_ui/ToReview.test.ts > a claim an officer can check on Home (issue 585) > offers Not them instead of Reject, on Home and on the card 32ms
+ ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > shows last week's newest record as context, never one from two weeks back, one undone across Monday or the mark's own 57ms
  ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > takes this week's list and Home's numbers from this week's records only, the Needs help group counted 53ms
- ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > shows a run longer than one read as two lines on two pages, each action once 51ms
+ ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > never folds two posts in a row into one line 44ms
+ ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > folds a roll call finished by several officers into one line naming each once (issue 585) 56ms
+ ✓ lib/private/desk-activity-pages.test.ts > recent activity pages > shows a run longer than one read as two lines on two pages, each action once 48ms
 
  Test Files  11 passed (11)
       Tests  39 passed (39)
-   Start at  07:42:24
-   Duration  2.04s (import 43%, tests 33%, transform 23%)
+   Start at  07:54:23
+   Duration  1.77s (import 47%, tests 35%, transform 17%)
 ```
 
 `pnpm test:e2e e2e/desk-flows.spec.ts -g "Follow-up: Talked to them"` - exit 0
@@ -69,10 +69,10 @@
 ```
 Running 2 tests using 2 workers
 
-  ✓  2 [wide] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.0s)
-  ✓  1 [phone] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.0s)
+  ✓  2 [phone] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.1s)
+  ✓  1 [wide] › e2e/desk-flows.spec.ts:77:1 › Follow-up: Talked to them takes a quiet member off the list, after a reload too (1.1s)
 
-  2 passed (4.0s)
+  2 passed (4.3s)
 $ playwright test e2e/desk-flows.spec.ts -g 'Follow-up: Talked to them'
 [WebServer] ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3497". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
 ```
@@ -82,10 +82,10 @@ $ playwright test e2e/desk-flows.spec.ts -g 'Follow-up: Talked to them'
 ```
 Running 2 tests using 2 workers
 
-  ✓  2 [phone] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (1.4s)
-  ✓  1 [wide] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (1.4s)
+  ✓  1 [wide] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (648ms)
+  ✓  2 [phone] › e2e/desk.spec.ts:56:1 › Home shows the alliance, its activity and its week line (661ms)
 
-  2 passed (7.2s)
+  2 passed (3.4s)
 $ playwright test e2e/desk.spec.ts -g 'Home shows the alliance'
 [WebServer] ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3497". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
 ```
@@ -96,10 +96,10 @@ $ playwright test e2e/desk.spec.ts -g 'Home shows the alliance'
 Running 2 tests using 2 workers
 
   -  2 [wide] › e2e/desk-flows.spec.ts:136:1 › Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too
-  ✓  1 [phone] › e2e/desk-flows.spec.ts:136:1 › Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too (2.1s)
+  ✓  1 [phone] › e2e/desk-flows.spec.ts:136:1 › Follow-up: No longer needs help takes a member off Needs help, after a refusal and a reload too (925ms)
 
   1 skipped
-  1 passed (8.7s)
+  1 passed (3.7s)
 $ playwright test e2e/desk-flows.spec.ts -g 'No longer needs help'
 [WebServer] ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3497". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
 ```
