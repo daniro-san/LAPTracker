@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Claude Code Stop hook: `pnpm check` must pass before a turn ends (plan §11.4).
+# Claude Code Stop hook: `pnpm check:fast` must pass before a turn ends (plan §11.4). It runs the same gates
+# as `pnpm check` but only some tests (scripts/test-changed.sh); CI runs the full `pnpm check`.
 # Exit 2 keeps the agent working with the failure (stderr) in view. After two fix rounds in a row still fail
 # (`stop_hook_active` true on each), the turn may end, so the agent reports instead of looping (CLAUDE.md);
 # Claude Code's own cap is 8 continuations. On that exit 0, stderr reaches no one, so the notice goes to
@@ -23,7 +24,7 @@ block() {
   n=$((n + 1))
   if [ "$n" -gt 2 ]; then
     rm -f "$rounds_file"
-    echo '{"systemMessage": "stop-check: the check still fails after two fix rounds, so this turn ends without a passing pnpm check (or without node_modules). Run pnpm check to see the failure."}'
+    echo '{"systemMessage": "stop-check: the check still fails after two fix rounds, so this turn ends without a passing pnpm check:fast (or without node_modules). Run pnpm check:fast to see the failure."}'
     exit 0
   fi
   echo "$n" >"$rounds_file"
@@ -41,9 +42,9 @@ fi
 
 # Changes to check but no dependencies: block instead of passing without a check.
 [ -d node_modules ] ||
-  block "stop-check: node_modules is missing, so pnpm check cannot run. Run pnpm install --frozen-lockfile, then finish."
+  block "stop-check: node_modules is missing, so pnpm check:fast cannot run. Run pnpm install --frozen-lockfile, then finish."
 
-if ! out=$(pnpm check 2>&1); then
-  block "$(printf 'pnpm check failed — fix before finishing:\n%s' "$(printf '%s\n' "$out" | tail -n 60)")"
+if ! out=$(pnpm check:fast 2>&1); then
+  block "$(printf 'pnpm check:fast failed — fix before finishing:\n%s' "$(printf '%s\n' "$out" | tail -n 60)")"
 fi
 pass
