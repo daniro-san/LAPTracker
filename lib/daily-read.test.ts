@@ -12,10 +12,11 @@ import { BLOCKED_ROSTER_KEYS, findBlockedKeys, memberHistoryCard } from "./queri
 import { allianceStatement } from "./queries/statement";
 import { dayRosterUids } from "./repo/squads";
 import { endOfDayReads } from "./repo/workspace-rosters";
-import { dailyReads, dailyRosters, playerFrames, runLogs } from "./schema";
+import { dailyReads, dailyRosters, playerFrames, runLogs, workspaces } from "./schema";
 import { alliances } from "./schema-alliances";
+import { workspaceKeys } from "./schema-keys";
 import { toSnapshotInput } from "./sources/shared";
-import { UpstreamError } from "./sources/types";
+import { QuotaExhaustedError, UpstreamError } from "./sources/types";
 
 let db: Db;
 beforeAll(async () => {
@@ -122,6 +123,72 @@ describe("runDailyRead (D60)", () => {
     const card = await memberHistoryCard(db, id, at);
     expect(card?.roster).toHaveLength(3);
     expect(findBlockedKeys(card)).toEqual([]);
+  });
+});
+
+describe("a workspace's alliance on its own key (D124, D133)", () => {
+  const [mine = 0, theirs = 0] = IDS;
+  const API_KEY = "lap_test-workspace-placeholder";
+
+  /** `theirs` saved a key; `mine` reads on LAP_API_KEY. Records the key each alliance's call carried. */
+  async function keyed(theirsOutcome: () => Error | null) {
+    const [ws] = await db
+      .insert(workspaces)
+      .values({
+        unionId: theirs,
+        slug: "theirs",
+        discordGuildId: "700000000000000201",
+        leaderRoleIds: [],
+      })
+      .returning({ id: workspaces.id });
+    const workspaceId = ws?.id ?? 0;
+    await db.insert(workspaceKeys).values({ workspaceId, nonce: "n1", status: "ok", statusAt: T0 });
+    // Our quota holds dailyReadQuota(1, 20) = 12 + 50 = 62: enough only when theirs is not counted.
+    const v1 = fakeV1(
+      (id) => (id === theirs && theirsOutcome()) || roster(id, ago(T0, minutes(1))),
+      62,
+    );
+    const used = new Map<number, string | undefined>();
+    const fetch = v1.fetchAlliance;
+    v1.fetchAlliance = (id, onAttempt, _signal, options) => {
+      used.set(id, options?.apiKey);
+      return fetch(id, onAttempt);
+    };
+    const targets = [
+      { unionId: mine, key: null },
+      { unionId: theirs, key: { workspaceId, apiKey: API_KEY, nonce: "n1" } },
+    ];
+    return { v1, used, workspaceId, targets };
+  }
+
+  it("reads it on its own key, which our quota check does not count", async () => {
+    const { v1, used, targets } = await keyed(() => null);
+
+    const summary = await runDailyRead(deps(v1), db, "2026-11-10", targets);
+
+    expect(summary).toMatchObject({ status: "complete", failed: [] });
+    expect(used).toEqual(
+      new Map([
+        [mine, undefined],
+        [theirs, API_KEY],
+      ]),
+    );
+  });
+
+  it("marks the key out of quota on its 429 and fails only that alliance; the read goes on", async () => {
+    const { v1, workspaceId, targets } = await keyed(() => new QuotaExhaustedError("429"));
+
+    const summary = await runDailyRead(deps(v1), db, "2026-11-10", targets);
+
+    expect(summary).toMatchObject({ status: "partial", error: null });
+    expect(summary?.failed.map((f) => f.unionId)).toEqual([theirs]);
+    const rows = await db.select().from(dailyRosters);
+    expect(rows.find((r) => r.unionId === mine)?.memberUids).toHaveLength(3);
+    const [key] = await db
+      .select()
+      .from(workspaceKeys)
+      .where(eq(workspaceKeys.workspaceId, workspaceId));
+    expect(key).toMatchObject({ status: "out_of_quota", quotaRemaining: 0 });
   });
 });
 

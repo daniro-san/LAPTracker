@@ -37,3 +37,12 @@ it("ends a call that never answers at its own timeout, not the 30 s default", as
   }).catch((e: unknown) => e);
   expect(error).toMatchObject({ name: "TimeoutError", detail: { timeoutMs: 50 } });
 });
+
+it("asks for the tracker's cached copy, with no fresh=1, when a call passes fresh: false (D133)", async () => {
+  const mock = mockFetch(respond(readFixture(OGS)));
+  await fetchAlliance(67111155, undefined, undefined, { fresh: false });
+
+  expect(mock.mock.calls.map((c) => String(c[0]))).toEqual([
+    "https://v1.test/v1/alliances/67111155",
+  ]);
+});

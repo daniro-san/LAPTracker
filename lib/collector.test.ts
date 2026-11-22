@@ -126,6 +126,18 @@ describe("runSnapshot", () => {
     );
   });
 
+  it("reads the board's top 20 by might in a BEFORE when no tracked set exists yet (D133)", async () => {
+    const v1 = fakeV1(fresh);
+    const { deps, repo } = makeDeps(v1, fakeInternal(), []);
+    repo.trackedAllianceIds = async () => [];
+
+    await runSnapshot(EVENT_ID, "before", deps);
+
+    // The fake board ranks IDS above BOARD_EXTRA by might.
+    expect(repo.tables.events.get(EVENT_ID)?.allianceIds).toEqual(IDS);
+    expect([...v1.calls].sort()).toEqual([...IDS].sort());
+  });
+
   it("fails an AFTER run on an event with no alliance list without a quota call", async () => {
     const v1 = fakeV1(fresh);
     const { deps, repo } = makeDeps(v1, fakeInternal(), []);
