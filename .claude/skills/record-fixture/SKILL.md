@@ -16,37 +16,21 @@ description: Record a new upstream API response into fixtures/ (spends LAP API q
 
 ## 2. Credentials, never printed
 
-- If `LAP_API_KEY` is set in the environment (cloud environment variable), use it as is.
-- Otherwise, locally, read it from `.env.local` into a shell variable without echoing it:
-  `LAP_API_KEY=$(grep -E '^LAP_API_KEY=' .env.local | cut -d= -f2- | tr -d "\"' \r")`
-- Send it as `Authorization: Bearer`. A `401 {"detail":"missing_api_key"}` means no key reached the API (that call costs no quota); stop and tell the owner.
+- The key never passes through your shell. `pnpm fixture:record` (`scripts/record-fixture.ts`) takes `LAP_API_KEY` from the environment (a cloud environment variable) or, locally, from the local env file through `--env-file-if-exists` in package.json. Never open, grep or source that file; the env guard blocks it.
+- The local env file holds only a placeholder key unless the owner put the real one there for this run. A placeholder gets `401` (no quota spent). If the script says the key is not set, or a call returns `401 {"detail":"missing_api_key"}`, stop and ask the owner to provide the key.
 - Never `echo`, `set -x`, `env` or paste the key. Never put it in a file under the repo.
 
 ## 3. Call and save the raw body
 
 ```bash
-UA="laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)"
-API="https://api.lastasylumtracker.com/v1"
-RAW=$(mktemp)
-# One line per call: <path under /v1> <output file>. Positional shell parameters are avoided on
-# purpose: the skill loader substitutes them with the skill's arguments.
-# The body lands in a temp file outside the repo; the neutraliser writes it to its fixtures path.
-while read -r path out; do
-  code=$(curl -sS -A "$UA" -H "Authorization: Bearer $LAP_API_KEY" -H 'Accept: application/json' \
-    --max-time 60 -o "$RAW" -w '%{http_code} %{time_total}s' "$API/$path")
-  echo "$path -> $code"
-  # Deny by default: only an explicit /tmp path gets the raw body; every other path is neutralised.
-  case "$out" in
-    /tmp/*) cp "$RAW" "$out" ;;
-    *) pnpm -s tsx scripts/neutralise-fixture.ts < "$RAW" > "$out" ;;
-  esac
-  case "$code" in 401* | 403* | 429*) echo STOP; break ;; esac
-done <<'CALLS'
+# One line per call: <path under /v1> <output file>. The script sends the User-Agent and the key, waits up to
+# 60 s per call, prints "<path> -> <status> <seconds>s", and stops at the first 401, 403 or 429.
+# Deny by default: only an explicit /tmp path gets the raw body; every other path is neutralised.
+pnpm -s fixture:record <<'CALLS'
 quota            /tmp/quota-before.json
 alliances/<id>   fixtures/v1-ids/<id>.json
 quota            /tmp/quota-after.json
 CALLS
-rm "$RAW"
 ```
 
 - **Neutralise before the body reaches `fixtures/`.** The repository is public (D76). `scripts/neutralise-fixture.ts` sets `x`, `y`, `online`, `last_online_at` and `joined_at` to a neutral value of the same type (numbers 0, booleans false, strings empty, null stays null) at every depth (rosters, members, player responses) and keeps the keys and every other byte. The internal ranks board and any other body go through it too. Never write a raw body to a path under `fixtures/`, and never commit one.

@@ -183,7 +183,7 @@
         ]
       },
       {
-        "matcher": "Bash|Read|Grep|Glob",
+        "matcher": "Bash|Monitor|Read|Grep|Glob",
         "hooks": [
           {
             "type": "command",

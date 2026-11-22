@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { parseEnv as parseDotenv } from "node:util";
+
 import { describe, expect, it } from "vitest";
 
 import { parseEnv } from "./env";
@@ -41,6 +44,15 @@ describe("parseEnv", () => {
       return "";
     })();
     expect(message).not.toContain(secret);
+  });
+
+  it("runs locally on .env.example's public placeholders but refuses them in production", () => {
+    const template = parseDotenv(readFileSync(new URL("../.env.example", import.meta.url), "utf8"));
+    expect(parseEnv(template).EDIT_PIN).toBe(template.EDIT_PIN);
+    expect(() => parseEnv({ ...template, VERCEL_ENV: "production" })).toThrow(
+      /EDIT_PIN: the public placeholder[\s\S]*CRON_SECRET: the public placeholder/,
+    );
+    expect(parseEnv({ ...valid, VERCEL_ENV: "production" }).VERCEL_ENV).toBe("production");
   });
 
   it("reads SAMPLE_EVERY_MIN as 15 by default, accepts 0 (off) and 15, and rejects what is off the hour's grid", () => {

@@ -13,9 +13,10 @@ pnpm install            # also installs the lefthook git hooks
 cp .env.example .env.local   # local placeholders; never commit it
 ```
 
-**Local setup without production secrets.** Local work needs no production value, and agents cannot read env files: `scripts/hooks/env-guard.sh` blocks every agent tool call that names one other than `.env.example`.
+**Local setup without production secrets.** Local work needs no production value. The protection is that `.env.local` holds none. `scripts/hooks/env-guard.sh` is a guard against accidental reads, not a sandbox: it refuses an agent tool call whose text names an env file other than `.env.example`, but it matches text, so a name built at runtime or a script that opens the file gets past it.
 
-- Copy `.env.example` to `.env.local`. Its values are local placeholders: `DATABASE_URL` is the cluster below, and the upstream API, Discord and PostHog base URLs point at `127.0.0.1:9`, where nothing answers.
+- The owner creates `.env.local` from `.env.example` (agents can't: the copy names `.env.local`, so the guard blocks it). Its values are local placeholders: `DATABASE_URL` is the cluster below, and the upstream API, Discord and PostHog base URLs point at `127.0.0.1:9`, where nothing answers. `EDIT_PIN` and `CRON_SECRET` there are public, so `lib/env.ts` refuses them when `VERCEL_ENV` is `production`.
+- A fresh worktree has no `.env.local`. There, export the template into each shell command instead: `set -a; . ./.env.example; set +a; pnpm dev:local` (the same prefix for every `db:local` script). It also needs `pnpm install --frozen-lockfile`, the Postgres binaries below, and its own ports if another checkout's cluster is running: override `DATABASE_URL`'s port and `DB_LOCAL_BRIDGE_PORT` after the prefix, and pass `-p <port>` to `pnpm dev:local`. `pnpm db:local:start` creates the worktree's own `.pglocal/`.
 - Use the local database below (`pnpm db:local:start`, `db:local:migrate`, `db:local:seed`), not Neon. If you need hosted data, use the Neon `preview` branch's role, never production's.
 - Leave the webhooks, the Discord keys, the PostHog keys, `GROQ_API_KEY`, `WORKSPACE_KEYS_SECRET` and the VAPID keys empty unless the task needs them. `EDIT_PIN` and `CRON_SECRET` are required, so they keep the local placeholders.
 - What stays off while they are empty: Discord messages; workspace sign-in (`/w/<slug>` says it is not set up) and "Send to LAPTracker"; analytics and PostHog flags (use `LOCAL_FLAGS`); the usage numbers on `/admin` and the desk; Translate and Improve writing; Publish to Discord; saved workspace tracker keys; officers' browser notifications. Upstream reads fail, so pages show the seed's data.
@@ -98,6 +99,7 @@ The next version is the latest `v*` tag plus the bump, so `package.json` is neve
 | `pnpm db:local:bridge`                       | WebSocket → TCP bridge from `DB_LOCAL_BRIDGE_PORT` (default 54321) to the local cluster. Local `DATABASE_URL` only                                                                                               |
 | `pnpm db:local:seed`                         | `pnpm db:seed` (same flags) through the bridge. Local `DATABASE_URL` only                                                                                                                                        |
 | `pnpm dev:local`                             | `pnpm dev` with `scripts/db-local-preload.mjs`, which sends the Neon driver's WebSocket to the bridge when `DATABASE_URL` is local                                                                               |
+| `pnpm fixture:record`                        | the `record-fixture` skill's calls: one `<path under /v1> <output file>` per stdin line, key from the environment or the local env file. Spends quota                                                            |
 | `pnpm snapshot:dry`                          | one snapshot (`--phase before\|after`) through the real adapters with fixtures served instead of the network. No database, no quota                                                                              |
 | `pnpm i18n:todo` / `pnpm i18n:stamp`         | the translation work list as JSON / mark translated keys as current                                                                                                                                              |
 
@@ -112,7 +114,7 @@ The code is written mostly by Claude Code sessions with a human reviewing. Every
   - SessionStart → `scripts/install_pkgs.sh` installs deps when the lockfile changed and puts Node 26 on PATH in the cloud.
   - Every Edit/Write → `eslint --fix` on that file; remaining errors go straight back to the agent.
   - Every Bash call → `scripts/hooks/pr-base-guard.sh` refuses a `gh pr create` without `--base dev`.
-  - Every Bash, Read, Grep and Glob call → `scripts/hooks/env-guard.sh` refuses one that names an env file other than `.env.example`, or dotenv.
+  - Every Bash, Monitor, Read, Grep and Glob call → `scripts/hooks/env-guard.sh` refuses one that names an env file other than `.env.example`, a glob that matches one, dotenv, or a recursive `grep`/`rg`/`find` that would print env files' lines.
   - Stop → `pnpm check`; the main session's turn can't end while it fails, or while the tree has changes and `node_modules` is missing, until two fix rounds in a row have failed (then the turn ends with a notice to the user). Subagents fire `SubagentStop`, which has no hook.
 - **Enforcement layers** (nobody commits or pushes to `dev` or `main`; `main` changes only by merging the release-prepare PR). The guard is GitHub's: the `dev` and `main` rulesets require a PR and `check`, block force pushes and deletion (`dev` also requires linear history), and have no bypass actors, so `--admin` cannot get past them. Behind it, in order:
   - the lefthook pre-commit job refuses a commit on `dev` or `main`;

@@ -171,8 +171,21 @@ function parseWith<T extends z.ZodType>(
   return result.data;
 }
 
+/** The local placeholders in .env.example: public, so production never runs on them. */
+const PUBLIC_PLACEHOLDERS = {
+  EDIT_PIN: "000000",
+  CRON_SECRET: "local-placeholder-cron-secret-0123456789",
+} as const;
+
 export function parseEnv(source: Record<string, string | undefined>): Env {
-  return parseWith(envSchema, source);
+  const env = parseWith(envSchema, source);
+  const placeholders = Object.entries(PUBLIC_PLACEHOLDERS)
+    .filter(([key, value]) => env[key as keyof typeof PUBLIC_PLACEHOLDERS] === value)
+    .map(([key]) => `${key}: the public placeholder from .env.example`);
+  if (env.VERCEL_ENV === "production" && placeholders.length > 0) {
+    throw new Error(`Invalid environment:\n  ${placeholders.join("\n  ")}`);
+  }
+  return env;
 }
 
 /** What lib/sources needs, so a source can run (live smoke test) without the database or schedule vars. */

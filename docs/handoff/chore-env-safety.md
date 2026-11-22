@@ -1,70 +1,139 @@
-# chore-env-safety: agents cannot read local env files; local work runs without production secrets
+# chore-env-safety: a guard against accidental agent reads of local env files; local work without production secrets
 
-The owner (2026-11-21) approved this recommendation: agents must not be able to read local secret files, and local development must work without production secrets. Branch `chore/env-safety` from `origin/dev`. Part of #592.
+The owner (2026-11-21) approved this recommendation: agents must not read local secret files, and local development must work without production secrets. Branch `chore/env-safety` from `origin/dev`. Part of #592.
+
+The real protection is that the local env file holds no production secret, which is the owner's to-do below. The hook only catches an agent's accidental read. It matches the text of a tool call, so it is not a sandbox.
 
 ## Built
 
-- **`scripts/hooks/env-guard.sh`**, a PreToolUse hook for Bash, Read, Grep and Glob, registered in `.claude/settings.json`. It parses the hook input with jq, or with node when jq is missing, the same way `pr-base-guard.sh` does. It exits 2 with a one-line reason when:
-  - a Bash command, Read `file_path`, Grep `path`/`glob` or Glob `pattern`/`path` contains a word that starts with `.env` after a non-word character and is not exactly `.env.example`. Examples: `.env`, `.env.local`, `.env.production.local`, `.env*`, `./.env`;
-  - a Bash command names `dotenv` or `dotenvx`;
-  - a Glob pattern or Grep glob ends in a part that starts with `.` and matches an env file name (`.env*`, `.e*`, `.*`).
+- **`scripts/hooks/env-guard.sh`**: a PreToolUse hook for Bash, Monitor, Read, Grep and Glob, registered in `.claude/settings.json`. It reads Bash's and Monitor's `command`, Read's `file_path`, Grep's `path` and `glob`, and Glob's `pattern` and `path`, with jq, or with node when jq is missing. It exits 2 with a one-line reason when the input has any of these (names match case-insensitively):
+  - **an env file name:** a word that starts with `.env` and is not exactly `.env.example`. A word character or a backslash before it means it is not a file name, so `process.env`, "environment" and the regex `process\.env` pass;
+  - **dotenv:** the word `dotenv` or `dotenvx` in a shell command;
+  - **a glob that matches an env file:** a word whose last part starts with `.` and matches an env file name, such as `.e*`, `.*` or `.[e]nv.local`. This applies to shell words, Glob patterns and Grep globs;
+  - **a search that prints env files' lines without naming them** (shell commands only), when a path it searches is the repo root, a parent of it, `.`, `..`, `~` or omitted:
+    - `grep -r`/`-R`, unless an `--exclude=` glob covers every env file name;
+    - `rg` with `-u`, `--no-ignore*`, `--hidden` or `-.`;
+    - `find` with `-exec`/`-execdir`/`-ok`, or with `xargs` later in the command.
 
-  It lets these through: `.env.example`; `process.env.X`; "environment"; Grep content patterns such as `\.env\.local`; and `pnpm <script>`, because the `--env-file-if-exists=.env.local` sits in package.json, not in the command text.
-- **`scripts/hooks/env-guard.test.ts`**: 14 cases that run the script with sample hook input.
-  - Blocked: `cat .env.local`, `grep KEY .env`, `ls -a | xargs cat .env*`, `node -r dotenv/config …`, Read `…/.env.local`, Grep path `.env.production`, Glob `**/.env*`.
-  - Allowed: `cat .env.example`, Read `…/.env.example`, `pnpm dev:local`, `pnpm db:local:seed --with-states`, `git status`, a grep for `process.env.EDIT_PIN` plus `echo environment`, Glob `**/*.ts`.
-- **`.claude/settings.json` `permissions.deny`**:
-  - Read: added `.env.local.*`.
-  - Bash equivalents of the existing Read rules, which had none: `.env` as a word or after `/`, `.env.local*`, `.env.dev*`, `.env.prod*`, `.env.preview*`, `.env.staging*`, `.env.test*`, `.env.vercel*`, and `*dotenv*`.
-- **`.env.example`**: lists every variable the app reads (`lib/env.ts`, plus `DATABASE_URL_UNPOOLED`, `DB_LOCAL_BRIDGE_PORT`, `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_API_BASE_URL`, `NEXT_PUBLIC_BLANK_COPY`) and the deploy settings, each with a one-line comment. Values:
-  - required ones: the local placeholders that were in CONTRIBUTING;
-  - outside services' base URLs: `127.0.0.1:9`;
-  - optional secrets: empty.
+    The block message points to the Grep tool, which respects .gitignore.
+  - **input it cannot check:** not JSON, empty, or neither jq nor node on PATH. These are refused (fail closed).
 
-  A closing comment names what is deliberately not set there: Vercel's system variables, and the test opt-ins `LAP_LIVE_TEST` (spends quota), `LAP_SMOKE_OUT` and `OCR_TEST`. The sections and their order are unchanged.
+  It lets through:
+  - `.env.example`;
+  - `pnpm <script>` (the `--env-file-if-exists` is in package.json, not in the command);
+  - `git grep`;
+  - recursive searches limited to named folders (`grep -rn X lib app`).
+- **`scripts/hooks/env-guard.test.ts`**: 24 cases.
+  - Blocked (13): `cat .env.local`, `grep KEY .env`, `ls -a | xargs cat .env*`, `cat .ENV.LOCAL`, `cat .[e]nv.local`, `node -r dotenv/config …`, `grep -rn DATABASE_URL .`, `rg --hidden DATABASE_URL`, `find . -type f -exec cat {} +`, Monitor `tail -f .env.local`, Read `…/.env.local`, Grep path `.env.production`, Glob `**/.e*`.
+  - Refused (1): input that is not JSON.
+  - Allowed (10): `cat .env.example`, Read `…/.env.example`, `pnpm dev:local`, `pnpm db:local:seed --with-states`, `git status`, `grep -rn 'process.env.EDIT_PIN' lib && echo environment`, `grep -rn 'process\.env' lib`, `grep -rn DATABASE_URL lib app`, `grep -rn --exclude='.env*' DATABASE_URL .`, Glob `**/*.ts`.
+- **`.claude/settings.json`**:
+  - the hook matcher is `Bash|Monitor|Read|Grep|Glob`. Monitor is the only other tool in this Claude Code version that runs a shell command, and it takes `command` like Bash;
+  - `permissions.deny` gets `Read(//**/.env.local.*)` and the Bash equivalents of the env Read rules: `.env` as a word or after `/`, `.env.local*`, `.env.dev*`, `.env.prod*`, `.env.preview*`, `.env.staging*`, `.env.test*`, `.env.vercel*`, `*dotenv*`.
+- **`.env.example`**: every variable the app reads, each with a one-line comment. Values:
+  - the required ones: local placeholders;
+  - the outside services' base URLs: `127.0.0.1:9`;
+  - the optional secrets: empty.
+
+  Line 1 says Vercel uses its own values, never these. `QUOTA_CHECK_AT` is now quoted, so a shell can source the file. A closing comment names what is deliberately not set (Vercel's system variables, `LAP_LIVE_TEST`, `LAP_SMOKE_OUT`, `OCR_TEST`).
+- **`lib/env.ts`**: `parseEnv` refuses the template's `EDIT_PIN` and `CRON_SECRET` placeholders when `VERCEL_ENV` is `production`. The error names the key only. Test in `lib/env.test.ts`: the template parses locally and is refused in production.
+- **record-fixture**:
+  - new `pnpm fixture:record` (`scripts/record-fixture.ts`, `tsx --env-file-if-exists=.env.local`). It takes `<path under /v1> <output file>` lines on stdin and calls the upstream default base URL from `lib/env.ts`. It neutralises every output except `/tmp/` paths (D76) and stops at 401/403/429;
+  - `.claude/skills/record-fixture/SKILL.md` §2 and §3 now use the script. The agent no longer greps the env file for the key.
+- **CLAUDE.md**: the secrets rule now reads "Code and `pnpm` scripts read secrets from the local env file (.env.local) or the environment; agents never open, print or search that file".
 - **CONTRIBUTING.md**:
-  - a "Local setup without production secrets" paragraph under Setup;
-  - the placeholder block under "Local database" is replaced by a pointer to `.env.example`, so the values live in one place;
-  - a line for the new hook in "How the harness works".
+  - "Local setup without production secrets": the hook is a guard against accidental reads, not a sandbox; the owner creates `.env.local` from `.env.example`; how a fresh worktree runs the app without one;
+  - the hook's line in "How the harness works";
+  - a `pnpm fixture:record` row in Scripts.
+- **D03**: a dated amendment for the production refusal of the placeholder PIN.
 
 ## Decisions
 
-- `EDIT_PIN` and `CRON_SECRET` are not empty in the template. `lib/env.ts` requires them and the server does not start without them, so they keep the local placeholders (`000000`, a 40-character local string). The other secrets are empty.
-- The guard blocks any mention of a secret env file name in a Bash command, quoted or not, commit messages included. Stripping quotes would let `echo "$(cat .env.local)"` through. An agent rephrases the message.
-- Glob and Grep globs are checked only when their last part starts with `.`. Without that rule, `**/*` would be blocked as well, and it only lists file names.
-- `cp .env.example .env.local` is blocked for agents, because it overwrites the owner's file. The owner runs it himself.
+- **Required secrets get placeholders.** `EDIT_PIN` and `CRON_SECRET` are required by `lib/env.ts`, so the template gives them local placeholders. Now that these are public, production refuses them.
+- **Quoted mentions are blocked too.** The guard blocks a mention of a secret env file name in a shell command even inside quotes, commit messages included. Stripping quotes would let `echo "$(cat .env.local)"` through.
+- **Recursive searches use a path rule.** A recursive search counts only when a path it searches contains the repo root's top level, where the env files are, so `grep -r X lib` passes. A command that `cd`s into `lib` and then searches `.` is blocked (false positive).
+- **The fixture script always uses the real upstream URL** (lib/env.ts's default). A local `LAP_API_BASE_URL` points at `127.0.0.1:9`, and the skill always meant the real API.
+- **Fresh worktree:** export the template into each command (`set -a; . ./.env.example; set +a; …`). Agents cannot create `.env.local`, and Next and the `--env-file-if-exists` scripts both read from the process environment.
 
 ## Deviations
 
-- The task asked that "each assertion must fail if the guard is removed". That holds for the 7 block cases when the guard always allows (exit 0). The 7 allow cases are checked the other way: they fail when the guard always blocks (exit 2). All 14 fail when the script is missing. All three were run once; the results are under Verified.
+- The coordinator asked for `git reset --hard origin/chore/env-safety`. That command is denied in settings.json. I ran `git rebase origin/chore/env-safety` instead: my local commit had the same patch, so nothing was dropped, and the branch is at 443a656d plus this change.
 
 ## Verified
 
-- `pnpm check`: passed (prettier, eslint, tsc, vitest 299 files / 1574 tests passed, 2 files / 4 tests skipped, drift, i18n).
-- Guard replaced by `exit 0`: 7 failed (the block cases). Replaced by `exit 2`: 7 failed (the allow cases). Script removed: 14 failed. Restored, and byte-compared with the original.
-- jq and node paths: 13 edge inputs run with jq and with a PATH without jq gave the same exit codes.
-- `.env.example` parsed with `node:util` `parseEnv` and passed through `lib/env.ts` `parseEnv`: valid. Every `envSchema` key is in the template except `LAP_LIVE_TEST` and `VERCEL_ENV`, which the closing comment names.
-- No `.env*` file other than `.env.example` was opened, read or printed in this session.
+- `pnpm check`: passed (prettier, eslint, tsc, vitest 304 files / 1605 tests passed, 2 files / 4 tests skipped, drift, i18n).
+- Each new hook case fails when its check is removed. I removed one check at a time in a copy of the script and restored it afterwards (byte-compared):
+
+  | Check removed | Case that fails |
+  |---|---|
+  | lowercasing | `.ENV.LOCAL` |
+  | the backslash rule | `process\.env` |
+  | the `--exclude=` strip | the `--exclude='.env*'` allow |
+  | `covers_env` | the same allow |
+  | the dotenv line | `dotenv/config` |
+  | the wildcard line | `.[e]nv.local` and Glob `**/.e*` |
+  | the recursive line | grep, rg and find |
+  | `grep_reaches` alone | the grep case only |
+  | `rg_reaches` alone | the rg case only |
+  | `find_reaches` alone | the find case only |
+  | the path rule (every path counts) | `lib app`, `process\.env` and `EDIT_PIN` allows |
+  | Monitor in the parser | the Monitor case |
+  | fail closed | the non-JSON case |
+
+  The first round's results still hold: with the guard always allowing, the 7 original block cases fail; with it always blocking, the allow cases fail; with the script missing, every case fails.
+- 42 sample inputs gave the expected exit codes under macOS `/bin/bash` 3.2. 13 inputs gave the same codes with jq and with node only. With neither on PATH, the hook refuses. A 400-line command takes 0.2 s.
+- `production` guard: the test fails with the check disabled.
+- `pnpm fixture:record` with empty stdin and a placeholder key: runs and makes no call. With a non-`lap_` key: exits 1 before any call. No quota spent.
+- Fresh worktree with no local env file: the template exported in the shell, then `db:local:start`, `migrate`, `bridge` and `seed --with-states`, then `dev:local -p 3490` (cluster 54390, bridge 54391). `/` and `/admin` answered 200. Everything I started was stopped by PID, and the cluster with `db:local:stop`. `.pglocal/` stays in the worktree (gitignored).
+- No `.env*` file other than `.env.example` was opened, read or printed.
 
 ## Open issues
 
-- The guard matches text, like `pr-base-guard.sh`. Another spelling gets past it: a variable holding the name, `.e""nv.local`, or a script file that reads it. It catches mistakes, not intent.
-- A Grep without `path` or `glob` searches the tree. `.env.local` is gitignored, so ripgrep skips it by default. The hook adds nothing in that case.
-- A Grep glob such as `.env.e*`, which could only match `.env.example`, is blocked, because the word is not exactly `.env.example`. This is a minor false positive, left as it is.
-- The hooks in `.claude/settings.json` are loaded when a session starts. Sessions already running do not have the guard.
+What the guard does not cover. It catches mistakes, not intent:
+
+- names built at runtime or split by quoting: `f=.e; cat ${f}nv.local`, `cat .e""nv.local`, a variable holding the path;
+- programs that open the file themselves. An example is `bash scripts/probe-v1.sh`, which greps `.env.local` for the key; the command text never names the file. The same goes for a `node`, `python` or `tsx` one-off that builds the path;
+- searchers and readers it does not parse:
+  - `ag`, `ack`, `git grep --no-index`;
+  - `ls -a | xargs cat` with no `find`;
+  - `grep`/`rg` long options whose argument comes as a separate word, which can be misread as a path;
+- tools outside the matcher: MCP tools, and Write/Edit (overwriting is possible; Edit needs a prior Read, which is denied);
+- sessions that started before this change, which load hooks at start.
+
+Known false positives:
+
+- any shell command that mentions a secret env file name, commit messages included;
+- `.env.e*` (it could only match the template);
+- a recursive grep of `.` after a `cd` into a subfolder;
+- `find . … | xargs …` even when the find only selects `.ts` files.
+
+Follow-ups for the owner:
+
+- `docs/SESSION_PLAYBOOK.md` lines 95, 162 and 221 still say to read the key from `.env.local`. CLAUDE.md forbids editing that file in a session, so it needs the owner or a playbook update.
+- `scripts/probe-v1.sh` (owner-run) still greps `.env.local`. Leave it, or route it through `pnpm fixture:record`.
 
 ## Next
 
-- Model/effort: keep. The work was a shell script, a template and docs, with no app code.
+- Model/effort: keep. The review round's findings were text-matching gaps, and the fixes are covered by mutation-checked cases.
 - Owner first, on his own machine:
   1. Remove the production secrets from `.env.local`. Either start again from `cp .env.example .env.local` with `pnpm db:local`, or point `DATABASE_URL` at the Neon `preview` branch's role and password, never production's.
-  2. If he wants, rotate everything that was ever in `.env.local`: the upstream API key, the Neon password, `CRON_SECRET`, `EDIT_PIN`, the Discord webhooks, client secret and bot token, the PostHog personal keys, `GROQ_API_KEY`, `WORKSPACE_KEYS_SECRET` (rotating it means every saved workspace tracker key must be entered again) and the VAPID private key. Then update Vercel and the GitHub secrets.
-  3. Restart running Claude Code sessions so they load the new hook.
-- Plan change: none.
+  2. Check that production's `EDIT_PIN` and `CRON_SECRET` are not the template's placeholders. If they are, the next production deploy refuses to start.
+  3. If he wants, rotate everything that was ever in `.env.local`: the upstream API key, the Neon password, `CRON_SECRET`, `EDIT_PIN`, the Discord webhooks, client secret and bot token, the PostHog personal keys, `GROQ_API_KEY`, `WORKSPACE_KEYS_SECRET` (every saved workspace tracker key must then be entered again) and the VAPID private key. Then update Vercel, the GitHub secret and the cron-job.org header (D30).
+  4. To record a fixture, provide the real key for that run: in the environment, or in `.env.local` for the run only. The agent runs `pnpm fixture:record` and never sees the key.
+  5. Restart running Claude Code sessions so they load the hook.
+- Plan change: none. `docs/SESSION_PLAYBOOK.md` line 162 repeats the old secrets rule (see Open issues).
+
+What was missing from the task prompt?
+
+- `EDIT_PIN` and `CRON_SECRET` are required and cannot be empty.
+- Blocking the copy leaves agents in a fresh worktree with no `.env.local`.
+- The record-fixture skill read the key with grep, which the new rule forbids.
+- Whether Monitor and the recursive searchers were in scope.
 
 <adjustments>
-- Agents cannot read `.env.local`. A task that needs a real value must have the owner run the command himself, or use `pnpm <script>`, which loads the file into the app only.
-- `.env.example` now holds the local placeholders. Copying it gives a working local setup on `pnpm db:local` with no outside calls.
+- Agents cannot read `.env.local`. A task that needs a real value has the owner run the command, or uses a `pnpm <script>`, which loads the file into the app only (`pnpm fixture:record` for fixtures).
+- In a fresh worktree, run the app as `set -a; . ./.env.example; set +a; pnpm dev:local` (same prefix for `db:local:*`), on ports of its own.
+- Production refuses the template's `EDIT_PIN` and `CRON_SECRET`.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/612
