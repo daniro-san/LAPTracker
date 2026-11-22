@@ -16,7 +16,7 @@ test("Me: the member's own page, with their own numbers only", async ({ page }) 
   await expect(page.getByText(`In the game, you are ${linked}.`)).toBeVisible();
   await expect(page.getByText("Your progress")).toBeVisible();
   // Raid prep marked this member "No shield" (the seed's Shield mark for them).
-  await expect(page.getByText(/Raid prep, .*: No shield/)).toBeVisible();
+  await expect(page.getByText(/Raid prep, .*your mark: .No shield./)).toBeVisible();
   for (const other of A.names.filter((n) => n !== linked)) {
     await expect(page.getByText(other)).toHaveCount(0);
   }
