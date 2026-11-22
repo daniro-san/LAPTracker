@@ -10,33 +10,21 @@ Requires Node 26 (`.nvmrc`) and pnpm 12 (pinned in `packageManager`).
 nvm use                 # reads .nvmrc → newest installed 26.x
 npm i -g pnpm@12
 pnpm install            # also installs the lefthook git hooks
-cp .env.example .env.local   # fill in; never commit it
+cp .env.example .env.local   # local placeholders; never commit it
 ```
+
+**Local setup without production secrets.** Local work needs no production value, and agents cannot read env files: `scripts/hooks/env-guard.sh` blocks every agent tool call that names one other than `.env.example`.
+
+- Copy `.env.example` to `.env.local`. Its values are local placeholders: `DATABASE_URL` is the cluster below, and the upstream API, Discord and PostHog base URLs point at `127.0.0.1:9`, where nothing answers.
+- Use the local database below (`pnpm db:local:start`, `db:local:migrate`, `db:local:seed`), not Neon. If you need hosted data, use the Neon `preview` branch's role, never production's.
+- Leave the webhooks, the Discord keys, the PostHog keys, `GROQ_API_KEY`, `WORKSPACE_KEYS_SECRET` and the VAPID keys empty unless the task needs them. `EDIT_PIN` and `CRON_SECRET` are required, so they keep the local placeholders.
+- What stays off while they are empty: Discord messages; workspace sign-in (`/w/<slug>` says it is not set up) and "Send to LAPTracker"; analytics and PostHog flags (use `LOCAL_FLAGS`); the usage numbers on `/admin` and the desk; Translate and Improve writing; Publish to Discord; saved workspace tracker keys; officers' browser notifications. Upstream reads fail, so pages show the seed's data.
 
 Pre-commit needs [gitleaks](https://github.com/gitleaks/gitleaks) on PATH (`brew install gitleaks`). For cloud sessions (claude.ai/code), paste `scripts/cloud-setup.sh` as the environment's setup script. It installs Node 26, pnpm 12 and gitleaks.
 
 **Local database (no Docker, D47).** A plain Postgres cluster in `.pglocal/` (gitignored), reached by the Neon driver through a small WebSocket bridge. It needs the Postgres server binaries (`initdb`, `pg_ctl`, `postgres`, `psql`) on PATH. macOS: `brew install postgresql@18`, then `export PATH="$(brew --prefix postgresql@18)/bin:$PATH"` (the formula is keg-only, and the `initdb` that Homebrew's `libpq` puts on PATH cannot start a server). Debian or Ubuntu: `apt install postgresql`, then add `/usr/lib/postgresql/<version>/bin` to PATH.
 
-Put these values in `.env.local`. They are placeholders: nothing here reaches Neon or the upstream API, because both upstream base URLs point at `127.0.0.1:9`, where nothing answers.
-
-```bash
-DATABASE_URL=postgres://lap:lap@127.0.0.1:54320/laptracker
-DB_LOCAL_BRIDGE_PORT=54321
-LAP_API_KEY=lap_local-placeholder
-LAP_API_BASE_URL=http://127.0.0.1:9/v1
-LAP_SITE_BASE_URL=http://127.0.0.1:9/api
-CRON_SECRET=local-placeholder-cron-secret-0123456789
-EDIT_PIN=000000
-SERVER_TZ=Etc/GMT+2
-EVENT_WEEKDAY=6
-EVENT_TIME=12:00
-SNAPSHOT_BEFORE=10:00
-SNAPSHOT_AFTER=14:00
-SNAPSHOT_WINDOW_MIN=45
-QUOTA_CHECK_AT=fri 20:00
-```
-
-The user, password, port and database name come from `DATABASE_URL`; the bridge listens on `DB_LOCAL_BRIDGE_PORT` (default 54321). Every `db:local` script refuses to run unless the host of `DATABASE_URL` is exactly `localhost` or `127.0.0.1`, so a `.env.local` that points at Neon is never seeded or migrated by them.
+The placeholders in `.env.example` (above) are set up for it. The user, password, port and database name come from `DATABASE_URL`; the bridge listens on `DB_LOCAL_BRIDGE_PORT` (default 54321). Every `db:local` script refuses to run unless the host of `DATABASE_URL` is exactly `localhost` or `127.0.0.1`, so a `.env.local` that points at Neon is never seeded or migrated by them.
 
 ```bash
 pnpm db:local:start             # first run: initdb; then start the cluster and create the database
@@ -124,6 +112,7 @@ The code is written mostly by Claude Code sessions with a human reviewing. Every
   - SessionStart → `scripts/install_pkgs.sh` installs deps when the lockfile changed and puts Node 26 on PATH in the cloud.
   - Every Edit/Write → `eslint --fix` on that file; remaining errors go straight back to the agent.
   - Every Bash call → `scripts/hooks/pr-base-guard.sh` refuses a `gh pr create` without `--base dev`.
+  - Every Bash, Read, Grep and Glob call → `scripts/hooks/env-guard.sh` refuses one that names an env file other than `.env.example`, or dotenv.
   - Stop → `pnpm check`; the main session's turn can't end while it fails, or while the tree has changes and `node_modules` is missing, until two fix rounds in a row have failed (then the turn ends with a notice to the user). Subagents fire `SubagentStop`, which has no hook.
 - **Enforcement layers** (nobody commits or pushes to `dev` or `main`; `main` changes only by merging the release-prepare PR). The guard is GitHub's: the `dev` and `main` rulesets require a PR and `check`, block force pushes and deletion (`dev` also requires linear history), and have no bypass actors, so `--admin` cannot get past them. Behind it, in order:
   - the lefthook pre-commit job refuses a commit on `dev` or `main`;
