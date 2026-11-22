@@ -33,7 +33,7 @@ import {
 } from "./follow-up-rules";
 import { lastDays } from "./member-days";
 import { isMember, saveFacts, type FactChange } from "./member-facts";
-import { DAY_MS, gameWeek, OFFLINE_GRACE_DAYS } from "./member-week";
+import { DAY_MS, gameWeek } from "./member-week";
 import { membersView, type MemberRow } from "./members";
 import { messageLanguage } from "./ready-message";
 import type { AttackerGroup } from "./theft-groups";
@@ -58,20 +58,14 @@ const LANGUAGE_DAYS = 14;
 export type FollowUpItem = WorkItem & { language: WorkspaceLanguage | null };
 
 /**
- * The members with the coins tip (D140) in the last 7 days of `reads`, less those first seen under
- * OFFLINE_GRACE_DAYS ago (the offline signal's grace, D127): a newcomer is still settling in.
+ * The members with the coins tip (D140) in the last 7 server days of `reads`, less those still settling in
+ * (first seen under OFFLINE_GRACE_DAYS ago, D127). The window is 7 calendar days: a day with no read
+ * stays in it and counts as no data, never as a day below 1,000.
  */
 function tipsOf(members: readonly MemberRow[], reads: readonly RosterRead[]): Set<number> {
-  const newest = reads.at(-1)?.day;
-  const ms = (day: string) => Date.parse(`${day}T00:00:00Z`);
-  const settling = (m: MemberRow) =>
-    m.isNew &&
-    m.seenSince !== null &&
-    newest !== undefined &&
-    ms(newest) - ms(m.seenSince) < OFFLINE_GRACE_DAYS * DAY_MS;
   return new Set(
     members
-      .filter((m) => !settling(m) && coinsTip(lastDays(reads, m.uid)?.rows.coins ?? []))
+      .filter((m) => !m.settling && coinsTip(lastDays(reads, m.uid)?.rows.coins ?? []))
       .map((m) => m.uid),
   );
 }

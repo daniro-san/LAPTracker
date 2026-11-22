@@ -33,7 +33,14 @@ import {
 } from "@/lib/repo/workspace-features";
 import { errorResponse, withContext } from "@/lib/route";
 import { changesCommands, syncCommands } from "@/lib/workspace-commands";
-import { ALLOWANCES, copiedOverrides, FEATURES, type Feature } from "@/lib/workspace-features";
+import {
+  ALLOWANCES,
+  copiedOverrides,
+  FEATURES,
+  isDefaultCap,
+  isDefaultSwitch,
+  type Feature,
+} from "@/lib/workspace-features";
 
 const id = z.number().int().positive();
 const allowance = z.enum(ALLOWANCES);
@@ -111,7 +118,7 @@ async function capChange(
   now: Date,
 ): Promise<DeskAction | null> {
   const value =
-    b.cap === "default" || b.cap === target.defaults.caps[b.allowance] ? "reset" : b.cap;
+    b.cap === "default" || isDefaultCap(target.defaults, b.allowance, b.cap) ? "reset" : b.cap;
   const capped = await setCap(db, b.workspace_id, b.allowance, value, now);
   if (!capped) return null;
   return b.cap === "default" ? "reset" : "cap";
@@ -124,7 +131,7 @@ async function switchChange(
   target: WorkspaceSettings,
   now: Date,
 ): Promise<DeskAction | null> {
-  const isDefault = b.on === null || b.on === !target.defaults.off.includes(b.feature);
+  const isDefault = b.on === null || isDefaultSwitch(target.defaults, b.feature, b.on);
   const switched = await setSwitch(db, b.workspace_id, b.feature, isDefault ? null : b.on, now);
   if (!switched) return null;
   if (b.on === null) return "reset";

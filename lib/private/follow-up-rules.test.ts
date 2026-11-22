@@ -38,4 +38,8 @@ describe("the Follow-up rules (issue 340, D104)", () => {
     expect(coinsTip([400, 400, 400, 400, 1000, 1000, 1000])).toBe(false);
     expect(coinsTip([400, 400, 400, 400, null, null, null])).toBe(false);
   });
+
+  it("gives the coins tip at exactly 5 days below 1,000 when the other 2 days have no read (D140)", () => {
+    expect(coinsTip([null, 400, 999, "none", 400, null, 0])).toBe(true);
+  });
 });

@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
-import { WORKSPACE_LANGUAGES } from "@/lib/private/dictionary";
 import type { FactField } from "@/lib/private/fact-fields";
 import { discordLiteral, gameMail } from "@/lib/private/notice-formats";
 
@@ -16,6 +15,7 @@ import { CopyButton } from "./CopyButton";
 import { panelCard, type CardRead } from "./follow-up-card";
 import type { FollowUpWords } from "./follow-up-words";
 import type { FollowUpRow } from "./FollowUpSheet";
+import { LANGUAGE_CHOICES } from "./languages";
 import { readCard } from "./MemberSheet";
 import { SignedOutNote } from "./SignedOut";
 
@@ -82,7 +82,7 @@ export function Message({ row, words }: { row: FollowUpRow; words: FollowUpWords
         {words["followup.message"]}
       </h3>
       <div role="group" aria-label={words["followup.messageLang"]} className="mt-1 flex gap-2">
-        {WORKSPACE_LANGUAGES.map((l) => (
+        {LANGUAGE_CHOICES.map(({ id: l }) => (
           <button
             key={l}
             type="button"

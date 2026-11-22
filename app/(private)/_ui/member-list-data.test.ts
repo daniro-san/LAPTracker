@@ -32,6 +32,7 @@ const member = (over: Partial<ListSource> = {}): ListSource => ({
   duel: {},
   seenSince: "2026-11-02",
   isNew: false,
+  settling: false,
   reasons: [],
   missing: [],
   missingDays: 0,
