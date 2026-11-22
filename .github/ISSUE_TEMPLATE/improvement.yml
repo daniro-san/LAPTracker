@@ -63,6 +63,11 @@ body:
       label: Design validation
       description: Only when this changes how something is presented or used. Per DESIGN.md § Validation, all three must agree before building — the persona panel (officers first), real usage in PostHog for the screens touched, and the product-strategy persona.
   - type: textarea
+    id: measure
+    attributes:
+      label: What will we want to measure after release?
+      description: Optional. The product question, and the events that would answer it (docs/analytics/tracking-plan.md).
+  - type: textarea
     id: done-when
     attributes:
       label: Done when
@@ -73,10 +78,10 @@ body:
     id: size
     attributes:
       label: Size
-      description: M and L go through `tlc-spec-lean` before building.
+      description: Defined in CONTRIBUTING.md § Working rules. M and L go through `tlc-spec-lean` before building.
       options:
-        - S — this template is enough
-        - M — run tlc-spec-lean first
-        - L — run tlc-spec-lean first
+        - S — none of the M items; this form is the spec
+        - M — a new route or page, migration, decision, private-field flow, external call or quota use, or a flow across 2+ screens; run tlc-spec-lean first
+        - L — a new feature area, or more than one PR; run tlc-spec-lean first
     validations:
       required: true

@@ -4,6 +4,7 @@ import type { PostHog } from "posthog-js";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { track, type AnalyticsEvent, type AnalyticsEvents } from "./events";
+import type { ServerEvents } from "./server";
 
 type PropertyValue = {
   [E in AnalyticsEvent]: AnalyticsEvents[E][keyof AnalyticsEvents[E]];
@@ -99,6 +100,15 @@ describe("the workspace on every event (issue 452)", () => {
   });
 });
 
+// The events `lib/analytics/server.ts` sends; the last test checks with tsc that this is all of them.
+const SERVER_EVENTS = [
+  "$exception",
+  "$ai_generation",
+  "discord_command_used",
+  "ws_action",
+  "ws_roll_call_marked",
+] as const;
+
 describe("the tracking plan (D115)", () => {
   it("lists `workspace` and `alliance` on every ws_* event (issue 452)", async () => {
     const { readFileSync } = await import("node:fs");
@@ -118,17 +128,38 @@ describe("the tracking plan (D115)", () => {
     const { DESK_ACTIONS, DESK_FEATURES } = await import("./server");
     const { ANALYTICS_EVENTS } = await import("./events");
     const plan = readFileSync("docs/analytics/tracking-plan.md", "utf8");
-    const named = [
-      ...ANALYTICS_EVENTS,
-      "$exception",
-      "$ai_generation",
-      "discord_command_used",
-      "ws_action",
-      ...DESK_FEATURES,
-      ...DESK_ACTIONS,
-    ];
+    const named = [...ANALYTICS_EVENTS, ...SERVER_EVENTS, ...DESK_FEATURES, ...DESK_ACTIONS];
     expect(named.filter((name) => !plan.includes(`\`${name}\``))).toEqual([]);
     // Every event the type allows is in the run-time list, so the check above covers them all.
     expectTypeOf<AnalyticsEvent>().toEqualTypeOf<(typeof ANALYTICS_EVENTS)[number]>();
+  });
+
+  it("names in its Event columns no event the code no longer sends", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { ANALYTICS_EVENTS } = await import("./events");
+    const plan = readFileSync("docs/analytics/tracking-plan.md", "utf8");
+    // posthog-js's own names, which the code does not send itself (`$cookieless_mode` is a property).
+    const sent = new Set<string>([
+      ...ANALYTICS_EVENTS,
+      ...SERVER_EVENTS,
+      "$pageview",
+      "$opt_in",
+      "$cookieless_mode",
+    ]);
+    // In every table whose header has an "Event" column, the backticked names in that column.
+    const named: string[] = [];
+    let column = -1;
+    for (const line of plan.split("\n")) {
+      if (!line.startsWith("|")) {
+        column = -1;
+        continue;
+      }
+      const cells = line.split("|").map((cell) => cell.trim());
+      if (column < 0) column = cells.indexOf("Event");
+      else for (const m of (cells[column] ?? "").matchAll(/`([^`]+)`/g)) named.push(m[1] ?? "");
+    }
+    expect(named).toContain("ws_action");
+    expect(named.filter((name) => !sent.has(name))).toEqual([]);
+    expectTypeOf<(typeof SERVER_EVENTS)[number]>().toEqualTypeOf<keyof ServerEvents>();
   });
 });

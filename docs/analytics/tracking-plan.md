@@ -1,6 +1,6 @@
 # Tracking plan (D115)
 
-What we send to PostHog (project 741657, US cloud, D77), which product question each event answers, and the insights and funnels to build from it. An event that answers no question here is not added. `lib/analytics/events.test.ts` fails `pnpm check` if an event, a desk feature or a desk action in the code is missing from this page.
+What we send to PostHog (project 741657, US cloud, D77), which product question each event answers, and the insights and funnels to build from it. An event that answers no question here is not added. `lib/analytics/events.test.ts` fails `pnpm check` if an event, a desk feature or a desk action in the code is missing from this page, and if a table's Event column here names an event the code no longer sends.
 
 ## Rules for every event
 
@@ -157,7 +157,9 @@ Every insight above can be broken down or filtered by `alliance` (or `workspace`
 - **AI calls per alliance** — Trends, `$ai_generation` total count and sum of `$ai_input_tokens` + `$ai_output_tokens`, breakdown `alliance`, daily and weekly; filter `$ai_is_error = true` for failures. Ties in with the AI caps (#450): it shows which alliance would reach a cap.
 - **Errors per alliance** — Trends, `$exception` total count, breakdown `alliance`, daily.
 
-## Changed in D115
+## Changed
+
+One dated line for each change in what a number means, newest last. The first three came with D115.
 
 - "Paste updates" sent `ws_screenshot_sent` with `kind: member_update`, which counted a paste as a screenshot. It now sends `ws_updates_pasted`.
 - Exception messages are scrubbed in every area instead of replaced by `[masked]` on the workspace and `/admin`.

@@ -16,6 +16,14 @@ Closes #
 
 <!-- Fields touched. Any private roster field (x, y, online, last_online_at, joined_at, daily_*, active, avatar_url)? Does anything reach logs, caches, analytics or Discord? "None" is a fine answer. -->
 
+## Analytics plan
+
+<!-- docs/analytics/tracking-plan.md, per CONTRIBUTING.md § Working rules. Name each event, and any PostHog insight, dashboard or Endpoint checked. Or "No change", and why. -->
+
+- Added: <!-- event, and the product question it answers -->
+- Changed: <!-- property, when it fires, or a funnel step's meaning; dated line in the plan's "Changed" -->
+- Removed: <!-- out of both the code and the plan -->
+
 ## Verification
 
 <!-- Paste real output, not "works". -->
@@ -31,6 +39,7 @@ Closes #
 
 ## Gates
 
+- [ ] Size: <!-- S / M / L per CONTRIBUTING.md § Working rules; M and L: the spec-lean plan, and the product-strategy persona's and adversarial reviewer's verdicts -->
 - [ ] Review: <!-- full panel + adversarial for lib/private, privacy or quota; one reviewer otherwise -->
 - [ ] `/pr-review`
 - [ ] Decision: <!-- Dnn added or amended, or "none" -->
