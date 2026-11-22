@@ -68,4 +68,4 @@ Branch `fix/admin-runs-lookups` from `origin/dev` (3ed4302d). **Size S**: a bug 
 - The four test gaps listed in issue 509 are closed: `fresh: false`, the daily read's workspace-key paths (own key, quota count, 429 marks the key), `unknown_alliance`, and the empty-set board fallback.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/623
