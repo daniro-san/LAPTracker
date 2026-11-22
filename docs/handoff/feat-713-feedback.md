@@ -1,6 +1,6 @@
 # feat-713-feedback — "Send feedback" from the desk and the board, read by the owner on /admin/feedback
 
-Part of #713 (part H, the feedback form). Size M. Plan: `.specs/features/713-feedback/plan.md` (approved by the owner on 2026-11-22 in the chat, relayed on #713). Decision: D157. Migration: `0071_feedback`. The orchestrator gives it its final number: 0073, after `feat/713-callouts` (0072) is on origin.
+Part of #713 (part H, the feedback form). Size M. Plan: `.specs/features/713-feedback/plan.md` (approved by the owner on 2026-11-22 in the chat, relayed on #713). Decision: D157. Migration: `0073_feedback`. Stacked on `feat/713-callouts` (PR #721, migration 0072): merge #721 first.
 
 ## Built
 
@@ -18,7 +18,7 @@ Part of #713 (part H, the feedback form). Size M. Plan: `.specs/features/713-fee
   4. the honeypot: when filled, the answer is `{ok: true}` and nothing is stored or counted;
   5. 5 a day per IP hash, then 20 a day per workspace (`auth_attempts` day keys; the IP only as an HMAC labelled `feedback-ip:`);
   6. `redactPrivate` on the text, then one insert. The work runs through `privately`.
-- **Storage**: migration `0071_feedback`, `lib/schema-feedback.ts`, `lib/repo/feedback.ts`. Who sent it is never stored.
+- **Storage**: migration `0073_feedback`, `lib/schema-feedback.ts`, `lib/repo/feedback.ts`. Who sent it is never stored.
 - **Retention**: `purgeOldFeedback` runs in the tick's daily cleanup, beside `purgeOldAppErrors`. A failed run shows in /admin's "Needs you" ("The 180-day feedback clean-up failed on …").
 - **D125**: `feedback` is in `WORKSPACE_TABLES` with `file: null` (deleted with the workspace, never downloaded). The `day:feedback:ws:<id>` counter is deleted with the other counters.
 - **/admin/feedback** (`app/(pages)/admin/feedback/page.tsx`, `lib/queries/admin-feedback.ts`, `app/_ui/admin/FeedbackStatus.tsx`):
@@ -55,7 +55,7 @@ Part of #713 (part H, the feedback form). Size M. Plan: `.specs/features/713-fee
 ## Deviations
 
 - The PostHog property is `feedback_area`, not `area`. `before_send` (`lib/analytics/sanitise.ts`) overwrites `area` on every browser event with public, workspace or admin, as `board_section` avoids `section`.
-- Numbers: the branch carries `0071_feedback`. The decision was first numbered as D155 (the next free on dev), then renamed to D157 on the coordinator's message. `feat/713-callouts` (0072) was not on origin when this was finished, so the migration is not regenerated as 0073 yet.
+- Numbers: the decision was first numbered D155 (then the next free on dev) and the migration 0071. On the coordinator's messages the decision became D157, and the branch was rebased onto `origin/feat/713-callouts` (#721). The 0071 migration, its snapshot and its journal entry were dropped, and `pnpm db:generate` made `0073_feedback`, whose snapshot's `prevId` is 0072's id.
 - The tlc-spec-lean `checks.md` and Verifier phases were not run. The task named the plan, the persona check and the tests, which were done.
 
 ## Verified
@@ -72,7 +72,7 @@ Part of #713 (part H, the feedback form). Size M. Plan: `.specs/features/713-fee
   - The new flow: an officer sends a problem from Home and sees "Received, thank you."; the owner unlocks /admin/feedback with the PIN, finds the item with `/w/lnk · desk · officer · en`, marks it Read, and the status holds after a reload.
   - The flow passed with `--repeat-each=3`.
   - The first full run: the 74 other tests passed. My spec failed because the guard could not read an answer that the client never read. Both clients now read their answer.
-  - Final full run, after both clients read their answer: 75 passed, 7 skipped, 0 failed.
+  - Final full run, after both clients read their answer: 75 passed, 7 skipped, 0 failed. After the rebase onto #721: `pnpm check` exit 0 (1933 passed, 4 skipped; drift and i18n clean) and the feedback spec passed.
 - Persona check at 360 px (screenshots of the local build, invented data). The panel: three officers (UK 50s, PH 30s, FR 40s), a member (UA 20s), an adversarial reviewer and a product strategist.
   - Every persona answered every first-glance question correctly: "How do I report a bug?", "Will anyone see my name or answer?", "Did it go through?".
   - Every persona approved with changes. No MUST.
