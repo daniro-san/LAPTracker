@@ -96,7 +96,7 @@ export default async function AlliancesPage({ searchParams }: { searchParams: Se
               <section aria-labelledby="tracked-h" className="mt-6">
                 <h2 id="tracked-h" className="mb-2 font-subhead text-display-md">
                   {a.tracked}{" "}
-                  <span className="text-ink/60 tabular-nums">({list.tracked.length})</span>
+                  <span className="text-ink/70 tabular-nums">({list.tracked.length})</span>
                 </h2>
                 <AllianceRows rows={list.tracked} href={href} copy={copy} />
               </section>
@@ -105,7 +105,7 @@ export default async function AlliancesPage({ searchParams }: { searchParams: Se
               <section aria-labelledby="more-h" id="more" className="mt-8 scroll-mt-20">
                 <h2 id="more-h" className="font-subhead text-display-md">
                   {a.more}{" "}
-                  <span className="text-ink/60 tabular-nums">
+                  <span className="text-ink/70 tabular-nums">
                     ({list.total - list.tracked.length})
                   </span>
                 </h2>

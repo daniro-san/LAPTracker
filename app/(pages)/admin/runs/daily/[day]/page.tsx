@@ -21,7 +21,7 @@ import { getDailyRun } from "@/lib/queries/daily-runs";
 export default async function DailyRunPage({ params }: { params: Promise<{ day: string }> }) {
   const t = copy.admin.runs;
   // Session first (issue 218): locked, the PIN card whatever the day, and no database read.
-  if (!(await isAdmin())) return <AdminShell title={t.title} />;
+  if (!(await isAdmin())) return <AdminShell section="/admin/runs" title={t.title} />;
   const { day } = await params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) notFound();
   const [found, clock] = await Promise.all([
@@ -32,7 +32,7 @@ export default async function DailyRunPage({ params }: { params: Promise<{ day: 
   const { run, logs, tags, trace } = found;
   const title = fill(t.dailyRun, { read: t.daily, day: clock.weekday(dayDate(run.day)) });
   return (
-    <AdminShell title={title}>
+    <AdminShell section="/admin/runs" title={title}>
       <AdminSection
         id="run-summary"
         title={title}

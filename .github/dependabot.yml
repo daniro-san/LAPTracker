@@ -1,4 +1,6 @@
 # Weekly updates, minor/patch grouped into one PR per ecosystem; majors arrive alone (plan §12.4).
+# A release must be 7 days old (majors 14) before Dependabot proposes it (D151). Groups match in file order,
+# so lint-format takes prettier and eslint before minor-and-patch does; automerge skips lint-format.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -6,7 +8,13 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     groups:
+      lint-format:
+        patterns: [prettier, eslint, "@eslint/*", typescript-eslint, "eslint-plugin-*"]
+        update-types: [minor, patch]
       minor-and-patch:
         update-types: [minor, patch]
   - package-ecosystem: github-actions
@@ -14,6 +22,8 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: [minor, patch]

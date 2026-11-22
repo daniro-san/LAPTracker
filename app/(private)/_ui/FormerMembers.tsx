@@ -119,14 +119,16 @@ function FormerList(p: {
             role="search"
             className="sticky top-0 z-[5] -mx-4 mt-3 bg-paper px-4 py-2 md:-mx-6 md:px-6 lg:mx-0 lg:px-0"
           >
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value.slice(0, 64))}
-              aria-label={t["former.search"]}
-              placeholder={t["former.search"]}
-              className="drawn-field min-h-11 w-full px-3"
-            />
+            {/* A label that stays on screen, not a placeholder (issue 585). */}
+            <label className="block">
+              <span className="block text-body-sm font-semibold">{t["former.search"]}</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value.slice(0, 64))}
+                className="drawn-field mt-1 min-h-11 w-full px-3"
+              />
+            </label>
           </div>
           {kept.length === 0 && <p className="mt-3">{t["former.empty"]}</p>}
           <ul

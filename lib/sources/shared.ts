@@ -2,13 +2,12 @@
 import { z } from "zod";
 
 import { sumKills } from "../compute";
+// Player photos live on PHOTO_HOST; anything else (the game's default heads are relative paths) is no photo.
+import { PHOTO_HOST } from "../queries/blocked-keys";
 import { type AllianceSnapshotInput, type Quota, SchemaError, type SchemaCode } from "./types";
 
 // INVARIANT user-agent-always: without it Cloudflare answers 403 before the key is checked (plan §2).
 export const USER_AGENT = "laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)";
-
-/** Player photos live on this host; anything else (the game's default heads are relative paths) is no photo. */
-const PHOTO_HOST = "phs-image.globallap.com";
 
 /** The game's avatar frames: `/static/frames/frame_<id>.png`, relative to the tracker site (D65). */
 const FRAME_PATH = /^\/static\/frames\/frame_(\d{1,9})\.png$/;

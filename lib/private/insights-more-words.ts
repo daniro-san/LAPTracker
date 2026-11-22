@@ -8,7 +8,7 @@ import { calendarDates } from "./calendar-words";
 import type { WorkspaceKey } from "./dictionary";
 import { NONE } from "./fact-text";
 import { compact, counted, percent, type Formats } from "./insights-format";
-import type { KvkEvent } from "./insights-kvk";
+import type { KvkEvent, KvkView } from "./insights-kvk";
 import { SHIELD_WEEKS, type PassShare, type ShieldWeek } from "./insights-shield";
 import { FRESH_HOURS, SQUAD_COUNTS, type SquadsCoverage } from "./insights-squads";
 import type { BarRow } from "./insights-words";
@@ -24,7 +24,8 @@ export interface KvkEventWords {
 }
 
 export interface KvkWords {
-  headline: string;
+  /** The card's top lines: a KvK waiting for the daily read, then the newest event's summary or why none shows. */
+  based: string[];
   events: KvkEventWords[];
   /** The newest event's members in name order, each with their loss and how far back. */
   people: { uid: number; name: string; line: string }[];
@@ -110,15 +111,26 @@ function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
   };
 }
 
-/** The KvK section's words; null before any KvK with both reads inside the page's reads. */
-export function kvkWords(events: KvkEvent[], newest: string, f: Formats): KvkWords | null {
-  const first = events[0];
-  if (!first) return null;
+/**
+ * The KvK section's words. `time`: the daily read's server time (DAILY_ROSTER_AT). A KvK waiting for that
+ * read leads; with no event shown and none waiting, one line says why.
+ */
+export function kvkWords(kvk: KvkView, newest: string, f: Formats, time: string): KvkWords {
   const { t, language } = f;
-  const back = backOf(first);
-  const date = calendarDates(language).short(first.day);
-  return {
-    headline:
+  const dates = calendarDates(language);
+  const { waiting, readsFrom } = kvk;
+  const first = kvk.events[0];
+  const back = first ? backOf(first) : null;
+  const based: string[] = [];
+  if (waiting)
+    based.push(
+      waiting.today
+        ? fill(t["insights.kvk.waitingToday"], { time })
+        : fill(t["insights.kvk.waiting"], { date: dates.short(waiting.day), time }),
+    );
+  if (first) {
+    const date = dates.short(first.day);
+    based.push(
       back === null
         ? fill(t["insights.kvk.headlineNoLoss"], { date })
         : fill(t["insights.kvk.headline"], {
@@ -126,8 +138,17 @@ export function kvkWords(events: KvkEvent[], newest: string, f: Formats): KvkWor
             lost: percent(lossOf(first), language),
             back: percent(back, language),
           }),
-    events: events.map((e) => eventWords(e, newest, f)),
-    people: first.people.map((p) => ({
+    );
+  } else if (!waiting)
+    based.push(
+      readsFrom
+        ? fill(t["insights.kvk.notInReads"], { date: dates.short(readsFrom), time })
+        : t["insights.kvk.none"],
+    );
+  return {
+    based,
+    events: kvk.events.map((e) => eventWords(e, newest, f)),
+    people: (first?.people ?? []).map((p) => ({
       uid: p.uid,
       name: p.name,
       line: fill(t[p.lost > 0 ? "insights.kvk.person" : "insights.kvk.personNoLoss"], {
@@ -135,7 +156,7 @@ export function kvkWords(events: KvkEvent[], newest: string, f: Formats): KvkWor
         back: percent(p.back, language),
       }),
     })),
-    help: first.help,
+    help: first?.help ?? [],
   };
 }
 

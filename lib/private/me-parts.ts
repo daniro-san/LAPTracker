@@ -142,21 +142,50 @@ export function recoveryLine(
 
 export interface Needed {
   team: string | null;
-  seats: { movedTo: string | null; planned: string; coach: boolean; second: string | null }[];
-  marks: { kind: string; variant: string | null; day: string; part: string; mark: string | null }[];
+  seats: {
+    movedTo: string | null;
+    planned: string;
+    minute: number | null;
+    coach: boolean;
+    second: string | null;
+  }[];
+  marks: {
+    kind: string;
+    variant: string | null;
+    day: string;
+    minute: number | null;
+    part: string;
+    mark: string | null;
+  }[];
 }
 
-/** The member's week in plain lines, the soonest first: Elixir team, caravan seats, roll call marks. */
+/** A line of the member's week, and when its event starts and is surely over (epoch ms; null for the
+ * week's Elixir team). */
+export interface NeededLine {
+  line: string;
+  when: { at: number; end: number } | null;
+}
+
+/**
+ * The member's week in plain lines, the soonest first: Elixir team, caravan seats, roll call marks. A mark
+ * reads "your mark: “Shield up”", a record and not an order (issue 585). `timeOf` gives each event's start
+ * and end from its kind, day and time, so the page can say "Started" and "Ended".
+ */
 export function neededLines(
   n: Needed,
   week: string,
   t: WorkspaceDictionary,
   date: (day: string) => string,
-): string[] {
+  timeOf: (kind: string, day: string, minute: number | null) => { at: number; end: number },
+): NeededLine[] {
   const seats = n.seats.map((s) => {
     const day = s.movedTo ?? addDays(week, weekdayIndex(s.planned));
     const seat = s.coach ? "coach" : s.second === "vip" ? "vip" : "guardian";
-    return { day, line: fill(t[`me.caravan.${seat}`], { day: date(day) }) };
+    return {
+      day,
+      line: fill(t[`me.caravan.${seat}`], { day: date(day) }),
+      when: timeOf("caravan", day, s.minute),
+    };
   });
   const marks = n.marks.map((m) => {
     const kind = m.kind as RollKind;
@@ -171,11 +200,14 @@ export function neededLines(
         day: date(m.day),
         mark: wall ? wallWord : markWord(mark, kind, t),
       }),
+      when: timeOf(m.kind, m.day, m.minute),
     };
   });
-  const team = n.team ? [fill(t["me.elixir"], { team: n.team })] : [];
+  const team = n.team ? [{ line: fill(t["me.elixir"], { team: n.team }), when: null }] : [];
   return [
     ...team,
-    ...[...seats, ...marks].sort((a, b) => a.day.localeCompare(b.day)).map((x) => x.line),
+    ...[...seats, ...marks]
+      .sort((a, b) => a.day.localeCompare(b.day))
+      .map(({ line, when }) => ({ line, when })),
   ];
 }

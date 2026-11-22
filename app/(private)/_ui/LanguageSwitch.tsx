@@ -1,6 +1,7 @@
 "use client";
 
-// EN · PT · FR (D71): a one-year cookie, then the server renders the page again in that language.
+// EN · PT · FR (D71): a one-year cookie, then the server renders the page again in that language. Each
+// button is named "PT, Português", so the code it shows is in its name (WCAG 2.5.3, issue 585).
 import { useRouter } from "next/navigation";
 
 import { track } from "@/lib/analytics/events";
@@ -27,7 +28,7 @@ export function LanguageSwitch({ current, label }: { current: WorkspaceLanguage;
           <button
             type="button"
             lang={c.id}
-            aria-label={c.name}
+            aria-label={`${c.short}, ${c.name}`}
             aria-pressed={c.id === current}
             onClick={() => pick(c.id)}
             className={`min-h-11 min-w-11 px-2 text-body-sm font-semibold tracking-wide ${

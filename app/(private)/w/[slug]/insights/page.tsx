@@ -57,7 +57,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
       {words.effort && <EffortCard effort={words.effort} t={t} noData={noData} share={share} />}
       {words.flow && <FlowCard flow={words.flow} t={t} noData={noData} />}
       <KvkCard
-        kvk={kvkWords(data.view.kvk, data.view.newest, { t, language })}
+        kvk={kvkWords(data.view.kvk, data.view.newest, { t, language }, getEnv().DAILY_ROSTER_AT)}
         slug={slug}
         t={t}
         noData={noData}

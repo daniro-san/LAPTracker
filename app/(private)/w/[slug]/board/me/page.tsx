@@ -59,6 +59,8 @@ function Body(props: {
   slug: string;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
+  /** When the server rendered the page (epoch ms). */
+  now: number;
 }) {
   const { shown, slug, t, language } = props;
   const link = { slug, t, language };
@@ -105,7 +107,7 @@ function Body(props: {
       margin={
         <MarginNote id="me-needed" title={t["me.needed.head"]}>
           <p className="py-1 text-body-sm text-ink/75">{t["me.needed.lead"]}</p>
-          <MeNeeded view={view} t={t} />
+          <MeNeeded view={view} t={t} since={props.now} />
           <div className="py-2">
             <p className="text-body-sm">{fill(t["me.linked"], { name: view.name })}</p>
             <MeLink {...link} state={{ kind: "linked" }} />
@@ -150,7 +152,7 @@ export default async function MePage({ params }: { params: Promise<{ slug: strin
       </p>
       <PageHead id="me-title" title={t["me.title"]} meta={t["me.lead"]} />
       {board.officer && <p className="mb-2 text-body-sm text-ink/75">{t["me.preview"]}</p>}
-      <Body shown={shown} slug={slug} t={t} language={language} />
+      <Body shown={shown} slug={slug} t={t} language={language} now={now.getTime()} />
     </Frame>
   );
 }

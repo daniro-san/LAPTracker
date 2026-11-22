@@ -11,7 +11,19 @@ import {
 
 const ON = { VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" };
 const EVENTS: ServerEvent[] = [
-  { event: "$exception", properties: { name: "TypeError", kind: "render", route: "/w/[slug]" } },
+  {
+    event: "$exception",
+    properties: {
+      name: "TypeError",
+      kind: "render",
+      route: "/w/[slug]",
+      message: "Cannot read properties of undefined (reading 'map')",
+      stack:
+        "at render (/var/task/.next/server/app/page.js:1:2045)\nat async Page (node:internal/x:3:4)",
+      handled: false,
+      section: "home",
+    },
+  },
   {
     event: "$ai_generation",
     properties: {
@@ -50,7 +62,7 @@ describe("server events (D115)", () => {
     await expect(captureServer(ON, fetcher, EVENTS)).resolves.toBeUndefined();
   });
 
-  it("carry codes, enums and counts only: an AI generation has no prompt or output, an error no message", () => {
+  it("carry codes, enums and counts only: an AI generation has no prompt or output; an error is PostHog's shape", () => {
     const [error, ai, command] = EVENTS.map(wireProperties);
     expect(ai).toEqual({
       $process_person_profile: false,
@@ -68,10 +80,38 @@ describe("server events (D115)", () => {
     for (const key of ["$ai_input", "$ai_output_choices", "$ai_output", "$ai_base_url"]) {
       expect(ai).not.toHaveProperty(key);
     }
+    // The message arrives already redacted and scrubbed (lib/report-error.ts); frames outermost first.
     expect(error).toMatchObject({
-      $exception_list: [{ type: "TypeError", value: "render error" }],
+      $exception_list: [
+        {
+          type: "TypeError",
+          value: "Cannot read properties of undefined (reading 'map')",
+          mechanism: { handled: false, synthetic: false },
+          stacktrace: {
+            type: "raw",
+            frames: [
+              {
+                platform: "node:javascript",
+                function: "Page",
+                filename: "node:internal/x",
+                in_app: false,
+              },
+              {
+                platform: "node:javascript",
+                function: "render",
+                filename: "/var/task/.next/server/app/page.js",
+                lineno: 1,
+                colno: 2045,
+                in_app: true,
+              },
+            ],
+          },
+        },
+      ],
+      $exception_level: "error",
       kind: "render",
       route: "/w/[slug]",
+      section: "home",
     });
     expect(command).toMatchObject({ command: "translate_for_me" });
   });

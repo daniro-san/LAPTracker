@@ -67,6 +67,8 @@ export default defineConfig(
       "next-env.d.ts",
       "fixtures/**",
       "coverage/**",
+      "test-results/**",
+      "playwright-report/**",
       ".claude/worktrees/**",
     ],
   },
@@ -150,8 +152,23 @@ export default defineConfig(
     },
   },
   {
+    // D71 through lib/push: lib/private imports lib/push, which reports errors through lib/report-error, so
+    // neither may reach lib/notify* or lib/discord-* (D115, 2026-11-21).
+    files: ["lib/push.ts", "lib/report-error.ts"],
+    rules: {
+      "import-x/no-restricted-paths": restrict([
+        {
+          target: ["./lib/push.ts", "./lib/report-error.ts"],
+          from: NOTIFY_AND_DISCORD,
+          message:
+            "lib/push and lib/report-error, which lib/private reaches, import no lib/notify* or lib/discord-* (D71).",
+        },
+      ]),
+    },
+  },
+  {
     // A describe() block is one function by syntax but N test cases by meaning.
-    files: ["**/*.test.ts"],
+    files: ["**/*.test.ts", "e2e/**/*.spec.ts"],
     rules: { "max-lines-per-function": "off" },
   },
   {
@@ -166,7 +183,7 @@ export default defineConfig(
     rules: { "max-lines": "off" },
   },
   {
-    files: ["scripts/**/*.mjs", "*.config.mjs"],
+    files: ["scripts/**/*.mjs", "e2e/**/*.mjs", "*.config.mjs"],
     languageOptions: { globals: { process: "readonly", console: "readonly" } },
   },
 );

@@ -123,13 +123,18 @@ export function Intro(props: {
   shield: boolean;
   undo: (() => void) | null;
   more?: string[];
+  /** False when the page says "n of m marked" elsewhere (Raid prep's answer card, issue 585). */
+  progress?: boolean;
 }) {
   const { words, marks } = props;
+  const progress = props.progress !== false;
   return (
     <>
       <p className="mt-3 flex flex-wrap items-center gap-x-3 text-body-sm">
-        <span>{fill(words["roll.progress"], { n: props.marked, total: props.total })}</span>
-        {props.total > 0 && props.marked === props.total && (
+        {progress && (
+          <span>{fill(words["roll.progress"], { n: props.marked, total: props.total })}</span>
+        )}
+        {progress && props.total > 0 && props.marked === props.total && (
           <span className="font-semibold">{words["roll.done"]}</span>
         )}
         {props.undo && (
@@ -170,12 +175,12 @@ export function SearchBar(props: {
   return (
     // `data-sticky-search` gives the page its scroll-padding-top (globals.css, issue 585).
     <div data-sticky-search className="sticky top-0 z-[5] mt-2 flex items-end gap-2 bg-paper py-2">
+      {/* A label that stays on screen, not a placeholder (issue 585). */}
       <label className="min-w-0 flex-1">
-        <span className="sr-only">{words["roll.search"]}</span>
+        <span className="block text-body-sm font-semibold">{words["roll.search"]}</span>
         <input
           type="search"
           autoComplete="off"
-          placeholder={words["roll.search"]}
           value={props.q}
           onChange={(e) => props.onQ(e.target.value)}
           className={FIELD}
@@ -210,7 +215,8 @@ export function RollCallMarks(props: {
 }) {
   const { words, marks } = props;
   useFreshOnReturn();
-  const m = useMarks(props.slug, props.occasion, props.rows, words["roll.failed"]);
+  const page = { failed: words["roll.failed"], roll_call: "other" } as const;
+  const m = useMarks(props.slug, props.occasion, props.rows, page);
   const r = useRest(m, marks, words);
   const all = useOrder(props.rows);
   const [q, setQ] = useState("");

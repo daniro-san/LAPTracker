@@ -85,19 +85,16 @@ function EventBody({ e, t, noData }: { e: KvkEventWords; t: WorkspaceDictionary;
 }
 
 export function KvkCard(props: {
-  kvk: KvkWords | null;
+  kvk: KvkWords;
   slug: string;
   t: WorkspaceDictionary;
   noData: string;
 }) {
   const { kvk, slug, t, noData } = props;
-  if (!kvk)
-    return (
-      <Card id="insights-kvk" title={t["insights.kvk.head"]} based={[t["insights.kvk.none"]]} />
-    );
   const [newest, ...older] = kvk.events;
+  if (!newest) return <Card id="insights-kvk" title={t["insights.kvk.head"]} based={kvk.based} />;
   return (
-    <Card id="insights-kvk" title={t["insights.kvk.head"]} based={[kvk.headline]}>
+    <Card id="insights-kvk" title={t["insights.kvk.head"]} based={kvk.based}>
       <div className="mt-3 border-t-2 border-rule pt-2">
         <h3 className="font-semibold">{t["insights.kvk.help.head"]}</h3>
         <p className="text-body-sm text-ink/80">{t["insights.kvk.help.lead"]}</p>

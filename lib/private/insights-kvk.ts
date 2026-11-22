@@ -16,6 +16,13 @@ export const RECOVERY_READS = 7;
 export const HEAVY_LOSS = 0.25;
 /** …and still below this share of their might before it. */
 export const HELP_BELOW = 0.8;
+/** Events shown start this many days from the first read's day: an End read the day before may sit on it. */
+export const KVK_SHOWN_FROM = -1;
+/**
+ * The page reads events from this many days from the first read's day: one KvK week before the events shown,
+ * only so that `readsFrom` can say a KvK before the reads is not shown.
+ */
+export const KVK_READ_FROM = KVK_SHOWN_FROM - 7;
 
 export interface KvkMember {
   uid: number;
@@ -127,26 +134,49 @@ function eventOf(
   };
 }
 
+/** The KvK card's data: the events it shows, and why it may show none yet. */
+export interface KvkView {
+  /** The newest KVK_EVENTS events inside the page's reads, the newest first. */
+  events: KvkEvent[];
+  /**
+   * An event whose Start and End are read but no end-of-day read has come after its End yet (KvK day,
+   * from the End to the 23:30 ST read): its day, and whether that is `now`'s server day.
+   */
+  waiting: { day: string; today: boolean } | null;
+  /** The first read's day, when a KvK before the page's reads has both reads: it is not shown. */
+  readsFrom: string | null;
+}
+
 /**
- * The newest KVK_EVENTS events (newest first) against the page's end-of-day reads; [] with no read. `away`:
- * members on a break, left out of the help list.
+ * The KvK card's data against the page's end-of-day reads; nothing with no read. `events` may start before
+ * the reads (KVK_READ_FROM): one before KVK_SHOWN_FROM only sets `readsFrom`. `away`: members on a break,
+ * left out of the help list.
  */
 export function kvkOf(
   events: readonly EventMight[],
   reads: readonly RosterRead[],
   zone: string,
   away: ReadonlySet<number>,
-): KvkEvent[] {
+  now: Date,
+): KvkView {
+  const first = reads[0];
   const newest = reads.at(-1);
-  if (!newest) return [];
+  if (!first || !newest) return { events: [], waiting: null, readsFrom: null };
+  const from = addDays(first.day, KVK_SHOWN_FROM);
+  const inside = events
+    .filter((e) => dayIn(zone, e.at.getTime()) >= from)
+    .sort((a, b) => b.at.getTime() - a.at.getTime());
   // An event whose End is newer than the newest read waits for the next read (KvK day, End to 23:30):
-  // until then "now" would be the day before the event.
-  const sorted = events
-    .filter((e) => e.afterAt < newest.at)
-    .sort((a, b) => b.at.getTime() - a.at.getTime())
-    .slice(0, KVK_EVENTS);
-  return sorted.flatMap((e, i) => {
-    const one = eventOf(e, sorted[i - 1], reads, zone, { event: i === 0, away });
-    return one ? [one] : [];
-  });
+  // until then "now" would be the day before the event, so the card says it is waiting.
+  const pending = inside.find((e) => e.afterAt >= newest.at);
+  const sorted = inside.filter((e) => e.afterAt < newest.at).slice(0, KVK_EVENTS);
+  const day = pending && dayIn(zone, pending.at.getTime());
+  return {
+    events: sorted.flatMap((e, i) => {
+      const one = eventOf(e, sorted[i - 1], reads, zone, { event: i === 0, away });
+      return one ? [one] : [];
+    }),
+    waiting: day ? { day, today: day === dayIn(zone, now.getTime()) } : null,
+    readsFrom: inside.length < events.length ? first.day : null,
+  };
 }

@@ -25,6 +25,7 @@ import {
   markRows,
   markWords,
   occasionQuery,
+  raidHead,
   rollWords,
 } from "../../../../_ui/roll-call-data";
 import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
@@ -99,6 +100,9 @@ export default async function MarkPage({
   const o = view.opened;
   const elixir = o.kind === "elixir" && o.placed !== null;
   const head = headerOf(o, { t, language, zone: page.zone });
+  // Raid prep's day line names the raid it serves (issue 585); archive and delete still name its own day.
+  const raid =
+    view.prep && raidHead(view.prep.friday, { t, language, zone: page.zone, today: page.today });
   const words = rollWords(t);
   const title = callTitle(o, t);
   return (
@@ -117,8 +121,8 @@ export default async function MarkPage({
         backHref={`/w/${slug}/roll-call?week=${o.week}`}
         title={title}
         archived={!!o.call?.archivedAt}
-        {...head}
         day={o.day}
+        {...(raid ?? head)}
         steps={
           elixir
             ? {

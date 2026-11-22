@@ -22,6 +22,7 @@ import type { Phase } from "./repo";
 import { setDiscordMessageId, type EventInfo } from "./repo/events";
 import { loadVerdictInput } from "./repo/rehearsals";
 import { listPhaseReports, otherShortSample, type PhaseReport } from "./repo/snapshots";
+import { reportError } from "./report-error";
 
 interface Request {
   event: EventInfo;
@@ -59,8 +60,9 @@ async function endTurnout(
 ) {
   if (phase !== "after" || !detail || !(await flagsOf(ctx.env, ctx.fetch)).has("war-turnout"))
     return null;
-  return memberTurnout(db, detail.snapshots).catch(() => {
+  return memberTurnout(db, detail.snapshots).catch((error: unknown) => {
     console.error("notify.turnout_failed", { event_id: eventId });
+    reportError(ctx, { route: "lib/run-notify.ts", kind: "notify.turnout_failed", error });
     return null;
   });
 }
@@ -68,8 +70,9 @@ async function endTurnout(
 async function notifyPublic(db: Db, s: Shared, ctx: Pick<AppContext, "env" | "fetch">) {
   const { event, phase, origin } = s.req;
   // getEventDetail reads real events only: the public message never sees a rehearsal.
-  const detail = await getEventDetail(db, event.id).catch(() => {
+  const detail = await getEventDetail(db, event.id).catch((error: unknown) => {
     console.error("notify.detail_failed", { event_id: event.id });
+    reportError(ctx, { route: "lib/run-notify.ts", kind: "notify.detail_failed", error });
     return null;
   });
   const rowsOf = (p: Phase) => detail?.snapshots.find((x) => x.phase === p)?.alliances ?? null;

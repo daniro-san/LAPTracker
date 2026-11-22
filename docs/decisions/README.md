@@ -8,9 +8,9 @@ The header text above is the old file's, kept as it was. The split it describes 
 
 ## Adding a decision
 
-- Create `docs/decisions/DNN-<slug>.md` with the next free number, zero-padded, and a heading `## DNN — Title (date, who, session, issue)`.
+- Create `docs/decisions/DNN-<slug>.md` with the next free number, zero-padded, and a heading `## DNN — Title (date, who, session, issue)`. The next free number is the highest `D*` file in `docs/decisions/` on the latest `origin/dev` plus one; there are no reserved ranges. If a rebase brings in a decision with the same number, renumber yours (file, heading, index line and every reference to it).
 - Add one line to the index below, in numeric order.
-- Never edit another session's entry. A reversal is a new entry that names the one it supersedes.
+- Never rewrite an entry's earlier text. A refinement is a dated amendment appended at the end of that decision (`**Amendment YYYY-MM-DD (who, issue): …**`), and a reversal is a new entry that names the one it supersedes.
 
 ## Index
 
@@ -157,3 +157,5 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D147 — The Raid Shield summary posts only to its own Discord channel: a third webhook, "Raid Shield", in Alliance settings; without it no summary is posted (2026-11-21, owner; amends D129, D137, D144)](D147-raid-shield-summary-own-channel.md)
 - [D148 — Browser notifications for officers: Web Push on node:crypto, one device at a time, four uses, counts and a link only (2026-11-21, owner, issue 558; amends D71, D137, D141)](D148-browser-notifications-for-officers.md)
 - [D149 — Reads of tables that grow forever take a window or an index: the desk's facts and /admin's first roll call (2026-11-21, perf panel, issue 521 follow-up; amends D109, D144, D145)](D149-growing-tables-read-by-window-or-index.md)
+- [D150 — A committed e2e suite: Playwright on a production build, a Postgres service container in CI, invented data, the app under test reaches nothing outside the machine; a required check, and WebKit on every release (2026-11-21, owner, issue 477; uses D47, D71, D99, D131)](D150-committed-e2e-suite-with-playwright.md)
+- [D151 — Dependencies wait 7 days before Dependabot proposes them, and formatter/linter bumps are their own group that never merges itself (2026-11-21, CI audit, issue 592; amends plan §11.6 and §12.4)](D151-dependency-cooldown-and-a-lint-format-group.md)

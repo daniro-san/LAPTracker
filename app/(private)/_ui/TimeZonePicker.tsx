@@ -85,15 +85,18 @@ function ZoneSheet(props: Props & { onPick: (zone: string) => void; onClose: () 
       title={words["facts.timeZone"]}
       words={sheetWords(words)}
     >
-      <input
-        type="search"
-        data-initial-focus
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={words["tz.search"]}
-        aria-label={words["tz.searchAria"]}
-        className={FIELD}
-      />
+      {/* A label that stays on screen; the placeholder is only the hint (issue 585). */}
+      <label className="block">
+        <span className="block text-body-sm font-semibold">{words["tz.searchAria"]}</span>
+        <input
+          type="search"
+          data-initial-focus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={words["tz.search"]}
+          className={`${FIELD} mt-1`}
+        />
+      </label>
       <p className="mt-1 text-body-sm text-ink/75">{say(words["tz.st"], { offset: st })}</p>
       <label className="mt-2 flex min-h-11 items-center justify-between gap-3">
         <span>{words["tz.theirTime"]}</span>

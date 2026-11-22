@@ -66,3 +66,5 @@ Why: officers mark the KvK shield, the Undead Siege, plunders and the Elixir Scr
 - **No new query.** A tap is still one POST to the roll call route, with the version it saw (409 as above); nothing polls. The bulk writes still read the page again once, as before.
 
 **Amendment (2026-11-21, issue 585):** "the rest" reads "Mark the other 57 as “Took part”", "Someone is away" reads "Add away dates", the Roll call list's link reads "Mark ›", the sticky bar is one line below 640, and a picked Elixir Scramble member away that day shows "Away that day". See D137's amendment of that date.
+
+**Amendment 2026-11-21 (issue 585, Raid prep follow-ups):** Raid prep's sticky bar counts in its Shield card's words: "Shield: 61 to mark · 16 not seen yet, left out", with away members as "61 to mark · 3 away, left out". An officer who reads English as a second language read "not set" as "no shield". The other roll calls' bar still reads "57 not set · 3 away, left out", the D75 word their tiles use.

@@ -35,7 +35,7 @@ function Card({
       <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-body-sm">
         {notice.languages.map(({ language, written, stale }) => {
           const state = !written ? "missing" : stale ? "stale" : "fresh";
-          const tone = { missing: "text-ink/60", stale: "font-semibold text-yarn", fresh: "" }[
+          const tone = { missing: "text-ink/70", stale: "font-semibold text-yarn", fresh: "" }[
             state
           ];
           return (

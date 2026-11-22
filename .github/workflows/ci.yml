@@ -2,10 +2,15 @@
 # Runs once per PR, not also on the branch push (2026-11-19, to measure Actions minutes before deciding on a
 # private repo). A PR that changes only docs (docs/** or *.md) checks formatting and skips the rest; the job
 # still reports "check", which the dev and main rulesets require.
+# PRs into dev and the release PR into main run here. The release PR needs its own pull_request run: a
+# "check" from a Run workflow on the same commit does not count toward a PR's required checks (verified on the
+# v5.46.0 release PR, 2026-11-22, D29). Prepare release no longer starts a Run workflow of ci, so a release
+# still runs ci once.
 name: ci
 
 on:
   pull_request:
+    branches: [dev, main]
   workflow_dispatch:
 
 permissions:
@@ -30,7 +35,7 @@ jobs:
         run: |
           if [ -z "$BASE" ]; then echo "docs_only=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           git fetch --no-tags --depth=1 origin "$BASE"
-          files=$(git diff --name-only "$BASE" HEAD)
+          files=$(git diff --no-renames --name-only "$BASE" HEAD)
           echo "$files"
           if [ -n "$files" ] && ! echo "$files" | grep -Ev '^docs/|\.md$' >/dev/null; then
             echo "docs_only=true" >> "$GITHUB_OUTPUT"

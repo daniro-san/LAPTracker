@@ -5,7 +5,9 @@
 // tracker's map scan, and the tracker's own marks are shown "from the tracker" until an officer checks them
 // (D137, 2026-11-21). One vocabulary (issue 585): the Raid Shield check has a night check and a morning
 // check, on this page, on Insights, in settings and in the Discord summary. French puts a no-break space
-// before : and ?.
+// before : and ?. The first-glance words (issue 585) are in dictionary.raidprep-glance.ts.
+import { glanceEn, glanceFr, glancePt } from "./dictionary.raidprep-glance";
+
 export const prepEn = {
   "roll.prep.shield": "Shield",
   "roll.prep.wall": "Squads off the wall",
@@ -14,16 +16,15 @@ export const prepEn = {
   "roll.prep.wall.toggle": "Show squads off the wall",
   "roll.prep.wall.help":
     "Squads off the wall is optional and never counts. Turn on “Show squads off the wall” to mark it on the cards; a card keeps showing it once it is marked.",
-  "roll.prep.on": "seen",
-  "roll.prep.notSeen": "not seen",
-  "roll.prep.checkpoint": "{pass} {time}: {state}",
-  "roll.prep.pass.night": "Night",
-  "roll.prep.pass.morning": "Morning",
+  "roll.prep.on": "shield seen",
+  "roll.prep.notSeen": "no shield seen",
+  "roll.prep.checkpoint": "{pass}: {state}",
+  "roll.prep.pass.night": "Night check",
+  "roll.prep.pass.morning": "Morning check",
   "roll.prep.noShieldSeen": "No shield seen",
   "roll.prep.notSeenLeft": "{n} not seen yet, left out",
   "roll.prep.notSeenLeft.one": "{n} not seen yet, left out",
-  "roll.prep.read.night": "Night check {time} ST: {on} of {read} with a shield seen",
-  "roll.prep.read.morning": "Morning check {time} ST: {on} of {read} with a shield seen",
+  ...glanceEn,
   "roll.prep.read.none":
     "Night check: Friday from 23:30 ST. Morning check: Saturday from {time} ST. The tracker reads every member at each.",
   "roll.prep.read.unread": "{n} not read yet",
@@ -95,16 +96,15 @@ export const prepPt: PrepWords = {
   "roll.prep.wall.toggle": "Mostrar esquadrões fora da muralha",
   "roll.prep.wall.help":
     "Esquadrões fora da muralha é opcional e nunca conta. Ligue “Mostrar esquadrões fora da muralha” para marcar nos cartões; o cartão continua mostrando depois de marcado.",
-  "roll.prep.on": "visto",
-  "roll.prep.notSeen": "não visto",
-  "roll.prep.checkpoint": "{pass} {time}: {state}",
+  "roll.prep.on": "escudo visto",
+  "roll.prep.notSeen": "sem escudo visto",
+  "roll.prep.checkpoint": "{pass}: {state}",
   "roll.prep.pass.night": "Noite",
   "roll.prep.pass.morning": "Manhã",
   "roll.prep.noShieldSeen": "Sem escudo visto",
   "roll.prep.notSeenLeft": "{n} ainda sem escudo visto, deixados de fora",
   "roll.prep.notSeenLeft.one": "{n} ainda sem escudo visto, deixado de fora",
-  "roll.prep.read.night": "Conferência da noite {time} ST: {on} de {read} com escudo visto",
-  "roll.prep.read.morning": "Conferência da manhã {time} ST: {on} de {read} com escudo visto",
+  ...glancePt,
   "roll.prep.read.none":
     "Conferência da noite: sexta a partir das 23:30 ST. Conferência da manhã: sábado a partir das {time} ST. O tracker lê todos os membros em cada uma.",
   "roll.prep.read.unread": "{n} ainda sem leitura",
@@ -175,16 +175,15 @@ export const prepFr: PrepWords = {
   "roll.prep.wall.toggle": "Afficher les escouades hors du mur",
   "roll.prep.wall.help":
     "Escouades hors du mur est facultatif et ne compte jamais. Activez « Afficher les escouades hors du mur » pour le marquer sur les cartes ; une carte continue de l’afficher une fois marqué.",
-  "roll.prep.on": "vu",
-  "roll.prep.notSeen": "pas vu",
-  "roll.prep.checkpoint": "{pass} {time} : {state}",
+  "roll.prep.on": "bouclier vu",
+  "roll.prep.notSeen": "pas de bouclier vu",
+  "roll.prep.checkpoint": "{pass} : {state}",
   "roll.prep.pass.night": "Soir",
   "roll.prep.pass.morning": "Matin",
   "roll.prep.noShieldSeen": "Pas de bouclier vu",
   "roll.prep.notSeenLeft": "{n} pas encore vus, laissés de côté",
   "roll.prep.notSeenLeft.one": "{n} pas encore vu, laissé de côté",
-  "roll.prep.read.night": "Vérification du soir {time} ST : {on} sur {read} avec un bouclier vu",
-  "roll.prep.read.morning": "Vérification du matin {time} ST : {on} sur {read} avec un bouclier vu",
+  ...glanceFr,
   "roll.prep.read.none":
     "Vérification du soir : vendredi à partir de 23:30 ST. Vérification du matin : samedi à partir de {time} ST. Le tracker lit chaque membre à chacune.",
   "roll.prep.read.unread": "{n} pas encore lus",

@@ -22,7 +22,7 @@ export const followUpEn = {
   "followup.group.tip": "A tip to share · {n}",
   "followup.reason.coins":
     "Alliance Help coins below 1,000 most days. Maybe share that helping gives coins.",
-  "followup.openAria": "{name}: why, a message and how it went",
+  "followup.openHint": "Opens the reasons, a message to send and how it went.",
   "followup.pick": "Pick someone to see why they’re here, a message to copy and how it went.",
   "followup.why": "Why they’re on the list",
   "followup.message": "A message you can send",
@@ -99,7 +99,7 @@ export const followUpPt: FollowUpWords = {
   "followup.group.tip": "Uma dica para passar · {n}",
   "followup.reason.coins":
     "Moedas de Ajuda da aliança abaixo de 1.000 na maioria dos dias. Vale contar que ajudar dá moedas.",
-  "followup.openAria": "{name}: motivo, mensagem e como foi",
+  "followup.openHint": "Abre os motivos, uma mensagem para enviar e como foi.",
   "followup.pick": "Escolha alguém para ver o motivo, uma mensagem para copiar e como foi.",
   "followup.why": "Por que está na lista",
   "followup.message": "Uma mensagem para enviar",
@@ -179,7 +179,7 @@ export const followUpFr: FollowUpWords = {
   "followup.group.tip": "Une astuce à partager · {n}",
   "followup.reason.coins":
     "Pièces d’Aide d’alliance sous 1 000 la plupart des jours. Rappeler qu’aider rapporte des pièces ?",
-  "followup.openAria": "{name} : raison, message et suite",
+  "followup.openHint": "Ouvre les raisons, un message à envoyer et la suite.",
   "followup.pick": "Choisissez quelqu’un pour voir la raison, un message à copier et la suite.",
   "followup.why": "Pourquoi sur la liste",
   "followup.message": "Un message à envoyer",

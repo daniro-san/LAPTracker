@@ -114,7 +114,7 @@ export function SideNav({
 }: {
   t: WorkspaceDictionary;
   slug: string;
-  current: TabId;
+  current: TabId | null;
   view?: DeskView;
   waiting: number;
   wide: boolean;
@@ -154,7 +154,7 @@ export function Tabs({
 }: {
   t: WorkspaceDictionary;
   slug: string;
-  current: TabId;
+  current: TabId | null;
   waiting: number;
   on: ReadonlySet<Feature>;
 }) {
@@ -167,15 +167,16 @@ export function Tabs({
     >
       <ul
         className="mx-auto grid max-w-[640px]"
-        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(min-content, 1fr))` }}
       >
         {tabs.map((id) => {
           const label = t[`tab.${id}`];
           const inside = (
             <>
               <TabIcon id={id} />
-              {/* Five tabs leave 72 px each at 360 px. 12 px fits the longest word ("Acompanhar") whole;
-                  a label of two words may take two lines, broken only between words. */}
+              {/* Five tabs leave 72 px each at 360 px. 12 px fits the longest word ("Acompanhar", 66 px) whole;
+                  a tab is never narrower than its longest word (min-content, issue 585: it was cut at
+                  320 px), and a label of two words may take two lines, broken only between words. */}
               <span className="max-w-full text-[12px] leading-tight hyphens-none [overflow-wrap:normal]">
                 {label}
               </span>
@@ -191,7 +192,7 @@ export function Tabs({
                 <span
                   aria-disabled="true"
                   aria-label={`${label} (${t["tab.soon"]})`}
-                  className={`${box} border-t-[3px] border-transparent text-ink/55`}
+                  className={`${box} border-t-[3px] border-transparent text-ink/70`}
                 >
                   {inside}
                   <span aria-hidden="true" className="text-[11px] leading-none">

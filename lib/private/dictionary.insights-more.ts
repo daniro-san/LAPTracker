@@ -7,6 +7,12 @@ export const insightsMoreEn = {
   "insights.kvk.head": "KvK cost and recovery",
   "insights.kvk.none":
     "No KvK in these weeks has both a Start and an End read yet. This fills in after the next one.",
+  "insights.kvk.waitingToday":
+    "Today's KvK is recorded: its Start and End reads are in. Its cost and recovery show here after tonight's daily read at {time} ST.",
+  "insights.kvk.waiting":
+    "The KvK of {date} is recorded: its Start and End reads are in. Its cost and recovery show here after the next daily read at {time} ST.",
+  "insights.kvk.notInReads":
+    "This page's daily reads start on {date}, so earlier KvKs are not shown here. The next KvK shows here after the daily read at {time} ST on its day.",
   "insights.kvk.headline":
     "Last KvK, {date}: the alliance lost {lost} of its might, and {back} of that is back.",
   "insights.kvk.headlineNoLoss": "Last KvK, {date}: the alliance lost no might.",
@@ -91,6 +97,12 @@ export const insightsMorePt: MoreWords = {
   "insights.kvk.head": "Custo e recuperação da KvK",
   "insights.kvk.none":
     "Nenhuma KvK destas semanas tem ainda leitura de Início e de Fim. Isto se preenche depois da próxima.",
+  "insights.kvk.waitingToday":
+    "A KvK de hoje está registrada: as leituras de Início e de Fim estão feitas. O custo e a recuperação aparecem aqui depois da leitura diária desta noite, às {time} ST.",
+  "insights.kvk.waiting":
+    "A KvK de {date} está registrada: as leituras de Início e de Fim estão feitas. O custo e a recuperação aparecem aqui depois da próxima leitura diária, às {time} ST.",
+  "insights.kvk.notInReads":
+    "As leituras diárias desta página começam em {date}, então as KvKs anteriores não aparecem aqui. A próxima KvK aparece aqui depois da leitura diária das {time} ST do dia dela.",
   "insights.kvk.headline":
     "Última KvK, {date}: a aliança perdeu {lost} do poder, e {back} disso já voltou.",
   "insights.kvk.headlineNoLoss": "Última KvK, {date}: a aliança não perdeu poder.",
@@ -174,6 +186,12 @@ export const insightsMoreFr: MoreWords = {
   "insights.kvk.head": "Le coût de la KvK et la reprise",
   "insights.kvk.none":
     "Aucune KvK de ces semaines n’a encore un relevé de Début et de Fin. Ça se remplit après la prochaine.",
+  "insights.kvk.waitingToday":
+    "La KvK d’aujourd’hui est enregistrée : ses relevés de Début et de Fin sont faits. Son coût et la reprise s’affichent ici après le relevé quotidien de ce soir, à {time} ST.",
+  "insights.kvk.waiting":
+    "La KvK du {date} est enregistrée : ses relevés de Début et de Fin sont faits. Son coût et la reprise s’affichent ici après le prochain relevé quotidien, à {time} ST.",
+  "insights.kvk.notInReads":
+    "Les relevés quotidiens de cette page commencent le {date}, donc les KvK d’avant ne sont pas affichées ici. La prochaine KvK s’affiche ici après le relevé quotidien de {time} ST, le jour même.",
   "insights.kvk.headline":
     "Dernière KvK, {date} : l’alliance a perdu {lost} de sa puissance, et {back} de cette perte est revenue.",
   "insights.kvk.headlineNoLoss": "Dernière KvK, {date} : l’alliance n’a pas perdu de puissance.",

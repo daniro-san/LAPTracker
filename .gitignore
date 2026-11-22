@@ -10,6 +10,11 @@ next-env.d.ts
 *.tsbuildinfo
 coverage/
 
+# e2e suite output (pnpm test:e2e)
+test-results/
+e2e-outbound.log
+playwright-report/
+
 # local Postgres cluster (pnpm db:local:start)
 .pglocal/
 
@@ -22,3 +27,10 @@ coverage/
 
 # Python bytecode from docs/brand/drawing/build.py
 __pycache__/
+
+# tlc-spec-lean captures and screenshots stay local (.specs/README.md)
+.specs/**/*.[pP][nN][gG]
+.specs/**/*.[jJ][pP][gG]
+.specs/**/*.[jJ][pP][eE][gG]
+.specs/**/*.[wW][eE][bB][pP]
+.specs/**/*.[gG][iI][fF]

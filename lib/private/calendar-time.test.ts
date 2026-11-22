@@ -8,6 +8,7 @@ import {
   typedTime,
   zonedInstant,
 } from "./calendar-time";
+import { endOf } from "./calendar-words";
 
 const SERVER = "Etc/GMT+2"; // UTC−2, the server's clock
 
@@ -59,5 +60,12 @@ describe("server time and the viewer's own time (issue 300)", () => {
       "21:00",
     ]);
     expect(parseTime(typedTime("2100"))).toBe(1260);
+  });
+
+  it("ends an Elixir window after its 30 minutes and any other entry with its server day (issue 585)", () => {
+    const iso = (ms: number) => new Date(ms).toISOString();
+    expect(iso(endOf("elixir", "2026-11-22", 18 * 60, SERVER))).toBe("2026-11-22T20:30:00.000Z");
+    expect(iso(endOf("kvk", "2026-11-21", 12 * 60, SERVER))).toBe("2026-11-22T02:00:00.000Z");
+    expect(iso(endOf("shield", "2026-11-21", null, SERVER))).toBe("2026-11-22T02:00:00.000Z");
   });
 });

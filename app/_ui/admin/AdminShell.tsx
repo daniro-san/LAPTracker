@@ -27,9 +27,20 @@ const NAV = [
   { href: "/admin/runs", label: copy.admin.nav.runs },
   { href: "/admin/errors", label: copy.admin.nav.errors },
   { href: "/admin/changes", label: copy.admin.changes.title },
-];
+] as const;
 
-export async function AdminShell({ title, children }: { title: string; children?: ReactNode }) {
+/** Where the page sits in the admin nav: the nav link that gets `aria-current` (issue 585). */
+export type AdminNavHref = (typeof NAV)[number]["href"];
+
+export async function AdminShell({
+  title,
+  section,
+  children,
+}: {
+  title: string;
+  section: AdminNavHref;
+  children?: ReactNode;
+}) {
   const session = await adminSession();
   return (
     // English whatever the viewer's language (D48): the lang attribute says so for this subtree.
@@ -44,7 +55,9 @@ export async function AdminShell({ title, children }: { title: string; children?
       />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         {session === "valid" ? (
-          <Unlocked title={title}>{children}</Unlocked>
+          <Unlocked title={title} section={section}>
+            {children}
+          </Unlocked>
         ) : (
           <PinGate ended={session === "none" ? null : session} />
         )}
@@ -54,7 +67,15 @@ export async function AdminShell({ title, children }: { title: string; children?
   );
 }
 
-async function Unlocked({ title, children }: { title: string; children?: ReactNode }) {
+async function Unlocked({
+  title,
+  section,
+  children,
+}: {
+  title: string;
+  section: AdminNavHref;
+  children?: ReactNode;
+}) {
   const now = new Date();
   const env = getEnv();
   const [[running, [last], [daily], rehearsal], clock] = await Promise.all([
@@ -83,7 +104,8 @@ async function Unlocked({ title, children }: { title: string; children?: ReactNo
             key={n.href}
             href={n.href}
             prefetch={false}
-            className="flex min-h-11 items-center px-3 text-sm font-medium"
+            aria-current={n.href === section ? "page" : undefined}
+            className="flex min-h-11 items-center px-3 text-sm font-medium aria-[current=page]:font-bold aria-[current=page]:no-underline aria-[current=page]:shadow-[inset_0_-3px_0_var(--color-plum)]"
           >
             {n.label}
           </TextLink>

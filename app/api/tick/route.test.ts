@@ -15,6 +15,7 @@ import { ago, fakeV1, IDS, minutes, roster } from "@/lib/collector.test-helpers"
 import type { Db } from "@/lib/db";
 import { noQueryDb, openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import {
+  appErrors,
   dailyReads,
   dailyRosters,
   events,
@@ -302,6 +303,20 @@ describe("POST /api/tick", () => {
     expect([read.calls.length, later.calls]).toEqual([IDS.length, []]);
     expect(await days()).toEqual([{ day: "2026-11-08", status: "complete" }]);
     expect(await rosterRows()).toBe(IDS.length);
+  });
+
+  it("deletes app_errors rows older than 30 days after the day's first read (D115, 2026-11-21)", async () => {
+    const { at } = dailyTicks();
+    const now = new Date("2026-11-09T01:37:00Z");
+    for (const days of [31, 29]) {
+      const when = new Date(now.getTime() - days * 86_400_000);
+      await db.insert(appErrors).values({ at: when, route: "/x", message: `route Error ${days}` });
+    }
+
+    expect((await at("2026-11-09T01:37")).answer).toBe("2026-11-08 complete");
+    expect(await db.select({ message: appErrors.message }).from(appErrors)).toEqual([
+      { message: "route Error 29" },
+    ]);
   });
 
   it("reads nothing after the server midnight when the day's ticks inside its window were missed", async () => {

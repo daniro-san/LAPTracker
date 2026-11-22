@@ -71,13 +71,17 @@ function Row(props: {
   const { row, words } = props;
   return (
     <li className="border-t border-rule pb-3">
-      {/* The person is the way into their panel: why, the message, what to fill in, how it went. */}
+      {/* The person is the way into their panel: why, the message, what to fill in, how it went. Its name is
+          what it shows (the name and the reasons, WCAG 2.5.3); what it opens is its description (issue 585). */}
+      <span id={`fu-hint-${row.uid}`} className="sr-only">
+        {words["followup.openHint"]}
+      </span>
       <button
         type="button"
         data-uid={row.uid}
         aria-haspopup={props.sheet ? "dialog" : undefined}
         aria-current={props.open ? "true" : undefined}
-        aria-label={fill(words["followup.openAria"], { name: isolate(row.name) })}
+        aria-describedby={`fu-hint-${row.uid}`}
         onClick={props.onOpen}
         className={`${props.open ? OPEN_ROW : "tint-button"} -mx-2 block min-h-11 w-[calc(100%+1rem)] px-2 pt-3 pb-1 text-left`}
       >

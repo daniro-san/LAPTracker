@@ -4,6 +4,7 @@ import type { PostHog } from "posthog-js";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { track, type AnalyticsEvent, type AnalyticsEvents } from "./events";
+import type { ServerEvents } from "./server";
 
 type PropertyValue = {
   [E in AnalyticsEvent]: AnalyticsEvents[E][keyof AnalyticsEvents[E]];
@@ -29,7 +30,9 @@ describe("custom events (D77)", () => {
     // @ts-expect-error a reviewer's name is not a target
     track("ws_review_requested", { scope: "notice", to: "Ana" as string });
     // @ts-expect-error no member value rides on a mark
-    track("ws_roll_call_marked", { how: "tap", uid: 4242 });
+    track("ws_roll_call_marked", { how: "tap", roll_call: "raid_prep", uid: 4242 });
+    // @ts-expect-error a mark says Raid prep or other (issue 585), never the roll call's title
+    track("ws_roll_call_marked", { how: "tap", roll_call: "Cheese Trap · Lv.3" as string });
     // Issue 486: the key's state and the owner's switch, never the key or the workspace.
     track("ws_key_saved", { state: "ok" });
     // @ts-expect-error the key itself is not a state
@@ -99,6 +102,15 @@ describe("the workspace on every event (issue 452)", () => {
   });
 });
 
+// The events `lib/analytics/server.ts` sends; the last test checks with tsc that this is all of them.
+const SERVER_EVENTS = [
+  "$exception",
+  "$ai_generation",
+  "discord_command_used",
+  "ws_action",
+  "ws_roll_call_marked",
+] as const;
+
 describe("the tracking plan (D115)", () => {
   it("lists `workspace` and `alliance` on every ws_* event (issue 452)", async () => {
     const { readFileSync } = await import("node:fs");
@@ -118,17 +130,51 @@ describe("the tracking plan (D115)", () => {
     const { DESK_ACTIONS, DESK_FEATURES } = await import("./server");
     const { ANALYTICS_EVENTS } = await import("./events");
     const plan = readFileSync("docs/analytics/tracking-plan.md", "utf8");
-    const named = [
-      ...ANALYTICS_EVENTS,
-      "$exception",
-      "$ai_generation",
-      "discord_command_used",
-      "ws_action",
-      ...DESK_FEATURES,
-      ...DESK_ACTIONS,
-    ];
+    const named = [...ANALYTICS_EVENTS, ...SERVER_EVENTS, ...DESK_FEATURES, ...DESK_ACTIONS];
     expect(named.filter((name) => !plan.includes(`\`${name}\``))).toEqual([]);
     // Every event the type allows is in the run-time list, so the check above covers them all.
     expectTypeOf<AnalyticsEvent>().toEqualTypeOf<(typeof ANALYTICS_EVENTS)[number]>();
+  });
+
+  it("names in its Event columns no event that is gone from the code's event lists", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { ANALYTICS_EVENTS } = await import("./events");
+    const plan = readFileSync("docs/analytics/tracking-plan.md", "utf8");
+    // posthog-js's own names, which the code does not send itself (`$cookieless_mode` is a property).
+    const sent = new Set<string>([
+      ...ANALYTICS_EVENTS,
+      ...SERVER_EVENTS,
+      "$pageview",
+      "$opt_in",
+      "$cookieless_mode",
+    ]);
+    // In every table whose header has an "Event" column, the backticked names in that column, by heading.
+    const bySection = new Map<string, string[]>();
+    let section = "";
+    let column = -1;
+    for (const line of plan.split("\n")) {
+      if (line.startsWith("#")) section = line.replace(/^#+\s*/, "");
+      if (!line.startsWith("|")) {
+        column = -1;
+        continue;
+      }
+      const cells = line.split("|").map((cell) => cell.trim());
+      if (column < 0) column = cells.indexOf("Event");
+      else
+        for (const m of (cells[column] ?? "").matchAll(/`([^`]+)`/g))
+          bySection.set(section, [...(bySection.get(section) ?? []), m[1] ?? ""]);
+    }
+    // One known event per section with an Event table, so a renamed header or a broken table fails here.
+    const anchors: Record<string, string> = {
+      "The analytics question (public pages)": "$opt_in",
+      "Desk outcomes (browser)": "ws_text_read",
+      "A new alliance's way in (D130, issue 453)": "ws_invite_opened",
+      "Members' board": "ws_board_section_viewed",
+      "Server-side signals": "ws_action",
+    };
+    for (const [heading, anchor] of Object.entries(anchors))
+      expect(bySection.get(heading) ?? [], heading).toContain(anchor);
+    expect([...bySection.values()].flat().filter((name) => !sent.has(name))).toEqual([]);
+    expectTypeOf<(typeof SERVER_EVENTS)[number]>().toEqualTypeOf<keyof ServerEvents>();
   });
 });

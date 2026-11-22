@@ -21,7 +21,7 @@ function zoneName(zone: string, at: number, language: string): string {
 
 /**
  * The viewer's clock for a time, in parts for the board's time column (D116): "15:00", "your time (BRT)",
- * and "+1 d" when that is another day on the viewer's clock.
+ * and "the next day" or "the day before" when that is another day on the viewer's clock.
  */
 export function ownClock(
   at: number,
@@ -38,7 +38,8 @@ export function ownClock(
 }
 
 /**
- * The board's time column: the viewer's own time large, "your time (BRT)" under it, then server time. Server
+ * The board's time column: the viewer's own time large, "the day before" or "the next day" under it when
+ * that is another day, "your time (BRT)", then server time. Server
  * time alone until the browser knows its zone, so server and browser HTML never differ.
  */
 export function BoardTimeColumn(props: {
@@ -54,14 +55,15 @@ export function BoardTimeColumn(props: {
   const own = ownClock(props.at, props.day, zone, props.language, props.words);
   return (
     <>
-      <span className="block text-lg leading-tight font-bold tabular-nums">
-        {own.time}
-        {own.mark && <span className="ml-1 text-body-sm font-semibold">{own.mark}</span>}
-      </span>
-      <span className="block text-[13px] leading-tight">
+      <span className="block text-lg leading-tight font-bold tabular-nums">{own.time}</span>
+      {/* Its own line: "the day before" beside the time broke across lines in the 6rem column. */}
+      {own.mark && (
+        <span className="block text-body-sm leading-tight font-semibold">{own.mark}</span>
+      )}
+      <span className="block text-body-sm leading-tight">
         {own.label} <span className="whitespace-nowrap">{own.zone}</span>
       </span>
-      <span className="block text-[13px] leading-tight text-ink/75 tabular-nums">{props.st}</span>
+      <span className="block text-body-sm leading-tight text-ink/75 tabular-nums">{props.st}</span>
     </>
   );
 }
@@ -116,8 +118,8 @@ export function LanguageTabs({
             onKeyDown={(ev) => onKey(ev, i)}
             className="tint-button min-h-11 min-w-11 px-3 font-semibold aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
           >
-            <span aria-hidden="true">{p.short}</span>
-            <span className="sr-only">{p.name}</span>
+            {p.short}
+            <span className="sr-only">{`, ${p.name}`}</span>
           </button>
         ))}
       </div>

@@ -12,6 +12,7 @@ import { createRepo, type Phase, type Repo, type SnapshotPhase } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
 import type { EventInfo } from "./repo/events";
 import { insertRunLog } from "./repo/run-logs";
+import { reportError } from "./report-error";
 import { notifyFinished, notifySample } from "./run-notify";
 import { nextEvent } from "./schedule";
 
@@ -84,8 +85,9 @@ async function finaliseCrashed(
       quotaUnseenCalls: 0,
       boardPulledAt: null,
     });
-  } catch {
+  } catch (error) {
     console.error("snapshot.finalise_failed", { snapshot_id: snapshotId });
+    reportError(ctx, { route: "lib/run.ts", kind: "snapshot.finalise_failed", error });
   }
   return summary;
 }
@@ -182,7 +184,10 @@ async function collect(
     summary = await start(deps);
   } catch (e) {
     if (e instanceof RunRefusedError) refused = e;
-    else await logger.error("run.crashed", { error: e instanceof Error ? e.name : "unknown" });
+    else {
+      await logger.error("run.crashed", { error: e instanceof Error ? e.name : "unknown" });
+      reportError(ctx, { route: "lib/run.ts", kind: "run.crashed", error: e });
+    }
   } finally {
     // INVARIANT run.finalised-in-finally: a claimed row never stays `running` past the response.
     if (summary === null && claimedId !== null) {

@@ -28,7 +28,7 @@ export const FOLLOW_UP_KEYS = [
   "followup.undoFailed",
   "followup.failed",
   // The panel (issue 460, D140).
-  "followup.openAria",
+  "followup.openHint",
   "followup.pick",
   "followup.why",
   "followup.message",

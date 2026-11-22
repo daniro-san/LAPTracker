@@ -253,7 +253,7 @@ async function Schedule({
 
 export default async function AdminPage() {
   // Session first (issue 218): locked, the PIN card and no database read.
-  if (!(await isAdmin())) return <AdminShell title={t.title} />;
+  if (!(await isAdmin())) return <AdminShell section="/admin" title={t.title} />;
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
@@ -269,7 +269,7 @@ export default async function AdminPage() {
     { phase: "after" as const, at: next.afterAt, event: next },
   ].find((c) => c.at > now);
   return (
-    <AdminShell title={t.title}>
+    <AdminShell section="/admin" title={t.title}>
       <Status
         quota={quota}
         running={views.running}

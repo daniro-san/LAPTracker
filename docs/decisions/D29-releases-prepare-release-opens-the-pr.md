@@ -10,3 +10,18 @@ Why: a release was three manual steps (PR, merge, `gh release create`) and the t
 - **Setting needed.** "Allow GitHub Actions to create and approve pull requests" must be on, or `gh pr create` fails with the `GITHUB_TOKEN`. `default_workflow_permissions` stays `read`; each workflow declares its own permissions.
 - **Required check.** A PR opened with `GITHUB_TOKEN` starts no new workflow runs, but a required status check is read from the head commit, and `ci` already ran on the push to `dev` (check run `check`, from github-actions, the integration the ruleset names). If the newest push to `dev` has no finished `check`, the release PR will wait on it.
 - **Limit.** Workflows run from the default branch, so Prepare release exists in the Actions tab only after a release carries it to `main`.
+
+**Amendment 2026-11-21 (owner, issue 592): who merges, and where `check` comes from.**
+
+- Since #444, `ci` runs on `pull_request` and `workflow_dispatch` only, so a push to `dev` no longer reports `check`. Prepare release now ends with `gh workflow run ci.yml --ref dev`, which reports `check` on the release PR's head commit. The PR's own `pull_request` run shows `action_required`, because `GITHUB_TOKEN` opened it.
+- The orchestrator approves that held run, waits for a green `check`, and merges the release PR with a merge commit (owner, 2026-11-16 and 2026-11-21). Nobody merges with `--admin`, and nothing reaches `main` any other way.
+
+**Amendment 2026-11-21 (CI audit, issue 592): no held run to approve.**
+
+- `ci` and `dependabot-automerge` run on `pull_request` into `dev` only. The release PR (`dev → main`) starts neither, so it has no held `action_required` run, and nobody approves one.
+- The Run workflow that Prepare release starts on `dev` posts `check` on the release PR's head commit. Checked on PR #593 (head `fab5252f`): run 44957284752 (`workflow_dispatch`, `dev`) posted `check` = success from `github-actions`, the integration the `main` ruleset requires (id 15368). PR #589 (head `b509ad32`) shows the same. The approved `pull_request` run on that SHA was a second, identical run.
+- The orchestrator waits for that `check` to be green, then merges with `--merge --match-head-commit <sha>`. The `actions/runs/*/approve` allow rule is gone from `.claude/settings.json`.
+- Saves about 2,500 Actions minutes a month at the 2026-11-20/21 release rate (13 releases a day × one ~6-minute `check` run × 30 days ≈ 2,300–2,500), and one manual step per release.
+- If `dev` moves after Prepare release, the release PR's new head has no `check`: dispatch `ci` (and `e2e`) on `dev` again before merging (CONTRIBUTING, How to cut a release, step 4).
+
+**Amendment 2026-11-22 (orchestrator, issue 592):** The 2026-11-21 amendment was wrong on one point: a `check` from a Run workflow of `ci` on `dev` sits on the release PR's head commit but does not count toward the PR's required checks: at 02:39 UTC on 2026-11-22 the v5.46.0 release PR (#611), head `75a0e7dc`, was `BLOCKED` with that dispatched `check` green on its head, and its check rollup listed only Vercel; the head moved only at 02:43. The release PR runs `ci` on `pull_request` again (`branches: [dev, main]`), held for approval because `GITHUB_TOKEN` opened it, and Prepare release no longer starts a Run workflow of `ci`. A release still runs `ci` once; the approve allow rule is back.

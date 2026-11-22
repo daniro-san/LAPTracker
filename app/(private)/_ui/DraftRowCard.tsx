@@ -314,7 +314,7 @@ export function DraftRowCard(props: {
   return (
     <li
       id={id}
-      className={`scroll-mt-20 border border-rule px-3 py-3 ${state.dropped ? "opacity-60" : ""}`}
+      className={`scroll-mt-20 border border-rule px-3 py-3 ${state.dropped ? "border-dashed" : ""}`}
     >
       <RowHead row={row} label={props.label} w={w} matched={props.matched} />
       {!state.dropped && <RowInputs id={id} {...props} />}

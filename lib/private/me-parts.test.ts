@@ -66,22 +66,37 @@ describe("a member's own week (D142)", () => {
     expect(recoveryLine(days, { day: "2026-11-04", power: 1000 }, t, f.date)).toBeNull();
   });
 
-  it("lists their team, seat and marks, the soonest first", () => {
+  it("lists their team, seat and marks, the soonest first, each mark as a record with its times", () => {
+    const asked: string[] = [];
     const lines = neededLines(
       {
         team: "B",
-        seats: [{ movedTo: null, planned: "2026-10-29", coach: true, second: null }],
-        marks: [{ kind: "shield", variant: null, day: "2026-11-02", part: "wall", mark: "yes" }],
+        seats: [{ movedTo: null, planned: "2026-10-29", minute: 840, coach: true, second: null }],
+        marks: [
+          {
+            kind: "shield",
+            variant: null,
+            day: "2026-11-02",
+            minute: null,
+            part: "wall",
+            mark: "yes",
+          },
+        ],
       },
       "2026-11-02",
       t,
       (d) => d,
+      (kind, day, minute) => {
+        asked.push(`${kind} ${day} ${minute}`);
+        return { at: 1, end: 2 };
+      },
     );
     expect(lines).toEqual([
-      "Elixir Scramble this week: Team B",
-      "Raid prep, 2026-11-02: Squads off the wall",
-      "Alliance Caravan, 2026-11-05: you are the Coachman.",
+      { line: "Elixir Scramble this week: Team B", when: null },
+      { line: "Raid prep, 2026-11-02 · your mark: “Squads off the wall”", when: { at: 1, end: 2 } },
+      { line: "Alliance Caravan, 2026-11-05: you are the Coachman.", when: { at: 1, end: 2 } },
     ]);
+    expect(asked).toEqual(["caravan 2026-11-05 840", "shield 2026-11-02 null"]);
   });
 });
 

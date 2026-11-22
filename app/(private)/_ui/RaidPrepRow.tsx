@@ -2,11 +2,11 @@
 
 // One member's tile on Raid prep (issue 474, D137; a grid tile since issue 412, compact since issue 585):
 // the name and the Shield's word beside its ✓ / ✗ pair (44 px, the same button again clears), the tracker's
-// checkpoints on one line at their map scans' server time, the Squads off the wall pair only when the page
-// shows it or the member has a wall mark, and one footer line: the ready private message in the member's
+// checkpoints, one line each with its map scan's server time ("Night check: shield seen (map from 22:33
+// ST)"), the Squads off the wall pair only when the page shows it or the member has a wall mark, and one footer line: the ready private message in the member's
 // language with only the parts not yet ✓. The tracker's line is a hint (D75). A mark the tick wrote from
 // the tracker's reading says "from the tracker" beside it (D137, 2026-11-21).
-import { Fragment, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { fill, isolate } from "@/lib/copy";
@@ -59,20 +59,23 @@ function Pair(props: {
 }
 
 /**
- * The tracker's checkpoints that happened, on one line: "Night 22:33: seen · Morning 07:15: not seen".
- * "Not seen" is in yarn, and bold only while the Shield is not marked yet (panel review, issue 585).
+ * The tracker's checkpoints that happened, one line each: "Night check: shield seen" and, muted, "map from
+ * 22:33 ST". The time is labelled as the member's map scan, never the check's, so the card above never
+ * seems to disagree (issue 585, first glance). "No shield seen" is in yarn, and bold only while the
+ * Shield is not marked yet (panel review, issue 585).
  */
 function TrackerLine({ tr, marked }: { tr: PrepTrackerView; marked: boolean }) {
   const notSeen = marked ? "text-yarn" : "font-semibold text-yarn";
   return (
-    <p className="mt-0.5 text-body-sm">
-      {tr.checks.map((c, i) => (
-        <Fragment key={c.text}>
-          {i > 0 && <span className="text-ink/80"> · </span>}
-          <span className={`whitespace-nowrap ${c.on ? "text-ink/80" : notSeen}`}>{c.text}</span>
-        </Fragment>
+    <div className="mt-0.5 text-body-sm">
+      {tr.checks.map((c) => (
+        <p key={c.text}>
+          <span className={c.on ? "text-ink/80" : notSeen}>{c.text}</span>{" "}
+          {/* In brackets, so it wraps as a unit on a narrow tile (four columns at 1280). */}
+          <span className="text-label whitespace-nowrap text-ink/75">{`(${c.scan})`}</span>
+        </p>
       ))}
-    </p>
+    </div>
   );
 }
 
@@ -93,8 +96,11 @@ function MessageBox(props: { text: string; head: string; name: string; words: Ro
         {/* Each tile's "Message" is named for screen readers: "Message for Ana" (panel review, issue 585). */}
         <span className="sr-only">{` ${fill(props.words["roll.prep.messageTo"], { name: isolate(props.name) })}`}</span>
       </summary>
-      <p className="text-body-sm text-ink/80">{props.head}</p>
-      <textarea readOnly value={props.text} rows={3} className={`${FIELD} mt-1 text-[16px]`} />
+      {/* The heading is the box's visible label (issue 585). */}
+      <label className="block">
+        <span className="block text-body-sm text-ink/80">{props.head}</span>
+        <textarea readOnly value={props.text} rows={3} className={`${FIELD} mt-1 text-[16px]`} />
+      </label>
       <button type="button" onClick={() => void copy()} className={`${chip()} mt-1`}>
         {props.words[copied ? "roll.prep.copied" : "roll.prep.copy"]}
       </button>

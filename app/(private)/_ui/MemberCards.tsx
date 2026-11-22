@@ -28,7 +28,7 @@ export const STATUS_TONE = {
   checkin: "font-semibold text-yarn",
   new: "font-semibold text-plum",
   nodata: "text-ink/70",
-  fine: "text-ink/60",
+  fine: "text-ink/70",
   none: "",
 } as const;
 

@@ -29,6 +29,22 @@ export async function insertAppError(db: Db, row: AppErrorRow): Promise<void> {
   if (oldestKept) await db.delete(appErrors).where(lt(appErrors.id, oldestKept.id));
 }
 
+/** How long a row is kept (D115's 2026-11-21 amendment): its detail holds the error's own text. */
+export const APP_ERROR_DAYS = 30;
+
+/**
+ * INVARIANT app-errors.purged-30-days: deletes the rows recorded more than 30 days before `now`, through
+ * app_errors_at_idx (at most MAX_APP_ERRORS rows exist). Returns how many went. Run once a day by the tick.
+ */
+export async function purgeOldAppErrors(db: Db, now: Date): Promise<number> {
+  const before = new Date(now.getTime() - APP_ERROR_DAYS * 86_400_000);
+  const gone = await db
+    .delete(appErrors)
+    .where(lt(appErrors.at, before))
+    .returning({ id: appErrors.id });
+  return gone.length;
+}
+
 /** app_alerts ids: one row per kind of alert (D45). */
 export const APP_ERROR_ALERT = 1;
 export const TICK_SILENCE_ALERT = 2;

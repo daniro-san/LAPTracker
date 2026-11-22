@@ -6,6 +6,7 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./", import.meta.url)) } },
   test: {
     environment: "node",
+    globalSetup: ["./vitest.global-setup.ts"],
     // PGlite open+migrate in beforeAll (D19): slowest 69.8 s across four parallel `pnpm test`
     // runs on a 10-core Mac at load average 66 (2026-11-05, #124); about 2x that.
     hookTimeout: 140_000,

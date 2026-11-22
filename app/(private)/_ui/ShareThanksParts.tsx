@@ -55,8 +55,8 @@ export function TextField(props: {
             onClick={() => props.onLanguage(c.id)}
             className={`${chip(language === c.id)} min-w-12 justify-center`}
           >
-            <span aria-hidden="true">{c.short}</span>
-            <span className="sr-only">{c.name}</span>
+            {c.short}
+            <span className="sr-only">{`, ${c.name}`}</span>
           </button>
         ))}
       </div>

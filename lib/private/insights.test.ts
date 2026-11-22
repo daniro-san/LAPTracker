@@ -187,13 +187,25 @@ describe("the Insights read (issue 489)", () => {
 
     const view = await insightsView(db, access, NOW, ZONE);
 
-    expect(view.kvk).toHaveLength(1);
-    expect(view.kvk[0]).toMatchObject({ members: 1, before: 20_000_000, after: 5_000_000 });
-    expect(view.kvk[0]?.help).toEqual([{ uid: 101, name: "P101" }]);
+    expect(view.kvk.events).toHaveLength(1);
+    expect(view.kvk.events[0]).toMatchObject({ members: 1, before: 20_000_000, after: 5_000_000 });
+    expect(view.kvk.events[0]?.help).toEqual([{ uid: 101, name: "P101" }]);
     // 101: 2 squads, seen 2 h ago; 102: 1 squad, 4 days ago; 103's only row is another alliance's.
     expect(view.squads).toMatchObject({ counts: [1, 1, 0], none: 1, fresh: [1, 0, 1] });
     // Fewer than 4 members with squads make no might groups.
     expect(view.squads?.bands).toEqual([]);
+  });
+
+  it("says the reads start after a KvK that came before them, and does not show that KvK", async () => {
+    const access = await officer();
+    // Our daily reads start on Tuesday 17; the KvK of Saturday 14 has both reads.
+    await roster("2026-11-17", OURS, [101, 102], true);
+    await roster("2026-11-18", OURS, [101, 102], true);
+    await kvk(new Date("2026-11-14T14:00:00Z"), OURS, { 101: [20_000_000, 15_000_000] });
+
+    const view = await insightsView(db, access, NOW, ZONE);
+
+    expect(view.kvk).toEqual({ events: [], waiting: null, readsFrom: "2026-11-17" });
   });
 
   it("counts each week's Raid Shield checks over Friday's roster, and nothing while off", async () => {

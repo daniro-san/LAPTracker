@@ -28,7 +28,7 @@ export default async function RunsPage({
 }) {
   const t = copy.admin.runs;
   // Session first (issue 218): locked, the PIN card and no database read.
-  if (!(await isAdmin())) return <AdminShell title={t.title} />;
+  if (!(await isAdmin())) return <AdminShell section="/admin/runs" title={t.title} />;
   const sp = await searchParams;
   const show = RUN_FILTERS.find((f) => f === sp.show) ?? null;
   const [[runs, daily], clock] = await Promise.all([
@@ -47,7 +47,7 @@ export default async function RunsPage({
     .sort((a, b) => b.run.startedAt.getTime() - a.run.startedAt.getTime())
     .slice(0, LIMIT);
   return (
-    <AdminShell title={t.title}>
+    <AdminShell section="/admin/runs" title={t.title}>
       <RunsFilter show={show} />
       {entries.length === 0 ? (
         <p>{show ? t.noneShown : t.none}</p>
