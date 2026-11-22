@@ -100,7 +100,7 @@ export async function POST(
       if (only && made === 1 && none === 0) return go(`${home}/shots/${only.id}`);
       return go(`${home}?shared=done&made=${made}&none=${none}`);
     } catch (error) {
-      // A code only (privately): app_errors and the admin alert get it, as a /shots/read failure does.
+      // A code only (privately): app_errors gets it, as a /shots/read failure does.
       await recordAppError(ctx, {
         route: "/w/[slug]/share",
         kind: "route",

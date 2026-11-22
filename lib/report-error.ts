@@ -1,6 +1,6 @@
 // An error as it leaves our code (D61, D115's 2026-11-21 amendment): its detail after redact() (secrets and,
 // through redactPrivate, private roster values), and PostHog's `$exception`. Apart from lib/app-errors.ts,
-// which adds the app_errors row and the admin alert, so lib/push.ts (and through it lib/private) can report a
+// which adds the app_errors row, so lib/push.ts (and through it lib/private) can report a
 // caught error without reaching lib/notify (D71). Imports only lib/analytics, lib/env, lib/redact and
 // lib/app-context's type: lib/app-context imports this module for AppContext.report, so no value comes back.
 import { analyticsKey } from "./analytics/events";
@@ -120,7 +120,7 @@ export type Report = (error: unknown, context: ReportContext) => void;
 
 /**
  * An error our code caught and carried on from (a daily job, a run's crash, a notification's read, a push):
- * PostHog only, `handled: true`, no app_errors row and no alert, no await. `kind` is the code its log line
+ * PostHog only, `handled: true`, no app_errors row, no await. `kind` is the code its log line
  * has. Never for an error that is thrown on, which reaches recordAppError through withContext or
  * onRequestError.
  */

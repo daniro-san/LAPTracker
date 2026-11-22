@@ -4,7 +4,6 @@ import { ADMIN_WEBHOOK, PUBLIC_WEBHOOK, TEST_ENV, TEST_PIN } from "./app-context
 import type { RunSummary } from "./collector";
 import {
   adminSnapshotMessage,
-  appErrorMessage,
   createNotifier,
   discordClock,
   pinLockedMessage,
@@ -241,20 +240,6 @@ describe("admin messages", () => {
   it("says the PIN is locked and that the tick still works", () => {
     expect(pinLockedMessage(20)).toBe(
       "Locked: 20 wrong PINs, so PIN entry is off for an hour. The scheduled tick and workflow_dispatch still work.",
-    );
-  });
-
-  it("names the route, the error class and the digest of an app error", () => {
-    expect(appErrorMessage("/api/events/[id]", "route TypeError", "123")).toBe(
-      "✗ App error on /api/events/[id]: route TypeError · digest 123 · /admin/errors",
-    );
-  });
-
-  it("replaces private roster values in an app error's line and keeps its other words (D115)", () => {
-    const reason =
-      'route Error — Bad row for Invented Bramble {"x":98765,"y":54321} last_online_at=2026-11-20T10:00:00Z dailyTech: 4321 https://phs-image.globallap.com/h/7a1b9c.png';
-    expect(appErrorMessage("/api/tick", reason, null)).toBe(
-      '✗ App error on /api/tick: route Error — Bad row for Invented Bramble {"x":…,"y":…} last_online_at=… dailyTech: … … · /admin/errors',
     );
   });
 });
