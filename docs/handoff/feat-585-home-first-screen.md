@@ -76,6 +76,10 @@ Part of #585 (F3 on Home, F21). Size M (Home's main flow; amendments to D104, D1
 
 ## Next
 
+- Follow-up from the review of PR 652: compute the "waiting in To review" count once in `WorkspacePage` and pass it to the badge, the heading and the jump, with one test that they agree (today three places add the same three counts).
+- Follow-up from the review of PR 652: test the fold across the "Show more" cursor with two officers, and on a server day outside UTC (the test helper fixes UTC).
+- Merged with S3 (PR 651) by a merge of `dev`: the spec files keep both slices, and `labelled` moved to `e2e/fixtures/test.ts` so `e2e/desk.spec.ts` stays under 300 lines.
+
 - **S3** (in parallel, Follow-up rows and Members' group, F29): one action per row, tappable names, "Card ›", a group's repeated line said once, the wide frame, one in-place help, Members' "To check in with or help" renamed or repointed. Members still shows S1's "Follow-up: 12 to look at · 4 noted this week"; S3 may align it with Home's words.
 - **S5:** "After KvK, offer help · n" in Follow-up from `insights-kvk.ts` `help`, with Insights linking to it (a rule change, its own plan review).
 - **Follow-ups from this slice:**
