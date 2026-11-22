@@ -30,8 +30,7 @@ export const insightsZonesEn = {
   "insights.zones.legend":
     "Times on their own clock: now ({now} ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK ({kvk} ST). Bar: share of the {known} members with a time zone.",
   "insights.zones.notRecorded": "Not recorded yet",
-  "insights.zones.notCounted":
-    "Not counted in any group. Members lists today’s roster, so its count there can differ.",
+  "insights.zones.notCounted": "Not counted in any group.",
   "insights.zones.add": "Add their time zone ›",
   "insights.zones.usual.one":
     "Within their usual hours for the most: {hours} ST, {count} of the {known} members with a time zone ({n} not recorded). A guess from their time zone, for times you set, like rallies.",
@@ -70,8 +69,7 @@ export const insightsZonesPt: ZonesWords = {
   "insights.zones.legend":
     "Horários no relógio deles: agora ({now} ST), no próximo reset das 00:00 ST (o raid começa no reset antes do KvK) e no KvK ({kvk} ST). Barra: parcela dos {known} membros com fuso horário.",
   "insights.zones.notRecorded": "Ainda não registrado",
-  "insights.zones.notCounted":
-    "Fora de todos os grupos. Membros mostra a lista de hoje, então a contagem lá pode ser outra.",
+  "insights.zones.notCounted": "Fora de todos os grupos.",
   "insights.zones.add": "Adicionar o fuso deles ›",
   "insights.zones.usual.one":
     "Mais membros no horário comum deles: {hours} ST, {count} dos {known} membros com fuso horário ({n} sem registro). Uma estimativa pelo fuso, para horários que você marca, como rallies.",
@@ -110,8 +108,7 @@ export const insightsZonesFr: ZonesWords = {
   "insights.zones.legend":
     "Heures sur leur propre horloge : maintenant ({now} ST), au prochain reset de 00:00 ST (le raid commence à celui d’avant le KvK) et au KvK ({kvk} ST). Barre : part des {known} membres avec un fuseau horaire.",
   "insights.zones.notRecorded": "Pas encore noté",
-  "insights.zones.notCounted":
-    "Compté dans aucun groupe. Membres montre la liste d’aujourd’hui, donc son nombre peut y différer.",
+  "insights.zones.notCounted": "Hors de tout groupe.",
   "insights.zones.add": "Ajouter leur fuseau horaire ›",
   "insights.zones.usual.one":
     "Dans leurs heures habituelles pour le plus grand nombre : {hours} ST, {count} des {known} membres avec un fuseau horaire ({n} non noté). Une estimation d’après leur fuseau, pour les heures que vous fixez, comme les rallyes.",

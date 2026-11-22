@@ -147,7 +147,8 @@ export function effortsOf(reads: readonly RosterRead[], leftOut: ReadonlySet<num
 export interface Band {
   low: number;
   high: number;
-  members: number;
+  /** Its members: their count is this list's length (#678, one rule per set). */
+  uids: number[];
   medians: Record<EffortMetric, Median | null>;
 }
 
@@ -164,7 +165,7 @@ export function bandsOf(efforts: readonly Effort[]): Band[] {
   return bands.reverse().map((list) => ({
     low: (list[0] as Effort).might,
     high: (list.at(-1) as Effort).might,
-    members: list.length,
+    uids: list.map((e) => e.uid),
     medians: {
       quests: medianOf(list, "quests"),
       coins: medianOf(list, "coins"),
@@ -294,7 +295,7 @@ export function wentTo(left: readonly Move[], seen: readonly Elsewhere[], ours: 
   );
 }
 
-/** How many current members were first seen in each band: under 14, 30, 90 days, more, since our first read. */
+/** The current members first seen in each band: under 14, 30, 90 days, more, since our first read. */
 export function tenureOf(
   uids: readonly number[],
   firstSeen: ReadonlyMap<number, string>,
@@ -302,24 +303,23 @@ export function tenureOf(
   newest: string,
 ) {
   // `span`: the days our records cover, so the page leaves out the bands longer than that.
-  const counts = {
-    under: TENURE_DAYS.map(() => 0),
-    over: 0,
-    sinceStart: 0,
+  const bands = {
+    under: TENURE_DAYS.map((): number[] => []),
+    over: [] as number[],
+    sinceStart: [] as number[],
     span: daysBetween(oldest, newest),
   };
   for (const uid of uids) {
     const first = firstSeen.get(uid) ?? newest;
     if (first <= oldest) {
-      counts.sinceStart += 1;
+      bands.sinceStart.push(uid);
       continue;
     }
     const days = daysBetween(first, newest);
     const band = TENURE_DAYS.findIndex((d) => days < d);
-    if (band < 0) counts.over += 1;
-    else counts.under[band] = (counts.under[band] ?? 0) + 1;
+    (band < 0 ? bands.over : (bands.under[band] as number[])).push(uid);
   }
-  return counts;
+  return bands;
 }
 
 /**
@@ -344,7 +344,7 @@ export function newcomersOf(
     return then && m.power !== null ? [(m.power - then) / then] : [];
   });
   return {
-    n: fresh.length,
+    uids: fresh.map((m) => m.uid),
     counted: growth.length,
     grew: growth.filter((g) => g > 0).length,
     median: median(growth),

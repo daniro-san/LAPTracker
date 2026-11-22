@@ -154,7 +154,7 @@ describe("the Insights read (issue 489)", () => {
     expect(view.flow?.wentTo).toEqual([{ unionId: FERN, tag: null, n: 1 }]);
     expect(view.labels.get(FERN)).toMatchObject({ tag: "FN", name: "Fern Hall" });
     // 102 is on a break; 104 and 108 were first seen after our first read, so they are new.
-    expect(view.effort?.leftOut).toEqual({ fresh: 2, away: 1, noMight: 0 });
+    expect(view.effort?.leftOut).toEqual({ fresh: [104, 108], away: [102], noMight: [] });
     expect(view.effort?.members).toBe(4);
     expect(JSON.stringify(view)).not.toMatch(/98765|54321|1763337600|last_?online/);
   });

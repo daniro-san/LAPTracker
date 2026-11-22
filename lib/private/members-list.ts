@@ -157,6 +157,14 @@ export type Clock = ReturnType<typeof clockAt>;
 
 export const isDaytime = (minute: number) => minute >= DAY_FROM && minute < DAY_TO;
 
+/**
+ * Whether a member with `zone` is within their usual hours when the server clock reads `hour`:00; null with
+ * no time zone, which is neither (D75). Members' daytime and night filters and Insights' usual hours both
+ * call it (#678, one rule per set).
+ */
+export const daytimeAt = (zone: string | null, hour: number, clock: Clock): boolean | null =>
+  zone === null ? null : isDaytime(clock(zone, hour));
+
 /** A query with its search folded once, for one pass over the rows. */
 type Ready = MemberQuery & { needle: string };
 const ready = (query: MemberQuery): Ready => ({ ...query, needle: fold(query.q.trim()) });
@@ -167,8 +175,10 @@ const asks = (m: ListMember, ask: AskKind) =>
 function keepsFacts(m: ListMember, q: Ready, clock: Clock): boolean {
   // No time zone matches neither daytime nor night; no language matches no language (D75).
   const time = q.time;
-  if (time && (m.zone === null || isDaytime(clock(m.zone, time.hour)) !== (time.mode === "day")))
-    return false;
+  if (time) {
+    const day = daytimeAt(m.zone, time.hour, clock);
+    if (day === null || day !== (time.mode === "day")) return false;
+  }
   return q.lang === null || m.languages.includes(q.lang);
 }
 

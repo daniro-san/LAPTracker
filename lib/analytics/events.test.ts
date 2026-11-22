@@ -38,6 +38,13 @@ describe("custom events (D77)", () => {
     // @ts-expect-error the key itself is not a state
     track("ws_key_saved", { state: "lap_0123" as string });
     track("admin_feature_changed", { feature: "ai_cap", on: false });
+    // Issue 678: a desk drilldown carries the page, the set's kind and a count bucket, never the count.
+    track("ws_drilldown_opened", { surface: "insights", kind: "tenure", count_bucket: "2_4" });
+    // @ts-expect-error the exact count is not a bucket
+    track("ws_drilldown_opened", { surface: "insights", kind: "zone", count_bucket: 3 });
+    const opened = { surface: "insights", kind: "zone", count_bucket: "1" } as const;
+    // @ts-expect-error no uid rides on a drilldown
+    track("ws_drilldown_opened", { ...opened, uid: 4242 });
     // @ts-expect-error no workspace rides on the owner's change
     track("admin_feature_changed", { feature: "notices", on: true, workspace: "ogs" });
   });
