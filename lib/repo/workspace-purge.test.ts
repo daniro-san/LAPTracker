@@ -19,6 +19,7 @@ import {
   seedWorkspace,
   SEED_AT,
 } from "../workspace-data.test-helpers";
+import { feedbackLimitKey } from "./feedback";
 import { ownedBy, WORKSPACE_TABLES } from "./workspace-data";
 import {
   askDeletion,
@@ -68,6 +69,23 @@ describe("the workspace purge (D125)", () => {
         (Object.values(getTableColumns(t)).some((c) => c.name === "workspace_id") || pointsIn(t)),
     );
     expect(missing.map(getTableName)).toEqual([]);
+  });
+
+  it("deletes the workspace's feedback day counter with it and keeps another workspace's (D157)", async () => {
+    const nse = await seedWorkspace(db, "nse", 67109944);
+    const ogs = await seedWorkspace(db, "ogs", 67111155);
+    await db.insert(schema.authAttempts).values(
+      [nse, ogs].map((w) => ({
+        key: feedbackLimitKey(w.workspaceId),
+        count: 3,
+        windowStart: SEED_AT,
+      })),
+    );
+    await askDeletion(db, nse.workspaceId, nse.officer, SEED_AT);
+    expect((await purgeDueWorkspaces(db, later(DELETION_GRACE_MS))).workspaces).toBe(1);
+    expect(await db.select({ key: schema.authAttempts.key }).from(schema.authAttempts)).toEqual([
+      { key: feedbackLimitKey(ogs.workspaceId) },
+    ]);
   });
 
   it("keeps a workspace whose deletion was cancelled after the job listed it", async () => {

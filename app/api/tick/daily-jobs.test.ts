@@ -1,5 +1,6 @@
 // The tick's daily jobs after the day's first read (lib/tick.ts): D115's app_errors past 30 days are
-// deleted, and D132's player reads keep their columns but lose raw bodies past 90 days. A failed job is a
+// deleted, D132's player reads keep their columns but lose raw bodies past 90 days, and D157's feedback past
+// 180 days is deleted. A failed job is a
 // "Needs you" row on /admin until a later night's job succeeds (issue 507).
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,8 +13,10 @@ import { ago, fakeV1, minutes, roster } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { failedCleanups } from "@/lib/queries/admin-page";
+import { purgeOldFeedback } from "@/lib/repo/feedback";
 import { clearOldPlayerRaw } from "@/lib/repo/player-reads";
 import { appErrors } from "@/lib/schema";
+import { feedback } from "@/lib/schema-feedback";
 import { playerReads } from "@/lib/schema-squads";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -25,6 +28,10 @@ vi.mock("@/lib/app-context", async (original) => ({
 vi.mock("@/lib/repo/player-reads", async (original) => {
   const real = await original<typeof import("@/lib/repo/player-reads")>();
   return { ...real, clearOldPlayerRaw: vi.fn(real.clearOldPlayerRaw) };
+});
+vi.mock("@/lib/repo/feedback", async (original) => {
+  const real = await original<typeof import("@/lib/repo/feedback")>();
+  return { ...real, purgeOldFeedback: vi.fn(real.purgeOldFeedback) };
 });
 // The squads batch after the answer (`after`) needs a Next request: not run here.
 vi.mock("next/server", async (original) => ({
@@ -87,6 +94,25 @@ describe("the tick's daily jobs after the day's first read", () => {
       .orderBy(playerReads.readAt);
     expect(rows).toEqual([{ rawJson: null }, { rawJson: { days: 89 } }]);
   });
+
+  it("deletes feedback older than 180 days (D157)", async () => {
+    await db.insert(feedback).values(
+      [181, 179].map((days) => ({
+        area: "desk" as const,
+        kind: "idea" as const,
+        text: `sent ${days} days ago`,
+        path: "/w/alpha",
+        language: "en",
+        tier: "officer" as const,
+        createdAt: daysAgo(days),
+      })),
+    );
+
+    expect(await nightRead()).toBe("2026-11-08 complete");
+    expect(await db.select({ text: feedback.text }).from(feedback)).toEqual([
+      { text: "sent 179 days ago" },
+    ]);
+  });
 });
 
 /** /admin's "Needs you" rows at `now`, as the page builds them, with nothing else waiting. */
@@ -127,6 +153,19 @@ describe("a failed daily clean-up on /admin (issue 507)", () => {
       [
         "Daily clean-up",
         "The 90-day clean-up failed on Sun, Nov 8",
+        "/admin/runs/daily/2026-11-08",
+      ],
+    ]);
+  });
+
+  it("shows 'The 180-day feedback clean-up failed' in Needs you when the feedback purge fails (D157)", async () => {
+    vi.mocked(purgeOldFeedback).mockRejectedValueOnce(new Error("connection terminated"));
+
+    expect(await nightRead()).toBe("2026-11-08 complete");
+    expect(await needs(NOW)).toEqual([
+      [
+        "Daily clean-up",
+        "The 180-day feedback clean-up failed on Sun, Nov 8",
         "/admin/runs/daily/2026-11-08",
       ],
     ]);

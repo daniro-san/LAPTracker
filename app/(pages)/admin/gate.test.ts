@@ -14,6 +14,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import type { Env } from "@/lib/env";
 import { appErrors, workspaces } from "@/lib/schema";
+import { feedback } from "@/lib/schema-feedback";
 import { accessRequests } from "@/lib/schema-invites";
 
 const holder = vi.hoisted(() => ({
@@ -53,6 +54,7 @@ vi.mock("next/navigation", async (original) => ({
 const { default: AdminPage } = await import("./page");
 const { default: RunsPage } = await import("./runs/page");
 const { default: ErrorsPage } = await import("./errors/page");
+const { default: FeedbackPage } = await import("./feedback/page");
 const { default: RunPage } = await import("./runs/[id]/page");
 const { default: DailyRunPage } = await import("./runs/daily/[day]/page");
 
@@ -78,6 +80,7 @@ describe("/admin pages, locked", () => {
     ["/admin", () => AdminPage()],
     ["/admin/runs", () => RunsPage({ searchParams: Promise.resolve({}) })],
     ["/admin/errors", () => ErrorsPage({ searchParams: Promise.resolve({}) })],
+    ["/admin/feedback", () => FeedbackPage({ searchParams: Promise.resolve({}) })],
     ["/admin/runs/1", () => run("1")],
     [
       "/admin/runs/daily/2026-11-12",
@@ -168,6 +171,39 @@ describe("/admin pages, unlocked", () => {
     expect(shown).toContain(", 1 in the last 24 h");
     // The Alliances row's page errors open that workspace's errors, not its settings (F34).
     expect(shown).toContain('href="/admin/errors?w=amber"');
+  });
+
+  it("/admin/feedback lists what was sent, newest first, and a kind filter keeps only that kind (D157)", async () => {
+    await signedInWithAmber();
+    const sent = (kind: "idea" | "problem", text: string, hoursAgo: number) => ({
+      area: "desk" as const,
+      kind,
+      text,
+      path: "/w/amber/roll-call",
+      language: "pt-BR",
+      workspaceId: 1,
+      tier: "member" as const,
+      createdAt: new Date(T0.getTime() - hoursAgo * 3_600_000),
+    });
+    await db
+      .insert(feedback)
+      .values([sent("idea", "A month view, please", 2), sent("problem", "Send stays grey", 1)]);
+    const all = await html(await FeedbackPage({ searchParams: Promise.resolve({}) }));
+    expect(all).toContain(">Feedback</h1>");
+    // Both are listed before their order is compared (indexOf is -1 for a missing one).
+    expect(all).toContain("Send stays grey");
+    expect(all).toContain("A month view, please");
+    expect(all.indexOf("Send stays grey")).toBeLessThan(all.indexOf("A month view, please"));
+    expect(all).toContain("/w/amber · desk · member · pt-BR");
+    // Each kind filter keeps its own item and leaves out the other.
+    const of = async (kind: string) =>
+      html(await FeedbackPage({ searchParams: Promise.resolve({ kind }) }));
+    const ideas = await of("idea");
+    expect(ideas).toContain("A month view, please");
+    expect(ideas).not.toContain("Send stays grey");
+    const problems = await of("problem");
+    expect(problems).toContain("Send stays grey");
+    expect(problems).not.toContain("A month view, please");
   });
 
   it("/admin/runs/<unknown id> still calls notFound", async () => {

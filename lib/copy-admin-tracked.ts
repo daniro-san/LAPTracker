@@ -3,6 +3,7 @@
 // at the 300-line limit.
 import { adminCopy as base } from "./copy-admin";
 import { changesAdminCopy } from "./copy-admin-changes";
+import { feedbackAdminCopy } from "./copy-admin-feedback";
 import { kvkAdminCopy } from "./copy-admin-kvk";
 
 export const trackedAdminCopy = {
@@ -42,4 +43,5 @@ export const adminCopy = {
   tracked: trackedAdminCopy,
   changes: changesAdminCopy,
   kvk: kvkAdminCopy,
+  feedback: feedbackAdminCopy,
 };

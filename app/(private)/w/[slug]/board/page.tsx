@@ -23,6 +23,7 @@ import { ReachLine } from "../../../_ui/BoardReach";
 import { LINK, Notices, StartHere, Week } from "../../../_ui/BoardSections";
 import { BoardSectionsSeen } from "../../../_ui/BoardSectionsSeen";
 import { BoardThanks } from "../../../_ui/BoardThanks";
+import { Feedback } from "../../../_ui/Feedback";
 import { DeletionNotice, Frame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
 
@@ -158,6 +159,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
         edit={access.officer ? `/w/${slug}/start-here` : null}
       />
       {env.POSTHOG_QUERY_API_KEY && <ReachLine t={t} />}
+      <Feedback slug={slug} area="board" language={language} t={t} />
     </Frame>
   );
 }
