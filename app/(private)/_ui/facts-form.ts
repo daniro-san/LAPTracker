@@ -64,6 +64,7 @@ export const EDITOR_KEYS = [
   "src.officer",
   "src.sheet",
   "src.tracker",
+  "src.member",
   "src.unsaved",
   "paste.help",
   "paste.read",
@@ -199,6 +200,7 @@ export const SOURCE_KEY = {
   officer: "src.officer",
   sheet: "src.sheet",
   tracker: "src.tracker",
+  member: "src.member",
 } as const satisfies Record<FactSource, keyof EditorWords>;
 
 /** 69.5 as "69.5" in English, "69,5" in Portuguese and French. */

@@ -5,12 +5,16 @@
 // remembers the last pick, best effort (localStorage, as the clock choice), so a tap opens its tab even when
 // storage is blocked. The card is drawn only in the browser, after its read, so the remembered tab is read
 // when it first renders. Four across at 360 px, each 44 px or taller; nothing is hover-only. The History tab's
-// panel is here too (moved from MemberCards.tsx for its size).
+// panel is here too (moved from MemberCards.tsx for its size), and the Info tab's details and map position
+// (moved for the same reason, issue 301).
 import { useRef, useState, type KeyboardEvent } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
+import { chip } from "@/lib/brand/components/controls";
 import { CARD_TABS, type CardTab } from "@/lib/private/dictionary.card";
 import type { CardData } from "@/lib/private/member-card";
+
+import { withNoData } from "./NoData";
 
 const TAB_KEY = "ws.cardTab";
 
@@ -119,5 +123,29 @@ export function History({ card }: { card: CardData }) {
         </section>
       ))}
     </>
+  );
+}
+
+export function Details({ rows, noData }: { rows: CardData["details"]; noData: string }) {
+  return (
+    <dl className="mt-3 text-body-sm">
+      {rows.map((d) => (
+        <div key={d.label} className="flex justify-between gap-3 border-t border-rule py-2">
+          <dt className="text-ink/75">{d.label}</dt>
+          <dd className="text-right tabular-nums">{withNoData(d.value, noData)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Map position stays hidden until asked for (D136): D71 allows it, people first. */
+export function MapPosition({ map, noData }: { map: CardData["map"]; noData: string }) {
+  const [open, setOpen] = useState(false);
+  if (open) return <Details rows={[map]} noData={noData} />;
+  return (
+    <button type="button" onClick={() => setOpen(true)} className={`${chip()} mt-1`}>
+      {map.show}
+    </button>
   );
 }

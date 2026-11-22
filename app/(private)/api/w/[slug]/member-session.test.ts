@@ -32,10 +32,12 @@ type Fixture = { body?: unknown; query?: string; picture?: true; officer?: false
 /**
  * Not officer routes, so not here. login: where every sign-in starts, with no session yet. logout: ends a
  * session of either tier (D105). me: a member's own "This is me" (D142), behind the board's door
- * (requireBoard), tested in me/route.test.ts. The board and how-to are pages, not API routes: the board
+ * (requireBoard), tested in me/route.test.ts; me/facts: a member tells their officers their own facts
+ * (D154), behind the same door and an approved link, tested in me/facts/route.test.ts. The board and how-to
+ * are pages, not API routes: the board
  * has its own door (requireBoard) and how-to reads nothing.
  */
-const EXCLUDED = new Set(["login/route.ts", "logout/route.ts", "me/route.ts"]);
+const EXCLUDED = new Set(["login/route.ts", "logout/route.ts", "me/route.ts", "me/facts/route.ts"]);
 
 const ID = "00000000-0000-4000-8000-000000000001";
 const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
@@ -55,6 +57,9 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   },
   "member-links/route.ts": { POST: { body: { action: "unlink", user: 999, uid: 1 } } },
   "members/[uid]/route.ts": { GET: {} },
+  "members/[uid]/self-report/route.ts": {
+    POST: { body: { action: "seen", user: 1, field: "timeZone", version: 1 } },
+  },
   "notices/draft/route.ts": {
     POST: { body: { kind: "translate", from: "en", to: ["fr"], text: "Hello" } },
   },

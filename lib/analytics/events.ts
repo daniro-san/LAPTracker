@@ -112,6 +112,8 @@ export interface AnalyticsEvents {
   ws_message_copied: { where: "card" | "follow_up"; to: "game" | "discord" };
   /** A members' board section came on screen, once per page load. */
   ws_board_section_viewed: { board_section: BoardSection };
+  /** D154: a member sent their own info to their officers from their own page (no value, no field). */
+  ws_self_report_sent: { change: "save" | "remove" };
   /** Alliance settings' Check found the bot in the alliance's Discord server for the first time (D129). */
   ws_bot_installed: NoProperties;
   /** A channel's webhook saved in Alliance settings (D129, D147): which channel only, never the URL. */
@@ -164,6 +166,7 @@ export const ANALYTICS_EVENTS = [
   "ws_thanks_shared",
   "ws_message_copied",
   "ws_board_section_viewed",
+  "ws_self_report_sent",
   "ws_bot_installed",
   "ws_webhook_set",
   "ws_access_requested",

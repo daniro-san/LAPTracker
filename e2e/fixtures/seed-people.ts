@@ -189,3 +189,21 @@ export function switchWorkspaceOf(repeat: number) {
   };
 }
 
+/**
+ * The member who tells their officers their time zone on their own page (D154), phone only: the second
+ * roster member of the repeat's own filler workspace (switchWorkspaceOf), with an approved link and a
+ * member session of their own, so no other test's card or Home shows what they send.
+ */
+export function selfReportOf(repeat: number) {
+  const n = repeat % REPEATS;
+  const w = switchWorkspaceOf(repeat);
+  const f = FILLERS[n] as (typeof FILLERS)[number];
+  return {
+    workspace: w,
+    user: 10 + n,
+    uid: Number(`${f.unionId}2`),
+    name: fillerNames(f)[1] as string,
+    token: `e2e-session-${w.slug}-member-token-0000${10 + n}`,
+  };
+}
+

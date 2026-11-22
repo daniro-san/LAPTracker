@@ -15,17 +15,21 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { meAccess, requireBoard, type CookieReader } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { selfReportWords } from "@/lib/private/dictionary.self-report";
 import { featureOn } from "@/lib/private/features";
 import { meView, type MeView } from "@/lib/private/me";
 import { linkedName, linkPicker, type LinkPicker } from "@/lib/private/me-link";
 import { cardFormats } from "@/lib/private/member-card";
+import { ownReport, REPORT_FIELDS, type OwnReports } from "@/lib/private/self-report";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { BoardAccount } from "../../../../_ui/BoardAccount";
 import { LINK } from "../../../../_ui/BoardSections";
+import { editorWords } from "../../../../_ui/facts-form";
 import { Frame, workspaceWords } from "../../../../_ui/Frame";
 import { MeLink } from "../../../../_ui/MeLink";
 import { MeNeeded, MeProgress, MeSquads, MeWeek } from "../../../../_ui/MeSections";
+import { MeSelfReport } from "../../../../_ui/MeSelfReport";
 import { refuse } from "../../../../_ui/refuse";
 
 export const metadata: Metadata = { title: "Your page" };
@@ -33,7 +37,7 @@ export const metadata: Metadata = { title: "Your page" };
 type Shown =
   | { kind: "pick"; picker: LinkPicker }
   | { kind: "pending"; name: string | null }
-  | { kind: "me"; view: MeView };
+  | { kind: "me"; view: MeView; reports: OwnReports };
 
 /** INVARIANT workspace.access-first: nothing private is read before the access check. */
 function readMe(
@@ -52,7 +56,12 @@ function readMe(
     if (!board.ok || !featureOn(board, "board")) return { board, shown: null };
     const me = meAccess(board);
     const shown: Shown = me
-      ? { kind: "me", view: await meView(db, me, at) }
+      ? {
+          kind: "me",
+          ...(await Promise.all([meView(db, me, at), ownReport(db, board, me)]).then(
+            ([view, reports]) => ({ view, reports }),
+          )),
+        }
       : board.player
         ? { kind: "pending", name: await linkedName(db, board) }
         : { kind: "pick", picker: await linkPicker(db, board) };
@@ -99,12 +108,30 @@ function Body(props: {
         <MeLink {...link} state={{ kind: "linked" }} />
       </section>
     );
-  const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
+  const zone = getEnv().SERVER_TZ;
+  const f = cardFormats(language, zone, new Date());
+  const { reports } = shown;
+  const days = Object.fromEntries(
+    REPORT_FIELDS.map((field) => {
+      const at = reports[field]?.at;
+      return [field, at ? f.date(new Date(at)) : null];
+    }),
+  ) as Record<(typeof REPORT_FIELDS)[number], string | null>;
   return (
     <Spread
       marginFirst
       main={
         <>
+          {/* D154: first in the main column, so a member finds it without scrolling past the charts. */}
+          <MeSelfReport
+            slug={slug}
+            language={language}
+            serverZone={zone}
+            reports={reports}
+            words={selfReportWords(t)}
+            editor={editorWords(t)}
+            days={days}
+          />
           <MeProgress view={view} t={t} language={language} f={f} />
           <MeWeek view={view} t={t} />
           <MeSquads view={view} />

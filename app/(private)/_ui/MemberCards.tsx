@@ -17,11 +17,20 @@ import type { CardData } from "@/lib/private/member-card";
 import { CardFollowUp } from "./CardFollowUp";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
-import { CardTabs, History, panelId, tabId, useCardTab } from "./MemberCardTabs";
+import {
+  CardTabs,
+  Details,
+  History,
+  MapPosition,
+  panelId,
+  tabId,
+  useCardTab,
+} from "./MemberCardTabs";
 import { MemberLastDays } from "./MemberLastDays";
 import { CardLink } from "./MemberLinks";
 import { MemberSquads } from "./MemberSquads";
 import { withNoData } from "./NoData";
+import { SelfReportCard, SelfReportInfo } from "./SelfReportCard";
 
 export const STATUS_TONE = {
   help: "font-semibold text-yarn",
@@ -53,7 +62,7 @@ type CardProps = {
   card: CardData;
   editor: EditorContext;
   zoneNow: string | null;
-  onChanged?: () => void;
+  onChanged?: (() => void) | undefined;
 } & Editing;
 
 /** The sheet bar's two ways into the editor: "Edit info" the main action, "Paste what they told you" second. */
@@ -74,7 +83,7 @@ export function factsActions(
 /** What the facts section needs: also a pending or former member's (D106, D107), who have no card. */
 export type FactsCard = Pick<
   CardData,
-  "uid" | "name" | "factLines" | "stored" | "autoStatus" | "noData"
+  "uid" | "name" | "factLines" | "stored" | "autoStatus" | "noData" | "selfReport"
 >;
 
 /** The facts editor, a sheet of its own, while the sheet's bar has it open. */
@@ -143,6 +152,8 @@ function FactList({
             {dates && l.updated && (
               <span className="block text-[12px] text-ink/70">{l.updated}</span>
             )}
+            {/* D154: what the member said, seen by an officer and not what the card holds. */}
+            <SelfReportInfo text={card.selfReport?.info[l.field as "adTech"]} />
           </dd>
         </div>
       ))}
@@ -197,7 +208,8 @@ function ShieldBlock({ shield }: { shield: NonNullable<CardData["shield"]> }) {
  * Status, the Raid Shield block during the raid (issue 634), the stat strip, their time and languages,
  * where they came from and who on Discord is linked to them (D142): the same on every tab.
  */
-function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | null; slug: string }) {
+function Header({ card, zoneNow, editor, onChanged }: CardProps) {
+  const { slug } = editor;
   return (
     <div className="px-3 pb-3">
       {card.statusLabel && (
@@ -237,6 +249,13 @@ function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | nul
         </p>
       ))}
       {card.link && <CardLink slug={slug} link={card.link} words={card.link.words} />}
+      <SelfReportCard
+        slug={slug}
+        uid={card.uid}
+        report={card.selfReport}
+        onChanged={onChanged}
+        failed={editor.words?.["facts.failed"] ?? ""}
+      />
     </div>
   );
 }
@@ -275,19 +294,6 @@ function Overview({ card, editor, onChanged }: CardProps) {
   );
 }
 
-function Details({ rows, noData }: { rows: CardData["details"]; noData: string }) {
-  return (
-    <dl className="mt-3 text-body-sm">
-      {rows.map((d) => (
-        <div key={d.label} className="flex justify-between gap-3 border-t border-rule py-2">
-          <dt className="text-ink/75">{d.label}</dt>
-          <dd className="text-right tabular-nums">{withNoData(d.value, noData)}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
 function Info({ card, editor }: Pick<CardProps, "card" | "editor">) {
   const [dates, setDates] = useState(false);
   const dated = card.factLines.some((l) => l.updated);
@@ -315,24 +321,13 @@ function Info({ card, editor }: Pick<CardProps, "card" | "editor">) {
   );
 }
 
-/** Map position stays hidden until asked for (D136): D71 allows it, people first. */
-function MapPosition({ map, noData }: { map: CardData["map"]; noData: string }) {
-  const [open, setOpen] = useState(false);
-  if (open) return <Details rows={[map]} noData={noData} />;
-  return (
-    <button type="button" onClick={() => setOpen(true)} className={`${chip()} mt-1`}>
-      {map.show}
-    </button>
-  );
-}
-
 /** The opened member: the header, then the four tabs and the open one's panel. */
 export function MemberCard(props: CardProps) {
   const { card } = props;
   const [tab, setTab] = useCardTab();
   return (
     <>
-      <Header card={card} zoneNow={props.zoneNow} slug={props.editor.slug} />
+      <Header {...props} />
       <CardTabs card={card} active={tab} onPick={setTab} />
       <div
         id={panelId(card.uid)}

@@ -2,9 +2,11 @@
 // officers' Start here editor and the link to the board from the desk. One module that the three workspace
 // dictionaries spread. French puts a no-break space before : ; ! and ?. A member's own page (D142) rides along.
 import { meEn, meFr, mePt } from "./dictionary.me";
+import { selfReportEn, selfReportFr, selfReportPt } from "./dictionary.self-report";
 
 export const boardEn = {
   ...meEn,
+  ...selfReportEn,
   "board.name": "Members’ board",
   "board.title": "Next 7 days in the alliance",
   "board.lead": "Your officers keep this page. New here?",
@@ -77,6 +79,7 @@ type BoardWords = Record<keyof typeof boardEn, string>;
 
 export const boardPt: BoardWords = {
   ...mePt,
+  ...selfReportPt,
   "board.name": "Mural dos membros",
   "board.title": "Os próximos 7 dias da aliança",
   "board.lead": "Os oficiais cuidam desta página. Chegou agora?",
@@ -146,6 +149,7 @@ export const boardPt: BoardWords = {
 
 export const boardFr: BoardWords = {
   ...meFr,
+  ...selfReportFr,
   "board.name": "Tableau des membres",
   "board.title": "Les 7 prochains jours de l’alliance",
   "board.lead": "Vos officiers tiennent cette page à jour. Nouveau ici ?",

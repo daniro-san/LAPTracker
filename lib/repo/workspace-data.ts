@@ -12,6 +12,7 @@ import {
   calendarOccurrences,
   garrisonPlans,
   memberFacts,
+  memberSelfReports,
   memberFollowUps,
   nameAliases,
   pendingMembers,
@@ -74,6 +75,13 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
     omit: ["discord_user_id", "allowlist_added_by"],
   },
   { file: "member-facts", table: memberFacts, scope: "workspace" },
+  // D154: what members sent about themselves; a fact only once an officer put it on the card.
+  {
+    file: "member-self-reports",
+    table: memberSelfReports,
+    scope: "workspace",
+    omit: ["request_id"],
+  },
   { file: "new-members", table: pendingMembers, scope: "workspace" },
   { file: "name-aliases", table: nameAliases, scope: "workspace" },
   { file: "calendar-entries", table: calendarEntries, scope: "workspace" },

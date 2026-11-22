@@ -125,6 +125,7 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
     const tables = [
       "people",
       "member-facts",
+      "member-self-reports",
       "new-members",
       "name-aliases",
       "calendar-entries",
