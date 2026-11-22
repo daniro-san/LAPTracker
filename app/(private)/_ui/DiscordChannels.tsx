@@ -10,11 +10,13 @@ import { useState, type FormEvent } from "react";
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
+import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 
 import { AskSheet } from "./AskSheet";
 import { postDiscord, type Note, NoteLine } from "./discord-send";
+import { HowTo } from "./HowTo";
 import { newRequestId } from "./request-id";
 
 export type ChannelKind = "leaders" | "members" | "shield";
@@ -225,10 +227,12 @@ function ChannelCard(props: {
   };
   return (
     <div className="drawn-frame-soft px-3 py-3">
-      <h4 className="font-semibold">{t[`discord.channel.${c.channel}`]}</h4>
-      {c.channel === "shield" && (
-        <p className="mb-1 text-body-sm text-ink/75">{t["discord.channel.shieldHelp"]}</p>
-      )}
+      <h4 className="flex flex-wrap items-baseline gap-x-3 font-semibold">
+        {t[`discord.channel.${c.channel}`]}
+        {c.channel === "shield" && <Tag tone="attention">{t["discord.channel.leadersOnly"]}</Tag>}
+      </h4>
+      {/* It names members without a shield seen (D147): the card's most important line, at full ink. */}
+      {c.channel === "shield" && <p className="mb-1">{t["discord.channel.shieldHelp"]}</p>}
       <p className={c.state === "reenter" ? "font-semibold text-seal" : "text-ink/80"}>
         <bdi>{stateLine(c, t)}</bdi>
       </p>
@@ -263,16 +267,22 @@ export function DiscordChannels(props: {
   channels: ChannelProps[];
   /** Webhooks can be saved: WORKSPACE_KEYS_SECRET is set (D124). */
   saving: boolean;
+  /** "3. Channels for notices", or the heading with no step number while the site's bot is off. */
+  head: WorkspaceKey;
   t: WorkspaceDictionary;
 }) {
   const { t } = props;
+  // How to get a webhook: open while a channel still needs one, one tap away once every channel is set.
+  const unset = props.channels.some((c) => c.state === "none" || c.state === "reenter");
   return (
     <section aria-labelledby="discord-hooks" className="mt-6">
       <h3 id="discord-hooks" className="font-subhead text-body-lg font-semibold">
-        {t["discord.hooks.head"]}
+        {t[props.head]}
       </h3>
       <p className="mt-1">{t["discord.hooks.lead"]}</p>
-      <p className="mt-2 text-body-sm text-ink/75">{t["discord.hooks.how"]}</p>
+      <HowTo summary={t["discord.hooks.howSummary"]} open={unset}>
+        <p className="text-body-sm">{t["discord.hooks.how"]}</p>
+      </HowTo>
       <div className="mt-3 grid gap-3">
         {props.channels.map((c) => (
           <ChannelCard key={c.channel} slug={props.slug} c={c} t={t} saving={props.saving} />

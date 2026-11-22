@@ -4,7 +4,7 @@
 export const switchesEn = {
   "switches.head": "Features",
   "switches.lead":
-    "Turn on what your alliance uses. Turning one off hides it for every officer. Nothing is deleted: turn it on again and everything is back.",
+    "Turn on what your alliance uses, then tap Save. Turning one off hides it for every officer. Nothing is deleted: turn it on again and everything is back.",
   "switches.estimate":
     "Tracker calls with your choices: about {daily} a day, of the 1,000 calls a key has each day. Counted for {members} members.",
   "switches.estimatePeak":
@@ -42,7 +42,7 @@ export const switchesEn = {
 export const switchesPt: typeof switchesEn = {
   "switches.head": "Recursos",
   "switches.lead":
-    "Ligue o que a sua aliança usa. Se você desligar um recurso, ele some para todos os oficiais. Nada é apagado: ligue de novo e tudo volta.",
+    "Ligue o que a sua aliança usa e toque em Salvar. Se você desligar um recurso, ele some para todos os oficiais. Nada é apagado: ligue de novo e tudo volta.",
   "switches.estimate":
     "Chamadas ao tracker com as suas escolhas: cerca de {daily} por dia, das 1.000 chamadas que uma chave tem por dia. Contado para {members} membros.",
   "switches.estimatePeak":
@@ -81,7 +81,7 @@ export const switchesPt: typeof switchesEn = {
 export const switchesFr: typeof switchesEn = {
   "switches.head": "Fonctions",
   "switches.lead":
-    "Activez ce que votre alliance utilise. Désactiver une fonction la cache pour tous les officiers. Rien n’est supprimé : réactivez-la et tout revient.",
+    "Activez ce que votre alliance utilise, puis touchez Enregistrer. Désactiver une fonction la cache pour tous les officiers. Rien n’est supprimé : réactivez-la et tout revient.",
   "switches.estimate":
     "Appels au tracker avec vos choix : environ {daily} par jour, sur les 1 000 appels qu’une clé a chaque jour. Compté pour {members} membres.",
   "switches.estimatePeak":

@@ -34,6 +34,13 @@ export const discordFr: typeof discordEn = {
   "discord.private":
     "Seulement si un salon est privé : pour que les commandes y publient, ouvrez les paramètres du salon → Permissions → ajoutez LAPTracker, puis autorisez Voir le salon, Envoyer des messages, Créer des fils publics et Envoyer des messages dans les fils.",
   "discord.hooks.head": "3. Salons des annonces",
+  "discord.hooks.headAlone": "Salons des annonces",
+  "discord.hooks.howSummary": "Comment obtenir l’URL du webhook",
+  "discord.privateSummary": "Publier dans un salon privé ?",
+  "discord.bot.siteOffHead": "Bot et commandes",
+  "discord.bot.siteOff":
+    "Le bot Discord de LAPTracker est arrêté sur ce site pour l’instant : il n’y a rien à ajouter ni à vérifier ici. Les salons ci-dessous n’en ont pas besoin : les annonces et le résumé du Bouclier de raid passent par leurs propres webhooks.",
+  "discord.channel.leadersOnly": "Direction seulement",
   "discord.hooks.lead":
     "Quand vous touchez Publier sur Discord sur une annonce, les annonces de la direction vont dans le salon des chefs et celles des membres dans le salon des membres. Chaque salon a besoin de son propre webhook. Le résumé de la vérification du Bouclier de raid est publié seulement dans son propre salon.",
   "discord.hooks.how":
