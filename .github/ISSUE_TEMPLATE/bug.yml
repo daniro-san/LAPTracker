@@ -91,7 +91,7 @@ body:
     id: size
     attributes:
       label: Size
+      description: Defined in CONTRIBUTING.md § Working rules.
       options:
-        - S
-        - M
-        - L
+        - S — restores intended behaviour; this form is the spec
+        - M — has an M trigger, most often a migration or a new decision; run tlc-spec-lean first

@@ -46,16 +46,19 @@ Read by `/code-review` and by `/pr-review` (through `.claude/pr-review.md`) on e
 - [ ] Session replay: text under `/w` and `/admin` is masked by the layout's `ph-mask`; per-member values such as bars also need `ph-no-capture` (issue 549, D142).
 - [ ] Every route behind `requireWorkspace` answers a request without a usable session with `401 signed_out` (D99); errors are codes only.
 
-## Performance, copy and people (CONTRIBUTING.md § Working rules, DESIGN.md § Validation)
+## Performance, copy, analytics and people (CONTRIBUTING.md § Working rules, DESIGN.md § Validation)
 
 - [ ] Does the change make the night read, Raid prep, member cards right after a read, or the status bar while a read runs any staler? Does a read of a table that grows forever take a window or an index (D149)?
 - [ ] A cut or changed user-facing string that a decision quotes carries a dated amendment to that decision.
 - [ ] Nothing ranks people, counts missing data against anyone, or acts on its own (D75).
+- [ ] A PR sized S or n/a has no M trigger in its diff (CONTRIBUTING.md § Working rules, "When to run `/tlc-spec-lean`"): no new route or page, migration, new decision, private-field flow change, new external call or quota use, or flow across two or more screens.
+- [ ] The PR's Analytics plan section matches the diff: every event or property added, changed or removed in the code is listed there and in `docs/analytics/tracking-plan.md`.
 
 ## Tests
 
 - [ ] Tests that assert the wrong thing or pass vacuously (e.g. a detector that never sees a positive case, a mock that makes the assertion trivially true).
 - [ ] A change to `lib/compute.ts`, `lib/collector.ts`, `lib/budget.ts` or `lib/sources/*` ships with a test.
+- [ ] Every new or changed test protects a named user flow, user action or stated rule, and none is on the fake-test list in CONTRIBUTING.md § Working rules, "Tests check real behaviour".
 
 ## Specs (`.specs/`, see `.specs/README.md`)
 
