@@ -18,7 +18,9 @@ import { discordClock } from "./discord-format";
 import { editOnly, sendOrEdit } from "./discord-send";
 import type { Env } from "./env";
 import { escapeDiscord } from "./notify";
+import { discordCallout, withCallout } from "./post-callout";
 import { membersOfRaid } from "./raid-prep-fill";
+import { liveCallout } from "./repo/post-touches";
 import {
   getShieldCheck,
   keepMessage,
@@ -255,7 +257,11 @@ async function messageOf(
   const language = SHIELD_LANGUAGES.includes(lang) ? lang : "en";
   const words = SHIELD_POST[language];
   const url = `${deps.origin}/w/${target.slug}/roll-call?week=${mondayOf(day)}`;
-  const content = shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url, language);
+  // D156: the alliance's own line above our title, while its `post_callouts` is on.
+  const callout =
+    target.workspaceId === null ? "" : await liveCallout(db, target.workspaceId, "shield");
+  const message = shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url, language);
+  const content = withCallout(discordCallout(callout), message);
   // The forum post's title: the message's title without its bold marks.
   return { content, title: words.title.replaceAll("*", "") };
 }

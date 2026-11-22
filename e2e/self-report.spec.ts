@@ -7,16 +7,16 @@
 import type { Page } from "@playwright/test";
 
 import { daysAgo, selfReportOf, usDay } from "./fixtures/seed";
-import { deskFrame, expect, hydrated, noError, sees, signIn, test } from "./fixtures/test";
-
-/** Waits until the page's refresh of `path` (router.refresh, an RSC answer) has come in whole. */
-async function refreshedAfter(page: Page, path: string, action: () => Promise<void>) {
-  const refreshed = page.waitForResponse(
-    (r) => new URL(r.url()).pathname === path && r.request().headers()["rsc"] === "1",
-  );
-  await action();
-  await (await refreshed).finished();
-}
+import {
+  deskFrame,
+  expect,
+  hydrated,
+  noError,
+  savedAndRefreshed,
+  sees,
+  signIn,
+  test,
+} from "./fixtures/test";
 
 test("a member's time zone and languages sent from Me show on their card as self-reported; “Put on the card” and “Seen, keep the card” hold after a reload", async ({
   context,
@@ -79,7 +79,7 @@ test("a member's time zone and languages sent from Me show on their card as self
   await expect(form.getByRole("button", { name: /Your time zone/ })).toContainText("Europe/London");
   await form.getByRole("button", { name: "Português (Portuguese)" }).click();
   const send = form.getByRole("button", { name: "Send to your officers" });
-  await refreshedAfter(page, `/w/${w.slug}/board/me`, () => send.click());
+  await savedAndRefreshed(page, `/w/${w.slug}/board/me`, () => send.click());
   await sees(form.getByRole("status"), "Sent. Your officers see it on your member card.");
   await sees(form, `You sent this on ${today} · not seen yet`);
   await page.reload();
@@ -120,7 +120,7 @@ test("a member's time zone and languages sent from Me show on their card as self
   const clear = form.getByRole("button", { name: "Clear" });
   await hydrated(clear);
   await clear.click();
-  await refreshedAfter(page, `/w/${w.slug}/board/me`, () => send.click());
+  await savedAndRefreshed(page, `/w/${w.slug}/board/me`, () => send.click());
   await sees(form, `You took back what you sent, on ${today} · not seen yet`);
   card = await asOfficer();
   await sees(

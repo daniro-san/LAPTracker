@@ -45,6 +45,7 @@ export const featuresAdminCopy = {
     discord_send: "Send to LAPTracker",
     discord_translate_me: "Translate for me",
     discord_translate_everyone: "Translate for everyone",
+    post_callouts: "Alliance's line on our posts",
     squads: "Squads read (own key)",
     shield_check: "Raid Shield check (own key)",
     notice_pictures: "Notice pictures (Neon storage)",

@@ -17,7 +17,6 @@ import {
 import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
 import type { TurnoutLists } from "./queries";
-import { redactPrivate } from "./redact";
 import type { Verdict } from "./rehearsal";
 import type { SnapshotPhase } from "./repo";
 import { fill } from "./words";
@@ -327,17 +326,6 @@ export function rehearsalSkippedMessage(
 }
 
 export const pinLockedMessage = (n: number): string => fill(copy.discord.admin.pinLocked, { n });
-
-/** The admin alert; `message` may end with the error's own first line, so it passes redactPrivate (D115). */
-export function appErrorMessage(route: string, message: string, digest: string | null): string {
-  const t = copy.discord.admin;
-  return fill(t.appError, {
-    route,
-    // INVARIANT app-errors.private-redacted: the alert's text passes the private-field redactor.
-    message: redactPrivate(message),
-    digest: digest ? fill(t.digest, { digest }) : "",
-  });
-}
 
 /** The tick-silence alert (D45): minutes since the last tick and its time, or none recorded. */
 export function tickSilenceMessage(last: { min: number; at: string } | null): string {

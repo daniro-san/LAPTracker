@@ -70,3 +70,5 @@ Why: the owner liked "Worth a thank-you" (D109) and asked to make it sharable an
 - **Not done:** the board's preview strip still wraps to two lines at 360 px (D105's words).
 
 - **Amendment 2026-11-20 (D139, issue 489).** The Insights page's "Quiet contributors" open the same sheet with them ticked, under a third deed, `steady` ("kept up their daily quests and donations"); `did` takes up to 3 deeds. There the pick help reads "The quiet contributors are ticked. Untick anyone you'd rather not name."; Members and Home keep the line above.
+
+**Amendment 2026-11-22 (issue 713, D156): the alliance's own line.** "Post to Discord" opens the first message with the alliance's line for the weekly thanks, when one is saved and `post_callouts` is on, above the bold title (or above the text in a forum post, whose title is the post's name). It is escaped and links nothing (D156). The members' board's card does not take it.

@@ -6,7 +6,7 @@ import type { AppContext } from "@/lib/app-context";
 import { TEST_PIN, testContext } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
-import { kvkOpponents } from "@/lib/schema-kvk";
+import { kvkOpponents, kvkSuggestions } from "@/lib/schema-kvk";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -90,5 +90,55 @@ describe("POST /api/admin/kvk-opponent (D152)", () => {
     expect(await (await save({ event_at: NEXT, result: null })).json()).toMatchObject({
       result: null,
     });
+  });
+});
+
+describe("POST /api/admin/kvk-opponent: the ranks board suggestion (D155)", () => {
+  /** The board's calls, each failing as a fetch with no answer does. */
+  let calls: number[];
+  beforeEach(() => {
+    calls = [];
+    const ctx = holder.ctx;
+    if (!ctx) throw new Error("no context");
+    ctx.internal = {
+      ...ctx.internal,
+      fetchRanks: async (server) => {
+        calls.push(server);
+        throw new Error("fetch failed");
+      },
+    };
+  });
+
+  it("saves the typed tags when the board read fails, and marks the read failed", async () => {
+    const res = await save({ event_at: NEXT, server: 326, tags: ["AAA", "BBB"] });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ server: 326, tags: ["AAA", "BBB"] });
+    expect(calls).toEqual([326]);
+    expect(await db.select().from(kvkSuggestions)).toMatchObject([{ status: "failed" }]);
+  });
+
+  it("answers Suggest tags with 404 no_opponent and no call while no server is saved", async () => {
+    const res = await save({ event_at: NEXT, suggest: true });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ code: "no_opponent" });
+    expect(calls).toEqual([]);
+  });
+
+  it("reads the board again on Suggest tags after a failed read", async () => {
+    await save({ event_at: NEXT, server: 326, tags: [] });
+    expect((await save({ event_at: NEXT, suggest: true })).status).toBe(200);
+    expect(calls).toEqual([326, 326]);
+    expect(await db.select().from(kvkSuggestions)).toMatchObject([{ attempts: 2 }]);
+  });
+
+  it("answers Suggest tags at the war with 409 war_started and no call", async () => {
+    await save({ event_at: NEXT, server: 326, tags: [] });
+    const ctx = holder.ctx;
+    if (!ctx) throw new Error("no context");
+    ctx.now = () => new Date(NEXT);
+    const res = await save({ event_at: NEXT, suggest: true });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ code: "war_started" });
+    expect(calls).toEqual([326]);
   });
 });

@@ -28,6 +28,7 @@ import {
   hydrated,
   isolated,
   noError,
+  savedAndRefreshed,
   sees,
   signIn,
   test,
@@ -38,18 +39,6 @@ const B = ALLIANCES.b;
 /** A button whose name starts with the member's name (a Members line, a Follow-up row). */
 const named = (page: Page, prefix: string, name: string) =>
   page.getByRole("button", { name: new RegExp(`^${prefix}${isolated(name)}`) });
-
-/**
- * Runs `action` (a tap that saves), then waits until the page's refresh of `path` (router.refresh, an RSC
- * answer) has come in whole: a reload or a new page cut short would leave that answer unread by the guards.
- */
-async function savedAndRefreshed(page: Page, path: string, action: () => Promise<void>) {
-  const refreshed = page.waitForResponse(
-    (r) => new URL(r.url()).pathname === path && r.request().headers()["rsc"] === "1",
-  );
-  await action();
-  await (await refreshed).finished();
-}
 
 /** The sign-in screen (D99), with none of Lantern Keep's members on it. */
 async function signInScreen(page: Page) {

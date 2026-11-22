@@ -48,6 +48,8 @@ export const discordFr: typeof discordEn = {
   "discord.channel.shield": "Salon du Bouclier de raid",
   "discord.channel.shieldHelp":
     "Pour le résumé de la vérification du Bouclier de raid. Il cite les membres sans bouclier vu, alors choisissez un salon que seuls les chefs et les officiers voient. Sans ce salon, aucun résumé n’est publié.",
+  "discord.channel.look":
+    "Les messages affichent le nom et l’image de ce webhook. Modifiez-les sur Discord : Paramètres du serveur → Intégrations → Webhooks.",
   "discord.hook.set": "Configuré · #{name}",
   "discord.hook.site":
     "Utilise un salon configuré par le site (#{name}). Ajoutez le webhook de votre alliance pour publier dans votre salon.",

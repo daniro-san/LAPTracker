@@ -6,7 +6,7 @@ import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { opponentCallsDue } from "../kvk";
 import { events, snapshots } from "../schema";
-import { kvkOpponents, kvkReads } from "../schema-kvk";
+import { kvkOpponents, kvkReads, kvkSuggestions, type SuggestedAlliance } from "../schema-kvk";
 import type { Phase } from "./index";
 
 /** A scheduled event's opponent as a run reads it. */
@@ -212,4 +212,76 @@ export async function kvkEventTimes(db: Db, next: Date, before = 4): Promise<Dat
     .orderBy(desc(events.eventAtUtc))
     .limit(before);
   return [next, ...past.map((p) => p.at)];
+}
+
+/** A `running` claim older than this belongs to a killed request (the board's call times out at 30 s). */
+export const SUGGEST_STALE_AFTER_MS = 2 * 60_000;
+/** Board reads per (KvK, server), the first included (INVARIANT suggest.attempt-cap). */
+export const SUGGEST_MAX_ATTEMPTS = 3;
+
+/**
+ * Claims the (KvK, server) board read before its call (D155): a new row, or with `retry` a failed row (or a
+ * stale `running` claim) with attempts left. False when the claim is refused: a `read` row is never claimed
+ * again (INVARIANT suggest.one-read-per-event-server). One statement, so two saves at once make one call.
+ */
+export async function claimSuggestion(
+  db: Db,
+  key: { eventAt: Date; server: number },
+  now: Date,
+  retry: boolean,
+): Promise<boolean> {
+  const insert = db
+    .insert(kvkSuggestions)
+    .values({ ...key, status: "running", attempts: 1, claimedAt: now });
+  const stale = new Date(now.getTime() - SUGGEST_STALE_AFTER_MS);
+  const claimed = await (
+    retry
+      ? insert.onConflictDoUpdate({
+          target: [kvkSuggestions.eventAt, kvkSuggestions.server],
+          set: { status: "running", attempts: sql`${kvkSuggestions.attempts} + 1`, claimedAt: now },
+          setWhere: sql`${kvkSuggestions.attempts} < ${SUGGEST_MAX_ATTEMPTS} and (${kvkSuggestions.status} = 'failed' or (${kvkSuggestions.status} = 'running' and ${kvkSuggestions.claimedAt} < ${stale.toISOString()}))`,
+        })
+      : insert.onConflictDoNothing()
+  ).returning({ id: kvkSuggestions.id });
+  return claimed.length > 0;
+}
+
+/** The board's answer over its claim: the suggested alliances, or `failed` (null). */
+export async function finishSuggestion(
+  db: Db,
+  key: { eventAt: Date; server: number },
+  read: { alliances: SuggestedAlliance[]; pulledAt: Date } | null,
+  now: Date,
+): Promise<void> {
+  await db
+    .update(kvkSuggestions)
+    .set(read ? { status: "read", ...read, readAt: now } : { status: "failed" })
+    .where(and(eq(kvkSuggestions.eventAt, key.eventAt), eq(kvkSuggestions.server, key.server)));
+}
+
+/** The board reads of these war times, for /admin's card (D155). */
+export async function suggestionsAt(db: Db, eventAts: Date[]) {
+  if (eventAts.length === 0) return [];
+  return db
+    .select({
+      eventAt: kvkSuggestions.eventAt,
+      server: kvkSuggestions.server,
+      status: kvkSuggestions.status,
+      attempts: kvkSuggestions.attempts,
+      alliances: kvkSuggestions.alliances,
+      claimedAt: kvkSuggestions.claimedAt,
+      readAt: kvkSuggestions.readAt,
+    })
+    .from(kvkSuggestions)
+    .where(inArray(kvkSuggestions.eventAt, eventAts));
+}
+
+/** True once the Start (or End) stored a row for this opponent: its tags were read (D152). */
+export async function opponentWasRead(db: Db, opponentId: number): Promise<boolean> {
+  const [row] = await db
+    .select({ id: kvkReads.id })
+    .from(kvkReads)
+    .where(eq(kvkReads.opponentId, opponentId))
+    .limit(1);
+  return row !== undefined;
 }

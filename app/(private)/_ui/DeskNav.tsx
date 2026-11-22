@@ -1,5 +1,5 @@
 // The desk's five destinations (D71) for each width (D122): the bottom tabs below 768, the side rail from
-// 768 and the labelled sidebar with each destination's views from 1280. Frame puts them in AppShell. A
+// 768 and the labelled sidebar from 1280, both with each destination's views (issue 720). Frame puts them in AppShell. A
 // destination or view the site's owner turned off for the alliance is left out (D126).
 import type { NavItem } from "@/lib/brand/components/layout/layout-rules";
 import { NavRail } from "@/lib/brand/components/layout/NavRail";
@@ -125,24 +125,18 @@ export function SideNav({
     label: t["tab.aria"],
     items: navItems(t, slug, on),
     current,
+    ...(view && { view }),
     icons: Object.fromEntries(TABS.map((id) => [id, <TabIcon key={id} id={id} />])),
     soon: t["tab.soon"],
+    // "See what members see" (the members' board) ends both, under a hairline (issue 720: the rail too).
+    footer: on.has("board") && (
+      <a href={`/w/${slug}/board`} className="text-link inline-flex min-h-11 items-center">
+        {t["board.seeMembers"]}
+      </a>
+    ),
   };
   if (!wide) return <NavRail {...props} badges={{ home: <Waiting n={waiting} t={t} /> }} />;
-  return (
-    <NavSidebar
-      {...props}
-      {...(view && { view })}
-      badges={{ home: <Waiting n={waiting} t={t} inline /> }}
-      footer={
-        on.has("board") && (
-          <a href={`/w/${slug}/board`} className="text-link inline-flex min-h-11 items-center">
-            {t["board.seeMembers"]}
-          </a>
-        )
-      }
-    />
-  );
+  return <NavSidebar {...props} badges={{ home: <Waiting n={waiting} t={t} inline /> }} />;
 }
 
 export function Tabs({

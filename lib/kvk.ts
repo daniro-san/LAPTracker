@@ -1,8 +1,19 @@
 // The KvK matchup's rules (D152, issue 306), pure: which alliances each side compares, their figures at the
 // Start, and Start to End over the members in both readings. No IO, no clock.
 
+import { z } from "zod";
+
 import { MAX_OPPONENT_TAGS } from "./budget";
 import type { OpponentInfo, OpponentRead } from "./repo/kvk";
+
+/** A tag as one path segment of the by-tag lookup: 1–12 characters after NFC, no space, no `/ ? # % \`, no
+ * control character, not dots only (`..` would leave the segment). Case-sensitive (plan §2). The /admin
+ * route checks typed tags with it, and the ranks board's suggestion keeps only tags that pass it (D155). */
+export const opponentTag = z
+  .string()
+  .transform((s) => s.normalize("NFC"))
+  .refine((s) => [...s].length >= 1 && [...s].length <= 12)
+  .refine((s) => !/[\s/?#%\\\p{Cc}]/u.test(s) && !/^\.+$/.test(s));
 
 /** A KvK opponent's Start row the End and the matchup may use: data, fresh, and read before the war. */
 export const usableStart = (

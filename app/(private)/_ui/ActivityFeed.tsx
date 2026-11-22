@@ -146,8 +146,8 @@ export function ActivityFeed(props: {
           <Line key={`${line.at}-${i}`} line={line} onNames={onNames} />
         ))}
       </ul>
-      {/* From 1024, in the sticky margin that scrolls on its own, the two buttons stay in view at its
-          foot while the lines run past it (issue 412 UX pass). */}
+      {/* From 1024 the two buttons stay in view at the window's foot while the lines run past them
+          (issue 412 UX pass). */}
       {(list.next !== null || list.more.length > 0) && (
         <div className="flex flex-wrap gap-x-6 border-t border-rule bg-paper lg:sticky lg:bottom-0">
           {/* A failed "Show more" says so next to the button, in view at the margin's foot. */}

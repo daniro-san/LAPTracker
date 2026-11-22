@@ -15,6 +15,7 @@ let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
   await storeBoard(db, DAY, {
+    server: 325,
     pulledAt: T0,
     power: new Map(ALL.map((id, i) => [id, 9_000_000 - i * 1000])),
     kills: new Map(ALL.map((id) => [id, 500])),

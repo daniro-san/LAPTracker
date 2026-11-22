@@ -1,12 +1,24 @@
 // /admin's KvK opponent card (D152, issue 306), as `copy.admin.kvk`. English only (D48).
 export const kvkAdminCopy = {
   title: "KvK opponent",
-  help: "The server our server meets in a Saturday's KvK, and its alliances' tags. Copy the tags from the game's KvK ranking. Each costs one call at the Start and one at the End.",
+  help: "The server our server meets in a Saturday's KvK, and its alliances' tags. Saving the server reads its ranks board once and suggests its 15 largest alliances; you can also copy the tags from the game's KvK ranking. Each tag costs one call at the Start and one at the End.",
   /** The picker's label and one option: `Sat, Nov 28 · next` / `Sat, Nov 21`. */
   event: "KvK",
   next: "{day} · next",
   server: "Server",
   tags: "Tags (up to 15, separated by spaces or commas)",
+  /** The server's ranks board suggestion (D155). */
+  suggest: {
+    /** `Suggested from server 326's ranks board, read 16:05 ST.` */
+    from: "Suggested from server {server}'s ranks board, read {time} ST. Untick what you don't want, then save.",
+    failed: "Server {server}'s ranks board couldn't be read. Type the tags as before.",
+    running: "Reading server {server}'s ranks board…",
+    button: "Suggest tags",
+    chips: "Suggested tags",
+    /** One chip: `XQZ · 4.1B`. */
+    chip: "{tag} · {might}",
+    other: "Other tags (separated by spaces or commas)",
+  },
   save: "Save opponent",
   saved: "Saved.",
   /** After the war: the tags can no longer change. */

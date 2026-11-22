@@ -4,6 +4,7 @@
 // spends. Then the Raid Shield check's own settings while it is on (D137). Then Notifications, this officer's
 // own device, only when the site has push keys (D148). Then Discord (D129): add the bot,
 // Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the
+// alliance's own line on our posts while `post_callouts` is on (D156). Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page. Issue 585: the page head says how the page saves, and an "On this page"
@@ -23,11 +24,12 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { allianceFeaturesView } from "@/lib/private/alliance-features";
 import { agoText } from "@/lib/private/calendar-words";
-import type { WorkspaceLanguage } from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
+import { calloutsView } from "@/lib/private/post-callouts";
 import { pushView } from "@/lib/private/push-settings";
 import { serverClock } from "@/lib/private/read-status";
 import { RENEW_MS } from "@/lib/private/session";
@@ -42,6 +44,7 @@ import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
+import { PostCallouts } from "../../../_ui/PostCallouts";
 import { PushSettings } from "../../../_ui/PushSettings";
 import { RaidPrepSettings } from "../../../_ui/RaidPrepSettings";
 import { refuse } from "../../../_ui/refuse";
@@ -100,22 +103,26 @@ function keyForm(
 async function readSettings(
   db: Db,
   access: WorkspaceAccess,
-  ctx: { env: Env; now: Date; language: WorkspaceLanguage },
+  ctx: { env: Env; now: Date; language: WorkspaceLanguage; t: WorkspaceDictionary },
 ) {
   const { env, now } = ctx;
-  const [view, waiting, bot, channels, squads, features, shield, push] = await Promise.all([
-    trackerKeyView(db, access, env, now),
-    toReviewCount(db, access, now),
-    botView(db, access, env),
-    webhookViews(db, access, env),
-    squadsReader(db, access, env, now).then((key) =>
-      key ? squadsToday(db, access, env, now) : null,
-    ),
-    allianceFeaturesView(db, access),
-    shieldSettingsView(db, access, ctx.language),
-    pushView(db, access, env),
-  ]);
-  return { view, waiting, bot, channels, squads, features, shield, push };
+  // The Raid Shield card's settings, read once: the lines' card takes the summary's language from them.
+  const shieldRead = shieldSettingsView(db, access, ctx.language);
+  const [view, waiting, bot, channels, squads, features, shield, push, callouts] =
+    await Promise.all([
+      trackerKeyView(db, access, env, now),
+      toReviewCount(db, access, now),
+      botView(db, access, env),
+      webhookViews(db, access, env),
+      squadsReader(db, access, env, now).then((key) =>
+        key ? squadsToday(db, access, env, now) : null,
+      ),
+      allianceFeaturesView(db, access),
+      shieldRead,
+      pushView(db, access, env),
+      shieldRead.then((s) => calloutsView(db, access, ctx.t, s?.language ?? null)),
+    ]);
+  return { view, waiting, bot, channels, squads, features, shield, push, callouts };
 }
 
 /** The first card: the tracker key and today's squads read. */
@@ -148,7 +155,7 @@ function indexInput(
   page: Awaited<ReturnType<typeof readSettings>>,
   data: SettingsIndexInput["data"],
 ): SettingsIndexInput {
-  const { view, bot, channels, features, shield, push } = page;
+  const { view, bot, channels, features, shield, push, callouts } = page;
   const allowed = features.groups.flatMap((g) => g.features);
   return {
     key: view.state,
@@ -158,6 +165,10 @@ function indexInput(
     shield: shield && { discord: shield.discord, channel: summaryChannel(channels) },
     push: Boolean(push),
     discord: { channels: channels.map((c) => c.state), botOff: siteBotOff(bot) },
+    callouts: callouts && {
+      set: callouts.filter((c) => c.callout !== "").length,
+      n: callouts.length,
+    },
     data,
   };
 }
@@ -172,7 +183,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, page } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    const ctx = { env, now, language };
+    const ctx = { env, now, language, t };
     return { access, page: access.ok ? await readSettings(db, access, ctx) : null };
   });
   if (!access.ok || !page) {
@@ -224,7 +235,7 @@ function SettingsCards(props: {
 }) {
   const { slug, t } = props;
   const { env, now, language } = props.ctx;
-  const { view, bot, channels, squads, features, shield, push } = props.page;
+  const { view, bot, channels, squads, features, shield, push, callouts } = props.page;
   return (
     <>
       <TrackerKeyCard
@@ -254,6 +265,7 @@ function SettingsCards(props: {
         saving={Boolean(env.WORKSPACE_KEYS_SECRET)}
         t={t}
       />
+      {callouts && <PostCallouts slug={slug} rows={callouts} t={t} language={language} />}
       <WorkspaceDataForm
         slug={slug}
         t={t}

@@ -23,7 +23,14 @@ export const viewport: Viewport = { viewportFit: "cover" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const copy = await requestCopy();
-  return { title: copy.site.name, description: copy.site.description };
+  // darkreader-lock: Brave iOS "Night Mode" injects Dark Reader, which recolours the light theme; the lock tag
+  // is Dark Reader's documented opt-out. Our own light and dark themes are the only dark mode (DESIGN.md).
+  return {
+    title: copy.site.name,
+    description: copy.site.description,
+    // Content must be non-empty: Next drops a meta tag whose content is "".
+    other: { "darkreader-lock": "true" },
+  };
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

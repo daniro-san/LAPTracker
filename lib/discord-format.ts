@@ -3,16 +3,8 @@
 import { compactLarge } from "./compact";
 import { copy } from "./copy";
 
-/**
- * Text people type (a round's name; an alliance's tag and name, or a member's name, typed in game) shows
- * literally: Discord markdown is backslash-escaped and mentions get a zero-width space after the `@`. Pure,
- * so the desk's "Copy names" uses it in the browser too (issue 585).
- */
-export const escapeDiscord = (text: string) =>
-  text
-    .replace(/[\\*_~`|>[\]]/g, "\\$&")
-    .replace(/@(everyone|here)/g, "@\u200b$1")
-    .replace(/<@/g, "<@\u200b");
+// The escaper lives in a module that imports nothing, so lib/private can use it too (D71, D156).
+export { escapeDiscord } from "./markdown-escape";
 
 export const MINUS = "−";
 export const sign = (n: number) => (n > 0 ? "+" : n < 0 ? MINUS : "");

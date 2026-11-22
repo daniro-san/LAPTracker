@@ -7,6 +7,7 @@ import {
   boolean,
   check,
   integer,
+  jsonb,
   pgTable,
   serial,
   text,
@@ -80,5 +81,43 @@ export const kvkReads = pgTable(
   (t) => [
     unique("kvk_reads_opponent_phase_tag_unique").on(t.opponentId, t.phase, t.tag),
     check("kvk_reads_phase_check", sql`${t.phase} in ('before', 'after')`),
+  ],
+);
+
+/** One suggested alliance of the opponent's ranks board (D155): its tag, name and might only. */
+export interface SuggestedAlliance {
+  tag: string;
+  name: string | null;
+  power: number;
+}
+
+/**
+ * The opponent's ranks board read for one (KvK, server) (D155): claimed before the call, so a `read` row is
+ * never read again (INVARIANT suggest.one-read-per-event-server) and a failed one at most 3 times in all
+ * (INVARIANT suggest.attempt-cap). /admin only.
+ */
+export const kvkSuggestions = pgTable(
+  "kvk_suggestions",
+  {
+    id: serial("id").primaryKey(),
+    eventAt: tstz("event_at").notNull(),
+    server: integer("server").notNull(),
+    status: text("status", { enum: ["running", "read", "failed"] }).notNull(),
+    attempts: integer("attempts").notNull().default(1),
+    alliances: jsonb("alliances").$type<SuggestedAlliance[]>(),
+    /** The board's own pulled_at. */
+    pulledAt: tstz("pulled_at"),
+    claimedAt: tstz("claimed_at").notNull(),
+    readAt: tstz("read_at"),
+  },
+  (t) => [
+    unique("kvk_suggestions_event_at_server_unique").on(t.eventAt, t.server),
+    check("kvk_suggestions_server_check", sql`${t.server} between 1 and 9999`),
+    check("kvk_suggestions_status_check", sql`${t.status} in ('running', 'read', 'failed')`),
+    check("kvk_suggestions_attempts_check", sql`${t.attempts} between 1 and 3`),
+    check(
+      "kvk_suggestions_alliances_check",
+      sql`${t.alliances} is null or jsonb_array_length(${t.alliances}) <= 15`,
+    ),
   ],
 );

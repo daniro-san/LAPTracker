@@ -188,6 +188,18 @@ export const hydrated = (target: Locator) =>
     .toBe(true);
 
 /**
+ * Runs `action` (a tap that saves), then waits until the page's refresh of `path` (router.refresh, an RSC
+ * answer) has come in whole: a reload or a new page cut short would leave that answer unread by the guards.
+ */
+export async function savedAndRefreshed(page: Page, path: string, action: () => Promise<void>) {
+  const refreshed = page.waitForResponse(
+    (r) => new URL(r.url()).pathname === path && r.request().headers()["rsc"] === "1",
+  );
+  await action();
+  await (await refreshed).finished();
+}
+
+/**
  * Taps a feed's "Show more" (Home's Recent activity) until `item` is listed: the tests' own writes are newer
  * than the seed's rows, so a seeded line may be on a later page.
  */

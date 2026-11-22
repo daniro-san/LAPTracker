@@ -2,20 +2,16 @@
 // onRequestError and from route handlers that caught one. `message` is our own words (kind and error
 // name, plan §12.3) and groups the rows; `detail` (D61) keeps the error's own message, stack start and
 // cause, for /admin/errors only, after redact(): secrets and, through redactPrivate, private roster values
-// (D115's 2026-11-21 amendment). The admin alert adds the message's first line. Rows go after 30 days.
+// (D115's 2026-11-21 amendment). Rows go after 30 days. No Discord alert: PostHog's error tracking posts new and spiking issues (D115).
 // The detail and PostHog's `$exception` are built in lib/report-error.ts.
 import { eventWorkspace, type EventWorkspace } from "./analytics/server";
 import { secretsOf, type AppContext } from "./app-context";
-import { appErrorMessage, createNotifier } from "./notify";
 import { allianceLabelOf } from "./repo/alliances";
-import { claimAppErrorAlert, insertAppError } from "./repo/app-errors";
+import { insertAppError } from "./repo/app-errors";
 import { findWorkspaceBySlug, WORKSPACE_SLUG } from "./repo/workspaces";
-import { appErrorDetail, sendException, type AppErrorDetail } from "./report-error";
-
-const ALERT_REASON_CHARS = 160;
+import { appErrorDetail, sendException } from "./report-error";
 
 const MIN_INSERT_GAP_MS = 1_000;
-const ALERT_GAP_MS = 60 * 60_000;
 
 // INVARIANT app-errors.one-per-second: per instance. Module scope is per instance by definition,
 // which is exactly the plan's unit here (unlike the PIN limiter, which must hold across instances).
@@ -80,22 +76,9 @@ export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Pro
       // D144: the slug as the request named it, only in a slug's shape (it comes from the path).
       workspaceSlug: slug && WORKSPACE_SLUG.test(slug) ? slug : null,
     });
-    // At most one alert per hour while errors continue; the DB holds the last alert time, and the
-    // claim decides which instance posts.
-    if (await claimAppErrorAlert(opened.db, now, ALERT_GAP_MS)) {
-      await createNotifier(ctx.env, ctx.fetch).admin(
-        appErrorMessage(entry.route, alertReason(message, detail), entry.digest),
-      );
-    }
   } catch {
     // The database is the likely cause; the console line above is the record.
   } finally {
     await opened?.close();
   }
-}
-
-/** "render TypeError — Cannot read properties of undefined (reading 'x')": the message's first line. */
-function alertReason(message: string, detail: AppErrorDetail): string {
-  const first = detail.message.split("\n")[0]?.trim().slice(0, ALERT_REASON_CHARS);
-  return first ? `${message} — ${first}` : message;
 }

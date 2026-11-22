@@ -26,6 +26,7 @@ import {
   REPEATS,
   SENTINELS,
   SHIELD_MARKED,
+  SIEGE_ENTRY,
   signOutToken,
   slotOf,
   switchWorkspaceOf,
@@ -343,12 +344,13 @@ function workspaceRows(): string[] {
   lines.push(
     `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ${signOuts.join(", ")};`,
   );
-  // A workspace per filler alliance, with its officer's session, for the feature-switch test.
+  // A workspace per filler alliance, with its officer's session, for the feature-switch, tracker key and
+  // notice tests. The owner allows Translate there (D126: a feature that spends Groq starts off).
   for (let r = 0; r < REPEATS; r++) {
     const w = switchWorkspaceOf(r);
     lines.push(
       `insert into workspaces (id, slug, union_id, discord_guild_id, leader_role_ids, member_role_ids) values (${w.id}, '${w.slug}', ${w.unionId}, '70000000000000010${w.id}', '{70000000000000020${w.id}}', '{70000000000000030${w.id}}');`,
-      `insert into workspace_features (workspace_id, switches) values (${w.id}, '{}');`,
+      `insert into workspace_features (workspace_id, switches) values (${w.id}, '{"notice_translate": true}');`,
       `insert into workspace_users (id, workspace_id, discord_user_id, display_name, allowlisted, last_login_at) values (${5 + r}, ${w.id}, '70000000000000040${5 + r}', 'Officer ${w.tag}', true, now());`,
       `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ('${hash(w.token)}', ${w.id}, ${5 + r}, now(), now() + interval '6 days', now(), 'officer');`,
       // D154: the member who sends their own time zone from Me.
@@ -382,6 +384,17 @@ function rollCallRows(cal: ReturnType<typeof calendarOf>): string[] {
   ];
 }
 
+/** Each filler workspace's weekly Undead Siege Lv.6 on the raid's Saturday at 12:00 ST (SIEGE_ENTRY). */
+function siegeRows(cal: ReturnType<typeof calendarOf>): string[] {
+  const rows = Array.from({ length: REPEATS }, (_, r) => {
+    const w = switchWorkspaceOf(r);
+    return `(${SIEGE_ENTRY + r}, ${w.id}, 'undead', 6, '${cal.raid.day}', 720, true, false, ${5 + r})`;
+  });
+  return [
+    `insert into calendar_entries (id, workspace_id, kind, level, day, minute, weekly, for_members, created_by) values ${rows.join(", ")};`,
+  ];
+}
+
 /** The whole seed as one transaction, for psql. */
 export function seedSql(now: Date): string {
   const cal = calendarOf(now);
@@ -403,6 +416,7 @@ export function seedSql(now: Date): string {
     ...eventRows(cal.events),
     ...workspaceRows(),
     ...rollCallRows(cal),
+    ...siegeRows(cal),
     // ADDED_BY_HAND, a minute before the seed and one second apart, each already matched to their member.
     `insert into pending_members (workspace_id, name, name_key, created_by, created_at, matched_uid, matched_at) values ${ADDED_BY_HAND.map((name, i) => `(${ALLIANCES.a.id}, ${q(name)}, ${q(name.toLowerCase())}, 1, now() - interval '${60 - i} seconds', ${uidOf("a", ALLIANCES.a.names.indexOf(name))}, now())`).join(", ")};`,
     ...factRows(cal.today),

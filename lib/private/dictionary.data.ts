@@ -84,6 +84,8 @@ export const dataEn = {
   "data.file.thanks": "The weekly thanks, as shared.",
   "data.file.thanks-taken-down": "Thanks taken down from the members’ board.",
   "data.file.start-here": "Start here, in each language.",
+  "data.file.post-callouts":
+    "Your own line on our Discord posts, per post, and who changed it last.",
   "data.file.screenshot-drafts": "Screenshot imports: the text read and the rows found.",
   "data.file.alliance-duel-points": "Alliance Duel points saved from screenshots.",
   "data.file.screenshot-checks": "Rankings checked against the tracker: counts only.",
@@ -182,6 +184,8 @@ export const dataPt: typeof dataEn = {
   "data.file.thanks": "Os agradecimentos da semana, como foram compartilhados.",
   "data.file.thanks-taken-down": "Agradecimentos retirados do mural dos membros.",
   "data.file.start-here": "Comece aqui, em cada idioma.",
+  "data.file.post-callouts":
+    "A sua frase nos nossos posts do Discord, por post, e quem a mudou por último.",
   "data.file.screenshot-drafts": "Importações de prints: o texto lido e as linhas encontradas.",
   "data.file.alliance-duel-points": "Pontos do Alliance Duel salvos de prints.",
   "data.file.screenshot-checks": "Rankings conferidos com o tracker: só contagens.",
@@ -286,6 +290,8 @@ export const dataFr: typeof dataEn = {
   "data.file.thanks": "Les remerciements de la semaine, tels que partagés.",
   "data.file.thanks-taken-down": "Les remerciements retirés du tableau des membres.",
   "data.file.start-here": "Commencer ici, dans chaque langue.",
+  "data.file.post-callouts":
+    "Votre phrase sur nos messages Discord, par message, et qui l’a changée en dernier.",
   "data.file.screenshot-drafts": "Les imports de captures : le texte lu et les lignes trouvées.",
   "data.file.alliance-duel-points":
     "Les points de l’Alliance Duel enregistrés depuis des captures.",

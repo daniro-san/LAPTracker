@@ -23,7 +23,7 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
-    text: "KvK matchup, before Saturday's KvK: on /admin → KvK opponent, save the opponent's server and its alliance tags by Saturday 10:00 ST. After the Start (12:00 ST), check each tag's outcome on that card, then turn the kvk-matchup flag on in PostHog (it exists and is off).",
+    text: "KvK matchup, before Saturday's KvK: on /admin → KvK opponent, save the opponent's server by Saturday 10:00 ST; the card then suggests its 15 largest alliances from that server's ranks board (untick or add tags, then save). After the Start (12:00 ST), check each tag's outcome on that card, then turn the kvk-matchup flag on in PostHog (it exists and is off).",
     issue: 306,
   },
   {
@@ -41,6 +41,7 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "PostHog → your personal API keys: create one with only the error-tracking write scope for project 741657, then add it in Vercel → Production as POSTHOG_PERSONAL_API_KEY (Sensitive). The v5.47.0 build uploaded no source map because the key is missing, so PostHog shows minified stack traces for browser and server errors; the maps are still deleted from every deploy.",
     issue: 592,
+    done: true,
   },
   {
     text: "Decide #634: show the Raid Shield reading on the member card? Recommendation: only from Friday's night check until KvK starts, in server time.",
@@ -50,14 +51,17 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "Guide: after v5.47.0, retake the new-alliance guide's Alliance settings screenshots (the page now opens with an index and saves Features with a button), with names and channels blurred.",
     issue: 527,
+    done: true,
   },
   {
     text: "Before the next release reaches production: check in Vercel that EDIT_PIN and CRON_SECRET are not the public placeholders from the repo's env template (000000 and the local cron placeholder). Then ask Claude for the guard that refuses them in production.",
     issue: 592,
+    done: true,
   },
   {
     text: "On your Mac: take every production secret out of your local env file (use local Postgres or the Neon preview role), and restart open Claude sessions so they load the new env guard. Rotating the old secrets is optional.",
     issue: 592,
+    done: true,
   },
   {
     text: "Decide #617: the 12 real game screenshots (and 6 OCR texts) with player names in the test fixtures. Recommendation: replace them with rendered screens with invented names; the real ones stay in git history.",
@@ -72,8 +76,9 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 516,
   },
   {
-    text: 'GitHub → Settings → Actions: allow only selected actions (GitHub\'s own, pnpm/action-setup, dependabot/fetch-metadata), require actions pinned to a full commit SHA, and set the default workflow token to read-only. Keep "Allow GitHub Actions to create and approve pull requests" ON: Prepare release opens the release PR with it (D29). Also turn on non-provider secret patterns. The CI/CD panel recommends it; every workflow already pins SHAs and sets its own permissions. The default token is already read-only; the three commands are in the chat of 2026-11-22.',
+    text: 'GitHub → Settings → Actions: allow only selected actions (GitHub\'s own, pnpm/action-setup, dependabot/fetch-metadata), require actions pinned to a full commit SHA, and set the default workflow token to read-only. Keep "Allow GitHub Actions to create and approve pull requests" ON: Prepare release opens the release PR with it (D29). The CI/CD panel recommends it; every workflow already pins SHAs and sets its own permissions. The default token is already read-only; the three commands are in the chat of 2026-11-22.',
     issue: 592,
+    done: true,
   },
   {
     text: "Decide whether dev becomes the default branch. It is main today, a recorded choice, so changing it needs a new decision. Issues would close on their own, Dependabot security PRs would target dev and schedules would run from dev, but the after-deploy smoke check (D46) would need moving too. The order matters: first make the main ruleset target main by name, then switch the default branch, then ask Claude for the follow-up PR.",
@@ -120,6 +125,7 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "Guide: sign in once at /w with the new Discord permissions, then review the guide screenshots of /w and Alliance settings → Features.",
     issue: 527,
+    done: true,
   },
   {
     text: "Send the invite link and the guide PDF to the new alliance when you like.",
@@ -128,23 +134,28 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "PostHog → Error tracking → Alerts: connect the admin Discord channel as a destination (paste its webhook there yourself), then ask Claude to send the error alert to it.",
     issue: 527,
+    done: true,
   },
 
   {
     text: "cron-job.org: on the /api/tick job, turn on Notify on failure by email.",
     issue: 527,
+    done: true,
   },
   {
     text: "GitHub: check that your notification settings email you about failed scheduled Actions runs. The uptime check relies on it.",
     issue: 527,
+    done: true,
   },
   {
     text: "Neon → Billing: set a spending limit or alert of about US$ 10 a month, if the option exists.",
     issue: 527,
+    done: true,
   },
   {
     text: "Neon → Branches: delete leftover preview branches. Keep main and any branch you use.",
     issue: 527,
+    done: true,
   },
   {
     text: "Around 2026-11-28, look at Neon's compute graph. If it is well below 100 CU-hours a month, consider the Free plan. Then decide between Neon and Supabase.",
@@ -195,6 +206,20 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.63.0",
+    date: "2026-11-22",
+    title: "Opponent tags suggested, and the desk at every width",
+    changes: [
+      "KvK opponent (/admin): saving the opponent's server now reads that server's ranks board once and suggests its 15 largest alliances as ticked tags; untick or add, then save. It spends no tracker calls and stores only tags, names and might.",
+      "Officers' Desk on tablets (768–1279 px): every page is in the side rail now, Former members, Insights, Caravans, Notices and Thefts included. The header fits two lines on a phone, Home no longer scrolls inside itself, and long names in Insights wrap between words.",
+      "Alliance settings → Discord says where a post's name and picture come from (the webhook's own, set in Discord), and the members' board thank-you card shows the alliance's badge.",
+      'Notifications: when the browser\'s push service refuses (Brave turns it off by default) or does not answer, the card now says so and how to fix it, instead of "Not saved".',
+      "Brave on iPhone: the site now asks Night Mode not to recolour it; check once with Night Mode on that the light theme stays cream.",
+      "Behind the scenes: errors now ping the admin Discord channel only through PostHog, and production refuses to start with the template's placeholder PIN or cron secret.",
+    ],
+    prs: [717, 722, 714, 716, 719, 715, 718],
+  },
   {
     version: "v5.62.0",
     date: "2026-11-22",

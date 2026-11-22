@@ -47,6 +47,8 @@ export const discordEn = {
   "discord.channel.shield": "Raid Shield channel",
   "discord.channel.shieldHelp":
     "For the Raid Shield check’s summary. It names the members without a shield seen, so use a channel that only leaders and officers can see. Without this channel, no summary is posted.",
+  "discord.channel.look":
+    "Posts show this webhook’s name and picture. Change them in Discord: Server Settings → Integrations → Webhooks.",
   "discord.hook.set": "Set · #{name}",
   "discord.hook.site":
     "Using a channel the site set up (#{name}). Add your alliance’s own webhook to post to your channel instead.",
@@ -146,6 +148,8 @@ export const discordPt: typeof discordEn = {
   "discord.channel.shield": "Canal do Escudo de raid",
   "discord.channel.shieldHelp":
     "Para o resumo da conferência do Escudo de raid. Ele cita os membros sem escudo visto, então use um canal que só os líderes e os oficiais veem. Sem este canal, nenhum resumo é postado.",
+  "discord.channel.look":
+    "As postagens mostram o nome e a imagem deste webhook. Mude-os no Discord: Configurações do servidor → Integrações → Webhooks.",
   "discord.hook.set": "Configurado · #{name}",
   "discord.hook.site":
     "Usando um canal configurado pelo site (#{name}). Adicione o webhook da sua aliança para postar no seu canal.",

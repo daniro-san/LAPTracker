@@ -89,6 +89,11 @@ export const SHIELD_MARKED = [0, 1, 2, 3];
 export const WALL_ONLY = [4, 5];
 /** Calendar entries: the weekly KvK (Raid prep), and the cheese entries below. */
 export const KVK_ENTRY = 1;
+/**
+ * Each filler workspace's weekly Undead Siege on the raid's Saturday (D121): the garrison post with the
+ * alliance's own line (D156) posts its plan, on the repeat's own workspace. Entry SIEGE_ENTRY + repeat.
+ */
+export const SIEGE_ENTRY = 60;
 
 /** The projects (playwright.config.ts) and the repeats (--repeat-each) that each get a roll call of their own. */
 export const PROJECTS = ["phone", "wide", "iphone"];

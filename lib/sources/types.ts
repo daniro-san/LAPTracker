@@ -141,6 +141,8 @@ export interface BoardLabel {
 }
 
 export interface RanksBoard {
+  /** The server the answer says it is (`sid`); null when it does not say. D155 checks it. */
+  server: number | null;
   /** The older of the two boards' pulled_at. */
   pulledAt: Date;
   power: Map<UnionId, number>;

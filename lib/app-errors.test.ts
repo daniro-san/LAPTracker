@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ADMIN_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
 import { minutes, T0 } from "./collector.test-helpers";
 import { openTestDb, truncateAll } from "./db.test-helpers";
-import { claimAppErrorAlert, insertAppError, purgeOldAppErrors } from "./repo/app-errors";
+import { insertAppError, purgeOldAppErrors } from "./repo/app-errors";
 import { reportError, type Report } from "./report-error";
 import { appErrors, workspaces } from "./schema";
 
@@ -34,23 +34,7 @@ beforeEach(async () => {
 });
 afterAll(() => vi.restoreAllMocks());
 
-describe("app-error alert", () => {
-  it("alerts once per hour while errors continue", async () => {
-    const { ctx, clock, posts } = testContext(db);
-    // An error every 5 minutes for 3 hours (36 errors, ≥ 1 s apart so the per-instance limiter
-    // lets each one through): alerts at 0, 60 and 120 minutes.
-    for (let i = 0; i < 36; i++) {
-      clock.now = new Date(T0.getTime() + i * minutes(5));
-      await recordAppError(ctx, {
-        route: "/api/x",
-        kind: "route",
-        digest: null,
-        error: new Error(),
-      });
-    }
-    expect(posts.filter((p) => p.url === ADMIN_WEBHOOK)).toHaveLength(3);
-  });
-
+describe("app errors", () => {
   it("sends $exception with the workspace and alliance under a workspace's slug, none for an unknown one (issue 452)", async () => {
     await db
       .insert(workspaces)
@@ -103,7 +87,7 @@ describe("app-error alert", () => {
     expect(rows.map((r) => r.slug)).toEqual(["ogs", null, null]);
   });
 
-  it("stores, alerts and sends to PostHog an error with its private roster values replaced (D115, 2026-11-21)", async () => {
+  it("stores and sends to PostHog an error with its private roster values replaced (D115, 2026-11-21)", async () => {
     const { ctx, posts } = testContext(db, ON);
     const parsed = z.object({ x: z.number() }).safeParse({ x: "98765" }, { reportInput: true });
     const error = new Error(
@@ -118,9 +102,8 @@ describe("app-error alert", () => {
     await vi.waitFor(() => expect(exceptions(posts)).toHaveLength(1));
     const [row] = await db.select().from(appErrors);
     const stored = JSON.stringify(row?.detail);
-    const alert = posts.find((p) => p.url === ADMIN_WEBHOOK)?.content ?? "";
     const [sent] = exceptions(posts);
-    for (const text of [stored, alert, JSON.stringify(sent)])
+    for (const text of [stored, JSON.stringify(sent)])
       for (const leak of LEAKS) expect(text).not.toContain(leak);
     // The name is public: /admin/errors keeps it; PostHog never gets it (quoted text is scrubbed).
     expect(JSON.stringify(sent)).not.toContain("Invented Bramble");
@@ -128,7 +111,8 @@ describe("app-error alert", () => {
     expect(stored).toContain('\\"nick_name\\":\\"Invented Bramble\\"');
     expect(stored).toContain("Key (union_id, y)=(67111155, …) already exists.");
     expect(stored).toContain('\\"path\\": [\\n      \\"x\\"\\n    ]');
-    expect(alert).toContain("render Error — Bad row: x=… y=… last_online_at=… daily_tech=… …");
+    // The app sends no Discord alert of its own (PostHog does, D115).
+    expect(posts.filter((p) => p.url === ADMIN_WEBHOOK)).toHaveLength(0);
     // PostHog's $exception: the scrubbed message, the frames, not handled for a render error.
     const frame = expect.objectContaining({ platform: "node:javascript", in_app: true });
     expect(sent).toMatchObject({
@@ -146,7 +130,7 @@ describe("app-error alert", () => {
     });
   });
 
-  it("keeps a failed query's parameters (an officer's text) out of the row, the alert and PostHog", async () => {
+  it("keeps a failed query's parameters (an officer's text) out of the row and PostHog", async () => {
     const { ctx, posts } = testContext(db, ON);
     // An officer's text of two lines: the second starts like a stack frame.
     const text = "Invented Bramble wrote this notice\nat 8pm in the hall";
@@ -164,8 +148,7 @@ describe("app-error alert", () => {
     });
     await vi.waitFor(() => expect(exceptions(posts)).toHaveLength(1));
     const [row] = await db.select().from(appErrors);
-    const alert = posts.find((p) => p.url === ADMIN_WEBHOOK)?.content ?? "";
-    for (const kept of [JSON.stringify(row?.detail), alert, JSON.stringify(exceptions(posts))])
+    for (const kept of [JSON.stringify(row?.detail), JSON.stringify(exceptions(posts))])
       for (const leak of ["Invented Bramble", "8pm"]) expect(kept).not.toContain(leak);
     expect(row?.detail).toMatchObject({
       message: expect.stringMatching(/^Failed query: insert into app_errors .*\nparams: …$/s),
@@ -174,7 +157,7 @@ describe("app-error alert", () => {
     });
   });
 
-  it("sends a handled error to PostHog once, with no row and no alert", async () => {
+  it("sends a handled error to PostHog once, with no row", async () => {
     const { ctx, posts } = testContext(db, ON);
     reportError(ctx, {
       route: "/api/tick",
@@ -205,19 +188,9 @@ describe("app-error alert", () => {
     const rows = await db.select({ message: appErrors.message }).from(appErrors);
     expect(rows).toEqual([{ message: "route Error 29" }]);
   });
-
-  it("gives the claim to exactly one of two concurrent callers", async () => {
-    await claimAppErrorAlert(db, T0, HOUR);
-    const later = new Date(T0.getTime() + HOUR);
-    const claims = await Promise.all([
-      claimAppErrorAlert(db, later, HOUR),
-      claimAppErrorAlert(db, later, HOUR),
-    ]);
-    expect(claims.filter(Boolean)).toHaveLength(1);
-  });
 });
 
-// INVARIANT app-errors.private-redacted is enforced by behaviour: the stored detail, the alert and the PostHog
+// INVARIANT app-errors.private-redacted is enforced by behaviour: the stored detail and the PostHog
 // payload of a recorded error are checked for leaks in the first test above; a handled error's PostHog payload is checked in "sends a handled error to PostHog once".
 describe("one private-field redactor on every error's way out (D115, 2026-11-21)", () => {
   // The type is the guard: `pnpm typecheck` fails if any line marked @ts-expect-error stops being an error.

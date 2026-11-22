@@ -15,6 +15,8 @@ import {
   HTTPS_PORT,
   OUTBOUND_LOG,
   SERVER_ENV,
+  STUB_PORT,
+  STUB_URL,
 } from "./e2e/env";
 
 const CI = Boolean(process.env.CI);
@@ -79,6 +81,12 @@ export default defineConfig({
       : []),
   ],
   webServer: [
+    // The tracker, Groq and Discord's webhooks, for the flows that save a key and post a notice.
+    {
+      command: `node e2e/stub-server.mjs ${STUB_PORT}`,
+      url: `${STUB_URL}/__stub/received`,
+      env: SERVER_ENV,
+    },
     {
       command: "node scripts/db-local-bridge.mjs",
       port: BRIDGE_PORT,

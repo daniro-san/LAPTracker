@@ -15,6 +15,7 @@ const ready: SettingsIndexInput = {
   shield: { discord: true, channel: "ok" },
   push: true,
   discord: { channels: ["set", "set", "set"], botOff: false },
+  callouts: { set: 1, n: 3 },
   data: { download: true, deletionDate: null },
 };
 
@@ -34,10 +35,12 @@ describe("Alliance settings' index", () => {
       },
       { id: "push", label: "Notifications", state: null, attention: false },
       { id: "discord", label: "Discord", state: "3 of 3 channels set", attention: false },
+      { id: "callouts", label: "Your line on our posts", state: "1 of 3 set", attention: false },
       { id: "workspace-data", label: "Your alliance’s data", state: null, attention: false },
     ]);
 
-    // The Raid Shield check is off, the site has no push keys and no Discord app, export is off.
+    // The Raid Shield check is off, the site has no push keys and no Discord app, the lines on our posts
+    // and export are off.
     const plain = settingsIndex(
       {
         ...ready,
@@ -45,6 +48,7 @@ describe("Alliance settings' index", () => {
         shield: null,
         push: false,
         discord: { channels: ["set", "none", "none"], botOff: true },
+        callouts: null,
         data: { download: false, deletionDate: null },
       },
       t,

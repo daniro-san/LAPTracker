@@ -81,3 +81,24 @@ Public pages and the members' board show none. A workspace's desk shows only its
 - **Not done:** dropping Secure from the test cookie (a `__Host-` cookie must be Secure, and the app's cookie stays as it is), and an HTTPS proxy in front of `next start` (the app compares a write's Origin with `http(s)://localhost:<next's own port>`, so a proxy on another port fails every write unless it rewrites Origin). Playwright and WebKit have no setting that makes libsoup treat localhost as secure.
 - **What:** with `E2E_WEBKIT=1` the config starts a third web server, `e2e/https-server.mjs`, after `next start` is up (so after the build): Next's own custom server (`next({ dev: false, hostname: "localhost", port })`, the same request handlers as `next start`) on the same build, over HTTPS on 127.0.0.1:3478, with the same server environment and the same preloads (db:local bridge, no-network guard). The `iphone` project's `baseURL` is `https://localhost:3478`, with `ignoreHTTPSErrors`. The certificate is self-signed, made at start by `openssl req -x509` and kept in memory with its key. The only file written is a three-line openssl config in a temporary directory, removed once openssl returns (the runner's system `openssl.cnf` includes directories that do not exist); nothing is committed. Phone and wide still use `next start` over http.
 - **Cost:** one more server start, about 1.3 s locally (18.2 s against 16.9 s for the three projects without a build).
+
+**Amendment 2026-11-22 (orchestrator, issue 477, PR 712): a stub server for the tracker, Groq and Discord's webhooks.** This replaces the part of "The app under test reaches nothing outside the machine" that says the upstream API points at `127.0.0.1:9` and that Groq, webhooks and the tracker keys are unset. The two guards are unchanged.
+
+- **Why:** flow 7 (save and test a tracker key) and flow 4 (translate a notice and publish it to Discord) need an answer from the tracker, from Groq and from a Discord webhook.
+- **What:** one stub for the whole suite, `e2e/stub-server.mjs`, on `127.0.0.1:<E2E_STUB_PORT>` (default 3479). The config starts it first among the web servers. It keeps each request it answered in memory (path, Authorization header, and for a POST the body as text and parsed). The specs read that list from `GET /__stub/received`. It answers three routes:
+  - `GET /v1/quota` for any key but `LAP_API_KEY`: the recorded `fixtures/v1-20261116T105019Z/quota-before.json`;
+  - `POST /groq/openai/v1/chat/completions`: the text inside the prompt's `<text>` tags, each word written backwards, so D81's untranslated guard finds none of the source words;
+  - `POST /discord/webhooks/<id>/<token>`: `{id, channel_id}`, as Discord answers `?wait=true`. A multipart post (a notice with a picture, D119) is read from its `payload_json` part.
+- **A body it cannot read:** a POST to those two routes that is neither JSON nor multipart with `payload_json` gets 400. The handler never throws, so one bad request cannot stop the shared stub.
+- **Unknown routes:** any other request, including the site's key on `/v1/quota`, gets no answer. The stub reads its body, then closes the socket. `fetch` then fails with `TypeError: fetch failed`, cause `UND_ERR_SOCKET` (no system error code). At `127.0.0.1:9` it failed with the same `TypeError`, cause "bad port" (a port `fetch` refuses before connecting), also with no code. `lib/sources` `RequestError` (name `TypeError`) and `lib/data-unavailable.ts` `databaseDown` (false) read both the same way. A reset socket was ruled out: its `ECONNRESET` code makes `databaseDown` true. So was a close before the body is read: a POST then fails with `ECONNRESET` too.
+- **Settings** (`e2e/env.ts`):
+  - `LAP_API_BASE_URL` is `<stub>/v1`. Discord's API and PostHog stay at `127.0.0.1:9`.
+  - `GROQ_API_KEY` is an invented `gsk_` value.
+  - `WORKSPACE_KEYS_SECRET` is 32 fixed bytes, base64, made at runtime.
+  - `WORKSPACE_DISCORD_WEBHOOKS` gives each filler workspace an invented leadership channel.
+  - `E2E_STUB_URL` names the stub.
+  - The notification webhooks, push and analytics stay unset.
+- **Fixed URLs:** Groq's endpoint and Discord's webhook URLs are fixed in the app. So `e2e/no-network.mjs`, only when `E2E_STUB_URL` is set, makes `fetch` send `https://api.groq.com/…` and `https://discord.com/api/webhooks/…` to the stub. The app's code and URLs are unchanged. Other users of the preload (`scripts/record-fixture.test.ts`) keep `fetch` as it is.
+- **The seed:** the filler workspaces allow `notice_translate` (D126: a feature that spends Groq starts off).
+- **Seen in every e2e run now:** Home's "Add your tracker key" card, and the key and webhook forms in Alliance settings, in place of their "off" lines. No other spec reads them.
+- **Publish reads its answer:** `NoticePublish` now reads its 2xx answer, as `SignOutButton` does (amendment of PR 632): left unread, Chromium never finished it, and the guards could not read it.

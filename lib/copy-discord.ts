@@ -76,8 +76,6 @@ export const discordCopy = {
     databaseHigh: " (⚠ over {n} MB)",
     pinLocked:
       "Locked: {n} wrong PINs, so PIN entry is off for an hour. The scheduled tick and workflow_dispatch still work.",
-    appError: "✗ App error on {route}: {message}{digest} · /admin/errors",
-    digest: " · digest {digest}",
     tickSilence:
       "⚠ No tick for {min} min (last {at}). Check the cron-job.org job and CRON_SECRET · /admin",
     tickNone: "⚠ No tick recorded yet. Check the cron-job.org job and CRON_SECRET · /admin",
