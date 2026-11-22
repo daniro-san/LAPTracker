@@ -14,6 +14,12 @@ export const needsAdminCopy = {
   waiting: "{n} waiting",
   errors: "App errors",
   errors24h: "{n} in the last 24 h",
+  cleanup: "Daily clean-up",
+  cleanupFailed: {
+    workspaces: "A workspace deletion failed on {day}",
+    players: "The 90-day clean-up failed on {day}",
+    errors: "The 30-day error clean-up failed on {day}",
+  },
   workspaces: "Workspaces",
   setup: "{n} to set up",
   key: "{n} with a key to fix",

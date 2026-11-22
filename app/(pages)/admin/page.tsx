@@ -199,7 +199,7 @@ export default async function AdminPage() {
   const now = new Date();
   const next = nextEvent(now, env);
   const [
-    [current, rehearsal, quota, manual, running, runs, row, ticks, daily],
+    [current, rehearsal, quota, manual, running, runs, row, ticks, daily, cleanups],
     clock,
     ws,
     requests,
@@ -233,6 +233,7 @@ export default async function AdminPage() {
     dailyRetry: dailyRetry !== null,
     requests,
     errors24h: errors,
+    cleanups: cleanups.map((c) => ({ ...c, dayText: clock.weekday(c.at) })),
     workspaces: alliances,
     deletions: ws.rows.filter((w) => w.deletion).length,
     morningQuota: quota.morning,
