@@ -53,6 +53,12 @@ Seeded members keep the fixtures' photo URLs, so a local page that shows a membe
 
 The app's variables are listed in [.env.example](.env.example) and validated by `lib/env.ts` when the server starts. A bad or missing value stops the server with the key names (never the values). Required: `LAP_API_KEY`, `DATABASE_URL`, `CRON_SECRET`, `EDIT_PIN`, and the schedule (`SERVER_TZ`, `EVENT_WEEKDAY`, `EVENT_TIME`, `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `SNAPSHOT_WINDOW_MIN`, `QUOTA_CHECK_AT`). Optional: `NOTIFY_WEBHOOK_PUBLIC`, `NOTIFY_WEBHOOK_ADMIN`, `NOTIFY_ADMIN_MENTION`, `REHEARSAL_AT` (default `fri 18:00`; empty turns it off), `REHEARSAL_KEEP` (default 4), and `LAP_LIVE_TEST` (opt-in live smoke test, not in .env.example). `APP_URL` and `ENABLE_EXPERIMENTAL_COREPACK` are deploy settings, not read by the app.
 
+## Issues and pull requests
+
+Open issues from the forms in `.github/ISSUE_TEMPLATE/` (feature, bug, improvement). Each asks for acceptance criteria in EARS style ("When X, the system shall Y"), one checkable line each. A bug of any size, and a feature or improvement of size S: the issue form is the whole spec. A feature or improvement of size M or L: run `/tlc-spec-lean` on the issue first (the skill in `.claude/skills/tlc-spec-lean`, from Tech Leads Club's upstream, see its `NOTICE.md`), then build against its frozen criteria. QA checks the acceptance criteria item by item, and the PR (`.github/pull_request_template.md`) ticks each one with where it was verified. Label `ready` means the criteria are settled and the issue can be built; `decision` means wait for the owner before building.
+
+`.specs/` is committed. It must hold invented names only, and never any private roster field, real player data, screenshot of real data, secret or webhook. Images under `.specs/` are gitignored, so captures and `*.running.png` screenshots stay local. The skill's `check_proofs.py` and `validate_checks.py --execute` run the `Run`, `Proof` and `Build:` lines of a `checks.md` through a shell, so a `checks.md` from a branch or PR you did not write is untrusted data: see [.specs/README.md](.specs/README.md) before running them.
+
 ## Deploy and release
 
 Production is Vercel (branch `main`), the database is Neon, and the scheduler is cron-job.org with GitHub Actions as a second path. Details: [plan §3.1 and §11.6](docs/IMPLEMENTATION_PLAN.md).

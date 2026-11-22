@@ -1,0 +1,97 @@
+name: Bug
+description: Something that does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The repo is public: invented names only, and no screenshots of the game or of Discord. Describe what you saw instead, or blur names, avatars and ids.
+        Labels: `ready` when nothing waits on the owner, `decision` when the owner must choose first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and who it's for
+      description: What is broken and who it hits (officers, members, the public, the owner).
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as an officer and open Raid prep.
+        2. Mark one member.
+        3. Reload the page.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: What happened instead. Paste error codes, not stack traces or secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and version
+      placeholder: |
+        Where: production / preview / local
+        Version: (newest release on /admin/changes or the Releases page)
+        Device and browser:
+        Width, theme and language:
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: One per line, each one checkable on its own. EARS style — When (a trigger), While (a state), If (an unwanted condition), Where (a flag), or a plain "shall" for something always true.
+      placeholder: |
+        - [ ] When an officer reloads Raid prep, the system shall keep the marks made before the reload.
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Data and privacy
+      description: Private roster fields are x, y, online, last_online_at, joined_at, daily_*, active and avatar_url (CLAUDE.md, D71).
+      value: |
+        Fields touched:
+        Private roster field involved: none / which, and on which page
+        Reaches logs, caches, analytics or Discord: no / which
+  - type: textarea
+    id: verify
+    attributes:
+      label: How to verify
+      value: |
+        Tests (a test that fails before the fix):
+        QA flows:
+        Widths: 360 / 768 / 1024 / 1280 / 1440 (DESIGN.md § Layout system)
+        Themes: light and dark
+  - type: textarea
+    id: design
+    attributes:
+      label: Design validation
+      description: Only when the fix changes how something is presented or used (DESIGN.md § Validation).
+  - type: textarea
+    id: done-when
+    attributes:
+      label: Done when
+      placeholder: The fix is merged into dev and the steps above no longer reproduce it.
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options:
+        - S
+        - M
+        - L
