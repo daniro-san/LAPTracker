@@ -1,5 +1,7 @@
 // What each error means and what to do about it (D61), on /admin and in the daily read's admin message.
 // Split out of lib/copy-admin.ts to keep each file readable; it is `copy.admin.guide`. English only (D48).
+import { DAILY_QUOTA_TEXT } from "./budget";
+
 export const guideCopy = {
   title: "What it means",
   details: "Details",
@@ -28,7 +30,7 @@ export const guideCopy = {
       action: "Their service is overloaded or down. Wait, then retry.",
     },
     quota: {
-      meaning: "Today's 1,000 API requests are spent (HTTP 429).",
+      meaning: `Today's ${DAILY_QUOTA_TEXT} API requests are spent (HTTP 429).`,
       action: "Wait for the reset at 00:00 UTC (22:00 server time).",
     },
     quotaRule: {

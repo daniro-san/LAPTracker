@@ -1,8 +1,8 @@
 # Alliance settings and /admin: clear, explicit, with help in place (#585 batch 2b)
 
-**Approved**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Plan review](#plan-review); adversarial verdict: [Plan review](#plan-review)
+**Approved**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Plan review](#plan-review), S2: [S2 plan review](#s2-plan-review); adversarial verdict: [Plan review](#plan-review), S2: [S2 plan review](#s2-plan-review)
 
-Size: L (more than one PR; slice 3 adds routes). This plan covers all slices; **only slice 1 (S1) is built in this PR**. Part of #585 (findings F28, F38, F11, F12, F13, F33, F34) and #392.
+Size: L (more than one PR; slice 3 adds routes). This plan covers all slices; slice 1 (S1) was built in PR #620; **slice 2 (S2) is built in `feat/585-admin-first-screen`** (updated 2026-11-22). Part of #585 (findings F28, F38, F11, F12, F13, F33, F34) and #392.
 
 ## Problem
 
@@ -70,7 +70,7 @@ None - no one-way door: no data is deleted, no schema change, no change to who s
 
 ## Criteria
 
-### S1: Alliance settings says what is set, what saves, and what needs a look (P1) - built in this PR
+### S1: Alliance settings says what is set, what saves, and what needs a look (P1) - built in PR #620
 
 **Acceptance Criteria**
 
@@ -100,34 +100,89 @@ None - no one-way door: no data is deleted, no schema change, no change to who s
 15. The webhook how-to ("In Discord: open the channel's settings → …") and the private-channel permissions note SHALL be in-place help a 44 px summary opens; the how-to SHALL be open while any channel is not set
 16. The desk dictionary SHALL hold every new or changed string in EN, PT-BR and FR
 
-### S2: /admin answers "what do I need to do?" first (P1) - next PR
+### S2: /admin answers "what do I need to do?" first (P1) - built in PR `feat/585-admin-first-screen`
+
+Updated 2026-11-22 before building, after reading `dev` at fd1597b8: #560 (D145) already reads the setup steps from our own tables; #597 already sets `aria-current` in the /admin nav; #620 gave `PageIndex`; #623 touched only /admin/runs. Still open on `dev`: all of F11, F12, F13 and F34 below.
+
+**Path (S2).** Reuses `PageIndex` (#620), `AdminSection`, the Alliances rows (`allianceRow`, `byAttention`) and the watcher's heartbeat rule (`heartbeatBoundary`, D45/D141); the rules that decide what the owner sees (which rows wait, the setup gaps, the quota verdict, the late tick, the alliance choices) are plain functions in `app/_ui/admin/` that Vitest reaches.
+
+1. owner opens `/admin` -> `isAdmin` (exists) - locked: the PIN card and no read, as today
+2. `readWorkspaces` (new, out of `Workspaces` (exists)) - the workspace reads the page already makes, once; "Needs you", Alliances and the Workspaces sections take them from here, so no read runs twice
+3. `allianceRow` (exists) - gains the setup gaps; `byAttention` ranks key, errors, setup, cap
+4. `needsYou` (new, `app/_ui/admin/needs-you.ts`) - turns the reads, `countWaitingRequests` (new, one count) and `errorsLastDay` (new, one indexed count, React `cache`) into the rows that wait, each with its count in words and where it is done
+5. `PageIndex` (exists) - draws them in an `AdminSection` "Needs you" above Status; gains an optional `href` for a row on another admin page
+6. `AdminShell` (exists) - the App errors count in the nav, from `errorsLastDay`, on every /admin page
+7. `/admin/errors` (exists) - shows each group's workspace addresses; `?w=<slug>` lists that workspace's groups only
+
+```mermaid
+flowchart LR
+    A["1. isAdmin (exists)"] --> R["2. readWorkspaces (new)"]
+    R --> AR["3. allianceRow (exists)"] --> NY["4. needsYou (new)"] --> PI["5. PageIndex (exists)"]
+    E["4. errorsLastDay (new)"] --> NY
+    E --> NAV["6. AdminShell nav (exists)"]
+    AR -->|Page errors: n| ER["7. /admin/errors?w=slug (exists)"]
+```
+
+**Changes underneath (S2)**
+
+| Front       | What changes                                                                                                                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| domain      | "Needs a look" on the Alliances table meant key, errors or a used-up limit; now also a setup gap. Read by the table's chip and its sort; "Needs you" counts only the key and setup reasons      |
+| stored data | nothing to migrate; more read inside `allianceUsage`'s one statement: each alliance's first roster that did not fail (`daily_rosters_union_idx`), the member roles, a finished daily read since |
+| readers     | /admin (Needs you, Status, Alliances, Activity, Workspaces form), every /admin page's nav, /admin/errors. The tick watcher and the Discord quota report are unchanged                           |
+| design      | DESIGN.md's `PageIndex` line: /admin's "Needs you" uses it, rows may link to another page                                                                                                       |
+
+Data: none - read only; no entity, relation or field is added or written.
 
 **Acceptance Criteria**
 
-17. WHEN the owner opens /admin THEN the first section SHALL be "Needs you", listing with a count each thing that waits on him: access requests, workspaces with a setup gap, page errors in the last 24 h, the quota above the cap or low, a late tick (none for 20 minutes or more); with none, one line says so
-18. The workspaces' attention (`attentionOf`) SHALL count a closed board, no read yet, no Discord and no member role as setup gaps (F12)
-19. The /admin nav SHALL carry counts for App errors and for the workspaces needing a look
-20. `WorkspaceForm`'s alliance select SHALL show the workspace's own alliance when it has no read yet (F13)
-21. IF the quota left is above the cap THEN the quota fact SHALL NOT say OK (F34); "of 1,000" SHALL come from one constant; `/admin/errors` SHALL show `workspace_slug`
+17. WHEN the owner opens /admin THEN the first section, above Status, SHALL be "Needs you": one row per kind of thing that waits on him, each with its count or state in words and a 44 px link to where it is done, in this order, and only while it waits:
+    - the scheduler late (criterion 23) → Status
+    - today's daily read did not finish and Retry is offered (`dailyView`) → Run something now
+    - access requests with no answer yet (all of them, not only the 50 listed) → New alliances
+    - app errors in the last 24 h → /admin/errors
+    - workspaces with a setup gap or a key to fix ("1 to set up · 1 with a key to fix") → Alliances
+    - workspace deletions asked (D125) → Workspaces
+    - the daily read's API reading of today, taken before the day's spend, under 900 → Status: the first quota check in the newest daily read's run log, which a retry keeps (a retry overwrites `daily_reads.quota_remaining_before` with its own reading, taken after the spend); no row when that first check got no number (changed 2026-11-22 after the PR #637 review)
+    - open owner to-dos → /admin/changes, its to-do list; this row only is not in yarn (changed 2026-11-22 after the after-build first-glance test, where "25 open" read as weighing as much as a request waiting today)
+      With none, the section SHALL say so in one line.
+    - invented seed: 1 request, 1 error (`ogs`), 2 workspaces to set up (`fern`, `brk`: no member role), the open to-dos → four rows; `ogs`'s page error is under App errors, not again under Workspaces; yesterday's 3,869 reading → no quota row; a snapshot's 819 after an event day → no quota row
+18. The workspaces' attention (`attentionOf`) SHALL count as setup gaps, in this order: no member role (the members' board is closed; the owner sets it here), and no read yet (no roster of its alliance that did not fail, from the day before the workspace was made on, while a daily read that started after it was made has finished). They rank after a key problem and errors and before a used-up limit, and the first one is the chip's reason in words (F12)
+    - no member role → "Setup: no member role"; made before a finished daily read with no roster, or only a failed one → "Setup: no read yet"; a daily read still running since it was made → no "no read yet"; every step done → no reason
+19. The /admin nav SHALL carry, on every /admin page, the count of app errors in the last 24 h beside App errors, read out in words, and none while 0
+20. `WorkspaceForm`'s alliance select SHALL list a workspace's own alliance, by its id, when nothing names it yet, and SHALL show it selected when that workspace is edited (F13)
+21. IF today's API reading is above 1,000 THEN the quota fact SHALL NOT say OK: it SHALL show "{n} left" and a muted "Above the 1,000 plan", and no Needs you row (F34)
+    - 1,000 → OK; 1,001 → above; 899 → Low; yesterday's 3,869 → "3,869 left", "Not read today", no verdict
+22. The /admin and guide strings SHALL take every "1,000 API calls a day" figure from one constant (F34)
+23. WHEN the newest tick started before the newest heartbeat slot the watcher judges (`heartbeatBoundary`, D45/D141), or no tick was ever recorded, THEN the Last tick fact SHALL say "Late" in seal (F34)
+    - newest tick 03:05 UTC at 05:00 → on time; at 06:11 → late; 06:05 → on time
+24. `/admin/errors` SHALL show each group's workspace address (`/w/<slug>`) when its rows carry one; `?w=<slug>` SHALL list only that workspace's groups, with a link back to all; a value that is not a single workspace address SHALL list every group (F34)
+25. The Alliances row's "Page errors" count, when above 0, SHALL link to `/admin/errors?w=<slug>`, not to the workspace's settings (F34)
+26. /admin's Activity SHALL show each workspace's setup steps even when PostHog returns nothing, and the steps SHALL include "Member role" (done or not yet) and "First read" (its date) (F12)
 
 ### S3: /admin structure: Overview, Runs, Workspaces, one page per workspace (P2) - later PR, M triggers (new routes)
 
 **Acceptance Criteria**
 
-22. `/admin/workspaces` SHALL list the workspaces with their setup state; `/admin/workspaces/[slug]` SHALL hold that workspace's setup checklist, its features with plain words for each layer (allowed by the owner, on for the alliance, paused), its roles (leadership and member role ids, with help on where to find them), and a danger zone at the end (pause, sign out users) whose every action asks first, safe answer first
-23. The admin area SHALL move its destructive actions without changing what they do or what they confirm
+27. `/admin/workspaces` SHALL list the workspaces with their setup state; `/admin/workspaces/[slug]` SHALL hold that workspace's setup checklist, its features with plain words for each layer (allowed by the owner, on for the alliance, paused), its roles (leadership and member role ids, with help on where to find them), and a danger zone at the end (pause, sign out users) whose every action asks first, safe answer first
+28. The admin area SHALL move its destructive actions without changing what they do or what they confirm
 
 ### S4: who can open the desk (P3) - needs the owner's OK (`decision`)
 
 **Acceptance Criteria**
 
-24. WHERE the owner approves it, Alliance settings SHALL show which Discord roles open the desk as leadership and as members (F38). Not built until the owner decides it: it reads Discord role names, which the desk does not show today
+29. WHERE the owner approves it, Alliance settings SHALL show which Discord roles open the desk as leadership and as members (F38). Not built until the owner decides it: it reads Discord role names, which the desk does not show today
 
 ## Out of scope
 
 | Excluded                                                         | Why                                                                                                                                      |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | S2, S3, S4 in this PR                                            | L work: one PR per slice; S1 has the highest first-glance gain for officers                                                              |
+| S2: a shorter /admin (9,184 px at 360)                           | S3 moves Workspaces, permissions and switches to their own pages; S2 only puts what waits first                                          |
+| S2: a Workspaces or Overview nav count                           | No Workspaces page until S3; see Assumptions                                                                                             |
+| S2: the same Needs you rows in the owner's Discord admin message | Product persona's new use; follow-up: one function, two outlets                                                                          |
+| S2: the first open to-do's text beside the count                 | Owner persona SHOULD; follow-up                                                                                                          |
+| S2: owner to-dos marked done on /admin                           | They are static data in `lib/patch-notes.ts`; a release marks them                                                                       |
 | A batch features route (`{switches: …}`)                         | One POST per changed switch fits the 60-per-15-minutes limit (at most 20 switches) and keeps `ws_action` one per switch                  |
 | A warning on in-app navigation (Next links) with unsaved changes | The desk's leave warning (notices, Start here) covers reload and close only; the yarn "Not saved yet" stays visible. Follow-up if needed |
 | Recomputing the tracker-call estimate from the draft             | The estimate counts served features (owner pauses included); after Save the refreshed page shows it                                      |
@@ -137,13 +192,21 @@ None - no one-way door: no data is deleted, no schema change, no change to who s
 
 ## Assumptions
 
-| Assumption                                                  | Chosen default                                                                                                                                                          | Rationale                                                                                                    | Confirmed? |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------- |
-| "Explicit save model"                                       | Every card that changes something for the whole alliance saves with its own button and says "Not saved yet" until then; per-device Notifications save on tap, said once | The finding is two models with nothing saying which; the instant one changes every officer's tabs on one tap | n          |
-| Where the index lives                                       | A reusable `PageIndex` layout component, so S2 can use it on /admin                                                                                                     | DESIGN.md: no component that exists only once                                                                | n          |
-| Which states count as "needs a look"                        | Only states that stop something working (key refused, out of quota, to enter again; a webhook to paste again; the summary on without its channel; a deletion asked)     | D75 tone: yarn means "needs a look", not "optional thing not set"; a missing key is optional (D134)          | n          |
-| Which slice is first                                        | Alliance settings                                                                                                                                                       | The orchestrator's brief; officers are many and first-time, /admin has one user                              | y          |
-| The site's bot "off" covers both no app id and no bot token | Two states (`off`, `noCheck`), because with an app id the install link works                                                                                            | `botView`: `installUrl` needs only `DISCORD_CLIENT_ID`; Check needs the token and both credentials           | n          |
+| Assumption                                                  | Chosen default                                                                                                                                                                      | Rationale                                                                                                                                                                                                                  | Confirmed? |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| "Explicit save model"                                       | Every card that changes something for the whole alliance saves with its own button and says "Not saved yet" until then; per-device Notifications save on tap, said once             | The finding is two models with nothing saying which; the instant one changes every officer's tabs on one tap                                                                                                               | n          |
+| Where the index lives                                       | A reusable `PageIndex` layout component, so S2 can use it on /admin                                                                                                                 | DESIGN.md: no component that exists only once                                                                                                                                                                              | n          |
+| Which states count as "needs a look"                        | Only states that stop something working (key refused, out of quota, to enter again; a webhook to paste again; the summary on without its channel; a deletion asked)                 | D75 tone: yarn means "needs a look", not "optional thing not set"; a missing key is optional (D134)                                                                                                                        | n          |
+| Which slice is first                                        | Alliance settings                                                                                                                                                                   | The orchestrator's brief; officers are many and first-time, /admin has one user                                                                                                                                            | y          |
+| The site's bot "off" covers both no app id and no bot token | Two states (`off`, `noCheck`), because with an app id the install link works                                                                                                        | `botView`: `installUrl` needs only `DISCORD_CLIENT_ID`; Check needs the token and both credentials                                                                                                                         | n          |
+| S2: "a late tick (none for 20 minutes or more)"             | Late = the watcher's rule (`heartbeatBoundary`): the newest tick before the newest 3-hourly heartbeat slot at least 10 minutes old                                                  | Since D141 an idle tick writes no row, so "none for 20 minutes" is true most of the day; the plan's line was written before that (infeasible as worded)                                                                    | n          |
+| S2: "workspaces with a setup gap" in Needs you              | Counts the Alliances rows with a setup gap or a key to fix, worded by kind; not errors (App errors' own row) and not a used-up limit or a key out of quota (both mend at 00:00 UTC) | Owner persona: one error counted twice; product persona: count only what someone can act on today                                                                                                                          | n          |
+| S2: "no Discord" as a setup gap (F12)                       | Not a gap: Activity lists "Webhook set" with the other steps                                                                                                                        | Product persona and adversarial: an alliance may choose no channel (D75; S1 settled yarn only for what stops working)                                                                                                      | n          |
+| S2: "no member role" stays a gap                            | Counted until the owner sets one, also when an alliance means its board to stay closed                                                                                              | The owner sets the member role on /admin; accepted limit (adversarial SHOULD 7)                                                                                                                                            | n          |
+| S2: "no read yet"                                           | Only once a daily read that started after the workspace was made has finished; a failed roster is no read                                                                           | Before that the owner can do nothing: the next daily read takes it (D133); a failed roster is a gap (adversarial MUST 1)                                                                                                   | n          |
+| S2: the nav count for "the workspaces needing a look"       | Not built: the nav carries the App errors count only; the workspaces are a Needs you row on Overview                                                                                | Owner persona: a count beside Overview repeats the section under it; adversarial: on every admin page it would run the whole Alliances read set each 4 s poll during a run (#521). S3's Workspaces page gets its own count | n          |
+| S2: "the quota above the cap" in Needs you                  | Not a row: Status shows "{n} left" and a muted "Above the 1,000 plan"                                                                                                               | Owner persona: the reading is usually above 1,000, so the row would show every day and train him to skip the section                                                                                                       | n          |
+| S2: "the quota low" in Needs you                            | Only from the newest daily read's first quota check (its first `v1.fetch` quota line in `run_logs`), today's; none when that check got no number                                    | Adversarial MUST 2: a snapshot's reading after an event day's runs is under 900 by design (819 measured)                                                                                                                   | n          |
 
 **Open questions:** none - all resolved or logged above (S4 waits on the owner's decision before it is planned in detail; it is not built here).
 
@@ -189,9 +252,23 @@ Settings first is right: half its views are on a phone and few officers have use
 - Accepted limit: the leave warning does not catch in-app navigation (Out of scope).
 - No one-way door: the standing approval applies.
 
+### S2 plan review
+
+Run 2026-11-22 on the S2 criteria before building, on a local production build of `dev` (fd1597b8) with the invented 585 seed (`585-admin/shots/before/`: /admin 9,184 px tall at 360, 6,652 at 768, 6,578 at 1024 and 1280; 41 statements per /admin view, 7 on /admin/errors).
+
+**First-glance test, before** (360 × 780, about 5 s, `admin--360-light-fold.png`): the owner, "What do I need to do today on /admin?": "Nothing is urgent today. The API budget is fine, nothing is running, and the next run is a week away." Wrong (MUST): an access request, two workspaces without a member role and an app error wait. He also read "3869 of 1,000" as contradictory.
+
+**Owner as /admin user: approve with changes.** Taken: the scheduler late first (it stops every run); a row for a daily read Retry offers; one error not counted twice (the workspaces row counts setup and key only); no "above 1,000" row (the reading is usually above it, so the row would show every day); the workspaces row worded by kind; a row for an asked deletion (the only step that cannot be undone, still cancellable); the reading with grouped digits and "{n} left" above 1,000. Not taken: the nav count beside Overview (it repeats the section under it; see Assumptions). Follow-up: the first open to-do's text beside the count.
+
+**Product strategy: approve with changes.** Taken: no "no Discord" gap (an alliance may choose it, D75, as S1 settled); "no read yet" only after a daily read since the workspace was made has finished; the above-1,000 chip muted, not seal, and no Needs you row; no used-up limit or key out of quota in the Needs you count (both mend at 00:00 UTC); the late-tick rule kept (matches the watcher and D141). Proposed and kept for later: the same Needs you rows in the owner's Discord admin message. Measure after release (no new event): time from `ws_access_requested` to `admin_workspace_approved`; the share of /admin sessions whose next pageview is a row's target (`/admin/errors`, `/admin/changes`); `$pageleave` max scroll on /admin under 640 px; `$pageview` of `/admin/errors` with `?w=`.
+
+**Adversarial (privacy, attention rules, performance): approve with changes.** No one-way door: no schema, no deletion, no quota spend, no dependency; the new sections, nav and filter carry counts, words and workspace addresses only, no roster field, name, key, webhook or Discord id; `workspace_slug` is checked when written and `?w=` is escaped by React. Taken: MUST 1, a failed roster or one from before the workspace is no "first read"; MUST 2, "low" only from the daily read's reading before the day's spend; MUST 3, `?w=` used only as one string that is a workspace address, else every group; SHOULD 4, the nav reads one indexed count on every page, not the Alliances read set (RunWatch refreshes every 4 s during a run); SHOULD 5, waiting requests by `count(*)`, not the 50 listed; SHOULD 6, moot (no Discord gap); SHOULD 7 and 8, accepted and said in Assumptions; SHOULD 9, the late rule matches the watcher, and an idle tab's "Late" can be stale until its next refresh (accepted).
+
 ## Analytics plan
 
 No new event. Change: a dated line in the tracking plan's "Changed" section: from this release Features saves on Save, so `ws_action` `features` still counts one per switch that went through, and turn_off → turn_on pairs within minutes should drop. Remove: nothing. PostHog side: no insight or Endpoint reads `ws_action` `features` by action; nothing to change.
+
+S2: no change. No new event: the owner is /admin's one user, and `$pageview` paths, `$pageleave` scroll depth and the existing `admin_*` events answer the S2 questions (the list in the S2 plan review). No event's meaning changes. PostHog side: nothing reads /admin events in an insight or Endpoint.
 
 ## Differences from the source
 

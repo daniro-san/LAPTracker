@@ -1,6 +1,6 @@
 // /admin's New alliances card (D130, issue 453): the invite links and the requests, newest first. Owner only
 // (PIN). Never a link's secret or hash, a claim, or the servers a person manages: their state in words.
-import { desc } from "drizzle-orm";
+import { count, desc, isNull } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { accessRequests, allianceInvites } from "../schema-invites";
@@ -70,6 +70,15 @@ export async function listInvites(db: Db, now: Date): Promise<AdminInvite[]> {
     name: r.name,
     slug: r.slug,
   }));
+}
+
+/** Requests with no answer yet, all of them, not only the ones listed (issue 585, F11: "Needs you"). */
+export async function countWaitingRequests(db: Db): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(accessRequests)
+    .where(isNull(accessRequests.decision));
+  return row?.n ?? 0;
 }
 
 /** /admin lists the newest this many requests (issue 500); older ones wait for the 30-day purge. */

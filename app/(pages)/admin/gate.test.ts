@@ -11,8 +11,10 @@ import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
 import { adminCopy } from "@/lib/copy-admin";
 import type { Db } from "@/lib/db";
-import { openTestDb } from "@/lib/db.test-helpers";
+import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import type { Env } from "@/lib/env";
+import { appErrors, workspaces } from "@/lib/schema";
+import { accessRequests } from "@/lib/schema-invites";
 
 const holder = vi.hoisted(() => ({
   ctx: null as AppContext | null,
@@ -75,7 +77,7 @@ describe("/admin pages, locked", () => {
   it.each([
     ["/admin", () => AdminPage()],
     ["/admin/runs", () => RunsPage({ searchParams: Promise.resolve({}) })],
-    ["/admin/errors", () => ErrorsPage()],
+    ["/admin/errors", () => ErrorsPage({ searchParams: Promise.resolve({}) })],
     ["/admin/runs/1", () => run("1")],
     [
       "/admin/runs/daily/2026-11-12",
@@ -106,6 +108,67 @@ describe("/admin pages, unlocked", () => {
 
   // The session check reads the clock itself: it runs at T0, the context's clock.
   afterEach(() => vi.useRealTimers());
+
+  /** Signed in at T0, with amber: no member role yet, made a week before. */
+  async function signedInWithAmber() {
+    vi.useFakeTimers({ toFake: ["Date"], now: T0 });
+    await truncateAll(db);
+    holder.ctx = testContext(db).ctx;
+    holder.cookie = adminToken(TEST_ENV, T0);
+    await db.insert(workspaces).values({
+      unionId: 101,
+      slug: "amber",
+      discordGuildId: "700000000000000101",
+      leaderRoleIds: ["700000000000000201"],
+      createdAt: new Date(T0.getTime() - 7 * 86_400_000),
+    });
+  }
+
+  it("/admin's Activity shows each workspace's setup steps when PostHog has no totals (F12)", async () => {
+    await signedInWithAmber();
+    const shown = await html(await AdminPage());
+    const activity = shown.slice(shown.indexOf(">Activity</h2>"));
+    expect(shown).toContain(">Activity</h2>");
+    expect(activity).toContain("No totals from PostHog right now: setup steps only.");
+    for (const step of ['href="#w-amber"', "Created", "Member role", "First read", "not yet"])
+      expect(activity).toContain(step);
+  });
+
+  it("/admin opens with what needs the owner, before Status, and the nav counts the last day's app errors (issue 585)", async () => {
+    await signedInWithAmber();
+    // Page errors under amber's address 23 h and 25 h ago (only the first is in the nav's 24 h); one
+    // request waiting.
+    const error = {
+      route: "/w/[slug]/roll-call",
+      message: "roll_call_conflict",
+      workspaceSlug: "amber",
+    };
+    await db.insert(appErrors).values([
+      { ...error, at: new Date(T0.getTime() - 23 * 3_600_000), digest: "d1a2" },
+      { ...error, at: new Date(T0.getTime() - 25 * 3_600_000), digest: "e9f1" },
+    ]);
+    await db.insert(accessRequests).values({
+      unionId: 910103,
+      playerName: "Juniper Vale",
+      claimedRole: "r4",
+      rosterMatch: "found",
+      statusHash: "hash-1",
+      createdAt: T0,
+    });
+
+    const shown = await html(await AdminPage());
+    const needs = shown.indexOf(">Needs you</h2>");
+    expect(needs).toBeGreaterThan(0);
+    expect(shown.indexOf(">Status</h2>")).toBeGreaterThan(needs);
+    const section = shown.slice(needs, shown.indexOf(">Status</h2>"));
+    for (const row of ["Access requests", "1 waiting", "1 in the last 24 h", "1 to set up"])
+      expect(section).toContain(row);
+    expect(section).toContain('href="/admin/errors"');
+    // The nav's App errors count, read out in words.
+    expect(shown).toContain(", 1 in the last 24 h");
+    // The Alliances row's page errors open that workspace's errors, not its settings (F34).
+    expect(shown).toContain('href="/admin/errors?w=amber"');
+  });
 
   it("/admin/runs/<unknown id> still calls notFound", async () => {
     vi.useFakeTimers({ toFake: ["Date"], now: T0 });
