@@ -55,17 +55,21 @@ net.Socket.prototype.connect = function (...args) {
 };
 syncBuiltinESMExports();
 
+// Only with E2E_STUB_URL set (the e2e servers); other users of this preload, such as
+// scripts/record-fixture.test.ts, keep fetch as it is.
 const STUB = process.env.E2E_STUB_URL;
-const TO_STUB = [
-  ["https://api.groq.com/", `${STUB}/groq/`],
-  ["https://discord.com/api/webhooks/", `${STUB}/discord/webhooks/`],
-];
-const send = globalThis.fetch;
-const { Request } = globalThis;
-globalThis.fetch = function (input, init) {
-  const url = input instanceof Request ? input.url : String(input);
-  const route = TO_STUB.find(([from]) => url.startsWith(from));
-  if (!route) return send.call(this, input, init);
-  const to = route[1] + url.slice(route[0].length);
-  return send.call(this, input instanceof Request ? new Request(to, input) : to, init);
-};
+if (STUB) {
+  const TO_STUB = [
+    ["https://api.groq.com/", `${STUB}/groq/`],
+    ["https://discord.com/api/webhooks/", `${STUB}/discord/webhooks/`],
+  ];
+  const send = globalThis.fetch;
+  const { Request } = globalThis;
+  globalThis.fetch = function (input, init) {
+    const url = input instanceof Request ? input.url : String(input);
+    const route = TO_STUB.find(([from]) => url.startsWith(from));
+    if (!route) return send.call(this, input, init);
+    const to = route[1] + url.slice(route[0].length);
+    return send.call(this, input instanceof Request ? new Request(to, input) : to, init);
+  };
+}

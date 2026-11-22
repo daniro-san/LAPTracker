@@ -6,10 +6,12 @@
 //   untranslated guard sees none of the source's words;
 // - POST /discord/webhooks/<id>/<token>: a notice posted to Discord (D102).
 // e2e/no-network.mjs sends Groq's and Discord's webhook URLs here. GET /__stub/received lists what was
-// answered, for the specs. Any other request gets no answer: its body is read, then the socket is closed,
+// answered, for the specs. A POST to the last two whose body is neither JSON nor a multipart post with a
+// `payload_json` part gets 400. Any other request gets no answer: its body is read, then the socket is closed,
 // so fetch fails with "fetch failed" and a cause with no system error code, as it did at 127.0.0.1:9 (a
 // port fetch refuses before connecting). lib/sources' RequestError and lib/data-unavailable's databaseDown
 // read both the same way.
+import { Buffer } from "node:buffer";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { URL } from "node:url";
@@ -19,17 +21,29 @@ const QUOTA = readFileSync("fixtures/v1-20261116T105019Z/quota-before.json", "ut
 const SITE_KEY = `Bearer ${process.env.LAP_API_KEY}`;
 const WEBHOOK = /^\/discord\/webhooks\/\d+\/[\w-]+$/;
 
-/** What each answered request carried: its path, the Authorization header, and the parsed JSON body. */
+/**
+ * What each answered request carried: its path and Authorization header, and for a POST its body as sent
+ * (`raw`, as text) and parsed (`body`).
+ */
 const received = [];
+const { Response } = globalThis;
 
-const text = async (req) => {
-  let body = "";
-  for await (const chunk of req) body += chunk;
-  return body;
+const bytes = async (req) => {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return Buffer.concat(chunks);
 };
 
-const json = (res, body) => {
-  res.writeHead(200, { "content-type": "application/json" });
+/** A POST's JSON: the body itself, or a multipart post's `payload_json` part (a notice's picture, D119). */
+async function payloadOf(req, raw) {
+  const type = req.headers["content-type"] ?? "";
+  if (!type.startsWith("multipart/form-data")) return JSON.parse(raw.toString("utf8"));
+  const form = await new Response(raw, { headers: { "content-type": type } }).formData();
+  return JSON.parse(String(form.get("payload_json")));
+}
+
+const json = (res, body, status = 200) => {
+  res.writeHead(status, { "content-type": "application/json" });
   res.end(JSON.stringify(body));
 };
 
@@ -40,9 +54,9 @@ function translated(prompt) {
   return inside.replace(/\S+/g, (word) => [...word].reverse().join(""));
 }
 
-createServer(async (req, res) => {
+async function answer(req, res) {
   const { pathname } = new URL(req.url, "http://stub");
-  const body = await text(req);
+  const raw = await bytes(req);
   const record = (extra = {}) =>
     received.push({ path: pathname, authorization: req.headers.authorization ?? null, ...extra });
   if (req.method === "GET" && pathname === "/__stub/received") return json(res, received);
@@ -52,17 +66,27 @@ createServer(async (req, res) => {
     return res.end(QUOTA);
   }
   if (req.method === "POST" && pathname === "/groq/openai/v1/chat/completions") {
-    const answer = translated(JSON.parse(body));
-    record({ body: JSON.parse(body), answer });
+    const body = await payloadOf(req, raw);
+    const text = translated(body);
+    record({ raw: raw.toString("utf8"), body, answer: text });
     return json(res, {
-      choices: [{ finish_reason: "stop", message: { role: "assistant", content: answer } }],
+      choices: [{ finish_reason: "stop", message: { role: "assistant", content: text } }],
       usage: { prompt_tokens: 1, completion_tokens: 1 },
     });
   }
   if (req.method === "POST" && WEBHOOK.test(pathname)) {
-    record({ body: JSON.parse(body) });
+    record({ raw: raw.toString("utf8"), body: await payloadOf(req, raw) });
     // `?wait=true`: Discord answers with the message it made.
     return json(res, { id: String(received.length), channel_id: "1" });
   }
   req.socket.destroy();
-}).listen(port, "127.0.0.1");
+}
+
+// A body the stub cannot read (not JSON, no payload_json) answers 400; nothing throws out of the handler,
+// so one bad request never stops the stub the whole suite shares.
+createServer((req, res) =>
+  answer(req, res).catch((error) => {
+    if (res.headersSent) return res.destroy();
+    json(res, { error: String(error?.message ?? error) }, 400);
+  }),
+).listen(port, "127.0.0.1");

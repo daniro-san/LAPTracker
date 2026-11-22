@@ -4,12 +4,13 @@ Part of #477 (flows 4 and 7).
 
 ## Built
 
-- `e2e/stub-server.mjs`: one HTTP server on 127.0.0.1 for the whole suite, started by Playwright like the other servers (`E2E_STUB_PORT`, default 3479). It answers three routes and keeps each request it answered in memory: path, Authorization header and JSON body (and, for Groq, its answer). The specs read that list from `GET /__stub/received`.
+- `e2e/stub-server.mjs`: one HTTP server on 127.0.0.1 for the whole suite, started by Playwright like the other servers (`E2E_STUB_PORT`, default 3479). It answers three routes and keeps each request it answered in memory: path, Authorization header, and for a POST its body as text (`raw`) and parsed (`body`; for Groq also its answer). The specs read that list from `GET /__stub/received`.
   - `GET /v1/quota` for any key except LAP_API_KEY: the recorded fixture `fixtures/v1-20261116T105019Z/quota-before.json`.
   - `POST /groq/openai/v1/chat/completions`: each word of the text inside `<text>…</text>` written backwards, so the untranslated guard (D81) finds none of the source words.
-  - `POST /discord/webhooks/<id>/<token>`: answers `{id, channel_id}`, as Discord does with `?wait=true`.
+  - `POST /discord/webhooks/<id>/<token>`: answers `{id, channel_id}`, as Discord does with `?wait=true`. A multipart post (a notice with a picture, D119) is read from its `payload_json` part.
+  - A POST to those two routes that is neither JSON nor multipart with `payload_json` gets 400. The handler never throws, so one bad request cannot stop the shared stub.
   - Any other request: the stub reads the body, then closes the socket without an answer.
-- `e2e/no-network.mjs`: when `E2E_STUB_URL` is set, `fetch` sends `https://api.groq.com/…` and `https://discord.com/api/webhooks/…` to the stub. Both URLs are fixed in the app code (`GROQ_CHAT_URL`, and the webhook regex in `lib/env.ts`), so the app code stays as it is.
+- `e2e/no-network.mjs`: only when `E2E_STUB_URL` is set (the e2e servers), `fetch` sends `https://api.groq.com/…` and `https://discord.com/api/webhooks/…` to the stub. Both URLs are fixed in the app code (`GROQ_CHAT_URL`, and the webhook regex in `lib/env.ts`), so the app code stays as it is. Other users of the preload (`scripts/record-fixture.test.ts`) keep `fetch` as it is.
 - `e2e/env.ts`: `LAP_API_BASE_URL` now points at the stub. New invented values: `GROQ_API_KEY`, `WORKSPACE_KEYS_SECRET` (32 bytes, base64) and `WORKSPACE_DISCORD_WEBHOOKS`, which gives each filler workspace (irt, mnw, glw) a leadership channel (`NOTICE_CHANNELS`). Also new: `E2E_STUB_URL`, `STUB_PORT` and `STUB_URL`.
 - `e2e/fixtures/seed.ts`: the filler workspaces' `workspace_features.switches` turn `notice_translate` on (D126: a feature that spends Groq starts off).
 - `e2e/desk-key.spec.ts` (flow 7, phone only, on `switchWorkspaceOf(repeat)`):
@@ -23,8 +24,9 @@ Part of #477 (flows 4 and 7).
   - The officer saves, then posts to "#<slug>-leaders" and sees "Posted to #… by Officer <TAG>", also after a reload.
   - The stub's posts to that webhook contain the title, the English text and the translation.
   - `leaksIn` (the guards' sentinel scan) finds no private roster field in the posted JSON.
-- `savedAndRefreshed` moved from `e2e/desk-flows.spec.ts` to `e2e/fixtures/test.ts`, so the new specs can use it. desk-flows imports it from there.
+- `savedAndRefreshed` moved from `e2e/desk-flows.spec.ts` to `e2e/fixtures/test.ts`, so the new specs can use it. desk-flows and `e2e/self-report.spec.ts` import it from there; self-report's own copy (`refreshedAfter`) is gone.
 - `app/(private)/_ui/NoticePublish.tsx`: `send` now reads the answer body on a 2xx (see Deviations).
+- `docs/decisions/D150-committed-e2e-suite-with-playwright.md`: a dated amendment (2026-11-22, issue 477, PR 712) on the stub, the routes it answers, how unknown routes and unreadable bodies fail, the new settings and the preload rewrite.
 
 ## Decisions
 
@@ -43,7 +45,7 @@ Part of #477 (flows 4 and 7).
 
 - One app change: `NoticePublish.tsx` read nothing from a 2xx answer. Chromium never finishes loading a response body the page leaves unread. `response.text()` in the guards then hangs, or fails as "unreadable answer" after a reload, so flow 4 could not pass the guards. `send` now reads the JSON, as `TrackerKeyForm` and `calendar-send` already do. Users see no difference.
 - `savedAndRefreshed` was moved to `fixtures/test.ts`, not copied into the new specs (one helper, three users).
-- Count with the new specs: 72 passed, 6 skipped. Dev alone is 70 passed, 4 skipped. The +2 passed are the new phone tests. The +2 skipped are their wide runs. The 4 earlier skips are unchanged. With the calendar PR as well, expect 74 passed, 6 skipped.
+- Count with the new specs, on dev with the calendar PR (#709): 74 passed, 6 skipped. Dev alone was 72 passed, 4 skipped. The +2 passed are the new phone tests. The +2 skipped are their wide runs. The 4 earlier skips are unchanged.
 
 ## Verified
 
@@ -58,6 +60,12 @@ Part of #477 (flows 4 and 7).
   - `postMessages` returns all messages sent without calling `fetch`. The page still shows "Posted to #irt-leaders…". desk-notice fails at `expect(posted.length).toBeGreaterThan(0)` (received 0).
   - The posted content gets `\nAt 713579` (Lantern Keep's map x sentinel). desk-notice fails at "private roster fields in the post" with `["a.x"]`.
 - `pnpm vitest related --run` on the changed files: 5 passed. `pnpm check`: exit 0 (352 files passed, 2 skipped). It needed two fix rounds: prettier on desk-key.spec.ts, then ESLint `no-undef` for `URL` and `Request` in the `.mjs` files.
+- After PR 712's review, on the branch rebased onto dev (with the calendar PR):
+  - The stub, run alone and probed: a JSON post and a multipart post with a picture each get 200, and their `payload_json` is recorded. A text body and a broken Groq body each get 400. An unknown route still gets `UND_ERR_SOCKET`, and the stub keeps answering.
+  - `pnpm vitest run scripts/record-fixture.test.ts`: 1 passed (it preloads no-network.mjs without `E2E_STUB_URL`).
+  - Fresh build, then desk-key, desk-notice and self-report: 3 passed, 3 skipped (wide). The same three again after the last stub edit: 3 passed.
+  - Full e2e suite once: 74 passed, 6 skipped, no `e2e-outbound.log`.
+  - `pnpm check`: exit 0 (353 files passed, 2 skipped), after one fix round (ESLint `no-undef` for `Buffer` in the stub).
 
 ## Open issues
 
@@ -67,7 +75,7 @@ Part of #477 (flows 4 and 7).
 
 ## Next
 
-- Merge the calendar PR (`test/477-calendar-key`). This branch's handoff covers flow 7, which that branch left open. After both are in, #477's three missing flows (3, 4 and 7) are covered and the issue can close.
+- The calendar PR (#709) is merged. With this PR, #477's three missing flows (3, 4 and 7) are covered and the issue can close.
 - Follow-up: read the answer body in the three components listed under Open issues, before e2e flows cover them.
 
 What was missing from the task prompt? That the AI features start off for a new workspace (D126), so the seed had to turn Translate on. Also that an answer the page never reads cannot be scanned by the guards in Chromium.
