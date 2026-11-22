@@ -6,14 +6,20 @@
 //   seen with a shield", at the newest answer's time.
 // Friday's read is the squads queue (D132): it runs while that queue's day is running and 00:00 ST has not
 // come; Saturday's runs while its `morning_status` is `running`.
+// Both counts are of Raid prep's set (drilldown batch C, 2026-11-22): the roster's members with those away on
+// the raid's Saturday left out (`membersOfRaid`, shared with the Discord summary and the officers'
+// notification), which Raid prep's grid leaves out by the same rule. The away ones are said as a count
+// ("· 3 away"), and the line links the week's Raid prep (`raidPrepUrl`, the notification's link).
 import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import type { Env } from "../env";
+import { raidPrepUrl } from "../push-uses";
 import { getShieldCheck, shieldReadings, type ShieldCheckRow } from "../repo/shield-checks";
-import { dayRosterUids, getSquadRead } from "../repo/squads";
+import { getSquadRead } from "../repo/squads";
 import { quotaDayRead } from "../schedule";
 import { kvkStart, passWindows, suggestionOf } from "../shield-check";
+import { membersOfRaid } from "../shield-post";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
 import { featureOn } from "./features";
@@ -23,6 +29,10 @@ export interface ShieldStatus {
   at: number;
   running: boolean;
   text: string;
+  /** The week's Raid prep, where the members counted are marked. */
+  href: string;
+  /** Seen with a shield (0 while running): the bucket "Raid prep ›" sends (`ws_drilldown_opened`). */
+  on: number;
 }
 
 const clock = (zone: string, at: Date) => dateWords("en", zone).time(at);
@@ -42,23 +52,32 @@ export async function shieldStatus(
   const pass = check.morningStartedAt ? "morning" : check.nightAt ? "night" : null;
   if (!pass) return null;
   const w = passWindows(day, env)[pass];
-  const [readings, uids, running] = await Promise.all([
+  const zone = env.SERVER_TZ;
+  const [readings, raid, running, href] = await Promise.all([
     shieldReadings(db, access.unionId, w.from, w.to),
-    dayRosterUids(db, day, access.unionId),
+    membersOfRaid(db, access, day, zone),
     isRunning(db, check, now < w.to),
+    raidPrepUrl(db, { id: access.workspaceId, slug: access.slug }, day),
   ]);
-  const members = uids?.length ?? 0;
+  const asked = new Set(raid.members.map((m) => m.uid).filter((uid) => !raid.away.has(uid)));
+  const mine = readings.filter((r) => asked.has(r.uid));
+  const members = asked.size;
+  const away = raid.away.size;
+  const awayText =
+    away === 0
+      ? ""
+      : ` · ${fill(t[`status.shield.away.${away === 1 ? "one" : "other"}`], { n: away })}`;
   if (running) {
     const started = (check.morningStartedAt ?? check.nightAt) as Date;
-    const at = clock(env.SERVER_TZ, started);
-    const text = fill(t["status.shield.running"], { read: readings.length, members, at });
-    return { at: started.getTime(), running, text };
+    const at = clock(zone, started);
+    const text = fill(t["status.shield.running"], { read: mine.length, members, at }) + awayText;
+    return { at: started.getTime(), running, text, href, on: 0 };
   }
-  if (readings.length === 0) return null;
-  const last = new Date(Math.max(...readings.map((r) => r.readAt.getTime())));
-  const on = readings.filter((r) => suggestionOf(r) === "on").length;
-  const text = fill(t["status.shield.done"], { at: clock(env.SERVER_TZ, last), on, members });
-  return { at: last.getTime(), running, text };
+  if (mine.length === 0) return null;
+  const last = new Date(Math.max(...mine.map((r) => r.readAt.getTime())));
+  const on = mine.filter((r) => suggestionOf(r) === "on").length;
+  const text = fill(t["status.shield.done"], { at: clock(zone, last), on, members }) + awayText;
+  return { at: last.getTime(), running, text, href, on };
 }
 
 /** Saturday's read runs while its status is `running`; Friday's while the squads queue's day does. */

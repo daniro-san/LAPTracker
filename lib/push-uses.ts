@@ -26,9 +26,9 @@ export type UseDeps = PushDeps & {
 
 /**
  * The Raid prep roll call of the week holding Friday `day`: the week's KvK Calendar entry, else the one the
- * tracker's fill added (D137), else the week's Roll call page.
+ * tracker's fill added (D137), else the week's Roll call page. The status bar's shield line links it too.
  */
-async function raidPrepUrl(db: Db, ws: { id: number; slug: string }, day: string) {
+export async function raidPrepUrl(db: Db, ws: { id: number; slug: string }, day: string) {
   const monday = mondayOf(day);
   const sunday = addDays(monday, 6);
   const cal = await calendarRows(db, ws.id, monday, monday, sunday);

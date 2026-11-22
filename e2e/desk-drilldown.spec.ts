@@ -1,10 +1,12 @@
 // Drilldown on Raid prep and the Roll call list (2026-11-22): a tap on a count shows exactly the members it
 // names. Raid prep's "Show the n" beside "To remind: n", and the Roll call card's ✗ and "Not set" counts,
 // which open the marking page on that chip. Read only: this week's seeded Raid prep, which no test marks.
+// Home (batch C): a new-members line opens its names, and "n already noted" opens Follow-up's Noted card.
 // Expected members are computed from the seed (e2e/fixtures/seed.ts).
 import type { Page } from "@playwright/test";
 
 import {
+  ADDED_BY_HAND,
   ALLIANCES,
   calendarOf,
   KVK_ENTRY,
@@ -84,4 +86,43 @@ test("Roll call list: Raid prep's ✗ and Not set counts open its page on that c
   const todo = page.getByRole("button", { name: `To mark ${notSet.length}`, exact: true });
   await expect(todo).toHaveAttribute("aria-pressed", "true");
   await tilesAre(page, notSet);
+});
+
+test("Home: “added 3 new members” opens exactly those names, and the noted ones open Noted this week", async ({
+  page,
+}) => {
+  await page.goto(desk);
+  await expect(page.getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
+  await deskFrame(page, A);
+  // The seed's three members added by hand are one line; the tests' own marks are newer, so it may be on a
+  // later page.
+  const activity = page.getByRole("region", { name: "Recent activity" }).first();
+  const added = activity.getByRole("listitem").filter({ hasText: /added 3 new members/ });
+  const more = activity.getByRole("button", { name: "Show more" });
+  while ((await added.count()) === 0) {
+    const shown = await activity.getByRole("listitem").count();
+    await hydrated(more);
+    await more.click();
+    await expect.poll(() => activity.getByRole("listitem").count()).toBeGreaterThan(shown);
+  }
+  await expect(added).toContainText(/Officer LNK⁩? added 3 new members/);
+  await added.getByText(/added 3 new members/).click();
+  const order = new Intl.Collator("en", { numeric: true, ignorePunctuation: true });
+  await expect(added.getByRole("list").getByRole("listitem")).toHaveText(
+    [...ADDED_BY_HAND].sort((x, y) => order.compare(x, y)),
+  );
+  // The noted ones (0 or 1 at this moment: the Follow-up card test keeps a Talked, see desk.spec.ts) are a
+  // link of their own, to Follow-up's "Noted this week", which lists that many.
+  const noted = page
+    .getByRole("region", { name: "Follow-up" })
+    .getByRole("link", { name: /already noted by officers$/ });
+  if ((await noted.count()) === 0) return;
+  const n = Number((await noted.innerText()).match(/^\d+/)?.[0]);
+  await expect(noted).toHaveAttribute("href", `${desk}/follow-up#follow-up-noted`);
+  await hydrated(noted);
+  await noted.click();
+  await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: `Noted this week · ${n}` }),
+  ).toBeVisible();
 });

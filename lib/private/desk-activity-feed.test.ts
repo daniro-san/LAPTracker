@@ -17,6 +17,7 @@ import {
   notices,
 } from "../schema-notices";
 import type { WorkspaceAccess } from "./access";
+import { activityView } from "./desk-activity-words";
 import {
   ago,
   browser,
@@ -25,6 +26,7 @@ import {
   NOW,
   recentActivity,
 } from "./desk-activity.test-helpers";
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
 
 let db: Db;
 let ws: number;
@@ -96,6 +98,38 @@ describe("recent activity", () => {
       "Ana updated Bramble’s info",
       "Ana posted the notice “Weekly schedule” on Discord",
       "Ana updated 5 members",
+    ]);
+  });
+
+  it("opens “added 3 new members” to exactly those three names, in name order (drilldown batch C)", async () => {
+    const a = (await browser(db, ws, "Ana")).userId;
+    const added = (name: string, at: Date) => ({
+      ...{ workspaceId: ws, name, nameKey: name.toLowerCase() },
+      ...{ createdBy: a, createdAt: at },
+    });
+    await db
+      .insert(pendingMembers)
+      .values([added("Wren", ago(9)), added("aster vale", ago(8)), added("Brindle", ago(7))]);
+    await db.insert(memberFacts).values(
+      [101, 102].map((uid, i) => ({
+        ...{
+          workspaceId: ws,
+          uid,
+          field: "troops",
+          version: 1,
+          value: "1",
+          source: "officer" as const,
+        },
+        ...{ writtenBy: a, writtenAt: ago(30 + i) },
+      })),
+    );
+    const me = (await (await browser(db, ws, "Rook")).visit(NOW)) as WorkspaceAccess;
+    const page = { lines: await recentActivity(db, me, NOW), next: null };
+    const view = activityView(page, WORKSPACE_DICTIONARIES.en, "en", NOW);
+    expect(view.lines.map((l) => [l.text.replace(/[⁨⁩]/g, ""), l.names])).toEqual([
+      ["Ana added 3 new members", ["aster vale", "Brindle", "Wren"]],
+      // "updated n members" stays a count: its members are not in the feed's read.
+      ["Ana updated 2 members", undefined],
     ]);
   });
 

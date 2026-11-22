@@ -232,9 +232,15 @@ async function deliver(
 /**
  * The alliance's members and, of them, the uids away on the raid's Saturday (Friday `day` + 1), by the roll
  * call's rule (D103), as Raid prep's fill leaves them out. The summary and the officers' notification
- * (lib/push-uses.ts) both read them here, so their counts agree.
+ * (lib/push-uses.ts) both read them here, so their counts agree, and so does the desk's status bar
+ * (lib/private/shield-status.ts), which counts Raid prep's set: these members, the away ones left out.
  */
-export async function membersOfRaid(db: Db, target: ShieldTarget, day: string, zone: string) {
+export async function membersOfRaid(
+  db: Db,
+  target: Pick<ShieldTarget, "unionId" | "workspaceId">,
+  day: string,
+  zone: string,
+) {
   const [roster, facts] = await Promise.all([
     anyRoster(db, target.unionId),
     awayFacts(db, target.workspaceId as number),

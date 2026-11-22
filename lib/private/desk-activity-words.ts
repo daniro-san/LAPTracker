@@ -227,6 +227,18 @@ export interface ActivityView {
   at: string;
   ago: string;
   run: { text: string; at: string; ago: string }[];
+  /**
+   * "{who} added {n} new members" (drilldown batch C): the n names, in name order, which its fold shows in
+   * place of the run's lines. The same array as the n. Names as typed (D106), with no uid: plain text.
+   */
+  names?: string[];
+}
+
+/** A new members' run's names in the officer's language's name order; undefined for any other line. */
+function namesOf(item: ActivityItem, language: WorkspaceLanguage): string[] | undefined {
+  if (item.kind !== "newMember" || item.names.length < 2) return undefined;
+  const order = new Intl.Collator(language, { numeric: true, ignorePunctuation: true });
+  return [...item.names].sort((a, b) => order.compare(a, b));
 }
 
 /** A page of the feed in the officer's language, made on the server; `next` is the cursor in ms. */
@@ -243,11 +255,15 @@ export function activityView(
 ): ActivityPageView {
   const when = (at: Date) => ({ at: at.toISOString(), ago: activityAgo(at, now, language, t) });
   return {
-    lines: page.lines.map((line) => ({
-      text: feedLine(line, t, language),
-      ...when(line.item.at),
-      run: line.run.map((item) => ({ text: activityLine(item, t, language), ...when(item.at) })),
-    })),
+    lines: page.lines.map((line) => {
+      const names = namesOf(line.item, language);
+      return {
+        text: feedLine(line, t, language),
+        ...when(line.item.at),
+        run: line.run.map((item) => ({ text: activityLine(item, t, language), ...when(item.at) })),
+        ...(names && { names }),
+      };
+    }),
     next: page.next?.getTime() ?? null,
   };
 }

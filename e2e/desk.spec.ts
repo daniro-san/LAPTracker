@@ -74,11 +74,11 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   // at the cap (DAILY) and records no facts for its new members, so the list holds `toLookOf`
   // (e2e/fixtures/follow-up-list.ts). The noted part races: the card test below, in this project and the
   // other one running beside it, keeps a Talked on a member, so 0 or 1 is right at this moment; the exact
-  // rule is in follow-up-week.test.ts.
+  // rule is in follow-up-week.test.ts. The noted ones are a link of their own (desk-drilldown.spec.ts).
   const card = page.getByRole("region", { name: "Follow-up" });
   const n = toLookOf();
   const followUp = card.getByRole("link", {
-    name: new RegExp(`^${n} members? to look at this week( · 1 already noted by officers)?$`),
+    name: new RegExp(`^${n} members? to look at this week$`),
   });
   await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
   const next = page.getByRole("region", { name: "Today and tomorrow" });

@@ -41,20 +41,23 @@ const margin = (followUp: WeekCounts | null, members = view) =>
 describe("Home's Follow-up card (issue 585 slice 4)", () => {
   it("says Follow-up's numbers in the main column while the tab is on, and leaves the margin's line to the tab off", () => {
     const week = card({ toLook: 12, noted: 4 });
-    expect(textOf(week)).toBe(
-      "Follow-up 12 members to look at this week · 4 already noted by officers",
-    );
+    // Two links (drilldown batch C): the head to Follow-up, the noted ones to its "Noted this week".
+    expect(textOf(week)).toContain("Follow-up");
+    expect(textOf(week)).toContain("12 members to look at this week");
+    expect(textOf(week)).toContain("4 already noted by officers");
     expect(week).toContain('href="/w/ogs/follow-up"');
-    expect(textOf(card({ toLook: 1, noted: 0 }))).toBe("Follow-up 1 member to look at this week");
-    expect(textOf(card({ toLook: 0, noted: 4 }))).toBe(
-      "Follow-up Nobody to look at this week · 4 already noted by officers",
-    );
+    expect(week).toContain('href="/w/ogs/follow-up#follow-up-noted"');
+    const none = card({ toLook: 1, noted: 0 });
+    expect(textOf(none)).toContain("1 member to look at this week");
+    expect(none).not.toContain("#follow-up-noted");
+    expect(textOf(card({ toLook: 0, noted: 4 }))).toContain("Nobody to look at this week");
     const fine = card({ toLook: 0, noted: 0 });
     expect(textOf(fine)).toBe("Follow-up Everyone looks fine this week.");
     expect(fine).not.toContain("href");
-    expect(followUpWords({ toLook: 1, noted: 1 }, WORKSPACE_DICTIONARIES.fr, "fr")).toBe(
-      "1 membre à suivre cette semaine · 1 déjà noté par les officiers",
-    );
+    expect(followUpWords({ toLook: 1, noted: 1 }, WORKSPACE_DICTIONARIES.fr, "fr")).toEqual({
+      head: "1 membre à suivre cette semaine",
+      noted: "1 déjà noté par les officiers",
+    });
     // The margin says nothing more about check-ins while the card does.
     expect(textOf(margin({ toLook: 0, noted: 0 }))).not.toContain("Everyone looks fine this week.");
     expect(margin({ toLook: 12, noted: 4 })).not.toContain("follow-up");
