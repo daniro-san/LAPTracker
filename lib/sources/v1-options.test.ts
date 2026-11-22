@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { mockFetch, respond, stubSourceEnv } from "./test-helpers";
+import { mockFetch, readFixture, respond, stubSourceEnv } from "./test-helpers";
 import { fetchAlliance } from "./v1";
+
+const OGS = "v1-20261104T155902Z/alliance-67111155.json";
 
 beforeEach(() => stubSourceEnv());
 afterEach(() => {
