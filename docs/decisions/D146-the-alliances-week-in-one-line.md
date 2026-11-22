@@ -18,3 +18,5 @@ Why: the owner approved on 2026-11-19 one line that sums up the alliance's day a
 **Session replay.** Alliance-level numbers, so no `ph-no-capture` (issue 549 covers per-member values).
 
 **Later (issue 466):** the same numbers may go on the public alliance page for the own alliance (D76 allows aggregates there). That needs a read on the public side and the public cache's rules (D143); it is not built here.
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S2):** the missing days read "no daily update on Tue, Wed, not in the total" (PT "sem atualização diária em …", FR "sans mise à jour quotidienne : …"; it read "no read on Tue, Wed, …"): "daily update" is the glossary's UI word. The rule is unchanged.

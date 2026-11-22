@@ -124,7 +124,7 @@ export const membersEn = {
   "week.this": "this week",
   "week.last": "last week",
   "week.of": "the week of {date}",
-  "week.noRead": "no read on {days}, not in the total",
+  "week.noRead": "no daily update on {days}, not in the total",
 } as const;
 
 export type MembersWords = Record<keyof typeof membersEn, string>;

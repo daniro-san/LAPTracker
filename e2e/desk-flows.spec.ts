@@ -104,8 +104,11 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   const cardLink = row.getByRole("link", { name: new RegExp(`^${isolated(name)}’s card$`) });
   await expect(cardLink).toHaveText("Card ›");
   await expect(cardLink).toHaveAttribute("href", `/w/${B.slug}/members?m=${uid}`);
-  // "How this list works" is open on this browser's first visit, closed after (its cookie).
+  // "How this list works" is closed on every visit, the first too (issue 585 batch 4 S2): the groups stay
+  // on the first screen. One tap opens the owner's line (D104).
   const help = page.locator("details").filter({ hasText: "How this list works" });
+  await expect(help).not.toHaveAttribute("open");
+  await help.locator("summary").click();
   await expect(help).toHaveAttribute("open", "");
   await sees(
     help,
@@ -131,7 +134,7 @@ test("Follow-up: Talked to them takes a quiet member off the list, after a reloa
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
   await deskFrame(page, B);
   await expect(help).not.toHaveAttribute("open");
-  // Closed, it still says how to reach the other answers: the name.
+  // Closed again after a reload, it still says how to reach the other answers: the name.
   await sees(
     help.locator("summary"),
     "Tap a name to write down what they said. How this list works",

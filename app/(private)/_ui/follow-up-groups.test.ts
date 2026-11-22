@@ -160,14 +160,7 @@ describe("Follow-up's groups (issue 585 slice 2)", () => {
     const group = groupsOf(items, t, f, "en", "2026-11-21").find((g) => g.id === "kvk");
     const week = Array.from({ length: 7 }, (_, i) => `2026-11-${16 + i}`);
     const data = { early: false, week, items, noted: [], zones: [], thefts: [] } as never;
-    const head = renderToStaticMarkup(
-      createElement(FollowUpHead, {
-        data,
-        t,
-        language: "en",
-        help: { seen: true, covered: false },
-      }),
-    );
+    const head = renderToStaticMarkup(createElement(FollowUpHead, { data, t, language: "en" }));
     expect(group?.rows.map((r) => r.name)).toEqual(["Bryn", "Cass"]);
     expect(head).toContain(`>${group?.rows.length} to offer help after the KvK ↓</a>`);
   });

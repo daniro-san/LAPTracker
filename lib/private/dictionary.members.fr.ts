@@ -125,5 +125,5 @@ export const membersFr: MembersWords = {
   "week.this": "cette semaine",
   "week.last": "la semaine dernière",
   "week.of": "la semaine du {date}",
-  "week.noRead": "sans relevé : {days}, hors du total",
+  "week.noRead": "sans mise à jour quotidienne : {days}, hors du total",
 };

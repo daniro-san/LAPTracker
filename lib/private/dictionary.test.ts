@@ -39,6 +39,31 @@ describe("the workspace dictionary (D71, #305)", () => {
     expect(stray("fr", /heure serveur/iu)).toEqual([]);
   });
 
+  it("calls the end-of-day read the daily update, one word per language, never a read or a relevé (issue 585 batch 4 S2)", () => {
+    // The glossary's UI word; the Raid Shield check's "reading", squad reads and a KvK's Start and End reads
+    // are other things and keep their words.
+    const TERM = {
+      en: /\bdaily updates?\b/iu,
+      "pt-BR": /\batualiza(?:ção|ções) diárias?/iu,
+      fr: /\bmises? à jour quotidiennes?/iu,
+    };
+    const OLD = {
+      en: /\bdaily reads?\b|\bend-of-day reads?\b|\broster read\b|\bno read\b|\bfirst read\b|\bday’s read\b/iu,
+      "pt-BR": /\bleituras? diárias?|\bleitura da lista\b|\bsem leitura em\b/iu,
+      fr: /\brelevés? quotidiens?|\blectures? quotidiennes?|\bmise à jour du jour\b|\blecture de la liste\b|\b(?:sans|pas de) relevé/iu,
+    };
+    for (const [language, words] of Object.entries(WORKSPACE_DICTIONARIES)) {
+      const values = Object.values(words);
+      const term = TERM[language as keyof typeof TERM];
+      const old = OLD[language as keyof typeof OLD];
+      expect(values.filter((v) => term.test(v)).length, language).toBeGreaterThan(0);
+      expect(
+        values.filter((v) => old.test(v)),
+        language,
+      ).toEqual([]);
+    }
+  });
+
   it("fills every Portuguese and French line that ends a sentence with a date from the sentence or year form, at its caller (issue 585 batch 4)", () => {
     // The short form ends in "." ("nov."), so a line ending "{date}." printed "nov..". Each such line is
     // traced to the code that makes its date, and that code must be a `sentence` or `withYear` form;
