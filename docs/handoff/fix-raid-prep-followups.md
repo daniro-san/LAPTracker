@@ -123,4 +123,4 @@ This branch does the follow-ups that PR #599's handoff (`docs/handoff/fix-raid-p
 - The e2e "Home shows the alliance…" test fails on a Sunday server day. Expect it red in a local run on Sunday, or fix it first in a small `fix/` PR.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/610
