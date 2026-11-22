@@ -10,9 +10,10 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type { LinkWords } from "@/lib/private/dictionary.me";
 import type { CardLink as CardLinkData, LinkReview } from "@/lib/private/me-link";
+import { fill } from "@/lib/words";
 
 import { AskSheet } from "./AskSheet";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";

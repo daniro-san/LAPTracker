@@ -1,7 +1,8 @@
 // What /admin says about a press and about a run in progress: the words for the API's answer, the notice
 // while something runs, and the notice with the last outcome.
 import { Notice, type NoticeTone } from "@/lib/brand/components/Notice";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import type { RunningView } from "./actions";
 import { phaseWord, stateWord } from "./words";

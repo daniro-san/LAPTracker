@@ -8,9 +8,9 @@ import { useState, type FormEvent } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip, FIELD } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { WARNING_LANGUAGES, type WarningLanguage } from "@/lib/private/theft-warning";
+import { fill } from "@/lib/words";
 
 import { CopyButton } from "./CopyButton";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";

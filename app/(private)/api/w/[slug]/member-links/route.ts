@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { decideLink } from "@/lib/private/me-link";
 import { SLUG } from "@/lib/private/sign-in";
@@ -43,6 +43,6 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
     if (result === "none") return privateError(404, "not_found");
     if (result === "taken") return privateError(409, "taken");
     const done = Response.json({ ok: true }, { headers: NO_STORE });
-    return counted(ctx, access, "member_link", input.action, done);
+    return withActionEvent(ctx, access, "member_link", input.action, done);
   });
 }

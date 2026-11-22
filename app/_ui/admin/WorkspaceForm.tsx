@@ -8,7 +8,8 @@ import { useState, type ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 const t = copy.admin.workspaces;
 export const FIELD = "drawn-field min-h-11 w-full px-3";

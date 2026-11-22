@@ -10,8 +10,9 @@ import { requestServerClock } from "@/app/_ui/locale";
 import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { StitchedCheck } from "@/lib/brand/components/StatusIcons";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { ownerTodo, patchNotes, REPO_URL, type PatchNote } from "@/lib/patch-notes";
+import { fill } from "@/lib/words";
 
 const t = copy.admin.changes;
 const LINK = "text-link";

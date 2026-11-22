@@ -20,6 +20,7 @@ import { dayFormat, factText, type FactTextFormat } from "@/lib/private/fact-tex
 import { mightIn, parseOnboarding } from "@/lib/private/onboarding-parse";
 import { sameName } from "@/lib/private/roster-search";
 import { nameKey } from "@/lib/screenshot/name-key";
+import { fill } from "@/lib/words";
 
 import { FactFields } from "./FactFields";
 import {
@@ -27,7 +28,6 @@ import {
   formOf,
   inputsOf,
   propose,
-  say,
   valuesOf,
   type EditorWords,
   type Form,
@@ -221,14 +221,14 @@ function NameField(props: {
       )}
       {first && (
         <div id="pending-taken" role="status" className="mt-2 border-l-4 border-yarn pl-2">
-          <p translate="no">{say(words["pending.taken"], { name: isolate(first.name) })}</p>
+          <p translate="no">{fill(words["pending.taken"], { name: isolate(first.name) })}</p>
           <div className="mt-1 flex flex-wrap gap-2">
             <a
               href={`/w/${props.slug}/members?q=${encodeURIComponent(first.name)}`}
               translate="no"
               className={chip(true)}
             >
-              {say(words["pending.open"], { name: isolate(first.name) })}
+              {fill(words["pending.open"], { name: isolate(first.name) })}
             </a>
             <button type="button" onClick={props.onAnyway} className={chip()}>
               {words["pending.addAnyway"]}
@@ -285,7 +285,7 @@ export function FactsEditor(props: EditorProps) {
         adding ? (
           words["pending.add"]
         ) : (
-          <span translate="no">{say(words["facts.title"], { name: isolate(props.name) })}</span>
+          <span translate="no">{fill(words["facts.title"], { name: isolate(props.name) })}</span>
         )
       }
       words={sheetWords(words)}

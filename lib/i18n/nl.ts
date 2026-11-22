@@ -422,6 +422,9 @@ export const nl = {
     left: "Weg",
     joinedReads: "In de ledenlijst bij Einde ({to}), niet bij Begin ({from}).",
     leftReads: "In de ledenlijst bij Begin ({from}), niet bij Einde ({to}).",
+    startUnknown: "Begin onbekend",
+    endUnknown: "Einde onbekend",
+    countedAsZero: "geteld als 0",
   },
   leadership: {
     title: "Leiding",

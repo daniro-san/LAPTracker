@@ -10,13 +10,15 @@ import { useMemo, useState } from "react";
 
 import { ROLE_TONE, RoleMark } from "@/lib/brand/components/RoleMark";
 import { rankDelta } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { useCopy } from "./LocaleProvider";
 import {
   CHANGE_SORTS,
   change,
   filterMembers,
+  killsUnknownAt,
   mightSteps,
   plainFilter,
   type MemberFilter,
@@ -43,8 +45,18 @@ const SORTS: { key: SortKey; label: (copy: Dictionary) => string }[] = [
 
 type Field = "power" | "kills" | "lv";
 
-/** `compared`: both rosters exist. Without it (the After has not run) there are no changes to show. */
-type Mode = { canDelta: boolean; compared: boolean };
+/** `compared`: both rosters exist. Without it (the After has not run) there are no changes to show.
+ * `sort`: the list's order, for the note on a kills change the ± Kills order counts from 0. */
+type Mode = { canDelta: boolean; compared: boolean; sort: SortKey };
+
+/** "Start unknown" or "End unknown" after a `—` kills change; "· counted as 0" while ± Kills orders the
+ * list, which counts the unknown figure as 0 (D15 amendment, #692). */
+function unknownKills(m: MemberView, mode: Mode, copy: Dictionary): Pick<StatMetric, "unknown"> {
+  const side = killsUnknownAt(m, mode.canDelta);
+  if (!side) return {};
+  const text = side === "start" ? copy.members.startUnknown : copy.members.endUnknown;
+  return { unknown: mode.sort === "killsDelta" ? `${text} · ${copy.members.countedAsZero}` : text };
+}
 
 function metric(m: MemberView, label: string, field: Field, mode: Mode): StatMetric {
   const now = m.after ?? m.before;
@@ -59,7 +71,7 @@ function metric(m: MemberView, label: string, field: Field, mode: Mode): StatMet
   };
 }
 
-function toRow(m: MemberView, mode: Mode, copy: Dictionary): StatRow {
+export function toRow(m: MemberView, mode: Mode, copy: Dictionary): StatRow {
   const n = m.rank.after ?? m.rank.before;
   return {
     key: String(m.uid),
@@ -94,7 +106,7 @@ function toRow(m: MemberView, mode: Mode, copy: Dictionary): StatRow {
     ),
     metrics: [
       metric(m, copy.ledger.might, "power", mode),
-      metric(m, copy.ledger.kills, "kills", mode),
+      { ...metric(m, copy.ledger.kills, "kills", mode), ...unknownKills(m, mode, copy) },
       metric(m, copy.ledger.level, "lv", mode),
     ],
   };
@@ -242,7 +254,7 @@ export function MembersExplorer({
     if (next.show !== f.show || next.sort !== f.sort) keepInUrl(next);
     setF(next);
   };
-  const mode = { canDelta, compared };
+  const mode = { canDelta, compared, sort: f.sort };
   // No Joined / Left against a stale side (REVIEW item 1), nor with one roster (D32).
   const shows = canDelta && compared && members.some((m) => m.status !== "");
   const filtered = f.name.trim() !== "" || f.lo > 0 || f.hi < steps.length - 1 || f.show !== "";

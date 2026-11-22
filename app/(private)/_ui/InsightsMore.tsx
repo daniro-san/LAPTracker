@@ -7,7 +7,6 @@
 // only: no lineup, no names.
 import type { ReactNode } from "react";
 
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type {
   KvkEventWords,
@@ -16,6 +15,7 @@ import type {
   SquadsWords,
 } from "@/lib/private/insights-more-words";
 import type { BarRow } from "@/lib/private/insights-words";
+import { fill } from "@/lib/words";
 
 import { Bars, Card, Sub } from "./InsightsSections";
 import { withNoData } from "./NoData";

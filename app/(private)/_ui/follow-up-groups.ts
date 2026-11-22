@@ -3,7 +3,6 @@
 // "New · n" and "A tip to share · n", each
 // row with why the member is on the list in the officer's words. Apart from the page so the grouping can be
 // tested with the dictionary's own words.
-import { fill } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { FollowUpItem } from "@/lib/private/follow-up";
@@ -16,14 +15,21 @@ import {
 import type { Reason } from "@/lib/private/members";
 import { reasonText, type Formats } from "@/lib/private/members-sheet";
 import { inputOf, readyTexts } from "@/lib/private/ready-message";
+import { fill, plural } from "@/lib/words";
 
 import type { FollowUpGroup, FollowUpRow, RowLine } from "./FollowUpList";
-import { counted } from "./FollowUpWeek";
 
 /** A reason in Follow-up's own words ("Quiet for 3 days. Worth a hello."); the held KvK one as Members says it. */
 function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
   if (r.kind === "kvk") return reasonText(r, t, f);
-  return counted(t, `followup.reason.${r.kind}`, r.days, f.language);
+  return fill(
+    plural(
+      r.days,
+      { one: t[`followup.reason.${r.kind}.one`], other: t[`followup.reason.${r.kind}.other`] },
+      f.language,
+    ),
+    { n: r.days },
+  );
 }
 
 /**

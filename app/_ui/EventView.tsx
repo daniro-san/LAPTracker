@@ -5,12 +5,13 @@
 // alliance's own page, labelled "Ranks board", and this page links there.
 import { TextLink } from "@/lib/brand/components/TextLink";
 import type { NameHistoryEntry } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
 import type { getEventDetail, listEvents, RosterChange } from "@/lib/queries";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import { BalanceLink, CompareLink } from "./ComparePicker";
 import { DetailTable, figureRows } from "./DetailLines";

@@ -4,8 +4,8 @@
 // nothing sent is "none" (D127), written "none". The average is `dayAverage`, the one rule the card, Me and
 // Insights share (owner, 2026-11-22, #663): a "none" day counts as 0 and the line names it; a day with no
 // read never counts.
-import { fill } from "../copy";
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
+import { fill, plural } from "../words";
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";
 import { DAY_MS, isoDay } from "./member-week";
@@ -76,7 +76,8 @@ export function dayAverage(cells: readonly (DayCell | "later")[]): DayAverage | 
   return { value: sum / listed.length, days: listed.length, none };
 }
 
-const plural = (n: number) => (n === 1 ? "one" : "other");
+const form = (n: number, language: string) =>
+  plural(n, { one: "one", other: "other" } as const, language);
 
 /**
  * "Average 400 · 6 days, of which 2 none", so a lower average says why; "None on all 7 days" when every listed day
@@ -86,10 +87,12 @@ export function averageLine(
   a: DayAverage | null,
   t: WorkspaceDictionary,
   show: (n: number) => string,
+  language: string,
 ): string | null {
   if (!a) return null;
-  if (a.none === a.days) return fill(t[`card.days.allNone.${plural(a.days)}`], { n: a.days });
-  const line = fill(t[`card.days.average.${plural(a.days)}`], {
+  if (a.none === a.days)
+    return fill(t[`card.days.allNone.${form(a.days, language)}`], { n: a.days });
+  const line = fill(t[`card.days.average.${form(a.days, language)}`], {
     v: show(Math.round(a.value)),
     n: a.days,
   });
@@ -135,6 +138,7 @@ export interface DaysFormats {
   date: (day: string) => string;
   weekday: (day: string) => string;
   dayOfMonth: (day: string) => string;
+  language: string;
 }
 
 function rowOf(
@@ -157,7 +161,7 @@ function rowOf(
       said: `${f.date(days[i] as string)}: ${said}`,
     };
   });
-  const average = averageLine(dayAverage(cells), t, show) ?? NONE;
+  const average = averageLine(dayAverage(cells), t, show, f.language) ?? NONE;
   return { metric, label: t[`card.days.${metric}`], average, bars };
 }
 

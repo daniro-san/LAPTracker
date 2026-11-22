@@ -9,8 +9,8 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { sendCalendar } from "./calendar-send";
 import type { LinkEntry, NoticeCalendar } from "./notice-calendar";

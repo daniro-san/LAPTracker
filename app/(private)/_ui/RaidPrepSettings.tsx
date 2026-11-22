@@ -78,6 +78,7 @@ export function RaidPrepSettings(props: {
    */
   channel: "ok" | "reenter" | "none";
   t: WorkspaceDictionary;
+  language: string;
 }) {
   const { t } = props;
   const { v, change, changes, busy, saved, error, save } = useShieldSettings(
@@ -137,6 +138,7 @@ export function RaidPrepSettings(props: {
         error={error}
         onSave={() => void save()}
         t={t}
+        language={props.language}
       />
     </section>
   );

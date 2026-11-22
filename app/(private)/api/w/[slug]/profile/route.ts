@@ -4,7 +4,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { linkPlayer, profileView, renameOfficer, unlinkPlayer } from "@/lib/private/profile";
 import { SLUG } from "@/lib/private/sign-in";
@@ -53,7 +53,7 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
           : await unlinkPlayer(db, access);
     if (result === "taken") return privateError(409, result);
     if (typeof result === "string") return privateError(400, result);
-    return counted(
+    return withActionEvent(
       ctx,
       access,
       "profile",

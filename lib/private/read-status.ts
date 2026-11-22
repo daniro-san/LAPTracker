@@ -9,7 +9,6 @@
 // - the Raid Shield check (D137), while it is on: running, then done until KvK starts (shield-status.ts),
 //   with its way to Raid prep.
 import { getAppContext } from "../app-context";
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -19,6 +18,7 @@ import { dayRosterState } from "../repo/squads";
 import { keyFacts } from "../repo/workspace-keys";
 import { inEventWindow, quotaDayRead, serverInstant } from "../schedule";
 import { stopKind } from "../squads";
+import { fill } from "../words";
 import { dailyKeyRule, dailyTracked } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
@@ -64,6 +64,7 @@ export async function readStatus(
   env: Env,
   now: Date,
   t: WorkspaceDictionary,
+  language: string,
 ): Promise<ReadStatus> {
   const day = quotaDayRead(now, env);
   // One read of the key's facts serves the key line, the squads rule and the daily read's rule.
@@ -73,7 +74,7 @@ export async function readStatus(
     dayRosterState(db, day, access.unionId),
     getDailyRead(db, day),
     dailyTracked(db, day),
-    shieldStatus(db, access, env, now, t),
+    shieldStatus(db, access, env, now, t, language),
   ]);
   const secret = env.WORKSPACE_KEYS_SECRET;
   const key = keyViewOf(access, facts, secret, now);
@@ -102,10 +103,11 @@ export async function frameReadStatus(
   access: WorkspaceAccess,
   t: WorkspaceDictionary,
   now: Date,
+  language: string,
 ): Promise<ReadStatus | null> {
   const { env, report } = getAppContext();
   try {
-    return await withPageDb((db) => readStatus(db, access, env, now, t));
+    return await withPageDb((db) => readStatus(db, access, env, now, t, language));
   } catch (error) {
     privateLog("w.read_status.failed");
     report(error, { route: "lib/private/read-status.ts", kind: "w.read_status.failed" });

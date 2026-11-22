@@ -10,13 +10,13 @@ import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import type { Tone } from "@/lib/ai/notice-writing";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import type {
   WorkspaceDictionary,
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import { DRAFT_LIMIT, NOTICE_LIMIT } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { smallButton } from "./NoticeBits";
 import { sheetWords } from "./sheet-words";

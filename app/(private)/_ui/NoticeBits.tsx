@@ -6,9 +6,10 @@
 import type { ReactNode, Ref } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { fieldName, valueWords, type Conflict } from "./notice-client";
 

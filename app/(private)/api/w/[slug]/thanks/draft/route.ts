@@ -8,7 +8,7 @@ import { ChatError } from "@/lib/ai/groq";
 import { WRITING_LANGUAGES } from "@/lib/ai/notice-writing";
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn, giveBackAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
@@ -55,7 +55,7 @@ export async function POST(
         ms: ctx.now().getTime() - started,
         people: parsed.data.people.length,
       });
-      return counted(
+      return withActionEvent(
         ctx,
         access,
         "thanks",

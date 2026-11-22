@@ -19,7 +19,7 @@ import {
 } from "@/lib/ai/notice-writing";
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn, giveBackAllowance, settled, useAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
@@ -138,7 +138,7 @@ export async function POST(
         },
         { headers: NO_STORE },
       );
-      return counted(ctx, access, "notice_ai", ask.kind, drafts);
+      return withActionEvent(ctx, access, "notice_ai", ask.kind, drafts);
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
       // D126: the model did not answer, so the alliance's daily count gets these units back.

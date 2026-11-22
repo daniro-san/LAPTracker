@@ -2,10 +2,10 @@
 // back to this week; then once per screen what ST means (owner: members keep asking "is this server
 // time?") and what KvK stands for (naming.md).
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import { addDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 const LINK = `${chip()} min-w-12 justify-center font-semibold`;
 

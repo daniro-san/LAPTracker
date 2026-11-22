@@ -3,7 +3,7 @@
 // Saturday's morning read starts and whether the leaders' channel gets the summary. 403 turned_off while
 // the check is off (D134); 429 rate_limited. A save counts as `ws_action` `raid_prep` / `save`.
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -34,6 +34,6 @@ export async function POST(
     const done = await privately("raid_prep.save", () => saveShield(db, access, input, now));
     if (!done.ok) return privateError(STATUS[done.code], done.code);
     const body = Response.json({ ok: true }, { headers: NO_STORE });
-    return counted(ctx, access, "raid_prep", "save", body);
+    return withActionEvent(ctx, access, "raid_prep", "save", body);
   });
 }

@@ -7,8 +7,9 @@ import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { blankCopy, blankDictionary, copy, en, fill, isolate } from "./copy";
+import { blankCopy, blankDictionary, copy, en, isolate } from "./copy";
 import { TRANSLATIONS } from "./i18n";
+import { fill } from "./words";
 
 const ROOT = join(import.meta.dirname, "..");
 

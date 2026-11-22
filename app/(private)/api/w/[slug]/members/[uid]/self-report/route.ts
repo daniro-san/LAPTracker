@@ -7,7 +7,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -62,6 +62,12 @@ export async function POST(
     if (result === "removed") return privateError(409, "removed");
     if (result !== "ok") return Response.json(result.conflict, { status: 409, headers: NO_STORE });
     const done = Response.json({ ok: true }, { headers: NO_STORE });
-    return counted(ctx, access, "self_report", input.action === "use" ? "accept" : "mark", done);
+    return withActionEvent(
+      ctx,
+      access,
+      "self_report",
+      input.action === "use" ? "accept" : "mark",
+      done,
+    );
   });
 }

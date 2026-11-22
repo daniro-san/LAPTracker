@@ -12,8 +12,9 @@ import {
   type Side,
   TOP_N,
 } from "@/lib/balance";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { isOn } from "@/lib/flags";
+import { fill } from "@/lib/words";
 
 import { balanceHref, BLOC_FILL, sideOf } from "./BalanceBar";
 import { LineChart } from "./charts/LineChart";

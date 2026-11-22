@@ -5,9 +5,10 @@
 // not update is a hollow stub with the words in the Details table, the busiest 30 minutes are named in
 // text and underlined.
 import { Chip } from "@/lib/brand/components/Chip";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { isOn } from "@/lib/flags";
 import type { EventProgress } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import type { ComparisonRow } from "./event-rows";
 import { allianceLabel, compact, signOf, type Clock } from "./format";

@@ -9,7 +9,7 @@ import { useState } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import type {
   WorkspaceDictionary,
@@ -17,6 +17,7 @@ import type {
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import type { DueItem } from "@/lib/private/notice-picture-due";
+import { fill } from "@/lib/words";
 
 import { smallButton } from "./NoticeBits";
 import { isSignedOut, post } from "./screenshot-upload";

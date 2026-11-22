@@ -2,7 +2,6 @@
 // officer's language. The week's list (D109's progress, weekly baseline) comes ticked, with what each person
 // did in words; the roster's names let the officer add someone. No value, no ranking (D75).
 import { getAppContext } from "@/lib/app-context";
-import { fill } from "@/lib/copy";
 import { addDays, mondayOf } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -11,6 +10,7 @@ import { thanksWeek } from "@/lib/private/fact-trend";
 import { progressText } from "@/lib/private/member-card";
 import type { MembersView } from "@/lib/private/members";
 import { NOTE_LIMIT } from "@/lib/private/thanks";
+import { fill } from "@/lib/words";
 
 import { SHEET_KEYS } from "./sheet-words";
 

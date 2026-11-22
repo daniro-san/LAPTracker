@@ -124,6 +124,7 @@ test.describe("one workspace's sessions never open the other's", () => {
             },
           });
           expect(mark.status()).toBe(401);
+          expect(await mark.json()).toEqual({ code: "signed_out" });
           await ctx.dispose();
         }
       });
@@ -180,7 +181,8 @@ test.describe("no answer carries a private roster field", () => {
   const officer = "Officer LNK";
   const member = "Member LNK";
   const A = ALLIANCES.a.name;
-  const sweeps: [string, string | null, [string, string][]][] = [
+  // Each sweep with the Lantern Keep session it runs with (none: signed out).
+  const sweeps: [string, "officer" | "member" | null, [string, string][]][] = [
     [
       "the public pages",
       null,
@@ -212,7 +214,7 @@ test.describe("no answer carries a private roster field", () => {
     ],
     [
       "a's desk",
-      cookiesOf("a", "officer")[0] as string,
+      "officer",
       [
         [`/w/${slug("a")}`, officer],
         [`/w/${slug("a")}/members`, officer],
@@ -222,22 +224,29 @@ test.describe("no answer carries a private roster field", () => {
         [`/w/${slug("a")}/insights`, officer],
         [`/w/${slug("a")}/follow-up`, officer],
         [`/w/${slug("a")}/calendar`, officer],
+        [`/w/${slug("a")}/calendar/caravans`, officer],
+        [`/w/${slug("a")}/notices`, officer],
+        [`/w/${slug("a")}/notices/new`, officer],
+        [`/w/${slug("a")}/notices/pictures`, officer],
+        [`/w/${slug("a")}/thefts`, officer],
+        [`/w/${slug("a")}/import`, officer],
+        [`/w/${slug("a")}/start-here`, officer],
         [`/w/${slug("a")}/settings`, officer],
         [`/api/w/${slug("a")}/activity?before=${Date.now()}`, officer],
       ],
     ],
     [
       "a's board",
-      cookiesOf("a", "member")[0] as string,
+      "member",
       [
         [`/w/${slug("a")}/board`, member],
         [`/w/${slug("a")}/board/me`, member],
       ],
     ],
   ];
-  for (const [label, cookie, paths] of sweeps) {
-    test(label, async () => {
-      const ctx = await api(cookie);
+  for (const [label, tier, paths] of sweeps) {
+    test(label, async ({ context, page }) => {
+      const ctx = await api(tier ? (cookiesOf("a", tier)[0] as string) : null);
       for (const [path, marker] of paths) {
         const res = await ctx.get(path);
         expect(res.status(), path).toBe(200);
@@ -258,6 +267,19 @@ test.describe("no answer carries a private roster field", () => {
         }
       }
       await ctx.dispose();
+      // A desk or board page whose data failed still answers 200, its error boundary drawn in the browser;
+      // the HTML alone cannot tell (its payload carries the error copy as words for the page's forms). So
+      // each is also opened, and shows its marker and no error screen. The public pages have theirs in
+      // public.spec.ts.
+      if (!tier) return;
+      await signIn(context, "a", tier);
+      for (const [path, marker] of paths.filter(([path]) => !path.startsWith("/api/"))) {
+        await page.goto(path);
+        // The page itself, not a redirect to Home or the sign-in screen.
+        expect(new URL(page.url()).pathname, path).toBe(path.split("?")[0]);
+        await noError(page);
+        await expect(page.getByText(marker).first(), path).toBeAttached();
+      }
     });
   }
 

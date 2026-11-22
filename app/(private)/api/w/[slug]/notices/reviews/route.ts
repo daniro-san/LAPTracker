@@ -4,7 +4,7 @@
 //   {action: "ask", notice, language | null, reviewer | null, requestId}  → 200 {id}, 404, 400 reviewer
 //   {action: "approve", review, requestId}  → 200, 404, 403 not_reviewer, 409 closed
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
@@ -34,13 +34,13 @@ export async function POST(
       if (!asked.ok) return privateError(asked.reason === "not_found" ? 404 : 400, asked.reason);
       privateLog("notices.review.asked", { whole: body.language === null ? 1 : 0 });
       const made = Response.json({ id: asked.id }, { headers: NO_STORE });
-      return counted(ctx, access, "notice_review", "ask", made);
+      return withActionEvent(ctx, access, "notice_review", "ask", made);
     }
     const answer = { review: body.review, outcome: "approved" as const };
     const result = await answerReview(db, access, answer, body.requestId, now);
     if (result !== "ok") return privateError(STATUS[result], result);
     privateLog("notices.review.approved", {});
     const done = Response.json({ ok: true }, { headers: NO_STORE });
-    return counted(ctx, access, "notice_review", "approve", done);
+    return withActionEvent(ctx, access, "notice_review", "approve", done);
   });
 }

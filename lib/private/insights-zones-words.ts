@@ -4,10 +4,10 @@
 // offset at the instant shown ("UTC−3") and a time its zone's clock (`dateWords`). Not recorded is a count
 // with no bar, never in a share (D75). Each group's row carries its members, its count that list's length
 // (#678); not recorded and usual hours link to Members' own filters (`NOT_RECORDED`, `usualAt`).
-import { fill } from "../copy";
 import { dateWords } from "../date-words";
+import { fill, plural } from "../words";
 import { dayIn, hhmm, offsetText } from "./calendar-time";
-import { counted, type Formats } from "./insights-format";
+import { type Formats } from "./insights-format";
 import { setOf, type Who } from "./insights-sets";
 import type { BarRow } from "./insights-words";
 import {
@@ -64,7 +64,14 @@ function citiesOf(g: ZoneGroup, f: Formats): string | null {
   if (cities.length === 0) return null;
   const shown = cities.slice(0, CITIES).join(", ");
   return cities.length > CITIES
-    ? counted(f.t, "insights.zones.more", cities.length - CITIES, f.language, { cities: shown })
+    ? fill(
+        plural(
+          cities.length - CITIES,
+          { one: f.t["insights.zones.more.one"], other: f.t["insights.zones.more.other"] },
+          f.language,
+        ),
+        { n: cities.length - CITIES, cities: shown },
+      )
     : shown;
 }
 
@@ -121,9 +128,14 @@ function headline(groups: ZoneGroup[], known: number, m: Moments, f: ZoneFormats
               n: top,
               known,
             })
-          : counted(t, "insights.zones.tie", top, language, {
-              groups: largest.map(named).join(", "),
-            });
+          : fill(
+              plural(
+                top,
+                { one: t["insights.zones.tie.one"], other: t["insights.zones.tie.other"] },
+                language,
+              ),
+              { n: top, groups: largest.map(named).join(", ") },
+            );
   const resets = [
     ...new Set(largest.map((g) => clockInSentence(clockOf(g, m.reset, f, false), f))),
   ];
@@ -136,11 +148,14 @@ function usualLine(c: ZoneCounts, known: number, f: ZoneFormats): Usual | null {
   if (!first) return null;
   const hours = runs.map((r) => `${hhmm(r.from * 60)}–${hhmm(r.to * 60 + 59)}`);
   return {
-    line: counted(f.t, "insights.zones.usual", c.members - known, f.language, {
-      hours: listOf(hours, f.language),
-      count: first.n,
-      known,
-    }),
+    line: fill(
+      plural(
+        c.members - known,
+        { one: f.t["insights.zones.usual.one"], other: f.t["insights.zones.usual.other"] },
+        f.language,
+      ),
+      { n: c.members - known, hours: listOf(hours, f.language), count: first.n, known },
+    ),
     hour: first.from,
   };
 }
@@ -150,13 +165,32 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
   const { t, language } = f;
   const known = knownOf(c);
   if (known === 0)
-    return { based: [counted(t, "insights.zones.none", c.members, language)], details: null };
+    return {
+      based: [
+        fill(
+          plural(
+            c.members,
+            { one: t["insights.zones.none.one"], other: t["insights.zones.none.other"] },
+            language,
+          ),
+          { n: c.members },
+        ),
+      ],
+      details: null,
+    };
   const groups = zoneGroups(c, m);
   const server = dateWords(language, f.serverZone);
   return {
     based: [
       headline(groups, known, m, f),
-      counted(t, "insights.zones.based", c.members, language, { known }),
+      fill(
+        plural(
+          c.members,
+          { one: t["insights.zones.based.one"], other: t["insights.zones.based.other"] },
+          language,
+        ),
+        { n: c.members, known },
+      ),
     ],
     details: {
       legend: fill(t["insights.zones.legend"], {

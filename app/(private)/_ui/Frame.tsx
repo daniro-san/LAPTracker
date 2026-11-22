@@ -9,7 +9,7 @@ import { type ReactNode, Suspense } from "react";
 
 import { analyticsPerson } from "@/lib/analytics/person";
 import { AppShell } from "@/lib/brand/components/layout/AppShell";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
@@ -21,6 +21,7 @@ import {
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import { frameReadStatus } from "@/lib/private/read-status";
+import { fill } from "@/lib/words";
 import type { Feature } from "@/lib/workspace-features";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";
@@ -206,7 +207,7 @@ export function SignedInFrame({
           language={language}
         />
         <Suspense fallback={null}>
-          <ReadStatusLine access={access} t={t} keyShown={keyShown} />
+          <ReadStatusLine access={access} t={t} language={language} keyShown={keyShown} />
         </Suspense>
         {children}
       </Frame>
@@ -221,14 +222,16 @@ export function SignedInFrame({
 async function ReadStatusLine({
   access,
   t,
+  language,
   keyShown,
 }: {
   access: WorkspaceAccess;
   t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
   keyShown: boolean;
 }) {
   // A failed read renders nothing and logs a code (`frameReadStatus`): never the desk page's error.
-  const status = await frameReadStatus(access, t, new Date());
+  const status = await frameReadStatus(access, t, new Date(), language);
   if (!status?.lines.some((l) => !(keyShown && l.keyCard))) return null;
   const words = {
     label: t["status.label"],

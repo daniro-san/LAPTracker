@@ -7,8 +7,9 @@
 import { chip } from "@/lib/brand/components/controls";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
+import { fill } from "@/lib/words";
 
-import { DAYS, fillIn, type Day, type Words } from "./draft-known";
+import { DAYS, type Day, type Words } from "./draft-known";
 
 export interface ReviewText {
   /** "week of Mon 16 Nov" for the picture's week and the one before. */
@@ -66,15 +67,15 @@ const WHERE: Partial<Record<ImportKind, string>> = {
 /** "Saves to: Alliance Duel points of each member, week of Mon 16 Nov"; a check writes nothing. */
 function whereText(view: DraftView, w: Words, text: ReviewText, c: Choices): string | undefined {
   const other = WHERE[view.kind];
-  if (other) return fillIn(w["shots.draft.saveTo"], { where: w[other] ?? "" });
+  if (other) return fill(w["shots.draft.saveTo"] ?? "", { where: w[other] ?? "" });
   if (view.kind !== "alliance_duel") return w["shots.where.check"];
   if (c.scope === null) return w["shots.where.pickTab"];
   const week = c.weekBefore ? 1 : 0;
   const where =
     c.scope === "daily"
-      ? fillIn(w["shots.where.duelDay"], { day: text.days[week][DAYS.indexOf(c.day)] ?? "" })
-      : fillIn(w["shots.where.duelWeek"], { week: text.weeks[week] });
-  return fillIn(w["shots.draft.saveTo"], { where });
+      ? fill(w["shots.where.duelDay"] ?? "", { day: text.days[week][DAYS.indexOf(c.day)] ?? "" })
+      : fill(w["shots.where.duelWeek"] ?? "", { week: text.weeks[week] });
+  return fill(w["shots.draft.saveTo"] ?? "", { where });
 }
 
 function DuelChoices(props: {

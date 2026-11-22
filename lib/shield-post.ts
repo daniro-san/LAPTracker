@@ -28,6 +28,7 @@ import {
 import { sealedWebhooks } from "./repo/workspace-discord";
 import { passWindows, suggestionOf, type ShieldPass } from "./shield-check";
 import type { ShieldTarget } from "./shield-read";
+import { fill, plural } from "./words";
 import { masterFingerprint, openKey } from "./workspace-keys";
 
 /** Names listed at most, so the message stays far under Discord's 2,000 characters. */
@@ -113,9 +114,6 @@ export function summarize(
   return { shielded, read, unread: members.length - read, notSeen, away: awayNotSeen, at };
 }
 
-const fill = (text: string, values: Record<string, string | number>) =>
-  text.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ""));
-
 function readLine(w: ShieldPostWords, s: ReadSummary, day: string, zone: string) {
   const time = s.at ? discordClock(zone).time(s.at) : "–";
   const line = fill(w.read, { day, time, n: s.shielded, total: s.read });
@@ -138,12 +136,15 @@ export function shieldMessage(
   reads: { night: ReadSummary; morning: ReadSummary | null },
   zone: string,
   url: string,
+  language: string,
 ): string {
   const lines = [readLine(w, reads.night, w.fri, zone)];
   if (reads.morning) lines.push(readLine(w, reads.morning, w.sat, zone));
   const newest = reads.morning ?? reads.night;
   const head = `${w.title}\n${lines.join("\n")}`;
-  const away = newest.away ? fill(newest.away === 1 ? w.awayOne : w.away, { n: newest.away }) : "";
+  const away = newest.away
+    ? fill(plural(newest.away, { one: w.awayOne, other: w.away }, language), { n: newest.away })
+    : "";
   const shown = [names(w, newest.notSeen), away].filter(Boolean).join(" · ");
   const list = shown
     ? `\n${fill(reads.morning ? w.notSeenMorning : w.notSeen, { names: shown })}`
@@ -251,9 +252,10 @@ async function messageOf(
       : null;
   const morning = read && read.read > 0 ? read : null;
   const lang = target.settings?.language as ShieldLanguage;
-  const words = SHIELD_POST[SHIELD_LANGUAGES.includes(lang) ? lang : "en"];
+  const language = SHIELD_LANGUAGES.includes(lang) ? lang : "en";
+  const words = SHIELD_POST[language];
   const url = `${deps.origin}/w/${target.slug}/roll-call?week=${mondayOf(day)}`;
-  const content = shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url);
+  const content = shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url, language);
   // The forum post's title: the message's title without its bold marks.
   return { content, title: words.title.replaceAll("*", "") };
 }

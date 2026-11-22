@@ -6,9 +6,9 @@
 // time first and no local time), so server and browser HTML never differ.
 import { useSyncExternalStore } from "react";
 
-import { fill } from "@/lib/copy";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
+import { fill } from "@/lib/words";
 
 const subscribe = () => () => {};
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;

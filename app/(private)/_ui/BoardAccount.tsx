@@ -1,7 +1,8 @@
 // The members' board's account line (D105), on the board and on a member's own page (D142): "Signed in as
 // … · Sign out"; an officer's preview names no officer, and reads as a member's would.
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { SignOutButton } from "./SignOutButton";
 

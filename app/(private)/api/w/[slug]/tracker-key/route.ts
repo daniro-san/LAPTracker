@@ -3,7 +3,7 @@
 // answers 401). The key is checked at the boundary (a `lap_` key), tested with one /quota call on itself
 // and stored sealed. No answer carries the key: only its state, last 4 characters and quota left.
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import {
@@ -46,7 +46,7 @@ export async function POST(
       // D141: a key decides the squads targets, so the ticks look at the queue again. After the write: a
       // tick in between could keep "settled" from before it.
       ctx.wakeCache.forget();
-      return counted(ctx, access, "tracker_key", "delete", answer(view));
+      return withActionEvent(ctx, access, "tracker_key", "delete", answer(view));
     }
     const result = await saveTrackerKey(db, access, { env: ctx.env, v1: ctx.v1, now }, input);
     if (!result.ok) {
@@ -54,6 +54,6 @@ export async function POST(
       return privateError(status, code);
     }
     ctx.wakeCache.forget();
-    return counted(ctx, access, "tracker_key", "save", answer(result.view));
+    return withActionEvent(ctx, access, "tracker_key", "save", answer(result.view));
   });
 }

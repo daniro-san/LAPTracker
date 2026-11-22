@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { removePicture } from "@/lib/private/notice-picture";
@@ -32,7 +32,7 @@ export async function POST(
     const removed = Response.json({ ok: true }, { headers: NO_STORE });
     // Counted only when a picture was really removed (review of PR 422).
     return result === "removed"
-      ? counted(ctx, access, "notice", "picture_remove", removed)
+      ? withActionEvent(ctx, access, "notice", "picture_remove", removed)
       : removed;
   });
 }

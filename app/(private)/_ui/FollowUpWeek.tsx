@@ -2,26 +2,17 @@
 // and its jumps, and the foot with "Noted this week" and the thefts still open. The Noted card is always
 // there, before the alliance's first daily update too, so the head's jump always has its card and the
 // Monday rule is always on the page (D104, amended 2026-11-22). People first (D75): nothing is ranked.
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
-import type {
-  WorkspaceDictionary,
-  WorkspaceKey,
-  WorkspaceLanguage,
-} from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { FollowUpView, NotedItem } from "@/lib/private/follow-up";
 import { inKvkGroup, notedLine, type FollowUpAction } from "@/lib/private/follow-up-rules";
 import type { Formats } from "@/lib/private/members-sheet";
 import type { AttackerGroup } from "@/lib/private/theft-groups";
+import { fill, plural } from "@/lib/words";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
-
-/** The singular or plural form of a Follow-up phrase, by the language's own rule. */
-export function counted(t: WorkspaceDictionary, key: string, n: number, language: string) {
-  const form = new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
-  return fill(t[`${key}.${form}` as WorkspaceKey], { n });
-}
 
 /** "Nov 16 – 22" in the officer's language. */
 const weekRange = (week: string[], language: string) =>
@@ -58,17 +49,38 @@ export function FollowUpHead(props: {
       <div className="flex flex-wrap gap-x-4">
         {hit > 0 && (
           <a href="#follow-up-kvk" className={LINK}>
-            {counted(t, "followup.kvk.jump", hit, language)}
+            {fill(
+              plural(
+                hit,
+                { one: t["followup.kvk.jump.one"], other: t["followup.kvk.jump.other"] },
+                language,
+              ),
+              { n: hit },
+            )}
           </a>
         )}
         {data.noted.length > 0 && (
           <a href="#follow-up-noted" className={LINK}>
-            {counted(t, "followup.noted.jump", data.noted.length, language)}
+            {fill(
+              plural(
+                data.noted.length,
+                { one: t["followup.noted.jump.one"], other: t["followup.noted.jump.other"] },
+                language,
+              ),
+              { n: data.noted.length },
+            )}
           </a>
         )}
         {data.thefts.length > 0 && (
           <a href="#follow-up-thefts" className={LINK}>
-            {counted(t, "followup.theftsJump", data.thefts.length, language)}
+            {fill(
+              plural(
+                data.thefts.length,
+                { one: t["followup.theftsJump.one"], other: t["followup.theftsJump.other"] },
+                language,
+              ),
+              { n: data.thefts.length },
+            )}
           </a>
         )}
       </div>

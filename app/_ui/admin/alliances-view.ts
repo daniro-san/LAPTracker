@@ -4,10 +4,11 @@
 // owner (issue 585, F12), then a daily limit used up. Counts and times only (D71): no name, no key, its last 4
 // or its quota, no webhook. English only (D48).
 import { OWN_ALLIANCE_ID } from "@/config/alliances";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { AllianceUsage } from "@/lib/queries/admin-alliances";
 import type { AdminFeatures } from "@/lib/queries/workspace-features";
 import type { AdminWorkspace } from "@/lib/queries/workspaces";
+import { fill } from "@/lib/words";
 import {
   ALLOWANCES,
   ESTIMATE_MEMBERS,

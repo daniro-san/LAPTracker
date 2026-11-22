@@ -10,8 +10,9 @@ import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import type { ImportPreview, ImportResult, ImportRow } from "@/lib/private/sheet-import";
+import { fill } from "@/lib/words";
 
-import { IMPORT_PROBLEM, say, type ImportWords } from "./facts-form";
+import { IMPORT_PROBLEM, type ImportWords } from "./facts-form";
 import { Columns, Done, FillCount, Matched } from "./ImportParts";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
@@ -44,11 +45,11 @@ function OpenRow(props: {
         {row.name}
       </p>
       {row.role && (
-        <p className="text-body-sm text-ink/75">{say(words["import.role"], { role: row.role })}</p>
+        <p className="text-body-sm text-ink/75">{fill(words["import.role"], { role: row.role })}</p>
       )}
       {row.unread.map((text) => (
         <p key={text} className="text-body-sm text-ink/75">
-          {say(words["import.zone"], { text })}
+          {fill(words["import.zone"], { text })}
         </p>
       ))}
       {answer !== undefined ? (
@@ -129,7 +130,7 @@ function Review(props: {
     <section className="mt-4">
       <Columns preview={preview} words={words} language={language} />
       <p className="mt-2 font-semibold tabular-nums">
-        {say(words["import.summary"], {
+        {fill(words["import.summary"], {
           rows: preview.rows.length,
           matched: matched.length,
           open: open.length,
@@ -144,7 +145,7 @@ function Review(props: {
           }
           className={buttonClass("secondary", "mt-3")}
         >
-          {say(words["import.dismissAll"], { n: none.length })}
+          {fill(words["import.dismissAll"], { n: none.length })}
         </button>
       )}
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -163,7 +164,7 @@ function Review(props: {
       <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-rule bg-paper py-3">
         <div>
           <FillCount preview={preview} answers={answers} words={words} language={language} />
-          <p className="tabular-nums">{say(words["import.left"], { n: left })}</p>
+          <p className="tabular-nums">{fill(words["import.left"], { n: left })}</p>
         </div>
         <button
           type="button"

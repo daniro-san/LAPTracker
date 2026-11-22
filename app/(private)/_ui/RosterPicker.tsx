@@ -7,8 +7,8 @@
 import { useState } from "react";
 
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import { searchRoster } from "@/lib/private/roster-search";
+import { fill } from "@/lib/words";
 
 import type { CalendarSheetWords, Member, SuggestedMember } from "./calendar-data";
 import { Labeled, TextInput } from "./CalendarFields";

@@ -4,7 +4,6 @@
 // response limit, so the pictures that would pass it are left out (newest kept) and the README says so.
 // Never in it: x, y, online, last_online_at (CLAUDE.md, D71), avatar_url, the tracker key, sessions or any
 // secret (lib/repo/workspace-data.ts reads the tables and drops those columns).
-import { fill } from "../copy";
 import type { Db } from "../db";
 import { recordFailure } from "../repo/auth-attempts";
 import {
@@ -19,6 +18,7 @@ import {
 } from "../repo/workspace-data";
 import { lastSeen } from "../repo/workspace-past-roster";
 import { exportLimitKey } from "../repo/workspace-purge";
+import { fill } from "../words";
 import { pack, zip, ZIP_END_SIZE, zipEntrySize, type Packed } from "../zip";
 import type { WorkspaceAccess } from "./access";
 import { activityPage } from "./desk-activity";

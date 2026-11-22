@@ -181,6 +181,8 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | KvK matchup                           | KvK-Duell                              | `kvk.title`, `kvk.versus` — the event page's section: both servers' top alliances at the Start                                               |
 | Start to End                          | Beginn bis Ende                        | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — the same alliances read at the Start and at the End                                      |
 | member list                           | Members-Liste                          | `members.joinedReads`, `members.leftReads` — the member list, with "Members" kept as the game term                                           |
+| unknown                               | unbekannt                              | `members.startUnknown`, `members.endUnknown` — a Start or End read that is missing                                                           |
+| counted as 0                          | als 0 gezählt                          | `members.countedAsZero` — a missing read counted as zero in the sum                                                                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

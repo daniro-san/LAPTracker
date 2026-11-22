@@ -31,6 +31,7 @@ describe("the roll call's sticky bar", () => {
         away: 2,
         offer: false,
         words: rollWords(t),
+        language: "en",
         marks: markWords("shield", t),
         r: idle,
         onRest: () => {},

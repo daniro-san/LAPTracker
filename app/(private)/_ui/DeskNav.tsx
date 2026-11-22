@@ -4,8 +4,8 @@
 import type { NavItem } from "@/lib/brand/components/layout/layout-rules";
 import { NavRail } from "@/lib/brand/components/layout/NavRail";
 import { NavSidebar } from "@/lib/brand/components/layout/NavSidebar";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 import type { Feature } from "@/lib/workspace-features";
 
 import { TabIcon, type TabId } from "./TabIcon";

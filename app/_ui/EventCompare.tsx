@@ -6,8 +6,9 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
 import { changeDifference } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { AllianceComparison, AllianceEventFigures, EventComparison } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { compareHref } from "./ComparePicker";
 import { DetailTable } from "./DetailLines";

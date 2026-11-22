@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 
 import type { Db } from "../db";
 import { currentCount, DAY_KEY_PREFIX, recordFailure } from "../repo/auth-attempts";
+import { fill } from "../words";
 import type { Allowance } from "../workspace-features";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import { useAllowance, type WithFeatures } from "./features";
@@ -59,7 +60,7 @@ export const quotaLine = (t: WorkspaceDictionary, refused: "person" | "day" | "c
     ? t["features.cap.translate"]
     : refused === "day"
       ? t["translate.discord.paused"]
-      : t["translate.discord.tooMany"].replace("{limit}", String(TRANSLATE_PER_MINUTE));
+      : fill(t["translate.discord.tooMany"], { limit: TRANSLATE_PER_MINUTE });
 
 /** The message's text, checked and masked; or the line that says why it cannot be translated. */
 export function checkedText(
@@ -71,9 +72,10 @@ export function checkedText(
   if (text.length > MAX_TRANSLATE_CHARS) {
     const n = new Intl.NumberFormat(language);
     return {
-      refused: t["translate.discord.tooLong"]
-        .replace("{count}", n.format(text.length))
-        .replace("{limit}", n.format(MAX_TRANSLATE_CHARS)),
+      refused: fill(t["translate.discord.tooLong"], {
+        count: n.format(text.length),
+        limit: n.format(MAX_TRANSLATE_CHARS),
+      }),
     };
   }
   const masked = mask(text);

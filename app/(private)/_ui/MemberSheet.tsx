@@ -12,9 +12,9 @@ import { useEffect, useState } from "react";
 import { PlayerAvatar } from "@/app/_ui/Pictures";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { CardData } from "@/lib/private/member-card";
+import { fill } from "@/lib/words";
 
 import type { ListRow, ListWords } from "./member-list-data";
 import { factsActions, MemberCard, type EditorContext, type FactsMode } from "./MemberCards";

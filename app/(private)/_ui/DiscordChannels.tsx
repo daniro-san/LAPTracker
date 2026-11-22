@@ -11,8 +11,8 @@ import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { AskSheet } from "./AskSheet";
 import { postDiscord, type Note, NoteLine } from "./discord-send";

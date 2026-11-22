@@ -2,8 +2,9 @@
 // the data was read (a daily read, or an event's Start or End) and since when the card counts. Every
 // card starts closed and fetches its contents when first opened (MemberHistoryBody). Below 640 px and
 // above, the same card.
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { HistoryEntry } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { EventLabel } from "./EventLabel";
 import { joinedText, leftText, type Clock } from "./format";

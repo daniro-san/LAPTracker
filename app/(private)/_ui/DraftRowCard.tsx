@@ -10,8 +10,9 @@ import { isolate } from "@/lib/copy";
 import type { ViewRow } from "@/lib/private/import-view";
 import { sameName } from "@/lib/private/roster-search";
 import { nameKey } from "@/lib/screenshot/name-key";
+import { fill } from "@/lib/words";
 
-import { factText, fillIn, groupedValue, type Words } from "./draft-known";
+import { factText, groupedValue, type Words } from "./draft-known";
 
 export interface RowState {
   uid: number | null;
@@ -62,7 +63,7 @@ function Conflict(props: {
           props.onChange({ ...state, dropped: false, version: k.version, kept: undefined })
         }
       >
-        {fillIn(w["shots.keptTheirs"], { theirs, mine })}
+        {fill(w["shots.keptTheirs"] ?? "", { theirs, mine })}
       </button>
     );
   }
@@ -72,21 +73,21 @@ function Conflict(props: {
   const field = w[`shots.field.${row.field ?? ""}`] ?? "";
   return (
     <div className="mt-2 border-l-4 border-seal pl-2">
-      <p className="text-body-sm">{fillIn(w["shots.conflict"], { field, theirs, mine })}</p>
+      <p className="text-body-sm">{fill(w["shots.conflict"] ?? "", { field, theirs, mine })}</p>
       <div className="mt-1 flex flex-wrap gap-2">
         <button
           type="button"
           className={button}
           onClick={() => props.onChange({ ...state, dropped: true, conflict: undefined, kept: c })}
         >
-          {fillIn(w["shots.keepTheirs"], { theirs })}
+          {fill(w["shots.keepTheirs"] ?? "", { theirs })}
         </button>
         <button
           type="button"
           className={button}
           onClick={() => props.onChange({ ...state, version: c.version, conflict: undefined })}
         >
-          {fillIn(w["shots.useMine"], { mine })}
+          {fill(w["shots.useMine"] ?? "", { mine })}
         </button>
       </div>
     </div>
@@ -111,7 +112,7 @@ function RowHead(props: { row: ViewRow; label: string; w: Words; matched?: strin
         <span className="font-semibold tabular-nums">{label}</span>
         {row.field && <span className="font-semibold">{w[`shots.field.${row.field}`]}</span>}
         <span translate="no">
-          {matched ?? fillIn(w["shots.read"], { name: isolate(row.name || "—") })}
+          {matched ?? fill(w["shots.read"] ?? "", { name: isolate(row.name || "—") })}
         </span>
         {tone && (
           <span className={`text-body-sm ${tone}`}>{w[`shots.match.${row.match.status}`]}</span>
@@ -205,7 +206,7 @@ function NewMemberName(props: InputProps & { name: string }) {
       </label>
       {first && !props.readOnly ? (
         <div role="status" className="mt-2 border-l-4 border-yarn pl-2">
-          <p translate="no">{fillIn(w["shots.taken"], { name: isolate(first.name) })}</p>
+          <p translate="no">{fill(w["shots.taken"] ?? "", { name: isolate(first.name) })}</p>
           <div className="mt-1 flex flex-wrap gap-2">
             <button
               type="button"
@@ -219,7 +220,7 @@ function NewMemberName(props: InputProps & { name: string }) {
                 })
               }
             >
-              {fillIn(w["shots.pickThem"], { name: isolate(first.name) })}
+              {fill(w["shots.pickThem"] ?? "", { name: isolate(first.name) })}
             </button>
             <button
               type="button"
@@ -261,7 +262,7 @@ function RowInputs(props: InputProps) {
               onClick={() => props.onChange({ ...state, uid: null, newName: row.name })}
             >
               <span translate="no">
-                {fillIn(w["shots.newMember"], { name: isolate(row.name) })}
+                {fill(w["shots.newMember"] ?? "", { name: isolate(row.name) })}
               </span>
             </button>
           )}

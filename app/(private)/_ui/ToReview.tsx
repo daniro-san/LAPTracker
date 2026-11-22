@@ -4,7 +4,7 @@
 // Above them, "2 new members to match" when a roster read could not match new members added by hand, and
 // each notice review request the officer may answer (D113), linked to its notice, and each member's "This is
 // me" waiting for an officer (D142), with Approve and Not them.
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { linkWords } from "@/lib/private/dictionary.me";
 import { MAX_PICTURES } from "@/lib/private/import";
@@ -16,6 +16,7 @@ import { draftCounts, kindLabel } from "@/lib/private/import-words";
 import type { LinkReview } from "@/lib/private/me-link";
 import type { reviewsForMe } from "@/lib/private/notice-reviews";
 import type { ReportReview } from "@/lib/private/self-report";
+import { fill } from "@/lib/words";
 
 import { LANGUAGE_NAME } from "./languages";
 import { LinkReviews } from "./MemberLinks";

@@ -5,7 +5,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { useCopy } from "./LocaleProvider";
 import { filterFromUrl, type MemberFilter, type MemberShow, type MemberView } from "./member-views";

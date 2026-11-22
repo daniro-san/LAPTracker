@@ -234,6 +234,7 @@ describe("sharing the thanks (D114)", () => {
   });
 
   it("nudges on Sunday and Monday only, until the week's thanks are shared", async () => {
+    expect(await thanksNudge(db, access, "2026-11-21")).toBe(false); // Saturday
     expect(await thanksNudge(db, access, "2026-11-22")).toBe(true); // Sunday
     expect(await thanksNudge(db, access, "2026-11-23")).toBe(true); // Monday: last week's
     expect(await thanksNudge(db, access, "2026-11-24")).toBe(false); // Tuesday

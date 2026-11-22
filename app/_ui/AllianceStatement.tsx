@@ -5,8 +5,9 @@
 import { Fragment } from "react";
 
 import { Measure } from "@/lib/brand/components/layout/Measure";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { AllianceStatement } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { compact, dayDate, type Clock } from "./format";
 import { StatementText } from "./StatementText";

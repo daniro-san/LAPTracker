@@ -1,21 +1,8 @@
-// The number and plural formats the Insights page's words share (issue 489).
+// The number formats the Insights page's words share (issue 489); plurals are lib/words' `plural`.
 import { compactLarge } from "../compact";
-import { fill } from "../copy";
-import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 
 export type Formats = { t: WorkspaceDictionary; language: WorkspaceLanguage };
-
-/** `key.one` or `key.other` by `n`, filled with `n` and `vars`. */
-export function counted(
-  t: WorkspaceDictionary,
-  key: string,
-  n: number,
-  language: string,
-  vars = {},
-) {
-  const form = new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
-  return fill(t[`${key}.${form}` as WorkspaceKey], { n, ...vars });
-}
 
 export const whole = (n: number, language: string) =>
   new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(n);

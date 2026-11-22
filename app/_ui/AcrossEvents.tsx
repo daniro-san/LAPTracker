@@ -4,8 +4,9 @@
 // change, `since 10:00` gives the change inside the event, as on the player page (issue 191). The rank is
 // the ledger rank by might, moved event over event; kills and server ranks are under Details.
 import { comparable, rankDelta, type NameHistoryEntry } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { HistoryRow } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { DetailTable, rankRow, type RankPair } from "./DetailLines";
 import { fellWithLeavers } from "./event-rows";

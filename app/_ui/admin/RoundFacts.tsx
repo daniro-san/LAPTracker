@@ -3,7 +3,8 @@
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import type { RoundView } from "./actions";
 import { StateChip } from "./parts";

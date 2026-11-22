@@ -8,8 +8,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { batchMayRun } from "@/lib/tick-batch";
+import { fill } from "@/lib/words";
 
 import type { RunningView } from "./actions";
 import { RESULT_MARK } from "./outcome";

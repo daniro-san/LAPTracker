@@ -4,10 +4,11 @@
 // Third-party text is rendered as text, never as HTML (plan §12.3).
 import type { ReactNode } from "react";
 
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { guideFor } from "@/lib/error-guide";
 import type { UpstreamDetail } from "@/lib/queries/daily-runs";
 import type { AppErrorDetail } from "@/lib/report-error";
+import { fill } from "@/lib/words";
 
 const g = copy.admin.guide;
 const PRE = "max-h-60 overflow-auto whitespace-pre-wrap break-words bg-ink/5 p-2 font-mono text-xs";

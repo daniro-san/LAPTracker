@@ -4,7 +4,7 @@
 // switch that went through counts as `ws_action` `features` / `turn_on` or `turn_off`.
 import { requireWorkspace } from "@/lib/private/access";
 import { allianceFeatureInput, setAllianceFeature } from "@/lib/private/alliance-features";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
@@ -34,6 +34,6 @@ export async function POST(
     // D141: the squads targets may have changed, so the ticks look at the queue again.
     ctx.wakeCache.forget();
     const body = Response.json({ ok: true, on: done.on }, { headers: NO_STORE });
-    return counted(ctx, access, "features", input.on ? "turn_on" : "turn_off", body);
+    return withActionEvent(ctx, access, "features", input.on ? "turn_on" : "turn_off", body);
   });
 }

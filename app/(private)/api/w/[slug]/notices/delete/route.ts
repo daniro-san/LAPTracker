@@ -4,7 +4,7 @@
 // change nothing, and Undo names the delete's. A deleted notice leaves every list; what was posted to
 // Discord stays there. → 200, 404 not_found.
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
@@ -35,7 +35,7 @@ export async function POST(
       {},
     );
     // ws_action (D115): notice / delete, undo or restore, counted on a 2xx only.
-    return counted(
+    return withActionEvent(
       ctx,
       access,
       "notice",

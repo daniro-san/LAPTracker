@@ -14,9 +14,10 @@ import { sharedAllianceList, sharedEventAllianceIds, sharedEvents } from "@/app/
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TRACKED_COUNT } from "@/config/alliances";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { homeEvent } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 

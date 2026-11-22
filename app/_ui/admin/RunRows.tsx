@@ -7,9 +7,10 @@ import type { ReactNode } from "react";
 import { dayDate, type Clock } from "@/app/_ui/format";
 import { Chip } from "@/lib/brand/components/Chip";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { listRuns } from "@/lib/queries/admin";
 import type { listDailyReads } from "@/lib/queries/daily-runs";
+import { fill } from "@/lib/words";
 
 import { GuideNote, UpstreamDetails } from "./ErrorDetail";
 import { StateChip } from "./parts";

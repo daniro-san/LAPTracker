@@ -8,9 +8,10 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 
 import type { Tone } from "@/lib/ai/notice-writing";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { LANGUAGE_NAME } from "./languages";
 import { askDraft, type DraftAnswer } from "./notice-client";

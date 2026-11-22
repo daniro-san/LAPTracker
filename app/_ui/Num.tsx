@@ -4,7 +4,7 @@
 // "Exact numbers" switch shows one or the other for the whole page with CSS only (globals.css). Every
 // change carries three channels (DESIGN.md): colour, an arrow and the signed number.
 
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { compact, exact, MEMBER_MARK, percent, percentText, ratioText, signOf } from "./format";
 import { useCopy, useLocale } from "./LocaleProvider";

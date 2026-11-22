@@ -11,10 +11,11 @@ import { useState } from "react";
 import type { RollCallSet } from "@/lib/analytics/events";
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
 import type { Mark } from "@/lib/private/roll-call-rules";
+import { fill } from "@/lib/words";
 
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";
@@ -272,6 +273,7 @@ export function RollCallMarks(props: RollCallMarksProps) {
         left={notSet.length}
         away={awayRows.length}
         words={words}
+        language={props.language}
         marks={marks}
         r={r}
         onRest={() => void r.rest(notSet.map((row) => row.uid))}

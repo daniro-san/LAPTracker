@@ -2,9 +2,10 @@
 // side, and from Start to End over the members in both readings. Alliance-level figures only, the same neutral
 // colours for both sides, no chart (D68). Cards stack below 640 px.
 import { SERVER } from "@/config/alliances";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { Side, SideAlliance } from "@/lib/kvk";
 import type { EventMatchup } from "@/lib/queries/kvk";
+import { fill } from "@/lib/words";
 
 import { allianceLabel, compact, signOf, type Clock } from "./format";
 import { requestClock, requestCopy, requestLocale } from "./locale";

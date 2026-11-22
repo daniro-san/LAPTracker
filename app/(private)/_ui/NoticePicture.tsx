@@ -7,9 +7,9 @@
 import { useRef, type ReactNode } from "react";
 
 import { Notice } from "@/lib/brand/components/Notice";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { PictureView } from "@/lib/private/notice-picture-rules";
+import { fill } from "@/lib/words";
 
 import type { PictureDraft } from "./notice-picture-state";
 import { smallButton } from "./NoticeBits";

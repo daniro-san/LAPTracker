@@ -11,8 +11,8 @@ import { Fragment, type ReactNode, useState } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { postDiscord, type Note, NoteLine } from "./discord-send";
 import { type BotFacts, botLines } from "./discord-step";

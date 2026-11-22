@@ -2,12 +2,12 @@
 // (issue 489), pure: the rows their HTML bars draw (D68: label and number in HTML beside every bar) and the
 // lines that say what each rests on. The only names are the help list and the per-member list, both in
 // name order (D75); the Raid Shield history is counts only.
-import { fill } from "../copy";
+import { fill, plural } from "../words";
 import { addDays } from "./calendar-time";
 import { calendarDates } from "./calendar-words";
 import type { WorkspaceKey } from "./dictionary";
 import { NONE } from "./fact-text";
-import { compact, counted, percent, type Formats } from "./insights-format";
+import { compact, percent, type Formats } from "./insights-format";
 import type { KvkEvent, KvkView } from "./insights-kvk";
 import { SHIELD_WEEKS, type PassShare, type ShieldWeek } from "./insights-shield";
 import { FRESH_HOURS, SQUAD_COUNTS, type SquadsCoverage } from "./insights-squads";
@@ -50,6 +50,49 @@ const lossOf = (e: KvkEvent) => (e.before > 0 ? (e.before - e.after) / e.before 
 const backOf = (e: KvkEvent) =>
   e.before > e.after ? (e.now - e.after) / (e.before - e.after) : null;
 
+/** "Counted: 30 members", then who was left out and why. */
+function kvkBased(e: KvkEvent, { t, language }: Formats): string[] {
+  const notCounted = [
+    ...(e.others > 0
+      ? [
+          fill(
+            plural(
+              e.others,
+              { one: t["insights.kvk.others.one"], other: t["insights.kvk.others.other"] },
+              language,
+            ),
+            { n: e.others },
+          ),
+        ]
+      : []),
+    ...(e.left > 0
+      ? [
+          fill(
+            plural(
+              e.left,
+              { one: t["insights.kvk.left.one"], other: t["insights.kvk.left.other"] },
+              language,
+            ),
+            { n: e.left },
+          ),
+        ]
+      : []),
+  ];
+  return [
+    fill(
+      plural(
+        e.members,
+        { one: t["insights.kvk.counted.one"], other: t["insights.kvk.counted.other"] },
+        language,
+      ),
+      { n: e.members },
+    ),
+    ...(notCounted.length > 0
+      ? [fill(t["insights.kvk.notCounted"], { list: notCounted.join(", ") })]
+      : []),
+  ];
+}
+
 function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
   const { t, language } = f;
   const dates = calendarDates(language);
@@ -62,10 +105,6 @@ function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
   });
   const lost = lossOf(e);
   const back = backOf(e);
-  const notCounted = [
-    ...(e.others > 0 ? [counted(t, "insights.kvk.others", e.others, language)] : []),
-    ...(e.left > 0 ? [counted(t, "insights.kvk.left", e.left, language)] : []),
-  ];
   const date = dates.short(e.day);
   return {
     label: fill(t["insights.kvk.event"], { date }),
@@ -77,12 +116,7 @@ function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
             lost: percent(lost, language),
             back: percent(back, language),
           }),
-    based: [
-      counted(t, "insights.kvk.counted", e.members, language),
-      ...(notCounted.length > 0
-        ? [fill(t["insights.kvk.notCounted"], { list: notCounted.join(", ") })]
-        : []),
-    ],
+    based: kvkBased(e, f),
     might: [
       row(t["insights.kvk.before"], e.before),
       row(
@@ -173,7 +207,14 @@ export function squadsWords(s: SquadsCoverage, f: Formats): SquadsWords {
   const top = Math.max(1, ...s.bands.map((b) => b.median));
   const fresh = s.fresh[0] ?? 0;
   return {
-    based: counted(t, "insights.squads.based", s.members, language),
+    based: fill(
+      plural(
+        s.members,
+        { one: t["insights.squads.based.one"], other: t["insights.squads.based.other"] },
+        language,
+      ),
+      { n: s.members },
+    ),
     headline: fill(
       t[fresh > 0 ? "insights.squads.headline" : "insights.squads.headlineNoneFresh"],
       {

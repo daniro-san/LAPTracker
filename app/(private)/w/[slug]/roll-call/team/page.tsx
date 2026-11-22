@@ -3,10 +3,10 @@
 // (owner, issue 298). Quest points stay on the server (D76): the page gets the order and "Quests this week".
 import { notFound } from "next/navigation";
 
-import { fill } from "@/lib/copy";
 import { cardFormats } from "@/lib/private/member-card";
 import { teamView } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
+import { fill, plural } from "@/lib/words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
 import { SignedInFrame } from "../../../../_ui/Frame";
@@ -41,7 +41,6 @@ export default async function TeamPage({
   const { access, slug, t, language } = page;
   const o = view.opened;
   const f = cardFormats(language, page.zone, page.now);
-  const plural = new Intl.PluralRules(language).select(view.away) === "one" ? "one" : "other";
   return (
     <SignedInFrame access={access} language={language} t={t} current="mark" waiting={page.waiting}>
       <RollCallHead
@@ -63,7 +62,18 @@ export default async function TeamPage({
         team={o.variant ?? ""}
         rows={teamRows(view.rows, t, f.compact)}
         registration={registrationText(o.day, page.today, t)}
-        away={view.away === 0 ? null : fill(t[`roll.team.away.${plural}`], { n: view.away })}
+        away={
+          view.away === 0
+            ? null
+            : fill(
+                plural(
+                  view.away,
+                  { one: t["roll.team.away.one"], other: t["roll.team.away.other"] },
+                  language,
+                ),
+                { n: view.away },
+              )
+        }
         words={rollWords(t)}
       />
     </SignedInFrame>

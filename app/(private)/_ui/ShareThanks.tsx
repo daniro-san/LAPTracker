@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import type { SharePerson, ShareThanksProps } from "./share-thanks-data";
 import { ShareThanksEdit, type Texts } from "./ShareThanksEdit";

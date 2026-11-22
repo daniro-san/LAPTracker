@@ -11,8 +11,8 @@ import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { FIELD } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 import { errorText, NoteLine, postInvite, Step, type Note } from "./invite-client";
 

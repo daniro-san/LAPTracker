@@ -6,13 +6,13 @@
 // While the Follow-up tab is on, Follow-up's two numbers are a card of Home's main column instead
 // (HomeFollowUp, issue 585 slice 4), so the first phone screen says them.
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
-import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { WeekCounts } from "@/lib/private/follow-up";
 import { cardFormats, progressText } from "@/lib/private/member-card";
 import type { MembersView } from "@/lib/private/members";
 import { serverDay } from "@/lib/schedule";
+import { fill, plural } from "@/lib/words";
 
 import { AllianceWeekLine, allianceWeekParts } from "./AllianceWeekLine";
 import { LINK } from "./BoardText";
@@ -60,16 +60,28 @@ export function followUpWords(
   language: WorkspaceLanguage,
 ) {
   if (counts.toLook === 0 && counts.noted === 0) return null;
-  const form = (n: number) =>
-    new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
   const head =
     counts.toLook === 0
       ? t["home.followUp.nobody"]
-      : fill(t[`home.followUp.toLook.${form(counts.toLook)}`], { n: counts.toLook });
+      : fill(
+          plural(
+            counts.toLook,
+            { one: t["home.followUp.toLook.one"], other: t["home.followUp.toLook.other"] },
+            language,
+          ),
+          { n: counts.toLook },
+        );
   const noted =
     counts.noted === 0
       ? null
-      : fill(t[`home.followUp.noted.${form(counts.noted)}`], { n: counts.noted });
+      : fill(
+          plural(
+            counts.noted,
+            { one: t["home.followUp.noted.one"], other: t["home.followUp.noted.other"] },
+            language,
+          ),
+          { n: counts.noted },
+        );
   return { head, noted };
 }
 

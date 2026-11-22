@@ -4,7 +4,7 @@
 // screenshot" beside the facts' paste boxes (D109): one read at a time per officer, else 429 `busy`.
 // `?text=plain` reads the picture in plain grey only, for the garrison plan's enemy might (D121).
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginPicture,
@@ -63,7 +63,7 @@ export async function POST(
     }
     if (!lines) return privateError(422, "refused");
     privateLog("w.import.read", { workspace: access.workspaceId, lines: lines.length });
-    return counted(
+    return withActionEvent(
       ctx,
       access,
       "screenshot",

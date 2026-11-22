@@ -21,7 +21,8 @@ import {
   StitchedCheck,
 } from "@/lib/brand/components/StatusIcons";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { ButtonStates } from "./ButtonStates";
 import { MoversSample } from "./MoversSample";

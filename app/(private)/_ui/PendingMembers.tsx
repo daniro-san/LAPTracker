@@ -16,8 +16,9 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill, isolate } from "@/lib/copy";
+import { isolate } from "@/lib/copy";
 import { NONE } from "@/lib/private/fact-text";
+import { fill } from "@/lib/words";
 
 import { FactsEditor } from "./FactsEditor";
 import type { DismissedRow, LifecycleWords, PendingRow } from "./member-lifecycle-data";

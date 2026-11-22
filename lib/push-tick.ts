@@ -4,13 +4,13 @@
 // (the heartbeat). The roll calls are read through lib/private/push-roll-calls.ts, the one lib/private module
 // this file may import (D148): the same counts the Roll call page shows, never a name.
 import type { AppContext } from "./app-context";
-import { fill } from "./copy-push";
 import type { Db } from "./db";
 import { dueRollCalls } from "./private/push-roll-calls";
 import { notifyOfficers, pushConfig, pushLater } from "./push";
 import { pushNightRead, type UseDeps } from "./push-uses";
 import { claimPushMark, workspacesWithUse } from "./repo/push";
 import type { TickOutcome } from "./tick";
+import { fill } from "./words";
 
 /** Each Calendar roll call's reminder that is due now, once ("open", then "left"), to its officers. */
 export async function rollCallReminders(deps: UseDeps, db: Db): Promise<void> {

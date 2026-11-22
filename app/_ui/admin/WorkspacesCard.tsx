@@ -9,7 +9,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
+import { fill } from "@/lib/words";
 import type { Allowance, OwnerSettings } from "@/lib/workspace-features";
 
 import { ConfirmSheet } from "./ConfirmSheet";

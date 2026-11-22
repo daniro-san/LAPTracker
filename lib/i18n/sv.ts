@@ -364,6 +364,9 @@ export const sv = {
     left: "Lämnade",
     joinedReads: "I medlemslistan vid Slut ({to}), inte vid Början ({from}).",
     leftReads: "I medlemslistan vid Början ({from}), inte vid Slut ({to}).",
+    startUnknown: "Början okänd",
+    endUnknown: "Slut okänt",
+    countedAsZero: "räknas som 0",
   },
   leadership: {
     title: "Ledning",

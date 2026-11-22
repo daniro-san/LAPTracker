@@ -4,7 +4,7 @@
 // requestCopy or useCopy (app/_ui/locale.ts, LocaleProvider). The /brand page's text, the admin area's
 // and the Discord messages' stay English: they live in sibling files and are re-exported in `copy`, so
 // there is one import path.
-// `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
+// `{name}` is a placeholder filled by `fill()` from lib/words.ts; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin-tracked";
 import { balanceCopy } from "./copy-balance";
@@ -254,6 +254,11 @@ export const en = {
     /** Under the member list's Joined / Left chips while one is on: when the two member lists were read. */
     joinedReads: "In the member list at End ({to}), not at Start ({from}).",
     leftReads: "In the member list at Start ({from}), not at End ({to}).",
+    /** After a member's `—` kills change when one side's kills are unknown (D15 amendment, #692). */
+    startUnknown: "Start unknown",
+    endUnknown: "End unknown",
+    /** Added after it while the list is sorted by ± Kills, which counts the unknown figure as 0. */
+    countedAsZero: "counted as 0",
   },
   /** The alliance's R5 and titled R4 officers: a section on the alliance page, a mark in the member list. */
   leadership: {
@@ -362,13 +367,6 @@ const BIDI_CONTROLS = /[‪-‮⁦-⁩]/g;
  * shown on a page; never for copied or exported text.
  */
 export const isolate = (text: string) => `⁨${text.replace(BIDI_CONTROLS, "")}⁩`;
-
-/** `fill("Last updated at {time}", { time: "14:01" })`; unknown placeholders stay as written. */
-export function fill(template: string, vars: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (all, key: string) =>
-    key in vars ? String(vars[key]) : all,
-  );
-}
 
 /** Pseudo-localisation (plan Phase 5f): every character but spaces and `{placeholders}` becomes `░`. */
 export function blankCopy<T>(value: T): T {

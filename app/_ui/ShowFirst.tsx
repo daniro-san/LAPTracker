@@ -6,7 +6,7 @@
 import { Children, useState, type ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
+import { fill } from "@/lib/words";
 
 import { useCopy } from "./LocaleProvider";
 

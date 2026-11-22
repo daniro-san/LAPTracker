@@ -26,6 +26,8 @@ export interface StatMetric {
   /** The delta's percentage is relative to this; defaults to `from`. */
   base?: number | null;
   note?: string;
+  /** Why the change is `—`, after it, e.g. "Start unknown" (D15 amendment, #692). */
+  unknown?: string;
   /** Members who joined and who left (both, else the change says it all): `+3 joined · −2 left` after the
    * change, each count a link to the row's member list with Joined or Left on (`StatRow.members`). */
   roster?: { joined: number; left: number };
@@ -115,6 +117,7 @@ function ChangeLine({ m, lead, page, copy }: CellProps) {
   return (
     <span className="text-sm tabular-nums sm:block">
       <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
+      {m.delta === null && m.unknown && <span className={MUTED}> · {m.unknown}</span>}
       {m.roster && m.delta !== null && <RosterNote roster={m.roster} page={page} copy={copy} />}
       {m.split && m.delta !== null && (
         <SplitMark

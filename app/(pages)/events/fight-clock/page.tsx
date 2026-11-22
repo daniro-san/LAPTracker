@@ -22,11 +22,12 @@ import {
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { clockColumns, type OffReason } from "@/lib/fight-clock";
 import { isOn } from "@/lib/flags";
 import { homeEvent, type FightClockEvent } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 export async function generateMetadata(): Promise<Metadata> {
   const copy = await requestCopy();

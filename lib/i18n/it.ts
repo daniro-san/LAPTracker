@@ -423,6 +423,9 @@ export const itIT = {
     left: "Usciti",
     joinedReads: "Nell’elenco dei Members a Fine ({to}), non a Inizio ({from}).",
     leftReads: "Nell’elenco dei Members a Inizio ({from}), non a Fine ({to}).",
+    startUnknown: "Inizio sconosciuto",
+    endUnknown: "Fine sconosciuta",
+    countedAsZero: "contato come 0",
   },
   leadership: {
     title: "Comando",

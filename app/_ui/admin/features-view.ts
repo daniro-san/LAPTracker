@@ -1,9 +1,10 @@
 // /admin's feature switches of one workspace, as its card shows them (D126, D134): its settings (its defaults
 // until the owner changes one), which owner values differ from the defaults, what the alliance turned off,
 // and the tracker calls its choices spend now. English only (D48).
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { AdminFeatures } from "@/lib/queries/workspace-features";
 import type { AdminWorkspace } from "@/lib/queries/workspaces";
+import { fill } from "@/lib/words";
 import {
   ALLOWANCES,
   defaultSettings,

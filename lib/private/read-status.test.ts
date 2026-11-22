@@ -63,7 +63,7 @@ beforeEach(async () => {
   });
 });
 
-const read = (at = NOW, squads = true) => readStatus(db, access(squads), TEST_ENV, at, t);
+const read = (at = NOW, squads = true) => readStatus(db, access(squads), TEST_ENV, at, t, "en");
 
 const SECRET = Buffer.alloc(32, 7).toString("base64");
 const KEYS_ON = { ...TEST_ENV, WORKSPACE_KEYS_SECRET: SECRET };
@@ -180,7 +180,7 @@ describe("readStatus (D135)", () => {
   it("a key to paste again comes first, with Alliance settings and the key card mark", async () => {
     await day({ status: "running" }, 1);
     const me = await ownKey("ok", "another");
-    const { lines } = await readStatus(db, me, KEYS_ON, NOW, t);
+    const { lines } = await readStatus(db, me, KEYS_ON, NOW, t, "en");
     // Sealed under another master key: `reenter`, and nobody reads the squads (`squadsKey`).
     expect(lines).toEqual([
       {
@@ -222,7 +222,7 @@ describe("readStatus (D135)", () => {
     await day({ status: "running" }, 1);
     await db.delete(dailyRosters);
     const me = await ownKey("invalid");
-    expect(await readStatus(db, me, KEYS_ON, NOW, t)).toEqual({
+    expect(await readStatus(db, me, KEYS_ON, NOW, t, "en")).toEqual({
       lines: [
         {
           id: "key",
@@ -237,7 +237,7 @@ describe("readStatus (D135)", () => {
     // A key spent today: the daily read and the squads read both leave it out until the reset, so the
     // roster and the squads say nothing either (Home's key card says it).
     await db.update(workspaceKeys).set({ status: "out_of_quota" });
-    expect(await readStatus(db, me, KEYS_ON, NOW, t)).toEqual({ lines: [], running: false });
+    expect(await readStatus(db, me, KEYS_ON, NOW, t, "en")).toEqual({ lines: [], running: false });
   });
 
   it("waiting: everyone left waits for a later try, with its time", async () => {
@@ -289,7 +289,7 @@ describe("frameReadStatus (D135)", () => {
     });
     holder.ctx = { env: TEST_ENV, openDb, report: vi.fn() } as unknown as AppContext;
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
-    expect(await frameReadStatus(access(), t, NOW)).toBeNull();
+    expect(await frameReadStatus(access(), t, NOW, "en")).toBeNull();
     expect(openDb).toHaveBeenCalledTimes(1);
     expect(log.mock.calls).toEqual([[JSON.stringify({ code: "w.read_status.failed" })]]);
     log.mockRestore();
@@ -303,7 +303,7 @@ describe("frameReadStatus (D135)", () => {
     const report = vi.fn<AppContext["report"]>();
     holder.ctx = { env: TEST_ENV, openDb, report } as unknown as AppContext;
     vi.spyOn(console, "info").mockImplementation(() => {});
-    expect(await frameReadStatus(access(), t, NOW)).toBeNull();
+    expect(await frameReadStatus(access(), t, NOW, "en")).toBeNull();
     expect(report.mock.calls).toEqual([
       [failure, { route: "lib/private/read-status.ts", kind: "w.read_status.failed" }],
     ]);

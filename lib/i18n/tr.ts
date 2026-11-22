@@ -422,6 +422,9 @@ export const tr = {
     left: "Ayrıldı",
     joinedReads: "Bitiş ({to}) itibarıyla üye listesinde, Başlangıç ({from}) itibarıyla değil.",
     leftReads: "Başlangıç ({from}) itibarıyla üye listesinde, Bitiş ({to}) itibarıyla değil.",
+    startUnknown: "Başlangıç bilinmiyor",
+    endUnknown: "Bitiş bilinmiyor",
+    countedAsZero: "0 sayıldı",
   },
   leadership: {
     title: "Liderlik",

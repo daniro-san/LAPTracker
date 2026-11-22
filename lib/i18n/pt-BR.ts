@@ -420,6 +420,9 @@ export const ptBR = {
     left: "Saíram",
     joinedReads: "Na lista de membros no Fim ({to}), não no Início ({from}).",
     leftReads: "Na lista de membros no Início ({from}), não no Fim ({to}).",
+    startUnknown: "Início desconhecido",
+    endUnknown: "Fim desconhecido",
+    countedAsZero: "contado como 0",
   },
   leadership: {
     title: "Liderança",

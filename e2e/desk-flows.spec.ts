@@ -22,12 +22,19 @@ import {
   switchWorkspaceOf,
   usDay,
 } from "./fixtures/seed";
-import { deskFrame, expect, hydrated, noError, sees, signIn, test } from "./fixtures/test";
+import {
+  deskFrame,
+  expect,
+  hydrated,
+  isolated,
+  noError,
+  sees,
+  signIn,
+  test,
+} from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const B = ALLIANCES.b;
-/** A name inside Unicode isolates, as isolate() writes it into a label or a line. */
-const isolated = (name: string) => `\\u2068?${name}\\u2069?`;
 /** A button whose name starts with the member's name (a Members line, a Follow-up row). */
 const named = (page: Page, prefix: string, name: string) =>
   page.getByRole("button", { name: new RegExp(`^${prefix}${isolated(name)}`) });

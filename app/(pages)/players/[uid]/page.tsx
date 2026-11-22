@@ -20,9 +20,10 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { FreshDots, Legend } from "@/app/_ui/Status";
 import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { homeEvent, playerHistory, playerProgress, type PlayerHistory } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 function Timelines({
   history,

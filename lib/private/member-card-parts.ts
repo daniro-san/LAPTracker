@@ -1,8 +1,8 @@
 // Parts of the member card's words (issue 461, D136), apart from member-card.ts for its size: the last 7
 // days' date formats, this week's Alliance Duel, what is still to ask, and every earlier value of a fact.
 // Also the line a quiet day gives (D127).
-import { fill } from "../copy";
 import type { FactRow } from "../repo/member-facts";
+import { fill } from "../words";
 import type { WorkspaceDictionary } from "./dictionary";
 import { FACT_FIELDS, type FactField, type FactValues, type MemberFacts } from "./fact-fields";
 import { factText, NONE } from "./fact-text";
@@ -29,6 +29,7 @@ export const daysFormats = (t: WorkspaceDictionary, f: CardFormats): DaysFormats
   date: (day) => f.date(day),
   weekday: (day) => t[WEEKDAYS[new Date(`${day}T00:00:00Z`).getUTCDay()] ?? "day.mon"],
   dayOfMonth: (day) => String(Number(day.slice(8))),
+  language: f.language,
 });
 
 const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;

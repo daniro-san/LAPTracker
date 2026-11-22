@@ -1,6 +1,6 @@
 // The import's words built from the dictionary (issue 299): a kind with its tab ("Alliance Duel weekly"),
 // counted phrases, and the lines the Discord reply shows for one send.
-import { fill } from "../copy";
+import { fill, plural } from "../words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { DraftSummary, Outcome } from "./import";
 import type { ImportKind, Scope } from "./import-kinds";
@@ -18,25 +18,36 @@ export function kindLabel(
   return t[`shots.kindScope.${kind as "alliance_duel" | "donation"}.${scope}`];
 }
 
-type Counted = "shots.rows" | "shots.doubtful" | "shots.notFound" | "shots.leftOut" | "shots.lost";
-
-/** "8 rows", "1 doubtful": the plural form of the officer's language. */
-export function counted(
-  t: WorkspaceDictionary,
-  language: WorkspaceLanguage,
-  key: Counted,
-  n: number,
-): string {
-  const form = new Intl.PluralRules(language).select(n) === "one" ? "one" : "other";
-  return fill(t[`${key}.${form}`], { n });
-}
-
 /** "8 rows, 1 doubtful": the rows of a draft and the ones that need a person. */
 export function draftCounts(t: WorkspaceDictionary, language: WorkspaceLanguage, d: DraftSummary) {
   return [
-    counted(t, language, "shots.rows", d.rows),
-    ...(d.doubtful > 0 ? [counted(t, language, "shots.doubtful", d.doubtful)] : []),
-    ...(d.notFound > 0 ? [counted(t, language, "shots.notFound", d.notFound)] : []),
+    fill(plural(d.rows, { one: t["shots.rows.one"], other: t["shots.rows.other"] }, language), {
+      n: d.rows,
+    }),
+    ...(d.doubtful > 0
+      ? [
+          fill(
+            plural(
+              d.doubtful,
+              { one: t["shots.doubtful.one"], other: t["shots.doubtful.other"] },
+              language,
+            ),
+            { n: d.doubtful },
+          ),
+        ]
+      : []),
+    ...(d.notFound > 0
+      ? [
+          fill(
+            plural(
+              d.notFound,
+              { one: t["shots.notFound.one"], other: t["shots.notFound.other"] },
+              language,
+            ),
+            { n: d.notFound },
+          ),
+        ]
+      : []),
   ].join(", ");
 }
 
@@ -65,10 +76,31 @@ export function outcomeLines(
       what: kindLabel(t, d.kind, d.scope, d.scopeSure),
       counts: draftCounts(t, language, d),
     })} → [${t["shots.reply.review"]}](${review(d.id)})`,
-    ...(d.leftOut > 0 ? [counted(t, language, "shots.leftOut", d.leftOut)] : []),
+    ...(d.leftOut > 0
+      ? [
+          fill(
+            plural(
+              d.leftOut,
+              { one: t["shots.leftOut.one"], other: t["shots.leftOut.other"] },
+              language,
+            ),
+            { n: d.leftOut },
+          ),
+        ]
+      : []),
   ]);
   const others = [...new Set(result.outcomes.map((o) => outcomeText(t, o)))].filter(
     (line): line is string => line !== null,
   );
-  return [...drafts, ...others, ...(lost > 0 ? [counted(t, language, "shots.lost", lost)] : [])];
+  return [
+    ...drafts,
+    ...others,
+    ...(lost > 0
+      ? [
+          fill(plural(lost, { one: t["shots.lost.one"], other: t["shots.lost.other"] }, language), {
+            n: lost,
+          }),
+        ]
+      : []),
+  ];
 }

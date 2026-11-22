@@ -9,8 +9,8 @@ import { useRef, useState } from "react";
 
 import { track, type RaidPrepSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
 import { PREP_MESSAGE } from "@/lib/private/dictionary.raidprep";
+import { fill, plural } from "@/lib/words";
 
 import type { PrepHeadView } from "./prep-data";
 import { remindAll, remindNames } from "./prep-message";
@@ -32,17 +32,22 @@ function marksLine(c: Record<"todo" | "yes" | "no" | "all", number>, words: Roll
 /** Sets the grid's members: the set, the line above it ("The 21 to remind") and which set it is. */
 export type ShowSet = (rows: readonly MarkRowView[], label: string, kind: RaidPrepSet) => void;
 
+/** The singular or plural form for `n` in the officer's language, filled with `n`. */
+const counted = (n: number, one: string, other: string, language: string) =>
+  fill(plural(n, { one, other }, language), { n });
+
 /** "Show the 21 ›": a visible label, not a hidden tap on the count (drilldown panel review). */
 function ShowChip(props: {
   kind: RaidPrepSet;
   rows: readonly MarkRowView[];
   line: { one: string; other: string };
   words: RollSheetWords;
+  language: string;
   onShow: ShowSet;
 }) {
   const { words } = props;
   const n = props.rows.length;
-  const said = (one: string, other: string) => (n === 1 ? one : fill(other, { n }));
+  const said = (one: string, other: string) => counted(n, one, other, props.language);
   return (
     <button
       type="button"
@@ -57,14 +62,14 @@ function ShowChip(props: {
 
 /** The card at the top: the answer first, the Shield marks' counts, the summary's state, "Mark ✓ the n". */
 export function TrackerBar(props: {
-  page: { head: PrepHeadView; words: RollSheetWords; slug: string };
+  page: { head: PrepHeadView; words: RollSheetWords; slug: string; language: string };
   /** Who "Mark ✓ the n seen with a shield" marks (`toAccept`): its n, "Show the n ›" and its writes. */
   accept: MarkRowView[];
   counts: Record<"todo" | "yes" | "no" | "all", number>;
   m: ReturnType<typeof useMarks>;
   onShow: ShowSet;
 }) {
-  const { head, words, slug } = props.page;
+  const { head, words, slug, language } = props.page;
   const [done, setDone] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (head.answer === null) return null;
@@ -96,9 +101,12 @@ export function TrackerBar(props: {
       {acceptable.length > 0 && (
         <p className="mt-2 flex flex-wrap gap-2">
           <button type="button" disabled={busy} onClick={() => void accept()} className={chip()}>
-            {acceptable.length === 1
-              ? words["roll.prep.accept.one"]
-              : fill(words["roll.prep.accept"], { n: acceptable.length })}
+            {counted(
+              acceptable.length,
+              words["roll.prep.accept.one"],
+              words["roll.prep.accept"],
+              language,
+            )}
           </button>
           <ShowChip
             kind="accept"
@@ -108,6 +116,7 @@ export function TrackerBar(props: {
               other: words["roll.prep.accept.shown"],
             }}
             words={words}
+            language={language}
             onShow={props.onShow}
           />
         </p>
@@ -158,7 +167,7 @@ export function RemindBar(props: {
   onShow: ShowSet;
   words: RollSheetWords;
 }) {
-  const { words } = props;
+  const { words, language: lang } = props;
   const names = props.rows.map((row) => row.name);
   const n = names.length;
   const { copied, done } = useCopied(names.join("\n"));
@@ -174,14 +183,16 @@ export function RemindBar(props: {
       // Nothing was copied: the chip keeps its label.
     }
   };
-  const one = n === 1;
   const said = {
-    names: one ? words["roll.prep.copiedNames.one"] : fill(words["roll.prep.copiedNames"], { n }),
+    names: counted(n, words["roll.prep.copiedNames.one"], words["roll.prep.copiedNames"], lang),
     message: words["roll.prep.copiedMessage"],
   };
-  const namesLabel = one
-    ? words["roll.prep.copyNames.one"]
-    : fill(words["roll.prep.copyNames"], { n });
+  const namesLabel = counted(
+    n,
+    words["roll.prep.copyNames.one"],
+    words["roll.prep.copyNames"],
+    lang,
+  );
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
       {/* The count those copies hold, said before them (issue 585, first glance). */}
@@ -198,6 +209,7 @@ export function RemindBar(props: {
               other: words["roll.prep.remind.shown"],
             }}
             words={words}
+            language={props.language}
             onShow={props.onShow}
           />
           <button type="button" onClick={() => void copy("names")} className={chip()}>

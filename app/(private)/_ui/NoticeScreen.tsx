@@ -14,9 +14,9 @@ import { useState, type ReactNode } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill } from "@/lib/copy";
 import { discordPost, gameMail, gameNotice } from "@/lib/private/notice-formats";
 import { NOTICE_LIMIT, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
 import { CopyButton } from "./CopyButton";
 import { LANGUAGE_NAME } from "./languages";

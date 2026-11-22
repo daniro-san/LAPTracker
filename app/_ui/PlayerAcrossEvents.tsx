@@ -8,9 +8,10 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { rankDelta } from "@/lib/compute";
-import { fill, type Dictionary } from "@/lib/copy";
+import { type Dictionary } from "@/lib/copy";
 import type { PlayerEventRow } from "@/lib/queries";
 import { isGeneratedName } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import { DetailTable, rankCell, type RankPair } from "./DetailLines";
 import { EmptyState } from "./EmptyState";

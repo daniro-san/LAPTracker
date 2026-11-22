@@ -3,7 +3,7 @@
 // so a map never becomes data. `pick` is the officer's type for pictures that were not recognised;
 // `preset`, the type of the tab's button they were sent with (D110).
 import { requireWorkspace } from "@/lib/private/access";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -57,6 +57,6 @@ export async function POST(
       drafts: result.drafts.length,
     });
     const made = Response.json(result, { headers: NO_STORE });
-    return counted(ctx, access, "screenshot", pasted ? "paste" : "add", made);
+    return withActionEvent(ctx, access, "screenshot", pasted ? "paste" : "add", made);
   });
 }

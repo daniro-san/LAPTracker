@@ -12,7 +12,7 @@
 // The lib calls run in `privately`, so an error leaves as a code; nothing about members is logged.
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
-import { counted } from "@/lib/private/desk-action";
+import { withActionEvent } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { noticeChannels } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
@@ -62,7 +62,7 @@ export async function POST(
       const set = await privately("garrison.enemy", () => saveEnemyMight(db, access, input, now));
       if (set.ok) {
         const body = Response.json({ ok: true, version: set.version }, { headers: NO_STORE });
-        return counted(ctx, access, "garrison", "edit", body);
+        return withActionEvent(ctx, access, "garrison", "edit", body);
       }
       if (set.code === "not_found") return privateError(404, set.code);
       return Response.json({ code: "stale", value: set.value }, { status: 409, headers: NO_STORE });
@@ -71,7 +71,7 @@ export async function POST(
       const saved = await privately("garrison.save", () => saveGarrison(db, access, input, now));
       if (!saved.ok) return privateError(STATUS[saved.code], saved.code);
       const body = Response.json({ ok: true, rev: saved.rev }, { headers: NO_STORE });
-      return counted(ctx, access, "garrison", "save", body);
+      return withActionEvent(ctx, access, "garrison", "save", body);
     }
     const language = pickWorkspaceLanguage(
       jar.get(WORKSPACE_LANG_COOKIE)?.value,
@@ -88,6 +88,6 @@ export async function POST(
     );
     if (!posted.ok) return privateError(STATUS[posted.code], posted.code);
     const body = Response.json({ ok: true, at: posted.at, rev: posted.rev }, { headers: NO_STORE });
-    return counted(ctx, access, "garrison", "publish", body);
+    return withActionEvent(ctx, access, "garrison", "publish", body);
   });
 }

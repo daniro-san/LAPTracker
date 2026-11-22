@@ -1,8 +1,9 @@
 // The Roll call tab's words (issue 298), made on the server: an occasion's title, each mark's word for its
 // kind (a shield is "up", a team member "joined", a siege "took part"), what "the rest" says, and the
 // counts line. "Not set" is said as it is, never as a "no" (D75).
-import { fill, isolate } from "../copy";
+import { isolate } from "../copy";
 import type { MarkRow } from "../repo/roll-call";
+import { fill } from "../words";
 import type { Placed } from "./calendar-model";
 import { agoText, titleOf } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";

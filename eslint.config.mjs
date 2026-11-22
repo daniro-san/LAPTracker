@@ -15,6 +15,13 @@ const zones = [
     message: "lib/compute and lib/budget are pure: they import nothing from the project.",
   },
   {
+    target: "./lib/words.ts",
+    from: ".",
+    except: ["./node_modules"],
+    message:
+      "lib/words imports nothing from the project: pages, push and Discord share its one rule.",
+  },
+  {
     target: "./lib/screenshot",
     from: ".",
     except: ["./node_modules", "./lib/screenshot"],
@@ -58,6 +65,13 @@ const restrict = (extra) => ["error", { zones: [...zones, ...extra] }];
 const COLOUR = String.raw`/#[0-9a-f]{3,6}\b|rgba?\(/i`;
 const COLOUR_MESSAGE =
   "No colour literal in app/ or lib/brand/components/ (docs/DESIGN.md, Enforcement). Use a brand token: a Tailwind token class (text-ink, bg-paper, border-rule…), var(--token), or currentColor. A new colour goes in lib/brand/tokens.css.";
+// Issue 592: one plural rule. An entry that sets no-restricted-syntax replaces an earlier entry's options
+// for the files both match, so the colour entry below lists this selector too.
+const PLURAL_RULES = {
+  selector: "MemberExpression[object.name='Intl'][property.name='PluralRules']",
+  message:
+    "No raw Intl.PluralRules (issue 592): use plural(n, { one, other }, language) from lib/words.ts.",
+};
 const PRIVATE = ["app/(private)/**", "lib/private/**"];
 // D71: lib/private logs only through its own code-and-numbers wrapper and sends no Discord message.
 const NOTIFY_AND_DISCORD = readdirSync(`${import.meta.dirname}/lib`)
@@ -203,6 +217,11 @@ export default defineConfig(
     rules: { "max-lines": "off" },
   },
   {
+    files: ["**/*.{ts,tsx,mjs}"],
+    ignores: ["lib/words.ts"],
+    rules: { "no-restricted-syntax": ["error", PLURAL_RULES] },
+  },
+  {
     // Tests never reach the page, and their names carry issue numbers ("#592"), so they are not checked.
     files: ["app/**/*.{ts,tsx}", "lib/brand/components/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
@@ -211,6 +230,7 @@ export default defineConfig(
         "error",
         { selector: `Literal[value=${COLOUR}]`, message: COLOUR_MESSAGE },
         { selector: `TemplateElement[value.raw=${COLOUR}]`, message: COLOUR_MESSAGE },
+        PLURAL_RULES,
       ],
     },
   },

@@ -3,6 +3,7 @@
 // same everywhere: 9.90M, 83%, T9, "Europe/Kyiv · UTC+2", English. Pure; it does not load lib/copy.
 import { compactLarge } from "../compact";
 import { dateWords } from "../date-words";
+import { fill } from "../words";
 import type { FactField, FactValues } from "./fact-fields";
 import { offsetLabel, offsetMinutes } from "./time-zones";
 
@@ -30,8 +31,8 @@ const compact = (n: number, language: string) =>
 function awayDays(v: FactValues["away"], f: FactTextFormat): string {
   if (!v.until) return "";
   return v.from
-    ? f.words["facts.awayRange"].replace("{from}", f.day(v.from)).replace("{to}", f.day(v.until))
-    : f.words["facts.until"].replace("{date}", f.day(v.until));
+    ? fill(f.words["facts.awayRange"], { from: f.day(v.from), to: f.day(v.until) })
+    : fill(f.words["facts.until"], { date: f.day(v.until) });
 }
 
 const SHOW: { [F in FactField]: (v: FactValues[F], f: FactTextFormat) => string } = {

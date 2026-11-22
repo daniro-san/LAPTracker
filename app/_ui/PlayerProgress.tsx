@@ -3,9 +3,9 @@
 // with the events' Start-to-End windows shaded, a note that war events cost might, and every reading in a
 // table under Details while the `chart-details` flag is on (D91). The same card at every width.
 import type { Dictionary } from "@/lib/copy";
-import { fill } from "@/lib/copy";
 import { isOn } from "@/lib/flags";
 import type { PlayerProgress as Progress, ProgressReading } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { LineChart } from "./charts/LineChart";
 import { EventLabel } from "./EventLabel";

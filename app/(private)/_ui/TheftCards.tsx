@@ -11,9 +11,9 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Tag } from "@/lib/brand/components/Tag";
-import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
+import { fill } from "@/lib/words";
 
 import { DeleteButton } from "./DeleteRecord";
 import { newRequestId } from "./request-id";

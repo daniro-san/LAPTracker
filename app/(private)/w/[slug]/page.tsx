@@ -14,7 +14,6 @@ import { notFound } from "next/navigation";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { Spread } from "@/lib/brand/components/layout/Spread";
-import { fill } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -32,6 +31,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { thanksNudge } from "@/lib/private/thanks";
 import { serverDay } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";

@@ -2,9 +2,10 @@
 // exist (07c S1, S3b): "Before snapshot", "done", "partly done", "failed".
 import type { Clock } from "@/app/_ui/format";
 import { runAbandoned } from "@/lib/compute";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import type { ManualEventStatus, RunningSnapshot } from "@/lib/queries/admin";
 import { isGeneratedName, type ScheduledEvent } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import type { CurrentEventView, DailyFailedView, RoundView } from "./actions";
 

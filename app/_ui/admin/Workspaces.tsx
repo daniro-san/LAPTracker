@@ -3,7 +3,7 @@
 // "Send to LAPTracker" command in their servers; then the squads read's progress and its button (D117,
 // amendment 2026-11-19b).
 import { OWN_ALLIANCE_ID } from "@/config/alliances";
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { discordClock } from "@/lib/discord-format";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -14,6 +14,7 @@ import { adminFeatures, type AdminFeatures } from "@/lib/queries/workspace-featu
 import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
 import { quotaDayRead } from "@/lib/schedule";
 import { stopKind } from "@/lib/squads";
+import { fill } from "@/lib/words";
 import {
   newAllianceDefaults,
   resolveFeatures,

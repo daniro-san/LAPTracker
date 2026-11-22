@@ -2,11 +2,15 @@
 // closed, #573), a roll call mark that is kept, and Raid prep's "To mark", which counts the Shield mark only
 // (#590 F1); the drilldowns are in desk-drilldown.spec.ts. Expected figures are computed from the seed's rows (e2e/fixtures/seed.ts) and written with the
 // pages' formatter (`big`); none depends on the day the suite runs, except the dates, which follow it.
+import { randomUUID } from "node:crypto";
+
 import type { Page } from "@playwright/test";
 
+import { BASE_URL } from "./env";
 import { toLookOf } from "./fixtures/follow-up-list";
 import {
   ALLIANCES,
+  CARD_TALKED,
   calendarOf,
   cheeseOf,
   DAILY,
@@ -16,6 +20,7 @@ import {
   LEAVER,
   NEEDS_HELP,
   needsHelpDays,
+  NOTED,
   lastRosterDay,
   raidOf,
   rosterOf,
@@ -26,7 +31,18 @@ import {
   WALL_ONLY,
   weekLine,
 } from "./fixtures/seed";
-import { big, deskFrame, expect, hydrated, labelled, sees, signIn, test } from "./fixtures/test";
+import {
+  big,
+  deskFrame,
+  expect,
+  hydrated,
+  isolated,
+  labelled,
+  sees,
+  showMoreUntil,
+  signIn,
+  test,
+} from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const desk = `/w/${A.slug}`;
@@ -51,15 +67,19 @@ async function tapAndSave(page: Page, target: import("@playwright/test").Locator
   await (await saved).finished();
 }
 
-test("Home shows the alliance, its activity and its week line", async ({ page }) => {
+test("Home shows the alliance, its activity and its week line", async ({ page }, info) => {
   await page.goto(desk);
   await expect(page.getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
   await deskFrame(page, A);
-  // Recent activity: other tests' roll call marks land here too, so only what none of them changes is
-  // checked: the feed lists the officer's own actions (the seed's and the tests' writer is that officer).
+  // Recent activity: the seed's "All fine" on this project's card member, by its officer; the tests' own
+  // writes are newer, so it may be on a later page.
   const activity = page.getByRole("region", { name: "Recent activity" }).first();
-  await expect(activity.getByRole("listitem").first()).toBeVisible();
-  await sees(activity.getByRole("listitem").first(), "Officer LNK");
+  const fine = A.names[CARD_TALKED[info.project.name] as number] as string;
+  const noted = activity.getByRole("listitem").filter({
+    hasText: new RegExp(`^${isolated("Officer LNK")} noted ${isolated(fine)} is fine`),
+  });
+  await showMoreUntil(activity, noted);
+  await expect(noted).toHaveCount(1);
   // D146: every member at the coin cap yesterday, the median quest points, the week's donations.
   const w = weekLine(seededAt());
   const week = page.getByRole("region", { name: "Members this week" }).first();
@@ -72,15 +92,17 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   // Issue 585: Follow-up's numbers, linked to Follow-up, in a card of Home's main column before "Today and
   // tomorrow" (slice 4), and no longer in "Members this week". The seed gives everyone quest points and coins
   // at the cap (DAILY) and records no facts for its new members, so the list holds `toLookOf`
-  // (e2e/fixtures/follow-up-list.ts). The noted part races: the card test below, in this project and the
-  // other one running beside it, keeps a Talked on a member, so 0 or 1 is right at this moment; the exact
-  // rule is in follow-up-week.test.ts. The noted ones are a link of their own (desk-drilldown.spec.ts).
+  // (e2e/fixtures/follow-up-list.ts). The noted ones are CARD_TALKED's, whatever the card test below holds;
+  // they are a link of their own (desk-drilldown.spec.ts).
   const card = page.getByRole("region", { name: "Follow-up" });
   const n = toLookOf();
   const followUp = card.getByRole("link", {
     name: new RegExp(`^${n} members? to look at this week$`),
   });
   await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
+  await expect(
+    card.getByRole("link", { name: `${NOTED} already noted by officers`, exact: true }),
+  ).toBeVisible();
   const next = page.getByRole("region", { name: "Today and tomorrow" });
   const [cardBox, nextBox] = [await card.boundingBox(), await next.boundingBox()];
   expect(cardBox && nextBox && cardBox.y < nextBox.y).toBe(true);
@@ -99,8 +121,12 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
       .getByRole("button", { name: "Send screenshots" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: /waiting in “To review”/ })).toHaveCount(0);
+  // The server's clock cannot be moved (page.clock moves the browser's), so the day the suite runs picks the
+  // branch; thanks.test.ts covers the weekdays.
   if ([0, 1].includes(new Date(cal.today).getUTCDay())) {
     await sees(week, "Time for the weekly appreciation post");
+  } else {
+    await expect(page.getByText("Time for the weekly appreciation post")).toHaveCount(0);
   }
 
   // The line leads to Follow-up, which lists the marked member first, under "Needs help", with since when,
@@ -131,7 +157,7 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
 
 test("Members: a card opens from the list and stays closed once closed, after a reload too", async ({
   page,
-}) => {
+}, info) => {
   // A clock the test moves on: "a moment after closing" (#573) is then 1.5 s of the page's own time.
   await page.clock.install();
   await page.goto(`${desk}/members`);
@@ -146,7 +172,8 @@ test("Members: a card opens from the list and stays closed once closed, after a 
     "href",
     `/w/${A.slug}/follow-up`,
   );
-  const k = 3;
+  // Each project's own member (CARD_TALKED): the Talked below is theirs alone.
+  const k = CARD_TALKED[info.project.name] as number;
   const name = A.names[k] as string;
   // A member's line: a card in a list below 1024 px, a table row from 1024 px (D122); its name opens the card.
   const lineOf = (n: string) =>
@@ -187,15 +214,29 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   ).toBeVisible();
   const change = rosterOf("a", k).might - rosterOf("a", k, 7).might;
   await sees(card, `Might +${big(change)} since ${usDay(daysAgo(7))}`);
-  // Issue 516: "Talked to them" on the card records it; the card is read again and its week line names it.
-  // Both projects tap it for this member, so the line is the same whichever saved last.
-  const week = new RegExp(`^This week: Talked ${usDay(daysAgo(0))} · \\u2068?Officer LNK\\u2069?$`);
+  // Issue 516: "Talked to them" on the card records it; the card is read again and its week line names it
+  // instead of the seed's "All fine". The card's Undo puts the "All fine" back at once.
+  const today = usDay(daysAgo(0));
+  const fine = new RegExp(`^This week: All fine, ${today} · ${isolated("Officer LNK")}$`);
+  const week = new RegExp(`^This week: Talked ${today} · ${isolated("Officer LNK")}$`);
   const talked = card.getByRole("button", { name: "Talked to them" });
+  await expect(card.getByText(fine)).toBeVisible();
   await talked.click();
   await expect(card.getByRole("status").filter({ hasText: /^Saved\./ })).toBeVisible();
-  await expect(card.getByRole("button", { name: "Undo" })).toBeVisible();
   await expect(talked).toBeDisabled();
   await expect(card.getByText(week)).toBeVisible();
+  await card.getByRole("button", { name: "Undo" }).click();
+  await expect(card.getByRole("status").filter({ hasText: /^Undone\.$/ })).toBeVisible();
+  await expect(card.getByText(fine)).toBeVisible();
+  await expect(card.getByText(week)).toHaveCount(0);
+  await expect(talked).toBeEnabled();
+  // Tapped again, the Talked is kept after a reload (below), then undone there.
+  const path = `/api/w/${A.slug}/follow-up`;
+  const sent = page.waitForRequest((r) => r.url().endsWith(path) && r.method() === "POST");
+  await talked.click();
+  await expect(card.getByRole("status").filter({ hasText: /^Saved\./ })).toBeVisible();
+  await expect(card.getByText(week)).toBeVisible();
+  const { uid, requestId } = (await sent).postDataJSON() as { uid: number; requestId: string };
   // "Message to send" opens Follow-up's ready message with its two copies (D140).
   const message = card.getByRole("button", { name: "Message to send" });
   await message.click();
@@ -231,12 +272,29 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   await sees(page.locator("main"), `${ROSTER} of ${ROSTER} members`);
   await expect(page.getByRole("heading", { name, level: 2 })).toBeHidden();
-  // The Talked from the card is kept: the card opened again after the reload still names it (it opens on
-  // the last tab picked, Info, D136).
-  await hydrated(row);
-  await row.click();
-  await card.getByRole("tab", { name: "Overview" }).click();
+  // The Talked is kept: the card opened again after the reload names it (it opens on the last tab picked,
+  // Info, D136).
+  const reopen = async () => {
+    await hydrated(row);
+    await row.click();
+    await card.getByRole("tab", { name: "Overview" }).click();
+  };
+  await reopen();
   await expect(card.getByText(week)).toBeVisible();
+  // Put back: the card offers Undo only until it is read again from a new page, so this is the Undo it
+  // sends, for the record the tap made; after a reload the card names the seed's "All fine" again.
+  const undo = await page.request.post(path, {
+    headers: { origin: BASE_URL },
+    data: { uid, action: "undo", target: requestId, requestId: randomUUID() },
+  });
+  expect(undo.status()).toBe(200);
+  await card.getByRole("button", { name: "Close" }).click();
+  await expect(page).not.toHaveURL(/[?&]m=/);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  await reopen();
+  await expect(card.getByText(fine)).toBeVisible();
+  await expect(card.getByText(week)).toHaveCount(0);
 });
 
 test("Roll call: a mark shows at once, is kept after a reload and in the list, then clears", async ({

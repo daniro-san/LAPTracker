@@ -1,15 +1,37 @@
 // The words of the Insights page's "Effort at every might level" (issue 489), pure: what the groups rest on
 // and who is left out, the groups' members behind a tap once (#678: "Who is in each group", never beside a
 // median), and each measure's groups as the rows its HTML bars draw (D68). A missing number is "—" (NONE).
-import { fill } from "../copy";
+import { fill, plural } from "../words";
 import { calendarDates } from "./calendar-words";
 import { NONE } from "./fact-text";
 import type { InsightsView } from "./insights";
-import { compact, counted, whole, type Formats } from "./insights-format";
+import { compact, whole, type Formats } from "./insights-format";
 import { EFFORT_METRICS, EFFORT_MIN_READS } from "./insights-rules";
 import { setOf, type MemberSet } from "./insights-sets";
 import type { InsightsWords } from "./insights-words";
 import { COINS_MAX } from "./member-days";
+
+/** The members left out of the groups, by kind, with their words; empty kinds left out. */
+function leftOutOf(e: NonNullable<InsightsView["effort"]>, { t, language }: Formats) {
+  // Each kind's words and members: "1 new" and "2 new" (PT "1 novo", FR "1 nouveau") take their own form.
+  return (
+    [
+      [
+        fill(
+          plural(
+            e.leftOut.fresh.length,
+            { one: t["insights.effort.fresh.one"], other: t["insights.effort.fresh.other"] },
+            language,
+          ),
+          { n: e.leftOut.fresh.length },
+        ),
+        e.leftOut.fresh,
+      ],
+      [fill(t["insights.effort.away"], { n: e.leftOut.away.length }), e.leftOut.away],
+      [fill(t["insights.effort.noMight"], { n: e.leftOut.noMight.length }), e.leftOut.noMight],
+    ] as const
+  ).filter(([, uids]) => uids.length > 0);
+}
 
 export function effortWords(
   e: NonNullable<InsightsView["effort"]>,
@@ -18,27 +40,28 @@ export function effortWords(
 ): InsightsWords["effort"] {
   const { t, language } = f;
   const dates = calendarDates(language);
-  // Each kind's words and members: "1 new" and "2 new" (PT "1 novo", FR "1 nouveau") take their own form.
-  const left = (
-    [
-      [counted(t, "insights.effort.fresh", e.leftOut.fresh.length, language), e.leftOut.fresh],
-      [fill(t["insights.effort.away"], { n: e.leftOut.away.length }), e.leftOut.away],
-      [fill(t["insights.effort.noMight"], { n: e.leftOut.noMight.length }), e.leftOut.noMight],
-    ] as const
-  ).filter(([, uids]) => uids.length > 0);
+  const left = leftOutOf(e, f);
   const rangeLabel = (b: (typeof e.bands)[number]) =>
     fill(t["insights.effort.band"], {
       low: compact(b.low, language),
       high: compact(b.high, language),
     });
   const based = [
-    counted(t, "insights.effort.based", e.reads, language, {
-      range:
-        e.from === e.to
-          ? dates.dayMonth(e.to)
-          : `${dates.dayMonth(e.from)} – ${dates.dayMonth(e.to)}`,
-      members: e.members,
-    }),
+    fill(
+      plural(
+        e.reads,
+        { one: t["insights.effort.based.one"], other: t["insights.effort.based.other"] },
+        language,
+      ),
+      {
+        n: e.reads,
+        range:
+          e.from === e.to
+            ? dates.dayMonth(e.to)
+            : `${dates.dayMonth(e.from)} – ${dates.dayMonth(e.to)}`,
+        members: e.members,
+      },
+    ),
     ...(e.reads < EFFORT_MIN_READS ? [fill(t["insights.effort.few"], { n: e.reads })] : []),
     ...(left.length > 0
       ? [

@@ -1,8 +1,8 @@
 // Alliance settings → Features saves on Save (issue 585, F28; D134 amended 2026-11-22): a tick changes only the
 // draft; Save sends one POST per switch that differs from what is stored, one after another (the route takes
 // one switch and counts one `ws_action` per switch), and stops at the first refusal, keeping the rest.
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
+import { fill } from "@/lib/words";
 
 export interface SwitchChange {
   feature: string;

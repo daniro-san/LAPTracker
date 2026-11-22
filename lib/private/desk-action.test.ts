@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { analyticsPersonId } from "../analytics/person";
 import type { WorkspaceAccess } from "./access";
-import { counted } from "./desk-action";
+import { withActionEvent } from "./desk-action";
 
 const SECRET = "s".repeat(32);
 const ACCESS = {
@@ -17,17 +17,17 @@ const ACCESS = {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe("counted (D115, issue 452)", () => {
+describe("withActionEvent (D115, issue 452)", () => {
   it("sends feature, action, workspace and alliance on the officer's pseudonymous id for a success, nothing for a refusal", async () => {
     const fetcher = vi.fn<typeof fetch>(async () => new Response("{}"));
     const ctx = {
       env: { CRON_SECRET: SECRET, VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" },
       fetch: fetcher,
-    } as unknown as Parameters<typeof counted>[0];
+    } as unknown as Parameters<typeof withActionEvent>[0];
     // The refusal first: once the success's event is sent, one the refusal had queued would be too.
-    counted(ctx, ACCESS, "calendar", "add", Response.json({ code: "x" }, { status: 409 }));
+    withActionEvent(ctx, ACCESS, "calendar", "add", Response.json({ code: "x" }, { status: 409 }));
     const ok = Response.json({ ok: true });
-    expect(counted(ctx, ACCESS, "calendar", "add", ok)).toBe(ok);
+    expect(withActionEvent(ctx, ACCESS, "calendar", "add", ok)).toBe(ok);
     await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
     expect(fetcher).toHaveBeenCalledTimes(1);
     const sent = JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)) as {

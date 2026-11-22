@@ -3,14 +3,15 @@
 // number is "—" (NONE), drawn as the NoData mark; never 0. A count that stands for a set of members carries
 // that set (#678): its number is the length of the list the same function returned, and its names are in
 // name order with nothing beside them (D75).
-import { fill, isolate } from "../copy";
+import { isolate } from "../copy";
 import type { AllianceLabel } from "../repo/alliances";
+import { fill, plural } from "../words";
 import { calendarDates } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import { NONE } from "./fact-text";
 import type { InsightsView } from "./insights";
 import { effortWords } from "./insights-effort-words";
-import { compact, counted, percent, type Formats } from "./insights-format";
+import { compact, percent, type Formats } from "./insights-format";
 import {
   NEWCOMER_DAYS,
   TENURE_DAYS,
@@ -116,9 +117,14 @@ function pulseWords(v: NonNullable<InsightsView["pulse"]>, f: Formats): Insights
   const missing = v.days.filter((d) => d.pulse === null);
   const latest = read.at(-1);
   const based = [
-    counted(t, "insights.pulse.based", read.length, language, {
-      days: read.map((d) => dates.weekday(d.day)).join(", "),
-    }),
+    fill(
+      plural(
+        read.length,
+        { one: t["insights.pulse.based.one"], other: t["insights.pulse.based.other"] },
+        language,
+      ),
+      { n: read.length, days: read.map((d) => dates.weekday(d.day)).join(", ") },
+    ),
     ...(missing.length > 0
       ? [
           fill(t["insights.pulse.noRead"], {
@@ -157,7 +163,14 @@ function pulseWords(v: NonNullable<InsightsView["pulse"]>, f: Formats): Insights
         share: scaled(weeks[i]?.x ?? null, k, top),
         note:
           w.reads > 0
-            ? counted(t, "insights.pulse.days", w.reads, language)
+            ? fill(
+                plural(
+                  w.reads,
+                  { one: t["insights.pulse.days.one"], other: t["insights.pulse.days.other"] },
+                  language,
+                ),
+                { n: w.reads },
+              )
             : t["insights.pulse.noReadWeek"],
         current: i === v.weeks.length - 1,
       })),
@@ -249,7 +262,17 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
     !nc || nc.uids.length === 0
       ? [t["insights.newcomers.none"]]
       : [
-          counted(t, "insights.newcomers.count", nc.uids.length, language),
+          fill(
+            plural(
+              nc.uids.length,
+              {
+                one: t["insights.newcomers.count.one"],
+                other: t["insights.newcomers.count.other"],
+              },
+              language,
+            ),
+            { n: nc.uids.length },
+          ),
           nc.median
             ? fill(t["insights.newcomers.grew"], {
                 grew: nc.grew,
@@ -259,9 +282,14 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
             : t["insights.newcomers.noMight"],
         ];
   return {
-    based: counted(t, "insights.flow.based", flow.reads, language, {
-      date: dates.sentence(flow.from),
-    }),
+    based: fill(
+      plural(
+        flow.reads,
+        { one: t["insights.flow.based.one"], other: t["insights.flow.based.other"] },
+        language,
+      ),
+      { n: flow.reads, date: dates.sentence(flow.from) },
+    ),
     weeks: flow.weeks.map((w, i) => ({
       label:
         i === last

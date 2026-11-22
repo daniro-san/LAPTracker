@@ -11,8 +11,8 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { TURNOUT_MIN_GAINERS, TURNOUT_TOP } from "@/lib/compute";
-import { fill } from "@/lib/copy";
 import type { AllianceTurnout, TurnoutLists } from "@/lib/queries";
+import { fill } from "@/lib/words";
 
 import { DrilldownLink } from "./DrilldownLink";
 import { allianceLabel, shareText } from "./format";

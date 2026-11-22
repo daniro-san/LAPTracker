@@ -1,11 +1,12 @@
 // /admin's KvK opponent card (D152, issue 306): the next scheduled event and the 4 before it, each with its
 // opponent's server, tags, result and what the Start and End read of each tag. Read after the page's own
 // isAdmin() check. English only (D48).
-import { copy, fill } from "@/lib/copy";
+import { copy } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { adminKvk, type AdminKvkRead } from "@/lib/queries/admin-kvk";
 import { nextEvent } from "@/lib/schedule";
+import { fill } from "@/lib/words";
 
 import type { Clock } from "../format";
 import { KvkForm, type KvkChoice } from "./KvkForm";
