@@ -28,7 +28,7 @@ import {
 } from "./repo/roll-call";
 import { shieldReadings, type StoredReading } from "./repo/shield-checks";
 import { anyRoster } from "./repo/workspace-any-roster";
-import { passWindows, suggestionOf } from "./shield-check";
+import { fridayOf, passWindows, suggestionOf } from "./shield-check";
 
 /** One workspace and its own alliance (D71): its roll calls, facts and members only. */
 export interface FillScope {
@@ -36,8 +36,7 @@ export interface FillScope {
   unionId: number;
 }
 
-/** The Friday whose night the roll call of `day` prepares: that week's (Monday + 4). */
-export const fridayOf = (day: string) => addDays(mondayOf(day), 4);
+export { fridayOf };
 
 /** Each member's away note and On a break, as the roll call reads them (D103). */
 async function awayFacts(db: Db, workspaceId: number): Promise<Map<number, AwayFacts>> {

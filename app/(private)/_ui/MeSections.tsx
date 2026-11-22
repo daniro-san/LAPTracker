@@ -121,7 +121,7 @@ export function MeNeeded({
     <p className="py-2 text-body-sm">{t["me.needed.none"]}</p>
   ) : (
     <ul>
-      {view.needed.map(({ line, when }) => (
+      {view.needed.map(({ line, when, step }) => (
         <li key={line} className="border-t border-rule py-2 text-body-sm first:border-t-0">
           {when ? (
             <Ended
@@ -134,6 +134,7 @@ export function MeNeeded({
           ) : (
             line
           )}
+          {step && <span className="mt-1 block font-semibold">{step}</span>}
         </li>
       ))}
     </ul>

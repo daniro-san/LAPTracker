@@ -2,6 +2,7 @@
 // own data; changing the uid in a request reaches nobody else's; a link that waits for an officer shows
 // nothing private; a member who left the alliance sees nothing more; another workspace's session claims
 // nothing here. Invented workspaces, members and numbers only.
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -16,6 +17,7 @@ import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import {
   dailyReads,
   dailyRosters,
+  rollCallMarks,
   rollCalls,
   rollCallTeam,
   workspaces,
@@ -33,7 +35,7 @@ const ORIGIN = "https://laptracker.test";
 const ALPHA = 900_001;
 const BRAVO = 900_002;
 const t = WORKSPACE_DICTIONARIES.en;
-const at = { now: T0, zone: "Etc/GMT+2", language: "en" as const, t };
+const at = { now: T0, zone: "Etc/GMT+2", endRead: "16:15", language: "en" as const, t };
 
 let db: Db;
 const tokens: Record<string, string> = {};
@@ -159,12 +161,12 @@ async function post(path: "me" | "member-links", who: string, body: object, slug
   return { status: res.status, body: (await res.json()) as Record<string, unknown> };
 }
 
-/** What the page shows the session: its own data, or null when nothing private may be shown. */
-async function shown(who: string) {
+/** What the page shows the session at `now`: its own data, or null when nothing private may be shown. */
+async function shown(who: string, now = T0) {
   const board = await requireBoard(db, "alpha", { get: () => ({ value: tokens[who] ?? "" }) }, T0);
   if (!board.ok) throw new Error(board.reason);
   const me = meAccess(board);
-  return me && meView(db, me, at);
+  return me && meView(db, me, { ...at, now });
 }
 
 /** A member claims `uid`; an officer approves it (D142: every member's link waits for an officer). */
@@ -224,6 +226,32 @@ describe("a member's own page (D142, issue 471)", () => {
     // Removed: the page and its week close again.
     await post("member-links", "alpha:Rook", { action: "unlink", ...ana });
     expect(await values("alpha:Ana Invented")).toBeNull();
+  });
+
+  it("gives a member's Raid prep ✗ its next step until KvK, then only the record, Ended after the End read (issue 585)", async () => {
+    const [ws] = await db.select().from(workspaces).where(eq(workspaces.slug, "alpha"));
+    // Added by hand on KvK Saturday, with no time; the tracker's morning check marked Ana "No shield".
+    const [call] = await db
+      .insert(rollCalls)
+      .values({ workspaceId: ws?.id ?? 0, kind: "shield", day: "2026-11-07", week: "2026-11-02" })
+      .returning({ id: rollCalls.id });
+    const mark = { uid: 101, version: 1, mark: "no", writtenAt: T0, byTracker: true };
+    await db.insert(rollCallMarks).values({ rollCallId: call?.id ?? 0, ...mark });
+    await linked("alpha:Ana Invented", 101);
+    const line = "Raid prep, Sat, Nov 7 · your mark: “No shield”";
+    // KvK at 12:00 ST and its End read at 16:15 ST, Saturday 2026-11-07.
+    const when = {
+      at: Date.parse("2026-11-07T14:00:00Z"),
+      end: Date.parse("2026-11-07T18:15:00Z"),
+    };
+    // T0 is Sat 10:00 ST: after the reset, before KvK.
+    expect(await shown("alpha:Ana Invented")).toMatchObject({
+      needed: [
+        { line, when, step: "Next step: turn on your shield before KvK starts at 12:00 ST." },
+      ],
+    });
+    const evening = await shown("alpha:Ana Invented", new Date("2026-11-07T19:00:00Z")); // 17:00 ST
+    expect(evening).toMatchObject({ needed: [{ line, when, step: undefined }] });
   });
 
   it("never lets a false claim lock the real player out, or an answer reach a later claim", async () => {

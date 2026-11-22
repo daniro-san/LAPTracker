@@ -64,8 +64,27 @@ describe("server time and the viewer's own time (issue 300)", () => {
 
   it("ends an Elixir window after its 30 minutes and any other entry with its server day (issue 585)", () => {
     const iso = (ms: number) => new Date(ms).toISOString();
-    expect(iso(endOf("elixir", "2026-11-22", 18 * 60, SERVER))).toBe("2026-11-22T20:30:00.000Z");
-    expect(iso(endOf("kvk", "2026-11-21", 12 * 60, SERVER))).toBe("2026-11-22T02:00:00.000Z");
-    expect(iso(endOf("shield", "2026-11-21", null, SERVER))).toBe("2026-11-22T02:00:00.000Z");
+    expect(iso(endOf("elixir", "2026-11-22", 18 * 60, SERVER, "16:15"))).toBe(
+      "2026-11-22T20:30:00.000Z",
+    );
+    expect(iso(endOf("undead", "2026-11-21", 20 * 60, SERVER, "16:15"))).toBe(
+      "2026-11-22T02:00:00.000Z",
+    );
+  });
+
+  it("shows KvK Saturday's KvK and its Raid prep as Started at 15:00 ST and Ended at 17:00 ST, after the 16:15 ST End read", () => {
+    const at15 = Date.parse("2026-11-21T17:00:00Z"); // Sat 15:00 ST
+    const at17 = Date.parse("2026-11-21T19:00:00Z"); // Sat 17:00 ST
+    // The KvK entry starts at 12:00 ST; a Raid prep added by hand has no time of its own.
+    for (const [kind, minute] of [
+      ["kvk", 12 * 60],
+      ["shield", 12 * 60],
+      ["shield", null],
+    ] as const) {
+      const end = endOf(kind, "2026-11-21", minute, SERVER, "16:15");
+      expect(new Date(end).toISOString()).toBe("2026-11-21T18:15:00.000Z"); // Sat 16:15 ST
+      expect(at15).toBeLessThan(end); // "Started"
+      expect(at17).toBeGreaterThanOrEqual(end); // "Ended"
+    }
   });
 });

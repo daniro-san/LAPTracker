@@ -5,7 +5,8 @@
 // that day.
 import { fill } from "../copy";
 import type { OwnDay } from "../repo/me";
-import { addDays, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
+import { KVK_MINUTE, raidOf } from "../shield-check";
+import { addDays, DAY_MS, hhmm, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";
 import {
@@ -164,12 +165,38 @@ export interface Needed {
 export interface NeededLine {
   line: string;
   when: { at: number; end: number } | null;
+  /** What to do next, for a Raid prep ✗ still ahead of KvK ("Next step: turn on your shield …"). */
+  step?: string | undefined;
+}
+
+/**
+ * The next step for a Raid prep ✗ (D137): "No shield" or "On the wall", from the raid's eve (the day before)
+ * until the reset (00:00 ST, the raid's start), then until KvK starts; none before the eve or once KvK has
+ * started. Raid prep's own deadlines (`raidOf`) and words, said to the member (people first, D75: what to
+ * do, never a reproach).
+ */
+function stepOf(
+  m: Needed["marks"][number],
+  t: WorkspaceDictionary,
+  now: number,
+  raid: ReturnType<typeof raidOf>,
+): string | undefined {
+  if (m.mark !== "no") return undefined;
+  const what = m.part === "wall" ? "wall" : "shield";
+  const reset = raid.reset.getTime();
+  // From the raid's eve only, so "the reset" is always tonight's, never a later week's.
+  if (now < reset - DAY_MS) return undefined;
+  if (now < reset) return t[`me.step.${what}.reset`];
+  if (now < raid.kvk.getTime()) return fill(t[`me.step.${what}.kvk`], { time: hhmm(KVK_MINUTE) });
+  return undefined;
 }
 
 /**
  * The member's week in plain lines, the soonest first: Elixir team, caravan seats, roll call marks. A mark
- * reads "your mark: “Shield up”", a record and not an order (issue 585). `timeOf` gives each event's start
- * and end from its kind, day and time, so the page can say "Started" and "Ended".
+ * reads "your mark: “Shield up”", a record and not an order (issue 585); a Raid prep ✗ adds its next step
+ * while it is still ahead at `now`. A Raid prep counts from its raid (`raidOf`, as its own page does): its
+ * KvK Saturday, and KvK's start when it has no time of its own. `timeOf` gives each event's start and end
+ * from its kind, day and time, so the page can say "Started" and "Ended".
  */
 export function neededLines(
   n: Needed,
@@ -177,6 +204,7 @@ export function neededLines(
   t: WorkspaceDictionary,
   date: (day: string) => string,
   timeOf: (kind: string, day: string, minute: number | null) => { at: number; end: number },
+  clock: { now: number; zone: string },
 ): NeededLine[] {
   const seats = n.seats.map((s) => {
     const day = s.movedTo ?? addDays(week, weekdayIndex(s.planned));
@@ -185,6 +213,7 @@ export function neededLines(
       day,
       line: fill(t[`me.caravan.${seat}`], { day: date(day) }),
       when: timeOf("caravan", day, s.minute),
+      step: undefined,
     };
   });
   const marks = n.marks.map((m) => {
@@ -193,6 +222,7 @@ export function neededLines(
     const wall = m.part === "wall" && mark !== "assumed";
     // Squads off the wall says itself whole; "On the wall" is plain enough.
     const wallWord = mark === "yes" ? t["roll.prep.wall"] : t["roll.prep.wall.no"];
+    const raid = m.kind === "shield" ? raidOf(m.day, { SERVER_TZ: clock.zone }) : null;
     return {
       day: m.day,
       line: fill(t["me.mark"], {
@@ -200,7 +230,10 @@ export function neededLines(
         day: date(m.day),
         mark: wall ? wallWord : markWord(mark, kind, t),
       }),
-      when: timeOf(m.kind, m.day, m.minute),
+      when: raid
+        ? timeOf(m.kind, raid.saturday, m.minute ?? KVK_MINUTE)
+        : timeOf(m.kind, m.day, m.minute),
+      step: raid ? stepOf(m, t, clock.now, raid) : undefined,
     };
   });
   const team = n.team ? [{ line: fill(t["me.elixir"], { team: n.team }), when: null }] : [];
@@ -208,6 +241,6 @@ export function neededLines(
     ...team,
     ...[...seats, ...marks]
       .sort((a, b) => a.day.localeCompare(b.day))
-      .map(({ line, when }) => ({ line, when })),
+      .map(({ line, when, step }) => ({ line, when, step })),
   ];
 }

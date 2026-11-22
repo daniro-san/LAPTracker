@@ -19,9 +19,9 @@ import {
   type StoredReading,
 } from "../repo/shield-checks";
 import {
-  kvkStart,
   morningMinuteOf,
   passWindows,
+  raidOf,
   suggestionOf,
   type ShieldSuggestion,
 } from "../shield-check";
@@ -212,7 +212,8 @@ export async function prepView(
   opened: Opened,
   clock: { zone: string; now: Date; shieldChannel?: boolean },
 ): Promise<PrepView> {
-  const friday = fridayOf(opened.day);
+  // The same raid as a member's own page counts from (`raidOf`).
+  const { friday, reset, kvk: kvkAt } = raidOf(opened.day, { SERVER_TZ: clock.zone });
   const tracker = featureOn(access, "shield_check");
   const ids = opened.call ? [opened.call.id] : [];
   const [roster, facts, main, wall, settings, reads, check] = await Promise.all([
@@ -226,7 +227,6 @@ export async function prepView(
       : Promise.resolve({ night: [], morning: [] }),
     getShieldCheck(db, { day: friday, unionId: access.unionId }),
   ]);
-  const kvkAt = kvkStart(friday, { SERVER_TZ: clock.zone });
   const nightOf = new Map(reads.night.map((r) => [r.uid, r]));
   const morningOf = new Map(reads.morning.map((r) => [r.uid, r]));
   const mainOf = new Map(main.map((m) => [m.uid, m]));
@@ -246,7 +246,6 @@ export async function prepView(
     )
     .map(([uid]) => mainOf.get(uid)?.at.getTime() ?? 0);
   const uids = new Set(roster.map((m) => m.uid));
-  const reset = kvkAt.getTime() - 12 * 3_600_000;
   const counts = { night: countOf(uids, reads.night), morning: countOf(uids, reads.morning) };
   // Only the check still ahead of KvK has a state to infer from today's settings (review of PR 590).
   const current = clock.now.getTime() < kvkAt.getTime();
@@ -257,7 +256,7 @@ export async function prepView(
     morningMinute: morningMinuteOf(settings?.morningMinute),
     ...counts,
     members: roster.length,
-    when: clock.now.getTime() < reset ? "reset" : "kvk",
+    when: clock.now.getTime() < reset.getTime() ? "reset" : "kvk",
     ahead: current,
     rows,
     toCheckAt: toCheck.length > 0 ? Math.max(...toCheck) : null,
