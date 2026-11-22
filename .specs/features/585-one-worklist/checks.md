@@ -1,12 +1,12 @@
 # One worklist (#585 batch 3) checks
 
 Build: `pnpm typecheck`; `pnpm lint`
-Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
+Run unit: `pnpm vitest run lib/private/follow-up-week.test.ts lib/private/follow-up-help.test.ts lib/private/follow-up-rules.test.ts "app/(private)/_ui/follow-up-groups.test.ts" "app/(private)/_ui/CheckInLine.test.ts" "app/(private)/_ui/FollowUpWeek.test.ts" lib/private/dictionary.test.ts --reporter=verbose`
 Plan: `.specs/features/585-one-worklist/plan.md`
 
 profile: light
 
-22 checks in 2 slices built (S1 in PR 640: C1-C14; S2 in `feat/585-needs-help`: C15-C22; S3-S6 are later PRs and get their own checks) · 0 one-way doors · 0 open, of which 0 block
+23 checks in 2 slices built (S1 in PR 640: C1-C14; S2 in `feat/585-needs-help`: C15-C23; S3-S6 are later PRs and get their own checks) · 0 one-way doors · 1 open (S2 failure modes: the panel's refusal branch, accepted), of which 0 block
 
 ## Checks
 
@@ -68,7 +68,7 @@ Proof: run unit | ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs hel
 **C18** - A Talked last week neither takes a member off this week's list nor counts as noted; Home's and Members' numbers equal Follow-up's with the Needs help member counted (3 and 0), then 2 and 1 after an "All fine" this week (AC 25, AC 31)
 Proof: run unit | ✓ lib/private/follow-up-help.test.ts > Follow-up's Needs help group (#585 slice 2) > takes this week's list and Home's numbers from this week's records only, the Needs help group counted
 
-**C19** - The mark reads "Since {day} · added by {officer}" ("Since {day}" with no officer), last week's line "Last week: {officer} · {day}: {what}", each note in quotes; in French « » with no-break spaces and one before each colon (AC 24, AC 13, AC 27)
+**C19** - The mark reads "Since {day} · added by {officer}" ("Since {day}" with no officer), last week's line "Last week: {officer} · {day}: {what}" ("Last week: {day}: {what}" with no officer), each note in quotes; in French « » with no-break spaces and one before each colon (AC 24, AC 13, AC 27)
 Proof: run unit | ✓ lib/private/follow-up-rules.test.ts > Follow-up's Needs help in words (#585 slice 2) > says since when and who added the mark, last week's record as context, each officer's note in quotes
 
 **C20** - Every new key exists in EN, PT-BR and FR (AC 27)
@@ -79,6 +79,9 @@ Proof: `pnpm test:e2e e2e/desk.spec.ts -g "Home shows the alliance"`
 
 **C22** - At 360 × 780, "Needs help · 1" is the first group inside the first viewport with the row's mark, note and last week's line; the panel shows "No longer needs help" under "Why they’re on the list"; a tap says "Saved. Galen Thorne no longer needs help.", the group leaves, and stays gone after a reload; the card's header says since when, who and the note, light and dark (AC 11, AC 12, AC 30)
 Proof: walk - `s2-shots/followup-360-fold.png`, `followup-360-full.png`, `followup-360-dark-full.png`, `panel-360.png`, `cleared-360.png`, `card-360-light.png`, `card-360-dark.png`, `followup-1280-after-clear.png` (invented e2e seed, Sun 22 Nov)
+
+**C23** - A member marked Needs help who also has a reason is in the first group, "Needs help · 1", with "They stay here each week until someone taps “No longer needs help”." under its title and one row holding the mark, the note in quotes and the reason line; they are not under "Worth a hello", which holds the unmarked member alone (AC 11; Verifier findings 1 and 3)
+Proof: run unit | ✓ app/(private)/_ui/follow-up-groups.test.ts > Follow-up's groups (issue 585 slice 2) > puts a member marked Needs help first, with the mark and their reasons on one row, and not under Worth a hello
 
 ## Coverage
 
@@ -109,7 +112,7 @@ Proof: walk - `s2-shots/followup-360-fold.png`, `followup-360-full.png`, `follow
 S2 swept:
 
 - validation: existing - "No longer needs help" posts to the facts route, whose body schema (`FACT_CHANGE`) and member check are unchanged
-- failure modes: the clear's refusal (409) or failure says "Could not save. Try again." and reads the list again (walk C22 for the success path; the route's 409 is D80's, tested in its route test)
+- failure modes: Unresolved - the panel's refusal branch (409 or failure: "Could not save. Try again.", the list read again) has no test; the 409 itself is the facts route's, tested in its route test; the success path is walk C22 (Verifier finding 2, accepted)
 - idempotency: existing - a second clear with the same version is refused by D80's version check; nothing else is written
 - authorization: existing - the facts route and every read require the workspace session; `helpMarkRows` filters both selects by `workspace_id` (C16 reads one workspace's rows)
 - concurrency: existing - another officer's status change meanwhile is refused (409, D80), and the list is read again
@@ -121,7 +124,7 @@ S2 swept:
 ## Handoff
 
 - **Settled mid-build:** none from the owner; the plan review (panel, product, adversarial) changed "Done" to "Noted", renamed "Check in" to "Worth a hello", moved the counts first and kept the Noted card on the page with nobody noted
-- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (rounds 1 and 2, returned); Verifier at cb4928d5 (returned: FAIL on 5 proof gaps, closed in c9a1b963, one accepted); S2 (2026-11-22): officer panel with first-glance test, product strategy, adversarial (plan review, returned: all approve with changes, plan Validation (e) to (g))
+- **Dispatched:** officer panel + product persona (before, returned), adversarial (returned); first-glance after panel (rounds 1 and 2, returned); Verifier at cb4928d5 (returned: FAIL on 5 proof gaps, closed in c9a1b963, one accepted); S2 (2026-11-22): officer panel with first-glance test, product strategy, adversarial (plan review, returned: all approve with changes, plan Validation (e) to (g)); S2 Verifier at aa610160 (returned: FAIL on 4 proof gaps, no code bug; 3 closed with C23 and C19, 1 accepted)
 - **Boundary:** C1-C11 at the commit named in the handoff
 - **Abandoned:** "Done this week" (panel and adversarial MUST); one wide `followedUpSince` for every reader (adversarial SHOULD: the counts read uid, action and time only)
 - **Walked:** `585-worklist/after/` at 360 light and dark and 1280, EN, server clock Sat 21 Nov 16:30 ST, invented 585 seed
