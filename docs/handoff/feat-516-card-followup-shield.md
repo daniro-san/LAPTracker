@@ -107,4 +107,4 @@ Part of #516. Size M, planned with `/tlc-spec-lean`: `.specs/features/516-card-f
 - To screenshot a raid-time state locally, the e2e build can be started with a Node preload that moves `Date` (scratch only). A `class extends Date` preload failed under `next start` with "Date.parse is not a function"; a function wrapper that copies `now`, `parse` and `UTC` works.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/633
