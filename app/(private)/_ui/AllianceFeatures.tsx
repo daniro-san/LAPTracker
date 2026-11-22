@@ -142,6 +142,7 @@ export function AllianceFeatures({
         error={error}
         onSave={() => void save()}
         t={t}
+        language={language}
       />
     </section>
   );

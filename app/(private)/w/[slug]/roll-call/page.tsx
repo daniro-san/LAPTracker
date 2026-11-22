@@ -10,7 +10,7 @@ import type { WorkspaceAccess } from "@/lib/private/access";
 import { isDay, mondayOf, offsetLabel } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { archivedInWeek, archivedItems, weekItems } from "@/lib/private/roll-call-view";
-import { fill } from "@/lib/words";
+import { fill, plural } from "@/lib/words";
 
 import { AddRollCall } from "../../../_ui/AddRollCall";
 import { calendarWords, type CalendarSheetWords } from "../../../_ui/calendar-data";
@@ -143,12 +143,29 @@ async function listOf(
 }
 
 /** "2 archived roll calls this week ›", to the Archived list; nothing when none is. */
-function ArchivedHint({ slug, n, t }: { slug: string; n: number; t: WorkspaceDictionary }) {
+function ArchivedHint({
+  slug,
+  n,
+  t,
+  language,
+}: {
+  slug: string;
+  n: number;
+  t: WorkspaceDictionary;
+  language: string;
+}) {
   if (n === 0) return null;
   return (
     <p className="mt-3">
       <a href={`/w/${slug}/roll-call?archived=1`} className={LINK}>
-        {fill(t[n === 1 ? "roll.archived.week.one" : "roll.archived.week.other"], { n })}
+        {fill(
+          plural(
+            n,
+            { one: t["roll.archived.week.one"], other: t["roll.archived.week.other"] },
+            language,
+          ),
+          { n },
+        )}
       </a>
     </p>
   );
@@ -207,7 +224,7 @@ export default async function RollCallPage({
           ))}
         </ul>
       )}
-      <ArchivedHint slug={slug} n={page.data.archivedHere} t={t} />
+      <ArchivedHint slug={slug} n={page.data.archivedHere} t={t} language={language} />
       {!archived && (
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
           <AddRollCall slug={slug} day={day} words={words} />

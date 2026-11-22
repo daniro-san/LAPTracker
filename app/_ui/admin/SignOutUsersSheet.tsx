@@ -9,7 +9,7 @@ import { FIELD } from "@/lib/brand/components/controls";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { copy, isolate } from "@/lib/copy";
-import { fill } from "@/lib/words";
+import { fill, plural } from "@/lib/words";
 
 const s = copy.admin.workspaces.signOutUsers;
 /** Above this many people, the list gets a search field. */
@@ -42,11 +42,12 @@ function question(slug: string, choice: SignOutChoice, people: SignOutPerson[]):
       s.sessionsOnly,
     ];
   }
+  // /admin is English only (D48), so the English rule is the one that applies.
   const n = counts(people)[choice.scope];
   const ask = {
-    all: n === 1 ? s.onePerson : s.confirmAll,
-    officers: n === 1 ? s.oneOfficer : s.confirmOfficers,
-    members: n === 1 ? s.oneMember : s.confirmMembers,
+    all: plural(n, { one: s.onePerson, other: s.confirmAll }, "en"),
+    officers: plural(n, { one: s.oneOfficer, other: s.confirmOfficers }, "en"),
+    members: plural(n, { one: s.oneMember, other: s.confirmMembers }, "en"),
   }[choice.scope];
   const lines = [fill(ask, { slug, n }), s.sessionsOnly];
   return choice.scope === "members" ? lines : [...lines, fill(s.pinStays, { slug })];

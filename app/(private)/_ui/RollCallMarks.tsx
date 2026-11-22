@@ -273,6 +273,7 @@ export function RollCallMarks(props: RollCallMarksProps) {
         left={notSet.length}
         away={awayRows.length}
         words={words}
+        language={props.language}
         marks={marks}
         r={r}
         onRest={() => void r.rest(notSet.map((row) => row.uid))}

@@ -19,7 +19,7 @@ import { track, type RaidPrepSet, type RollCallSet } from "@/lib/analytics/event
 import { chip } from "@/lib/brand/components/controls";
 import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
-import { fill } from "@/lib/words";
+import { fill, plural } from "@/lib/words";
 
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";
@@ -87,12 +87,9 @@ const toCheck = (rows: MarkRowView[], m: Marks, w: Marks, p: TileProps) =>
 /** "n marks came from the tracker's reading at 23:31 ST. …" and "Checked". */
 function TrackerCheck(props: {
   n: number;
-  head: PrepHeadView;
-  words: RollSheetWords;
-  slug: string;
-  occasion: Occasion;
+  page: Pick<PageProps, "head" | "words" | "language" | "slug" | "occasion">;
 }) {
-  const { head, words } = props;
+  const { head, words, language, slug, occasion } = props.page;
   const router = useRouter();
   // The time it checked up to: a later fill's newer marks bring the notice back on an open page.
   const [done, setDone] = useState<number | null>(null);
@@ -102,14 +99,18 @@ function TrackerCheck(props: {
   const { st, at } = head.check;
   const checked = async () => {
     setBusy(true);
-    const body = { action: "check", occasion: props.occasion, seen: at };
-    const { status } = await sendRoll(props.slug, body);
+    const body = { action: "check", occasion, seen: at };
+    const { status } = await sendRoll(slug, body);
     setBusy(false);
     if (status !== 200) return setFailed(status === 401 ? SIGNED_OUT : words["roll.failed"]);
     setDone(at);
     router.refresh();
   };
-  const text = props.n === 1 ? words["roll.prep.check.one"] : words["roll.prep.check"];
+  const text = plural(
+    props.n,
+    { one: words["roll.prep.check.one"], other: words["roll.prep.check"] },
+    language,
+  );
   return (
     <section role="status" className="drawn-card mt-3 px-3 py-2">
       <p className="text-body-sm font-semibold">{fill(text, { n: props.n, time: st })}</p>
@@ -239,13 +240,7 @@ export function RaidPrepMarks(props: PageProps) {
         undo={r.undoable && !r.fresh ? () => void r.undo() : null}
         more={prepNotes(props.head, words)}
       />
-      <TrackerCheck
-        n={toCheck(asked, m, w, props)}
-        head={props.head}
-        words={words}
-        slug={props.slug}
-        occasion={props.occasion}
-      />
+      <TrackerCheck n={toCheck(asked, m, w, props)} page={props} />
       <RemindBar
         rows={remind}
         language={props.language}
@@ -276,6 +271,7 @@ export function RaidPrepMarks(props: PageProps) {
         away={awayRows.length}
         offer={offerRest}
         words={words}
+        language={props.language}
         marks={marks}
         r={r}
         onRest={() => void r.rest(rest.map((row) => row.uid))}

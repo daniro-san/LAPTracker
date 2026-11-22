@@ -39,6 +39,7 @@ const f: DaysFormats = {
   date: (day) => card.date(day),
   weekday: (day) => day,
   dayOfMonth: (day) => day.slice(8),
+  language: "en",
 };
 
 // Nov 13–19: no read on the 15th, the 16th does not list member 1, the 17th lists them with nothing sent.

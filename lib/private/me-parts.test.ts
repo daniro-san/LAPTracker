@@ -14,6 +14,7 @@ const f = {
   date: (day: string) => day,
   weekday: (day: string) => day.slice(8),
   dayOfMonth: (day: string) => String(Number(day.slice(8))),
+  language: "en",
 };
 
 const day = (d: string, active: unknown, power: number | null = 1000, listed = true): OwnDay => ({

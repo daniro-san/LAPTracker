@@ -221,6 +221,7 @@ function Draft(props: {
         slug={props.slug}
         view={view}
         w={importWords(t)}
+        language={language}
         kinds={props.kinds}
         saveKinds={SAVED_KINDS}
         text={reviewText(view, t, language)}

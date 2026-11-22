@@ -2,7 +2,7 @@
 // pastes into in-game mail to a player of our own server who took from our members. The player's language
 // is not known, so the message is made in English, Portuguese and French at once, whatever the officer's
 // own language. Polite and factual (D75): what was reported, that we share a server, and what to do instead.
-import { fill } from "../words";
+import { fill, plural } from "../words";
 
 export const WARNING_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WarningLanguage = (typeof WARNING_LANGUAGES)[number];
@@ -53,9 +53,9 @@ export interface WarningInput {
 
 /** The warning in each language: a greeting, what was reported (and when, if known), and the request. */
 export function theftWarnings(input: WarningInput): Record<WarningLanguage, string> {
-  const one = input.count === 1;
   const made = (language: WarningLanguage) => {
     const t = TEXT[language];
+    const one = plural(input.count, { one: true, other: false }, language);
     const day = input.lastAt
       ? new Intl.DateTimeFormat(language, {
           day: "numeric",
