@@ -55,4 +55,4 @@
 - Plan entries that change what a number means go under `## Changed` in docs/analytics/tracking-plan.md, dated.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/601
