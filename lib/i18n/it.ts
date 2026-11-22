@@ -421,6 +421,8 @@ export const itIT = {
     lowFirst: "Prima i più bassi",
     joined: "Entrati",
     left: "Usciti",
+    joinedReads: "Nell’elenco dei Members a Fine ({to}), non a Inizio ({from}).",
+    leftReads: "Nell’elenco dei Members a Inizio ({from}), non a Fine ({to}).",
   },
   leadership: {
     title: "Comando",

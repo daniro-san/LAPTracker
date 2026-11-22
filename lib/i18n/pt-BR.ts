@@ -418,6 +418,8 @@ export const ptBR = {
     lowFirst: "Menor primeiro",
     joined: "Entraram",
     left: "Saíram",
+    joinedReads: "Na lista de membros no Fim ({to}), não no Início ({from}).",
+    leftReads: "Na lista de membros no Início ({from}), não no Fim ({to}).",
   },
   leadership: {
     title: "Liderança",

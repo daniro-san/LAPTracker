@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canCompare,
+  filterFromUrl,
   filterMembers,
   leadership,
   memberViews,
@@ -33,7 +34,14 @@ describe("filterMembers", () => {
     member(4, "Dana", 70, null),
   ];
   const steps = mightSteps(members); // [30, 60, 70, 80]
-  const all: MemberFilter = { sort: "might", desc: true, name: "", lo: 0, hi: steps.length - 1 };
+  const all: MemberFilter = {
+    sort: "might",
+    desc: true,
+    name: "",
+    show: "",
+    lo: 0,
+    hi: steps.length - 1,
+  };
   const names = (f: Partial<MemberFilter>, canDelta = true) =>
     filterMembers(members, { ...all, ...f }, steps, canDelta).map((m) => m.name);
 
@@ -45,6 +53,37 @@ describe("filterMembers", () => {
   it("sorts by change with members without one last, flips on desc, and searches names", () => {
     expect(names({ sort: "mightDelta" })).toEqual(["Ann", "Bob", "Cid", "Dana"]);
     expect(names({ sort: "name", desc: false, name: "a" })).toEqual(["Ann", "Dana"]);
+  });
+});
+
+describe("filterFromUrl", () => {
+  const usable = { canDelta: true, compared: true };
+  // One stayed, two joined, one left.
+  const roster: Pick<MemberView, "status">[] = [
+    { status: "" },
+    { status: "joined" },
+    { status: "joined" },
+    { status: "left" },
+  ];
+  const url = (q: { show?: string; sort?: string }, mode = usable, members = roster) =>
+    filterFromUrl(q, mode, members);
+
+  it("opens Joined or Left from the URL only when both sides are usable, never against a stale side or one roster", () => {
+    expect(url({ show: "left" }).show).toBe("left");
+    expect(url({ show: "left" }, { canDelta: false, compared: true }).show).toBe("");
+    expect(url({ show: "joined" }, { canDelta: true, compared: false }).show).toBe("");
+    expect(url({ show: "renamed" }).show).toBe("");
+  });
+
+  it("ignores Joined or Left from the URL when nobody joined or left, so the list never opens empty", () => {
+    expect(url({ show: "left" }, usable, [{ status: "" }, { status: "joined" }]).show).toBe("");
+    expect(url({ show: "joined" }, usable, [{ status: "" }]).show).toBe("");
+  });
+
+  it("sorts as the URL says, highest first, but not by a change the list cannot show", () => {
+    expect(url({ sort: "killsDelta" })).toEqual({ show: "", sort: "killsDelta", desc: true });
+    expect(url({ sort: "killsDelta" }, { canDelta: false, compared: false }).sort).toBe("might");
+    expect(url({ sort: "nonsense" }).sort).toBe("might");
   });
 });
 

@@ -405,6 +405,8 @@ export const th = {
     lowFirst: "ต่ำไปสูง",
     joined: "เข้า",
     left: "ออก",
+    joinedReads: "อยู่ในรายชื่อสมาชิกตอนสิ้นสุด ({to}) ไม่อยู่ตอนเริ่ม ({from})",
+    leftReads: "อยู่ในรายชื่อสมาชิกตอนเริ่ม ({from}) ไม่อยู่ตอนสิ้นสุด ({to})",
   },
   leadership: {
     title: "ผู้นำ",

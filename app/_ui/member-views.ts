@@ -1,7 +1,7 @@
 // Both rosters of an alliance merged by uid for the member table (plan Phase 5c), with each member's
 // ledger rank by might inside the alliance in each roster (Phase 5e), and the member filter's rules:
-// sort by one figure, a might range picked on the roster's own steps, a name search.
-import { rankBy, rosterDiff } from "@/lib/compute";
+// sort by one figure, a might range picked on the roster's own steps, a name search, joined or left only.
+import { killsGain, rankBy, rosterDiff } from "@/lib/compute";
 import type { MemberRow, Role } from "@/lib/queries";
 
 type Stats = { power: number | null; kills: number | null; lv: number | null };
@@ -114,6 +114,14 @@ export function withRoles(views: MemberView[], before: Roles, after: Roles): Mem
   return views.map((m) => ({ ...m, role: (m.after ? after : before).get(m.uid) ?? null }));
 }
 
+/** An event's two rosters as the member list shows them: merged by uid, with each member's role. */
+export const viewsOf = (d: {
+  membersBefore: MemberRow[];
+  membersAfter: MemberRow[];
+  rolesBefore: Roles;
+  rolesAfter: Roles;
+}) => withRoles(memberViews(d.membersBefore, d.membersAfter), d.rolesBefore, d.rolesAfter);
+
 /** The R5 leader first, then the titled officers by might, highest first. */
 export function leadership(views: MemberView[]): MemberView[] {
   const leaders = views.filter((m) => m.role?.kind === "leader");
@@ -121,16 +129,33 @@ export function leadership(views: MemberView[]): MemberView[] {
   return [...leaders, ...officers.sort((a, b) => mightOf(b) - mightOf(a))];
 }
 
-export type SortKey = "might" | "mightDelta" | "kills" | "killsDelta" | "lv" | "name";
+export const SORT_KEYS = ["might", "mightDelta", "kills", "killsDelta", "lv", "name"] as const;
+export type SortKey = (typeof SORT_KEYS)[number];
+/** The sorts by a change between the two rosters: offered only when both exist. */
+export const CHANGE_SORTS: readonly SortKey[] = ["mightDelta", "killsDelta"];
+
+/** Joined or Left only (`show=` in the URL, as member history); "" keeps everyone. */
+export type MemberShow = "" | "joined" | "left";
 
 export interface MemberFilter {
   sort: SortKey;
   desc: boolean;
   name: string;
+  show: MemberShow;
   /** Indexes into `mightSteps(members)`: the range's low and high ends. */
   lo: number;
   hi: number;
 }
+
+/** Everyone, by might, highest first, over the roster's whole might range. */
+export const plainFilter = (steps: number[]): MemberFilter => ({
+  sort: "might",
+  desc: true,
+  name: "",
+  show: "",
+  lo: 0,
+  hi: steps.length - 1,
+});
 
 /** A member's might now: the after roster's, or the before roster's for one who left. */
 export const mightOf = (m: MemberView) => (m.after ?? m.before)?.power ?? 0;
@@ -152,13 +177,17 @@ export function change(
   return canDelta ? gap(m.before?.[field], m.after?.[field]) : null;
 }
 
+/** The kills gain War turnout counts (`killsGain`, a null as 0, D15), so its gainers are the first rows. */
+const killsOrder = (m: MemberView, canDelta: boolean) =>
+  canDelta && m.before && m.after ? killsGain(m.before.kills, m.after.kills) : null;
+
 function sortValue(m: MemberView, key: SortKey, canDelta: boolean): number | string {
   const now = m.after ?? m.before;
   const values: Record<SortKey, number | string | null | undefined> = {
     might: now?.power,
     mightDelta: change(m, "power", canDelta),
     kills: now?.kills,
-    killsDelta: change(m, "kills", canDelta),
+    killsDelta: killsOrder(m, canDelta),
     lv: now?.lv,
     name: m.name.toLowerCase(),
   };
@@ -176,10 +205,43 @@ export function filterMembers(
   const text = f.name.trim().toLowerCase();
   const sign = f.desc ? -1 : 1;
   return members
-    .filter((m) => mightOf(m) >= lo && mightOf(m) <= hi && m.name.toLowerCase().includes(text))
+    .filter(
+      (m) =>
+        mightOf(m) >= lo &&
+        mightOf(m) <= hi &&
+        m.name.toLowerCase().includes(text) &&
+        (f.show === "" || m.status === f.show),
+    )
     .sort((a, b) => {
       const x = sortValue(a, f.sort, canDelta);
       const y = sortValue(b, f.sort, canDelta);
       return x < y ? -sign : x > y ? sign : 0;
     });
 }
+
+/**
+ * The list's start from the page's URL: `show=joined|left` only when the two rosters can be compared with
+ * both sides usable (no change against a stale side, REVIEW item 1) and someone is in that set (an empty
+ * list would have no chip to clear it), `sort=` only a sort the list offers. Anything else is ignored: the
+ * list opens as it always does.
+ */
+export function filterFromUrl(
+  params: { show?: string | string[] | null | undefined; sort?: string | string[] | undefined },
+  mode: { canDelta: boolean; compared: boolean },
+  members: readonly Pick<MemberView, "status">[],
+): Pick<MemberFilter, "show" | "sort" | "desc"> {
+  const asked = params.show === "joined" || params.show === "left";
+  const show =
+    asked && mode.canDelta && mode.compared && members.some((m) => m.status === params.show);
+  const sort = SORT_KEYS.find((k) => k === params.sort);
+  const offered = sort !== undefined && (mode.compared || !CHANGE_SORTS.includes(sort));
+  const key = offered ? sort : "might";
+  return { show: show ? (params.show as MemberShow) : "", sort: key, desc: key !== "name" };
+}
+
+/** The id of the alliance page's member list heading, where every drilldown lands. */
+export const MEMBERS_ID = "members";
+
+/** An alliance page's member list with Joined or Left on, or sorted by one figure: a drilldown's target. */
+export const drillHref = (page: string, q: { show: "joined" | "left" } | { sort: SortKey }) =>
+  `${page}?${new URLSearchParams(q).toString()}#${MEMBERS_ID}`;

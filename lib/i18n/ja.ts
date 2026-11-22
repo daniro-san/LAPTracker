@@ -412,6 +412,8 @@ export const ja = {
     lowFirst: "低い順",
     joined: "加入",
     left: "脱退",
+    joinedReads: "終了時（{to}）のメンバー一覧にいて、開始時（{from}）にはいません。",
+    leftReads: "開始時（{from}）のメンバー一覧にいて、終了時（{to}）にはいません。",
   },
   leadership: {
     title: "指導部",

@@ -402,6 +402,8 @@ export const zhCN = {
     lowFirst: "从低到高",
     joined: "加入",
     left: "离开",
+    joinedReads: "在结束（{to}）的成员名单中，不在开始（{from}）的名单中。",
+    leftReads: "在开始（{from}）的成员名单中，不在结束（{to}）的名单中。",
   },
   leadership: {
     title: "领导层",

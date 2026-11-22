@@ -362,6 +362,8 @@ export const sv = {
     lowFirst: "Lägst först",
     joined: "Gick med",
     left: "Lämnade",
+    joinedReads: "I medlemslistan vid Slut ({to}), inte vid Början ({from}).",
+    leftReads: "I medlemslistan vid Början ({from}), inte vid Slut ({to}).",
   },
   leadership: {
     title: "Ledning",

@@ -9,7 +9,7 @@ import type { EventTotals } from "@/lib/queries/events";
 import type { MemberShare } from "@/lib/queries/rosters";
 
 import type { RankPair } from "./DetailLines";
-import { joinedText, leftText, membersLostText } from "./format";
+import { membersLostText } from "./format";
 import type { MetricSplit } from "./SplitMark";
 import type { StatMetric } from "./StatTable";
 
@@ -61,15 +61,15 @@ function metric(
   before: number | null,
   after: number | null,
   delta: number | null,
-  note?: string,
 ): StatMetric {
-  return { label, value: after ?? before, delta, base: before, ...(note ? { note } : {}) };
+  return { label, value: after ?? before, delta, base: before };
 }
 
-/** `+3 joined · −1 left`, only when people both joined and left: otherwise the change says it all. */
-function rosterNote(change: RosterChange | undefined, copy: Dictionary): string | undefined {
-  if (!change || change.joined === 0 || change.left === 0) return undefined;
-  return `${joinedText(change.joined, copy)} · ${leftText(change.left, copy)}`;
+/** `+3 joined · −1 left` (StatTable writes and links it), only when people both joined and left: otherwise
+ * the change says it all. */
+function rosterNote(change: RosterChange | undefined): Pick<StatMetric, "roster"> {
+  if (!change || change.joined === 0 || change.left === 0) return {};
+  return { roster: { joined: change.joined, left: change.left } };
 }
 
 /** A falling total with members gone: the cause the `*` mark and its legend item name. */
@@ -137,13 +137,10 @@ function metricsFor(
       ...markOf(d?.kills, change, (c) => c.kills),
       detailNote: killNote(d?.kills ?? null, change, copy),
     },
-    metric(
-      copy.ledger.members,
-      b.members,
-      a.members,
-      d ? gap(b.members, a.members) : null,
-      d ? rosterNote(change, copy) : undefined,
-    ),
+    {
+      ...metric(copy.ledger.members, b.members, a.members, d ? gap(b.members, a.members) : null),
+      ...(d ? rosterNote(change) : {}),
+    },
   ];
 }
 

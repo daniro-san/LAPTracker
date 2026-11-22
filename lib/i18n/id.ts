@@ -421,6 +421,8 @@ export const idID = {
     lowFirst: "Terendah dulu",
     joined: "Masuk",
     left: "Keluar",
+    joinedReads: "Di daftar anggota pada Akhir ({to}), bukan pada Awal ({from}).",
+    leftReads: "Di daftar anggota pada Awal ({from}), bukan pada Akhir ({to}).",
   },
   leadership: {
     title: "Pimpinan",

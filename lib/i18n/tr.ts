@@ -420,6 +420,8 @@ export const tr = {
     lowFirst: "Önce düşük",
     joined: "Katıldı",
     left: "Ayrıldı",
+    joinedReads: "Bitiş ({to}) itibarıyla üye listesinde, Başlangıç ({from}) itibarıyla değil.",
+    leftReads: "Başlangıç ({from}) itibarıyla üye listesinde, Bitiş ({to}) itibarıyla değil.",
   },
   leadership: {
     title: "Liderlik",

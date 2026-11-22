@@ -8,6 +8,7 @@ import {
   ALLIANCES,
   boardOf,
   calendarOf,
+  changedAtLastEvent,
   endOf,
   eventTotals,
   lastRosterDay,
@@ -175,4 +176,62 @@ test("an event with a KvK opponent shows both servers at the Start and from Star
   await sees(theirChange, `Kills gained +${big(sum(end, 1) - sum(start, 1))}`);
   await noErrorOrEmpty(page);
   expect(await sideways(page)).toBe(false);
+});
+
+test("tapping a ledger row's joined count opens the alliance's member list with exactly those members", async ({
+  page,
+}) => {
+  await page.goto("/events/2");
+  const joined = changedAtLastEvent("a", "joined");
+  await ledgerRow(page, A)
+    .getByRole("link", { name: `+${joined.length} joined`, exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/events\/2\/alliances\/\d+\?show=joined#members$/);
+  await expect(page.getByRole("heading", { level: 1, name: `[${A.tag}] ${A.name}` })).toBeVisible();
+  const list = page.getByRole("region", { name: "Members" });
+  await expect(list.getByRole("button", { name: `Joined (${joined.length})` })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await sees(list, `${joined.length} shown`);
+  await expect(list.getByRole("listitem")).toHaveCount(joined.length);
+  for (const name of joined) {
+    await expect(list.getByRole("link", { name, exact: true })).toBeVisible();
+  }
+  // Tapping the chip again shows everyone (both rosters together: every seeded name), and the address drops
+  // the filter.
+  await list.getByRole("button", { name: `Joined (${joined.length})` }).click();
+  await expect(page).toHaveURL(/\/events\/2\/alliances\/\d+#members$/);
+  await expect(list.getByRole("listitem")).toHaveCount(A.names.length);
+  await noErrorOrEmpty(page);
+  expect(await sideways(page)).toBe(false);
+});
+
+test("the alliance page's split opens Joined again after the list went back to All", async ({
+  page,
+}) => {
+  await page.goto(`/events/2/alliances/${A.unionId}`);
+  const joined = changedAtLastEvent("a", "joined");
+  const list = page.getByRole("region", { name: "Members" });
+  const chip = list.getByRole("button", { name: `Joined (${joined.length})` });
+  const split = page.locator("details", {
+    hasText: "Includes member changes: show the split, Might",
+  });
+  // The split's "Came in with" line links to this same page, so the list is not remounted by it.
+  const openJoined = async () => {
+    await hydrated(split);
+    await split.locator("summary").click();
+    await split.getByRole("link", { name: `Came in with ${joined.length} who joined` }).click();
+    await expect(page).toHaveURL(/\?show=joined#members$/);
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expect(list.getByRole("listitem")).toHaveCount(joined.length);
+  };
+  await openJoined();
+  await chip.click();
+  await expect(list.getByRole("listitem")).toHaveCount(A.names.length);
+  await openJoined();
+  for (const name of joined) {
+    await expect(list.getByRole("link", { name, exact: true })).toBeVisible();
+  }
+  await noErrorOrEmpty(page);
 });
