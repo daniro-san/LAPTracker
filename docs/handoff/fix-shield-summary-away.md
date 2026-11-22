@@ -82,4 +82,4 @@ Branch `fix/shield-summary-away` from `origin/dev` (3ed4302d). **Size S**: a bug
 - `CallView.loaded` carries the roster and facts `callView` read. Strip it before the view goes further, as `readMark` does.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/624
