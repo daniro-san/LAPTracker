@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 
 import { factRows } from "./seed-facts";
-import { helpDays, needsHelpRows } from "./seed-help";
+import { helpDays, needsHelpRows, selfReportRows } from "./seed-help";
 import {
   ALLIANCES,
   AVATAR_SENTINEL,
@@ -309,12 +309,13 @@ function workspaceRows(): string[] {
   // A workspace per filler alliance, with its officer's session, for the feature-switch test.
   for (let r = 0; r < REPEATS; r++) {
     const w = switchWorkspaceOf(r);
-    const user = 5 + r;
     lines.push(
       `insert into workspaces (id, slug, union_id, discord_guild_id, leader_role_ids, member_role_ids) values (${w.id}, '${w.slug}', ${w.unionId}, '70000000000000010${w.id}', '{70000000000000020${w.id}}', '{70000000000000030${w.id}}');`,
       `insert into workspace_features (workspace_id, switches) values (${w.id}, '{}');`,
-      `insert into workspace_users (id, workspace_id, discord_user_id, display_name, allowlisted, last_login_at) values (${user}, ${w.id}, '70000000000000040${user}', 'Officer ${w.tag}', true, now());`,
-      `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ('${hash(w.token)}', ${w.id}, ${user}, now(), now() + interval '6 days', now(), 'officer');`,
+      `insert into workspace_users (id, workspace_id, discord_user_id, display_name, allowlisted, last_login_at) values (${5 + r}, ${w.id}, '70000000000000040${5 + r}', 'Officer ${w.tag}', true, now());`,
+      `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ('${hash(w.token)}', ${w.id}, ${5 + r}, now(), now() + interval '6 days', now(), 'officer');`,
+      // D154: the member who sends their own time zone from Me.
+      ...selfReportRows(r, hash),
     );
   }
   return lines;

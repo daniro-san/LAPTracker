@@ -9,6 +9,7 @@ import { authAttempts, workspaces, workspaceUsers } from "../schema";
 import { workspaceTombstones } from "../schema-retention";
 import { allianceLabelOf } from "./alliances";
 import { DAY_KEY_PREFIX } from "./auth-attempts";
+import { selfReportLimitKey } from "./self-reports";
 import { ownedBy, WORKSPACE_TABLES } from "./workspace-data";
 
 /** The grace period: everyone keeps access, can download, and any officer can cancel. */
@@ -92,6 +93,7 @@ export async function purgeWorkspace(db: Db, id: number, now: Date): Promise<num
       exportLimitKey(w.id),
       `keytest:ws:${w.id}`,
       ...users.map((u) => `keytest:user:${u.id}`),
+      ...users.map((u) => selfReportLimitKey(u.id)),
     ];
     await tx.delete(authAttempts).where(inArray(authAttempts.key, counters));
     await tx.delete(workspaces).where(eq(workspaces.id, w.id));

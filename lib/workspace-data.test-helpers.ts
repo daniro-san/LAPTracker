@@ -12,6 +12,7 @@ import {
   dailyRosters,
   garrisonPlans,
   memberFacts,
+  memberSelfReports,
   nameAliases,
   pendingMembers,
   workspaces,
@@ -110,6 +111,17 @@ export async function seedEverything(
     value: "Kind and steady",
     source: "officer",
     writtenBy: officer,
+    writtenAt: SEED_AT,
+  });
+  // D154: what a member sent about themselves (here the officer's own link, the one user seeded).
+  await db.insert(memberSelfReports).values({
+    workspaceId: ws,
+    userId: officer,
+    uid: 101,
+    field: "timeZone",
+    value: "Europe/Lisbon",
+    version: 1,
+    requestId: `self-${ws}`,
     writtenAt: SEED_AT,
   });
   await db.insert(pendingMembers).values([

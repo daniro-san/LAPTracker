@@ -40,8 +40,8 @@ const PG_INT_MAX = 2_147_483_647;
 const text = (max: number) => z.string().trim().max(max);
 const DAY = z.string().refine(isDay);
 
-/** Each field's value; null clears it. */
-const VALUES = {
+/** Each field's value; null clears it. A member's own report (D154) takes the same values. */
+export const FACT_VALUES = {
   squadMight: z.number().int().min(0).max(1e11),
   adTech: z.number().min(0).max(100),
   troopTier: z.number().int().min(1).max(TIER_MAX),
@@ -61,7 +61,7 @@ const change = <F extends FactField>(field: F) =>
       field: z.literal(field),
       /** The version the officer saw; 0 when the field had none. */
       version: z.number().int().min(0),
-      value: VALUES[field].nullable(),
+      value: FACT_VALUES[field].nullable(),
       source: z.enum(["message", "officer"]),
     })
     .strict();
@@ -174,6 +174,7 @@ async function saveOne(
   c: FactChange,
   now: Date,
   zone: string | undefined,
+  source: FactSource,
 ): Promise<ChangeResult> {
   const where = [db, access.workspaceId, uid, c.field] as const;
   const newest = await factVersion(...where, "newest");
@@ -190,9 +191,9 @@ async function saveOne(
     status = "merged";
   }
   const row = { workspaceId: access.workspaceId, uid, field: c.field, version: current + 1 };
-  const written = { value, source: c.source, writtenBy: access.user.id, writtenAt: now };
+  const written = { value, source, writtenBy: access.user.id, writtenAt: now };
   if (await insertFact(db, { ...row, ...written })) {
-    return { field: c.field, status, version: current + 1, value, source: c.source };
+    return { field: c.field, status, version: current + 1, value, source };
   }
   // Another officer saved this field between the read and the write.
   return refused(c.field, (await factVersion(...where, "newest")) as FactRow);
@@ -223,6 +224,23 @@ export async function saveFacts(
 ): Promise<ChangeResult[] | null> {
   if (!(await mayHaveFacts(db, access, uid))) return null;
   const results: ChangeResult[] = [];
-  for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone));
+  for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone, c.source));
   return results;
+}
+
+/**
+ * An officer's "Put on the card" of what a member sent about themselves (D154): the next version of that
+ * fact with source `member`, by D80's rule (`version` is the fact version the officer saw). Null when the
+ * uid is not in the alliance's newest roster: a member who left gets no new fact from their report.
+ */
+export async function saveMemberFact(
+  db: Db,
+  access: WorkspaceAccess,
+  uid: number,
+  change: { field: "adTech" | "timeZone" | "languages"; version: number; value: unknown },
+  now: Date,
+): Promise<ChangeResult | null> {
+  if (!(await isMember(db, access, uid))) return null;
+  const c = { ...change, source: "officer" } as FactChange;
+  return saveOne(db, access, uid, c, now, undefined, "member");
 }

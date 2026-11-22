@@ -22,6 +22,7 @@ import { MemberLastDays } from "./MemberLastDays";
 import { CardLink } from "./MemberLinks";
 import { MemberSquads } from "./MemberSquads";
 import { withNoData } from "./NoData";
+import { SelfReportCard, SelfReportInfo } from "./SelfReportCard";
 
 export const STATUS_TONE = {
   help: "font-semibold text-yarn",
@@ -53,7 +54,7 @@ type CardProps = {
   card: CardData;
   editor: EditorContext;
   zoneNow: string | null;
-  onChanged?: () => void;
+  onChanged?: (() => void) | undefined;
 } & Editing;
 
 /** The sheet bar's two ways into the editor: "Edit info" the main action, "Paste what they told you" second. */
@@ -74,7 +75,7 @@ export function factsActions(
 /** What the facts section needs: also a pending or former member's (D106, D107), who have no card. */
 export type FactsCard = Pick<
   CardData,
-  "uid" | "name" | "factLines" | "stored" | "autoStatus" | "noData"
+  "uid" | "name" | "factLines" | "stored" | "autoStatus" | "noData" | "selfReport"
 >;
 
 /** The facts editor, a sheet of its own, while the sheet's bar has it open. */
@@ -143,6 +144,8 @@ function FactList({
             {dates && l.updated && (
               <span className="block text-[12px] text-ink/70">{l.updated}</span>
             )}
+            {/* D154: what the member said, seen by an officer and not what the card holds. */}
+            <SelfReportInfo text={card.selfReport?.info[l.field as "adTech"]} />
           </dd>
         </div>
       ))}
@@ -197,7 +200,8 @@ function ShieldBlock({ shield }: { shield: NonNullable<CardData["shield"]> }) {
  * Status, the Raid Shield block during the raid (issue 634), the stat strip, their time and languages,
  * where they came from and who on Discord is linked to them (D142): the same on every tab.
  */
-function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | null; slug: string }) {
+function Header({ card, zoneNow, editor, onChanged }: CardProps) {
+  const { slug } = editor;
   return (
     <div className="px-3 pb-3">
       {card.statusLabel && (
@@ -237,6 +241,13 @@ function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | nul
         </p>
       ))}
       {card.link && <CardLink slug={slug} link={card.link} words={card.link.words} />}
+      <SelfReportCard
+        slug={slug}
+        uid={card.uid}
+        report={card.selfReport}
+        onChanged={onChanged}
+        failed={editor.words?.["facts.failed"] ?? ""}
+      />
     </div>
   );
 }
@@ -332,7 +343,7 @@ export function MemberCard(props: CardProps) {
   const [tab, setTab] = useCardTab();
   return (
     <>
-      <Header card={card} zoneNow={props.zoneNow} slug={props.editor.slug} />
+      <Header {...props} />
       <CardTabs card={card} active={tab} onPick={setTab} />
       <div
         id={panelId(card.uid)}

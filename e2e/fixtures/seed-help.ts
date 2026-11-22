@@ -2,7 +2,8 @@
 // NEEDS_HELP member, and the member each feature-switch workspace's "No longer needs help" test clears
 // (clearHelpOf). Every row is written as recordFollowUp writes it: "They need help" writes the status fact
 // (version 1) and its record with that fact version, by the same officer at the same moment.
-import { ALLIANCES, clearHelpOf, NEEDS_HELP, REPEATS, uidOf } from "./seed-people";
+// D154: the self-report member of each filler workspace (selfReportRows).
+import { ALLIANCES, clearHelpOf, NEEDS_HELP, REPEATS, selfReportOf, uidOf } from "./seed-people";
 
 const DAY_MS = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
@@ -40,5 +41,18 @@ export function needsHelpRows(week: string): string[] {
     ...cleared,
     ...marked(ws, uid, 1, days.marked, "00000000-0000-4000-8000-000000000585"),
     `insert into member_follow_ups (workspace_id, uid, action, note, until, fact_version, written_by, written_at, request_id) values (${ws}, ${uid}, 'talked', ${q(NEEDS_HELP.said)}, null, null, 1, ${at(days.talked)}, '00000000-0000-4000-8000-000000000586');`,
+  ];
+}
+
+/**
+ * D154: in each filler workspace, a member with an approved link to the filler's second roster member and a
+ * member session of their own, for the test that sends a time zone from Me (selfReportOf).
+ */
+export function selfReportRows(repeat: number, hash: (token: string) => string): string[] {
+  const m = selfReportOf(repeat);
+  const w = m.workspace;
+  return [
+    `insert into workspace_users (id, workspace_id, discord_user_id, display_name, allowlisted, last_login_at, player_uid, player_link, player_linked_at) values (${m.user}, ${w.id}, '70000000000000040${m.user}', 'Member ${w.tag}', false, now(), ${m.uid}, 'approved', now());`,
+    `insert into workspace_sessions (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier) values ('${hash(m.token)}', ${w.id}, ${m.user}, now(), now() + interval '6 days', now(), 'member');`,
   ];
 }

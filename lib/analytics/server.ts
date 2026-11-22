@@ -48,6 +48,8 @@ export const DESK_FEATURES = [
   "raid_prep",
   // D142: a member's "This is me" approved or removed by an officer.
   "member_link",
+  // D154: what a member sent about themselves, put on the card ("accept") or marked seen ("mark").
+  "self_report",
   // Issue 486: the invite's "finish" made the workspace (the setup funnel's first step).
   "workspace",
   // D148: Alliance settings → Notifications (a device turned on, its uses changed, turned off).

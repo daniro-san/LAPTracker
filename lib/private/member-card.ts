@@ -42,6 +42,7 @@ import {
   type Formats,
   type Status,
 } from "./members-sheet";
+import { cardSelfReport, type CardSelfReport } from "./self-report";
 import { trendOf, type Previous, type WeekBase } from "./trend-words";
 
 const exact = (n: number, language: string) =>
@@ -117,6 +118,8 @@ export interface CardData {
   followUp?: CardFollowUp | null;
   /** Issue 634: the Raid Shield block, from Friday's night check until KvK starts; null otherwise. */
   shield?: CardShield | null;
+  /** D154: what the member sent about themselves from their own link; null when nothing to show. */
+  selfReport?: CardSelfReport | null;
 }
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
@@ -335,7 +338,7 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const [squads, origin, link, followUp, marks, shield] = await Promise.all([
+  const [squads, origin, link, followUp, marks, shield, selfReport] = await Promise.all([
     squadsCard(db, access, uid, at.t, f),
     memberOrigin(db, access, uid, at.zone, at.t, f.date),
     cardLink(db, access, uid, at.t),
@@ -348,6 +351,7 @@ export async function memberCard(
       [...followUps].reverse(),
     ),
     cardShield(db, access, member, at),
+    cardSelfReport(db, access, uid, member.facts, at.t, f),
   ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
@@ -359,5 +363,5 @@ export async function memberCard(
   });
   const mark = marks.get(uid);
   const statusMark = mark ? markLines(mark, at.t, f.date) : [];
-  return { ...card, statusMark, squads, link, followUp, shield };
+  return { ...card, statusMark, squads, link, followUp, shield, selfReport };
 }
