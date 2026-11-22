@@ -3,15 +3,15 @@
 // (Saturday 12:00 ST), in server time. Outside that window it reads nothing and says nothing: nobody keeps a
 // shield after KvK, so a past raid's "no shield seen" never stays on the card (D75). Raid prep's own rules
 // and words: the raid from `raidOf`, the readings from the check's two windows of the workspace's own
-// alliance (`shieldReadings`, alliance-wide, D149), the checkpoints from `hintOf`, the week's Raid prep and
-// its Shield marks. An officer's mark leads (officer marks win, D137); the tracker's own marks do not, since
+// alliance (`shieldReadings`, the windows Raid prep reads), the checkpoints from `hintOf`, the week's Raid
+// prep and the member's newest Shield mark there (`newestMark`, one row by index). An officer's mark leads (officer marks win, D137); the tracker's own marks do not, since
 // its checkpoints say the same with their map time. A member away on the raid's Saturday gets only "Away on
 // raid day" (D103, as the Discord summary counts them). Attack-relevant: never logged or cached (D137).
 import { fill } from "../copy";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { weekRaidPrep } from "../raid-prep-fill";
-import { newestMarks } from "../repo/roll-call";
+import { newestMark } from "../repo/roll-call";
 import { shieldReadings } from "../repo/shield-checks";
 import { passWindows, raidOf } from "../shield-check";
 import type { WorkspaceAccess } from "./access";
@@ -73,8 +73,7 @@ export async function cardShield(
     shieldReadings(db, access.unionId, w.morning.from, w.morning.to),
     weekRaidPrep(db, access.workspaceId, raid.friday),
   ]);
-  const marks = prep?.callId ? await newestMarks(db, [prep.callId]) : [];
-  const own = marks.find((m) => m.uid === member.uid);
+  const own = prep?.callId ? await newestMark(db, prep.callId, member.uid, "main") : null;
   const read = (rows: typeof night) => rows.find((r) => r.uid === member.uid) ?? null;
   const newestFirst = hintOf(read(night), read(morning)).checkpoints.reverse();
   // An officer's mark leads (a cleared one does not); under it, the newest checkpoint, muted.

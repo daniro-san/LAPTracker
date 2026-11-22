@@ -8,12 +8,13 @@ import { describe, expect, it } from "vitest";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import type { MeView } from "@/lib/private/me";
 import { weekCard } from "@/lib/private/me-parts";
-import { cardFormats } from "@/lib/private/member-card";
+import { cardData, cardFormats } from "@/lib/private/member-card";
 import { daysFormats } from "@/lib/private/member-card-parts";
 import type { ListSource } from "@/lib/private/members";
 import { NO_QUERY } from "@/lib/private/members-list";
 
 import { listRow, listWords } from "./member-list-data";
+import { MemberCard, type EditorContext } from "./MemberCards";
 import { MembersList } from "./MembersList";
 import { MeWeek } from "./MeSections";
 
@@ -42,40 +43,43 @@ function recorded(html: string): string {
   return out + html.slice(at);
 }
 
+/** One member as the Members list and the card read them. */
+const SOURCE: ListSource = {
+  uid: 7,
+  name: "Thimble",
+  rank: "R4 · Muse",
+  rankCode: 104,
+  might: 61_234_567,
+  kills: 2_345_678,
+  sanctuary: 29,
+  activity: 214,
+  noQuestsOn: "2026-11-18",
+  noDonationsOn: null,
+  honor: 300,
+  donations: [5150, 1393, null, "later", "later", "later", "later"],
+  weekTotal: 6543,
+  joinedAt: null,
+  lastOnlineAt: null,
+  mapX: null,
+  mapY: null,
+  duel: {},
+  seenSince: "2026-11-02",
+  isNew: false,
+  settling: false,
+  reasons: [],
+  missing: [],
+  missingDays: 0,
+  facts: {},
+  officerStatus: null,
+  awayUntil: null,
+  early: false,
+  photo: { hasAvatar: false, frameId: null },
+  pastNames: [],
+};
+
 describe("session replay on the Members list (issue 549)", () => {
   it("records no member's week of donations or status line, which the page still shows", () => {
-    const member: ListSource = {
-      uid: 7,
-      name: "Thimble",
-      rank: "R4 · Muse",
-      rankCode: 104,
-      might: 61_234_567,
-      kills: 2_345_678,
-      sanctuary: 29,
-      activity: 214,
-      noQuestsOn: "2026-11-18",
-      noDonationsOn: null,
-      honor: 300,
-      donations: [5150, 1393, null, "later", "later", "later", "later"],
-      weekTotal: 6543,
-      joinedAt: null,
-      lastOnlineAt: null,
-      mapX: null,
-      mapY: null,
-      duel: {},
-      seenSince: "2026-11-02",
-      isNew: false,
-      settling: false,
-      reasons: [],
-      missing: [],
-      missingDays: 0,
-      facts: {},
-      officerStatus: null,
-      awayUntil: null,
-      early: false,
-      photo: { hasAvatar: false, frameId: null },
-      pastNames: [],
-    };
+    const member = SOURCE;
     const row = listRow(member, t, f);
     const html = renderToStaticMarkup(
       createElement(MembersList, {
@@ -105,6 +109,44 @@ describe("session replay on the Members list (issue 549)", () => {
     expect(kept).toContain("61.2M");
     expect(kept).not.toContain(row.text.donated);
     expect(kept).not.toContain(row.statusLine);
+  });
+});
+
+describe("session replay on the member card (issue 634, D137)", () => {
+  it("records none of the Raid Shield block, which the card still shows", () => {
+    const member = { ...SOURCE, uid: 8, name: "Fennick" };
+    const card = {
+      ...cardData(member, t, f, { joined: false, lastOnline: false, duel: false }),
+      shield: {
+        head: "Raid Shield",
+        lines: [
+          {
+            text: "Morning check: no shield seen",
+            scan: "map from 07:15 ST",
+            tone: "attention" as const,
+          },
+          { text: "Night check: shield seen", scan: "map from 22:33 ST", tone: "muted" as const },
+        ],
+      },
+    };
+    const editor = { slug: "ogs", words: t, language: "en" } as unknown as EditorContext;
+    const html = renderToStaticMarkup(
+      createElement(MemberCard, {
+        card,
+        editor,
+        zoneNow: null,
+        mode: null,
+        onEditorClose: () => {},
+      }),
+    );
+    for (const value of ["Raid Shield", "no shield seen", "07:15", "22:33"]) {
+      expect(html, value).toContain(value);
+    }
+    const kept = recorded(html);
+    expect(kept).toContain("61.2M");
+    for (const value of ["Raid Shield", "shield seen", "07:15", "22:33"]) {
+      expect(kept, value).not.toContain(value);
+    }
   });
 });
 

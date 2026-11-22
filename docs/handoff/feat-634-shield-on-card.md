@@ -18,7 +18,7 @@
 
 ## Decisions
 
-- Reads: the check's two alliance-wide windows (`shieldReadings` over `passWindows`, as on Raid prep), the week's Raid prep, and its newest Shield marks (`newestMarks` for that roll call). No per-member query (D149).
+- Reads: the check's two windows (`shieldReadings` over `passWindows`, as on Raid prep), the week's Raid prep, and the member's newest Shield mark there (`newestMark`, one row by index; review of PR 681, which D149 allows: one-row reads by `(union_id, uid, …)` are fine). An earlier version read the whole roll call's marks (`newestMarks`) on every card open.
 - An officer's mark leads; a mark the tracker wrote does not. This includes "Mark ✓ the n seen with a shield", whose marks are the tracker's. Those checkpoints say the same, with the map time. A cleared officer mark does not lead.
 - The away day is the raid's Saturday, as the Discord summary and the push count it (D137, 2026-11-22).
 - With `shield_check` off there is no block, even when officer marks exist (D126: turned-off features are hidden).
@@ -50,6 +50,7 @@
   - not read yet;
   - away on the raid's Saturday, and not away when the note ends Friday;
   - PT-BR and FR words.
+- `app/(private)/_ui/replay-masking.test.ts` (review of PR 681): the rendered card shows the block, and what replay records (every `ph-no-capture` element left out) holds none of it. It fails when the class is removed from `ShieldBlock`.
 - `app/(private)/api/w/[slug]/cross-workspace-reads.test.ts` (issue 471 suite): Alpha's card never shows Bravo's reading of the same player.
 - Each test fails when its rule is broken. Ten mutations were run one at a time and each turned at least one test red:
   - the window's start and end;
@@ -73,6 +74,7 @@
 
 - Follow-up: check PostHog's network capture settings for `/api/w/*` (adversarial SHOULD).
 - Follow-up: measure card opens against Raid prep opens between Fri 23:30 and Sat 12:00 ST, before and after the next KvK, from existing events (product persona).
+- Follow-up (review of PR 681, finding 2): the readings of the check's two windows are now read in three places with the same shape: `readingsOf` in `lib/private/raid-prep.ts:198`, `readingsOf` in `lib/raid-prep-fill.ts`, and `cardShield`. One shared read would keep them from drifting.
 - Follow-up: optional e2e coverage would need a server-side clock override for the e2e build (none exists today) and a seeded reading.
 
 What was missing from the task prompt? It asked for "away shows as away", while the issue's settled list says away members get no line. It also did not say whether the officers' mark or the tracker's mark leads. The issue settled that officer marks lead, but said nothing about the tracker's own marks.

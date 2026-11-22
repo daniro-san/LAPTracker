@@ -156,6 +156,6 @@ The tracker sees shields at its map scan: a shield turned on since may not show 
   - "Tracker: not read yet" ("Tracker: ainda sem leitura", "Tracker : pas encore lu") before any reading of the member;
   - only "Away on raid day" ("Ausente no dia do raid", "Absent le jour du raid") for a member away on the raid's Saturday (the roll call's away rule, as the summary counts them): no reading and no mark.
   - "no shield seen" and an officer's "No shield" in the attention colour, never bold; under an officer's mark, every line is muted.
-- **Reads** (D149): the check's two alliance-wide windows (`shieldReadings` over `passWindows`, as Raid prep), the week's Raid prep (`weekRaidPrep`, read only) and its newest Shield marks (`newestMarks`). No per-member query, no `shield_type`, nothing logged, cached or counted in analytics.
+- **Reads**: the check's two windows (`shieldReadings` over `passWindows`, the reads Raid prep makes), the week's Raid prep (`weekRaidPrep`, read only) and the member's newest Shield mark there (`newestMark`, one row by index, which D149 allows). No `shield_type`; nothing logged, cached or counted in analytics.
 - **Server time only** (Raid prep's tile rule): this amends D136's owner rule of 2026-11-20 for shields (see D136's amendment of the same day).
 - Tests: `lib/private/card-shield.test.ts` (the window's edges in server time, across midnight, the check off, each state, the languages) and the issue 471 suite (`cross-workspace-reads.test.ts`: Alpha's card never shows Bravo's reading of the same player).

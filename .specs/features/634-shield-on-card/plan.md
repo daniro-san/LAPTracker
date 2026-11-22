@@ -12,7 +12,7 @@ What is different when this ships: from Friday's night check (23:30 ST) until Kv
 
 ## Shape
 
-Reuses Raid prep's rules and reads: the raid's instants from `raidOf`, the readings from `shieldReadings` over `passWindows` (the alliance-wide windows Raid prep reads, no per-member query, D149), the checkpoints from `hintOf`, the week's Raid prep from `weekRaidPrep`, its marks from `newestMarks`, and the away rule `awayOn` on the raid's Saturday (as the Discord summary and the push count, D137 2026-11-22). The window and the state are decided in `lib/private/card-shield.ts`, which PGlite tests reach.
+Reuses Raid prep's rules and reads: the raid's instants from `raidOf`, the readings from `shieldReadings` over `passWindows` (the windows Raid prep reads), the checkpoints from `hintOf`, the week's Raid prep from `weekRaidPrep`, the member's newest Shield mark there from `newestMark` (one row by index, which D149 allows), and the away rule `awayOn` on the raid's Saturday (as the Discord summary and the push count, D137 2026-11-22). The window and the state are decided in `lib/private/card-shield.ts`, which PGlite tests reach.
 
 1. officer opens a card -> `GET /api/w/[slug]/members/[uid]` (exists) -> `requireWorkspace` (exists): officers of this workspace, own alliance; a member's session 401
 2. `memberCard` (exists) - as today, plus `cardShield` (new)
