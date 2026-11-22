@@ -67,4 +67,4 @@ The owner (2026-11-21) approved this recommendation: agents must not be able to 
 - `.env.example` now holds the local placeholders. Copying it gives a working local setup on `pnpm db:local` with no outside calls.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/612
