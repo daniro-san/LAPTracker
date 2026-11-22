@@ -71,6 +71,22 @@ Part of #585 (F3, F14, F15, F21, F29). Size L, planned with `/tlc-spec-lean`: `.
 | e2e Follow-up flow                                                                    | the Noted row drops the officer's name                                | fails (phone and wide) |
 
   - A first break of `doneThisWeek`'s own member filter did **not** fail: `weekLists` filtered non-members a second time. The redundant filter was removed, so one rule holds it, and the test then failed when that rule was broken.
+- **The Verifier** (an independent sub-agent, at cb4928d5): FAIL on proofs, no code bug. It found five gaps:
+  - C11's i18n script never reads the desk dictionary;
+  - the e2e card link matched any uid;
+  - C9's Home line accepts two forms;
+  - AC 8 had no check;
+  - the row's rank and note had no test.
+
+  Closed in c9a1b963:
+  - C11 now runs `dictionary.test.ts`;
+  - the e2e asserts the tapped member's uid, today's date and the rank;
+  - a new C12 render test holds AC 8; it fails with the early branch removed;
+  - the note line is shown in the walk.
+
+  **Accepted, not fixed:** C9's optional "· 1 noted this week". The other project's card flow keeps a Talked on a Lantern Keep member in parallel, so 0 or 1 is right at Home's moment; C3 and C5 hold the exact numbers.
+
+  Its own examples all passed: a record at exactly Mon 00:00:00 ST; Undo of the newer of two records; an empty week; FR singular and plural; PT 1,200.
 - **The tlc-spec-lean gate:** `validate_plan` 0 errors, 1 warning (an existing-module mark in the drawing); `validate_checks --execute` 0 errors, 1 warning (C11's i18n command has no test selector; it is the repo's one i18n check).
 - **First-glance test, 360 × 780.** Question: "Who do I need to check in with this week, and who has someone already talked to?" Panel: R5 40s EN, war lead 30s, diplomat early 20s FR, Discord-upkeep officer 50s US, officer early 20s UA, architect 30s CH.
 
