@@ -81,6 +81,8 @@ export interface MemberRow {
   duel: DuelSaved;
   seenSince: string | null;
   isNew: boolean;
+  /** First seen under OFFLINE_GRACE_DAYS ago (D127): no offline signal and no coins tip (D140) yet. */
+  settling: boolean;
   reasons: Reason[];
   missing: MissingField[];
   /** Days of the week so far with no read of the member (no donations data). */
@@ -192,6 +194,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     mapY: m.y,
     duel: s.duel.get(m.uid) ?? {},
     isNew,
+    settling,
     reasons,
     missing: missing.fields,
     missingDays: missing.days,
@@ -223,6 +226,7 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     duel: {},
     seenSince: firstSeen.get(m.uid) ?? null,
     isNew: false,
+    settling: false,
     reasons: [],
     missing: [],
     missingDays: 0,

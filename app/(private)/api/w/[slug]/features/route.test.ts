@@ -4,7 +4,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
-import { testContext } from "@/lib/app-context.test-helpers";
+import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
@@ -13,6 +13,7 @@ import { allianceFeaturesView, SWITCHES } from "@/lib/private/alliance-features"
 import { featuresBySlug } from "@/lib/private/features";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { dailyReads, dailyRosters, workspaces, workspaceUsers } from "@/lib/schema";
+import { workspaceDiscord } from "@/lib/schema-discord";
 import { workspaceFeatures } from "@/lib/schema-features";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -107,6 +108,30 @@ describe("POST /api/w/[slug]/features (D134)", () => {
     expect(v.estimate).toEqual({ daily: 108, peak: 108 });
     const squads = v.groups.flatMap((g) => g.features).find((f) => f.feature === "squads");
     expect(squads?.calls).toEqual({ n: 108, weekly: false });
+  });
+
+  it("registers the server's Discord commands again without the one its officers turned off (D129)", async () => {
+    const ctx = testContext(db, {
+      ...TEST_ENV,
+      DISCORD_CLIENT_ID: "900000000000000505",
+      DISCORD_CLIENT_SECRET: "client-secret-for-tests",
+    }).ctx;
+    const puts: { url: string; body: unknown }[] = [];
+    ctx.fetch = async (input, init) => {
+      if (String(input).endsWith("/oauth2/token")) return Response.json({ access_token: "b" });
+      puts.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+      return Response.json([]);
+    };
+    holder.ctx = ctx;
+    // The owner allows Translate for me; the server has both commands.
+    await db
+      .insert(workspaceFeatures)
+      .values({ workspaceId, switches: { discord_translate_me: true } });
+    const both = ["Send to LAPTracker", "Translate for me"];
+    await db.insert(workspaceDiscord).values({ workspaceId, commands: both });
+    expect((await post({ feature: "discord_translate_me", on: false })).status).toBe(200);
+    expect(puts.map((p) => p.url.split("/guilds/")[1])).toEqual(["1/commands"]);
+    expect(puts[0]?.body).toEqual([{ name: "Send to LAPTracker", type: 3 }]);
   });
 
   it("refuses past the window's switches, and a request without a session", async () => {

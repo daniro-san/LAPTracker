@@ -1,4 +1,9 @@
 // /admin's feature switches per workspace (D126), re-exported as `copy.admin.features`. English only (D48).
+import { TRACKER_CALLS, type Feature } from "./workspace-features";
+
+/** A feature's tracker calls per 100 members, from its measured rate (D134). */
+const per100 = (f: Feature) => Math.ceil(100 * (TRACKER_CALLS[f]?.perMember ?? 0));
+
 export const featuresAdminCopy = {
   summary: "Features: {on} of {all} on",
   usage: "AI today: {ai} · translations today: {translate}",
@@ -7,8 +12,7 @@ export const featuresAdminCopy = {
   changed: "Changed: {value}",
   reset: "Reset to default",
   allianceOff: "the alliance turned it off",
-  callsHelp:
-    "Own key: the alliance's tracker key. Squads read: about 106 calls a day per 100 members. Raid Shield check: about 200 calls on Friday night per 100 members.",
+  callsHelp: `Own key: the alliance's tracker key. Squads read: about ${per100("squads")} calls a day per 100 members. Raid Shield check: about ${per100("shield_check")} calls on Friday night per 100 members.`,
   estimate: "Tracker calls: about {daily} a day of 1,000 ({members} members)",
   estimatePeak:
     "Tracker calls: about {daily} a day, {peak} on Saturdays (UTC), of 1,000 ({members} members)",

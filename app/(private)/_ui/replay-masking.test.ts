@@ -65,6 +65,7 @@ describe("session replay on the Members list (issue 549)", () => {
       duel: {},
       seenSince: "2026-11-02",
       isNew: false,
+      settling: false,
       reasons: [],
       missing: [],
       missingDays: 0,

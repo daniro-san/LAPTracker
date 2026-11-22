@@ -279,12 +279,15 @@ describe("the queue's retries, newcomers and claim (D132)", () => {
 
   it("queues a member who joined after the day's roster, from an answer's newer alliance roster", async () => {
     await dayRead(THU.day, [1, 2], 900);
-    const roster = (updatedAt: string) => ({
-      roster: { unionId: OWN_ALLIANCE_ID, updatedAt: new Date(updatedAt), uids: [1, 2, 9] },
+    const roster = (updatedAt: string, uids: number[]) => ({
+      roster: { unionId: OWN_ALLIANCE_ID, updatedAt: new Date(updatedAt), uids },
     });
-    // Member 1's answer carries a roster older than the day's read: nothing is added.
+    // Member 1's answer carries a roster older than the day's read, with 8, who has left since: 8 is not
+    // added. Member 2's carries a newer one, where 9 has joined.
     const d = deps(THU.now, (uid) =>
-      roster(uid === 1 ? "2026-11-19T20:00:00Z" : "2026-11-20T01:38:00Z"),
+      uid === 1
+        ? roster("2026-11-19T20:00:00Z", [1, 2, 8])
+        : roster("2026-11-20T01:38:00Z", [1, 2, 9]),
     );
     expect(await runSquadsBatch(d, db)).toMatchObject({ calls: 2, more: true });
     expect(await runSquadsBatch(d, db)).toMatchObject({ status: "done", calls: 1 });
