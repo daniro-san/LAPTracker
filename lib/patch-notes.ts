@@ -24,15 +24,15 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
-    text: 'GitHub → Settings → Actions: allow only selected actions (GitHub\'s own, pnpm/action-setup, dependabot/fetch-metadata), require actions pinned to a full commit SHA, set the default workflow token to read-only and turn off "Allow GitHub Actions to create and approve pull requests". Also turn on non-provider secret patterns. The CI/CD panel recommends it; every workflow already pins SHAs and sets its own permissions.',
+    text: 'GitHub → Settings → Actions: allow only selected actions (GitHub\'s own, pnpm/action-setup, dependabot/fetch-metadata), require actions pinned to a full commit SHA, and set the default workflow token to read-only. Keep "Allow GitHub Actions to create and approve pull requests" ON: Prepare release opens the release PR with it (D29). Also turn on non-provider secret patterns. The CI/CD panel recommends it; every workflow already pins SHAs and sets its own permissions.',
     issue: 592,
   },
   {
-    text: "Decide whether dev becomes the default branch. Issues would close on their own, Dependabot security PRs would target dev, and schedules would run from dev. The order matters: first change the main ruleset to target refs/heads/main, then switch the default branch, then ask Claude for the follow-up PR.",
+    text: "Decide whether dev becomes the default branch. It is main today, a recorded choice, so changing it needs a new decision. Issues would close on their own, Dependabot security PRs would target dev and schedules would run from dev, but the after-deploy smoke check (D46) would need moving too. The order matters: first make the main ruleset target main by name, then switch the default branch, then ask Claude for the follow-up PR.",
     issue: 592,
   },
   {
-    text: "Decide whether to drop tick.yml's own GitHub schedule (it fired in about 4% of its slots; cron-job.org is the real scheduler, D30) and keepalive.yml.",
+    text: "Decide whether to drop the GitHub-side tick schedule. It fired in about 4% of its slots; cron-job.org is the real scheduler, and D30 keeps GitHub's as a second path, so dropping it needs an amendment. The monthly keep-alive must stay while any GitHub schedule is kept (uptime, the daily browser checks), or GitHub turns them off after 60 days.",
     issue: 592,
   },
   {
@@ -40,7 +40,7 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 592,
   },
   {
-    text: "Private repo: CI used about 16,000 Actions minutes a month at the current pace (about 1,000 PRs a month). After this release's savings it should land around 7,000–9,000, still above GitHub Pro's 3,000, so a private repo would need a self-hosted runner or paid minutes.",
+    text: "Private repo (needs its own decision): the CI/CD panel measured about 16,000 Actions minutes a month at the 2026-11-20/21 pace (69 PRs in 2 days, about 2 runs each, 13 releases a day). This release saves roughly 5,000–6,000 of that (faster checks, no double run per release), which still leaves several times GitHub Pro's 3,000, so a private repo would need a self-hosted runner or paid minutes.",
     issue: 592,
   },
   {
@@ -142,16 +142,16 @@ export const patchNotes: PatchNote[] = [
     changes: [
       "Raid prep: the header names the raid it serves (\"KvK Sat, Nov 21 · raid at the reset\"), not the day the roll call was added. The card opens with the answer, how many shields the tracker saw at the last check, and the marks below it add up and change with every tap. Each member's line says the shield time is the map's time.",
       "Insights → KvK cost and recovery: on KvK day, after the End read, the card says the KvK is recorded and that its numbers show after the 23:30 ST daily read, instead of claiming no KvK was read. When the page's reads start after the last KvK, it says so.",
-      'Easier to read: stronger contrast in light mode, visible labels on fields, "Started"/"Ended" words instead of faded items, and larger values on Me, the member card and Calendar.',
+      'Easier to read: stronger contrast in light mode, visible labels on fields, "Started"/"Ended" words instead of faded items, and larger values on Me, the member card and the board.',
       "Error reports: before any error text leaves the site, one filter removes the private roster fields and member text. Server errors now go to PostHog Error Tracking; /admin → App errors keeps 30 days as a fallback.",
-      "Every change to the site is now checked in a real browser before it can merge: 28 checks of what the public pages, the desk and the Me page show, including that one alliance never sees another's data. Each release also runs them in the iPhone browser engine.",
-      "Checks run about 3 minutes faster per change, a release no longer runs them twice, and Dependabot waits 7 days before proposing a new version.",
-      "For whoever builds the site: issue and PR templates with testable criteria, a rule to keep the analytics plan current with every change, and rules that every test checks real behaviour.",
+      "Every change to the site's code is now checked in a real browser before it can merge: 28 checks of what the public pages, the desk and the Me page show, including that one alliance never sees another's data. Each release also runs the desk checks in the iPhone browser engine.",
+      "Checks run about 3 minutes faster per change, a release no longer runs them twice, and Dependabot waits 7 days before proposing a new version (14 for major ones).",
+      "For whoever builds the site: issue and PR templates with testable criteria, a rule to keep the analytics plan current with every change, and rules on what and how to test, so every test checks real behaviour.",
     ],
     needsYou: [
       "GitHub Actions settings and three CI decisions are on the to-do list below (issue #592).",
     ],
-    prs: [596, 597, 598, 599, 600, 601, 602, 603, 604],
+    prs: [596, 597, 598, 599, 600, 601, 602, 603, 604, 605],
   },
   {
     version: "v5.45.0",
