@@ -94,5 +94,4 @@ body:
       description: Defined in CONTRIBUTING.md § Working rules.
       options:
         - S — restores intended behaviour; this form is the spec
-        - M — also needs a migration or a new decision; run tlc-spec-lean first
-        - L — also needs a new feature area or more than one PR; run tlc-spec-lean first
+        - M — has an M trigger, most often a migration or a new decision; run tlc-spec-lean first

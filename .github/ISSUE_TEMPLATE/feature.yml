@@ -74,8 +74,8 @@ body:
       label: Size
       description: Defined in CONTRIBUTING.md § Working rules. M and L go through `tlc-spec-lean` before building.
       options:
-        - S — none of the M items; this form is the spec
+        - S — none of the M or L items; this form is the spec
         - M — a new route or page, migration, decision, private-field flow, external call or quota use, or a flow across 2+ screens; run tlc-spec-lean first
-        - L — a new feature area, or more than one PR; run tlc-spec-lean first
+        - L — more than one PR (judged when planning), or a new top-level desk tab or public page family; run tlc-spec-lean first
     validations:
       required: true

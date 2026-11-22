@@ -134,7 +134,7 @@ describe("the tracking plan (D115)", () => {
     expectTypeOf<AnalyticsEvent>().toEqualTypeOf<(typeof ANALYTICS_EVENTS)[number]>();
   });
 
-  it("names in its Event columns no event the code no longer sends", async () => {
+  it("names in its Event columns no event that is gone from the code's event lists", async () => {
     const { readFileSync } = await import("node:fs");
     const { ANALYTICS_EVENTS } = await import("./events");
     const plan = readFileSync("docs/analytics/tracking-plan.md", "utf8");
@@ -146,20 +146,33 @@ describe("the tracking plan (D115)", () => {
       "$opt_in",
       "$cookieless_mode",
     ]);
-    // In every table whose header has an "Event" column, the backticked names in that column.
-    const named: string[] = [];
+    // In every table whose header has an "Event" column, the backticked names in that column, by heading.
+    const bySection = new Map<string, string[]>();
+    let section = "";
     let column = -1;
     for (const line of plan.split("\n")) {
+      if (line.startsWith("#")) section = line.replace(/^#+\s*/, "");
       if (!line.startsWith("|")) {
         column = -1;
         continue;
       }
       const cells = line.split("|").map((cell) => cell.trim());
       if (column < 0) column = cells.indexOf("Event");
-      else for (const m of (cells[column] ?? "").matchAll(/`([^`]+)`/g)) named.push(m[1] ?? "");
+      else
+        for (const m of (cells[column] ?? "").matchAll(/`([^`]+)`/g))
+          bySection.set(section, [...(bySection.get(section) ?? []), m[1] ?? ""]);
     }
-    expect(named).toContain("ws_action");
-    expect(named.filter((name) => !sent.has(name))).toEqual([]);
+    // One known event per section with an Event table, so a renamed header or a broken table fails here.
+    const anchors: Record<string, string> = {
+      "The analytics question (public pages)": "$opt_in",
+      "Desk outcomes (browser)": "ws_text_read",
+      "A new alliance's way in (D130, issue 453)": "ws_invite_opened",
+      "Members' board": "ws_board_section_viewed",
+      "Server-side signals": "ws_action",
+    };
+    for (const [heading, anchor] of Object.entries(anchors))
+      expect(bySection.get(heading) ?? [], heading).toContain(anchor);
+    expect([...bySection.values()].flat().filter((name) => !sent.has(name))).toEqual([]);
     expectTypeOf<(typeof SERVER_EVENTS)[number]>().toEqualTypeOf<keyof ServerEvents>();
   });
 });

@@ -1,6 +1,6 @@
 # Tracking plan (D115)
 
-What we send to PostHog (project 741657, US cloud, D77), which product question each event answers, and the insights and funnels to build from it. An event that answers no question here is not added. `lib/analytics/events.test.ts` fails `pnpm check` if an event, a desk feature or a desk action in the code is missing from this page, and if a table's Event column here names an event the code no longer sends.
+What we send to PostHog (project 741657, US cloud, D77), which product question each event answers, and the insights and funnels to build from it. An event that answers no question here is not added. `lib/analytics/events.test.ts` fails `pnpm check` if an event, a desk feature or a desk action in the code is missing from this page, and if a table's Event column here names an event that is no longer in the code's event lists (`ANALYTICS_EVENTS` in `lib/analytics/events.ts`, `ServerEvents` in `lib/analytics/server.ts`).
 
 ## Rules for every event
 

@@ -39,7 +39,7 @@ Closes #
 
 ## Gates
 
-- [ ] Size: <!-- S / M / L per CONTRIBUTING.md § Working rules; M and L: the spec-lean plan, and the product-strategy persona's and adversarial reviewer's verdicts -->
+- [ ] Size: <!-- S / M / L, or n/a (docs, harness, copy-only, dependency bump), per CONTRIBUTING.md § Working rules; M and L: the spec-lean plan, and the product-strategy persona's and adversarial reviewer's verdicts -->
 - [ ] Review: <!-- full panel + adversarial for lib/private, privacy or quota; one reviewer otherwise -->
 - [ ] `/pr-review`
 - [ ] Decision: <!-- Dnn added or amended, or "none" -->
