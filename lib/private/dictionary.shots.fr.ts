@@ -6,6 +6,7 @@ export const shotsFr: ShotsWords = {
   "shots.head": "À vérifier",
   "shots.lead": "Vérifiez chacune, puis enregistrez-la.",
   "shots.none": "Rien à vérifier.",
+  "shots.cardHead": "Captures d’écran",
   "shots.send": "Envoyer des captures",
   "shots.help":
     "Classements : activez My Alliance d’abord. Plusieurs captures d’une longue liste font un seul brouillon. Les captures ne sont pas gardées après lecture.",

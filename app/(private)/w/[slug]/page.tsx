@@ -6,6 +6,8 @@
 // members to the newest roster. D124: a card asks for the alliance's own tracker key, or says why it is
 // paused. D122: from 1024 the ledger spread, the cards to act on in the main column and the notes to read
 // beside them (recent activity with who is on the desk now, then members this week) in the margin column.
+// Issue 585 slice 4: the main column opens with Follow-up's two numbers and "1 waiting in To review ↓", and
+// "Send screenshots" is a card of its own after "To review".
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -35,6 +37,7 @@ import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
 import { cards } from "../../_ui/home-cards";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeMargin, type HomeDesk } from "../../_ui/HomeMargin";
+import { HomeFollowUp } from "../../_ui/HomeMembers";
 import { HomeNext } from "../../_ui/HomeNext";
 import { KeyCard } from "../../_ui/KeyCard";
 import { toMatchLine } from "../../_ui/member-lifecycle-data";
@@ -42,7 +45,7 @@ import { NotificationsHint } from "../../_ui/NotificationsHint";
 import { PicturesDueCard } from "../../_ui/PicturesDue";
 import { nextQuery, refuse } from "../../_ui/refuse";
 import { sharedLines } from "../../_ui/share-lines";
-import { ToReview } from "../../_ui/ToReview";
+import { ReviewJump, SendCard, ToReview } from "../../_ui/ToReview";
 
 const ERRORS = ["denied", "discord", "not_configured"] as const;
 /** What Home reads when the visitor is not signed in: nothing. */
@@ -180,6 +183,11 @@ function Home(props: {
         main={
           <>
             <KeyCard slug={slug} t={t} state={props.desk.key} />
+            <HomeFollowUp slug={slug} t={t} language={language} followUp={props.desk.followUp} />
+            <ReviewJump
+              t={t}
+              waiting={props.items.length + props.reviews.length + props.desk.links.length}
+            />
             <NextUp slug={slug} t={t} items={props.next} />
             <PicturesDueCard slug={slug} t={t} language={language} items={props.desk.due} />
             <ToReview
@@ -197,6 +205,7 @@ function Home(props: {
               day={f.date}
               links={props.desk.links}
             />
+            <SendCard slug={slug} t={t} language={language} />
           </>
         }
         margin={<HomeMargin {...props} />}

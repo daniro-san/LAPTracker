@@ -54,7 +54,7 @@ type What =
   | { kind: "noticePictureReused"; noticeId: number; fromId: number }
   | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope" | "source"> }
   | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
-  | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
+  | { kind: "marks"; call: Pick<MarksDone, "callId" | "kind" | "variant">; rest: boolean }
   /** A roll call deleted or archived (D120), never folded into another line. */
   | Omit<ActivityRows["callDeletes"][number], "by" | "at">
   /** A garrison plan saved or posted (D121), never folded into another line. */
@@ -125,8 +125,14 @@ const RANK: Partial<Record<What["kind"], number>> = {
 const rank = (r: Raw) => RANK[r.kind] ?? 0;
 const instant = (r: Raw) => `${r.by}@${r.at.getTime()}`;
 
-/** What makes two lines the same: the action and its object, without the time. */
-const sameKey = (r: Raw) => JSON.stringify({ ...r, at: 0 });
+/**
+ * What makes two lines the same: the action and its object, without the time. A roll call by its name, not
+ * its id, after a single line, so the same words in a row stay one line; inside a fold of several officers
+ * by its id, so another roll call of that name keeps a line of its own (issue 585).
+ */
+const byName = (r: Raw): Raw => (r.kind === "marks" ? { ...r, call: { ...r.call, callId: 0 } } : r);
+const sameKey = (r: Raw, run: Run) =>
+  JSON.stringify({ ...(run.lines.length === 1 ? byName(r) : r), at: 0 });
 
 /** Kinds whose run line counts the lines it opens to: "Rook added 6 entries to the Calendar". */
 export const COUNTED_RUNS = ["entry", "entryEdit", "noticeSaved", "draft"] as const;
@@ -136,6 +142,15 @@ export const COUNTED_RUNS = ["entry", "entryEdit", "noticeSaved", "draft"] as co
  * delete, a roll call, a follow-up, a review or the thanks is never folded into a run.
  */
 const GROUPED = new Set<What["kind"]>([...COUNTED_RUNS, "facts", "thefts", "newMember"]);
+
+/**
+ * Whether `r` joins the run that `lead` leads (on the same server day): one officer's line of the same
+ * grouped kind, or a "finished the roll call" line on the same roll call by any officer (issue 585).
+ */
+const joins = (r: Raw, lead: Raw) =>
+  r.kind === "marks" && lead.kind === "marks"
+    ? r.rest && lead.rest && r.call.callId === lead.call.callId
+    : GROUPED.has(r.kind) && r.kind === lead.kind && r.by === lead.by;
 
 /** The newest line of a run with the next one joined in: what the run holds, at the newest time. */
 function joined(a: Raw, b: Raw): Raw {
@@ -160,7 +175,8 @@ interface Run {
 /**
  * Lines in time order as the feed's lines. The same line repeated in a row is shown once, at its newest
  * time. One officer's consecutive lines of a grouped kind on the same server day are one run (2026-11-18,
- * issue 410); any other line in between, another officer's included, ends the run.
+ * issue 410), and so are consecutive "finished the roll call" lines on one roll call and server day by any
+ * officers (issue 585); any other line in between, another officer's included, ends the run.
  */
 function runs(lines: Raw[], zone: string): Run[] {
   const day = (at: Date) => serverDay(at, { SERVER_TZ: zone });
@@ -168,15 +184,9 @@ function runs(lines: Raw[], zone: string): Run[] {
   for (const r of lines) {
     const run = out.at(-1);
     const last = run?.lines.at(-1);
-    if (run && last && sameKey(r) === sameKey(last)) {
+    if (run && last && sameKey(r, run) === sameKey(last, run)) {
       run.oldest = r.at;
-    } else if (
-      run &&
-      GROUPED.has(r.kind) &&
-      r.kind === run.head.kind &&
-      r.by === run.head.by &&
-      day(r.at) === day(run.head.at)
-    ) {
+    } else if (run && day(r.at) === day(run.head.at) && joins(r, run.head)) {
       run.head = joined(run.head, r);
       run.lines.push(r);
       run.oldest = r.at;
@@ -374,11 +384,11 @@ export async function activityPage(
   ]);
   const names = { officers, members, titles };
   return {
+    // A run of several officers (a roll call finished) keeps the lines of those whose account is left.
     lines: page.flatMap((r): ActivityLine[] => {
-      const item = itemOf(r.head, names);
-      if (!item) return [];
       const run = r.lines.length > 1 ? r.lines.flatMap((l) => itemOf(l, names) ?? []) : [];
-      return [{ item, run }];
+      const item = itemOf(r.head, names) ?? run[0];
+      return item ? [{ item, run: run.length > 1 ? run : [] }] : [];
     }),
     next,
   };

@@ -6,6 +6,7 @@ export const shotsPt: ShotsWords = {
   "shots.head": "Para revisar",
   "shots.lead": "Confira cada um e salve.",
   "shots.none": "Nada para revisar.",
+  "shots.cardHead": "Prints",
   "shots.send": "Enviar prints",
   "shots.help":
     "Rankings: ligue My Alliance antes. Vários prints de uma lista longa viram um rascunho só. Os prints não são guardados depois da leitura.",

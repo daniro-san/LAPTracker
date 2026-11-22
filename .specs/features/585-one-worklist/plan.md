@@ -6,7 +6,9 @@
 
 **Approved (S3)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (i)](#i-s3-product-strategy-approve-with-changes); adversarial verdict: [Validation (k)](#k-s3-adversarial-approve-with-changes)
 
-Size: L (more than one PR across Home, Members, Follow-up, Insights and the member card). This plan covers all slices; slice 1 (S1) was built in PR 640, slice 2 (S2) in PR 646, **slice 3 (S3) is built in `feat/585-follow-up-rows`** (its own size: M, a flow across Follow-up and Members). Part of #585 (findings F3, F14, F15, F21, F29).
+**Approved (S4)**: 2026-11-22 - user: "go with what you and the personas recommend" (owner, 2026-11-21, standing approval in CONTRIBUTING.md § Working rules); product-strategy verdict: [Validation (i)](#i-s4-product-strategy-approve-with-changes); adversarial verdict: [Validation (k)](#k-s4-adversarial-approve-with-changes)
+
+Size: L (more than one PR across Home, Members, Follow-up, Insights and the member card). This plan covers all slices; slice 1 (S1) was built in PR 640, slice 2 (S2) in PR 646, slice 3 (S3) in PR 651, **slice 4 (S4) is built in `feat/585-home-first-screen`** (its own size: M, a flow across Follow-up and Members). Part of #585 (findings F3, F14, F15, F21, F29).
 
 ## Problem
 
@@ -184,6 +186,64 @@ New: nothing - no entity.
 
 **S3 validation:** the plan review is under [Validation (h) to (k)](#h-s3-officer-panel-first-glance-test-and-review).
 
+## S4 plan: Home's first screen (built in `feat/585-home-first-screen`)
+
+**S4 problem.** Measured on the S1 walk (invented 585 seed, `585-worklist/after2/home--360*`, server clock Sat 21 Nov 16:30 ST) and in the code at `f5d3658a`:
+
+- At 360 × 780 Home's first screen holds the tracker key card and "Today and tomorrow". Follow-up's two numbers ("Follow-up: 12 to look at · 4 noted this week", S1) are in the margin note "Members this week", which is the last block on a phone, about 2,600 px down. In the S1 panel, 5 of 6 officers could not tell from Home's first screen who needs them, and 1 read the Home badge "1" as one check-in (Validation (a)).
+- "Recent activity" opens with 16 "finished the roll call" lines: five officers each finished "Cheese Trap", "Undead Siege" and "Elixir Scramble". Each officer's "the rest" save is its own line (`marksWritten`, D108); a run only joins one officer's lines, and roll calls are never folded.
+- "Send screenshots", the help line and the "Nothing to review." line share the "To review" card, whose number counts only what waits. The button is the biggest thing in the card.
+- An entry of "Today and tomorrow" whose day is over keeps its two lines (time and "your time", then the title and "· Ended").
+
+What is different for an officer when S4 ships: Home's first phone screen has a "Follow-up" card saying "12 members to look at this week · 4 already noted by officers" as a link to Follow-up, and "1 waiting in “To review” ↓" when something waits; the activity says "Wren, Tomas, and 3 others finished the roll call “Cheese Trap”" once per roll call; "To review" holds only what waits for a person, and "Send screenshots" has a card of its own; a finished entry is one line.
+
+**S4 shape.** Reuses `followUpCounts` (S1, no new read), `checkInLink` (the margin's line while the tab is off), the activity's runs (`runs`, `feedLine`, the `<details>` run line) and `Ended`'s rule (`end` from `endOf`). No new route, table, field or migration.
+
+1. officer opens `/w/[slug]` -> `requireWorkspace` (exists)
+2. `cards` (exists) -> `followUpCounts` (exists): `{ toLook, noted }`, or null while the Follow-up tab is off (D126) or before the first daily update; nothing new read
+3. Home's main column (exists, changed): the tracker key card; `HomeFollowUp` (new, `HomeMembers.tsx`): a "Follow-up" card with "12 members to look at this week · 4 already noted by officers" (Home's own words, `followUpWords`; panel MUST 2) as one link, only while the numbers exist; "{n} waiting in “To review” ↓" (new, a jump to "To review", only while something waits: the Home tab's own number; panel MUST 1 and round 2); "Today and tomorrow", the pictures due, "To review" without the upload, and `SendCard` (new, `ToReview.tsx`): a "Screenshots" card with "Send screenshots" and its help line
+4. `HomeMembers` (exists, changed): no check-in line while Follow-up's numbers exist (they moved); while the tab is off, the old line and link, as today
+5. `marksWritten` (exists, changed) also returns the roll call's id; `runs` (exists, changed, `joins`) joins consecutive "finished the roll call" lines on the same roll call and server day, whatever the officer; `feedLine` names the officers, newest first, each once, with `Intl.ListFormat`: "Wren and Tomas", "Wren, Tomas, and Lucien", "Wren, Tomas, and 3 others" (FR and PT with the plural verb); the line opens to each officer's line, as a run does; `activityPage` keeps a folded line when its newest officer's account has no name (adversarial MUST 1)
+6. `HomeNext` (exists, changed): an entry whose end has passed is one line, "12:00 ST · KvK · Ended", still the 44 px link to its day in the Calendar
+
+```mermaid
+flowchart LR
+    R["1. requireWorkspace (exists)"] --> C["2. cards (exists)"] --> FC[("2. followUpCounts (exists)")]
+    C --> HF["3. HomeFollowUp (new)"]
+    R --> TR["3. ToReview (exists, changed)"]
+    R --> SC["3. SendCard (new)"]
+    C --> HM["4. HomeMembers (exists, changed)"]
+    R --> A["5. activityPage (exists)"] --> M[("5. marksWritten (exists, changed)")]
+    A --> RU["5. runs / feedLine (exist, changed)"]
+    R --> HN["6. HomeNext (exists, changed)"]
+```
+
+**Changes underneath (S4)**
+
+| Front       | What changes                                                                                                                                                                                                                  |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| domain      | D108's runs: "finished the roll call" lines by several officers on one roll call fold into one line (was: one officer's runs only; roll calls never folded). D108's order on Home and D110's Home button get dated amendments |
+| stored data | nothing to migrate; nothing new written                                                                                                                                                                                       |
+| readers     | Home (main column, margin, activity), the activity route's later pages (`GET /api/w/[slug]/activity`, same `activityPage`)                                                                                                    |
+| cost        | none: the roll call's id comes from the query that already groups by it; Home's Follow-up numbers are the ones `cards` already reads                                                                                          |
+
+New: nothing - read only.
+
+**S4 assumptions**
+
+| Assumption                         | Chosen default                                                                       | Rationale                                                                                                                                                                         | Confirmed? |
+| ---------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Where the line goes                | After the tracker key card, before "Today and tomorrow"                              | The key card is rare and blocks everything; the line is "who needs me this week"                                                                                                  | n          |
+| The card's words                   | Heading "Follow-up"; "12 members to look at this week · 4 already noted by officers" | Panel: 4 of 6 misread "12 to look at · 4 noted this week" on Home; Members keeps S1's line (S3 owns it)                                                                           | n          |
+| What waits in "To review"          | "1 waiting in “To review” ↓" after the Follow-up card; "To review" stays put         | Panel MUST 1 (5 of 6): the badge pointed at nothing visible; round 2 (3 of 6) read "1 to review ↓" above the key card as its label; moving the card would push today's events off | n          |
+| The line in "Members this week"    | Removed while Follow-up's numbers show above; kept while the tab is off              | One number in one place; D126: a turned-off tab's line stays as it was                                                                                                            | n          |
+| Which activity lines fold          | Consecutive "finished the roll call" lines on one roll call and server day           | The finding (16 lines); a line in between keeps its place (D108: a run never hides another line); paging stays                                                                    | n          |
+| Single taps ("took the roll call") | Not folded                                                                           | The brief and the finding name "finished"; noted as a follow-up                                                                                                                   | n          |
+| Where "Send screenshots" goes      | Its own card, right after "To review"                                                | Drafts it makes land in the card above; the door stays near the queue (PD-4)                                                                                                      | n          |
+| A finished entry                   | One line: start time, title, "Ended"; no "your time"                                 | Over is over: its time on the officer's clock no longer helps                                                                                                                     | n          |
+
+**S4 validation:** the plan review is under [Validation (h) to (k)](#h-s4-officer-panel-first-glance-test).
+
 ## Criteria
 
 ### S1: Follow-up says who is left and who was noted; Home and Members say the same (P1) - built in this PR
@@ -243,11 +303,25 @@ S3 continues at 32 (19 to 31 are taken):
 33. D104, D140, D98 and D73 SHALL each get an amendment dated 2026-11-22 for what they quote or rule that changes (the row, the help, the Needs help line, the Members group, the cookie)
 34. The Follow-up e2e flow SHALL assert that the quiet member's row has one button besides the name ("Talked to them"), no "Add a note", and "Card ›" linking to `/w/[slug]/members?m=<their uid>`, which opens that member's card (adversarial SHOULD); the quiet reason on the group, whether said once or on the row (adversarial MUST: other runs change the group's size); that "How this list works" is open on a first visit and closed after a reload; the Home e2e SHALL assert the Needs help group's new line; and a Members e2e SHALL assert the "Check in or Needs help" title and its "Follow-up ›" link
 
-### S4: Home leads with the week's follow-up, and its activity reads in one screen (P2) - later PR (F3 on Home, F21)
+### S4: Home leads with the week's follow-up, and its activity reads in one screen (P2) - built in `feat/585-home-first-screen` (F3 on Home, F21; M: Home's main flow)
 
-19. Home SHALL show Follow-up's two numbers in its main column near the top (product persona: the only fix for Home's first glance)
-20. Recent activity SHALL fold the same action on the same roll call by several officers into one line ("Cheese Trap roll call finished · Wren, Tomas and 3 others · yesterday")
+Shape, problem and plan review: [S4 plan](#s4-plan-homes-first-screen-built-in-feat585-home-first-screen).
+
+19. Home SHALL show Follow-up's two numbers in its main column near the top (product persona: the only fix for Home's first glance): WHILE the Follow-up tab is on and the alliance has had its first daily update, a card titled "Follow-up" after the tracker key card and before "Today and tomorrow" SHALL hold the numbers (S1's `followUpCounts`) as one 44 px link to `/w/[slug]/follow-up`, or "Everyone looks fine this week." (not a link) at 0 and 0; "Members this week" SHALL then show no check-in line
+    - 12 and 4 → "12 members to look at this week · 4 already noted by officers", nothing in "Members this week"; 1 and 0 → "1 member to look at this week"; 0 and 4 → "Nobody to look at this week · 4 already noted by officers"; 0 and 0 → "Everyone looks fine this week."
+20. Recent activity SHALL fold the same action on the same roll call by several officers into one line: consecutive "finished the roll call" lines (one action wrote several marks) on the same roll call (its id) and server day, whatever the officer, SHALL be one line at the newest time naming each officer once, newest first, that opens to each officer's line
+    - five officers finish "Cheese Trap" → "Wren, Tomas, and 3 others finished the roll call “Cheese Trap”" (FR "Wren, Tomas et 3 autres ont terminé l’appel …", PT "… concluíram a chamada …"); two → "Wren and Tomas finished …"; three → "Wren, Tomas, and Lucien finished …"; the newest officer's account without a name → the line stays with the others; another roll call of the same kind, a line in between, or another server day → separate lines; one officer twice → their name once
 21. The screenshot upload SHALL leave "To review" for a card of its own; a finished event on "Today and tomorrow" SHALL take one line
+    - "Send screenshots" and its help line in a card titled "Screenshots" right after "To review"; "To review" keeps its number, its items and "Nothing to review."
+    - an entry whose end (`endOf`) has passed on the viewer's clock: one 44 px link line, "{time} · {title} · Ended", no "your time"; an entry not over keeps its two lines
+
+S4 continues at 35 (19–21 above are S4's own; 24–31 are S2's; 32–34 are S3's, PR 651):
+
+35. WHILE the Follow-up tab is off (D126), Home SHALL read no follow-up record, show no Follow-up card, and keep today's line in "Members this week" ("{n} people to check in with or help", linked to the Members group); WHILE the alliance has no daily update yet (`early`), Home SHALL show no Follow-up card, as today
+36. The desk dictionary SHALL hold every new string in EN, PT-BR and FR
+37. D108 (the fold, the order on Home) and D110 (Home's "Send screenshots" in its own card) SHALL each get an amendment dated 2026-11-22
+38. The Home e2e SHALL assert the Follow-up card's line in Home's main column (before "Today and tomorrow", none in "Members this week") from the seed's numbers, its link to Follow-up, and "Send screenshots" outside "To review"
+39. WHILE something waits in "To review" (the Home tab's number: drafts, notice reviews for this officer, "This is me" claims), Home's main column SHALL show "{n} waiting in “To review” ↓" right after the Follow-up card (first when there is no card), a 44 px link to the "To review" card (`#to-review`); with nothing waiting it SHALL show nothing (panel MUST 1, round 2)
 
 ### S5: "After KvK, offer help" in Follow-up (P2) - later PR (F3; M: a rule change)
 
@@ -426,9 +500,54 @@ No one-way door: no migration, nothing deleted, no route or contract change, no 
 - NOTE, taken: D104's amendment says the owner's help line moved behind the disclosure (its words unchanged); the deviation "only the name styled as the link" (the S1 handoff said "the name and reasons") is in the handoff; `sharedOf` compares exact strings, so "Quiet for 3 days" and "for 4 days" stay on their rows; a save that shrinks a group to one row brings that row's line back (a small jump, accepted); privacy improves (`?q=<name>` becomes `?m=<uid>`); a screenshot at 1024 with the rail.
 - Changed after it, while building: the Members line shows while the head shows Follow-up's numbers (`followUpCounts` not null: the tab on and the first daily update in), not on the tab switch alone. That is the case where the two numbers met; before the first daily update the head says nothing about check-ins (criterion 8).
 
+### (h) S4: officer panel, first-glance test
+
+Six officer personas (R5 40s UK, war lead 30s US, diplomat early 20s FR, Discord-upkeep officer 50s PH, officer early 20s UA, architect 30s CH; AI personas on invented data) saw the 360 × 780 first viewport for about 5 seconds: today's screen (`585-worklist/after2/home--360-light-en-fold.png` and a text wireframe of it), then text wireframes of S4. Question: "What needs me today?" Truth: the tracker key needs re-entering, 1 "This is me" claim waits (the Home badge "1"), Follow-up has 12 to look at and 4 already noted, two events today.
+
+| Screen                                                  | Right | Partial | Wrong | Can't tell |
+| ------------------------------------------------------- | ----- | ------- | ----- | ---------- |
+| Before (today)                                          | 0     | 6       | 0     | 0          |
+| S4 round 1, A: card with no heading, S1's line          | 4     | 0       | 2     | 0          |
+| S4 round 1, B: card with a heading, S1's line           | 4     | 1       | 1     | 0          |
+| S4 round 2: heading "Follow-up", Home's words, the jump | 3     | 3       | 0     | 0          |
+
+Round 1 graded "right" on the key and the 12; round 2 also asked for the waiting claim. Before, nobody saw Follow-up's numbers or what the badge counts. Findings and what was done:
+
+- MUST, taken: the badge "1" pointed at nothing on the first screen (5 of 6): "{n} waiting in “To review” ↓", a jump to the card. Round 2 MUST, taken: "1 to review ↓" above the key card read as that card's label (3 of 6), so the jump sits after the Follow-up card and names the card.
+- MUST, taken: "Follow-up: 12 to look at · 4 noted this week" was misread on Home (4 of 6: "noted" as 4 more tasks, or as part of the key alert): Home says "12 members to look at this week · 4 already noted by officers" (round 2 SHOULD "by officers", taken). Members keeps S1's line (S3's files).
+- SHOULD, taken: a heading on the card (4 of 6 for B; the designer and product persona preferred A for its height, but A's two wrong answers came from the card reading as the alert's tail); a heading "Screenshots" on the upload's card (4 of 6, designer); wording 1, subject first, for the fold (4 of 6, designer, product).
+- SHOULD, not taken: "need a check-in" instead of "to look at" (round 2, 3 of 6): D104 keeps the owner's "to look at"; "1 claim to approve" naming the kind (round 2): three kinds share the count, the card says which; cutting the tracker key card's second sentence and renaming "Your tracker key needs you" (2 to 4 of 6): another card's copy, follow-up.
+- COULD, reported: "ST" never spelled out; "Alliance settings" twice; the ▾ glyph is small (the whole run line is already the 44 px `<summary>`).
+
+### (i) S4: product strategy: approve with changes
+
+- MUST, taken: D108's amendment says the fold's unit is the roll call, names go newest first and are not a ranking, "and 3 others" counts the officers on one action, never an officer's total (D75), and the line opens to each officer's line with its time.
+- SHOULD, taken: what waits in "To review" reaches the first screen (as the jump line, not by moving the card, so today's events keep their place); version A or B and wording 1 (B chosen on the panel's wrong answers, see (h)); the line stays out of "Members this week"; single taps not folded.
+- SHOULD, not taken: fold across other roll calls' "finished" lines. A fold that is not consecutive breaks D108's page cursor (a page's cursor is its last line's oldest action; an earlier line could then hold actions older than it, shown twice on the next page) and its "a run never hides another line". Follow-up, with the measure below.
+- COULD, reported: the "(R5)" in the wireframe's names is the seed's chosen name, not a tag (D108); two cards on a quiet day ("Nothing to review." and "Screenshots"): follow-up.
+- Measure (team level, no per-officer numbers): Home → Follow-up within 10 minutes, before and after, by width; `$autocapture` clicks on the card's link; Home scroll depth at < 640 px; `GET /api/w/[slug]/activity` and "Show more" per Home view (should fall); claim asked → answered time from the database; `ws_screenshot_sent` per workspace per week must not drop.
+
+### (j) S4: designer: approve with changes
+
+- MUST, taken: the card's link in the Home link style (semibold plum, underlined, 44 px); "Everyone looks fine this week." plain text, not a link; the Screenshots card after "To review"; wording 1; a finished entry one line, muted, keeping "ST" and its 44 px link.
+- MUST, already so: the run line's disclosure is the whole 44 px `<summary>` row, with ▾ turning ▴ when open and the lines indented.
+- SHOULD, not taken: move the card to the margin at 1280 (criterion 19 puts it in the main column, where the cards to act on are); fold the screenshot help under a disclosure; a "›" after the link.
+
+### (k) S4: adversarial: approve with changes
+
+No one-way door: no schema, no migration, nothing written, no privacy widening, no quota, no dependency.
+
+- MUST, taken: a folded line was dropped whole when its newest officer's account had no name (the head was that officer's line); `activityPage` now keeps the others' lines, and one left alone is a plain line (test).
+- MUST, taken: the criteria now carry the built words and order (19, 20, 39).
+- SHOULD, taken: English lists have the serial comma ("Wren, Tomas, and 3 others", `Intl.ListFormat`, as `namesList` already wrote); `followUpWords` takes a `WorkspaceLanguage`.
+- SHOULD, reported: on real data an officer's single taps ("took the roll call") between two "finished" lines end the fold, so the gain may be smaller than on the seed; folding the "took" lines of the same roll call in too is a criteria change, a follow-up. The id also reached `sameKey`, which showed one officer's identical lines on two roll calls of the same name four times in the e2e walk; `sameKey` now leaves the id out, so the same words in a row stay one line as before (in D108's amendment and the test).
+- NOTE: `followUpCounts` is null both with the tab off and before the first daily update; Home tells them apart through `view.early`, so criterion 35 holds. Two officers with the same desk name are named once in a fold (names are deduplicated as text).
+
 ## Analytics plan
 
 No new event, no change to an event. The count line on Home and Members becomes a link to Follow-up (was the Members group); pageviews already show it. A dated line in the tracking plan's "Changed" section says that from this release Home and Members link to Follow-up, so Follow-up pageviews from Home may rise. Remove: nothing. PostHog side: no insight or Endpoint reads these; nothing to change.
+
+S4: no new event, no change to an event. Home's Follow-up link moves from the margin note to a card near the top of the main column, with new words; "Send screenshots" (`ws_screenshot_sent` comes from its reads) moves from "To review" into its own card; the new "{n} waiting in “To review” ↓" is an in-page jump. A dated "Changed" line in the tracking plan says Home → Follow-up clicks and `$autocapture` on the line may rise from this release, and that autocapture on the old "Follow-up:" text on Home ends. Remove: nothing. PostHog side: no insight or Endpoint reads these.
 
 S2: no new event, no change to an event. "No longer needs help" saves through the facts route, which already counts `ws_action` `member_facts` `save`. A dated line in the tracking plan's "Changed" section says that from this release Home's and Members' "Follow-up: n to look at" also counts members marked Needs help, so the number can rise on release day. Remove: nothing. PostHog side: nothing reads these.
 
