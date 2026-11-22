@@ -419,6 +419,9 @@ export const uk = {
     left: "Пішли",
     joinedReads: "У списку учасників на «Кінці» ({to}), а не на «Початку» ({from}).",
     leftReads: "У списку учасників на «Початку» ({from}), а не на «Кінці» ({to}).",
+    startUnknown: "Початок невідомий",
+    endUnknown: "Кінець невідомий",
+    countedAsZero: "враховано як 0",
   },
   leadership: {
     title: "Керівництво",

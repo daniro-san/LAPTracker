@@ -414,6 +414,9 @@ export const ja = {
     left: "脱退",
     joinedReads: "終了時（{to}）のメンバー一覧にいて、開始時（{from}）にはいません。",
     leftReads: "開始時（{from}）のメンバー一覧にいて、終了時（{to}）にはいません。",
+    startUnknown: "開始は不明",
+    endUnknown: "終了は不明",
+    countedAsZero: "0として集計",
   },
   leadership: {
     title: "指導部",

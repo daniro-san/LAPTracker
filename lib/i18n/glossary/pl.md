@@ -166,6 +166,7 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | lookup                        | sprawdzenie                        | `alliances.getNote`, `alliances.usedUp`, `alliances.failed` — one request for an alliance's details, one a day                                                                 |
 | KvK matchup                   | Starcie KvK                        | `kvk.title`, `kvk.versus` — the event page's two-server section                                                                                                                |
 | Start to End                  | Od Początku do Końca               | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — the change between the Start and End readings                                                                              |
+| Unknown                       | nieznany                           | `members.startUnknown`, `members.endUnknown` — a figure the reading did not get at Start or End                                                                                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
