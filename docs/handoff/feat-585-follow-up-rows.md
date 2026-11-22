@@ -121,4 +121,4 @@ What was missing from the task prompt? Three things:
 - "Open on a first visit" needs a cookie, which D73 lists.
 - Without "Add a note" an officer may not find the panel: the task fixed one visible action without saying what shows the way in.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/651
