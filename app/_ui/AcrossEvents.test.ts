@@ -70,8 +70,12 @@ describe("AcrossEvents", () => {
       }),
     );
     const html = await new Response(prelude).text();
-    expect(html).toContain("97");
-    expect(html).not.toContain("+7");
+    // The newest event's Members cell, from its label to the next cell's label: its change is the dash.
+    const cell = html.split(`sm:sr-only">${en.ledger.members}</span>`)[1]?.split("sm:sr-only")[0];
+    expect(cell).toContain("97");
+    expect(cell).toMatch(
+      /<span class="text-sm tabular-nums sm:block"><span class="text-ink\/70">—<\/span><\/span>/,
+    );
   });
 
   it("gives both times their day when the End falls on the day after the Start (issue 473)", async () => {

@@ -128,6 +128,7 @@ describe("comparable", () => {
     expect(comparable(ok, { isFresh: true })).toBe(true);
     expect(comparable(ok, { isFresh: false })).toBe(false);
     expect(comparable({ isFresh: true, failed: true }, ok)).toBe(false);
+    expect(comparable(ok, { isFresh: true, failed: true })).toBe(false);
     expect(comparable(undefined, ok)).toBe(false);
     expect(comparable(ok, null)).toBe(false);
   });
