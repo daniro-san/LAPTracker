@@ -215,6 +215,8 @@ lib/route.ts, lib/app-context.ts, lib/app-errors.ts, lib/report-error.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
                     the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors
                     and its admin alert; an error's redacted detail and PostHog's `$exception` (`reportError`).
+lib/same-origin.ts  `isSameOriginJson`, the one same-origin rule for JSON writes: public routes import it, lib/private/http.ts
+                    re-exports it (D71). It imports nothing.
 config/alliances.ts the server, TRACKED_COUNT (20), LOOKUPS_PER_DAY (30) and the own alliance (D133: no fixed list).
 lib/tracked.ts      the day's ranks board and tracked set before the daily read (D133): the board stored, its top 20 by
                     might claimed once a day, the admin line on a change; `dayTargets` adds the workspaces' alliances

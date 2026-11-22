@@ -1,7 +1,7 @@
 // The squads read (D117) as a daily queue (D132) against a real Postgres (PGlite) with a stubbed
 // /v1/players and hero catalog: small batches, one answer per member and never over the cap, the KvK
-// reserve that waits instead of skipping, retries at the back of the queue, members who join during the
-// day, squads kept when a response leaves them out, and "Main squad might" versions that respect an
+// reserve that waits instead of skipping, retries at the back of the queue (members who join during the
+// day: squads-newcomers.test.ts), squads kept when a response leaves them out, and "Main squad might" versions that respect an
 // officer's value.
 import { and, eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -237,7 +237,7 @@ describe("the squads queue (D117, D132)", () => {
   });
 });
 
-describe("the queue's retries, newcomers and claim (D132)", () => {
+describe("the queue's retries and claim (D132)", () => {
   it("stops the day at a 429", async () => {
     await dayRead(THU.day, [1, 2, 3], 900);
     const d = deps(THU.now, (uid) => (uid === 2 ? new QuotaExhaustedError("429") : {}));
@@ -275,23 +275,6 @@ describe("the queue's retries, newcomers and claim (D132)", () => {
       attempts: 3,
     });
     expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({ failed: 3 });
-  });
-
-  it("queues a member who joined after the day's roster, from an answer's newer alliance roster", async () => {
-    await dayRead(THU.day, [1, 2], 900);
-    const roster = (updatedAt: string, uids: number[]) => ({
-      roster: { unionId: OWN_ALLIANCE_ID, updatedAt: new Date(updatedAt), uids },
-    });
-    // Member 1's answer carries a roster older than the day's read, with 8, who has left since: 8 is not
-    // added. Member 2's carries a newer one, where 9 has joined.
-    const d = deps(THU.now, (uid) =>
-      uid === 1
-        ? roster("2026-11-19T20:00:00Z", [1, 2, 8])
-        : roster("2026-11-20T01:38:00Z", [1, 2, 9]),
-    );
-    expect(await runSquadsBatch(d, db)).toMatchObject({ calls: 2, more: true });
-    expect(await runSquadsBatch(d, db)).toMatchObject({ status: "done", calls: 1 });
-    expect(d.calls).toEqual([1, 2, 9]);
   });
 
   it("refuses a second caller while a batch holds the claim, and takes over a stale one", async () => {

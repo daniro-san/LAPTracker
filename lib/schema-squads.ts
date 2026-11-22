@@ -165,6 +165,11 @@ export const playerReads = pgTable(
   (t) => [
     index("player_reads_member_idx").on(t.unionId, t.uid, t.readAt),
     index("player_reads_read_at_idx").on(t.readAt),
+    // The daily 90-day clean-up's own index (D149, issue 507): only reads that still hold a body, so the
+    // clean-up reads the day it clears, not the whole history. player_reads_read_at_idx stays for the windows.
+    index("player_reads_raw_read_at_idx")
+      .on(t.readAt)
+      .where(sql`${t.rawJson} is not null`),
   ],
 );
 

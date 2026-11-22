@@ -3,16 +3,8 @@
 // it, and a JSON body, which a cross-site form cannot send without a CORS preflight.
 export const NO_STORE = { "Cache-Control": "private, no-store" } as const;
 
-export function isSameOriginJson(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  const site = request.headers.get("sec-fetch-site");
-  const type = request.headers.get("content-type") ?? "";
-  return (
-    origin === new URL(request.url).origin &&
-    (site === null || site === "same-origin") &&
-    type.split(";")[0]?.trim() === "application/json"
-  );
-}
+// The JSON rule's one copy, shared with the public routes (issue 509).
+export { isSameOriginJson } from "../same-origin";
 
 /**
  * A picture sent from our own page as the request's whole body (issue 299). A cross-site form cannot

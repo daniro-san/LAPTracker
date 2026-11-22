@@ -4,7 +4,7 @@
 import { and, desc, eq, inArray, lt, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { dailyRosters, events, workspaces } from "../schema";
+import { dailyRosters, events } from "../schema";
 import { allianceBoard, alliances, trackedSets } from "../schema-alliances";
 import type { RanksBoard } from "../sources/types";
 
@@ -168,15 +168,6 @@ export async function allianceLabels(
 /** One alliance's label, or null when nothing names it. */
 export async function allianceLabelOf(db: Reader, unionId: number): Promise<AllianceLabel | null> {
   return (await allianceLabels(db, [unionId])).get(unionId) ?? null;
-}
-
-/** The label of the alliance of the workspace at `slug`; null when there is no such workspace or no label. */
-export async function workspaceAllianceLabel(db: Db, slug: string): Promise<AllianceLabel | null> {
-  const [w] = await db
-    .select({ unionId: workspaces.unionId })
-    .from(workspaces)
-    .where(eq(workspaces.slug, slug));
-  return w ? allianceLabelOf(db, w.unionId) : null;
 }
 
 /** Every alliance a workspace or an invite may be made for: on the board, or with a daily roster. */

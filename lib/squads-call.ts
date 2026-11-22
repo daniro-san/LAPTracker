@@ -93,6 +93,8 @@ export type Call = {
   day: string;
   /** When the day's roster was read: a body whose alliance the tracker updated later can add members. */
   rosterAt: Date;
+  /** Uids this batch knows are in the day's queue: the day's roster, then each newcomer it queued. */
+  queued: Set<number>;
 };
 
 /**
@@ -143,8 +145,12 @@ async function keep(db: Db, call: Call, player: PlayerSquadsInput, now: Date, b:
   // D132: someone who joined after the day's roster read is queued, from a body whose alliance roster
   // the tracker updated since. Only the uids are read; the roster itself is never stored.
   const { roster } = player;
-  if (roster && roster.unionId === unionId && roster.updatedAt > call.rosterAt)
-    b.joined += await queueMembers(db, { day: call.day, unionId }, roster.uids, now);
+  // Only uids the batch has not queued yet are sent (issue 507): most answers then write nothing.
+  if (roster && roster.unionId === unionId && roster.updatedAt > call.rosterAt) {
+    const fresh = roster.uids.filter((uid) => !call.queued.has(uid));
+    b.joined += await queueMembers(db, { day: call.day, unionId }, fresh, now);
+    for (const uid of fresh) call.queued.add(uid);
+  }
   if (workspaceId !== null && (await writeMight(db, { workspaceId, unionId }, call.uid, now)))
     b.might++;
 }
