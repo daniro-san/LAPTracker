@@ -60,9 +60,14 @@ export async function browser(
   return { userId, visit, board };
 }
 
-/** The feed's newest `size` lines at `now` (server time UTC), as Home reads its first page. */
-export const recentActivity = async (db: Db, access: WorkspaceAccess, now: Date, size = 40) =>
-  (await activityPage(db, access, { now, zone: "UTC" }, null, size)).lines;
+/** The feed's newest `size` lines at `now` (server time `zone`, UTC by default), as Home reads its first page. */
+export const recentActivity = async (
+  db: Db,
+  access: WorkspaceAccess,
+  now: Date,
+  size = 40,
+  zone = "UTC",
+) => (await activityPage(db, access, { now, zone }, null, size)).lines;
 
 /** The feed's lines in English (or `language`), without the isolation marks. */
 export const linesOf = (lines: ActivityLine[], language: WorkspaceLanguage = "en") =>

@@ -8,7 +8,7 @@ import { scheduledEventMight, type EventMight } from "../repo/workspace-rosters"
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn, zonedInstant } from "./calendar-time";
 import { featureOn } from "./features";
-import { kvkOpen, sinceMonday } from "./follow-up-rules";
+import { inKvkGroup, kvkOpen, sinceMonday } from "./follow-up-rules";
 import { afterKvk, KVK_HELP_DAYS, kvkOf, type KvkView } from "./insights-kvk";
 import type { MembersView } from "./members";
 
@@ -50,5 +50,5 @@ export async function kvkGroupOpen(
   if (!featureOn(access, "follow_up") || !after) return false;
   const rows = await followedUpSince(db, access.workspaceId, recordsSince(now, zone));
   const open = kvkOpen(after.help, rows, sinceMonday(now, zone), after.afterAt);
-  return [...open].some((uid) => !needsHelp.has(uid));
+  return [...open].some((uid) => inKvkGroup({ kvk: true, help: needsHelp.has(uid) }));
 }

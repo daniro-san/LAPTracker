@@ -9,7 +9,7 @@ import type {
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import type { FollowUpView, NotedItem } from "@/lib/private/follow-up";
-import { notedLine, type FollowUpAction } from "@/lib/private/follow-up-rules";
+import { inKvkGroup, notedLine, type FollowUpAction } from "@/lib/private/follow-up-rules";
 import type { Formats } from "@/lib/private/members-sheet";
 import type { AttackerGroup } from "@/lib/private/theft-groups";
 
@@ -48,7 +48,7 @@ export function FollowUpHead(props: {
 }) {
   const { data, t, language } = props;
   // "After KvK, offer help" (issue 585 S5): the members in it, not those under Needs help.
-  const hit = data.items.filter((i) => i.kvk && !i.help).length;
+  const hit = data.items.filter(inKvkGroup).length;
   return (
     <>
       <h1 className="font-display text-display-lg">{t["tab.review"]}</h1>

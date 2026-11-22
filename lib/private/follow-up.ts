@@ -152,17 +152,21 @@ export async function followUpCounts(
   return { toLook: items.length, noted: noted.length };
 }
 
-/** The standing Needs help mark of each of `uids` that has one (#585 S2): Follow-up's rows and the card. */
+/**
+ * The standing Needs help mark of each of `uids` that has one (#585 S2): Follow-up's rows and the card.
+ * `loaded`: the members' records the caller already read (oldest first), so they are not read again.
+ */
 export async function helpMarksOf(
   db: Db,
   workspaceId: number,
   uids: readonly number[],
+  loaded?: Awaited<ReturnType<typeof helpMarkRows>>["records"],
 ): Promise<Map<number, HelpMark>> {
-  const { versions, records } = await helpMarkRows(db, workspaceId, uids);
+  const { versions, records } = await helpMarkRows(db, workspaceId, uids, !loaded);
   return new Map(
     uids.flatMap((uid) => {
       const own = <T extends { uid: number }>(rows: T[]) => rows.filter((r) => r.uid === uid);
-      const mark = helpMark(own(versions), own(records));
+      const mark = helpMark(own(versions), own(loaded ?? records));
       return mark ? [[uid, mark] as const] : [];
     }),
   );
