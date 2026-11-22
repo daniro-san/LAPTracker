@@ -2,7 +2,7 @@
 // them, and the door in, "Send screenshots". Each draft says what was read and how many rows need a person.
 // Above them, "2 new members to match" when a roster read could not match new members added by hand, and
 // each notice review request the officer may answer (D113), linked to its notice, and each member's "This is
-// me" waiting for an officer (D142), with Approve and Reject.
+// me" waiting for an officer (D142), with Approve and Not them.
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { linkWords } from "@/lib/private/dictionary.me";
@@ -128,6 +128,8 @@ export function ToReview(props: {
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** "Mon 16 Nov 18:54 server time", per item. */
   when: (at: Date) => string;
+  /** "Thu, Nov 19", the day a "This is me" link was asked (issue 585). */
+  day: (at: Date) => string;
   /** Members' "This is me" links waiting for an officer (D142). */
   links: LinkReview[];
 }) {
@@ -142,7 +144,11 @@ export function ToReview(props: {
       </h2>
       {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
       <NoticeReviewLinks slug={slug} t={t} reviews={props.reviews} />
-      <LinkReviews slug={slug} reviews={props.links} words={linkWords(t)} />
+      <LinkReviews
+        slug={slug}
+        reviews={props.links.map((l) => ({ ...l, asked: l.at && props.day(l.at) }))}
+        words={linkWords(t)}
+      />
       {props.toMatch && (
         <p className="mt-1">
           <a

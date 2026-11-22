@@ -70,6 +70,7 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "Confirm the test rule: a change to a desk flow, or to the numbers a public page shows, updates its end-to-end test in the same PR (orchestrator recommendation).",
     issue: 592,
+    done: true,
   },
   {
     text: "Private repo (needs its own decision): the CI/CD panel measured about 16,000 Actions minutes a month at the 2026-11-20/21 pace (69 PRs in 2 days, about 2 runs each, 13 releases a day). This release saves roughly 5,000–6,000 of that (faster checks, no double run per release), which still leaves several times GitHub Pro's 3,000, so a private repo would need a self-hosted runner or paid minutes.",
@@ -171,6 +172,19 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.50.0",
+    date: "2026-11-22",
+    title: "Follow-up says who was already noted, and claims are easier to check",
+    changes: [
+      'Follow-up opens with the week\'s two numbers, how many to look at and how many others were already noted this week, and a new "Noted this week" card lists who an officer talked to since Monday, with the note. "Check in" is now "Worth a hello".',
+      "Home and Members show Follow-up's two numbers by Follow-up's own rule, linked to it, so the three pages no longer disagree.",
+      'A "This is me" claim on Home\'s "To review" links the player to their member card and says the day it was asked, so an officer can check who it is first. "Reject" is now "Not them".',
+      '/admin\'s "Needs you" shows a nightly clean-up that failed (old member data, deleted workspaces or old app errors) until it next runs fine.',
+      "Library updates, among them Next.js 16.4.6.",
+    ],
+    prs: [640, 643, 642, 618],
+  },
   {
     version: "v5.49.0",
     date: "2026-11-22",

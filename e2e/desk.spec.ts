@@ -13,6 +13,7 @@ import {
   JOINER,
   KVK_ENTRY,
   LEAVER,
+  newMembers,
   lastRosterDay,
   raidOf,
   rosterOf,
@@ -68,14 +69,21 @@ test("Home shows the alliance, its activity and its week line", async ({ page })
   );
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
   await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
-  // D114: on Sunday and Monday (server days), while the week is not thanked yet (the seed shares none), the
-  // thanks nudge takes the place of "Everyone looks fine"; on the other days that line shows.
-  const thanksDay = [0, 1].includes(new Date(cal.today).getUTCDay());
-  if (thanksDay) {
+  // Issue 585: Follow-up's numbers, linked to Follow-up. The seed gives everyone quest points and coins at
+  // the cap (DAILY) and records no facts for its new members, so the list holds the new members alone, each
+  // with every fact to ask. The noted part races: the card test below, in this project and the other one
+  // running beside it, keeps a Talked on a member, so 0 or 1 is right at this moment; the exact rule is in
+  // follow-up-week.test.ts.
+  const toLook = newMembers("a").length;
+  const followUp = week.getByRole("link", {
+    name: new RegExp(`^Follow-up: ${toLook} to look at( · 1 noted this week)?$`),
+  });
+  await expect(followUp).toHaveAttribute("href", `/w/${A.slug}/follow-up`);
+  // With someone to look at, "Everyone looks fine" never shows; on Sunday and Monday (server days), while
+  // the week is not thanked yet (the seed shares none), the thanks nudge shows too (D114).
+  await expect(week.getByText("Everyone looks fine this week.")).toHaveCount(0);
+  if ([0, 1].includes(new Date(cal.today).getUTCDay())) {
     await sees(week, "Time for the weekly appreciation post");
-    await expect(week.getByText("Everyone looks fine this week.")).toHaveCount(0);
-  } else {
-    await sees(week, "Everyone looks fine this week.");
   }
 });
 
