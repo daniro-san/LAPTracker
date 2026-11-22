@@ -9,7 +9,8 @@ export type Side = "a" | "b";
  * coordinates, and four years no page shows otherwise. Last online falls on a 29 February, which the member
  * card writes as "Feb 29" (no year), so a formatted leak can be seen too. Daily quest points (`active`) and
  * donations (`daily_tech`) are figures no other seeded value or copy line has, one pair per alliance; every
- * member of an alliance has the same (seed v2 varies them). Coins (`daily_honor`) sit at their 1,000 cap
+ * member of an alliance has the same, except the quest points of Lantern Keep's linked member around last
+ * week (seed.ts `questPointsOf`). Coins (`daily_honor`) sit at their 1,000 cap
  * (COINS_MAX), a figure the copy itself writes, so only their key can be looked for.
  */
 export const SENTINELS = {
@@ -178,6 +179,14 @@ export const NEEDS_HELP = {
  * Read-only; k=4 has no reason, fact or record of its own, and only the roll call test marks it.
  */
 export const HEAVY_HIT = { k: 4, lost: 10_000_000 } as const;
+
+/**
+ * The Lantern Keep member whose card each project's card test taps "Talked to them" on, then Undo: one per
+ * project. Each has an "All fine" an officer noted this week (seed-help.ts), so Follow-up's noted count is
+ * the same while a test holds its Talked as after its Undo: one per member here, whichever projects run.
+ */
+export const CARD_TALKED: Record<string, number> = { phone: 6, wide: 7, iphone: 8 };
+export const NOTED = Object.values(CARD_TALKED).length;
 
 /**
  * The member marked Needs help whom the "No longer needs help" test clears (issue 585 slice 2): the first

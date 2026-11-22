@@ -4,9 +4,10 @@
 import {
   ALLIANCES,
   calendarOf,
-  DAILY,
   daysAgo,
+  LINKED,
   LINKED_MEMBER,
+  questPointsOf,
   rosterOf,
   seededAt,
   shown,
@@ -45,15 +46,25 @@ test("Me: the member's own page, with their own numbers only", async ({ page }) 
   );
   const week = page.getByRole("region", { name: "This week" });
   await sees(week, "Daily quest points");
-  // This week's reads so far: Monday up to yesterday (none on a Monday, whose line then says so).
+  // The game week's reads so far, Monday up to yesterday (none on a Monday, whose line then says so), and
+  // last week's seven; the seed gives this member different quest points on each side of both Mondays.
   const reads = (new Date(cal.today).getUTCDay() + 6) % 7;
+  const average = (from: number, n: number) => {
+    const days = Array.from({ length: n }, (_, i) => daysAgo(from - i));
+    return Math.round(days.reduce((s, d) => s + questPointsOf("a", LINKED.a, d), 0) / n);
+  };
+  // The quest points row comes first; coins and donations have lines of their own below it.
   if (reads > 0) {
     const days = `${reads} day${reads === 1 ? "" : "s"}`;
     await expect(
-      week.getByText(`This week: Average ${DAILY.active} · ${days}`).first(),
+      week.getByText(`This week: Average ${average(reads, reads)} · ${days}`).first(),
     ).toBeVisible();
+  } else {
+    await expect(week.getByText("This week: no average yet").first()).toBeVisible();
   }
-  await expect(week.getByText(`Last week: Average ${DAILY.active} · 7 days`).first()).toBeVisible();
+  await expect(
+    week.getByText(`Last week: Average ${average(reads + 7, 7)} · 7 days`).first(),
+  ).toBeVisible();
   for (const other of A.names.filter((n) => n !== linked)) {
     await expect(page.getByText(other)).toHaveCount(0);
   }

@@ -9,6 +9,7 @@ import {
   calendarOf,
   HEAVY_HIT,
   kvkWeek,
+  NOTED,
   seededAt,
   shown,
   uidOf,
@@ -75,9 +76,9 @@ test("After KvK, offer help: Follow-up offers help to the member who took a heav
 test("Members' head says Follow-up's numbers, the KvK group counted", async ({ page }) => {
   await page.goto(`${desk}/members`);
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
-  // The same list as Follow-up and Home (slice 5); the noted part races (see desk.spec.ts's Home test).
-  const line = new RegExp(`^Follow-up: ${toLookOf()} to look at( · 1 noted this week)?$`);
-  await expect(page.locator("main").getByRole("link", { name: line })).toHaveAttribute(
+  // The same list as Follow-up and Home (slice 5), and the members noted (CARD_TALKED's, see desk.spec.ts).
+  const line = `Follow-up: ${toLookOf()} to look at · ${NOTED} noted this week`;
+  await expect(page.locator("main").getByRole("link", { name: line, exact: true })).toHaveAttribute(
     "href",
     `${desk}/follow-up`,
   );

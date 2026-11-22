@@ -8,14 +8,16 @@ import type { Page } from "@playwright/test";
 import {
   ADDED_BY_HAND,
   ALLIANCES,
+  CARD_TALKED,
   calendarOf,
   KVK_ENTRY,
   LEAVER,
   LINKED_MEMBER,
+  NOTED,
   seededAt,
   SHIELD_MARKED,
 } from "./fixtures/seed";
-import { deskFrame, expect, hydrated, sees, signIn, test } from "./fixtures/test";
+import { deskFrame, expect, hydrated, sees, showMoreUntil, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const desk = `/w/${A.slug}`;
@@ -98,31 +100,27 @@ test("Home: “added 3 new members” opens exactly those names, and the noted o
   // later page.
   const activity = page.getByRole("region", { name: "Recent activity" }).first();
   const added = activity.getByRole("listitem").filter({ hasText: /added 3 new members/ });
-  const more = activity.getByRole("button", { name: "Show more" });
-  while ((await added.count()) === 0) {
-    const shown = await activity.getByRole("listitem").count();
-    await hydrated(more);
-    await more.click();
-    await expect.poll(() => activity.getByRole("listitem").count()).toBeGreaterThan(shown);
-  }
+  await showMoreUntil(activity, added);
   await expect(added).toContainText(/Officer LNK⁩? added 3 new members/);
   await added.getByText(/added 3 new members/).click();
   const order = new Intl.Collator("en", { numeric: true, ignorePunctuation: true });
   await expect(added.getByRole("list").getByRole("listitem")).toHaveText(
     [...ADDED_BY_HAND].sort((x, y) => order.compare(x, y)),
   );
-  // The noted ones (0 or 1 at this moment: the Follow-up card test keeps a Talked, see desk.spec.ts) are a
-  // link of their own, to Follow-up's "Noted this week", which lists that many.
+  // The noted ones (CARD_TALKED's "All fine", which the card test's Talked and Undo leave noted) are a link
+  // of their own, to Follow-up's "Noted this week", which lists exactly those members.
   const noted = page
     .getByRole("region", { name: "Follow-up" })
-    .getByRole("link", { name: /already noted by officers$/ });
-  if ((await noted.count()) === 0) return;
-  const n = Number((await noted.innerText()).match(/^\d+/)?.[0]);
+    .getByRole("link", { name: `${NOTED} already noted by officers`, exact: true });
   await expect(noted).toHaveAttribute("href", `${desk}/follow-up#follow-up-noted`);
   await hydrated(noted);
   await noted.click();
   await expect(page.getByRole("heading", { level: 1, name: "Follow-up" })).toBeVisible();
+  const list = page.getByRole("region", { name: `Noted this week · ${NOTED}` });
   await expect(
-    page.getByRole("heading", { level: 2, name: `Noted this week · ${n}` }),
+    list.getByRole("heading", { level: 2, name: `Noted this week · ${NOTED}` }),
   ).toBeVisible();
+  for (const k of Object.values(CARD_TALKED)) {
+    await expect(list.getByRole("link", { name: A.names[k] as string })).toBeVisible();
+  }
 });
