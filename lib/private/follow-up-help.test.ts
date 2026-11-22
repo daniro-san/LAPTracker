@@ -286,3 +286,65 @@ describe("Follow-up's Needs help group (#585 slice 2)", () => {
     });
   });
 });
+
+describe("Undo of a Needs help record (#647)", () => {
+  const status = async (access: WorkspaceAccess, uid: number) =>
+    (await factsOf(db, access)).get(uid)?.status?.value ?? null;
+  const markOf = async (access: WorkspaceAccess, uid: number, now: Date) =>
+    (await followUpView(db, access, now, ZONE)).items.find((i) => i.member.uid === uid)?.mark;
+  const undo = async (access: WorkspaceAccess, r: FollowUpInput, when: Date) => {
+    const request = { uid: r.uid, target: r.requestId, requestId: randomUUID() };
+    expect(await undoFollowUp(db, access, request, at(when))).toEqual({ ok: true });
+  };
+
+  it("keeps another officer's standing mark when the undone save wrote no version of its own", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    await markHelp(ana, 101, "Unsure about the shield timing", st("2026-11-12T09:00"));
+    // Bo's sheet opened before Ana's mark (version 0): the same value reuses Ana's version.
+    const again = input(101, { action: "help", note: "Asked again" });
+    await recordFollowUp(db, bo, again, at(st("2026-11-12T10:00")));
+    await undo(bo, again, st("2026-11-12T10:01"));
+    expect(await markOf(ana, 101, NOW)).toEqual({
+      at: st("2026-11-12T09:00"),
+      by: "Ana",
+      note: "Unsure about the shield timing",
+    });
+    const card = await memberCard(db, ana, 101, { now: NOW, zone: ZONE, language: "en", t });
+    expect(card?.statusLabel).toBe("Needs help");
+    expect(card?.statusMark).toEqual([
+      `Since Thu, Nov 12 · added by ${isolate("Ana")}`,
+      "“Unsure about the shield timing”",
+    ]);
+  });
+
+  it("keeps last week's mark when a save that reused it on Sunday is undone on Monday", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    await markHelp(ana, 102, "Asked for help rebuilding", st("2026-11-13T12:00"));
+    const sunday = input(102, { action: "help" });
+    await recordFollowUp(db, bo, sunday, at(st("2026-11-15T23:50")));
+    await undo(bo, sunday, st("2026-11-16T00:05"));
+    expect(await status(ana, 102)).toBe("help");
+    expect(await markOf(ana, 102, NOW)).toEqual({
+      at: st("2026-11-13T12:00"),
+      by: "Ana",
+      note: "Asked for help rebuilding",
+    });
+  });
+
+  it("puts a different value back when the undone save wrote a new version over it", async () => {
+    const [ana, bo] = [await signedIn("Ana"), await signedIn("Bo")];
+    const onBreak = { field: "status", version: 0, value: "break", source: "officer" } as const;
+    await saveFacts(db, ana, 103, [onBreak], st("2026-11-18T09:00"), ZONE);
+    const help = await markHelp(bo, 103, "", st("2026-11-19T09:00"));
+    await undo(bo, help, st("2026-11-19T09:01"));
+    expect(await status(ana, 103)).toBe("break");
+  });
+
+  it("clears an officer's own mark when they undo it", async () => {
+    const ana = await signedIn("Ana");
+    const help = await markHelp(ana, 101, "", st("2026-11-19T09:00"));
+    await undo(ana, help, st("2026-11-19T09:01"));
+    expect(await status(ana, 101)).toBeNull();
+    expect(await helped(ana, NOW)).toEqual([]);
+  });
+});
