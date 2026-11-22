@@ -19,10 +19,26 @@ vi.mock("@/lib/app-context", async (original) => ({
   ...(await original<typeof import("@/lib/app-context")>()),
   getAppContext: () => holder.ctx,
 }));
+// The real read of a player's reports, with a hook that runs right after it: the writer blocked between an
+// officer's read and the seen mark, so the mark's own check is what refuses (review of PR 684).
+const race = vi.hoisted(() => ({ after: null as null | (() => Promise<unknown>) }));
+vi.mock("@/lib/repo/self-reports", async (original) => {
+  const real = await original<typeof import("@/lib/repo/self-reports")>();
+  return {
+    ...real,
+    reportsOfPlayer: async (...args: Parameters<typeof real.reportsOfPlayer>) => {
+      const rows = await real.reportsOfPlayer(...args);
+      const after = race.after;
+      race.after = null;
+      if (after) await after();
+      return rows;
+    },
+  };
+});
 
 let db: Db;
 const world = selfReportWorld();
-const { send, answer, rook, card, officerFact, roster, users, removeLink, ALPHA } = world;
+const { send, answer, rook, card, roster, users, removeLink, ALPHA } = world;
 
 beforeAll(async () => {
   db = await openTestDb();
@@ -82,6 +98,45 @@ describe("a member tells their officers (D154)", () => {
       status: 404,
       body: { code: "changed" },
     });
+  });
+
+  it("refuses a value outside the facts' bounds (AC12)", async () => {
+    for (const change of [
+      { field: "adTech", version: 0, value: 101 },
+      { field: "adTech", version: 0, value: -1 },
+      { field: "timeZone", version: 0, value: "Mars/Olympus" },
+      { field: "languages", version: 0, value: ["xx"] },
+      // An empty list is a take-back, sent as null.
+      { field: "languages", version: 0, value: [] },
+    ])
+      expect(await send("alpha:Ana Invented", [change])).toEqual({
+        status: 400,
+        body: { code: "bad_request" },
+      });
+    expect((await card(101))?.selfReport ?? null).toBeNull();
+  });
+
+  it("hides a blocked writer's reports from the card and Home, and lets no seen mark reach them", async () => {
+    await send("alpha:Ana Invented", [{ field: "adTech", version: 0, value: 72 }]);
+    const ana = eq(workspaceUsers.id, users["alpha:Ana Invented"] ?? 0);
+    const members = new Map([[101, "Ana Invented"]]);
+    await db.update(workspaceUsers).set({ blocked: true }).where(ana);
+    expect((await card(101))?.selfReport ?? null).toBeNull();
+    expect(await reportReviews(db, await rook(), members)).toEqual([]);
+    const seen = { action: "seen", user: users["alpha:Ana Invented"], field: "adTech", version: 1 };
+    expect(await answer("alpha:Rook", 101, seen)).toEqual({
+      status: 404,
+      body: { code: "changed" },
+    });
+    // The seen mark checks the writer itself too: blocked after the officer's read, it marks nothing.
+    await db.update(workspaceUsers).set({ blocked: false }).where(ana);
+    race.after = () => db.update(workspaceUsers).set({ blocked: true }).where(ana);
+    expect(await answer("alpha:Rook", 101, seen)).toEqual({
+      status: 404,
+      body: { code: "changed" },
+    });
+    await db.update(workspaceUsers).set({ blocked: false }).where(ana);
+    expect((await card(101))?.selfReport?.unseen).toMatchObject([{ field: "adTech", version: 1 }]);
   });
 
   it("stores nothing for a member the newest roster no longer lists", async () => {
@@ -146,26 +201,5 @@ describe("a member tells their officers (D154)", () => {
       ID(2),
     );
     expect(again.body.reports).toMatchObject({ adTech: { version: 1, seen: true } });
-  });
-
-  it("labels what the member says apart from what the card holds, with the day and the answers' words", async () => {
-    await send("alpha:Ana Invented", [
-      { field: "timeZone", version: 0, value: "Europe/Lisbon" },
-      { field: "languages", version: 0, value: ["pt"] },
-    ]);
-    await officerFact(101, "languages", ["pt"]);
-    const report = (await card(101))?.selfReport;
-    expect(report?.unseen).toEqual([
-      expect.objectContaining({
-        label: "Time zone",
-        says: "Member says: Europe/Lisbon · UTC+0",
-        sent: "Self-reported · Sat, Nov 7",
-        onCard: "On the card: nothing yet",
-        same: false,
-      }),
-      expect.objectContaining({ label: "Languages", says: "Member says: Portuguese", same: true }),
-    ]);
-    expect(report?.words["self.card.use"]).toBe("Put on the card");
-    expect(report?.words["self.card.seen"]).toBe("Seen, keep the card");
   });
 });

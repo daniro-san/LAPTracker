@@ -8,6 +8,7 @@ import { and, eq, lt, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberSelfReports, workspaceUsers } from "../schema";
+import { DAY_KEY_PREFIX } from "./auth-attempts";
 
 export type ReportField = "adTech" | "timeZone" | "languages";
 
@@ -22,7 +23,7 @@ export interface ReportRow {
 }
 
 /** The member's daily send counter in auth_attempts (D154): a day key, so it is kept 24 hours. */
-export const selfReportLimitKey = (userId: number) => `day:selfreport:${userId}`;
+export const selfReportLimitKey = (userId: number) => `${DAY_KEY_PREFIX}selfreport:${userId}`;
 
 const r = memberSelfReports;
 const columns = {

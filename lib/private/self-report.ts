@@ -9,7 +9,6 @@ import { z } from "zod";
 import { fill } from "../copy";
 import type { Db } from "../db";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
-import { factVersion } from "../repo/member-facts";
 import {
   markSeen,
   ownReports,
@@ -290,21 +289,9 @@ export async function answerReport(
   if (input.action === "seen")
     return (await markSeen(db, access.workspaceId, report, access.user.id, now)) ? "ok" : "changed";
   if (row.value === null) return "removed";
-  // Refused when any officer saved the fact since the card was read, languages too: D80 would combine
-  // languages, and a combined list is a value nobody saw (adversarial review, 2026-11-22).
-  const newest = await factVersion(db, access.workspaceId, uid, input.field, "newest");
-  const seenVersion = input.factVersion ?? 0;
-  if ((newest?.version ?? 0) !== seenVersion && newest)
-    return {
-      conflict: {
-        field: input.field,
-        status: "conflict",
-        version: newest.version,
-        value: newest.value,
-        source: newest.source,
-      },
-    };
-  const change = { field: input.field, version: seenVersion, value: row.value };
+  // Refused at the write when any officer saved the fact since the card was read, languages too: never
+  // combined, since a combined list is a value nobody saw (review of PR 684).
+  const change = { field: input.field, version: input.factVersion ?? 0, value: row.value };
   const saved = await saveMemberFact(db, access, uid, change, now);
   if (!saved) return "changed";
   if (saved.status === "conflict") return { conflict: saved };

@@ -17,6 +17,22 @@ vi.mock("@/lib/app-context", async (original) => ({
   ...(await original<typeof import("@/lib/app-context")>()),
   getAppContext: () => holder.ctx,
 }));
+// The real read of a fact's version, with a hook that runs right after it: another officer's save landing
+// between "Put on the card"'s read and its write (review of PR 684).
+const race = vi.hoisted(() => ({ after: null as null | (() => Promise<unknown>) }));
+vi.mock("@/lib/repo/member-facts", async (original) => {
+  const real = await original<typeof import("@/lib/repo/member-facts")>();
+  return {
+    ...real,
+    factVersion: async (...args: Parameters<typeof real.factVersion>) => {
+      const row = await real.factVersion(...args);
+      const after = race.after;
+      race.after = null;
+      if (after) await after();
+      return row;
+    },
+  };
+});
 
 let db: Db;
 const world = selfReportWorld();
@@ -78,6 +94,55 @@ describe("an officer answers a member's report (D154)", () => {
     });
     expect((await factsOf(db, await rook())).get(101)?.languages?.value).toEqual(["en"]);
     expect((await card(101))?.selfReport?.unseen).toHaveLength(1);
+  });
+
+  it("refuses Put on the card when another officer's save lands between its read and its write, and stores nothing", async () => {
+    await send("alpha:Ana Invented", [{ field: "languages", version: 0, value: ["fr"] }]);
+    const use = {
+      action: "use",
+      user: users["alpha:Ana Invented"],
+      field: "languages",
+      version: 1,
+      factVersion: 0,
+    };
+    // The card showed no languages; an officer saves English just after the route reads the version.
+    race.after = () => officerFact(101, "languages", ["en"]);
+    const refused = await answer("alpha:Rook", 101, use);
+    expect(refused).toMatchObject({
+      status: 409,
+      body: { field: "languages", version: 1, value: ["en"] },
+    });
+    // No combined list, no "from the member" version, and the report still waits.
+    expect((await factsOf(db, await rook())).get(101)?.languages).toMatchObject({
+      value: ["en"],
+      source: "officer",
+      version: 1,
+    });
+    expect((await card(101))?.selfReport?.unseen).toMatchObject([
+      { field: "languages", version: 1 },
+    ]);
+  });
+
+  it("refuses Put on the card for what the member took back, and lets an officer mark it seen", async () => {
+    await officerFact(101, "adTech", 70);
+    await send("alpha:Ana Invented", [{ field: "adTech", version: 0, value: 72 }]);
+    const took = await send(
+      "alpha:Ana Invented",
+      [{ field: "adTech", version: 1, value: null }],
+      ID(2),
+    );
+    expect(took.body.reports).toMatchObject({ adTech: { version: 2, value: null, seen: false } });
+    expect((await card(101))?.selfReport?.unseen).toMatchObject([
+      { field: "adTech", says: "Member took back what they sent", removed: true },
+    ]);
+    const report = { user: users["alpha:Ana Invented"], field: "adTech", version: 2 };
+    expect(await answer("alpha:Rook", 101, { action: "use", ...report, factVersion: 1 })).toEqual({
+      status: 409,
+      body: { code: "removed" },
+    });
+    expect((await factsOf(db, await rook())).get(101)?.adTech?.value).toBe(70);
+    expect((await answer("alpha:Rook", 101, { action: "seen", ...report })).status).toBe(200);
+    expect((await card(101))?.selfReport ?? null).toBeNull();
   });
 
   it("marks a report seen without changing the card, and finds nothing once the member sent again", async () => {

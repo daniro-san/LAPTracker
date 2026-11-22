@@ -1,8 +1,9 @@
-// A member tells their officers their time zone (D154): on their own page they tap "Use this phone's time
-// zone" and Send; the officer then sees it on the member's card, said by the member and apart from what the
-// card holds, and marks it seen, which a reload keeps. Phone only, on the repeat's own filler workspace
+// A member tells their officers their time zone and languages (D154): on their own page they tap "Use this
+// phone's time zone" and a language, and Send; the officer then sees both on the member's card, said by the
+// member and apart from what the card holds, puts the languages on the card and marks the time zone seen,
+// which a reload keeps. Phone only, on the repeat's own filler workspace
 // (selfReportOf), so no other test's card or Home shows it. Put back: the member takes it back and the
-// officer marks that seen, so the next run starts from an empty form.
+// officer marks that seen. The languages stay on the card: the slot, like the others, is sized for 3 repeats.
 import type { Page } from "@playwright/test";
 
 import { daysAgo, selfReportOf, usDay } from "./fixtures/seed";
@@ -17,7 +18,7 @@ async function refreshedAfter(page: Page, path: string, action: () => Promise<vo
   await (await refreshed).finished();
 }
 
-test("a member's time zone sent from Me shows on their card as self-reported, and “Seen, keep the card” holds after a reload", async ({
+test("a member's time zone and languages sent from Me show on their card as self-reported; “Put on the card” and “Seen, keep the card” hold after a reload", async ({
   context,
   page,
 }, info) => {
@@ -48,13 +49,27 @@ test("a member's time zone sent from Me shows on their card as self-reported, an
     await expect(card.getByRole("heading", { name: m.name, level: 2 })).toBeVisible();
     return card;
   };
-  const markSeen = async (card: ReturnType<Page["getByRole"]>) => {
+  /** One field's line in the card's "Sent by the member" block. */
+  const lineOf = (card: ReturnType<Page["getByRole"]>, field: string) =>
+    card
+      .getByRole("region", { name: "Sent by the member" })
+      .getByRole("listitem")
+      .filter({ hasText: field });
+  /** Taps `button` on the field's line and sees the block's outcome line for it. */
+  const answerOn = async (
+    card: ReturnType<Page["getByRole"]>,
+    field: string,
+    button: string,
+    outcome: string,
+  ) => {
+    const tap = lineOf(card, field).getByRole("button", { name: button });
+    await hydrated(tap);
+    await tap.click();
     const block = card.getByRole("region", { name: "Sent by the member" });
-    const seen = block.getByRole("button", { name: "Seen, keep the card" });
-    await hydrated(seen);
-    await seen.click();
-    await sees(block.getByRole("status"), "Time zone · Seen. The card stays as it is.");
+    await sees(block.getByRole("status").filter({ hasText: field }), `${field} · ${outcome}`);
   };
+  const markSeen = (card: ReturnType<Page["getByRole"]>) =>
+    answerOn(card, "Time zone", "Seen, keep the card", "Seen. The card stays as it is.");
 
   // The member sends the phone's zone.
   let form = await asMember();
@@ -62,6 +77,7 @@ test("a member's time zone sent from Me shows on their card as self-reported, an
   await hydrated(phone);
   await phone.click();
   await expect(form.getByRole("button", { name: /Your time zone/ })).toContainText("Europe/London");
+  await form.getByRole("button", { name: "Português (Portuguese)" }).click();
   const send = form.getByRole("button", { name: "Send to your officers" });
   await refreshedAfter(page, `/w/${w.slug}/board/me`, () => send.click());
   await sees(form.getByRole("status"), "Sent. Your officers see it on your member card.");
@@ -69,14 +85,20 @@ test("a member's time zone sent from Me shows on their card as self-reported, an
   await page.reload();
   await sees(form, `You sent this on ${today} · not seen yet`);
 
-  // The officer sees it said by the member, apart from the card's own value, and marks it seen.
+  // The officer sees both said by the member, apart from the card's own value; puts the languages on the
+  // card and marks the time zone seen.
   let card = await asOfficer();
-  const block = card.getByRole("region", { name: "Sent by the member" });
-  await sees(block, "Time zone");
-  await sees(block, "New");
-  await sees(block, `Member says: ${zone}`);
-  await sees(block, `Self-reported · ${today}`);
-  await sees(block, "On the card: nothing yet");
+  for (const [field, says] of [
+    ["Time zone", zone],
+    ["Languages", "Portuguese"],
+  ] as const) {
+    const line = lineOf(card, field);
+    await sees(line, "New");
+    await sees(line, `Member says: ${says}`);
+    await sees(line, `Self-reported · ${today}`);
+    await sees(line, "On the card: nothing yet");
+  }
+  await answerOn(card, "Languages", "Put on the card", "Put on the card.");
   await markSeen(card);
   await page.reload();
   card = page.getByRole("dialog", { name: m.name });
@@ -85,7 +107,10 @@ test("a member's time zone sent from Me shows on their card as self-reported, an
   await expect(card.getByRole("tab", { name: "Info" })).toBeVisible();
   await expect(card.getByRole("region", { name: "Sent by the member" })).toHaveCount(0);
   await card.getByRole("tab", { name: "Info" }).click();
-  await sees(card.getByRole("tabpanel"), `Member says: ${zone} · ${today} · not on the card`);
+  const infoTab = card.getByRole("tabpanel");
+  await sees(infoTab, `Member says: ${zone} · ${today} · not on the card`);
+  // The languages are the card's own fact now, said to come from the member.
+  await sees(infoTab.getByRole("definition").filter({ hasText: "Portuguese" }), "from the member");
 
   // The member sees that an officer has seen it, never what the card holds.
   form = await asMember();

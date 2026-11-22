@@ -174,7 +174,6 @@ async function saveOne(
   c: FactChange,
   now: Date,
   zone: string | undefined,
-  source: FactSource,
 ): Promise<ChangeResult> {
   const where = [db, access.workspaceId, uid, c.field] as const;
   const newest = await factVersion(...where, "newest");
@@ -191,9 +190,9 @@ async function saveOne(
     status = "merged";
   }
   const row = { workspaceId: access.workspaceId, uid, field: c.field, version: current + 1 };
-  const written = { value, source, writtenBy: access.user.id, writtenAt: now };
+  const written = { value, source: c.source, writtenBy: access.user.id, writtenAt: now };
   if (await insertFact(db, { ...row, ...written })) {
-    return { field: c.field, status, version: current + 1, value, source };
+    return { field: c.field, status, version: current + 1, value, source: c.source };
   }
   // Another officer saved this field between the read and the write.
   return refused(c.field, (await factVersion(...where, "newest")) as FactRow);
@@ -224,14 +223,16 @@ export async function saveFacts(
 ): Promise<ChangeResult[] | null> {
   if (!(await mayHaveFacts(db, access, uid))) return null;
   const results: ChangeResult[] = [];
-  for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone, c.source));
+  for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone));
   return results;
 }
 
 /**
  * An officer's "Put on the card" of what a member sent about themselves (D154): the next version of that
- * fact with source `member`, by D80's rule (`version` is the fact version the officer saw). Null when the
- * uid is not in the alliance's newest roster: a member who left gets no new fact from their report.
+ * fact with source `member`, only while the fact is still at the version the card showed. Unlike an
+ * officer's edit it is never combined (languages too): any save since, even one landing between this read
+ * and the write, is refused with the newer value, because the unique version lets only one write in and a
+ * combined list is a value nobody saw. Null when the uid is not in the alliance's newest roster.
  */
 export async function saveMemberFact(
   db: Db,
@@ -241,6 +242,17 @@ export async function saveMemberFact(
   now: Date,
 ): Promise<ChangeResult | null> {
   if (!(await isMember(db, access, uid))) return null;
-  const c = { ...change, source: "officer" } as FactChange;
-  return saveOne(db, access, uid, c, now, undefined, "member");
+  const where = [db, access.workspaceId, uid, change.field] as const;
+  const newest = await factVersion(...where, "newest");
+  const current = newest?.version ?? 0;
+  const value = normalise({ ...change, source: "officer" } as FactChange);
+  const row = { workspaceId: access.workspaceId, uid, field: change.field, version: current + 1 };
+  const written = { value, source: "member" as const, writtenBy: access.user.id, writtenAt: now };
+  if (current === change.version && (await insertFact(db, { ...row, ...written }))) {
+    return { field: change.field, status: "saved", version: current + 1, value, source: "member" };
+  }
+  // Another officer saved first: the newer value, or none when the card named a version that is gone.
+  const latest = (await factVersion(...where, "newest")) ?? newest;
+  if (latest) return refused(change.field, latest);
+  return { field: change.field, status: "conflict", version: 0, value: null, source: "officer" };
 }

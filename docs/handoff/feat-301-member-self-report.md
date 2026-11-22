@@ -22,7 +22,9 @@ Closes #301 (the self-report part the triage scoped; the issue's other "later" i
 - One row per user and field (newest only): bounded (D149); accepted values keep their history in `member_facts`.
 - "Put on the card" refuses any stale fact version, languages too (D80 would combine; a combined list is a value nobody saw).
 - Home lists reports but does not count them in the tab's number: that number is read on every desk page and would need the roster there.
-- D154, not D152/D153: D152 and D153 are taken by other branches (D153 on dev). Migration 0070 per the orchestrator (0069 goes to #306); the journal entry is idx 69 with tag `0070_member_self_reports`.
+- D154, not D152/D153: D152 and D153 are taken by other branches (D153 on dev). Migration `0070_member_self_reports` was regenerated with `drizzle-kit generate` on top of #306's 0069: journal idx 70, the snapshot's prevId is 0069's id, its `when` is after 0069's; `check-drift` is clean.
+- The `member_facts_source_check` swap stays a plain drop and add, as `0041_squads.sql` did: `scripts/migrate.ts` runs each migration in one transaction, so `NOT VALID` then `VALIDATE` would still hold the lock through the scan (D154).
+- "Put on the card" refuses any fact-version mismatch at the write (`saveMemberFact` no longer goes through the officer write's merge), so a save landing between its read and its write is refused, never combined (review of PR 684, finding 6).
 
 ## Deviations
 
@@ -41,6 +43,13 @@ Closes #301 (the self-report part the triage scoped; the issue's other "later" i
 - First-glance SHOULDs not done: Send off until something changed (today it answers "Nothing new to send yet."); room under the sticky Send bar and under the card's sticky bar; "Seen, keep the card" could say the item leaves To review; "Paste what they told you" next to the block could be read as related.
 - The member's time zone is stored as the browser or picker gives it; `Intl` accepts any letter case (D80's own validation, unchanged).
 - An officer's own approved link lets them send "as the member" for their own player; the card's link line names who is linked.
+
+## Review of PR 684 (2026-11-22)
+
+- Fixed: the migration regenerated on 0069 (finding 1); "Put on the card" refused at the write, with a PGlite race test (an officer's save hooked in right after the version read: 409, nothing stored, the report still new) (6); a blocked writer's reports hidden from the card and Home, and the seen mark's own blocked check tested by blocking the writer between the officer's read and the mark (8); "Put on the card" on a take-back is 409 `removed`, and a null send is stored (4); out-of-range values are 400 (3); the e2e puts the languages on the card and asserts the Info tab after a reload (5); `selfReportLimitKey` uses `DAY_KEY_PREFIX` (7). The card-labels test that the split had copied into `me/facts/route.test.ts` is gone (12).
+- Each new test was checked by breaking its rule: the blocked filter in `heldNow`, the one in `markSeen`, the old pre-read-then-merge path, the removed check, the language minimum, the AD range, and the e2e "Put on the card" answering ok without writing.
+- After these fixes, on the rebased branch: `pnpm vitest related --run` 408 passed; `pnpm check` exit 0 (1850 passed, 4 skipped; drift clean); full e2e 56 passed, 4 skipped (worktree Postgres on 54393); the self-report flow with `--repeat-each=3` 3 passed.
+- Left as follow-ups: a rendered test of Home's To review line (2); the plan's stale Shape step 5 and Surface table (9, 10); `SelfReportCard`'s discarded `res.json()` (11); the `data.file.member-self-reports` key's home (14); `selfReportWords` copying the officer card keys too (15); the day count before the roster read, and counting every attempt (16).
 
 ## Next
 
