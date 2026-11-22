@@ -1,4 +1,4 @@
-// Alliance settings → Your line on our posts (#713, D155): one line per post an alliance can get from us,
+// Alliance settings → Your line on our posts (#713, D156): one line per post an alliance can get from us,
 // written by an officer, at most 120 graphemes, never translated, posted above our title (lib/post-callout.ts
 // makes it safe for Discord). Only while `post_callouts` is on (D134): off, the card is hidden, saves are
 // refused and posts carry no line, and the saved lines stay. The text never reaches a log, an AI request,

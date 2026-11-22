@@ -99,7 +99,7 @@ function pieces(block: string): string[] {
  * "Publish to Discord": the chosen languages as messages of at most DISCORD_LIMIT characters each. Each
  * language under its name when there are several; the title in bold first unless it is the forum post's
  * own title. Whole languages share a message while they fit. `lead`, a line already made safe for Discord
- * (the alliance's own line, D155), goes first, on a line of its own above the title.
+ * (the alliance's own line, D156), goes first, on a line of its own above the title.
  */
 export function discordMessages(
   title: string,

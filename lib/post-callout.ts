@@ -1,4 +1,4 @@
-// An alliance's own line at the top of a post LAPTracker makes for it (#713, D155): pure, for the server and
+// An alliance's own line at the top of a post LAPTracker makes for it (#713, D156): pure, for the server and
 // the settings card's preview. Officers write it once per post; it is posted as written, never translated.
 // In Discord it shows literally and reaches no one: `escapeDiscord` (markdown, @everyone, @here, user and
 // role mentions), then what that leaves live in a line that opens a message: a heading or subtext mark at

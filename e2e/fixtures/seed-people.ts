@@ -91,7 +91,7 @@ export const WALL_ONLY = [4, 5];
 export const KVK_ENTRY = 1;
 /**
  * Each filler workspace's weekly Undead Siege on the raid's Saturday (D121): the garrison post with the
- * alliance's own line (D155) posts its plan, on the repeat's own workspace. Entry SIEGE_ENTRY + repeat.
+ * alliance's own line (D156) posts its plan, on the repeat's own workspace. Entry SIEGE_ENTRY + repeat.
  */
 export const SIEGE_ENTRY = 60;
 

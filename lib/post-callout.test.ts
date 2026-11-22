@@ -1,4 +1,4 @@
-// An alliance's own line on our posts (#713, D155), as Discord gets it: whatever an officer types, the line
+// An alliance's own line on our posts (#713, D156), as Discord gets it: whatever an officer types, the line
 // renders literally, links nothing and pings no one, and counts emoji as one. Invented text only.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
@@ -15,7 +15,7 @@ import {
 const LIVE =
   /@everyone|@here|<@[!&]?\d|<#\d|<\/\w|https?:\/\/|discord(app)?\.(gg|com\/invite)|^(#|-#)\s|\n/i;
 
-describe("the alliance's own line on our posts (D155)", () => {
+describe("the alliance's own line on our posts (D156)", () => {
   it("reaches Discord literally: no ping, no link, no heading, one line", () => {
     const typed =
       "# Let's go @everyone and @here <@123> <@&456> <#789> </raid:1> https://evil.test discord.gg/abc\nnext";

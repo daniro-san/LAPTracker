@@ -1,4 +1,4 @@
-// Home's recent activity (D108): a post's own line changed in Alliance settings (#713, D155), as one more part
+// Home's recent activity (D108): a post's own line changed in Alliance settings (#713, D156), as one more part
 // of lib/repo/desk-activity.ts's small-sources union read. Who, when and which post: never the text. The
 // table keeps one row per post, so only the latest change of each post is a line.
 import { sql } from "drizzle-orm";

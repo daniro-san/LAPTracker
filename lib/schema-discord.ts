@@ -67,12 +67,12 @@ export const workspaceWebhooks = pgTable(
   ],
 );
 
-/** The posts an alliance may put its own line on (#713, D155). */
+/** The posts an alliance may put its own line on (#713, D156). */
 export const POST_KEYS = ["shield", "thanks", "garrison"] as const;
 export type PostKey = (typeof POST_KEYS)[number];
 
 /**
- * An alliance's own touches on the posts LAPTracker makes for it (#713, D155): one row per workspace and
+ * An alliance's own touches on the posts LAPTracker makes for it (#713, D156): one row per workspace and
  * post, holding the officers' one line (the callout, at most 120 graphemes, never translated; empty: no
  * line) and who changed it last. Deleted with the workspace and downloaded (D125).
  */

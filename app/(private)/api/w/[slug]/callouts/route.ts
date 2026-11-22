@@ -1,4 +1,4 @@
-// POST /api/w/[slug]/callouts — Alliance settings → Your line on our posts (#713, D155). Officers only: same
+// POST /api/w/[slug]/callouts — Alliance settings → Your line on our posts (#713, D156). Officers only: same
 // origin, JSON, an officer's session (401 signed_out, D99). {post, callout}: one post's line, at most 120
 // graphemes once cleaned (400 too_long); "" clears it. 403 turned_off while `post_callouts` is off (D134);
 // 429 rate_limited. A save that changed the line counts as `ws_action` `post_callout` / `save`; the text

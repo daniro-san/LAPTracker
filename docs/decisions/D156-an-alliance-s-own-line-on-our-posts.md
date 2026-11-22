@@ -1,4 +1,4 @@
-## D155 — An alliance's own line on our posts: one line per post, at most 120 graphemes, never translated, posted above our title so it pings and links no one; notices take none (2026-11-22, owner, issue 713 part B; amends D108, D114, D121, D125, D134, D137, D147)
+## D156 — An alliance's own line on our posts: one line per post, at most 120 graphemes, never translated, posted above our title so it pings and links no one; notices take none (2026-11-22, owner, issue 713 part B; amends D108, D114, D121, D125, D134, D137, D147)
 
 Why: the owner (issue 713, 2026-11-22) wants each alliance to add its own touch to what we post for it, without editing our templates, for example "Let's go, family!" before the Raid Shield summary. The spike's recommendation for part B was approved in the chat the same day (recorded by the orchestrator on issue 713); answer 2: the Raid Shield summary takes a line like every other post.
 
@@ -29,7 +29,7 @@ Why: the owner (issue 713, 2026-11-22) wants each alliance to add its own touch 
 
 **The switch** (D134). `post_callouts` joins the catalog in the Discord group: "Your line on our posts" in Alliance settings, "Alliance's line on our posts" on /admin. It spends nothing, so it is allowed and on by default for every alliance. With it off (either layer) the card is hidden, the route answers 403, and every post goes out without a line; the saved lines stay and come back when it is on again.
 
-**Storage** (migration `0071_workspace_post_touches`). `workspace_post_touches(workspace_id → workspaces on delete cascade, post_key in (shield, thanks, garrison), callout, updated_by → workspace_users on delete set null, updated_at)`, one row per workspace and post. A save of the text already stored writes nothing (`on conflict … where callout is distinct from excluded.callout`).
+**Storage** (migration `0072_workspace_post_touches`). `workspace_post_touches(workspace_id → workspaces on delete cascade, post_key in (shield, thanks, garrison), callout, updated_by → workspace_users on delete set null, updated_at)`, one row per workspace and post. A save of the text already stored writes nothing (`on conflict … where callout is distinct from excluded.callout`).
 
 **Home's recent activity** (D108): "Ana changed the line on the Raid Shield summary" / "… on the weekly thanks" / "… on the garrison post" (PT "Ana mudou a frase do resumo do Escudo de raid", FR "Ana a changé la phrase du résumé du Bouclier de raid"), never the text. A same-text save adds no line. The table keeps one row per post, so only each post's latest change is a line.
 

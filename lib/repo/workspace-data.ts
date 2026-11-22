@@ -103,7 +103,7 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "thanks", table: thanksShares, scope: "workspace" },
   { file: "thanks-taken-down", table: thanksTakedowns, scope: "thanksShare" },
   { file: "start-here", table: startHere, scope: "workspace" },
-  // D155: the alliance's own line on each of our posts, the officers' words like Start here.
+  // D156: the alliance's own line on each of our posts, the officers' words like Start here.
   { file: "post-callouts", table: workspacePostTouches, scope: "workspace" },
   { file: "screenshot-drafts", table: screenshotDrafts, scope: "workspace" },
   { file: "alliance-duel-points", table: allianceDuelPoints, scope: "workspace" },

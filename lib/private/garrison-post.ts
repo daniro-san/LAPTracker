@@ -65,7 +65,7 @@ export async function postGarrison(
   const words = shareWordsOf(view, deps.t, deps.language);
   const [title = "", ...head] = words.head;
   const text = garrisonText(view, { ...words, head }, deps.language);
-  // D155: the alliance's own line above our title.
+  // D156: the alliance's own line above our title.
   const lead = discordCallout(await postCallout(db, access, "garrison"));
   const messages = discordMessages(title, [{ name: "", text }], !channel.forum, lead);
   const { sent } = await postMessages(deps.fetch, channel, title, messages);

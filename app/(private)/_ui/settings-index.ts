@@ -24,7 +24,7 @@ export interface SettingsIndexInput {
   /** The Notifications card: the site has push keys. */
   push: boolean;
   discord: { channels: WebhookState[]; botOff: boolean };
-  /** "Your line on our posts" (D155), shown while `post_callouts` is on: how many posts have a line. */
+  /** "Your line on our posts" (D156), shown while `post_callouts` is on: how many posts have a line. */
   callouts: { set: number; n: number } | null;
   /** `download`: the data card is shown (D126); `deletionDate`: a deletion is asked, its date. */
   data: { download: boolean; deletionDate: string | null };

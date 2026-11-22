@@ -1,4 +1,4 @@
-// Alliance settings → Your line on our posts (#713, D155) against a real Postgres (PGlite): an officer's line
+// Alliance settings → Your line on our posts (#713, D156) against a real Postgres (PGlite): an officer's line
 // is saved cleaned and read back, 120 graphemes and no more, a save of the same text changes nothing and
 // adds no Home line, a change is a Home line without the text, and with `post_callouts` off nothing is
 // saved or shown while the saved lines stay. Invented names only.
@@ -51,7 +51,7 @@ beforeEach(async () => {
 const save = (post: "shield" | "thanks" | "garrison", callout: string, at = NOW) =>
   saveCalloutFor(db, access, { post, callout }, at);
 
-describe("the alliance's own line on our posts (D155)", () => {
+describe("the alliance's own line on our posts (D156)", () => {
   it("is saved as one clean line and read back on the card and by the post", async () => {
     expect(await save("thanks", "  Thank you,\n  family  ")).toEqual({
       ok: true,

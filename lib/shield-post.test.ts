@@ -196,7 +196,7 @@ describe("the Raid Shield summary's names (D137, 2026-11-22)", () => {
   });
 });
 
-describe("the alliance's own line on the Raid Shield summary (D155)", () => {
+describe("the alliance's own line on the Raid Shield summary (D156)", () => {
   it("opens the summary with the line, pinging no one, and leaves it out while the switch is off", async () => {
     await save("shield");
     const by = await recordSignIn(db, ws, "ogs-ana", "Ana", FRI);

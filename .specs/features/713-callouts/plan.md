@@ -18,7 +18,7 @@ What is different when this ships: in Alliance settings an officer saves one lin
 
 | Front       | What changes                                                                                                                        |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| stored data | new table `workspace_post_touches`, migration `0071`; in D125's list, downloaded as `post-callouts.csv`, deleted with the workspace |
+| stored data | new table `workspace_post_touches`, migration `0072`; in D125's list, downloaded as `post-callouts.csv`, deleted with the workspace |
 | domain      | `post_callouts` joins D134's catalog (Discord group), allowed and on by default                                                     |
 | readers     | `lib/shield-post.ts`, `lib/private/thanks.ts`, `lib/private/garrison-post.ts`, Home's activity, the data download                   |
 
@@ -73,4 +73,4 @@ New: `workspace_post_touches(workspace_id → workspaces on delete cascade, post
 
 ## Validation
 
-Quick persona check at 360 px (invented names) on the real card: three officers (an R5 in a hurry, an officer reading English as a second language, an officer in her 50s), an adversarial reviewer (abuse, mentions, blame) and a designer. Each answered its question right from the first screen. Adopted: the word "line", not "callout", on the card and on Home; notices left out; no links at all; the lead's "It stays on every post until you change it, so keep it about the whole alliance." (D75, adversarial). Follow-up: a history of every change. Record: D155 § Persona check.
+Quick persona check at 360 px (invented names) on the real card: three officers (an R5 in a hurry, an officer reading English as a second language, an officer in her 50s), an adversarial reviewer (abuse, mentions, blame) and a designer. Each answered its question right from the first screen. Adopted: the word "line", not "callout", on the card and on Home; notices left out; no links at all; the lead's "It stays on every post until you change it, so keep it about the whole alliance." (D75, adversarial). Follow-up: a history of every change. Record: D156 § Persona check.

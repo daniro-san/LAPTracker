@@ -255,7 +255,7 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
   await seedPush(db, ws, officer);
 }
 
-/** D155: the alliance's own line on its weekly thanks. */
+/** D156: the alliance's own line on its weekly thanks. */
 async function seedCallout(db: Db, ws: number, officer: number) {
   await db.insert(workspacePostTouches).values({
     workspaceId: ws,

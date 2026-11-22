@@ -155,7 +155,7 @@ function noticeLine(
 
 /**
  * The weekly thanks shared or taken down (D114), the tracker key saved or removed (D124), the alliance's
- * data downloaded and its deletion asked or cancelled (D125), or a post's own line changed (D155).
+ * data downloaded and its deletion asked or cancelled (D125), or a post's own line changed (D156).
  */
 function plainLine(
   t: WorkspaceDictionary,

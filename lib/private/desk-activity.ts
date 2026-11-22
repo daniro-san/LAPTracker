@@ -70,7 +70,7 @@ type What =
   | { kind: "thanks"; target: "discord" | "board" | "down" }
   | Omit<ActivityRows["keyChanges"][number], "by" | "at">
   | Omit<ActivityRows["dataEvents"][number], "by" | "at">
-  /** A post's own line changed (D155): which post, never the text. */
+  /** A post's own line changed (D156): which post, never the text. */
   | Omit<ActivityRows["calloutChanges"][number], "by" | "at">;
 
 type Raw = What & { by: number; at: Date };

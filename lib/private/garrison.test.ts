@@ -230,7 +230,7 @@ describe("the garrison plan", () => {
     expect(sent).toHaveLength(1);
   });
 
-  it("opens the post with the alliance's own line above the title, pinging no one (D155)", async () => {
+  it("opens the post with the alliance's own line above the title, pinging no one (D156)", async () => {
     const callout = "Help each other @here <@42> discord.gg/abc";
     expect((await saveCalloutFor(db, access, { post: "garrison", callout }, NOW)).ok).toBe(true);
     const bodies: { content: string; allowed_mentions: unknown }[] = [];

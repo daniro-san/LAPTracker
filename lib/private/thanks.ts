@@ -158,7 +158,7 @@ export async function shareThanks(
     return { ok: true, row: claim.row };
   }
   const sections = written(input.texts).map(([l, text]) => ({ name: deps.names[l], text }));
-  // D155: the alliance's own line above our title, on Discord only (never on the board's card).
+  // D156: the alliance's own line above our title, on Discord only (never on the board's card).
   const lead = discordCallout(await postCallout(db, access, "thanks"));
   const messages = discordMessages(input.title, sections, !channel.forum, lead);
   const { sent } = await postMessages(deps.fetch, channel, input.title, messages);

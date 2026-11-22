@@ -65,4 +65,4 @@ Without it, OGs gets no Raid Shield summary.
 - `lib/shield-read.test.ts`: the tick's posting tests (#555's forum test included) post through a saved Raid Shield channel.
 - `app/(private)/api/w/[slug]/discord/route.test.ts`: the save's answer lists three channels.
 
-**Amendment 2026-11-22 (issue 713, D155).** The summary posted to the Raid Shield channel can open with the alliance's own line (D155); the channel rules here are unchanged.
+**Amendment 2026-11-22 (issue 713, D156).** The summary posted to the Raid Shield channel can open with the alliance's own line (D156); the channel rules here are unchanged.

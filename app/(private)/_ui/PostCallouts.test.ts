@@ -1,4 +1,4 @@
-// Alliance settings → Your line on our posts (#713, D155): each post's field has a visible label tied to it,
+// Alliance settings → Your line on our posts (#713, D156): each post's field has a visible label tied to it,
 // says where the line goes and how long it is, and previews the next post's first lines; a line over 120
 // characters is marked and says so. Invented text only.
 import { createElement } from "react";
@@ -26,7 +26,7 @@ const render = (callout: string) =>
     }),
   );
 
-describe("the lines on our posts in Alliance settings (D155)", () => {
+describe("the lines on our posts in Alliance settings (D156)", () => {
   it("labels each field visibly, says where it goes and how long it is, and previews the post", () => {
     const html = render("Shields up, family");
     expect(html).toContain(

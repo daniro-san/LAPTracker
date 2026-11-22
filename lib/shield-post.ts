@@ -257,7 +257,7 @@ async function messageOf(
   const language = SHIELD_LANGUAGES.includes(lang) ? lang : "en";
   const words = SHIELD_POST[language];
   const url = `${deps.origin}/w/${target.slug}/roll-call?week=${mondayOf(day)}`;
-  // D155: the alliance's own line above our title, while its `post_callouts` is on.
+  // D156: the alliance's own line above our title, while its `post_callouts` is on.
   const callout =
     target.workspaceId === null ? "" : await liveCallout(db, target.workspaceId, "shield");
   const message = shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url, language);

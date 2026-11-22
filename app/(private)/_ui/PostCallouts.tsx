@@ -1,6 +1,6 @@
 "use client";
 
-// Alliance settings → Your line on our posts (#713, D155): one field per post the alliance gets from us,
+// Alliance settings → Your line on our posts (#713, D156): one field per post the alliance gets from us,
 // each with a visible label, where it goes, "n of 120 characters" and a live preview of the next post's first
 // lines: the line as typed, then our title. One Save for the card (SaveRow, issue 585), which sends each
 // changed post in turn and stops at the first refusal, keeping what was typed. Shown only while

@@ -183,7 +183,7 @@ describe("sharing the thanks (D114)", () => {
     expect(row?.names).toEqual(names);
   });
 
-  it("opens the Discord post with the alliance's own line, shown literally, linking and pinging no one (D155)", async () => {
+  it("opens the Discord post with the alliance's own line, shown literally, linking and pinging no one (D156)", async () => {
     const saved = await saveCalloutFor(
       db,
       access,

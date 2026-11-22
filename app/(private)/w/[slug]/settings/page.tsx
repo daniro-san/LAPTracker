@@ -4,7 +4,7 @@
 // spends. Then the Raid Shield check's own settings while it is on (D137). Then Notifications, this officer's
 // own device, only when the site has push keys (D148). Then Discord (D129): add the bot,
 // Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the
-// alliance's own line on our posts while `post_callouts` is on (D155). Then the
+// alliance's own line on our posts while `post_callouts` is on (D156). Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page. Issue 585: the page head says how the page saves, and an "On this page"

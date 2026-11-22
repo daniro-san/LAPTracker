@@ -1,4 +1,4 @@
-// The alliance's own line on our posts (#713, D155): an officer saves a line for the garrison post in Alliance
+// The alliance's own line on our posts (#713, D156): an officer saves a line for the garrison post in Alliance
 // settings, it survives a reload, and the garrison plan posted to the leaders' Discord channel (a webhook
 // the stub takes, e2e/stub-server.mjs) opens with it, above our title, with @everyone broken so it pings no
 // one. Home then says who changed the line, never the text.

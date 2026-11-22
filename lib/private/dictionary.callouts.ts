@@ -1,4 +1,4 @@
-// Alliance settings → Your line on our posts (#713, D155) and its Home activity lines, in English,
+// Alliance settings → Your line on our posts (#713, D156) and its Home activity lines, in English,
 // Brazilian Portuguese and French: one module the settings dictionaries spread. French puts a no-break space
 // before : ! and inside « ».
 export const calloutsEn = {

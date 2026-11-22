@@ -54,7 +54,7 @@ export const DESK_FEATURES = [
   "workspace",
   // D148: Alliance settings → Notifications (a device turned on, its uses changed, turned off).
   "push",
-  // D155: Alliance settings → Your line on our posts (one post's line changed). Never the text.
+  // D156: Alliance settings → Your line on our posts (one post's line changed). Never the text.
   "post_callout",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];

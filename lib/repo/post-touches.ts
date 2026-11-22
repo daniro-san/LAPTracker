@@ -1,4 +1,4 @@
-// Each workspace's own line on the posts LAPTracker makes for it (#713, D155): one row per post, the latest
+// Each workspace's own line on the posts LAPTracker makes for it (#713, D156): one row per post, the latest
 // text and who changed it. The Raid Shield summary is posted by the tick, outside lib/private, so it reads
 // its line here, only while the workspace's `post_callouts` is on (D134's two layers).
 import { and, eq, sql } from "drizzle-orm";
