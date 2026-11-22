@@ -24,6 +24,14 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
+    text: "PostHog → your personal API keys: create one with only the error-tracking write scope for project 741657, then add it in Vercel → Production as POSTHOG_PERSONAL_API_KEY (Sensitive). Without it no source map was ever uploaded, so PostHog shows minified stack traces for browser and server errors; the maps are still deleted from every deploy.",
+    issue: 592,
+  },
+  {
+    text: "Decide #634: show the Raid Shield reading on the member card? Recommendation: only from Friday's night check until KvK starts, in server time.",
+    issue: 634,
+  },
+  {
     text: "Guide: after v5.47.0, retake the new-alliance guide's Alliance settings screenshots (the page now opens with an index and saves Features with a button), with names and channels blurred.",
     issue: 527,
   },
@@ -163,6 +171,22 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.48.0",
+    date: "2026-11-22",
+    title: "Talk to a member from their card, and quieter, cheaper reads",
+    changes: [
+      "Member card: officers can tap \"Talked to them\" and open the ready message to send (in the member's language, for game mail or Discord) without leaving the card. The card says whether this week's follow-up was noted.",
+      "The officers' Raid Shield phone notification now leaves away members out of its count, so it gives the same number as the leaders' Discord summary.",
+      "Signing out of the desk now finishes cleanly in every browser.",
+      "The daily read and the squads read do less database work: an index for the 90-day clean-up, no re-queueing of the whole roster after every answer, and one query less on every desk page.",
+      "For whoever builds the site: more end-to-end checks (sign-out, Follow-up, member facts, a feature switch), and tests for the Follow-up and feature-switch rules.",
+    ],
+    needsYou: [
+      "Add the PostHog key for source maps in Vercel, and one decision (#634), on the to-do list below.",
+    ],
+    prs: [629, 630, 631, 632, 633],
+  },
   {
     version: "v5.47.0",
     date: "2026-11-22",
