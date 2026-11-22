@@ -63,7 +63,7 @@ Part of #585 (F14). Size M: a rule change across Follow-up, Home, Members and th
 - **E2E, locally, on a production build** (own Postgres on 127.0.0.1:54391, app on 3491):
   - `e2e/desk.spec.ts` and `e2e/desk-flows.spec.ts`: 16 passed, 2 skipped (by design);
   - the whole suite: 46 passed, 2 skipped.
-- **`check_proofs.py`:** 24 pass, 0 fail at `aa610160`. It runs again at the fix commit before the PR.
+- **`check_proofs.py`:** 24 pass, 0 fail at `aa610160`; 25 pass, 0 fail at `a1168d40` (C23 added), on a fresh production build.
 - **Breaks.** Each was applied, its tests run, and the file put back:
 
 | Break | Fails |
