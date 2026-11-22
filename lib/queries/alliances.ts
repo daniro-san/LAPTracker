@@ -2,7 +2,7 @@
 // kills, lv only (§12.1), plus whether a photo exists (never its URL, D22); raw_json is never selected.
 import { and, asc, eq, inArray } from "drizzle-orm";
 
-import { delta, rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
+import { comparable, delta, rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { rolesOf, type Role } from "./leadership";
@@ -232,6 +232,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
       power: row.totalPower,
       kills: row.totalKills,
       lv: null,
+      members: row.memberCount,
       name: row.name,
       tag: row.tag,
       unionId,
@@ -244,7 +245,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
     const prev = i > 0 ? ordered[i - 1] : undefined;
     const rosterOfRow = (id: number) => rosters.filter((m) => m.allianceSnapshotId === id);
     const diff =
-      prev && prev[1].row.isFresh && row.isFresh
+      prev && comparable(prev[1].row, row)
         ? rosterDiff(rosterOfRow(prev[1].row.id), rosterOfRow(row.id))
         : null;
     const pair = pairs.get(eventId);
