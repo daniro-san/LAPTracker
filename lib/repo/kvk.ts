@@ -70,8 +70,9 @@ const readColumns = {
   totalPower: kvkReads.totalPower,
   totalKills: kvkReads.totalKills,
   memberUids: kvkReads.memberUids,
-  memberPower: kvkReads.memberPower,
-  memberKills: kvkReads.memberKills,
+  // As text: Drizzle reads a null bigint element as 0, and a null stays null (D15), as lib/queries/samples.ts.
+  memberPower: sql<(string | null)[] | null>`${kvkReads.memberPower}::text[]`,
+  memberKills: sql<(string | null)[] | null>`${kvkReads.memberKills}::text[]`,
   sourceUpdatedAt: kvkReads.sourceUpdatedAt,
   cached: kvkReads.cached,
   isFresh: kvkReads.isFresh,
@@ -79,14 +80,23 @@ const readColumns = {
   readAt: kvkReads.readAt,
 };
 
+/** A text array element as a number, a null kept null (D15). */
+const numbers = (xs: (string | null)[] | null) =>
+  xs && xs.map((x) => (x === null ? null : Number(x)));
+
 /** Every row of the opponents, in insert order. */
 export async function opponentReads(db: Db, opponentIds: number[]): Promise<OpponentRead[]> {
   if (opponentIds.length === 0) return [];
-  return db
+  const rows = await db
     .select(readColumns)
     .from(kvkReads)
     .where(inArray(kvkReads.opponentId, opponentIds))
     .orderBy(asc(kvkReads.id));
+  return rows.map((r) => ({
+    ...r,
+    memberPower: numbers(r.memberPower),
+    memberKills: numbers(r.memberKills),
+  }));
 }
 
 /** Drizzle types the elements as numbers; a null stays null in the array (D15). */

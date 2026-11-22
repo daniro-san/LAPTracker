@@ -74,6 +74,26 @@
 
 - **Verified after the fixes:** `pnpm vitest related --run` on the changed files: 200 files, 1,136 passed, 1 skipped. `pnpm check`: exit 0. `pnpm test:e2e` (full suite, with `next build`, own database `lap_e2e_k306`, dropped afterwards, ports 3577/54477): 53 passed, 3 skipped.
 
+## Second review fixes (PR 679, 2026-11-22)
+
+- **A 429 while a claim was in flight.** After its claim lands, a worker checks the stop flag again. If it is set, the call is not sent, the reserved count is given back, and the row is kept as `not sent: the run stopped`. Like every row, it is never read again.
+- **Postgres claim and answer, tested through the real repo** (`lib/repo/kvk.test.ts`, PGlite):
+  - one claim per (opponent, phase, tag), and a second one refused;
+  - the answer written over its own claim only;
+  - a claim with no answer counted as done.
+- **Found by that test, and fixed: a null member figure was read back as 0.** Drizzle reads a null bigint array element as `Number(null)`, which is 0, so a member with an unknown might counted as 0 in Start to End. That breaks D15 and could show a change of billions. `opponentReads` now reads the might and kills arrays as text and keeps a null as null, as `lib/queries/samples.ts` does. The in-memory repo had hidden it.
+- **Worker tests** (`lib/collector-opponent-workers.test.ts`). Each was checked against its break; every break made its own test fail:
+
+| Break | Test that fails |
+| --- | --- |
+| `Promise.all` in place of `allSettled` | "does not finish the run while a worker's call is still out, after another worker failed" |
+| no stop flag after a worker fails | "stops the other workers before their next call when one worker fails" |
+| the 429 flag set after the log write | "stops the other workers on a 429 before its log line is written" |
+| no skip when another run holds the claim | "sends nothing for a tag whose claim another run holds, and gives its count back" |
+| no stop check after the claim | the two "stops the other workers" tests |
+
+- **Verified after the second fixes:** `pnpm vitest related --run` on the changed files: 44 files, 264 passed. `pnpm check`: exit 0. `pnpm test:e2e` (full suite, built): 53 passed, 3 skipped. The shared local Postgres on 54320 had stopped, so this ran on a private Postgres 18 cluster in the scratchpad on port 54397, with `password` auth as `scripts/db-local.mjs` sets it up; that cluster was stopped afterwards.
+
 ## Open issues
 
 - **No owner reply on the plan itself.** It rests on the owner's 2026-11-19 comment on #306 (quota, privacy, views) and the standing approval. One-way doors for the owner to see:
@@ -102,6 +122,7 @@ Follow-ups:
   - finding 12: derive the e2e expected strings (server 325, the labels) from seed and copy exports instead of literals.
   - finding 13: use `HEAVY_MIGHT` in the SQL instead of `60000000`.
   - finding 14: `opponentReads` for /admin selects the member arrays it does not need.
+- second review: no test checks that every caller of the reserves (squads read, lookups, Raid Shield checks, the tick's daily read and /admin's Retry) passes `opponentReserve`. Today a caller that forgets it compiles and keeps no room for the opponent.
 
 Owner question (review finding 9): a past KvK with no opponent saved before its war cannot get one now. The route refuses a server or tag change at or after the war, and the result needs an opponent row. Should a past KvK, such as the 2026-11-14 one, be recordable after the fact, with its server and result only (no tags, no reads)? Today it cannot.
 

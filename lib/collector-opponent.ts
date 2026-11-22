@@ -23,6 +23,9 @@ export const OPPONENT_MIN_LEFT_MS = 5_000;
 /** The row a call claims before it is sent (INVARIANT kvk.one-call-per-row); the answer replaces it. A run
  * that dies in between leaves it, so that tag is never sent again. */
 export const SENT = "sent: no answer stored";
+/** A claim whose call was never sent: the run stopped (a 429, a worker's failure) while it waited on it. Like
+ * every row, it is never read again. */
+export const NOT_SENT = "not sent: the run stopped";
 const CONCURRENCY = 4;
 
 /** The run's state this reads and adds its calls to; never its `abort`, `capped` or `deadlineHit`. */
@@ -166,6 +169,11 @@ async function readOne(p: Pass, due: Due): Promise<void> {
   });
   // Another run holds the row: no call, so its reserved count is given back.
   if (!claimed) return void p.run.calls--;
+  // The run stopped while this claim was written: the call is not sent, and its count is given back.
+  if (p.stopped) {
+    p.run.calls--;
+    return deps.repo.updateOpponentRead({ ...sent, error: NOT_SENT });
+  }
   await deps.repo.updateOpponentRead(await callOne(p, due, sent));
 }
 

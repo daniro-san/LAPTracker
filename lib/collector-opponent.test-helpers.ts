@@ -34,7 +34,7 @@ export type Answer = AllianceSnapshotInput | Error;
 /** Deps with an opponent of `tags` on the event, and a by-tag fake. */
 export function setup(
   tags: string[],
-  byTag: (tag: string) => Answer,
+  byTag: (tag: string) => Answer | Promise<Answer>,
   byId?: (id: number) => Answer,
 ) {
   const v1 = fakeV1((id) =>
@@ -45,7 +45,7 @@ export function setup(
     onAttempt?.(0);
     expect(server).toBe(SERVER);
     tagCalls.push(tag);
-    const answer = byTag(tag);
+    const answer = await byTag(tag);
     if (answer instanceof Error) throw answer;
     return answer;
   };
