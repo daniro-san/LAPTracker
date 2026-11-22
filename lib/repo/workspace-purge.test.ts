@@ -1,21 +1,17 @@
 // The daily job of D125: a workspace whose 14 days ended is deleted from every table it owns, in one go,
 // and leaves a tombstone; another workspace and the public rosters stay. The list of owned tables covers
 // every table with a workspace_id column, so a table added later cannot be left behind.
+import { resolve } from "node:path";
+
 import { count, getTableColumns, getTableName, is } from "drizzle-orm";
 import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import drizzleConfig from "../../drizzle.config";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import * as schema from "../schema";
-import * as board from "../schema-board";
-import * as features from "../schema-features";
-import * as imports from "../schema-import";
-import * as keys from "../schema-keys";
-import * as notices from "../schema-notices";
 import * as retention from "../schema-retention";
-import * as squads from "../schema-squads";
-import * as thefts from "../schema-thefts";
 import {
   ownedRows,
   seedEverything,
@@ -53,8 +49,13 @@ async function rowsOf(ws: { id: number; unionId: number }) {
 }
 
 describe("the workspace purge (D125)", () => {
-  it("lists every table with a workspace_id column, or a foreign key into a listed table", () => {
-    const modules = [schema, board, features, imports, keys, notices, retention, squads, thefts];
+  it("lists every table with a workspace_id column, or a foreign key into a listed table", async () => {
+    // Every schema file drizzle.config.ts lists, so a table in a file added later is scanned too.
+    const files = drizzleConfig.schema as string[];
+    expect(files.length).toBeGreaterThan(0);
+    const modules: Record<string, unknown>[] = await Promise.all(
+      files.map((f) => import(resolve(import.meta.dirname, "../..", f))),
+    );
     const tables = [
       ...new Set(modules.flatMap((m) => Object.values(m).filter((v) => is(v, PgTable)))),
     ];

@@ -18,7 +18,7 @@ import { discordClock } from "./discord-format";
 import { editOnly, sendOrEdit } from "./discord-send";
 import type { Env } from "./env";
 import { escapeDiscord } from "./notify";
-import { withCallout } from "./post-callout";
+import { discordCallout, withCallout } from "./post-callout";
 import { membersOfRaid } from "./raid-prep-fill";
 import { liveCallout } from "./repo/post-touches";
 import {
@@ -261,7 +261,7 @@ async function messageOf(
   const callout =
     target.workspaceId === null ? "" : await liveCallout(db, target.workspaceId, "shield");
   const message = shieldMessage(words, { night, morning }, deps.env.SERVER_TZ, url, language);
-  const content = withCallout(callout, message);
+  const content = withCallout(discordCallout(callout), message);
   // The forum post's title: the message's title without its bold marks.
   return { content, title: words.title.replaceAll("*", "") };
 }

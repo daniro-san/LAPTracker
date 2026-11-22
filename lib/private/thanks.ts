@@ -9,7 +9,6 @@ import type { ChatModel } from "../ai/groq";
 import { WRITING_LANGUAGES } from "../ai/notice-writing";
 import { withNames, writeThanks, type Person } from "../ai/thanks-writing";
 import type { Db } from "../db";
-import { discordCallout } from "../post-callout";
 import { claimShare, finishShare, takeDown, weekShared, type ShareRow } from "../repo/thanks";
 import type { WorkspaceAccess } from "./access";
 import { isDay, weekdayIndex } from "./calendar-time";
@@ -159,7 +158,7 @@ export async function shareThanks(
   }
   const sections = written(input.texts).map(([l, text]) => ({ name: deps.names[l], text }));
   // D156: the alliance's own line above our title, on Discord only (never on the board's card).
-  const lead = discordCallout(await postCallout(db, access, "thanks"));
+  const lead = await postCallout(db, access, "thanks");
   const messages = discordMessages(input.title, sections, !channel.forum, lead);
   const { sent } = await postMessages(deps.fetch, channel, input.title, messages);
   const done = sent === messages.length;

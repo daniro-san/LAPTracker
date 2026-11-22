@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { FIELD } from "@/lib/brand/components/controls";
-import { CALLOUT_LIMIT, calloutLength } from "@/lib/post-callout";
+import { CALLOUT_LIMIT, calloutLength, cleanCallout } from "@/lib/post-callout";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { CalloutView } from "@/lib/private/post-callouts";
 import type { PostKey } from "@/lib/schema-discord";
@@ -39,7 +39,9 @@ function useCallouts(slug: string, rows: CalloutView[], t: WorkspaceDictionary) 
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const changed = rows.map((r) => r.post).filter((p) => lines[p].trim() !== kept[p].trim());
+  const changed = rows
+    .map((r) => r.post)
+    .filter((p) => cleanCallout(lines[p]) !== cleanCallout(kept[p]));
   const change = (post: PostKey, text: string) => {
     setSaved(false);
     setLines((l) => ({ ...l, [post]: text }));
@@ -78,9 +80,10 @@ function CalloutField(props: {
 }) {
   const { row, value, t } = props;
   const id = `callout-${row.post}`;
-  const length = calloutLength(value.trim());
+  // The line as the server stores and counts it (cleanCallout), so the card and the route agree.
+  const line = cleanCallout(value);
+  const length = calloutLength(line);
   const over = length > CALLOUT_LIMIT;
-  const line = value.replace(/\s+/g, " ").trim();
   return (
     <div role="group" aria-labelledby={`${id}-label`} className="mt-4 border-t border-rule pt-3">
       <label id={`${id}-label`} htmlFor={id} className="font-medium">
