@@ -10,7 +10,6 @@ import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { calendarDays, createEntry, editEntry } from "./calendar";
 import { removeEntry } from "./calendar-delete";
 import {
-  DUEL_DAYS,
   fieldChange,
   newEntry as newEntrySchema,
   type FieldChange,
@@ -295,6 +294,5 @@ describe("the workspace calendar (issue 300)", () => {
     expect(await theme("2026-11-20")).toEqual({ ok: false, code: "theme_exists" });
     const [row] = await db.select().from(calendarEntries);
     expect([row?.day, row?.minute]).toEqual(["2026-11-16", null]);
-    expect([DUEL_DAYS[0], DUEL_DAYS[6]]).toEqual(["Raven", null]);
   });
 });

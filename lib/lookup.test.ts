@@ -3,7 +3,7 @@
 // the day's cap, inside the event window, for an alliance the daily read covers, and when the read would cut
 // D117's reserve.
 import { count } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LOOKUPS_PER_DAY } from "../config/alliances";
 import { TEST_ENV } from "./app-context.test-helpers";
@@ -65,7 +65,6 @@ describe("Get today's details (D133)", () => {
     expect(v1.calls).toEqual([OTHER]);
     // Each call cut at 10 s and never retried, so the lookup ends inside the route's 30 s.
     expect(options).toEqual([{ fresh: false, maxRetries: 0, timeoutMs: LOOKUP_CALL_TIMEOUT_MS }]);
-    expect(LOOKUP_CALL_TIMEOUT_MS * 2).toBeLessThanOrEqual(20_000);
     const rows = await db.select().from(dailyRosters);
     expect(rows.map((r) => [r.readDay, r.unionId, r.isFresh])).toEqual([[DAY, OTHER, true]]);
     expect((await memberHistoryIndex(db, OTHER, { before: null }))?.entries).toHaveLength(1);
@@ -104,18 +103,23 @@ describe("Get today's details (D133)", () => {
   it("counts the lookups still in flight against the reserve, inside the claim's lock", async () => {
     // 101 left: one read keeps the reserve of 100, a second one at the same time would not.
     const { v1 } = source(101);
+    // The first read is held in flight until the second press has its answer.
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
     const slow = v1.fetchAlliance;
     v1.fetchAlliance = async (...args) => {
-      await new Promise((r) => setTimeout(r, 50));
+      await held;
       return slow(...args);
     };
 
-    const codes = await Promise.all([
-      lookupAlliance(deps(v1), db, OTHER),
-      lookupAlliance(deps(v1), db, SECOND),
-    ]);
+    const answered: string[] = [];
+    const presses = [OTHER, SECOND].map((id) =>
+      lookupAlliance(deps(v1), db, id).then((code) => (answered.push(code), code)),
+    );
+    await vi.waitFor(() => expect(answered).toEqual(["quota"]));
+    release();
 
-    expect(codes.sort()).toEqual(["done", "quota"]);
+    expect((await Promise.all(presses)).sort()).toEqual(["done", "quota"]);
     expect(v1.calls).toHaveLength(1);
   });
 

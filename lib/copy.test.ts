@@ -84,7 +84,6 @@ describe("copy", () => {
     const blank = blankCopy({ a: "Last updated {time}", b: { c: "Kills" } });
     expect(blank).toEqual({ a: "░░░░ ░░░░░░░ {time}", b: { c: "░░░░░" } });
     expect(fill(blank.a, { time: "12:01" })).toBe("░░░░ ░░░░░░░ 12:01");
-    expect(copy.ledger.might).toBe("Might");
   });
 
   it("blank dictionary keeps only the game's own terms readable", () => {

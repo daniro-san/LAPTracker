@@ -5,7 +5,6 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { ADMIN_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
-import { recordAppError } from "./app-errors";
 import { minutes, T0 } from "./collector.test-helpers";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { claimAppErrorAlert, insertAppError, purgeOldAppErrors } from "./repo/app-errors";
@@ -27,7 +26,11 @@ const exceptions = (posts: { url: string; body: Record<string, unknown> }[]) =>
     .filter((e) => e.event === "$exception")
     .map((e) => e.properties);
 
+// The one-row-a-second limiter lives on the module, per instance: each test gets a fresh instance.
+let recordAppError: (typeof import("./app-errors"))["recordAppError"];
 beforeEach(async () => {
+  vi.resetModules();
+  ({ recordAppError } = await import("./app-errors"));
   await truncateAll(db);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -86,8 +89,7 @@ describe("app-error alert", () => {
   it("stores the request's slug in a slug's shape only, for /admin's errors by workspace (D144)", async () => {
     const { ctx, clock } = testContext(db);
     for (const [i, slug] of ["ogs", "Not A Slug!", undefined].entries()) {
-      // After the other tests' clocks: the per-instance limiter keeps the last insert's time.
-      clock.now = new Date(T0.getTime() + 24 * HOUR + i * minutes(5));
+      clock.now = new Date(T0.getTime() + i * minutes(5));
       await recordAppError(ctx, {
         route: "/w/[slug]/thefts",
         kind: "render",
@@ -104,8 +106,7 @@ describe("app-error alert", () => {
   });
 
   it("stores, alerts and sends to PostHog an error with its private roster values replaced (D115, 2026-11-21)", async () => {
-    const { ctx, clock, posts } = testContext(db, ON);
-    clock.now = new Date(T0.getTime() + 48 * HOUR);
+    const { ctx, posts } = testContext(db, ON);
     const parsed = z.object({ x: z.number() }).safeParse({ x: "98765" }, { reportInput: true });
     const error = new Error(
       [
@@ -148,8 +149,7 @@ describe("app-error alert", () => {
   });
 
   it("keeps a failed query's parameters (an officer's text) out of the row, the alert and PostHog", async () => {
-    const { ctx, clock, posts } = testContext(db, ON);
-    clock.now = new Date(T0.getTime() + 72 * HOUR);
+    const { ctx, posts } = testContext(db, ON);
     // An officer's text of two lines: the second starts like a stack frame.
     const text = "Invented Bramble wrote this notice\nat 8pm in the hall";
     // A real Drizzle failure: "Failed query: … values (now(), $1, null)\nparams: <text>".

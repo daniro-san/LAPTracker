@@ -130,7 +130,8 @@ describe("POST /api/tick", () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-07T12:05:00Z");
-    // The run has used 116 s by the time it reads the quota; then every webhook call hangs.
+    // The run has used 116 s by the time it reads the quota (past its deadline: it closes partial); then
+    // every webhook call hangs.
     const fetchQuota = ctx.v1.fetchQuota;
     ctx.v1.fetchQuota = async (...args) => {
       clock.now = new Date(clock.now.getTime() + 116_000);
@@ -141,6 +142,9 @@ describe("POST /api/tick", () => {
     const res = await tick();
 
     expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ phase: "before", status: "partial" });
+    const rows = await db.select({ status: snapshots.status }).from(snapshots);
+    expect(rows).toEqual([{ status: "partial" }]);
   });
 
   it("runs only the earlier phase when both phases are due in the same tick", async () => {

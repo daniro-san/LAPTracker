@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
-import { testContext } from "./app-context.test-helpers";
+import { ADMIN_WEBHOOK, testContext } from "./app-context.test-helpers";
 import type { Db } from "./db";
-import { openTestDb } from "./db.test-helpers";
+import { openTestDb, truncateAll } from "./db.test-helpers";
 import { quotaReport } from "./run";
 import { dailyReads, dailyRosters } from "./schema";
 
@@ -11,9 +11,17 @@ const DAY = 86_400_000;
 const START = Date.UTC(2026, 10, 1, 8, 1);
 
 let db: Db;
-beforeEach(async () => {
+beforeAll(async () => {
   db = await openTestDb();
 });
+beforeEach(() => truncateAll(db));
+
+/** The one admin post the check sent. */
+function adminPost(posts: { url: string; content: string }[]): string {
+  const sent = posts.filter((p) => p.url === ADMIN_WEBHOOK);
+  expect(sent).toHaveLength(1);
+  return sent[0]?.content ?? "";
+}
 
 /** `n` daily reads of the site's own alliance: Zelda-Secret keeps 1,000 might, then drops to 900 on the last. */
 async function reads(n: number) {
@@ -42,7 +50,7 @@ describe("the Friday check's might line (D70)", () => {
 
     await quotaReport(ctx, db, { always: true });
 
-    const content = posts[0]?.content ?? "";
+    const content = adminPost(posts);
     expect(content).toContain("Might unchanged ≥ 7 daily reads: 0 · Lost might ≥ 5 %: 1");
     expect(content).not.toContain("Zelda");
   });
@@ -53,6 +61,6 @@ describe("the Friday check's might line (D70)", () => {
 
     await quotaReport(ctx, db, { always: true });
 
-    expect(posts[0]?.content).not.toContain("Might unchanged");
+    expect(adminPost(posts)).not.toContain("Might unchanged");
   });
 });

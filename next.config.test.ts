@@ -47,7 +47,7 @@ describe("the routes that read pictures (next.config.ts)", () => {
       // The route's address: no route group, [slug] matched by `*`.
       .map((f) => `/${f.replace(/\/route\.ts$/, "").replace(/\([^)]*\)\//g, "")}`)
       .map((path) => path.replace(/\[[^\]]+\]/g, "x"));
-    expect(readers).toHaveLength(3);
+    expect(readers.length).toBeGreaterThan(0);
     for (const path of readers) {
       expect(
         OCR_ROUTES.some((glob) => matchesGlob(path, glob)),

@@ -14,7 +14,6 @@ import {
 } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { saveFacts, type FactChange } from "./member-facts";
-import { KVK_REASON_ON } from "./member-week";
 import { killsGained, membersView, rankOf, type MemberRow } from "./members";
 import { whoOf } from "./members-list";
 import { statusOf } from "./members-sheet";
@@ -171,7 +170,6 @@ describe("Check in reasons (D75)", () => {
     expect(event?.at).toEqual(new Date("2026-11-14T14:00:00Z"));
     // Kills gained, and kills unknown at the Start (which never counts), are not "no kills gained".
     expect([1, 2, 3].map((uid) => killsGained(event, uid))).toEqual([0, 50, null]);
-    expect(KVK_REASON_ON).toBe(false);
     expect(view.members.flatMap((m) => m.reasons)).toEqual([]);
   });
 

@@ -1,7 +1,7 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
-import { openTestDb } from "../db.test-helpers";
+import { openTestDb, truncateAll } from "../db.test-helpers";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { findBlockedKeys } from "./blocked-keys";
 import { searchPlayers } from "./player-search";
@@ -18,6 +18,11 @@ let db: Db;
 
 beforeAll(async () => {
   db = await openTestDb();
+});
+
+// Each test adds its own events: every test starts from the same two snapshots only.
+beforeEach(async () => {
+  await truncateAll(db);
   const at = new Date("2026-10-17T14:00:00Z");
   const [event] = await db
     .insert(events)

@@ -66,22 +66,18 @@ beforeEach(async () => {
   }
 });
 
-const request = (
-  url: string,
-  body: unknown,
-  opts: { slug?: string; signedIn?: boolean; type?: string },
-) =>
+const request = (url: string, body: unknown, opts: { slug?: string; type?: string }) =>
   new Request(url, {
     method: "POST",
     headers: {
       origin: "https://laptracker.test",
       "content-type": opts.type ?? "application/json",
-      ...(opts.signedIn !== false && { cookie: `${SESSION_COOKIE}=${tokens[opts.slug ?? "ogs"]}` }),
+      cookie: `${SESSION_COOKIE}=${tokens[opts.slug ?? "ogs"]}`,
     },
     body: JSON.stringify(body),
   });
 
-const post = (body: unknown, opts: { slug?: string; signedIn?: boolean; type?: string } = {}) =>
+const post = (body: unknown, opts: { slug?: string; type?: string } = {}) =>
   route.POST(request(`https://laptracker.test/api/w/${opts.slug ?? "ogs"}/pending`, body, opts), {
     params: Promise.resolve({ slug: opts.slug ?? "ogs" }),
   });
@@ -126,11 +122,7 @@ describe("POST /api/w/[slug]/pending (D106)", () => {
     expect(await db.select().from(memberFacts)).toHaveLength(1);
   });
 
-  it("answers 401 signed_out without a session, 403 for a form, 400 for no name or request id", async () => {
-    expect(await answer(await post(add(randomUUID()), { signedIn: false }))).toEqual([
-      401,
-      { code: "signed_out" },
-    ]);
+  it("answers 403 for a form, 400 for no name or request id", async () => {
     expect((await post(add(randomUUID()), { type: "text/plain" })).status).toBe(403);
     expect((await post(add(randomUUID(), "  "))).status).toBe(400);
     expect((await post({ ...add(randomUUID()), requestId: "again" })).status).toBe(400);

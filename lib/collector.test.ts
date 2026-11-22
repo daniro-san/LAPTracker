@@ -285,7 +285,8 @@ describe("runSnapshot deadline", () => {
     vi.useFakeTimers({ now: T0 });
     const v1 = hangingV1();
     const { deps, repo } = makeDeps(v1);
-    deps.now = () => new Date();
+    // The fake timers' clock, started at T0: it moves as the test advances the timers.
+    deps.now = () => vi.getMockedSystemTime() ?? T0;
     const lines: string[] = [];
     deps.logger = { ...deps.logger, warn: async (code) => void lines.push(code) };
 
@@ -305,7 +306,8 @@ describe("runSnapshot deadline", () => {
   it("leaves a run that finishes in time unchanged", async () => {
     vi.useFakeTimers({ now: T0 });
     const { deps } = makeDeps(fakeV1((id) => roster(id, ago(T0, minutes(2)))));
-    deps.now = () => new Date();
+    // The fake timers' clock, started at T0: it moves as the test advances the timers.
+    deps.now = () => vi.getMockedSystemTime() ?? T0;
 
     const summary = await runSnapshot(EVENT_ID, "before", deps);
     await vi.advanceTimersByTimeAsync(RUN_DEADLINE_MS * 2);
