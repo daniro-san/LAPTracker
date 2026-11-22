@@ -5,7 +5,7 @@ import type { AdminFeatures } from "@/lib/queries/workspace-features";
 import type { AdminWorkspace } from "@/lib/queries/workspaces";
 import { NO_DEFAULTS } from "@/lib/workspace-features";
 
-import { allianceRow, byAttention, keyState } from "./alliances-view";
+import { allianceChoices, allianceRow, byAttention, keyState } from "./alliances-view";
 import type { FeaturesView } from "./WorkspaceFeatures";
 
 const NOW = new Date("2026-11-20T15:00:00Z");
@@ -17,7 +17,7 @@ const workspace = (over: Partial<AdminWorkspace> = {}): AdminWorkspace => ({
   unionId: 101,
   discordGuildId: "1",
   leaderRoleIds: [],
-  memberRoleIds: [],
+  memberRoleIds: ["700000000000000204"],
   openSessions: 0,
   allowlist: [],
   signedIn: [],
@@ -49,7 +49,12 @@ const view = (over: Partial<FeaturesView> = {}): FeaturesView => ({
   estimate: "",
   ...over,
 });
-const row = (w: AdminWorkspace, v = view(), errors24h = 0) =>
+const row = (
+  w: AdminWorkspace,
+  v = view(),
+  errors24h = 0,
+  read: { first_read: Date | null; readSince: boolean } = { first_read: NOW, readSince: true },
+) =>
   allianceRow({
     w,
     alliance: "AMB",
@@ -64,11 +69,14 @@ const row = (w: AdminWorkspace, v = view(), errors24h = 0) =>
       officerSeenAt: null,
       setup: {
         created: NOW,
+        member_role: w.memberRoleIds.length > 0 ? "done" : null,
+        first_read: read.first_read,
         key_saved: null,
         webhook: null,
         first_roll_call: null,
         first_notice: null,
       },
+      readSince: read.readSince,
     },
     current: FP,
     now: NOW,
@@ -138,24 +146,63 @@ describe("allianceRow (issue 485)", () => {
   });
 });
 
+describe("setup gaps (issue 585, F12)", () => {
+  it("counts no member role, and no read once a daily read since the workspace was made has finished, as setup to do", () => {
+    const closed = workspace({ memberRoleIds: [] });
+    expect(row(closed)).toMatchObject({
+      attention: ["setup"],
+      gaps: ["member_role"],
+      reason: "Setup: no member role",
+    });
+    // A daily read finished since it was made, and still no roster of its alliance that did not fail.
+    expect(row(workspace(), view(), 0, { first_read: null, readSince: true })).toMatchObject({
+      gaps: ["first_read"],
+      reason: "Setup: no read yet",
+    });
+    // Made after the newest finished read began: the next daily read takes it, nothing to do yet.
+    expect(row(workspace(), view(), 0, { first_read: null, readSince: false })).toMatchObject({
+      attention: [],
+      gaps: [],
+      reason: "",
+    });
+    expect(row(closed, view(), 0, { first_read: null, readSince: true }).gaps).toEqual([
+      "member_role",
+      "first_read",
+    ]);
+  });
+});
+
+describe("allianceChoices (F13)", () => {
+  it("keeps a workspace's own alliance in the select, by its id, when no board or roster names it yet", () => {
+    const known = [{ unionId: 101, label: "AMB · Amber Hall" }];
+    expect(allianceChoices(known, [101, 900802, 900802])).toEqual([
+      { unionId: 101, label: "AMB · Amber Hall" },
+      { unionId: 900802, label: "900802 · not read yet" },
+    ]);
+  });
+});
+
 describe("byAttention", () => {
-  it("puts a key that cannot be used first, then errors, then a used-up limit, then the rest by address", () => {
+  it("puts a key that cannot be used first, then errors, then setup, then a used-up limit, then the rest by address", () => {
     const full = view({ used: { ai: 20, translate: 0 } });
     const rows = [
       row(workspace({ id: 1, slug: "a-fine" })),
       row(workspace({ id: 2, slug: "b-cap" }), full),
       row(workspace({ id: 3, slug: "c-errors" }), view(), 2),
       row({ ...key("invalid"), id: 4, slug: "d-key" }),
+      row(workspace({ id: 5, slug: "e-setup", memberRoleIds: [] }), full),
     ];
     expect(rows.map((r) => r.reason)).toEqual([
       "",
       "Daily limit used up",
       "Page errors: 2",
       "Key: paused",
+      "Setup: no member role",
     ]);
     expect(rows.sort(byAttention).map((r) => r.slug)).toEqual([
       "d-key",
       "c-errors",
+      "e-setup",
       "b-cap",
       "a-fine",
     ]);

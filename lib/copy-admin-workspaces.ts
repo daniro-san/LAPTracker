@@ -8,6 +8,8 @@ export const workspacesAdminCopy = {
   /** The Alliances table above the workspaces (D144). */
   alliances: alliancesAdminCopy,
   alliance: "Alliance",
+  /** A workspace's own alliance that no board or daily roster names yet (F13): its id. */
+  allianceUnread: "{id} · not read yet",
   guild: "Discord server id",
   roles: "Leadership role ids",
   rolesHelp: "One or more, separated by commas or spaces.",

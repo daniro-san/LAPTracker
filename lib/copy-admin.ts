@@ -1,7 +1,10 @@
 // The admin area's text (app/(pages)/admin/*, app/_ui/admin/*), re-exported as `copy.admin` from
 // lib/copy.ts. Sentences are allowed here (DESIGN.md: the grandma voice lives in the admin area).
+import { DAILY_QUOTA_TEXT } from "./budget";
 import { featuresAdminCopy } from "./copy-admin-features";
 import { invitesAdminCopy } from "./copy-admin-invites";
+import { needsAdminCopy } from "./copy-admin-needs";
+import { statusAdminCopy } from "./copy-admin-status";
 import { workspacesAdminCopy } from "./copy-admin-workspaces";
 import { guideCopy } from "./copy-guide";
 
@@ -12,6 +15,8 @@ export const adminCopy = {
     overview: "Overview",
     runs: "Runs",
     errors: "App errors",
+    /** Beside App errors: app_errors rows in the last 24 h, read out in words (issue 585). */
+    errorsCount: "{n} in the last 24 h",
     logout: "Log out",
   },
   pin: {
@@ -37,39 +42,9 @@ export const adminCopy = {
   running: "running",
   /** The header's live candle (#91): its word is always shown beside it. */
   live: { on: "Run in progress", off: "Idle" },
-  status: {
-    title: "Status",
-    quota: "API calls left today",
-    quotaValue: "{n} of 1,000",
-    quotaOk: "OK",
-    quotaLow: "Low · under {n}",
-    quotaUnknown: "Unknown",
-    quotaNote: "Last read {at}",
-    /** The reading is from an earlier UTC day, when the quota was another one (it resets every UTC day). */
-    quotaOld: "Not read today",
-    quotaNoteOld: "Last read {at}. Today's first run reads it again.",
-    quotaNone: "No run has reported it yet.",
-    running: "Running now",
-    nothing: "Nothing",
-    next: "Next scheduled run",
-    nextValue: "{phase} · {at}",
-    nextNote: "{event} · event {at}",
-    /** The event keeps its generated name, so its date is the name. */
-    nextNoteDated: "Event {at}",
-    last: "Last result",
-    noRun: "No run yet.",
-    open: "Open this run",
-    tick: "Last tick",
-    noTick: "No tick recorded yet.",
-    tickNote: "Newest first: {list}",
-    tickOutcome: {
-      idle: "nothing due",
-      run: "snapshot",
-      "quota-check": "quota check",
-      rehearsal: "rehearsal",
-      none: "no end",
-    },
-  },
+  /** "Needs you" (issue 585, F11): what waits on the owner, first on /admin. */
+  needs: needsAdminCopy,
+  status: statusAdminCopy,
   schedule: {
     title: "Schedule",
     reference: "Read-only",
@@ -86,8 +61,7 @@ export const adminCopy = {
   },
   run: {
     title: "Run something now",
-    intro:
-      "The scheduler runs these on its own. Each press uses some of the 1,000 API calls a day. The cost is on each button.",
+    intro: `The scheduler runs these on its own. Each press uses some of the ${DAILY_QUOTA_TEXT} API calls a day. The cost is on each button.`,
     event: "Target event",
     /** The event the buttons act on: the nearest one until both its snapshots are done, then the next. */
     target: "{date} · {age} · {state}",
@@ -209,10 +183,8 @@ export const adminCopy = {
     none: "No manual round yet.",
     notRun: "not run",
     open: "Open on the site",
-    confirmBefore:
-      "Take the before snapshot of the manual round now? About 21 of today's 1,000 API calls, up to a minute.",
-    confirmAfter:
-      "Take the after snapshot of the manual round now? About 21 of today's 1,000 API calls, up to a minute.",
+    confirmBefore: `Take the before snapshot of the manual round now? About 21 of today's ${DAILY_QUOTA_TEXT} API calls, up to a minute.`,
+    confirmAfter: `Take the after snapshot of the manual round now? About 21 of today's ${DAILY_QUOTA_TEXT} API calls, up to a minute.`,
     created: "✓ Round created. Nothing has run yet: press Before.",
     /** A phase of the round, in words that say what to do next (#91 item 7). */
     phaseState: {
@@ -229,8 +201,7 @@ export const adminCopy = {
     /** A done phase (issue 157): a secondary control instead of the seal; one confirmation, then `force`. */
     again: "Record again",
     againName: "Record the {phase} again",
-    againConfirm:
-      "This replaces the {seal} snapshot from {at}. About 21 of today's 1,000 API calls, up to a minute.",
+    againConfirm: `This replaces the {seal} snapshot from {at}. About 21 of today's ${DAILY_QUOTA_TEXT} API calls, up to a minute.`,
     complete: "Round complete",
   },
   rehearsal: {
@@ -307,6 +278,10 @@ export const adminCopy = {
     first: "first {at}",
     digest: "digest {digest}",
     count: "{n}×",
+    /** `?w=<slug>` (F34): one workspace's errors. */
+    only: "Errors under /w/{slug} only.",
+    all: "Show all errors",
+    noneFor: "No errors recorded under /w/{slug}.",
   },
   guide: guideCopy,
   workspaces: workspacesAdminCopy,

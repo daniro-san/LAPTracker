@@ -56,9 +56,6 @@ export const TRACKER_CALLS: Partial<Record<Feature, { perMember: number; weekly:
   shield_check: { perMember: 2, weekly: true },
 };
 
-/** A tracker key's calls a quota day (the tracker's own limit). */
-export const TRACKER_QUOTA = 1000;
-
 /** The members an estimate assumes when no roster was read yet: an alliance's capacity. */
 export const ESTIMATE_MEMBERS = 100;
 

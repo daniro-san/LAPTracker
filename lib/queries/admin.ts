@@ -7,8 +7,7 @@ import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
 import type { SnapshotPhase } from "../repo";
 import { loadVerdictInput } from "../repo/rehearsals";
-import type { AppErrorDetail } from "../report-error";
-import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } from "../schema";
+import { allianceSnapshots, events, runLogs, snapshots, tickLog } from "../schema";
 import { runProblems } from "./run-problems";
 import { phaseColumn, phaseSnapshot } from "./visibility";
 
@@ -264,36 +263,6 @@ export function runTrace(
       retries: calls.reduce((sum, c) => sum + c.retries, 0),
     },
   };
-}
-
-export interface ErrorGroup {
-  key: string;
-  digest: string | null;
-  route: string;
-  message: string;
-  /** The newest row's detail (D61); null for rows recorded before it existed. */
-  detail: AppErrorDetail | null;
-  count: number;
-  firstAt: Date;
-  lastAt: Date;
-}
-
-/** app_errors grouped by Next's digest (route + message when it has none), newest first. */
-export async function listErrorGroups(db: Db): Promise<ErrorGroup[]> {
-  const rows = await db.select().from(appErrors).orderBy(desc(appErrors.at));
-  const groups = new Map<string, ErrorGroup>();
-  for (const r of rows) {
-    const key = r.digest ?? `${r.route}\n${r.message}`;
-    const group = groups.get(key);
-    if (!group) {
-      const detail = r.detail as AppErrorDetail | null;
-      groups.set(key, { key, ...r, detail, count: 1, firstAt: r.at, lastAt: r.at });
-      continue;
-    }
-    group.count += 1;
-    group.firstAt = r.at;
-  }
-  return [...groups.values()];
 }
 
 export interface RehearsalStatus {

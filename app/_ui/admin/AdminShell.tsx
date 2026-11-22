@@ -3,18 +3,19 @@
 // The header has no event selector here: admin pages are not about one event. RunWatch, the area's one
 // poller (#91), wraps the page so the candle is current on every admin page. Each page checks
 // isAdmin() itself before it reads the database (issue 218) and, when locked, renders this shell with
-// no children: the PIN card.
-import type { ReactNode } from "react";
+// no children: the PIN card. App errors carries the count of the last 24 h (issue 585, F11).
+import { cache, type ReactNode } from "react";
 
 import { requestServerClock } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { adminSession } from "@/lib/admin-session";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { copy } from "@/lib/copy";
+import { copy, fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { hasPendingRehearsal, listRuns, runningSnapshots } from "@/lib/queries/admin";
+import { countErrorsSince } from "@/lib/queries/admin-errors";
 import { listDailyReads } from "@/lib/queries/daily-runs";
 import { pollFrom } from "@/lib/tick-gate";
 
@@ -31,6 +32,32 @@ const NAV = [
 
 /** Where the page sits in the admin nav: the nav link that gets `aria-current` (issue 585). */
 export type AdminNavHref = (typeof NAV)[number]["href"];
+
+const DAY_MS = 86_400_000;
+
+/**
+ * app_errors rows in the last 24 h, read once per request: the nav and /admin's "Needs you" share it. One
+ * indexed count (`app_errors_at_idx`), so the nav stays cheap on every admin page and each poll's refresh.
+ */
+export const errorsLastDay = cache(() =>
+  withPageDb((db) => countErrorsSince(db, new Date(Date.now() - DAY_MS))),
+);
+
+/** A nav item's count, read out in words; nothing at 0. */
+function NavCount({ n }: { n: number }) {
+  if (n === 0) return null;
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="ml-1.5 rounded-full bg-seal px-1.5 text-[11px] leading-4 font-semibold text-paper tabular-nums"
+      >
+        {n}
+      </span>
+      <span className="sr-only">{`, ${fill(copy.admin.nav.errorsCount, { n })}`}</span>
+    </>
+  );
+}
 
 export async function AdminShell({
   title,
@@ -78,7 +105,7 @@ async function Unlocked({
 }) {
   const now = new Date();
   const env = getEnv();
-  const [[running, [last], [daily], rehearsal], clock] = await Promise.all([
+  const [[running, [last], [daily], rehearsal], clock, errors] = await Promise.all([
     withPageDb((db) =>
       Promise.all([
         runningSnapshots(db, now),
@@ -88,6 +115,7 @@ async function Unlocked({
       ]),
     ),
     requestServerClock(),
+    errorsLastDay(),
   ]);
   const views = watchViews(running, last, daily, now, clock);
   // D141 amendment: idle, the watch asks only from the next tick that can start a run; a pending rehearsal
@@ -108,6 +136,7 @@ async function Unlocked({
             className="flex min-h-11 items-center px-3 text-sm font-medium aria-[current=page]:font-bold aria-[current=page]:no-underline aria-[current=page]:shadow-[inset_0_-3px_0_var(--color-plum)]"
           >
             {n.label}
+            {n.href === "/admin/errors" && <NavCount n={errors} />}
           </TextLink>
         ))}
         {/* One group: it wraps as a unit, so Log out does not jump when the candle's word changes. */}

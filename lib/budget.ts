@@ -1,5 +1,10 @@
 // Quota arithmetic (plan §3.4, §4). Pure: no IO, no clock.
 
+/** The tracker's API calls a day for the site's key (plan §3.4); the UTC day resets it. */
+export const DAILY_QUOTA = 1000;
+/** `1,000`, as the /admin and guide strings write it. */
+export const DAILY_QUOTA_TEXT = DAILY_QUOTA.toLocaleString("en");
+
 /** Margin per run: the quota check itself, the Friday check, and retries. */
 const RESERVE_CALLS = 5;
 
