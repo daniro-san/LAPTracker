@@ -30,4 +30,4 @@ What was missing from the task prompt? Nothing; the owner asked for one place fo
 ## Next
 - None.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/670
