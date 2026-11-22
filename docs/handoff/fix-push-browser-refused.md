@@ -2,11 +2,11 @@
 
 ## Built
 - `enableDevice()` in `app/(private)/_ui/PushSettings.tsx`: runs the browser subscription and the server save as separate steps.
-  - A rejected `subscribe()` shows `push.serviceRefused`; nothing is sent to the server.
+  - A `subscribe()` that rejects with a DOMException named AbortError shows `push.serviceRefused`; any other rejection (failed registration, bad key) shows `push.failed`. Nothing is sent to the server.
   - A `subscribe()` that does not settle within 20 s shows `push.timedOut`. The `finally` in `enable()` then resets `busy`, so the button comes back.
   - A failed save to our server still shows `push.failed` (or the signed-out note on 401).
 - New strings in EN, PT-BR and FR (`lib/private/dictionary.push.ts`): `push.serviceRefused`, `push.timedOut`, `push.brave` (a Brave line in the card's help list, after the Android line).
-- `PushSettings.test.ts`: four tests (subscribe rejects, subscribe never resolves with fake timers, failed save, success).
+- `PushSettings.test.ts`: eight tests (AbortError, other failures, 401, save rejects, subscribe rejects, subscribe never resolves with fake timers, failed save, success).
 
 ## Decisions
 - Analytics: no push failure event exists (only `ws_push_enabled` and `ws_push_disabled`), so nothing was added to the tracking plan.

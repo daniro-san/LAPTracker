@@ -73,7 +73,10 @@ export async function enableDevice(
   try {
     sub = await withTimeout(subscribe(), SUBSCRIBE_TIMEOUT_MS);
   } catch (e) {
-    return { note: t[e instanceof TimedOut ? "push.timedOut" : "push.serviceRefused"] };
+    if (e instanceof TimedOut) return { note: t["push.timedOut"] };
+    // Only the push service's own refusal gets the Brave steps; a failed registration or a bad key does not.
+    const refused = e instanceof DOMException && e.name === "AbortError";
+    return { note: t[refused ? "push.serviceRefused" : "push.failed"] };
   }
   const res = await save(sub).catch(() => null);
   return res?.ok ? { done: true } : { note: failureNote(res, t) };
