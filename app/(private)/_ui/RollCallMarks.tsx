@@ -8,6 +8,7 @@
 // sets a member's away dates (D80, D103).
 import { useState } from "react";
 
+import type { RollCallSet } from "@/lib/analytics/events";
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill, isolate } from "@/lib/copy";
@@ -213,8 +214,9 @@ interface RollCallMarksProps {
   language: string;
   /** Today's server day, the first day an away note gets when none is picked (D103). */
   today: string;
-  /** The chip the page opens on (`?filter=`, the Roll call list's counts). */
+  /** The chip the page opens on (`?filter=`), and the one a Roll call card's count opened it on, if any. */
   filter: GridFilter;
+  opened: RollCallSet | null;
 }
 
 export function RollCallMarks(props: RollCallMarksProps) {
@@ -229,7 +231,7 @@ export function RollCallMarks(props: RollCallMarksProps) {
   const asked = all.filter((row) => row.away === null);
   const awayRows = all.filter((row) => row.away !== null);
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
-  const g = useGrid(asked, (uid) => m.shown(uid).mark, props.filter);
+  const g = useGrid(asked, (uid) => m.shown(uid).mark, props.filter, props.opened);
   const needle = fold(q.trim());
   const found = needle === "" ? null : (row: MarkRowView) => fold(row.name).includes(needle);
   return (

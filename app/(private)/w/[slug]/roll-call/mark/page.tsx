@@ -18,6 +18,7 @@ import { callRead } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
+import { openedFrom } from "../../../../_ui/drilldown-event";
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { prepHead, prepRows } from "../../../../_ui/prep-data";
 import { RaidPrepMarks } from "../../../../_ui/RaidPrepMarks";
@@ -29,7 +30,7 @@ import {
   raidHead,
   rollWords,
 } from "../../../../_ui/roll-call-data";
-import { filterOf, type GridFilter } from "../../../../_ui/roll-call-grid";
+import { filterOf } from "../../../../_ui/roll-call-grid";
 import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
 import { RollCallHead } from "../../../../_ui/RollCallHead";
 import { RollCallManage } from "../../../../_ui/RollCallManage";
@@ -69,7 +70,8 @@ function Marks(props: {
   view: NonNullable<Page["data"]>;
   page: Page;
   occasion: Occasion;
-  filter: GridFilter;
+  /** `?filter=` as asked. */
+  filter: unknown;
 }) {
   const { view, page, occasion } = props;
   const { slug, t, language } = page;
@@ -82,7 +84,8 @@ function Marks(props: {
     marks: markWords(o.kind, t),
     language,
     today: page.today,
-    filter: props.filter,
+    filter: filterOf(props.filter),
+    opened: openedFrom(props.filter),
   };
   if (!view.prep) return <RollCallMarks {...common} shield={o.kind === "shield"} />;
   return (
@@ -159,7 +162,7 @@ export default async function MarkPage({
           </a>
         </p>
       ) : (
-        <Marks view={view} page={page} occasion={occasion} filter={filterOf(search.filter)} />
+        <Marks view={view} page={page} occasion={occasion} filter={search.filter} />
       )}
       {o.call && (
         <RollCallManage

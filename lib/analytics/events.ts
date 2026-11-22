@@ -68,6 +68,19 @@ export type DrilldownSurface = "insights" | "raid_prep" | "roll_call";
  */
 export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone";
 
+/** Raid prep's two counts of people behind "Show the n ›" (#691): "To remind" and "Mark ✓ the n seen". */
+export type RaidPrepSet = "remind" | "accept";
+
+/** The chip a Roll call card's count opened its marking page on (#691): "To mark", ✗ or ✓. */
+export type RollCallSet = "todo" | "no" | "yes";
+
+/** Each surface with its own closed list of kinds, so a kind never rides on another page's event. */
+type DrilldownOpened = { count_bucket: CountBucket } & (
+  | { surface: Extract<DrilldownSurface, "insights">; kind: InsightsSet }
+  | { surface: Extract<DrilldownSurface, "raid_prep">; kind: RaidPrepSet }
+  | { surface: Extract<DrilldownSurface, "roll_call">; kind: RollCallSet }
+);
+
 /** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */
 export type BoardSection = "week" | "notices" | "start_here";
 
@@ -130,7 +143,7 @@ export interface AnalyticsEvents {
    * A desk count opened to its members' names (#678): the page, the kind of set and how many it held as a
    * bucket, once per kind per page view; never a name, uid, exact count or range.
    */
-  ws_drilldown_opened: { surface: DrilldownSurface; kind: InsightsSet; count_bucket: CountBucket };
+  ws_drilldown_opened: DrilldownOpened;
   /** A members' board section came on screen, once per page load. */
   ws_board_section_viewed: { board_section: BoardSection };
   /** D154: a member sent their own info to their officers from their own page (no value, no field). */

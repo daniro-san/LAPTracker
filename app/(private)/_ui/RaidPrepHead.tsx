@@ -7,7 +7,7 @@
 // 2026-11-22). Counts, times and names only; nothing here is sent anywhere by the page.
 import { useRef, useState } from "react";
 
-import { track } from "@/lib/analytics/events";
+import { track, type RaidPrepSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { PREP_MESSAGE } from "@/lib/private/dictionary.raidprep";
@@ -29,11 +29,12 @@ function marksLine(c: Record<"todo" | "yes" | "no" | "all", number>, words: Roll
   return fill(words[c.todo === 0 ? "roll.prep.marks.done" : "roll.prep.marks"], n);
 }
 
-/** Sets the grid's members: the set and the line above it ("The 21 to remind"). */
-export type ShowSet = (rows: readonly MarkRowView[], label: string) => void;
+/** Sets the grid's members: the set, the line above it ("The 21 to remind") and which set it is. */
+export type ShowSet = (rows: readonly MarkRowView[], label: string, kind: RaidPrepSet) => void;
 
 /** "Show the 21 ›": a visible label, not a hidden tap on the count (drilldown panel review). */
 function ShowChip(props: {
+  kind: RaidPrepSet;
   rows: readonly MarkRowView[];
   line: { one: string; other: string };
   words: RollSheetWords;
@@ -45,7 +46,7 @@ function ShowChip(props: {
   return (
     <button
       type="button"
-      onClick={() => props.onShow(props.rows, said(props.line.one, props.line.other))}
+      onClick={() => props.onShow(props.rows, said(props.line.one, props.line.other), props.kind)}
       className={chip()}
     >
       {said(words["roll.prep.show.one"], words["roll.prep.show"])}
@@ -100,6 +101,7 @@ export function TrackerBar(props: {
               : fill(words["roll.prep.accept"], { n: acceptable.length })}
           </button>
           <ShowChip
+            kind="accept"
             rows={props.accept}
             line={{
               one: words["roll.prep.accept.shown.one"],
@@ -189,6 +191,7 @@ export function RemindBar(props: {
       {n > 0 && (
         <>
           <ShowChip
+            kind="remind"
             rows={props.rows}
             line={{
               one: words["roll.prep.remind.shown.one"],

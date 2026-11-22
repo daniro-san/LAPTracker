@@ -18,7 +18,7 @@ Size M (the Roll call list's counts open the marking page with a chip set: a flo
 - D4 counts are pill chips, not underlined text (the older-eyes officer missed underlines).
 - Zero counts are not links: an empty list opens nothing useful.
 - No "Back to To mark" link and no "✓ includes n no problem seen" note, which the panel suggested: the "To mark" chip sits right above the set's line, and each tile says its own mark.
-- Analytics plan: none. The switches change no data; Raid prep's Copy chips beside them are deliberately not counted (D137); and the question such an event answers ("do officers open the sets behind counts?") spans every drilldown surface, so it should be one event defined once with the Insights drilldown (#678), not a second definition here.
+- Analytics: `ws_drilldown_opened`, the one desk drilldown event that #688 defined. Raid prep sends `surface` `raid_prep`, `kind` `remind` or `accept` on a "Show the n ›" tap. The marking page sends `surface` `roll_call`, `kind` `todo`, `no` or `yes` when it opens with `?filter=` from a card's count (a plain open or `All` sends nothing). Both are once per kind per page view, as on Insights, with a bucket of the set's size (`countBucket`) and never a name, uid or exact count. The kinds are closed lists in `lib/analytics/events.ts`, one per surface, so a kind can't ride on another surface's event. The tracking plan's row and a dated Changed line say so. The Roll call open is counted on the marking page's mount (in `useGrid`) rather than by a client wrapper around the server-rendered card links: the `filter` the page reads is the count that was tapped.
 
 ## Deviations
 
@@ -33,6 +33,13 @@ Size M (the Roll call list's counts open the marking page with a chip set: a flo
 - Each new test was broken once on purpose and failed: `toRemind` ignoring the tracker, `toAccept` returning every not-set member, "To mark" also matching "no problem seen", `filterOf` defaulting to ✗, a new member entering a shown set.
 - E2E on a local cluster of my own (port 54397, app 3587, bridge 54487), production build: the whole suite, 57 passed, 3 skipped (by design), phone and wide; the two new flows included.
 - `pnpm check`: passed (Vitest 1,789 passed, 4 skipped; lint, types, migrations, i18n up to date).
+- After the review and #688 (rebased on `dev`):
+  - Render-level PGlite tests render `RaidPrepMarks` from real data. One checks the shield card offers "Mark ✓ the 1 seen with a shield" and "Show the 1", not the 4 not set. The other checks the card's ✓ link (`filter=yes`) opens the page on ✓ with exactly the "Shield up" and "no problem seen" tiles.
+  - A test checks the event carries exactly `surface`, `kind` and `count_bucket`, and that a Roll call open is counted only from a linked count. `events.test.ts` checks that each surface takes only its own kinds.
+  - The assertion that restated the dictionary's "To remind" string is gone.
+  - Broken on purpose, each failed: `toAccept` returning every not-set member, ✓ not matching "no problem seen", an extra `n` property on the event.
+  - `pnpm vitest related`: 162 files, 928 tests passed. `pnpm check`: passed (1,868 passed, 4 skipped); its first run failed on the brand guard, which read "#691" and "#678" in app comments as colour literals, now written "PR 691" / "issue 678".
+  - E2E, fresh production build on my own cluster and ports: `desk-drilldown`, `desk` and `isolation` specs, 31 passed, 1 skipped.
 
 ## Open issues
 
@@ -42,7 +49,6 @@ Size M (the Roll call list's counts open the marking page with a chip set: a flo
 ## Next
 
 - Follow-up: D3 after the owner's answer on away members in "n not read yet".
-- Follow-up: one drilldown event across surfaces (`surface` × `kind` × `count_bucket`), defined once with #678.
 - The spike's batches B and C.
 
 What was missing from the task prompt? Whether "n not read yet" should keep counting away members; the answer decides whether D3 can be a grid switch.

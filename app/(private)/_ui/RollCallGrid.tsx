@@ -6,12 +6,15 @@
 // (roll-call-grid.ts), never by a mark, so a tile stays where it is while the officer marks. A search
 // looks through every member. Every roll call kind uses it; Raid prep's chips count the Shield only (D137).
 // It opens on the chip the address names (`?filter=`, else "To mark"), and `show` puts exactly one set of
-// members in it, with its line ("The 21 to remind"), until a chip is tapped.
-import { useState, type ReactNode } from "react";
+// members in it, with its line ("The 21 to remind"), until a chip is tapped. A page a card's count opened
+// counts `ws_drilldown_opened` once per page view (PR 691).
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { track, type RollCallSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 
+import { rollCallOpened } from "./drilldown-event";
 import type { RollSheetWords } from "./roll-call-data";
 import {
   gridCounts,
@@ -37,18 +40,31 @@ export function tileClass(done: boolean) {
   return `min-w-0 border border-rule px-2 pt-1.5 pb-2 ${done ? "bg-ink/[0.04]" : ""}`;
 }
 
+/** A card's count opened this page on its chip (`opened`): counted once, with the chip's size as a bucket. */
+function useOpenedFrom(opened: RollCallSet | null, n: number) {
+  const sent = useRef(false);
+  useEffect(() => {
+    if (!opened || sent.current) return;
+    sent.current = true;
+    track("ws_drilldown_opened", rollCallOpened(opened, n));
+  }, [opened, n]);
+}
+
 export function useGrid<T extends { uid: number }>(
   rows: T[],
   markOf: MarkOf,
   initial: GridFilter = "todo",
+  opened: RollCallSet | null = null,
 ) {
   const uids = rows.map((r) => r.uid);
   const [snap, setSnap] = useState(() => takeSnap(initial, uids, markOf));
   const [open, setOpen] = useState(false);
   const [limit, setLimit] = useState(MARKED_PAGE);
+  const counts = gridCounts(uids, markOf);
+  useOpenedFrom(opened, opened ? counts[opened] : 0);
   return {
     snap,
-    counts: gridCounts(uids, markOf),
+    counts,
     open,
     limit,
     /** A chip tap takes the sections again, the one already chosen too ("tap a filter to sort again"). */

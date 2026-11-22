@@ -13,8 +13,9 @@
 // tracker's (D137, 2026-11-21): the notice above the rows asks an officer to check them, and "Checked" or a
 // tap on the row checks them.
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
+import { track, type RaidPrepSet, type RollCallSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { fold } from "@/lib/private/members-list";
@@ -22,9 +23,10 @@ import type { Occasion } from "@/lib/private/roll-call";
 
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";
+import { prepOpened } from "./drilldown-event";
 import type { PrepHeadView, PrepRowView } from "./prep-data";
 import { toAccept, toRemind } from "./prep-message";
-import { prepNotes, RemindBar, TrackerBar } from "./RaidPrepHead";
+import { prepNotes, RemindBar, TrackerBar, type ShowSet } from "./RaidPrepHead";
 import { RaidPrepRow } from "./RaidPrepRow";
 import { sendRoll } from "./roll-call-client";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
@@ -154,9 +156,24 @@ type PageProps = TileProps & {
   rows: MarkRowView[];
   language: string;
   today: string;
-  /** The chip the page opens on (`?filter=`, the Roll call list's counts). */
+  /** The chip the page opens on (`?filter=`), and the one a Roll call card's count opened it on, if any. */
   filter: GridFilter;
+  opened: RollCallSet | null;
 };
+
+/**
+ * "Show the n ›" puts its set in the grid and counts `ws_drilldown_opened` (PR 691): once per kind per page
+ * view, with the set's size as a bucket.
+ */
+function useShow(g: { show: (rows: readonly MarkRowView[], label: string) => void }): ShowSet {
+  const counted = useRef(new Set<RaidPrepSet>());
+  return (rows, label, kind) => {
+    g.show(rows, label);
+    if (counted.current.has(kind)) return;
+    counted.current.add(kind);
+    track("ws_drilldown_opened", prepOpened(kind, rows.length));
+  };
+}
 
 /** Both parts' marks, "the rest", the order, and who is asked, away, not set and still to remind. */
 function usePrep(props: PageProps) {
@@ -172,7 +189,11 @@ function usePrep(props: PageProps) {
   // "No problem seen" is never given to someone the tracker did not see with a shield (D137).
   const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false);
   const seen = new Set(props.head.seen);
+  // The chips count the Shield only, as "n of m marked" does: the wall part is optional (issue 585).
+  const g = useGrid(asked, (uid) => m.shown(uid).mark, props.filter, props.opened);
   return {
+    g,
+    show: useShow(g),
     accept: toAccept(notSet, props.head.seen),
     m,
     w,
@@ -190,16 +211,14 @@ function usePrep(props: PageProps) {
       (uid) => m.shown(uid).mark,
       (uid) => prep[uid]?.tracker?.on === true,
     ),
-    // The chips count the Shield only, as "n of m marked" does: the wall part is optional (issue 585).
-    g: useGrid(asked, (uid) => m.shown(uid).mark, props.filter),
   };
 }
 
 export function RaidPrepMarks(props: PageProps) {
   const { words, marks } = props;
   useFreshOnReturn();
-  const { m, w, r, all, asked, notSet, awayRows, rest, offerRest, remind, accept, g } =
-    usePrep(props);
+  const p = usePrep(props);
+  const { m, w, r, all, asked, notSet, awayRows, rest, offerRest, remind, accept, g, show } = p;
   const [q, setQ] = useState("");
   const [away, setAway] = useState<AwayWho | null>(null);
   const [showWall, setShowWall] = useState(false);
@@ -209,7 +228,7 @@ export function RaidPrepMarks(props: PageProps) {
   return (
     <>
       {/* The answer first; its card holds "n of m marked" while the check is on (issue 585, first glance). */}
-      <TrackerBar page={props} accept={accept} counts={g.counts} m={m} onShow={g.show} />
+      <TrackerBar page={props} accept={accept} counts={g.counts} m={m} onShow={show} />
       <Intro
         marked={asked.length - notSet.length}
         total={asked.length}
@@ -233,7 +252,7 @@ export function RaidPrepMarks(props: PageProps) {
         when={props.head.when}
         wall={showWall}
         onWall={() => setShowWall((s) => !s)}
-        onShow={g.show}
+        onShow={show}
         words={words}
       />
       <SearchBar q={q} words={words} onQ={setQ} onAway={() => setAway("pick")} />
