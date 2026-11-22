@@ -5,7 +5,7 @@
 // that day.
 import { fill } from "../copy";
 import type { OwnDay } from "../repo/me";
-import { KVK_MINUTE } from "../shield-check";
+import { KVK_MINUTE, raidOf } from "../shield-check";
 import { addDays, DAY_MS, hhmm, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";
@@ -172,30 +172,31 @@ export interface NeededLine {
 /**
  * The next step for a Raid prep ✗ (D137): "No shield" or "On the wall", from the raid's eve (the day before)
  * until the reset (00:00 ST, the raid's start), then until KvK starts; none before the eve or once KvK has
- * started, nor for any other mark. Raid prep's own deadlines and words, said to the member (people first,
- * D75: what to do, never a reproach).
+ * started. Raid prep's own deadlines (`raidOf`) and words, said to the member (people first, D75: what to
+ * do, never a reproach).
  */
 function stepOf(
   m: Needed["marks"][number],
   t: WorkspaceDictionary,
   now: number,
-  startOf: (minute: number) => number,
+  raid: ReturnType<typeof raidOf>,
 ): string | undefined {
-  if (m.kind !== "shield" || m.mark !== "no") return undefined;
+  if (m.mark !== "no") return undefined;
   const what = m.part === "wall" ? "wall" : "shield";
-  const reset = startOf(0);
+  const reset = raid.reset.getTime();
   // From the raid's eve only, so "the reset" is always tonight's, never a later week's.
   if (now < reset - DAY_MS) return undefined;
   if (now < reset) return t[`me.step.${what}.reset`];
-  if (now < startOf(KVK_MINUTE)) return fill(t[`me.step.${what}.kvk`], { time: hhmm(KVK_MINUTE) });
+  if (now < raid.kvk.getTime()) return fill(t[`me.step.${what}.kvk`], { time: hhmm(KVK_MINUTE) });
   return undefined;
 }
 
 /**
  * The member's week in plain lines, the soonest first: Elixir team, caravan seats, roll call marks. A mark
  * reads "your mark: “Shield up”", a record and not an order (issue 585); a Raid prep ✗ adds its next step
- * while it is still ahead at `now`. `timeOf` gives each event's start and end from its kind, day and time,
- * so the page can say "Started" and "Ended".
+ * while it is still ahead at `now`. A Raid prep counts from its raid (`raidOf`, as its own page does): its
+ * KvK Saturday, and KvK's start when it has no time of its own. `timeOf` gives each event's start and end
+ * from its kind, day and time, so the page can say "Started" and "Ended".
  */
 export function neededLines(
   n: Needed,
@@ -203,7 +204,7 @@ export function neededLines(
   t: WorkspaceDictionary,
   date: (day: string) => string,
   timeOf: (kind: string, day: string, minute: number | null) => { at: number; end: number },
-  now: number,
+  clock: { now: number; zone: string },
 ): NeededLine[] {
   const seats = n.seats.map((s) => {
     const day = s.movedTo ?? addDays(week, weekdayIndex(s.planned));
@@ -221,6 +222,7 @@ export function neededLines(
     const wall = m.part === "wall" && mark !== "assumed";
     // Squads off the wall says itself whole; "On the wall" is plain enough.
     const wallWord = mark === "yes" ? t["roll.prep.wall"] : t["roll.prep.wall.no"];
+    const raid = m.kind === "shield" ? raidOf(m.day, { SERVER_TZ: clock.zone }) : null;
     return {
       day: m.day,
       line: fill(t["me.mark"], {
@@ -228,8 +230,10 @@ export function neededLines(
         day: date(m.day),
         mark: wall ? wallWord : markWord(mark, kind, t),
       }),
-      when: timeOf(m.kind, m.day, m.minute),
-      step: stepOf(m, t, now, (minute) => timeOf(m.kind, m.day, minute).at),
+      when: raid
+        ? timeOf(m.kind, raid.saturday, m.minute ?? KVK_MINUTE)
+        : timeOf(m.kind, m.day, m.minute),
+      step: raid ? stepOf(m, t, clock.now, raid) : undefined,
     };
   });
   const team = n.team ? [{ line: fill(t["me.elixir"], { team: n.team }), when: null }] : [];

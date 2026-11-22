@@ -24,8 +24,11 @@ Branch `fix/kvk-ended-me-no-mark` from `origin/dev` (3ed4302d). **Size S**: two 
     - from the raid's eve (24 h before the reset) until the reset (00:00 ST): "… before the reset (00:00 ST)";
     - then until KvK starts: "… before KvK starts at 12:00 ST";
     - from KvK's start: nothing, and the neutral record stays ("your mark: “No shield”").
-  - The deadlines and words follow Raid prep's own ready message (`raid-prep.ts`: reset, then `kvkStart`; `PREP_MESSAGE`). KvK's start is `KVK_MINUTE` from `lib/shield-check.ts`.
-  - `neededLines` takes `now` as its last argument. `NeededLine.step` is optional.
+  - The deadlines and words follow Raid prep's own ready message (`PREP_MESSAGE`).
+  - `neededLines` takes `clock: { now, zone }` as its last argument. `NeededLine.step` is optional.
+- **One raid for Raid prep and Me** (after the `/pr-review` of PR #619). `raidOf(day, cfg)` in `lib/shield-check.ts` returns the week's Friday (`fridayOf`, moved there from `lib/raid-prep-fill.ts`, which re-exports it), the Saturday, the reset (Sat 00:00 ST) and KvK's start (Sat 12:00 ST).
+  - `prepView` (`lib/private/raid-prep.ts`) now uses it for its Friday, its reset/KvK switch and `ahead`. The values are the same as before: the reset was `kvkStart − 12 h`.
+  - On Me, a Raid prep counts from its raid whatever day it was added on. Its step uses `raidOf`'s reset and KvK start. Its line's times use the Saturday, with KvK's start (`KVK_MINUTE`) when the roll call has no time. So a Raid prep added on a Friday or a Wednesday gets the same step as Raid prep's page shows, and a Raid prep with no time reads "· Started" from 12:00 ST instead of going straight to "· Ended" (review item 5, fixed).
 - **Copy** in EN, PT-BR and FR (`lib/private/dictionary.me.ts`, four new keys):
 
   | Key | EN | PT-BR | FR |
@@ -43,8 +46,13 @@ Branch `fix/kvk-ended-me-no-mark` from `origin/dev` (3ed4302d). **Size S**: two 
   - `lib/private/calendar-time.test.ts`: "shows KvK Saturday's KvK and its Raid prep as Started at 15:00 ST and Ended at 17:00 ST, after the 16:15 ST End read". It covers `kvk` at 12:00, and `shield` at 12:00 and with no time. The existing Elixir test keeps the Elixir case and now uses `undead` for "end of its server day" instead of `kvk`/`shield`, whose rule changed on purpose.
   - `lib/private/me-parts.test.ts`:
     - "tells a member marked ✗ on Raid prep what to do next, before the reset and then before KvK (D137)": Fri 00:00 and Fri 23:00 ST, then Sat 10:30 ST, for both the shield and the wall;
-    - "keeps only the neutral record of a Raid prep ✗ before the raid's eve and once KvK has started": Thu 23:00, Sat 15:00 and Sat 17:00 ST.
-  - The existing `neededLines` test and `app/(private)/api/w/[slug]/me/route.test.ts` pass the new argument (`now`, `endRead: "16:15"`).
+    - "keeps only the neutral record of a Raid prep ✗ before the raid's eve and once KvK has started": Thu 23:00, Sat 15:00 and Sat 17:00 ST;
+    - "switches to the KvK step exactly at the reset and drops it exactly at KvK's start": Sat 00:00 and Sat 12:00 ST exactly;
+    - "gives a ✗ on another roll call no next step: it is the member's own answer (D75)": Undead Siege, Elixir Scramble and Cheese Trap at Fri 23:00 ST;
+    - "counts a Raid prep added on another day of the week from that week's raid, as Raid prep's page does": added on Friday and on Wednesday, with no time, at Fri 23:00 and Sat 10:30 ST;
+    - "starts a Raid prep with no time of its own at KvK's start and ends it at the End read, not straight to Ended".
+  - The existing `neededLines` test passes the clock. Its Raid prep (dated Monday, no time) is now asked for on its KvK Saturday at 12:00, on purpose.
+  - `app/(private)/api/w/[slug]/me/route.test.ts` (PGlite, `meView` end to end): "gives a member's Raid prep ✗ its next step until KvK, then only the record, Ended after the End read (issue 585)". A tracker ✗ on a hand-added Saturday Raid prep with no time, at T0 (Sat 10:00 ST) and at Sat 17:00 ST, with the line, its times and the step.
 
 ## Decisions
 
@@ -61,7 +69,7 @@ Branch `fix/kvk-ended-me-no-mark` from `origin/dev` (3ed4302d). **Size S**: two 
 
 ## Verified
 
-- **`pnpm check` passed**: prettier, eslint, tsc, vitest (306 files passed, 2 skipped; 1587 tests passed, 4 skipped), drift, and i18n (17 languages up to date).
+- **`pnpm check` passed**: prettier, eslint, tsc, vitest (after the review fixes, on dev at f6236e14: 308 files passed, 2 skipped; 1635 tests passed, 4 skipped), drift, and i18n (17 languages up to date).
 - **Each new test fails when the code is broken on purpose** (checked one break at a time, then restored):
 
   | Break | Test that fails |
@@ -71,6 +79,13 @@ Branch `fix/kvk-ended-me-no-mark` from `origin/dev` (3ed4302d). **Size S**: two 
   | Reset deadline ignored (always the KvK wording) | next step before the reset, then before KvK |
   | Never hidden after KvK's start | neutral record before the eve and after KvK's start |
   | No eve window | neutral record before the eve and after KvK's start |
+  | Kind check removed (every ✗ counts as Raid prep) | no next step on another roll call |
+  | Raid from the roll call's own day (the old rule: `fridayOf` = day − 1) | Raid prep added on another day; the existing `neededLines` test |
+  | `<` → `<=` at the reset | exact reset and KvK start |
+  | `<` → `<=` at KvK's start | exact reset and KvK start |
+  | No time starts at its end again (`?? KVK_MINUTE` removed) | no time starts at KvK's start; the route test; the existing `neededLines` test |
+  | `meView` ignores the End read (`"23:59"`) | the route test |
+  | `meView` ignores `now` (`0`) | the route test |
 
 - **The real app, local.** Production build (`next build` + `next start`) on a local Postgres 18 with the e2e seed (invented data), `SNAPSHOT_AFTER=16:15`. The server clock was moved per scenario by a scratch preload, and the browser clock by Playwright's `page.clock`. Chrome at 360 × 780. Scenarios are dated Fri 2026-11-27 23:00 ST and Sat 2026-11-28 10:30, 15:00 and 17:00 ST.
 
@@ -105,6 +120,7 @@ Branch `fix/kvk-ended-me-no-mark` from `origin/dev` (3ed4302d). **Size S**: two 
 
 - **The step does not disappear live.** The server decides it at render time. On a page left open past 00:00 or 12:00 ST, the old step stays until a reload, while the "Ended" tag updates with the browser's clock. A small client check could hide it (follow-up).
 - **A KvK whose End was moved by hand for one event** (`events.after_at`) still ends at `SNAPSHOT_AFTER` here. An officer-typed KvK time after the End read would show "Ended" from its start. Both are edge cases.
+- **A Raid prep dated Friday leaves Me on Saturday** (pre-existing). `ownMarks` (`lib/repo/me.ts`) lists roll calls with `day >= today`, so on Saturday morning, when the tracker's ✗ arrives, a Raid prep added on Friday is no longer listed. Showing it would mean widening that query by the raid's week, a change to what the page reads, so it is not done here.
 - **KvK's start for the step is `KVK_MINUTE` (12:00) in `lib/shield-check.ts`**, the Raid Shield check's constant, not `EVENT_TIME`. This is the same as Raid prep's message ("before KvK starts at 12:00 ST"), and it is pre-existing.
 - Persona follow-ups, not built:
   - Product: show the step's deadline in the member's own time with ST in brackets, as the board's time column does.
@@ -120,7 +136,8 @@ Branch `fix/kvk-ended-me-no-mark` from `origin/dev` (3ed4302d). **Size S**: two 
 
 <adjustments>
 - `endOf(kind, day, minute, zone, endRead)` needs the End read time (`SNAPSHOT_AFTER`). `CalendarCtx` has `endRead`, and `meView`'s `at` has `endRead`.
-- `neededLines(n, week, t, date, timeOf, now)` takes `now`. `NeededLine.step` holds a Raid prep ✗'s next step from the raid's eve until KvK starts.
+- `neededLines(n, week, t, date, timeOf, { now, zone })` takes the clock. `NeededLine.step` holds a Raid prep ✗'s next step from the raid's eve until KvK starts.
+- `raidOf(day, cfg)` (`lib/shield-check.ts`) is the one rule for which raid a Raid prep roll call prepares. Use it, not the roll call's own day, anywhere a Raid prep's times matter. `fridayOf` lives there now.
 - Local first-glance captures with a moved clock work without code changes: seed with the e2e global setup under a `Date` preload, then move `workspace_sessions` to the scenario time (the seed dates sessions with Postgres `now()`, 6-day expiry). Next's server wraps `Date`, so the preload must define `parse` and `UTC` as the subclass's own statics.
 </adjustments>
 

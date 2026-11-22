@@ -10,6 +10,7 @@
 // The shield comes from the tracker's map scan (`map_updated_at`), not from the read itself: `fresh` does
 // not refresh it (owner's test, 2026-11-20). A shield turned on after the last scan is "not seen yet", a
 // hint and never a ✗ (D75).
+import { addDays, mondayOf } from "./calendar-time";
 import {
   quotaDayRead,
   serverInstant,
@@ -68,6 +69,25 @@ const addDay = (day: string) =>
 /** KvK's start after the check of Friday `day`: Saturday 12:00 ST. */
 export const kvkStart = (day: string, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
   serverInstant(addDay(day), "12:00", cfg);
+
+/** The Friday whose night the roll call of `day` prepares: that week's (Monday + 4). */
+export const fridayOf = (day: string) => addDays(mondayOf(day), 4);
+
+/**
+ * The raid a Raid prep roll call of server day `day` prepares (D137): its week's Friday, the Saturday of the
+ * reset that starts the raid (00:00 ST) and of KvK's start (12:00 ST). Raid prep's page and a member's own
+ * page both count from it, so they never disagree on a roll call added on another day.
+ */
+export function raidOf(day: string, cfg: Pick<ScheduleConfig, "SERVER_TZ">) {
+  const friday = fridayOf(day);
+  const saturday = addDay(friday);
+  return {
+    friday,
+    saturday,
+    reset: serverInstant(saturday, "00:00", cfg),
+    kvk: kvkStart(friday, cfg),
+  };
+}
 
 /** The morning read's start time, kept inside 10:00–11:00 ST. */
 export const morningMinuteOf = (minute: number | null | undefined) =>

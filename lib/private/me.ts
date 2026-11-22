@@ -83,7 +83,8 @@ export async function meView(
     },
     week: weekCard(days, today, t, d),
     squads: { ...squadsCardOf(pairs, heroes, t, f), none: t["me.squads.none"] },
-    // An event with no time of its own starts and ends with its day, so it is only ever "Ended".
+    // An event with no time of its own starts and ends with its day, so it is only ever "Ended"; a Raid
+    // prep starts with its KvK instead (`neededLines`).
     needed: neededLines(
       { team, seats, marks },
       week,
@@ -93,7 +94,7 @@ export async function meView(
         const end = endOf(kind, day, minute, zone, at.endRead);
         return { at: minute === null ? end : zonedInstant(day, minute, zone), end };
       },
-      now.getTime(),
+      { now: now.getTime(), zone },
     ),
   };
 }
