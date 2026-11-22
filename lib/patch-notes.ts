@@ -141,6 +141,7 @@ export const patchNotes: PatchNote[] = [
     title: "Raid prep says which raid it is for, an honest KvK card, and safer, faster checks",
     changes: [
       "Raid prep: the header names the raid it serves (\"KvK Sat, Nov 21 · raid at the reset\"), not the day the roll call was added. The card opens with the answer, how many shields the tracker saw at the last check, and the marks below it add up and change with every tap. Each member's line says the shield time is the map's time.",
+      'Raid prep\'s phone bar now counts "6 to mark" in the card\'s own words, the Roll call list names a Raid prep roll call by its KvK Saturday, and "your time" says "the day before" or "the next day" instead of "−1 d" / "+1 d" (on the members\' board it sits on its own line under the time).',
       "Insights → KvK cost and recovery: on KvK day, after the End read, the card says the KvK is recorded and that its numbers show after the 23:30 ST daily read, instead of claiming no KvK was read. When the page's reads start after the last KvK, it says so.",
       'Easier to read: stronger contrast in light mode, visible labels on fields, "Started"/"Ended" words instead of faded items, and larger values on Me, the member card and the board.',
       "Error reports: before any error text leaves the site, one filter removes the private roster fields and member text. Server errors now go to PostHog Error Tracking; /admin → App errors keeps 30 days as a fallback.",
@@ -151,7 +152,7 @@ export const patchNotes: PatchNote[] = [
     needsYou: [
       "GitHub Actions settings and three CI decisions are on the to-do list below (issue #592).",
     ],
-    prs: [596, 597, 598, 599, 600, 601, 602, 603, 604, 605],
+    prs: [596, 597, 598, 599, 600, 601, 602, 603, 604, 605, 608, 609, 610, 613],
   },
   {
     version: "v5.45.0",
