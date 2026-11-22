@@ -70,6 +70,7 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "Confirm the test rule: a change to a desk flow, or to the numbers a public page shows, updates its end-to-end test in the same PR (orchestrator recommendation).",
     issue: 592,
+    done: true,
   },
   {
     text: "Private repo (needs its own decision): the CI/CD panel measured about 16,000 Actions minutes a month at the 2026-11-20/21 pace (69 PRs in 2 days, about 2 runs each, 13 releases a day). This release saves roughly 5,000–6,000 of that (faster checks, no double run per release), which still leaves several times GitHub Pro's 3,000, so a private repo would need a self-hosted runner or paid minutes.",
