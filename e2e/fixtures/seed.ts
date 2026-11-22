@@ -116,9 +116,9 @@ function rawMember(side: Side, m: Member, k: number, idle: boolean) {
     rank_code: k === 0 ? 105 : k < 3 ? 104 : 102,
     rank_label: k === 0 ? "R5" : k < 3 ? "R4" : "R2",
     // The game sends null, never 0, for none that day (D127).
-    active: idle ? null : DAILY.active,
+    active: idle ? null : s.active,
     daily_honor: DAILY.honor,
-    daily_tech: idle ? null : DAILY.tech,
+    daily_tech: idle ? null : s.tech,
     x: s.x,
     y: s.y,
     online: true,
@@ -202,8 +202,11 @@ export const boardOf = (n: number) => ({
   kills: 10_000_000 - n * 1_000_000,
 });
 
-/** Each roster member's daily figures (D146 and the member card): quest points, coins, donations. */
-export const DAILY = { active: 400, honor: 1000, tech: 3000 } as const;
+/**
+ * Each Lantern Keep roster member's daily figures (D146 and the member card): quest points and donations
+ * are its sentinels, coins sit at the cap. Moss Hollow's have its own sentinels.
+ */
+export const DAILY = { active: SENTINELS.a.active, honor: 1000, tech: SENTINELS.a.tech } as const;
 
 /**
  * The desk's week line (D146) on the day the suite runs: the newest read is yesterday's, and its game week
