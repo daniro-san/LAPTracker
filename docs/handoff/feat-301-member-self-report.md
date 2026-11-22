@@ -50,4 +50,4 @@ Closes #301 (the self-report part the triage scoped; the issue's other "later" i
 
 What was missing from the task prompt? Whether officers' Home number should count members' reports (decided: listed, not counted) and which migration number to use (given later by the orchestrator: 0070).
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/684
