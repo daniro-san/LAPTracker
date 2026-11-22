@@ -3,7 +3,8 @@
 // Elixir Scramble roll call over its team only. Reading this page writes nothing: a Calendar roll call is
 // stored with its first mark. A saved roll call can be archived or deleted at the foot (D120); a deleted
 // one is a 404 here. A Raid Shield roll call is Raid prep (D137): two marks per member and the tracker's
-// shield readings while the Raid Shield check is on.
+// shield readings while the Raid Shield check is on. `?filter=` (todo, yes, no, all) opens the grid on that
+// chip, as the Roll call list's counts link it; anything else opens on "To mark".
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
@@ -17,6 +18,7 @@ import { callRead } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
+import { openedFrom } from "../../../../_ui/drilldown-event";
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { prepHead, prepRows } from "../../../../_ui/prep-data";
 import { RaidPrepMarks } from "../../../../_ui/RaidPrepMarks";
@@ -28,6 +30,7 @@ import {
   raidHead,
   rollWords,
 } from "../../../../_ui/roll-call-data";
+import { filterOf } from "../../../../_ui/roll-call-grid";
 import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
 import { RollCallHead } from "../../../../_ui/RollCallHead";
 import { RollCallManage } from "../../../../_ui/RollCallManage";
@@ -59,8 +62,17 @@ async function readMark(
 
 type Page = Awaited<ReturnType<typeof openRollCall<Awaited<ReturnType<typeof readMark>>>>>;
 
-/** The rows: Raid prep's two marks for a Raid Shield roll call (D137), else the roll call's one. */
-function Marks(props: { view: NonNullable<Page["data"]>; page: Page; occasion: Occasion }) {
+/**
+ * The rows: Raid prep's two marks for a Raid Shield roll call (D137), else the roll call's one. The grid
+ * opens on `filter`, the chip a count on the Roll call list names.
+ */
+function Marks(props: {
+  view: NonNullable<Page["data"]>;
+  page: Page;
+  occasion: Occasion;
+  /** `?filter=` as asked. */
+  filter: unknown;
+}) {
   const { view, page, occasion } = props;
   const { slug, t, language } = page;
   const o = view.opened;
@@ -72,6 +84,8 @@ function Marks(props: { view: NonNullable<Page["data"]>; page: Page; occasion: O
     marks: markWords(o.kind, t),
     language,
     today: page.today,
+    filter: filterOf(props.filter),
+    opened: openedFrom(props.filter),
   };
   if (!view.prep) return <RollCallMarks {...common} shield={o.kind === "shield"} />;
   return (
@@ -90,7 +104,8 @@ export default async function MarkPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const occasion = occasionOf(await searchParams);
+  const search = await searchParams;
+  const occasion = occasionOf(search);
   if (!occasion) notFound();
   const query = occasionQuery(occasion);
   const page = await openRollCall(
@@ -107,7 +122,6 @@ export default async function MarkPage({
   // Raid prep's day line names the raid it serves (issue 585); archive and delete still name its own day.
   const raid =
     view.prep && raidHead(view.prep.friday, { t, language, zone: page.zone, today: page.today });
-  const words = rollWords(t);
   const title = callTitle(o, t);
   return (
     // Raid prep is laid out for the wide frame: four columns of tiles at 1280 (issue 585, D122).
@@ -148,7 +162,7 @@ export default async function MarkPage({
           </a>
         </p>
       ) : (
-        <Marks view={view} page={page} occasion={occasion} />
+        <Marks view={view} page={page} occasion={occasion} filter={search.filter} />
       )}
       {o.call && (
         <RollCallManage
@@ -159,7 +173,7 @@ export default async function MarkPage({
           week={o.week}
           calendar={o.placed !== null}
           archived={o.call.archivedAt !== null}
-          words={words}
+          words={rollWords(t)}
         />
       )}
     </SignedInFrame>

@@ -45,6 +45,13 @@ describe("custom events (D77)", () => {
     const opened = { surface: "insights", kind: "zone", count_bucket: "1" } as const;
     // @ts-expect-error no uid rides on a drilldown
     track("ws_drilldown_opened", { ...opened, uid: 4242 });
+    // #691: Raid prep's and the Roll call list's sets, each in its own surface's closed list.
+    track("ws_drilldown_opened", { surface: "raid_prep", kind: "remind", count_bucket: "5_9" });
+    track("ws_drilldown_opened", { surface: "roll_call", kind: "no", count_bucket: "1" });
+    // @ts-expect-error an Insights set never rides on Raid prep's event
+    track("ws_drilldown_opened", { surface: "raid_prep", kind: "tenure", count_bucket: "1" });
+    // @ts-expect-error a Roll call chip is To mark, ✗ or ✓, never All
+    track("ws_drilldown_opened", { surface: "roll_call", kind: "all", count_bucket: "1" });
     // @ts-expect-error no workspace rides on the owner's change
     track("admin_feature_changed", { feature: "notices", on: true, workspace: "ogs" });
   });
