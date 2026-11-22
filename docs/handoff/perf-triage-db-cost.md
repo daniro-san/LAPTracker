@@ -71,11 +71,8 @@ Not run: Neon itself (not reachable here), so no cold-wake timing. Measure after
 
 ## Open issues
 
-- #507, still open after this PR:
-  - The Settings page's own copy of the squads rule. D132's 2026-11-20 amendment (D135) says `squadsReader` replaced it; check and close.
-  - "Make the newcomer test bite": it still does not. With `roster.updatedAt > call.rosterAt` removed, every squads test passes, the moved newcomer test included. Member 2's newer roster queues member 9 anyway. A scenario where only the older roster names the newcomer would bite.
-  - The purge has no test that the daily read triggers it, and no /admin signal.
-- #509, still open: lookups on /admin/runs; the missing tests; the per-address counting in the route; the home page's count query.
+- #507, still open after this PR: a line on /admin when the daily read's 90-day purge fails (today it reaches the log and PostHog only). The newcomer test bites since #630 (the older roster names 8; checked again after the rebase: removing the newer-roster check fails it), the purge trigger test is in #630, and the Settings item was done by D135.
+- #509: done with this PR. #623 fixed the lookups on /admin/runs and added the four tests; the per-address counting was dropped and the home page count was done (#537) in the 2026-11-22 triage; this PR folds the label query and keeps one `isSameOriginJson`.
 - Follow-up seen while measuring: `featuresBySlug` reads `workspaces` by slug again (`settingsBySlug`), plus `allowance_pauses`, on every private request. That is 2 of the 5 statements. Folding the settings into the workspace read, by id, would save one more.
 - Follow-up: the roster insert at the start of every squads batch (Deviations) could be skipped once the day's queue holds the roster. That saves about 100 conflicting rows per batch.
 
