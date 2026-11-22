@@ -48,26 +48,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The newest prettier, eslint and tsc caches saved from a Run workflow for this lockfile. Content-hashed
-      # (--cache-strategy content; tsc hashes every file in its build info), so a fresh checkout's mtimes
-      # do not matter and a changed file is checked again.
-      - if: steps.scope.outputs.docs_only != 'true'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: node_modules/.cache
-          key: lint-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
-          restore-keys: lint-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       - name: Format check (docs-only PR)
         if: steps.scope.outputs.docs_only == 'true'
         run: pnpm exec prettier --check .
       - if: steps.scope.outputs.docs_only != 'true'
         run: pnpm check
-      # Saved only from a Run workflow (a trusted ref), never from a PR, so a PR cannot plant a cache that
-      # later runs restore.
-      - if: steps.scope.outputs.docs_only != 'true' && github.event_name == 'workflow_dispatch'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: node_modules/.cache
-          key: lint-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.run_id }}
       - if: steps.scope.outputs.docs_only != 'true'
         run: pnpm audit --audit-level high
