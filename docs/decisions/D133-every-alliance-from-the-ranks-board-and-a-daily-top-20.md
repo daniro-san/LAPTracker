@@ -98,3 +98,5 @@ A normal day before: about 21 for the daily read plus about 100 for OGs' squads.
 - **D60, D72**: the daily read's alliances are the day's tracked set plus the workspaces' alliances (above), not `DAILY_ROSTER_IDS`.
 - **D124**: "A workspace's own daily roster read on its own key belongs to an alliance outside the 20, which issue 438 builds later" is built here. A tracked alliance's daily read stays on our key, as D124 says.
 - **D130**: the request form lists every known alliance. An invite may be made for any known alliance. The roles' `[TAG]` and the address come from the board's tag.
+
+**Amendment 2026-11-22 (orchestrator, issue 509):** `isSameOriginJson` now lives in `lib/same-origin.ts` (no imports), not `lib/route.ts`; the public lookup route imports it from there and `lib/private/http.ts` re-exports it (#631).

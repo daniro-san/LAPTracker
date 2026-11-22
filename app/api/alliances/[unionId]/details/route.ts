@@ -9,7 +9,8 @@ import { clientIp } from "@/lib/auth";
 import { databaseDown } from "@/lib/data-unavailable";
 import { LOOKUP_IP_LIMIT, LOOKUP_IP_WINDOW_MS, lookupAlliance } from "@/lib/lookup";
 import { recordFailure } from "@/lib/repo/auth-attempts";
-import { errorResponse, isSameOriginJson, withContext } from "@/lib/route";
+import { errorResponse, withContext } from "@/lib/route";
+import { isSameOriginJson } from "@/lib/same-origin";
 
 export const maxDuration = 30;
 

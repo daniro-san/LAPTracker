@@ -181,6 +181,7 @@ async function targetBatch(
       reserve,
       target,
       rosterAt: run.daily.startedAt,
+      queued: new Set(uids),
       signal: controller.signal,
     };
     return await readBatch(deps, db, log, batch);
@@ -247,10 +248,11 @@ async function readBatch(
     reserve: number;
     target: SquadTarget;
     rosterAt: Date;
+    queued: Set<number>;
     signal: AbortSignal;
   },
 ): Promise<SquadsOutcome> {
-  const { row, target, signal } = run;
+  const { row, target, signal, rosterAt, queued } = run;
   // The claim this batch holds: every write below is guarded by it.
   const claimedAt = row.batchAt as Date;
   const q = { day: row.day, unionId: target.unionId };
@@ -274,7 +276,7 @@ async function readBatch(
     if (why || signal.aborted) break;
     const save = (m: Parameters<typeof saveCall>[3]) =>
       saveCall(db, { ...q, claimedAt }, progress(row, b), m);
-    const call = { ...member, target, signal, day: row.day, rosterAt: run.rosterAt };
+    const call = { ...member, target, signal, day: row.day, rosterAt, queued };
     const outcome = await readOne(deps, db, call, b, save);
     // Cut by the deadline before it was sent: the member keeps its turn for the next batch.
     if (outcome === "unsent") break;

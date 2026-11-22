@@ -4,7 +4,7 @@
 // session never gets one: `requireBoard` gives it a BoardAccess, which opens only the members' board.
 import type { Db } from "../db";
 import { endpointHash } from "../push";
-import { workspaceAllianceLabel, type AllianceLabel } from "../repo/alliances";
+import { allianceLabelOf, type AllianceLabel } from "../repo/alliances";
 import { deleteDevice } from "../repo/push";
 import {
   deleteSession,
@@ -116,16 +116,17 @@ async function openSession(
 > {
   const token = sessionToken(cookies, slug)?.value;
   // The reads at once; the refusals keep their order (no workspace, then no session).
-  const [workspace, session, features, alliance] = await Promise.all([
+  const [workspace, session, features] = await Promise.all([
     findWorkspaceBySlug(db, slug),
     token ? findSession(db, hashToken(token)) : null,
     featuresBySlug(db, slug),
-    workspaceAllianceLabel(db, slug),
   ]);
   if (!workspace || !features) return refuse("no_workspace");
   if (!session) return refuse("signed_out");
   // INVARIANT workspace.session-bound: a session of one workspace opens no other.
   if (session.workspaceId !== workspace.id) return refuse("other_workspace");
+  // The label only for a session of this workspace, from the row just read (issue 509).
+  const alliance = await allianceLabelOf(db, workspace.unionId);
   return { workspace, session, features, alliance };
 }
 
