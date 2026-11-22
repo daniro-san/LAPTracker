@@ -126,6 +126,17 @@ export const factMemberOf = (project: string, repeat: number) =>
 export const FACT_SEEDED = { tier: 10, daysAgo: 3 } as const;
 
 /**
+ * The Lantern Keep member an officer marked Needs help the week before last ("They need help" with a note)
+ * and talked to last week (issue 585 slice 2): read-only, so Home counts them and Follow-up lists them under
+ * "Needs help" with since when, who, why and last week's note. k=5 has no fact the facts tests edit.
+ */
+export const NEEDS_HELP = {
+  k: 5,
+  note: "Asked for a hand rebuilding the main squad",
+  said: "Farming for now, will ask if stuck",
+} as const;
+
+/**
  * The workspace whose Thefts switch the feature-switch test turns off and on again (phone only): one of the
  * filler alliances per repeat, so no other test's navigation changes while it runs.
  */

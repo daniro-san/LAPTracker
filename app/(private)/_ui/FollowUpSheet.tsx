@@ -24,20 +24,26 @@ import { FactsEditor } from "./FactsEditor";
 import { send } from "./follow-up-send";
 import type { FollowUpWords } from "./follow-up-words";
 import { HEAD, Message, SECTION } from "./FollowUpMessage";
-import { Fill, Notes, useCard, type Editing } from "./FollowUpPanelParts";
+import { Fill, Notes, useCard, Why, type Editing } from "./FollowUpPanelParts";
 import type { EditorContext } from "./MemberCards";
 import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
+/** One line of why a member is on the list; `quote`: an officer's note. */
+export type RowLine = { text: string; quote?: boolean };
+
 export interface FollowUpRow {
   uid: number;
   name: string;
   rank: string | null;
-  /** "Needs help" when an officer set it; the group heading says the rest. */
-  tag: string | null;
-  /** Why they are on the list, in the officer's words: the reasons, the facts still to ask, the tip. */
-  lines: string[];
+  /** An officer's Needs help mark stands (issue 585 S2): the row is under "Needs help", with a way out. */
+  help: boolean;
+  /**
+   * Why they are on the list: the Needs help mark, the reasons, the facts still to ask, the tip, last
+   * week's context; `quote` marks an officer's note, clamped on the row and whole in the panel.
+   */
+  lines: RowLine[];
   /** Every fact still to ask, each a way into the facts editor at its field. */
   ask: { field: FactField; label: string }[];
   /** The ready message in each language, and the one shown first: the member's, else the officer's (D140). */
@@ -62,6 +68,8 @@ type PanelProps = {
   /** Beside the list from 1024 (D122), not a dialog. */
   pane: boolean;
   onSaved: (requestId: string) => void;
+  /** "No longer needs help" saved (issue 585 S2). */
+  onCleared: () => void;
   onClose: () => void;
 };
 
@@ -240,16 +248,7 @@ export function FollowUpPanel(props: PanelProps) {
           {line}
         </p>
       ))}
-      <section className="mt-3" aria-labelledby="follow-up-why-h">
-        <h3 id="follow-up-why-h" className={HEAD}>
-          {words["followup.why"]}
-        </h3>
-        <ul className="ph-no-capture text-body-sm">
-          {row.lines.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-      </section>
+      <Why slug={props.slug} row={row} words={words} onCleared={props.onCleared} />
       <Message message={row.message} words={words} where="follow_up" />
       <Fill row={row} words={words} card={card} onOpen={setEditing} />
       <Answers value={f.action} words={words} onChange={f.choose} />

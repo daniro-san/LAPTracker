@@ -12,6 +12,7 @@ import {
   factWriter,
   followedUpSince,
   followUpRequested,
+  helpMarkRows,
   insertMemberFollowUp,
   listMemberFollowUps,
   notedSince,
@@ -27,12 +28,15 @@ import type { FactSource } from "./fact-fields";
 import { featureOn } from "./features";
 import {
   coinsTip,
+  helpMark,
+  lastWeekOf,
   notedThisWeek,
   liveRecords,
   resolvedBy,
   weekStart,
   worklist,
   type FollowUpAction,
+  type HelpMark,
   type WorkItem,
 } from "./follow-up-rules";
 import { lastDays } from "./member-days";
@@ -60,8 +64,16 @@ export interface FollowUpView {
 /** How far back a member's game language is read: the squads read runs every day (D132). */
 export const LANGUAGE_DAYS = 14;
 
-/** A member on the list and the language of their ready message: null when no language is known. */
-export type FollowUpItem = WorkItem & { language: WorkspaceLanguage | null };
+/**
+ * A member on the list and the language of their ready message (null when no language is known), their
+ * standing Needs help mark (#585 S2) and last week's newest record as context, unless it is the record
+ * the mark already names.
+ */
+export type FollowUpItem = WorkItem & {
+  language: WorkspaceLanguage | null;
+  mark: HelpMark | null;
+  lastWeek: WeekRecord | null;
+};
 
 /** A member noted this week and the record that took them off the list. */
 export interface NotedItem {
@@ -123,6 +135,28 @@ export async function followUpCounts(
   return { toLook: items.length, noted: noted.length };
 }
 
+/** The standing Needs help mark of each of `uids` that has one (#585 S2): Follow-up's rows and the card. */
+export async function helpMarksOf(
+  db: Db,
+  workspaceId: number,
+  uids: readonly number[],
+): Promise<Map<number, HelpMark>> {
+  const { versions, records } = await helpMarkRows(db, workspaceId, uids);
+  return new Map(
+    uids.flatMap((uid) => {
+      const own = <T extends { uid: number }>(rows: T[]) => rows.filter((r) => r.uid === uid);
+      const mark = helpMark(own(versions), own(records));
+      return mark ? [[uid, mark] as const] : [];
+    }),
+  );
+}
+
+/** Last week's record, unless it is the one that wrote the standing Needs help mark the row names. */
+const contextOf = (record: WeekRecord | undefined, mark: HelpMark | null) =>
+  !record || (record.action === "help" && mark?.at.getTime() === record.at.getTime())
+    ? null
+    : record;
+
 /** The week's list as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function followUpView(
   db: Db,
@@ -131,31 +165,44 @@ export async function followUpView(
   zone: string,
 ): Promise<FollowUpView> {
   const today = dayIn(zone, now.getTime());
-  const [members, rows, thefts] = await Promise.all([
+  const monday = sinceMonday(now, zone);
+  // From last Monday (#585 S2): this week's records make the list, last week's only its context.
+  const lastMonday = weekStart(dayIn(zone, monday.getTime() - DAY_MS), zone);
+  const [members, window, thefts] = await Promise.all([
     membersView(db, access, now, zone),
-    notedSince(db, access.workspaceId, sinceMonday(now, zone)),
+    notedSince(db, access.workspaceId, lastMonday),
     theftsView(db, access, { now, zone }),
   ]);
-  const { items, noted } = weekLists(members, rows);
+  // The same rows Home and Members count (`followedUpSince` from this Monday).
+  const { items, noted } = weekLists(
+    members,
+    window.filter((r) => r.at >= monday),
+  );
+  const lastWeek = lastWeekOf(window, monday);
   // Only the members on the list, and only recent reads (#521).
   const since = new Date(now.getTime() - LANGUAGE_DAYS * DAY_MS);
-  const game = await gameLanguages(
-    db,
-    access.unionId,
-    items.map((i) => i.member.uid),
-    since,
-  );
+  const uids = items.map((i) => i.member.uid);
+  const helped = items.filter((i) => i.help).map((i) => i.member.uid);
+  const [game, marks] = await Promise.all([
+    gameLanguages(db, access.unionId, uids, since),
+    helpMarksOf(db, access.workspaceId, helped),
+  ]);
   return {
     early: members.early,
     week: gameWeek(today),
     // The officers' recorded languages first, then the game's (D137's order).
-    items: items.map((i) => ({
-      ...i,
-      language: messageLanguage([
-        ...(i.member.facts.languages?.value ?? []),
-        game.get(i.member.uid) ?? null,
-      ]),
-    })),
+    items: items.map((i) => {
+      const mark = marks.get(i.member.uid) ?? null;
+      return {
+        ...i,
+        language: messageLanguage([
+          ...(i.member.facts.languages?.value ?? []),
+          game.get(i.member.uid) ?? null,
+        ]),
+        mark,
+        lastWeek: contextOf(lastWeek.get(i.member.uid), mark),
+      };
+    }),
     noted,
     zones: members.zones,
     // Every attacker not yet resolved, whatever step they are at (D104, amended 2026-11-19).

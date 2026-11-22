@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { coinsTip, historyLine, notedLine, weekCountLine, weekStart } from "./follow-up-rules";
+import {
+  coinsTip,
+  historyLine,
+  lastWeekLines,
+  markLines,
+  notedLine,
+  weekCountLine,
+  weekStart,
+} from "./follow-up-rules";
 
 const dayOf = (at: Date) => at.toISOString().slice(0, 10);
 
@@ -73,5 +81,31 @@ describe("Follow-up's week in words (#585)", () => {
     );
     const away = { ...row, action: "break" as const, until: "2026-11-24", by: null };
     expect(notedLine(away, t, date, day)).toBe("2026-11-19: On a break until 2026-11-24");
+  });
+});
+
+describe("Follow-up's Needs help in words (#585 slice 2)", () => {
+  it("says since when and who added the mark, last week's record as context, each officer's note in quotes", () => {
+    const date = (at: Date) => dayOf(at);
+    const day = (iso: string) => iso;
+    const at = new Date("2026-11-13T10:00:00Z");
+    const en = WORKSPACE_DICTIONARIES.en;
+    const mark = { at, by: "Ana", note: "Lost the main squad" };
+    expect(markLines(mark, en, date)).toEqual([
+      "Since 2026-11-13 · added by ⁨Ana⁩",
+      "“Lost the main squad”",
+    ]);
+    // Set in Edit info by an officer no longer known: no name, and no note.
+    expect(markLines({ at, by: null, note: null }, en, date)).toEqual(["Since 2026-11-13"]);
+    const talked = { action: "talked" as const, note: "on holiday", until: null, at, by: "Tomas" };
+    expect(lastWeekLines(talked, en, date, day)).toEqual([
+      "Last week: ⁨Tomas⁩ · 2026-11-13: Talked to them",
+      "“on holiday”",
+    ]);
+    // French: guillemets with no-break spaces inside, and one before each colon.
+    expect(lastWeekLines(talked, WORKSPACE_DICTIONARIES.fr, date, day)).toEqual([
+      "Semaine dernière : ⁨Tomas⁩ · 2026-11-13 : On a parlé",
+      "« on holiday »",
+    ]);
   });
 });

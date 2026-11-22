@@ -172,6 +172,8 @@ One dated line for each change in what a number means, newest last. The first th
 - 2026-11-22 (issue 516): `ws_action` `follow_up` carries `from` (`follow_up`, `card`) and `on_list`, since a member card's "Talked to them" records follow-ups too. Before this date every record came from the Follow-up tab and has no `from`: read it as `follow_up`. New browser event `ws_message_copied` (`where`, `to`): before it, no copy of a ready message was counted.
 - 2026-11-22 (issue 585, batch 3): Home's and Members' check-in line ("Follow-up: 12 to look at · 4 noted this week") links to Follow-up while its tab is on; before, it linked to the Members list's group. Follow-up page views reached from Home or Members may rise from this release; read a rise as the link, not as more follow-up work. No event changed.
 
+- 2026-11-22 (issue 585, batch 3, slice 2, D104 amended): Follow-up keeps every member marked Needs help on the list each week until an officer clears the mark, so Home's and Members' "Follow-up: n to look at" also counts them; on release day the number rises by the members whose mark stood with no reason left. Read that step as the rule, not as more members in trouble. "No longer needs help" saves through the facts route, so it shows as `ws_action` `member_facts` `save`, like any facts save. No event changed.
+
 ## Not tracked, on purpose
 
 - Who marked, saved, thanked or was thanked; any member's value; anything typed.

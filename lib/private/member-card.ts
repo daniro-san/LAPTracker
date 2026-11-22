@@ -23,10 +23,10 @@ import {
 } from "./fact-fields";
 import { factText, NONE } from "./fact-text";
 import { cardBase, lastTwo, TREND_FIELDS, type Progress, type TrendField } from "./fact-trend";
-import { followUpsOf } from "./follow-up";
-import { historyLine } from "./follow-up-rules";
+import { followUpsOf, helpMarksOf } from "./follow-up";
+import { historyLine, markLines } from "./follow-up-rules";
 import { cardLink, type CardLink } from "./me-link";
-import { daysFormats, duelText, toAskLine, versionLines } from "./member-card-parts";
+import { daysFormats, duelText, quietDayLine, toAskLine, versionLines } from "./member-card-parts";
 import { daysCard, lastDays, LAST_DAYS, type DaysCard, type LastDays } from "./member-days";
 import { memberOrigin } from "./member-origin";
 import { squadsCard, type SquadsCard } from "./member-squads";
@@ -79,6 +79,8 @@ export interface CardData {
   status: Status;
   /** Empty for Fine and for "No data" (missing data is "—" in its own place, never a headline, #461). */
   statusLabel: string;
+  /** Under "Needs help": since when, who added it and their note in quotes (#585 S2), set by memberCard. */
+  statusMark: string[];
   /** The reasons with their evidence, or when a new member was first seen. */
   statusLines: string[];
   /** "No data": the name of the marker drawn where a value is "—". */
@@ -159,22 +161,6 @@ export function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
   }
   const label = status === "nodata" ? missingText(m, t, f) : t["status.fine"];
   return { status, label, lines: quietDayLine(m, t, f) };
-}
-
-/**
- * D127: no daily quests or no donations on a read that lists the member is a fact of that day, never
- * missing data: one line, both in one when both.
- */
-function quietDayLine(m: MemberRow, t: WorkspaceDictionary, f: Formats): string[] {
-  const day = m.noQuestsOn ?? m.noDonationsOn;
-  if (day === null) return [];
-  const key =
-    m.noQuestsOn && m.noDonationsOn
-      ? "members.noQuestsOrDonations"
-      : m.noQuestsOn
-        ? "members.noQuests"
-        : "members.noDonations";
-  return [fill(t[key], { day: f.date(day) })];
 }
 
 /** Rows empty for the whole alliance (Joined and Last online, sent as null since 2026-11-16) are left out. */
@@ -298,6 +284,7 @@ export function cardData(
     origin: x.origin,
     status,
     statusLabel: headline ? label : "",
+    statusMark: [],
     statusLines: headline ? lines : [],
     noData: t["nodata.mark"],
     days: x.days ? daysCard(x.days, t, daysFormats(t, f)) : null,
@@ -352,11 +339,13 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const [squads, origin, link, followUp] = await Promise.all([
+  const [squads, origin, link, followUp, marks] = await Promise.all([
     squadsCard(db, access, uid, at.t, f),
     memberOrigin(db, access, uid, at.zone, at.t, f.date),
     cardLink(db, access, uid, at.t),
     cardFollowUp(db, access, member, followUps, view.reads, at, f.date),
+    // Follow-up's own rule, read only while the status is Needs help (#585 S2).
+    helpMarksOf(db, access.workspaceId, member.officerStatus === "help" ? [uid] : []),
   ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
@@ -366,5 +355,7 @@ export async function memberCard(
     origin,
     history,
   });
-  return { ...card, squads, link, followUp };
+  const mark = marks.get(uid);
+  const statusMark = mark ? markLines(mark, at.t, f.date) : [];
+  return { ...card, statusMark, squads, link, followUp };
 }

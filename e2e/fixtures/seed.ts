@@ -1,6 +1,6 @@
 // The e2e seed (issue 477): two alliances with a workspace each, three filler alliances, 14 days of daily
 // rosters, two past Saturday events, this week's Raid prep and a cheese roll call, an officer's and a member's
-// session per workspace. Invented names only. Dates follow the day the suite runs, in server time (UTC−2),
+// session per workspace, and a Lantern Keep member marked Needs help (issue 585). Invented names only. Dates follow the day the suite runs, in server time (UTC−2),
 // so every run sees the same week shape. Each alliance's roster rows carry its own sentinel values for the
 // private roster fields, so a test can tell a leak, and whose it is, from any page or answer.
 import { createHash } from "node:crypto";
@@ -19,6 +19,7 @@ import {
   LEAVER,
   LINKED,
   LINKED_MEMBER,
+  NEEDS_HELP,
   KVK_ENTRY,
   PROJECTS,
   REPEATS,
@@ -307,6 +308,30 @@ function factRows(cal: ReturnType<typeof calendarOf>): string[] {
   ];
 }
 
+/**
+ * The days of NEEDS_HELP's two records, from the seed's week (this Monday, `cal.week`): "They need help" on
+ * the Friday of the week before last, "Talked to them" on last week's Friday.
+ */
+export function needsHelpDays(now: Date) {
+  const monday = Date.parse(calendarOf(now).week);
+  return { marked: iso(monday - 10 * DAY_MS), talked: iso(monday - 3 * DAY_MS) };
+}
+
+/**
+ * NEEDS_HELP's rows as recordFollowUp writes them: "They need help" writes the status fact (version 1) and its
+ * record with that fact version, by the same officer at the same moment; "Talked to them" writes a record only.
+ */
+function needsHelpRows(now: Date): string[] {
+  const { marked, talked } = needsHelpDays(now);
+  const ws = ALLIANCES.a.id;
+  const uid = uidOf("a", NEEDS_HELP.k);
+  const at = (day: string) => `'${day}T12:00:00-02:00'`;
+  return [
+    `insert into member_facts (workspace_id, uid, field, version, value, source, written_by, written_at) values (${ws}, ${uid}, 'status', 1, '"help"', 'officer', 1, ${at(marked)});`,
+    `insert into member_follow_ups (workspace_id, uid, action, note, until, fact_version, written_by, written_at, request_id) values (${ws}, ${uid}, 'help', ${q(NEEDS_HELP.note)}, null, 1, 1, ${at(marked)}, '00000000-0000-4000-8000-000000000585'), (${ws}, ${uid}, 'talked', ${q(NEEDS_HELP.said)}, null, null, 1, ${at(talked)}, '00000000-0000-4000-8000-000000000586');`,
+  ];
+}
+
 /** This week's Raid prep (the weekly KvK entry) with its marks, and a cheese entry with no roll call yet. */
 function rollCallRows(cal: ReturnType<typeof calendarOf>): string[] {
   const ws = ALLIANCES.a.id;
@@ -350,6 +375,7 @@ export function seedSql(now: Date): string {
     ...workspaceRows(),
     ...rollCallRows(cal),
     ...factRows(cal),
+    ...needsHelpRows(now),
     "select setval('events_id_seq', 100), setval('snapshots_id_seq', 100), setval('workspaces_id_seq', 100), setval('workspace_users_id_seq', 100), setval('calendar_entries_id_seq', 100), setval('roll_calls_id_seq', 100);",
     "commit;",
   ].join("\n");

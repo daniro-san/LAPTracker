@@ -7,6 +7,7 @@ import { calendarEn } from "./dictionary.calendar";
 import { dataEn } from "./dictionary.data";
 import { featuresEn } from "./dictionary.features";
 import { followUpEn } from "./dictionary.followup";
+import { followUpHelpEn } from "./dictionary.followup-help";
 import { fr } from "./dictionary.fr";
 import { garrisonEn } from "./dictionary.garrison";
 import { importEn } from "./dictionary.import";
@@ -268,6 +269,7 @@ const en = {
   ...translateEn,
   ...boardEn,
   ...followUpEn,
+  ...followUpHelpEn,
   ...insightsEn,
   ...activityEn,
   ...shareEn,
