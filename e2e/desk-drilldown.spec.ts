@@ -2,7 +2,9 @@
 // names. Raid prep's "Show the n" beside "To remind: n", and the Roll call card's ✗ and "Not set" counts,
 // which open the marking page on that chip. Read only: this week's seeded Raid prep, which no test marks.
 // Home (batch C): a new-members line opens its names, and "n already noted" opens Follow-up's Noted card.
-// Expected members are computed from the seed (e2e/fixtures/seed.ts).
+// Issue 726: Moss Hollow's Raid prep of the last raid, with the Raid Shield check on, shows "To check by hand"
+// and each map's day and age against the reset. Expected members are computed from the seed
+// (e2e/fixtures/seed.ts).
 import type { Page } from "@playwright/test";
 
 import {
@@ -10,12 +12,15 @@ import {
   ALLIANCES,
   CARD_TALKED,
   calendarOf,
+  HAND_CHECK,
   KVK_ENTRY,
   LEAVER,
   LINKED_MEMBER,
   NOTED,
   seededAt,
   SHIELD_MARKED,
+  SHIELD_PREP_ID,
+  SHIELD_READINGS,
 } from "./fixtures/seed";
 import { deskFrame, expect, hydrated, sees, showMoreUntil, signIn, test } from "./fixtures/test";
 
@@ -63,6 +68,51 @@ test("Raid prep: Show the n beside To remind puts exactly those members in the g
   // A chip brings its own members back: "To mark" holds only the not set.
   await page.getByRole("button", { name: `To mark ${notSet.length}`, exact: true }).click();
   await tilesAre(page, notSet);
+});
+
+/**
+ * A seeded map as a Raid prep tile writes it: "map Fri 16:41 ST · 7 h 19 min before reset", from its minutes
+ * from the reset of the last raid (Saturday 00:00 ST, UTC−2).
+ */
+function mapLine(minutes: number) {
+  const reset = Date.parse(`${cal.events[1]}T00:00:00-02:00`);
+  const at = new Date(reset + minutes * 60_000);
+  const zone = { timeZone: "Etc/GMT+2" };
+  const day = at.toLocaleDateString("en-US", { ...zone, weekday: "short" });
+  const time = at.toLocaleTimeString("en-GB", { ...zone, hour: "2-digit", minute: "2-digit" });
+  const [h, m] = [Math.floor(Math.abs(minutes) / 60), Math.abs(minutes) % 60];
+  const age = h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`;
+  return `map ${day} ${time} ST · ${age} ${minutes < 0 ? "before" : "after"} reset`;
+}
+
+test("Raid prep: To check by hand shows exactly its members, each map with its day and age", async ({
+  context,
+  page,
+}) => {
+  const B = ALLIANCES.b;
+  await signIn(context, "b", "officer");
+  await page.goto(`/w/${B.slug}/roll-call/mark?id=${SHIELD_PREP_ID}`);
+  await expect(page.getByRole("heading", { level: 1, name: "Raid prep" })).toBeVisible();
+  await deskFrame(page, B);
+  const card = page.getByRole("region", { name: "Shield" });
+  const hand = HAND_CHECK.map((k) => B.names[k] as string);
+  await sees(card, `To check by hand: ${hand.length}`);
+  // "Mark ✓ the n seen with a shield" offers only those the newest reading saw and the list leaves out.
+  const accept = Object.entries(SHIELD_READINGS).filter(
+    ([k, r]) => (r.morning ?? r.night)?.on && !HAND_CHECK.includes(Number(k)),
+  );
+  await sees(card, `Mark ✓ the ${accept.length} seen with a shield`);
+  const show = card.getByRole("button", { name: `Show the ${hand.length}`, exact: true });
+  await hydrated(show);
+  await show.click();
+  await sees(page.locator("main"), `The ${hand.length} to check by hand`);
+  await tilesAre(page, hand);
+  // Each listed tile says why, and each map says its day and its age against the reset.
+  const [k, r] = Object.entries(SHIELD_READINGS).find(([n]) => Number(n) === HAND_CHECK[1]) ?? [];
+  const tile = prepTiles(page).filter({ hasText: B.names[Number(k)] as string });
+  await sees(tile, "Check by hand · map over 3 h from the reset");
+  for (const map of [r?.night, r?.morning]) if (map) await sees(tile, mapLine(map.at));
+  await sees(prepTiles(page).filter({ hasText: hand[3] as string }), "Check by hand · no reading");
 });
 
 test("Roll call list: Raid prep's ✗ and Not set counts open its page on that chip, with exactly those members", async ({
