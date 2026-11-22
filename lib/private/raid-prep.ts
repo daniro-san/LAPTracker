@@ -141,7 +141,8 @@ const checkpointOf = (pass: Checkpoint["pass"], r: StoredReading | null): Checkp
     ? [{ pass, at: (r.mapAt ?? r.readAt).getTime(), on: suggestionOf(r) === "on" }]
     : [];
 
-function hintOf(night: StoredReading | null, morning: StoredReading | null): TrackerHint {
+/** A row's hint from its two readings; the member card reads it too (issue 634). */
+export function hintOf(night: StoredReading | null, morning: StoredReading | null): TrackerHint {
   return {
     suggestion: suggestionOf(morning ?? night),
     checkpoints: [...checkpointOf("night", night), ...checkpointOf("morning", morning)],

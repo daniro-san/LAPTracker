@@ -171,9 +171,31 @@ export function Facts({
   );
 }
 
+const SHIELD_TONE = { plain: "", attention: "text-yarn", muted: "text-ink/75" } as const;
+
 /**
- * Status, the stat strip, their time and languages, where they came from and who on Discord is linked to
- * them (D142): the same on every tab.
+ * Issue 634: the Raid Shield block, only from Friday's night check until KvK starts. Raid prep's words; the
+ * map scan's time in brackets kept whole, so it wraps as a unit at 360 px. Never in replay (D137).
+ */
+function ShieldBlock({ shield }: { shield: NonNullable<CardData["shield"]> }) {
+  return (
+    <div className="ph-no-capture mt-1 text-body-sm">
+      <p className="font-semibold">{shield.head}</p>
+      {shield.lines.map((l) => (
+        <p key={l.text} className={SHIELD_TONE[l.tone]}>
+          {l.text}
+          {l.scan && (
+            <span className="text-label whitespace-nowrap text-ink/75">{` (${l.scan})`}</span>
+          )}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Status, the Raid Shield block during the raid (issue 634), the stat strip, their time and languages,
+ * where they came from and who on Discord is linked to them (D142): the same on every tab.
  */
 function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | null; slug: string }) {
   return (
@@ -189,6 +211,7 @@ function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | nul
           {line}
         </p>
       ))}
+      {card.shield && <ShieldBlock shield={card.shield} />}
       <p className="flex flex-wrap gap-x-3 text-body-sm tabular-nums">
         {card.facts.map((f) => (
           <span

@@ -197,6 +197,25 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     expect(JSON.stringify(block)).not.toContain("Bravo");
   });
 
+  it("give Alpha's member card Alpha's own Raid Shield reading only, never Bravo's (issue 634)", async () => {
+    // Friday 23:45 ST: Bravo's workspace read the same player with a shield; Alpha's check has not read them.
+    const night = new Date("2026-11-21T01:31:00Z");
+    const map = new Date("2026-11-21T00:33:00Z");
+    await db.insert(playerReads).values({
+      unionId: BRAVO,
+      uid: 101,
+      readAt: night,
+      shielding: 1,
+      shieldType: 0,
+      mapUpdatedAt: map,
+    });
+    const now = new Date("2026-11-21T01:45:00Z");
+    const at = { now, zone: ZONE, language: "en" as const, t: WORKSPACE_DICTIONARIES.en };
+    const shield = (await memberCard(db, a, 101, at))?.shield;
+    expect(shield?.head).toBe("Raid Shield");
+    expect(JSON.stringify(shield)).not.toMatch(/shield seen|22:33/);
+  });
+
   it("Home's activity pages carry Alpha's lines only", async () => {
     const page = await call(two, "activity", {
       query: `?before=${SEED_AT.getTime() + 86_400_000}`,

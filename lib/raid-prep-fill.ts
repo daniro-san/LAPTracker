@@ -150,9 +150,10 @@ const fillRequest = (saturday: string) => `tracker-fill:${saturday}`;
  * (its row made as on a first mark), else one added as "Add a roll call" adds it, on Saturday, with the
  * tick's request id: one per kind and day (D103), and a lost race opens the winner. A deleted one keeps its
  * request id, so the tick never adds that week's again. Null when the week's Raid prep is archived: the
- * officers put it away, so nothing is filled (D120).
+ * officers put it away, so nothing is filled (D120). Nothing is written until `make` is called: the member
+ * card reads `callId` only (issue 634).
  */
-async function weekRaidPrep(db: Db, workspaceId: number, friday: string) {
+export async function weekRaidPrep(db: Db, workspaceId: number, friday: string) {
   const monday = mondayOf(friday);
   const sunday = addDays(monday, 6);
   const saturday = addDays(friday, 1);
