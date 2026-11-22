@@ -15,10 +15,9 @@ import { claimPushMark, workspacesOfUnions } from "./repo/push";
 import { callsOfWeeks } from "./repo/roll-call";
 import { getShieldCheck, shieldReadings } from "./repo/shield-checks";
 import { getSquadRead } from "./repo/squads";
-import { anyRoster } from "./repo/workspace-any-roster";
 import { serverDay } from "./schedule";
 import { passWindows, type ShieldPass } from "./shield-check";
-import { summarize } from "./shield-post";
+import { membersOfRaid, summarize } from "./shield-post";
 import type { ShieldTarget } from "./shield-read";
 
 export type UseDeps = PushDeps & {
@@ -54,7 +53,7 @@ async function passOver(db: Db, q: { day: string; unionId: number }, pass: Shiel
 /**
  * The Raid Shield check's notification (D137's two reads): when a read is over, or when its count changed
  * since the last one sent (a later tick read the retries). Only for alliances whose `shield_check` is on (the
- * tick's targets, D134). "{n} not seen with a shield yet": a count, never a name.
+ * tick's targets, D134). "{n} not seen with a shield yet": a count, never a name, away members left out.
  */
 export async function pushShield(
   deps: UseDeps,
@@ -66,8 +65,9 @@ export async function pushShield(
   const q = { day, unionId: target.unionId };
   if (!(await passOver(db, q, pass))) return;
   const w = passWindows(day, deps.env)[pass];
-  const members = (await anyRoster(db, target.unionId))?.members ?? [];
-  const read = summarize(members, await shieldReadings(db, target.unionId, w.from, w.to));
+  // Away members are left out of the count, as the summary leaves them out of its names (D137, 2026-11-22).
+  const { members, away } = await membersOfRaid(db, target, day, deps.env.SERVER_TZ);
+  const read = summarize(members, await shieldReadings(db, target.unionId, w.from, w.to), away);
   if (read.read === 0) return;
   const n = read.notSeen.length;
   const mark = { workspaceId: target.workspaceId, key: `shield:${day}`, value: `${pass}:${n}` };
@@ -75,7 +75,8 @@ export async function pushShield(
   const url = await raidPrepUrl(db, { id: target.workspaceId, slug: target.slug }, day);
   await notifyOfficers(deps, db, target.workspaceId, "shield", (words) => ({
     title: words.shieldTitle,
-    body: fill(n > 0 ? words.shieldSome : words.shieldNone, {
+    // "Every member read was seen" only when no away member was left out unseen either.
+    body: fill(n > 0 || read.away > 0 ? words.shieldSome : words.shieldNone, {
       read: pass === "night" ? words.fri : words.sat,
       n,
     }),

@@ -48,7 +48,7 @@ async function readMark(
     webhookViews(db, access, getEnv()),
   ]);
   if (!read) return null;
-  // The roster and facts the roll call read serve Raid prep too, and go no further than here.
+  // The roster, facts and marks the roll call read serve Raid prep too, and go no further than here.
   const { view, loaded } = read;
   if (view.opened.kind !== "shield") return { ...view, prep: null };
   const shieldChannel = hooks.some((h) => h.channel === "shield" && h.state === "set");

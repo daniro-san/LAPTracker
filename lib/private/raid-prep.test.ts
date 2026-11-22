@@ -18,7 +18,7 @@ import { playerReads } from "../schema-squads";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { acceptTracker, checkTracker, prepView, summaryOf } from "./raid-prep";
 import { addCall, markOne, openOccasion } from "./roll-call";
-import { callView } from "./roll-call-view";
+import { callRead, callView } from "./roll-call-view";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -192,6 +192,25 @@ describe("Raid prep (D137)", () => {
       NOW,
     );
     expect(refused).toEqual({ ok: false, code: "invalid" });
+  });
+
+  it("takes the Shield marks the mark page's roll call read instead of reading them again", async () => {
+    const access = await signedIn();
+    const filled = at("2026-11-21T12:20:00Z");
+    const scope = { workspaceId: access.workspaceId, unionId: OGS };
+    await fillRaidPrep(db, scope, "2026-11-20", { now: filled, zone: ZONE });
+    const occasion = await raidPrep(access);
+    const read = await callRead(db, access, occasion, "en", ZONE);
+    if (!read) throw new Error("no roll call");
+    const clock = { zone: ZONE, now: NOW };
+    const once = await prepView(db, access, read.view.opened, clock, read.loaded);
+    // The same view as reading the marks here: the tick's marks to check, as of the fill.
+    expect(once).toEqual(await prepView(db, access, read.view.opened, clock));
+    expect(once.toCheckAt).toBe(filled.getTime());
+    // An officer's ✓ on 101 after the roll call's read: the passed marks are the ones shown, not a new read.
+    await markOne(db, access, { occasion, uid: 101, mark: "yes", version: 1 }, NOW);
+    const again = await prepView(db, access, read.view.opened, clock, read.loaded);
+    expect(again.rows.get(101)?.fromTracker).toEqual({ unchecked: true });
   });
 
   it("shows the tick's marks as to check until Checked or a tap on the row (2026-11-21)", async () => {

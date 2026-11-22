@@ -12,6 +12,7 @@ import {
   newestMarks,
   teamCalls,
   teamsOf,
+  type MarkRow,
   type RollCallRow,
 } from "../repo/roll-call";
 import { endOfDayReads } from "../repo/workspace-rosters";
@@ -161,10 +162,12 @@ export interface CallView {
   team: number | null;
 }
 
-/** The roster and member facts a roll call's page read, so Raid prep's part of it reads them once. */
+/** The roster, member facts and newest marks a roll call's page read, so Raid prep's part reads them once. */
 export interface Loaded {
   roster: Awaited<ReturnType<typeof rosterOf>>;
   facts: Map<number, MemberFacts>;
+  /** Each member's newest mark of the roll call's own part (a Raid prep's Shield mark). */
+  marks: MarkRow[];
 }
 
 /** One roll call's rows, in the order they keep while marking (callOrder). */
@@ -179,7 +182,7 @@ export async function callView(
 }
 
 /**
- * The roll call's view and, beside it, the roster and facts it read: the mark page hands them to Raid
+ * The roll call's view and, beside it, the roster, facts and marks it read: the mark page hands them to Raid
  * prep's part (`prepView`), and the view itself never carries them.
  */
 export async function callRead(
@@ -214,7 +217,7 @@ export async function callRead(
     tally: tally(rows, own),
     team: opened.kind === "elixir" ? team.length : null,
   };
-  return { view, loaded: { roster, facts } };
+  return { view, loaded: { roster, facts, marks } };
 }
 
 export interface TeamRow {
