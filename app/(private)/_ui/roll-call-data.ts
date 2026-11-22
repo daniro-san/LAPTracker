@@ -90,8 +90,8 @@ const CHIP: Partial<Record<TallySet, GridFilter>> = {
 
 /**
  * Drilldown (2026-11-22): "Not set", ✓ and ✗ open the marking page on their chip ("To mark", ✓, ✗), when
- * above zero; "n of m marked" and "Away" stay text. ✓'s two counts, side by side, are one link, as the ✓
- * chip shows both.
+ * above zero; "n of m marked" and "Away" stay text. ✓'s two counts are one link, as the ✓ chip shows both;
+ * "✓ … + …" makes the pill read as the one ✓ it opens, not as two chips (issue 720).
  */
 function countsOf(parts: ReturnType<typeof tallyParts>, markHref: string): RollCount[] {
   const out: RollCount[] = [];
@@ -99,7 +99,7 @@ function countsOf(parts: ReturnType<typeof tallyParts>, markHref: string): RollC
     const chip = CHIP[p.set];
     const href = chip && p.n > 0 ? `${markHref}&filter=${chip}` : null;
     const last = out.at(-1);
-    if (href && last?.href === href) last.text = `${last.text} · ${p.text}`;
+    if (href && last?.href === href) last.text = `✓ ${last.text} + ${p.text}`;
     else out.push({ text: p.text, href });
   }
   return out;
