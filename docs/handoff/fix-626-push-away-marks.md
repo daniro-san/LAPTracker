@@ -63,4 +63,4 @@ Nothing follows from this issue. The D148 table's "none" text ("every member rea
 
 What was missing from the task prompt? What the push should say when every member not seen is away (`n` is 0). This PR sends "0 not seen with a shield yet" then, so the text stays true.
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/629
