@@ -19,6 +19,8 @@ export interface WorkItem {
   member: MemberRow;
   /** A reason to look, as the Members tab shows it (under Check in, or under Needs help). */
   checkIn: boolean;
+  /** An officer's Needs help mark stands, not paused by a break (#585 S2): on the list by itself. */
+  help: boolean;
   /** A new member's facts not recorded yet (Members' "Missing info"). */
   toAsk: AskFact[];
   /** Alliance Help coins below 1,000 on most days (D140): a tip to share, never a fault. */
@@ -39,8 +41,10 @@ export const coinsTip = (cells: readonly DayCell[]) =>
 
 /**
  * The members to look at this week, minus those an officer followed up this week (`resolved`), by name:
- * - a reason to look while not on a break: Check in, or Needs help whose signal still holds (an officer's
- *   Needs help keeps the reasons, D80, so the member comes back each week while the signal holds);
+ * - an officer's Needs help mark, while it stands and no break runs (#585 S2): back every Monday until an
+ *   officer clears it, whatever the reasons;
+ * - a reason to look while not on a break: Check in, or Needs help (an officer's Needs help keeps the
+ *   reasons, D80);
  * - new with a fact still missing (a member on a break is not asked, D75);
  * - in `tips` (the coins tip, D140), not on a break.
  */
@@ -56,7 +60,10 @@ export function worklist(
       const checkIn = member.reasons.length > 0 && needsAWord(who);
       const toAsk = who.includes("new") && !who.includes("break") ? factsToAsk(member.facts) : [];
       const tip = tips.has(member.uid) && !who.includes("break");
-      return checkIn || toAsk.length > 0 || tip ? [{ member, checkIn, toAsk, tip }] : [];
+      const help = who.includes("help") && !who.includes("break");
+      return help || checkIn || toAsk.length > 0 || tip
+        ? [{ member, checkIn, help, toAsk, tip }]
+        : [];
     })
     .sort((a, b) => a.member.name.localeCompare(b.member.name));
 }
@@ -101,6 +108,63 @@ export function notedThisWeek<T extends { uid: number; action: string; at: Date 
   return [...byUid.values()]
     .flatMap((own) => liveRecords(own).slice(-1))
     .sort((a, b) => b.at.getTime() - a.at.getTime());
+}
+
+/**
+ * Last week's context for a member back on the list (#585 S2): per member, the newest record still counting
+ * among `rows` (oldest first, from last Monday) that was written before `monday`. `liveRecords` runs over the
+ * whole window first, so a withdrawn this week cancels the record it undid, even across Monday.
+ */
+export function lastWeekOf<T extends { uid: number; action: string; at: Date }>(
+  rows: readonly T[],
+  monday: Date,
+): Map<number, T> {
+  const byUid = new Map<number, T[]>();
+  for (const row of rows) byUid.set(row.uid, [...(byUid.get(row.uid) ?? []), row]);
+  const last = new Map<number, T>();
+  for (const [uid, own] of byUid) {
+    const newest = liveRecords(own)
+      .filter((r) => r.at < monday)
+      .at(-1);
+    if (newest) last.set(uid, newest);
+  }
+  return last;
+}
+
+/** Since when a Needs help mark stands, who added it and their note (#585 S2). */
+export interface HelpMark {
+  at: Date;
+  by: string | null;
+  note: string | null;
+}
+
+/**
+ * The standing Needs help mark from a member's `status` versions (oldest first) and Follow-up records
+ * (oldest first, withdrawn ones included). The mark is the trailing run of `help` versions: the newest
+ * record still counting that wrote a version in that run gives who, when and the note (an Undo that puts
+ * an earlier `help` back writes a new version with no record of its own); else the run's first version,
+ * with no note (a mark set in Edit info). Null when the newest status is not Needs help.
+ */
+export function helpMark(
+  versions: readonly { version: number; value: unknown; at: Date; by: string | null }[],
+  records: readonly {
+    action: string;
+    factVersion: number | null;
+    note: string | null;
+    at: Date;
+    by: string | null;
+  }[],
+): HelpMark | null {
+  let first = versions.length;
+  while (first > 0 && versions[first - 1]?.value === "help") first--;
+  const start = versions[first];
+  if (!start) return null;
+  const record = liveRecords(records)
+    .filter((r) => r.action === "help" && r.factVersion !== null && r.factVersion >= start.version)
+    .at(-1);
+  return record
+    ? { at: record.at, by: record.by, note: record.note }
+    : { at: start.at, by: start.by, note: null };
 }
 
 /**
@@ -149,6 +213,35 @@ export function notedLine(
   return row.by
     ? fill(t["followup.noted.by"], { who: isolate(row.by), date: at, what })
     : fill(t["followup.noted.at"], { date: at, what });
+}
+
+/** An officer's note in quotes, on a line of its own, so it reads apart from the computed reasons. */
+const quoted = (note: string | null, t: WorkspaceDictionary) =>
+  note ? [fill(t["followup.quote"], { note })] : [];
+
+/**
+ * A standing Needs help mark (#585 S2): "Since Thu, Nov 19 · added by Tomas" ("Since Thu, Nov 19" when the
+ * officer is not known), then their note in quotes. The same lines on Follow-up's row and the card.
+ */
+export function markLines(
+  mark: HelpMark,
+  t: WorkspaceDictionary,
+  date: (at: Date) => string,
+): string[] {
+  const head = mark.by
+    ? fill(t["followup.mark.by"], { date: date(mark.at), who: isolate(mark.by) })
+    : fill(t["followup.mark.at"], { date: date(mark.at) });
+  return [head, ...quoted(mark.note, t)];
+}
+
+/** Last week's record as context (#585 S2): "Last week: Tomas · Thu, Nov 12: Talked to them", its note. */
+export function lastWeekLines(
+  row: HistoryRow,
+  t: WorkspaceDictionary,
+  date: (at: Date) => string,
+  day: (iso: string) => string,
+): string[] {
+  return [fill(t["followup.last"], { line: notedLine(row, t, date, day) }), ...quoted(row.note, t)];
 }
 
 /**

@@ -1,6 +1,6 @@
 // member_follow_ups (issue 340, D104): plain reads and writes of the officers' follow-ups, each inside one
 // workspace. Which members are on the week's list, and what resolves them, is decided in lib/private.
-import { and, asc, eq, gte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberFacts, workspaceUsers } from "../schema";
@@ -114,6 +114,55 @@ export async function listMemberFollowUps(
     .where(and(eq(memberFollowUps.workspaceId, workspaceId), eq(memberFollowUps.uid, uid)))
     .orderBy(asc(memberFollowUps.id));
   return rows.map(({ chosenName, displayName, ...r }) => ({ ...r, by: chosenName ?? displayName }));
+}
+
+/**
+ * What a Needs help mark is read from (#585 S2), for `uids` of one workspace: each member's `status`
+ * versions (oldest first, with the writer's desk name) and Follow-up records (oldest first). Both selects
+ * are filtered by `workspace_id`; only the few members marked Needs help are asked for.
+ */
+export async function helpMarkRows(db: Db, workspaceId: number, uids: readonly number[]) {
+  if (uids.length === 0) return { versions: [], records: [] };
+  const [versions, records] = await Promise.all([
+    db
+      .select({
+        uid: memberFacts.uid,
+        version: memberFacts.version,
+        value: memberFacts.value,
+        at: memberFacts.writtenAt,
+        chosenName: workspaceUsers.chosenName,
+        displayName: workspaceUsers.displayName,
+      })
+      .from(memberFacts)
+      .leftJoin(workspaceUsers, eq(workspaceUsers.id, memberFacts.writtenBy))
+      .where(
+        and(
+          eq(memberFacts.workspaceId, workspaceId),
+          eq(memberFacts.field, "status"),
+          inArray(memberFacts.uid, [...uids]),
+        ),
+      )
+      .orderBy(asc(memberFacts.version)),
+    db
+      .select({
+        uid: memberFollowUps.uid,
+        action: memberFollowUps.action,
+        note: memberFollowUps.note,
+        factVersion: memberFollowUps.factVersion,
+        at: memberFollowUps.writtenAt,
+        chosenName: workspaceUsers.chosenName,
+        displayName: workspaceUsers.displayName,
+      })
+      .from(memberFollowUps)
+      .leftJoin(workspaceUsers, eq(workspaceUsers.id, memberFollowUps.writtenBy))
+      .where(
+        and(eq(memberFollowUps.workspaceId, workspaceId), inArray(memberFollowUps.uid, [...uids])),
+      )
+      .orderBy(asc(memberFollowUps.id)),
+  ]);
+  const named = <T extends { chosenName: string | null; displayName: string | null }>(rows: T[]) =>
+    rows.map(({ chosenName, displayName, ...r }) => ({ ...r, by: chosenName ?? displayName }));
+  return { versions: named(versions), records: named(records) };
 }
 
 /** The desk name of the officer who wrote one version of a member's fact; null when not known. */

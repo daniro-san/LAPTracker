@@ -7,6 +7,7 @@ import { calendarFr } from "./dictionary.calendar.fr";
 import { dataFr } from "./dictionary.data";
 import { featuresFr } from "./dictionary.features";
 import { followUpFr } from "./dictionary.followup";
+import { followUpHelpFr } from "./dictionary.followup-help";
 import { garrisonFr } from "./dictionary.garrison";
 import { importFr } from "./dictionary.import";
 import { insightsFr } from "./dictionary.insights";
@@ -290,6 +291,7 @@ export const fr: WorkspaceDictionary = {
   ...translateFr,
   ...boardFr,
   ...followUpFr,
+  ...followUpHelpFr,
   ...insightsFr,
   ...activityFr,
   ...shareFr,

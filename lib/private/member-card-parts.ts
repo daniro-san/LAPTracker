@@ -1,5 +1,6 @@
 // Parts of the member card's words (issue 461, D136), apart from member-card.ts for its size: the last 7
 // days' date formats, this week's Alliance Duel, what is still to ask, and every earlier value of a fact.
+// Also the line a quiet day gives (D127).
 import { fill } from "../copy";
 import type { FactRow } from "../repo/member-facts";
 import type { WorkspaceDictionary } from "./dictionary";
@@ -9,6 +10,7 @@ import type { CardFormats } from "./member-card";
 import type { DaysFormats } from "./member-days";
 import type { MemberRow } from "./members";
 import { factsToAsk } from "./members-list";
+import type { Formats } from "./members-sheet";
 
 const WEEKDAYS = [
   "day.sun",
@@ -74,4 +76,20 @@ export function versionLines(
         date: f.date(r.writtenAt),
       });
     });
+}
+
+/**
+ * D127: no daily quests or no donations on a read that lists the member is a fact of that day, never
+ * missing data: one line, both in one when both.
+ */
+export function quietDayLine(m: MemberRow, t: WorkspaceDictionary, f: Formats): string[] {
+  const day = m.noQuestsOn ?? m.noDonationsOn;
+  if (day === null) return [];
+  const key =
+    m.noQuestsOn && m.noDonationsOn
+      ? "members.noQuestsOrDonations"
+      : m.noQuestsOn
+        ? "members.noQuests"
+        : "members.noDonations";
+  return [fill(t[key], { day: f.date(day) })];
 }

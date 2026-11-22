@@ -1,9 +1,10 @@
 "use client";
 
 // The parts of a member's Follow-up panel (issue 460, D140) that show what the card and the row hold: the
-// card read when the panel opens, "Fill in what they told you" and the last notes. The ready message with
-// its two copies is `Message` (FollowUpMessage.tsx, shared with the member card). Nothing here sends
-// anything.
+// card read when the panel opens, "Fill in what they told you", the last notes and "No longer needs help"
+// (issue 585 S2, the one part that saves: the member's status, through the facts route). The ready message with
+// its two copies is `Message` (FollowUpMessage.tsx, shared with the member card).
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
@@ -14,7 +15,7 @@ import type { FollowUpWords } from "./follow-up-words";
 import { HEAD, SECTION } from "./FollowUpMessage";
 import type { FollowUpRow } from "./FollowUpSheet";
 import { readCard } from "./MemberSheet";
-import { SignedOutNote } from "./SignedOut";
+import { RefusalLine, SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
 /**
  * The member's card (origin lines, stored facts, last notes), read when the panel opens and again by
@@ -128,6 +129,69 @@ export function Fill(props: {
         </button>
       </div>
       <CardStatus card={card} words={words} />
+    </section>
+  );
+}
+
+/**
+ * "No longer needs help" (issue 585 S2): clears the member's `status` fact through the facts route, with the
+ * version the page saw (D80), so the member leaves the "Needs help" group. Refused (another officer changed
+ * it, 409) or failed: one line, and the list is read again for the newest version.
+ */
+export function ClearHelp(props: {
+  slug: string;
+  row: FollowUpRow;
+  words: FollowUpWords;
+  onCleared: () => void;
+}) {
+  const { row, words } = props;
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const clear = async () => {
+    setBusy(true);
+    const change = {
+      field: "status",
+      version: row.versions.status,
+      value: null,
+      source: "officer",
+    };
+    const res = await fetch(`/api/w/${props.slug}/members/${row.uid}/facts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ changes: [change] }),
+    }).catch(() => null);
+    // Read to the end, as every desk save is: the answer is complete before the list is read again.
+    await res?.text().catch(() => null);
+    setBusy(false);
+    if (res?.status === 200) return props.onCleared();
+    setFailed(res?.status === 401 ? SIGNED_OUT : words["followup.failed"]);
+    router.refresh();
+  };
+  return (
+    <div className="mt-2">
+      <button type="button" disabled={busy} onClick={() => void clear()} className={chip()}>
+        {words["followup.helpDone"]}
+      </button>
+      {failed && <RefusalLine text={failed} className="mt-1 text-seal" />}
+    </div>
+  );
+}
+
+/** "Why they're on the list": the row's lines whole, and "No longer needs help" under a Needs help mark. */
+export function Why(props: Parameters<typeof ClearHelp>[0]) {
+  const { row, words } = props;
+  return (
+    <section className="mt-3" aria-labelledby="follow-up-why-h">
+      <h3 id="follow-up-why-h" className={HEAD}>
+        {words["followup.why"]}
+      </h3>
+      <ul className="ph-no-capture text-body-sm">
+        {row.lines.map((line, i) => (
+          <li key={i}>{line.text}</li>
+        ))}
+      </ul>
+      {row.help && <ClearHelp {...props} />}
     </section>
   );
 }

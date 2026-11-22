@@ -173,6 +173,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.51.0",
+    date: "2026-11-22",
+    title: "Members marked Needs help stay on Follow-up until someone clears it",
+    changes: [
+      'Follow-up opens with "Needs help": every member an officer marked Needs help, each week, until an officer taps "No longer needs help" in their panel. Each row says since when, who added the mark and their note; an away note pauses it. Before, a member marked Needs help whose activity looked normal again was on no list.',
+      'A row shows last week\'s note as context, and the member card says the same under "Needs help".',
+      'On release day Home\'s "Follow-up: n to look at" can rise: every Needs help mark that still stands joins the list. Clear the ones that are done.',
+    ],
+    prs: [646],
+  },
+  {
     version: "v5.50.0",
     date: "2026-11-22",
     title: "Follow-up says who was already noted, and claims are easier to check",

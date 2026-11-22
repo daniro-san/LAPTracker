@@ -126,6 +126,34 @@ export const factMemberOf = (project: string, repeat: number) =>
 export const FACT_SEEDED = { tier: 10, daysAgo: 3 } as const;
 
 /**
+ * The Lantern Keep member an officer marked Needs help the week before last ("They need help" with a note)
+ * and talked to last week (issue 585 slice 2): read-only, so Home counts them and Follow-up lists them under
+ * "Needs help" with since when, who, why and last week's note. k=5 has no fact the facts tests edit.
+ */
+export const NEEDS_HELP = {
+  k: 5,
+  note: "Asked for a hand rebuilding the main squad",
+  said: "Farming for now, will ask if stuck",
+} as const;
+
+/**
+ * The member marked Needs help whom the "No longer needs help" test clears (issue 585 slice 2): the first
+ * roster member of the repeat's own feature-switch workspace (switchWorkspaceOf), phone only, so Lantern
+ * Keep's counts never move while it runs. That alliance has no end-of-day read: an officer's status still
+ * shows then (D80), and Follow-up lists the member under "Needs help".
+ */
+export function clearHelpOf(repeat: number) {
+  const w = switchWorkspaceOf(repeat);
+  const f = FILLERS[repeat % REPEATS] as (typeof FILLERS)[number];
+  return {
+    workspaceId: w.id,
+    officer: 5 + (repeat % REPEATS),
+    uid: Number(`${f.unionId}1`),
+    name: fillerNames(f)[0] as string,
+  };
+}
+
+/**
  * The workspace whose Thefts switch the feature-switch test turns off and on again (phone only): one of the
  * filler alliances per repeat, so no other test's navigation changes while it runs.
  */

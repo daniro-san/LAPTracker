@@ -15,22 +15,29 @@ import { fill, isolate } from "@/lib/copy";
 
 import { send } from "./follow-up-send";
 import type { FollowUpWords } from "./follow-up-words";
-import { FollowUpPanel, type FollowUpRow } from "./FollowUpSheet";
+import { FollowUpPanel, type FollowUpRow, type RowLine } from "./FollowUpSheet";
 import type { EditorContext } from "./MemberCards";
 import { shown, useOpenMember } from "./open-member";
 import { OPEN_ROW } from "./PendingMembers";
 import { newRequestId } from "./request-id";
 
-export type { FollowUpRow };
+export type { FollowUpRow, RowLine };
 
 export interface FollowUpGroup {
   id: string;
   title: string;
+  /** Under the title: how a member leaves the group ("Needs help", issue 585 S2). */
+  hint?: string;
   rows: FollowUpRow[];
 }
 
-/** What the last save did, for the line with Undo. */
-type Done = { uid: number; name: string; requestId: string; state: "saved" | "undone" | "failed" };
+/** What the last save did, for the line with Undo; "cleared": No longer needs help (no Undo). */
+type Done = {
+  uid: number;
+  name: string;
+  requestId: string;
+  state: "saved" | "undone" | "failed" | "cleared";
+};
 
 function DoneLine(props: { done: Done | null; words: FollowUpWords; onUndo: () => void }) {
   const { done, words } = props;
@@ -41,7 +48,9 @@ function DoneLine(props: { done: Done | null; words: FollowUpWords; onUndo: () =
       ? fill(words["followup.saved"], { name })
       : done.state === "undone"
         ? fill(words["followup.undone"], { name })
-        : words["followup.undoFailed"];
+        : done.state === "cleared"
+          ? fill(words["followup.helpCleared"], { name })
+          : words["followup.undoFailed"];
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 empty:hidden">
       {done && (
@@ -89,12 +98,15 @@ function Row(props: {
         <span className="block font-semibold">
           <bdi translate="no">{row.name}</bdi>
           {row.rank && <span className="font-normal text-ink/75">{` · ${row.rank}`}</span>}
-          {row.tag && <span className="ml-2 text-[12px] font-semibold text-yarn">{row.tag}</span>}
         </span>
-        {row.lines.map((line) => (
-          // ph-no-capture (issue 549): the reasons and the coins tip never reach session replay.
-          <span key={line} className="ph-no-capture block text-body-sm">
-            {line}
+        {row.lines.map((line, i) => (
+          // ph-no-capture (issue 549): the reasons, the tip, the marks and the notes never reach replay.
+          // An officer's note is clamped to two lines here; the panel shows it whole (issue 585 S2).
+          <span
+            key={i}
+            className={`ph-no-capture block text-body-sm ${line.quote ? "line-clamp-2 text-ink/80" : ""}`}
+          >
+            {line.text}
           </span>
         ))}
       </button>
@@ -117,8 +129,18 @@ function Row(props: {
   );
 }
 
-/** A group of the week's list, in the drawn card (D116). */
-const GROUP = "drawn-card mt-4 px-4 pt-3";
+/** A group of the week's list, in the drawn card (D116): its title, how a member leaves it, its rows. */
+function Group({ group, children }: { group: FollowUpGroup; children: ReactNode }) {
+  return (
+    <section className="drawn-card mt-4 px-4 pt-3" aria-labelledby={`follow-up-${group.id}`}>
+      <h2 id={`follow-up-${group.id}`} className="font-subhead text-display-sm">
+        {group.title}
+      </h2>
+      {group.hint && <p className="text-body-sm text-ink/80">{group.hint}</p>}
+      <ul className="mt-1">{children}</ul>
+    </section>
+  );
+}
 
 /** One-tap "Talked to them", a save from the panel, and Undo, with the line that says what happened. */
 function useSaves(slug: string) {
@@ -127,6 +149,10 @@ function useSaves(slug: string) {
   const [busy, setBusy] = useState<number | null>(null);
   const saved = (row: FollowUpRow, requestId: string) => {
     setDone({ uid: row.uid, name: row.name, requestId, state: "saved" });
+    router.refresh();
+  };
+  const cleared = (row: FollowUpRow) => {
+    setDone({ uid: row.uid, name: row.name, requestId: "", state: "cleared" });
     router.refresh();
   };
   const talked = async (row: FollowUpRow) => {
@@ -148,7 +174,7 @@ function useSaves(slug: string) {
     setDone({ ...done, state: r?.status === 200 ? "undone" : "failed" });
     router.refresh();
   };
-  return { done, setDone, busy, saved, talked, undo };
+  return { done, setDone, busy, saved, cleared, talked, undo };
 }
 
 /**
@@ -176,7 +202,7 @@ export function FollowUpList(props: {
 }) {
   const { words, slug } = props;
   const at = useOpenMember(props.initialOpen);
-  const { done, setDone, busy, saved, talked, undo } = useSaves(slug);
+  const { done, setDone, busy, saved, cleared, talked, undo } = useSaves(slug);
   const row = useOpenRow(props.groups, at.open);
   const panel = (pane: boolean) =>
     row && (
@@ -197,35 +223,34 @@ export function FollowUpList(props: {
           saved(row, requestId);
           at.close();
         }}
+        onCleared={() => {
+          cleared(row);
+          at.close();
+        }}
       />
     );
   const list = (
     <>
       <DoneLine done={done} words={words} onUndo={undo} />
       {props.groups.map((g) => (
-        <section key={g.id} className={GROUP} aria-labelledby={`follow-up-${g.id}`}>
-          <h2 id={`follow-up-${g.id}`} className="font-subhead text-display-sm">
-            {g.title}
-          </h2>
-          <ul className="mt-1">
-            {g.rows.map((r) => (
-              <Row
-                key={r.uid}
-                row={r}
-                slug={slug}
-                words={words}
-                busy={busy === r.uid}
-                open={r.uid === at.open}
-                sheet={at.wide !== true}
-                onTalked={() => void talked(r)}
-                onOpen={() => {
-                  setDone(null);
-                  at.show(r.uid);
-                }}
-              />
-            ))}
-          </ul>
-        </section>
+        <Group key={g.id} group={g}>
+          {g.rows.map((r) => (
+            <Row
+              key={r.uid}
+              row={r}
+              slug={slug}
+              words={words}
+              busy={busy === r.uid}
+              open={r.uid === at.open}
+              sheet={at.wide !== true}
+              onTalked={() => void talked(r)}
+              onOpen={() => {
+                setDone(null);
+                at.show(r.uid);
+              }}
+            />
+          ))}
+        </Group>
       ))}
       {props.foot}
     </>

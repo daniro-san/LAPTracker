@@ -6,88 +6,19 @@
 // thefts whose follow-up is still open, each linked to its entry in the thefts log. People first (D75):
 // notes for the officers, nothing is sent, no ranking, a warm line when nobody is on it. Issue 585: the head
 // leads with the week's two numbers, and "Noted this week" says who an officer already noted, by whom.
-import { fill } from "@/lib/copy";
+// Slice 2: "Needs help" comes first, each row saying since when, who and why, and last week's note is context.
 import { getEnv } from "@/lib/env";
-import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
-import { followUpView, type FollowUpItem, type FollowUpView } from "@/lib/private/follow-up";
+import { followUpView, type FollowUpView } from "@/lib/private/follow-up";
 import { cardFormats } from "@/lib/private/member-card";
-import type { Reason } from "@/lib/private/members";
-import { reasonText, type Formats } from "@/lib/private/members-sheet";
-import { inputOf, readyTexts } from "@/lib/private/ready-message";
 
 import { editorWords } from "../../../_ui/facts-form";
+import { groupsOf } from "../../../_ui/follow-up-groups";
 import { followUpWords } from "../../../_ui/follow-up-words";
-import { FollowUpList, type FollowUpGroup, type FollowUpRow } from "../../../_ui/FollowUpList";
-import { counted, FollowUpFoot, FollowUpHead } from "../../../_ui/FollowUpWeek";
+import { FollowUpList } from "../../../_ui/FollowUpList";
+import { FollowUpFoot, FollowUpHead } from "../../../_ui/FollowUpWeek";
 import { SignedInFrame } from "../../../_ui/Frame";
 import { openRollCall } from "../../../_ui/roll-call-page";
-
-/** A reason in Follow-up's own words ("Quiet for 3 days. Worth a hello."); the held KvK one as Members says it. */
-function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
-  if (r.kind === "kvk") return reasonText(r, t, f);
-  return counted(t, `followup.reason.${r.kind}`, r.days, f.language);
-}
-
-/**
- * The ready message (D140) in each language the officer can pick, the member's first (else the
- * officer's).
- */
-function messageOf(item: FollowUpItem, officer: WorkspaceLanguage) {
-  return { language: item.language ?? officer, texts: readyTexts(inputOf(item)) };
-}
-
-/** A member on the list as the browser shows it. */
-function rowOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats, officer: WorkspaceLanguage) {
-  const { member, checkIn, toAsk, tip } = item;
-  const reasons = checkIn ? member.reasons.map((r) => reasonLine(r, t, f)) : [];
-  // Every fact still to ask, by name (issue 460): never only a count.
-  const list = toAsk.map((field) => t[`facts.${field}`]).join(", ");
-  const lines = [
-    ...reasons,
-    ...(toAsk.length > 0 ? [fill(t["followup.toAsk"], { list })] : []),
-    ...(tip ? [t["followup.reason.coins"]] : []),
-  ];
-  return {
-    uid: member.uid,
-    name: member.name,
-    rank: member.rank,
-    tag: member.officerStatus === "help" ? t["status.help"] : null,
-    lines,
-    ask: toAsk.map((field) => ({ field, label: t[`facts.${field}`] })),
-    message: messageOf(item, officer),
-    versions: {
-      away: member.facts.away?.version ?? 0,
-      status: member.facts.status?.version ?? 0,
-    },
-  } satisfies FollowUpRow;
-}
-
-/**
- * "Check in · n", "New · n", then "A tip to share · n" (D140), each alphabetical (the items come by name);
- * a member is in the first group that holds them, empty groups left out.
- */
-function groupsOf(
-  items: FollowUpItem[],
-  t: WorkspaceDictionary,
-  f: Formats,
-  officer: WorkspaceLanguage,
-): FollowUpGroup[] {
-  const checkIn = items.filter((i) => i.checkIn);
-  const fresh = items.filter((i) => !i.checkIn && i.toAsk.length > 0);
-  const tip = items.filter((i) => !i.checkIn && i.toAsk.length === 0);
-  return [
-    { id: "checkin", key: "followup.group.checkin" as const, items: checkIn },
-    { id: "new", key: "followup.group.new" as const, items: fresh },
-    { id: "tip", key: "followup.group.tip" as const, items: tip },
-  ]
-    .filter((g) => g.items.length > 0)
-    .map((g) => ({
-      id: g.id,
-      title: fill(t[g.key], { n: g.items.length }),
-      rows: g.items.map((i) => rowOf(i, t, f, officer)),
-    }));
-}
 
 export default async function FollowUpPage({
   params,

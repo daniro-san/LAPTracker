@@ -17,7 +17,7 @@ import type { CardData } from "@/lib/private/member-card";
 import { CardFollowUp } from "./CardFollowUp";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
-import { CardTabs, panelId, tabId, useCardTab } from "./MemberCardTabs";
+import { CardTabs, History, panelId, tabId, useCardTab } from "./MemberCardTabs";
 import { MemberLastDays } from "./MemberLastDays";
 import { CardLink } from "./MemberLinks";
 import { MemberSquads } from "./MemberSquads";
@@ -183,6 +183,12 @@ function Header({ card, zoneNow, slug }: { card: CardData; zoneNow: string | nul
           <span className={STATUS_TONE[card.status]}>{card.statusLabel}</span>
         </p>
       )}
+      {/* Since when, who added the Needs help mark and their note (issue 585 S2); never in replay (issue 549). */}
+      {card.statusMark.map((line, i) => (
+        <p key={i} className="ph-no-capture text-body-sm text-ink/80">
+          {line}
+        </p>
+      ))}
       <p className="flex flex-wrap gap-x-3 text-body-sm tabular-nums">
         {card.facts.map((f) => (
           <span
@@ -294,28 +300,6 @@ function MapPosition({ map, noData }: { map: CardData["map"]; noData: string }) 
     <button type="button" onClick={() => setOpen(true)} className={`${chip()} mt-1`}>
       {map.show}
     </button>
-  );
-}
-
-function History({ card }: { card: CardData }) {
-  const parts = [card.followUps, card.versions].filter((p) => p.lines.length > 0);
-  if (parts.length === 0)
-    return <p className="mt-3 text-body-sm text-ink/75">{card.versions.none}</p>;
-  return (
-    <>
-      {parts.map((p) => (
-        <section key={p.head} className="mt-3">
-          <h3 className="text-body-sm font-semibold">{p.head}</h3>
-          <ul className="text-body-sm whitespace-pre-line">
-            {p.lines.map((line, i) => (
-              <li key={i} className="border-t border-rule py-1.5 tabular-nums">
-                {line}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </>
   );
 }
 

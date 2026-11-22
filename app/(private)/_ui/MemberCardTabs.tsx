@@ -4,7 +4,8 @@
 // pattern (arrow keys, Home and End move and pick). The open tab is React state; the browser's storage only
 // remembers the last pick, best effort (localStorage, as the clock choice), so a tap opens its tab even when
 // storage is blocked. The card is drawn only in the browser, after its read, so the remembered tab is read
-// when it first renders. Four across at 360 px, each 44 px or taller; nothing is hover-only.
+// when it first renders. Four across at 360 px, each 44 px or taller; nothing is hover-only. The History tab's
+// panel is here too (moved from MemberCards.tsx for its size).
 import { useRef, useState, type KeyboardEvent } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
@@ -95,5 +96,28 @@ export function CardTabs({
         );
       })}
     </div>
+  );
+}
+
+/** The History tab: the follow-up notes, then the earlier values (D136). */
+export function History({ card }: { card: CardData }) {
+  const parts = [card.followUps, card.versions].filter((p) => p.lines.length > 0);
+  if (parts.length === 0)
+    return <p className="mt-3 text-body-sm text-ink/75">{card.versions.none}</p>;
+  return (
+    <>
+      {parts.map((p) => (
+        <section key={p.head} className="mt-3">
+          <h3 className="text-body-sm font-semibold">{p.head}</h3>
+          <ul className="text-body-sm whitespace-pre-line">
+            {p.lines.map((line, i) => (
+              <li key={i} className="border-t border-rule py-1.5 tabular-nums">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </>
   );
 }

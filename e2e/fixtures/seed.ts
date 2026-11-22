@@ -1,10 +1,11 @@
 // The e2e seed (issue 477): two alliances with a workspace each, three filler alliances, 14 days of daily
 // rosters, two past Saturday events, this week's Raid prep and a cheese roll call, an officer's and a member's
-// session per workspace. Invented names only. Dates follow the day the suite runs, in server time (UTC−2),
+// session per workspace, and a Lantern Keep member marked Needs help (issue 585). Invented names only. Dates follow the day the suite runs, in server time (UTC−2),
 // so every run sees the same week shape. Each alliance's roster rows carry its own sentinel values for the
 // private roster fields, so a test can tell a leak, and whose it is, from any page or answer.
 import { createHash } from "node:crypto";
 
+import { helpDays, needsHelpRows } from "./seed-help";
 import {
   ALLIANCES,
   AVATAR_SENTINEL,
@@ -307,6 +308,9 @@ function factRows(cal: ReturnType<typeof calendarOf>): string[] {
   ];
 }
 
+/** The days of NEEDS_HELP's two records (seed-help.ts), from the seed's week. */
+export const needsHelpDays = (now: Date) => helpDays(calendarOf(now).week);
+
 /** This week's Raid prep (the weekly KvK entry) with its marks, and a cheese entry with no roll call yet. */
 function rollCallRows(cal: ReturnType<typeof calendarOf>): string[] {
   const ws = ALLIANCES.a.id;
@@ -350,6 +354,7 @@ export function seedSql(now: Date): string {
     ...workspaceRows(),
     ...rollCallRows(cal),
     ...factRows(cal),
+    ...needsHelpRows(cal.week),
     "select setval('events_id_seq', 100), setval('snapshots_id_seq', 100), setval('workspaces_id_seq', 100), setval('workspace_users_id_seq', 100), setval('calendar_entries_id_seq', 100), setval('roll_calls_id_seq', 100);",
     "commit;",
   ].join("\n");
