@@ -77,4 +77,4 @@
 
 What was missing from the task prompt? It asked for "away shows as away", while the issue's settled list says away members get no line. It also did not say whether the officers' mark or the tracker's mark leads. The issue settled that officer marks lead, but said nothing about the tracker's own marks.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/681
