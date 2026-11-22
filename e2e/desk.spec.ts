@@ -143,7 +143,16 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await message.click();
   await expect(message).toHaveAttribute("aria-expanded", "true");
   await expect(card.getByRole("heading", { name: "A message you can send" })).toBeVisible();
+  // No language recorded or read for the seeded member: the officer's, English, pressed.
+  await expect(card.getByRole("button", { name: "English" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(card.getByRole("button", { name: "Copy for game mail" })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Copy for Discord" })).toBeVisible();
+  await message.click();
+  await expect(message).toHaveAttribute("aria-expanded", "false");
+  await expect(card.getByRole("heading", { name: "A message you can send" })).toBeHidden();
   // Info: the map position stays hidden until "Show map position" is tapped (D71: the own alliance only).
   const map = `X ${SENTINELS.a.x} · Y ${SENTINELS.a.y}`;
   await card.getByRole("tab", { name: "Info" }).click();

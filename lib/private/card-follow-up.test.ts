@@ -14,7 +14,7 @@ import { workspaceFeatures } from "../schema-features";
 import { playerReads } from "../schema-squads";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { followUpView, recordFollowUp } from "./follow-up";
+import { followUpView, recordFollowUp, undoFollowUp } from "./follow-up";
 import { memberCard } from "./member-card";
 import { inputOf, readyTexts, readyWords } from "./ready-message";
 import { createSession } from "./session";
@@ -97,16 +97,28 @@ describe("the member card's Follow-up block (issue 516)", () => {
     });
     const monday = new Date("2026-11-16T02:00:00Z"); // Mon 16 Nov 00:00 ST
     await recordFollowUp(db, ana, talked(101, "Back after exams"), { now: monday, zone: ZONE });
+    const mondays = { week: "This week: Talked Mon, Nov 16 · ⁨Ana⁩", note: "Back after exams" };
+    expect(await blockOf(ana, 101)).toMatchObject({ ...mondays, onList: false });
+    // The newest counts: Thursday's Talked; its Undo gives Monday's back.
+    const thursday = { now: new Date("2026-11-19T20:00:00Z"), zone: ZONE }; // Thu 19 Nov 18:00 ST
+    const later = talked(101, "Said hello again");
+    await recordFollowUp(db, ana, later, thursday);
     expect(await blockOf(ana, 101)).toMatchObject({
-      week: "This week: Talked Mon, Nov 16 · ⁨Ana⁩",
-      note: "Back after exams",
-      onList: false,
+      week: "This week: Talked Thu, Nov 19 · ⁨Ana⁩",
+      note: "Said hello again",
     });
+    const undo = { uid: 101, target: later.requestId, requestId: randomUUID() };
+    await undoFollowUp(db, ana, undo, thursday);
+    expect(await blockOf(ana, 101)).toMatchObject(mondays);
   });
 
-  it("gives a member off the week's list with nothing noted no week line (D75)", async () => {
+  it("gives a member off the week's list with nothing noted no week line, and a plain hello (D75)", async () => {
     const ana = await signedIn("Ana");
-    expect(await blockOf(ana, 102)).toMatchObject({ week: null, note: null, onList: false });
+    const block = await blockOf(ana, 102);
+    expect(block).toMatchObject({ week: null, note: null, onList: false });
+    // No language known: the officer's; no reason, tip or fact to ask: the hello and the warm end only.
+    const plain = { name: "Moss Example", isNew: false, reasons: [], tip: false, toAsk: [] };
+    expect(block?.message).toEqual({ language: "en", texts: readyTexts(plain) });
   });
 
   it("offers Follow-up's own message in the member's game language, the same after a Talked (D140)", async () => {
