@@ -5,7 +5,7 @@
 // Members' "Missing info" (`factsToAsk`). No donation reason, no ranking: the list is by name. D140 adds
 // one tip of Follow-up's own: Alliance Help coins below 1,000 on most days with data (`coinsTip`).
 import { fill, isolate } from "../copy";
-import { mondayOf, zonedInstant } from "./calendar-time";
+import { dayIn, mondayOf, zonedInstant } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 import { COINS_MAX, type DayCell } from "./member-days";
 import type { MemberRow } from "./members";
@@ -25,6 +25,8 @@ export interface WorkItem {
   toAsk: AskFact[];
   /** Alliance Help coins below 1,000 on most days (D140): a tip to share, never a fault. */
   tip: boolean;
+  /** Took a heavy hit in the last KvK and nobody wrote anything since (#585 S5): an offer of help. */
+  kvk: boolean;
 }
 
 /** D140 (owner, issue 460): the tip shows when coins were below 1,000 on at least 5 days with data. */
@@ -46,23 +48,26 @@ export const coinsTip = (cells: readonly DayCell[]) =>
  * - a reason to look while not on a break: Check in, or Needs help (an officer's Needs help keeps the
  *   reasons, D80);
  * - new with a fact still missing (a member on a break is not asked, D75);
- * - in `tips` (the coins tip, D140), not on a break.
+ * - in `tips` (the coins tip, D140), not on a break;
+ * - in `kvk` (After KvK, offer help, #585 S5: `kvkOpen`), not on a break.
  */
 export function worklist(
   members: readonly MemberRow[],
   resolved: ReadonlySet<number>,
   tips: ReadonlySet<number> = new Set(),
+  kvk: ReadonlySet<number> = new Set(),
 ): WorkItem[] {
   return members
+    .filter((member) => !resolved.has(member.uid))
     .flatMap((member) => {
-      if (resolved.has(member.uid)) return [];
       const who = whoOf(member);
       const checkIn = member.reasons.length > 0 && needsAWord(who);
       const toAsk = who.includes("new") && !who.includes("break") ? factsToAsk(member.facts) : [];
       const tip = tips.has(member.uid) && !who.includes("break");
       const help = who.includes("help") && !who.includes("break");
-      return help || checkIn || toAsk.length > 0 || tip
-        ? [{ member, checkIn, help, toAsk, tip }]
+      const hit = kvk.has(member.uid) && !who.includes("break");
+      return help || checkIn || toAsk.length > 0 || tip || hit
+        ? [{ member, checkIn, help, toAsk, tip, kvk: hit }]
         : [];
     })
     .sort((a, b) => a.member.name.localeCompare(b.member.name));
@@ -74,6 +79,9 @@ export function worklist(
  */
 export const weekStart = (today: string, zone: string) =>
   new Date(zonedInstant(mondayOf(today), 0, zone));
+
+/** Monday 00:00 server time of the game week that holds `now` (not the newest read's week). */
+export const sinceMonday = (now: Date, zone: string) => weekStart(dayIn(zone, now.getTime()), zone);
 
 /**
  * One member's records that still count, oldest first (`rows` oldest first): Undo appends "withdrawn",
@@ -93,6 +101,23 @@ export function resolvedBy(rows: readonly { uid: number; action: string }[]): Se
   const byUid = new Map<number, { action: string }[]>();
   for (const row of rows) byUid.set(row.uid, [...(byUid.get(row.uid) ?? []), row]);
   return new Set([...byUid].filter(([, own]) => liveRecords(own).length > 0).map(([uid]) => uid));
+}
+
+/**
+ * The members of a KvK's help list Follow-up still offers help to (#585 S5): none with a record still counting
+ * this week (from `monday`, as every group) or since the KvK's End read began (`afterAt`), so a talk on the
+ * Sunday after the KvK is not asked again on Monday. `rows`: any members, oldest first, from the earlier of
+ * the two.
+ */
+export function kvkOpen(
+  help: ReadonlySet<number>,
+  rows: readonly { uid: number; action: string; at: Date }[],
+  monday: Date,
+  afterAt: Date,
+): Set<number> {
+  const week = resolvedBy(rows.filter((r) => r.at >= monday));
+  const since = resolvedBy(rows.filter((r) => r.at >= afterAt));
+  return new Set([...help].filter((uid) => !week.has(uid) && !since.has(uid)));
 }
 
 /**

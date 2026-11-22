@@ -61,6 +61,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
         slug={slug}
         t={t}
         noData={noData}
+        followUp={data.view.kvkFollowUp}
       />
       {data.view.squads && (
         <SquadsCard squads={squadsWords(data.view.squads, { t, language })} t={t} noData={noData} />

@@ -137,6 +137,14 @@ export const NEEDS_HELP = {
 } as const;
 
 /**
+ * The Lantern Keep member who took a heavy hit at the last KvK (issue 585 slice 5): `lost` more might than
+ * the others at its End, and still that much lower on every read after it, so they lost more than a quarter
+ * of their might and are under 80% of it now: Insights' help list and Follow-up's "After KvK, offer help".
+ * Read-only; k=4 has no reason, fact or record of its own, and only the roll call test marks it.
+ */
+export const HEAVY_HIT = { k: 4, lost: 10_000_000 } as const;
+
+/**
  * The member marked Needs help whom the "No longer needs help" test clears (issue 585 slice 2): the first
  * roster member of the repeat's own feature-switch workspace (switchWorkspaceOf), phone only, so Lantern
  * Keep's counts never move while it runs. That alliance has no end-of-day read: an officer's status still
