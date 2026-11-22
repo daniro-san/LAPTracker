@@ -91,6 +91,12 @@ All runs were on a 10-core Mac shared with other agents. Load ranged from 4 to 3
 - **Imports are now the largest phase:** about 120 s of per-file time and 30 % of the wall. That is each file importing the Next route modules, the schema and the PGlite WASM. Not looked at here.
 - **`scripts/seed.test.ts`, under the "tests check real behaviour" rule.** It checks `pnpm db:seed --with-states`, a dev-only flag that adds two review states. It protects a local tool, not product behaviour, so it is a candidate to review under that rule. It is not deleted. The brief says the rule is in CONTRIBUTING § Working rules, but that section on `origin/dev` (fbc54558) has no such line yet. `lib/quota-report.test.ts` protects real behaviour (D70: the Friday check's might line carries counts and no member name).
 
+## What was missing from the task prompt?
+
+Nothing blocking. The prompt did not say the JSON reporter leaves out `beforeAll` and import time, which hid this change; the numbers above come from a small reporter kept outside the repo.
+
+Measured on CI (this PR's run): the `check` job took 257 s (was 443 s), vitest 184 s (was 366 s).
+
 ## Next
 
 - Model/effort: keep. Most of the time went into measuring. The machine's load (4–34, from other work) made sequential runs useless for comparison until the runs were interleaved.

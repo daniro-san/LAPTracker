@@ -49,7 +49,7 @@ async function seedBoardLabels(db: Db): Promise<void> {
 
 /**
  * The path of a tarball of a freshly migrated and seeded database, built on first use. Its name hashes
- * everything that shapes it (the migrations, the fixture, this file, the PGlite and drizzle-orm pins), so
+ * everything that shapes it (the migrations, the fixture, the seed's schema module, this file, the PGlite and drizzle-orm pins), so
  * a new or edited migration gets a new file and a file built from other inputs is never read. It is
  * written under a temp name and renamed, so parallel workers and other checkouts never read half a file.
  * vitest.global-setup.ts builds it once before the workers start.
@@ -66,7 +66,9 @@ export async function testDbSnapshot(): Promise<string> {
     .filter((f) => f.endsWith(".sql"))
     .sort();
   for (const f of sqlFiles) hash.update(f).update(readFileSync(`${MIGRATIONS}/${f}`));
-  for (const f of [`${MIGRATIONS}/meta/_journal.json`, FIXTURE, import.meta.filename])
+  // The seed inserts through lib/schema-alliances.ts: a column change there without a migration rebuilds too.
+  const seedSchema = `${ROOT}/lib/schema-alliances.ts`;
+  for (const f of [`${MIGRATIONS}/meta/_journal.json`, FIXTURE, seedSchema, import.meta.filename])
     hash.update(readFileSync(f));
   const dir = join(tmpdir(), "laptracker-test-db");
   const path = join(dir, `${hash.digest("hex").slice(0, 16)}.tar`);
