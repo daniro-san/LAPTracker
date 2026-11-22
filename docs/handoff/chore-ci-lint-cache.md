@@ -56,4 +56,4 @@ Local machine: 10 cores, load average 16–24 from other sessions throughout, so
 
 What was missing from the task prompt? That nothing dispatches `ci` on `dev` any more, so a CI cache saved on `workflow_dispatch` alone would rarely be saved; and that vitest matches `forceRerunTriggers` against absolute paths.
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/677
