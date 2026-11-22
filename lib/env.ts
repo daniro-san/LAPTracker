@@ -171,8 +171,28 @@ function parseWith<T extends z.ZodType>(
   return result.data;
 }
 
+/**
+ * The public placeholders of the committed template, .env.example (issue 592, D03 amendment). They mirror
+ * that file, so anyone can read them; production refuses exactly these values and nothing else.
+ */
+const PUBLIC_PLACEHOLDERS = {
+  CRON_SECRET: "local-placeholder-cron-secret-0123456789",
+  EDIT_PIN: "000000",
+} as const;
+
 export function parseEnv(source: Record<string, string | undefined>): Env {
-  return parseWith(envSchema, source);
+  const env = parseWith(envSchema, source);
+  if (source.NODE_ENV === "production" && source.VERCEL_ENV === "production") {
+    const placeholders = (Object.keys(PUBLIC_PLACEHOLDERS) as (keyof typeof PUBLIC_PLACEHOLDERS)[])
+      .filter((key) => env[key] === PUBLIC_PLACEHOLDERS[key])
+      .map(
+        (key) => `${key}: the public placeholder from .env.example is not allowed in production`,
+      );
+    if (placeholders.length > 0) {
+      throw new Error(`Invalid environment:\n  ${placeholders.join("\n  ")}`);
+    }
+  }
+  return env;
 }
 
 /** What lib/sources needs, so a source can run (live smoke test) without the database or schedule vars. */

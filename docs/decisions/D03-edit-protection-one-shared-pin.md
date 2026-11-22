@@ -13,3 +13,5 @@ The only write action exposed to people is "Run snapshot now", gated by `EDIT_PI
 - There is no automatic renewal: renewing without the PIN would let in whoever knows only the old one. When this ships, every existing cookie (old format) counts as expired, once.
 
 **Amendment 2026-11-22 (orchestrator, #592):** `.env.example` now holds a local placeholder `EDIT_PIN` (and `CRON_SECRET`), which is public. Production must never use them; the owner checks Vercel's values (a guard in `lib/env.ts` that refuses them in production waits for that check, so a matching value cannot take the site down unannounced).
+
+**Amendment 2026-11-22 (issue 592): production refuses the two placeholders.** The owner has checked Vercel, so `parseEnv` in `lib/env.ts` now fails, when `NODE_ENV` and `VERCEL_ENV` are both `production`, if `EDIT_PIN` or `CRON_SECRET` is exactly the public placeholder of `.env.example`. The error names the variable, never the value. It is an exact match only: no length or strength rule. Previews, local runs and tests are not affected. The check runs in the same validation that `instrumentation.ts` runs once at server start.
