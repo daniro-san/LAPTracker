@@ -8,6 +8,7 @@ import { OWN_ALLIANCE_ID } from "../config/alliances";
 import { TEST_ENV } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
+import { CALLOUT_LIMIT, calloutLength } from "./post-callout";
 import { calloutOf, saveCallout } from "./repo/post-touches";
 import { setSwitch } from "./repo/workspace-features";
 import { recordSignIn, saveWorkspace } from "./repo/workspaces";
@@ -213,5 +214,20 @@ describe("the alliance's own line on the Raid Shield summary (D156)", () => {
     expect(d.posts.map((p) => p.method)).toEqual(["POST", "PATCH"]);
     expect(d.texts[1]?.split("\n")[0]).toBe("**Raid Shield check**");
     expect(await calloutOf(db, ws, "shield")).toBe(callout);
+  });
+
+  it("leaves out a line that would take the summary past Discord's 2,000 characters", async () => {
+    await save("shield");
+    const by = await recordSignIn(db, ws, "ogs-ana", "Ana", FRI);
+    // 120 graphemes, each a letter under 16 stacked accents: short to count, long to send.
+    const callout = `a${"\u0301".repeat(16)}`.repeat(CALLOUT_LIMIT);
+    expect(calloutLength(callout)).toBe(CALLOUT_LIMIT);
+    await saveCallout(db, { workspaceId: ws, post: "shield", callout, by, at: FRI });
+    const d = discord();
+    expect(await d.post(FRI, "night")).toBe(true);
+    const [text = ""] = d.texts;
+    expect(text.length).toBeLessThanOrEqual(2000);
+    expect(text.startsWith("**Raid Shield check**\n")).toBe(true);
+    expect(text).not.toContain("\u0301");
   });
 });

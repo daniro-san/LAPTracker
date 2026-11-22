@@ -106,6 +106,8 @@ async function readSettings(
   ctx: { env: Env; now: Date; language: WorkspaceLanguage; t: WorkspaceDictionary },
 ) {
   const { env, now } = ctx;
+  // The Raid Shield card's settings, read once: the lines' card takes the summary's language from them.
+  const shieldRead = shieldSettingsView(db, access, ctx.language);
   const [view, waiting, bot, channels, squads, features, shield, push, callouts] =
     await Promise.all([
       trackerKeyView(db, access, env, now),
@@ -116,9 +118,9 @@ async function readSettings(
         key ? squadsToday(db, access, env, now) : null,
       ),
       allianceFeaturesView(db, access),
-      shieldSettingsView(db, access, ctx.language),
+      shieldRead,
       pushView(db, access, env),
-      calloutsView(db, access, ctx.t),
+      shieldRead.then((s) => calloutsView(db, access, ctx.t, s?.language ?? null)),
     ]);
   return { view, waiting, bot, channels, squads, features, shield, push, callouts };
 }

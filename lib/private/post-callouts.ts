@@ -7,13 +7,12 @@ import { z } from "zod";
 
 import { SHIELD_POST, SHIELD_LANGUAGES, type ShieldLanguage } from "../copy-shield";
 import type { Db } from "../db";
-import { CALLOUT_LIMIT, calloutLength, cleanCallout } from "../post-callout";
+import { CALLOUT_LIMIT, calloutLength, cleanCallout, discordCallout } from "../post-callout";
 import { recordFailure } from "../repo/auth-attempts";
 import { calloutOf, calloutsOf, saveCallout } from "../repo/post-touches";
-import { shieldSettingsOf } from "../repo/shield-checks";
 import { POST_KEYS, type PostKey } from "../schema-discord";
 import type { WorkspaceAccess } from "./access";
-import type { WorkspaceDictionary } from "./dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import { featureOn } from "./features";
 
 /** At most this many saves per 15 minutes per workspace: far above a person changing a line. */
@@ -44,25 +43,25 @@ function postsOf(access: WorkspaceAccess): PostKey[] {
 }
 
 /** The Raid Shield summary's title in the language the officers picked for it (D137). */
-async function shieldTitle(db: Db, access: WorkspaceAccess) {
-  const lang = (await shieldSettingsOf(db, access.workspaceId))?.language as ShieldLanguage;
-  const words = SHIELD_POST[SHIELD_LANGUAGES.includes(lang) ? lang : "en"];
-  return words.title.replaceAll("*", "");
+function shieldTitle(language: WorkspaceLanguage | null) {
+  const lang = language as ShieldLanguage;
+  return SHIELD_POST[SHIELD_LANGUAGES.includes(lang) ? lang : "en"].title.replaceAll("*", "");
 }
 
-/** The card's rows; null while `post_callouts` is off. */
+/**
+ * The card's rows; null while `post_callouts` is off. `shieldLanguage` is the Raid Shield card's own
+ * setting, which the page has already read (null while the check is off: no shield row then).
+ */
 export async function calloutsView(
   db: Db,
   access: WorkspaceAccess,
   t: WorkspaceDictionary,
+  shieldLanguage: WorkspaceLanguage | null,
 ): Promise<CalloutView[] | null> {
   if (!featureOn(access, "post_callouts")) return null;
-  const [saved, shield] = await Promise.all([
-    calloutsOf(db, access.workspaceId),
-    shieldTitle(db, access),
-  ]);
+  const saved = await calloutsOf(db, access.workspaceId);
   const titles: Record<PostKey, string> = {
-    shield,
+    shield: shieldTitle(shieldLanguage),
     thanks: t["share.discord.title"],
     garrison: t["switches.name.garrison"],
   };
@@ -98,8 +97,11 @@ export async function saveCalloutFor(
   return { ok: true, callout, changed };
 }
 
-/** The line a desk post (weekly thanks, garrison) opens with: "" while `post_callouts` is off. */
-export const postCallout = (db: Db, access: WorkspaceAccess, post: PostKey) =>
-  featureOn(access, "post_callouts")
-    ? calloutOf(db, access.workspaceId, post)
-    : Promise.resolve("");
+/**
+ * The line a desk post (weekly thanks, garrison) opens with, already made safe for Discord (escaped, linking
+ * and pinging no one), so a caller cannot forget it; "" while `post_callouts` is off or none is saved.
+ */
+export async function postCallout(db: Db, access: WorkspaceAccess, post: PostKey) {
+  if (!featureOn(access, "post_callouts")) return "";
+  return discordCallout(await calloutOf(db, access.workspaceId, post));
+}

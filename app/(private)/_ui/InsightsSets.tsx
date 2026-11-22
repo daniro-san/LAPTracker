@@ -27,13 +27,14 @@ export function Names({ set, slug, label }: { set: MemberSet; slug: string; labe
   return (
     <ul
       aria-label={label}
-      className="ph-no-capture ms-1 mb-2 grid grid-cols-2 gap-x-4 border-s-2 border-plum/30 ps-3 sm:grid-cols-3"
+      className="ph-no-capture ms-1 mb-2 grid grid-cols-2 items-start gap-x-4 border-s-2 border-plum/30 ps-3 sm:grid-cols-3"
     >
       {/* A flow week lists moves: one person can be in it twice. */}
       {set.people.map((p, i) => (
         <li key={`${p.uid}-${i}`} className="min-w-0">
           <a href={cardHref(slug, p)} className="text-link flex min-h-11 min-w-0 items-center">
-            <bdi translate="no" className="name-fit">
+            {/* A long name wraps between words inside its column, never past the card's edge (issue 720, .name-fit). */}
+            <bdi translate="no" className="name-fit min-w-0">
               {p.name}
             </bdi>
           </a>

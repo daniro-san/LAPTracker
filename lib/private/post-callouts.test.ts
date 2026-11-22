@@ -58,7 +58,7 @@ describe("the alliance's own line on our posts (D156)", () => {
       callout: "Thank you, family",
       changed: true,
     });
-    const view = await calloutsView(db, access, t);
+    const view = await calloutsView(db, access, t, null);
     expect(view?.find((r) => r.post === "thanks")).toEqual({
       post: "thanks",
       callout: "Thank you, family",
@@ -93,7 +93,7 @@ describe("the alliance's own line on our posts (D156)", () => {
     await setAllianceSwitch(db, ws, "post_callouts", false, NOW);
     access = await signIn();
     expect(await save("thanks", "Another line")).toEqual({ ok: false, code: "turned_off" });
-    expect(await calloutsView(db, access, t)).toBeNull();
+    expect(await calloutsView(db, access, t, null)).toBeNull();
     expect(await postCallout(db, access, "thanks")).toBe("");
     await setAllianceSwitch(db, ws, "post_callouts", true, NOW);
     access = await signIn();

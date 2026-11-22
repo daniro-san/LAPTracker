@@ -28,11 +28,15 @@ export async function calloutOf(db: Db, workspaceId: number, post: PostKey): Pro
   return row?.callout ?? "";
 }
 
-/** The post's line when the workspace has `post_callouts` on, else "" (the line stays stored). */
+/**
+ * The post's line when the workspace has `post_callouts` on, else "" (the line stays stored). The line is
+ * read first: with none saved, the usual case, that is the one query; the switch is read only for a line.
+ */
 export async function liveCallout(db: Db, workspaceId: number, post: PostKey): Promise<string> {
+  const line = await calloutOf(db, workspaceId, post);
+  if (!line) return "";
   const found = await settingsById(db, workspaceId);
-  if (!found || !resolveFeatures(found.settings, []).on.has("post_callouts")) return "";
-  return calloutOf(db, workspaceId, post);
+  return found && resolveFeatures(found.settings, []).on.has("post_callouts") ? line : "";
 }
 
 /**

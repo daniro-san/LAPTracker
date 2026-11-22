@@ -19,6 +19,16 @@ Part of #713 (part B, callouts). Size M: a migration, a new decision, a change t
 - Tests: `lib/post-callout.test.ts` (fast-check: nothing pings, links or makes a heading), `lib/private/post-callouts.test.ts` (save, read, the 120 boundary with an emoji, the Home line, switch off), one new test each in `lib/private/thanks.test.ts`, `lib/private/garrison.test.ts`, `lib/shield-post.test.ts` (the built Discord payload), `app/(private)/_ui/PostCallouts.test.ts` (render). The purge and download tests now see a seeded row (`lib/workspace-seed-parts.test-helpers.ts`), and `settings-index.test.ts` has the new row.
 - E2E `e2e/desk-callout.spec.ts` (phone only, on the repeat's filler workspace): the officer saves the garrison post's line, it survives a reload, the garrison plan posted to the stub's leaders webhook opens with it (`@everyone` broken, `allowed_mentions` empty, no private field), and Home names the change without the text. The seed gives each filler workspace a weekly Undead Siege Lv.6 (`SIEGE_ENTRY` 60 + repeat).
 
+- Review round (PR 721):
+  - `cleanCallout` removes every Cc and Cf character (U+061C, U+180E, U+00AD and the tag characters included), keeping only the zero-width joiner; variation selectors are not Cf.
+  - `discordCallout` puts a zero-width space before every dot between two host-name characters (also the ideographic dots `\u3002 \uFF0E \uFF61`), so a bare domain such as `evil.example/login` is no host; the invite rule is now part of it.
+  - `escapeDiscord` moved to `lib/markdown-escape.ts` (imports nothing); `lib/discord-format.ts` re-exports it. `lib/post-callout.ts` imports only it, so `lib/private` reaches no `lib/discord-*` module. `postCallout` returns the escaped line.
+  - The card counts `cleanCallout(value)`, as the route does, and compares changes the same way.
+  - `withCallout` leaves the line out of the Raid Shield summary when line and message would pass 2,000 characters.
+  - Settings: the lines' card takes the summary language from the Raid Shield settings the page already reads (no read with the check off); one query for the lines.
+  - `liveCallout` reads the line first and the switch only when a line is saved: one query per summary in the usual case.
+  - Tests: `app/(private)/api/w/[slug]/callouts/route.test.ts` (statuses, 429, the event only on a change, never the text); fast-check pieces for the Cf characters, bare domains, addresses and ideographic dots; the card's count with spaces and a hidden character; the summary with a 120-grapheme line of stacked accents; the purge test now scans every file in `drizzle.config.ts`'s `schema` list.
+
 ## Decisions
 
 - Notices take no line: a notice is the officers' own text from title to end, not a template of ours; officers can already put any line at its top in each language; one standing line would sit above unrelated notices.
@@ -44,8 +54,11 @@ Part of #713 (part B, callouts). Size M: a migration, a new decision, a change t
 - Mutation check: `garrison-post.ts` posting without the line makes the garrison payload test fail; reverted.
 - Persona check at 360 × 780 on the real card (D156 § Persona check): three officers, an adversarial reviewer and a designer each answered their question right from the first screen. Adopted: "line" not "callout", no links, notices left out, and the lead's "It stays on every post until you change it, so keep it about the whole alliance."
 
+- Review round: related tests 94 files, 591 passed; `pnpm check` passed (361 files, 1,926 tests passed, 4 skipped); `e2e/desk-callout.spec.ts` on a fresh build passed on phone (wide skipped), no `e2e-outbound.log`; mutation proofs, each reverted: without the host-dot break and the Cf rule, 3 of 5 tests in `lib/post-callout.test.ts` fail; with the route counting every save, its event test fails 3 runs of 3; with the table dropped from `WORKSPACE_TABLES`, the purge scan fails naming `workspace_post_touches`. The ESLint zone rejects a probe file in `lib/private` importing `../discord-format` and accepts one importing `../markdown-escape` (probes deleted). A transitive import (through a module outside the fence) is not caught by the zone.
+
 ## Open issues
 
+- Discord does not document which bare domains it turns into links; the line breaks every host-name dot instead of relying on it. Not checked against the real Discord (no real Discord call in this work).
 - A history of every line change (who wrote what, before another officer changed it), if the owner wants a full trail.
 - The garrison page and the thanks sheet do not preview the line before posting; only Alliance settings does.
 - Existing gap, not from this change: the purge job does not delete the `shield:ws:<id>` rate-limit counter of D137 (nor this change's `callout:ws:<id>`); both expire with their 15-minute window.

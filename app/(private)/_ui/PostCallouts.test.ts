@@ -47,4 +47,16 @@ describe("the lines on our posts in Alliance settings (D156)", () => {
     expect(html).toContain("Too long: keep it to 120 characters.");
     expect(render("x".repeat(120))).toContain("120 of 120 characters");
   });
+
+  it("counts the line as the server stores it: spaces and hidden characters are not counted", () => {
+    // The route keeps 120 graphemes for each: a zero-width space dropped, a run of spaces made one.
+    for (const typed of [
+      `  ${"x".repeat(120)}\u200B  `,
+      `${"x".repeat(60)}    ${"x".repeat(59)}`,
+    ]) {
+      const html = render(typed);
+      expect(html).toContain("120 of 120 characters");
+      expect(html).not.toContain("aria-invalid");
+    }
+  });
 });
