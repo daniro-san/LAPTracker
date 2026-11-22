@@ -187,6 +187,20 @@ export const hydrated = (target: Locator) =>
     .poll(() => target.evaluate((el) => Object.keys(el).some((k) => k.startsWith("__reactProps$"))))
     .toBe(true);
 
+/**
+ * Taps a feed's "Show more" (Home's Recent activity) until `item` is listed: the tests' own writes are newer
+ * than the seed's rows, so a seeded line may be on a later page.
+ */
+export async function showMoreUntil(feed: Locator, item: Locator) {
+  const more = feed.getByRole("button", { name: "Show more" });
+  while ((await item.count()) === 0) {
+    const shown = await feed.getByRole("listitem").count();
+    await hydrated(more);
+    await more.click();
+    await expect.poll(() => feed.getByRole("listitem").count()).toBeGreaterThan(shown);
+  }
+}
+
 /** A figure of 1,000 or more as the pages write it (lib/compact, D78). */
 export const big = (n: number) => compactLarge(n, "en-GB");
 

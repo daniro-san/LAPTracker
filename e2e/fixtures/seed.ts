@@ -105,7 +105,22 @@ const members = (side: Side, day: number): Member[] =>
     kills: 1_000_000 + k * 40_000 + day * 3_000,
   }));
 
-function rawMember(side: Side, m: Member, k: number, idle: boolean) {
+/**
+ * A member's daily quest points on read day `day`: the alliance's sentinel, except Lantern Keep's
+ * LINKED_MEMBER, whose own page (D142) averages this game week and last week, so that a wrong window shows:
+ * last week's days go from 30 under the sentinel to 30 over it, Monday to Sunday (their average is the
+ * sentinel, which the page then still shows); this week's are 20 over it, and older days 50 over it.
+ */
+export function questPointsOf(side: Side, uid: number, day: string): number {
+  const s = SENTINELS[side].active;
+  if (uid !== LINKED.a) return s;
+  const monday = Date.parse(calendarOf(seededAt()).week);
+  const n = (Date.parse(day) - monday) / DAY_MS;
+  if (n >= 0) return s + 20;
+  return n >= -7 ? s + (n + 7 - 3) * 10 : s + 50;
+}
+
+function rawMember(side: Side, m: Member, k: number, idle: boolean, day: string) {
   const s = SENTINELS[side];
   return {
     uid: m.uid,
@@ -116,7 +131,7 @@ function rawMember(side: Side, m: Member, k: number, idle: boolean) {
     rank_code: k === 0 ? 105 : k < 3 ? 104 : 102,
     rank_label: k === 0 ? "R5" : k < 3 ? "R4" : "R2",
     // The game sends null, never 0, for none that day (D127).
-    active: idle ? null : s.active,
+    active: idle ? null : questPointsOf(side, m.uid, day),
     daily_honor: DAILY.honor,
     daily_tech: idle ? null : s.tech,
     x: s.x,
@@ -131,7 +146,7 @@ function rawMember(side: Side, m: Member, k: number, idle: boolean) {
 /** `daysLeft`: the end-of-day reads after this one; the IDLE members are quiet on the last IDLE_DAYS. */
 function rosterRow(side: Side, day: string, list: Member[], daysLeft: number) {
   const { unionId, tag, name } = ALLIANCES[side];
-  const members = list.map((m, k) => rawMember(side, m, k, IDLE_UIDS.has(m.uid) && daysLeft < IDLE_DAYS));
+  const members = list.map((m, k) => rawMember(side, m, k, IDLE_UIDS.has(m.uid) && daysLeft < IDLE_DAYS, day));
   const raw = { union_id: unionId, abbr: tag, name, members };
   const total = (f: (m: Member) => number) => list.reduce((s, m) => s + f(m), 0);
   return `insert into daily_rosters (read_day, union_id, tag, name, member_count, total_power, total_kills, source_updated_at, is_fresh, member_uids, member_names, member_power, member_kills, raw_json) values ('${day}', ${unionId}, '${tag}', ${q(name)}, ${list.length}, ${total((m) => m.power)}, ${total((m) => m.kills)}, '${day}T23:31:00-02:00', true, ${arr(list.map((m) => m.uid))}, ${arr(list.map((m) => m.name))}, ${arr(list.map((m) => m.power))}, ${arr(list.map((m) => m.kills))}, ${q(JSON.stringify(raw))}::jsonb);`;

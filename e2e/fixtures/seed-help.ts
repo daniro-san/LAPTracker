@@ -2,8 +2,16 @@
 // NEEDS_HELP member, and the member each feature-switch workspace's "No longer needs help" test clears
 // (clearHelpOf). Every row is written as recordFollowUp writes it: "They need help" writes the status fact
 // (version 1) and its record with that fact version, by the same officer at the same moment.
-// D154: the self-report member of each filler workspace (selfReportRows).
-import { ALLIANCES, clearHelpOf, NEEDS_HELP, REPEATS, selfReportOf, uidOf } from "./seed-people";
+// D154: the self-report member of each filler workspace (selfReportRows). CARD_TALKED's "All fine" this week.
+import {
+  ALLIANCES,
+  CARD_TALKED,
+  clearHelpOf,
+  NEEDS_HELP,
+  REPEATS,
+  selfReportOf,
+  uidOf,
+} from "./seed-people";
 
 const DAY_MS = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
@@ -41,7 +49,19 @@ export function needsHelpRows(week: string): string[] {
     ...cleared,
     ...marked(ws, uid, 1, days.marked, "00000000-0000-4000-8000-000000000585"),
     `insert into member_follow_ups (workspace_id, uid, action, note, until, fact_version, written_by, written_at, request_id) values (${ws}, ${uid}, 'talked', ${q(NEEDS_HELP.said)}, null, null, 1, ${at(days.talked)}, '00000000-0000-4000-8000-000000000586');`,
+    ...notedRows(),
   ];
+}
+
+/**
+ * CARD_TALKED's "All fine" this week (a record only, as recordFollowUp writes it), half a minute before the
+ * seed and a second apart: after the members ADDED_BY_HAND (a minute before), so before every test's write.
+ */
+function notedRows(): string[] {
+  return Object.values(CARD_TALKED).map(
+    (k, i) =>
+      `insert into member_follow_ups (workspace_id, uid, action, note, until, fact_version, written_by, written_at, request_id) values (${ALLIANCES.a.id}, ${uidOf("a", k)}, 'fine', null, null, null, 1, now() - interval '${30 - i} seconds', '00000000-0000-4000-8000-00000000060${i}');`,
+  );
 }
 
 /**
