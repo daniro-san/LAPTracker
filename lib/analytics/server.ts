@@ -251,17 +251,37 @@ function ownProperties(e: ServerEvent): Wire {
 /** `at fn (file:line:col)`, `at file:line:col`, `at async fn (…)`, `at fn (native)`. */
 const FRAME = /^at (?:async )?(?:(.+?) \()?(.+?)(?::(\d+):(\d+))?\)?$/;
 
+const fileOf = (line: string) => FRAME.exec(line.trim())?.[2]?.replace(/^file:\/\//, "");
+
+/**
+ * Each chunk's PostHog chunk id by its file. The build's posthog-cli (scripts/sourcemaps.ts) puts a snippet
+ * in every server chunk that, when the chunk loads, keeps its id under the stack of an Error made there; the
+ * stack's first frame is the chunk's own file. As @posthog/core's `getFilenameToChunkIdMap`.
+ */
+function chunkIds(): Map<string, string> {
+  const injected = (globalThis as { _posthogChunkIds?: Record<string, string> })._posthogChunkIds;
+  const ids = new Map<string, string>();
+  for (const [stack, id] of Object.entries(injected ?? {})) {
+    const file = stack.split("\n").map(fileOf).find(Boolean);
+    if (file) ids.set(file, id);
+  }
+  return ids;
+}
+
 /**
  * Node's `at …` lines as PostHog's raw frames (the fields of @posthog/core's node parser), outermost first as
- * PostHog orders them. A frame on an absolute path outside node_modules is the app's.
+ * PostHog orders them. A frame on an absolute path outside node_modules is the app's. A frame in a chunk the
+ * build uploaded a map for carries its `chunk_id`, which PostHog resolves to our file, line and function.
  */
 export function stackFrames(stack: string): object[] {
+  const ids = chunkIds();
   return stack
     .split("\n")
     .flatMap((line) => {
       const m = FRAME.exec(line.trim());
       if (!m) return [];
       const filename = m[2]?.replace(/^file:\/\//, "");
+      const chunk = filename && ids.get(filename);
       return [
         {
           platform: "node:javascript",
@@ -269,6 +289,7 @@ export function stackFrames(stack: string): object[] {
           ...(filename && { filename }),
           ...(m[3] && { lineno: Number(m[3]), colno: Number(m[4]) }),
           in_app: !!filename?.startsWith("/") && !filename.includes("/node_modules/"),
+          ...(chunk && { chunk_id: chunk }),
         },
       ];
     })

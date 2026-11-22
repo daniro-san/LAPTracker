@@ -71,6 +71,10 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 527,
   },
   {
+    text: 'PostHog → Project settings: check that "Discard client IP data" is on. Nothing in the app uses a visitor\'s location, so keep it on.',
+    issue: 592,
+  },
+  {
     text: "cron-job.org: on the /api/tick job, turn on Notify on failure by email.",
     issue: 527,
   },

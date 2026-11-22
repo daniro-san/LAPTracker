@@ -6,6 +6,7 @@ import { openDb, type Db, type PoolSize } from "./db";
 import { getEnv, type Env } from "./env";
 import { nextEventCache, type EventCache } from "./event-cache";
 import { nextPublicCache, type PublicCache } from "./public-cache";
+import { reporter, type Report } from "./report-error";
 import { internal, v1 } from "./sources";
 import type { InternalSource, V1Source } from "./sources/types";
 import { nextWakeCache, type WakeCache } from "./wake-cache";
@@ -30,6 +31,12 @@ export interface AppContext {
    * tag go on each `$ai_generation`; null when a Discord server's workspace is gone); null without GROQ_API_KEY.
    */
   ai: ((where: EventWorkspace | null) => ChatModel) | null;
+  /**
+   * An error caught and carried on from, to PostHog's error tracking (lib/report-error.ts `reportError`,
+   * D115's 2026-11-21 amendment): lib/private's way to report without importing analytics (D71). Only
+   * `route` and `kind` are read from the context; the error's detail passes the private-field redactor.
+   */
+  report: Report;
 }
 
 /** Each Groq request's metadata to PostHog (D115): one trace id per completion, no text, no key. */
@@ -63,25 +70,9 @@ export function getAppContext(): AppContext {
     publicCache: nextPublicCache,
     wakeCache: nextWakeCache,
     ai: groqKey ? (where) => groqChat(groqKey, send, undefined, observeAi(env, send, where)) : null,
+    report: reporter({ env, fetch: send }),
   };
 }
 
-/** Every value the logger and messages must never carry (plan §12.2). */
-export function secretsOf(env: Env): string[] {
-  return [
-    env.DATABASE_URL,
-    env.CRON_SECRET,
-    env.EDIT_PIN,
-    env.LAP_API_KEY,
-    env.NOTIFY_WEBHOOK_PUBLIC,
-    env.NOTIFY_WEBHOOK_ADMIN,
-    env.DISCORD_CLIENT_SECRET,
-    env.DISCORD_BOT_TOKEN,
-    env.GROQ_API_KEY,
-    env.WORKSPACE_KEYS_SECRET,
-    env.VAPID_PRIVATE_KEY,
-    ...Object.values(env.WORKSPACE_DISCORD_WEBHOOKS ?? {}).flatMap((w) =>
-      [w.members?.url, w.leaders?.url].filter((u) => u !== undefined),
-    ),
-  ].filter((s): s is string => s !== undefined);
-}
+/** In lib/env.ts since 2026-11-22, so lib/report-error needs no value from this module (no import cycle). */
+export { secretsOf } from "./env";

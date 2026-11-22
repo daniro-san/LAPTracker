@@ -6,6 +6,7 @@
 // marked matched. No match or several: it stays, "To match" (`toMatch`), and an officer links it by hand
 // or deletes it. Delete dismisses it and keeps its facts and points; adding the name again reopens it
 // (2026-11-17). A fuzzy match never merges.
+import { getAppContext } from "../app-context";
 import type { Db } from "../db";
 import { newestRoster } from "../repo/import";
 import { aliasesOf, saveAliases } from "../repo/member-facts";
@@ -275,13 +276,18 @@ export async function reconcilePending(
 
 /**
  * The match a page read runs first (Members, Home), and the pending members still open. A failed match
- * is logged as a code only and the page shows them as they are, so it never takes the page down.
+ * is logged as a code only, reported (redacted, D115), and the page shows them as they are, so it never takes
+ * the page down.
  */
 export async function matchOnRead(db: Db, access: WorkspaceAccess, now: Date): Promise<Pending[]> {
   try {
     return (await reconcilePending(db, access, now)).open;
-  } catch {
+  } catch (error) {
     privateLog("w.pending.match_failed");
+    getAppContext().report(error, {
+      route: "lib/private/pending-members.ts",
+      kind: "w.pending.match_failed",
+    });
     return pendingMembers(db, access);
   }
 }

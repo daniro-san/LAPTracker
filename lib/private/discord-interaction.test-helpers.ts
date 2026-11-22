@@ -133,5 +133,6 @@ export function jobDeps(db: Db, fetcher: typeof fetch, read: string[]): JobDeps 
     origin: "https://laptracker.test",
     serverTz: "Etc/GMT+2",
     now: () => NOW,
+    report: () => undefined,
   };
 }

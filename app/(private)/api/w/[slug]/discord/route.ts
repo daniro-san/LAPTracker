@@ -79,7 +79,12 @@ export async function POST(
       );
       const t = WORKSPACE_DICTIONARIES[language];
       const words = { title: t["discord.test.title"], text: t[`discord.test.${input.channel}`] };
-      const tested = await testWebhook(db, access, { ...deps, ...words }, input.channel);
+      const tested = await testWebhook(
+        db,
+        access,
+        { ...deps, ...words, report: ctx.report },
+        input.channel,
+      );
       if (!tested.ok) return privateError(STATUS[tested.code], tested.code);
       const body = Response.json({ ok: true }, { headers: NO_STORE });
       return counted(ctx, access, "discord", "test", body);
