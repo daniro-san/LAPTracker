@@ -159,10 +159,9 @@ export interface CallView {
   tally: Tally;
   /** An Elixir Scramble team's size; null for other kinds. */
   team: number | null;
-  /** The roster and member facts read for it, so Raid prep's part of the same page reads them once. */
-  loaded: Loaded;
 }
 
+/** The roster and member facts a roll call's page read, so Raid prep's part of it reads them once. */
 export interface Loaded {
   roster: Awaited<ReturnType<typeof rosterOf>>;
   facts: Map<number, MemberFacts>;
@@ -176,6 +175,20 @@ export async function callView(
   language: string,
   zone: string,
 ): Promise<CallView | null> {
+  return (await callRead(db, access, occasion, language, zone))?.view ?? null;
+}
+
+/**
+ * The roll call's view and, beside it, the roster and facts it read: the mark page hands them to Raid
+ * prep's part (`prepView`), and the view itself never carries them.
+ */
+export async function callRead(
+  db: Db,
+  access: WorkspaceAccess,
+  occasion: Occasion,
+  language: string,
+  zone: string,
+): Promise<{ view: CallView; loaded: Loaded } | null> {
   const opened = await openOccasion(db, access, occasion);
   if (!opened) return null;
   const ids = opened.call ? [opened.call.id] : [];
@@ -195,13 +208,13 @@ export async function callView(
     note: facts.get(m.uid)?.away?.value ?? null,
     noteVersion: facts.get(m.uid)?.away?.version ?? 0,
   }));
-  return {
+  const view = {
     opened,
     rows,
     tally: tally(rows, own),
     team: opened.kind === "elixir" ? team.length : null,
-    loaded: { roster, facts },
   };
+  return { view, loaded: { roster, facts } };
 }
 
 export interface TeamRow {

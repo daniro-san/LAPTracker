@@ -237,12 +237,12 @@ async function messageOf(
 ) {
   const { target, day } = run;
   const windows = passWindows(day, deps.env);
-  const members = ((await anyRoster(db, target.unionId))?.members ?? []).map((m) => ({
-    uid: m.uid,
-    name: m.name,
-  }));
+  const [roster, facts] = await Promise.all([
+    anyRoster(db, target.unionId),
+    awayFacts(db, target.workspaceId as number),
+  ]);
+  const members = (roster?.members ?? []).map((m) => ({ uid: m.uid, name: m.name }));
   // Away on the raid's Saturday, by the roll call's rule (D103), as Raid prep's fill leaves them out.
-  const facts = await awayFacts(db, target.workspaceId as number);
   const saturday = addDays(day, 1);
   const away = new Set(
     members

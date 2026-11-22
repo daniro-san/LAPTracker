@@ -144,4 +144,4 @@ The tracker sees shields at its map scan: a shield turned on since may not show 
 
 - A member away on the raid's Saturday (the roll call's away rule, `lib/member-away.ts`, read as Raid prep's fill reads it) is not named. The line ends with how many were left out, a count only: "Not seen yet: Aster 2, Briar 3 · 1 away, left out" (PT "… · 1 ausente, fora da lista", "2 ausentes"; FR "… · 1 absent, hors de la liste", "2 absents"). When everyone not seen is away, the line is "Not seen yet: 1 away, left out".
 - The read lines ("Night check 23:31 ST: 87 of 97 with a shield seen · 4 not read") are unchanged: away members still count there.
-- Test: `lib/shield-post.test.ts`, "leaves a member away on the raid's Saturday out of “Not seen yet” and counts them instead".
+- Tests: `lib/shield-post.test.ts`, "leaves a member away from the raid's Saturday out of “Not seen yet” and counts them instead" and "names nobody this morning when everyone not seen is away or on a break, and counts them in the plural".

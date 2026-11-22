@@ -93,14 +93,14 @@ function discord(forum = false) {
     now: () => at,
     origin: "https://laptracker.test",
   };
-  const post = (now: Date, pass: "night" | "morning") => {
+  const post = (now: Date, pass: "night" | "morning", language = "en") => {
     at = now;
     const target: ShieldTarget = {
       unionId: OWN_ALLIANCE_ID,
       workspaceId: ws,
       slug: "ogs",
       key: null,
-      settings: { workspaceId: ws, morningMinute: 600, discord: true, language: "en" },
+      settings: { workspaceId: ws, morningMinute: 600, discord: true, language },
     } as ShieldTarget;
     return postShieldSummary(deps, db, { day: DAY, target, pass });
   };
@@ -161,22 +161,35 @@ describe("the Raid Shield summary's channel (D147)", () => {
 });
 
 describe("the Raid Shield summary's names (D137, 2026-11-22)", () => {
-  it("leaves a member away on the raid's Saturday out of “Not seen yet” and counts them instead", async () => {
-    await save("shield");
-    await db.insert(memberFacts).values({
-      workspaceId: ws,
-      uid: 2,
-      field: "away",
-      version: 1,
-      value: { text: "Trip", from: "2026-11-19", until: "2026-11-23" },
-      source: "officer",
-      writtenAt: FRI,
+  /** An officer's fact about member `uid`, saved on Friday night. */
+  const fact = (uid: number, field: "away" | "status", value: unknown) =>
+    db.insert(memberFacts).values({
+      ...{ workspaceId: ws, uid, field, version: 1, value },
+      ...{ source: "officer", writtenAt: FRI },
     });
+
+  it("leaves a member away from the raid's Saturday out of “Not seen yet” and counts them instead", async () => {
+    await save("shield");
+    // Away from Saturday only: on Friday, the night check's own day, Wren2 is not away yet.
+    await fact(2, "away", { text: "Trip", from: "2026-11-21", until: "2026-11-23" });
     const d = discord();
     expect(await d.post(FRI, "night")).toBe(true);
     const [text] = d.texts;
     expect(text).toContain("Night check 23:45 ST: 0 of 2 with a shield seen");
     expect(text).toContain("\nNot seen yet: Wren1 · 1 away, left out\n");
     expect(text).not.toContain("Wren2");
+  });
+
+  it("names nobody this morning when everyone not seen is away or on a break, and counts them in the plural", async () => {
+    await save("shield");
+    await fact(1, "status", "break");
+    await fact(2, "away", { text: "Viagem", from: "2026-11-21", until: "2026-11-23" });
+    const morning = { unionId: OWN_ALLIANCE_ID, readAt: SAT, shielding: 0, shieldType: 0 };
+    await db.insert(playerReads).values([1, 2].map((uid) => ({ ...morning, uid })));
+    const d = discord();
+    expect(await d.post(SAT, "morning", "pt-BR")).toBe(true);
+    const [text] = d.texts;
+    expect(text).toContain("\nSem escudo visto hoje de manhã: 2 ausentes, fora da lista\n");
+    expect(text).not.toMatch(/Wren/);
   });
 });
