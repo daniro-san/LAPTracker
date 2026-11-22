@@ -23,16 +23,18 @@ Local: Apple silicon, Node 26.5.0, Postgres 18 (worktree-local db:local cluster 
 - `pnpm vitest related --run playwright.config.ts e2e/env.ts e2e/https-server.mjs`: 3 passed. `pnpm check`: exit 0.
 - CI failure artifact of run 45006762322: the `iphone` traces show `addCookies` with the Secure `__Host-` cookie, then `http://localhost:3477/w/lnk` answered with the sign-in page. WebKit's trace leaves the Cookie header out of every request, so the trace alone does not prove which cookie was dropped.
 - Certificate step, round 3: the openssl call of `e2e/https-server.mjs` run with `/usr/bin/openssl` (LibreSSL 3.3.6) and `/opt/homebrew/bin/openssl` (OpenSSL 4.1.0), each with `OPENSSL_CONF=/nonexistent` in the parent env: exit 0, stdout holds a private key and a certificate, no config left behind.
-- **Not run here:** Linux WebKit. Docker was not to be started. The orchestrator's dispatch of `e2e.yml` on this branch is the check.
+- Linux WebKit, CI: `workflow_dispatch` of `e2e.yml` on this branch, run 45018120933 at 4862884d (ubuntu): 50 passed, 3 skipped, 0 failed, the 4 `[iphone]` desk tests included. Runs 45010070936, 45010272152 and 45010498286 failed at the certificate step (stderr hidden; the runner's `openssl.cnf` includes missing directories; `/dev/stdin` refused on a Node socket); round 3 fixed all three.
 
 ## Open issues
-- The openssl call (config file, no `-keyout`) is untested on Linux; the next `e2e.yml` dispatch is the first run of it there.
+- Follow-up (review of PR 648): `writeFileSync` of the temp config sits outside a try/finally, so a throw there leaves the (non-secret) temp directory behind; a signal that kills openssl gives an error with no cause.
+- Follow-up (review of PR 648): CONTRIBUTING.md's e2e line names only `next start` on 3477; it could name the HTTPS server on 3478 and that `openssl` must be installed for `E2E_WEBKIT=1`.
 - `docs/handoff/test-477-e2e-ci.md` line 60 says WebKit sends the Secure cookie to http localhost. That is true on macOS only. Old handoffs are left as they are; D150's amendment corrects it.
 
 ## What was missing from the task prompt?
 That the app checks Origin against `next start`'s own port, which rules out a proxy on another port.
 
 ## Next
-- Dispatch `e2e.yml` on `fix/e2e-webkit-linux` (workflow_dispatch, so `E2E_WEBKIT=1`). Check the `e2e` job, step `Run pnpm test:e2e`: 0 failed, with the 4 runnable `[iphone]` desk tests passing.
+- The next release dispatch and the daily cron run WebKit on `dev`; check that their `[iphone]` tests pass.
+- The two follow-ups under Open issues.
 
 PR: https://github.com/daniro-san/LAPTracker/pull/648
