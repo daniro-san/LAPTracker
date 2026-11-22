@@ -32,6 +32,16 @@ Daily unique visitors on public pages are real (one hash per visitor per day, or
 
 Insight: **Consent rate** — Trends, `$opt_in` unique users ÷ `$pageview` unique users on `area = public`, weekly.
 
+## Public drilldowns
+
+A count on an event page opens the people behind it on the alliance page's member list (the drilldowns). `before_send` cuts the query string from page views, so a view of `/events/<id>/alliances/<uid>` cannot tell a drilldown from a plain visit; this event does.
+
+| Product question                                                | Event              | Properties                                                                                                                                                                                        | Sent from                                                                                 |
+| --------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Do visitors open the people behind a count, and from which one? | `drilldown_opened` | `surface`: `ledger`, `split`, `war_turnout`, `kill_share`; `kind`: `joined`, `left`, `kills`; `count_bucket`: `0`, `1`, `2_4`, `5_9`, `10_plus`; `workspace`, `alliance`: not sent (public pages) | the tap on a drilldown link (`app/_ui/DrilldownLink.tsx`), before the alliance page opens |
+
+Insight: **Drilldowns** — Trends, `drilldown_opened` total count, weekly, breakdown `surface`, then `kind`; beside it `$pageview` on `/events/*` (no ratio between them: a drilldown is a tap on an event page).
+
 ## Desk actions (server, every write that went through)
 
 One event, `ws_action`, sent by `lib/private/desk-action.ts` from each private write route after a 2xx answer, on the officer's pseudonymous id. Properties: `feature` and `action`, `tier` = `officer`, `area` = `workspace`, `workspace` and `alliance`. A refused write (409, 400, signed out) is not counted. A write repeated with the same request id after a lost answer (D100) is counted again: the lib functions answer a replay exactly like the first write, so the route cannot tell them apart. Such repeats are rare.
@@ -188,6 +198,7 @@ One dated line for each change in what a number means, newest last. The first th
 
 - 2026-11-22 (issue 301, D154): new browser event `ws_self_report_sent` and `ws_action` feature `self_report` (`accept`, `mark`). A fact put on the card from a member's report is a `self_report` / `accept`, not a `member_facts` / `save`, so `member_facts` saves may dip where members report their own facts; read the two together. Remove: nothing.
 - 2026-11-22 (#678, D139 and D153 amended): Insights' counts of members (effort groups, left out on a break or with no might, each flow week, tenure bands past the newcomer days, time zone rows) open their members' names in place. Add `ws_drilldown_opened`, the one desk drilldown event (`surface`, `kind`, `count_bucket`; Raid prep and Roll call emit it with #691, the public `drilldown_opened` of #690 shares the bucket), sent when a set opens, once per kind per page view; a set reopened after Back is not counted again. A name opens the member's card, a Members page view after Insights (`?m=` is stripped). The open set's key goes into the address fragment (`#who-…`), which `before_send` drops. Change, remove: nothing. Read after two weeks which kinds are opened before adding "Copy names" to any.
+- 2026-11-22 (drilldown batch B): new public event `drilldown_opened` (`surface`, `kind`, `count_bucket`). The ledger's `+n joined · −n left`, the split's "Came in with / Went with" lines, War turnout's and Kill share's rows now open the alliance page's member list filtered or sorted, so `/events/*/alliances/*` page views may rise from this release; read a rise as the links, not as more interest. Before this date no drilldown was counted. Change, remove: nothing.
 
 ## Not tracked, on purpose
 

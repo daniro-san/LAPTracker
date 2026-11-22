@@ -8,7 +8,10 @@ import type { CSSProperties, ReactNode } from "react";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import type { Dictionary } from "@/lib/copy";
 
+import { DrilldownLink } from "./DrilldownLink";
 import { EmptyState } from "./EmptyState";
+import { joinedText, leftText } from "./format";
+import { drillHref } from "./member-views";
 import { Delta, Num, Rank } from "./Num";
 import { SplitMark, type MetricSplit } from "./SplitMark";
 
@@ -23,6 +26,9 @@ export interface StatMetric {
   /** The delta's percentage is relative to this; defaults to `from`. */
   base?: number | null;
   note?: string;
+  /** Members who joined and who left (both, else the change says it all): `+3 joined · −2 left` after the
+   * change, each count a link to the row's member list with Joined or Left on (`StatRow.members`). */
+  roster?: { joined: number; left: number };
   /** The change fell while members left: it carries the `*` mark the legend explains. */
   memberMark?: boolean;
   /** Members who joined or left moved the change: a tappable `*` opens its split (D69 amendment,
@@ -40,6 +46,8 @@ export interface StatMetric {
 export interface StatRow {
   key: string;
   href?: string;
+  /** The alliance's event page: its member list is where the roster counts and the split's lines lead. */
+  members?: string;
   /** A pale background class that marks the row (the alliance leader and officers), beside its mark. */
   tint?: string;
   /** The element id, for "jump to my alliance". */
@@ -63,8 +71,69 @@ export const LABEL = `text-label font-semibold uppercase tracking-[0.04em] ${MUT
 
 /** `shared`: the row's Details control sits on this metric's line below 640 px (see MoreBar), so the
  * metric takes one of the card's two columns; otherwise it spans both. */
-function MetricCell({ m, shared, lead }: { m: StatMetric; shared: boolean; lead: ReactNode }) {
+/** `+3 joined · −2 left`; each count a link over the row's own link, with a 44 px target (`-my-3`). */
+function RosterNote({
+  roster,
+  page,
+  copy,
+}: {
+  roster: { joined: number; left: number };
+  page: string | undefined;
+  copy: Dictionary;
+}) {
+  const part = (show: "joined" | "left") => {
+    const text = show === "joined" ? joinedText(roster.joined, copy) : leftText(roster.left, copy);
+    return page ? (
+      <DrilldownLink
+        href={drillHref(page, { show })}
+        surface="ledger"
+        kind={show}
+        count={roster[show]}
+        className="text-link relative z-10 -my-3 inline-flex min-h-11 items-center"
+      >
+        {text}
+      </DrilldownLink>
+    ) : (
+      text
+    );
+  };
+  return (
+    <span className="font-normal">
+      {" · "}
+      {part("joined")}
+      {" · "}
+      {part("left")}
+    </span>
+  );
+}
+
+type CellProps = { m: StatMetric; lead: ReactNode; page: string | undefined; copy: Dictionary };
+
+/** The change under a figure, with its roster counts and its split's `*`. */
+function ChangeLine({ m, lead, page, copy }: CellProps) {
   const base = m.base ?? m.from ?? null;
+  return (
+    <span className="text-sm tabular-nums sm:block">
+      <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
+      {m.roster && m.delta !== null && <RosterNote roster={m.roster} page={page} copy={copy} />}
+      {m.split && m.delta !== null && (
+        <SplitMark
+          total={m.delta}
+          split={m.split}
+          page={page}
+          name={
+            <>
+              {m.label}, {lead}
+            </>
+          }
+        />
+      )}
+    </span>
+  );
+}
+
+function MetricCell({ shared, ...cell }: CellProps & { shared: boolean }) {
+  const { m } = cell;
   return (
     <div
       className={`grid grid-cols-[5rem_minmax(0,1fr)] items-baseline gap-x-2 sm:relative sm:col-span-1 sm:block sm:text-right ${shared ? "" : "col-span-2"}`}
@@ -83,22 +152,7 @@ function MetricCell({ m, shared, lead }: { m: StatMetric; shared: boolean; lead:
         {m.at ? (
           <span className={`text-sm tabular-nums sm:block ${MUTED}`}>{m.at}</span>
         ) : (
-          !m.noChange && (
-            <span className="text-sm tabular-nums sm:block">
-              <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
-              {m.split && m.delta !== null && (
-                <SplitMark
-                  total={m.delta}
-                  split={m.split}
-                  name={
-                    <>
-                      {m.label}, {lead}
-                    </>
-                  }
-                />
-              )}
-            </span>
-          )
+          !m.noChange && <ChangeLine {...cell} />
         )}
         {m.vs && (
           <span className={`basis-full text-xs tabular-nums ${MUTED} sm:block`}>
@@ -255,6 +309,8 @@ export function StatTable({
                 m={m}
                 shared={i === row.metrics.length - 1 && more}
                 lead={row.lead}
+                page={row.members}
+                copy={copy}
               />
             ))}
             <MoreBar row={row} copy={copy} inline />

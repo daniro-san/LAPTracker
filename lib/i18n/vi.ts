@@ -415,6 +415,9 @@ export const vi = {
     lowFirst: "Thấp trước",
     joined: "Vào",
     left: "Rời",
+    joinedReads:
+      "Có trong danh sách thành viên lúc Kết thúc ({to}), không có lúc Bắt đầu ({from}).",
+    leftReads: "Có trong danh sách thành viên lúc Bắt đầu ({from}), không có lúc Kết thúc ({to}).",
   },
   leadership: {
     title: "Ban lãnh đạo",

@@ -421,6 +421,8 @@ export const pl = {
     lowFirst: "Od najmniejszych",
     joined: "Doszli",
     left: "Odeszli",
+    joinedReads: "Na liście członków na Końcu ({to}), nie na Początku ({from}).",
+    leftReads: "Na liście członków na Początku ({from}), nie na Końcu ({to}).",
   },
   leadership: {
     title: "Dowództwo",

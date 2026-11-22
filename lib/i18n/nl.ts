@@ -420,6 +420,8 @@ export const nl = {
     lowFirst: "Laagste eerst",
     joined: "Erbij",
     left: "Weg",
+    joinedReads: "In de ledenlijst bij Einde ({to}), niet bij Begin ({from}).",
+    leftReads: "In de ledenlijst bij Begin ({from}), niet bij Einde ({to}).",
   },
   leadership: {
     title: "Leiding",

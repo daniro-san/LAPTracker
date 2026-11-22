@@ -416,6 +416,8 @@ export const ru = {
     lowFirst: "Сначала меньше",
     joined: "Пришли",
     left: "Ушли",
+    joinedReads: "В списке участников на «Конце» ({to}), не на «Начале» ({from}).",
+    leftReads: "В списке участников на «Начале» ({from}), не на «Конце» ({to}).",
   },
   leadership: {
     title: "Руководство",

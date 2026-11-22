@@ -5,13 +5,14 @@
 // by a line. Rows come biggest gap first. Only the first TOP rows whose kill share is above their might
 // share are shown, and the viewer's own wherever it is, until "Show all (n)" opens every row (owner, D83). Every
 // row's figure is the gap in points; the ratio is shown only as its range, for an alliance with enough events.
-// Marks and the line are plain HTML boxes (D68); every figure is also text. No member is named.
-import Link from "next/link";
+// Marks and the line are plain HTML boxes (D68); every figure is also text. No member is named. A row opens the
+// alliance's member list sorted by kills gained, highest first (the section exists only once the End ran).
 import { useState } from "react";
 
 import { fill } from "@/lib/copy";
 import type { Carried, CarriedRow } from "@/lib/queries";
 
+import { DrilldownLink } from "./DrilldownLink";
 import {
   allianceLabel,
   compact,
@@ -21,6 +22,7 @@ import {
   shareText,
 } from "./format";
 import { useCopy, useLocale } from "./LocaleProvider";
+import { drillHref } from "./member-views";
 import { useMyAlliance } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { ShowAllButton } from "./ShowFirst";
@@ -61,8 +63,11 @@ function Row({
       data-mine={mine ? "" : undefined}
       className="data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)]"
     >
-      <Link
-        href={`/events/${eventId}/alliances/${r.unionId}`}
+      <DrilldownLink
+        href={drillHref(`/events/${eventId}/alliances/${r.unionId}`, { sort: "killsDelta" })}
+        surface="kill_share"
+        kind="kills"
+        count={r.turnout?.gainers ?? 0}
         className="tint-button block min-h-11 px-1 py-1.5"
       >
         <span className="flex items-center gap-2">
@@ -105,7 +110,7 @@ function Row({
             })}
           </span>
         )}
-      </Link>
+      </DrilldownLink>
     </li>
   );
 }

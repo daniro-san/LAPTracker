@@ -71,6 +71,12 @@ export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "te
 /** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */
 export type BoardSection = "week" | "notices" | "start_here";
 
+/** Where a public count was tapped to open the people behind it: a ledger row's `+3 joined · −2 left`, a
+ * split's "Came in with / Went with" line (ledger or alliance page), a War turnout or a Kill share row. */
+export type PublicDrilldownSurface = "ledger" | "split" | "war_turnout" | "kill_share";
+/** What it opened: the members who joined, who left, or the list by kills gained. */
+export type PublicDrilldownKind = "joined" | "left" | "kills";
+
 type NoProperties = Record<string, never>;
 
 export interface AnalyticsEvents {
@@ -152,6 +158,12 @@ export interface AnalyticsEvents {
   ws_push_enabled: { use: PushUse };
   /** A notification use turned off for this device, or the device turned off (one per use it had). */
   ws_push_disabled: { use: PushUse };
+  /** A public count opened to the people behind it (the drilldowns): where, what, and the count's bucket. */
+  drilldown_opened: {
+    surface: PublicDrilldownSurface;
+    kind: PublicDrilldownKind;
+    count_bucket: CountBucket;
+  };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 
@@ -193,6 +205,7 @@ export const ANALYTICS_EVENTS = [
   "admin_feature_changed",
   "ws_push_enabled",
   "ws_push_disabled",
+  "drilldown_opened",
 ] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */

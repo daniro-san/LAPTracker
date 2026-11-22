@@ -5,16 +5,19 @@
 // gained (concentration), ranked for alliances with enough gainers and followed by the rest, muted. Bars
 // are plain boxes: neutral for every alliance, yarn for the viewer's own (the ledger's highlight, with a
 // "My alliance" chip). Each list shows its first 5 rows and the viewer's own, the rest behind "Show all".
-// No member is named; a row links to the alliance's event page.
+// No member is named; a row links to the alliance's event page, once the event has an End with its member list
+// sorted by kills gained, highest first: the gainers it counts come first.
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { TURNOUT_MIN_GAINERS, TURNOUT_TOP } from "@/lib/compute";
 import { fill } from "@/lib/copy";
 import type { AllianceTurnout, TurnoutLists } from "@/lib/queries";
 
+import { DrilldownLink } from "./DrilldownLink";
 import { allianceLabel, shareText } from "./format";
 import { useCopy, useLocale } from "./LocaleProvider";
+import { drillHref } from "./member-views";
 import { useMyAlliance } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { ShowAllButton } from "./ShowFirst";
@@ -46,18 +49,54 @@ export function visibleEntries<E extends { t: { unionId: number } }>(
     : entries.filter(({ t }, i) => i < SHOWN || t.unionId === mine || t.unionId === own);
 }
 
+function RowLink({
+  eventId,
+  t,
+  soFar,
+  children,
+}: {
+  eventId: number;
+  t: AllianceTurnout;
+  soFar: boolean;
+  children: ReactNode;
+}) {
+  const page = `/events/${eventId}/alliances/${t.unionId}`;
+  const className = "tint-button block min-h-11 px-1 py-1.5";
+  if (soFar) {
+    return (
+      <Link href={page} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <DrilldownLink
+      href={drillHref(page, { sort: "killsDelta" })}
+      surface="war_turnout"
+      kind="kills"
+      count={t.gainers}
+      className={className}
+    >
+      {children}
+    </DrilldownLink>
+  );
+}
+
 function BarList({
   title,
   help,
   entries,
   eventId,
   mine,
+  soFar,
 }: {
   title: string;
   help?: string;
   entries: Entry[];
   eventId: number;
   mine: number | null;
+  /** No End yet: the alliance page has no kills change to sort by, so a row opens it as it is. */
+  soFar: boolean;
 }) {
   const copy = useCopy();
   const [all, setAll] = useState(false);
@@ -73,10 +112,7 @@ function BarList({
             data-mine={t.unionId === mine ? "" : undefined}
             className={`data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)] ${muted ? "text-ink/70" : ""}`}
           >
-            <Link
-              href={`/events/${eventId}/alliances/${t.unionId}`}
-              className="tint-button block min-h-11 px-1 py-1.5"
-            >
+            <RowLink eventId={eventId} t={t} soFar={soFar}>
               <span className="flex items-center gap-2">
                 <AllianceBadge badgeId={t.badgeId} />
                 <span className="min-w-0 flex-1 truncate">{allianceLabel(t.tag, t.name)}</span>
@@ -96,7 +132,7 @@ function BarList({
                   />
                 )}
               </span>
-            </Link>
+            </RowLink>
           </li>
         ))}
       </ol>
@@ -136,13 +172,20 @@ export function WhoFought({ eventId, lists }: { eventId: number; lists: TurnoutL
         {lists.soFar ? l.foughtSoFarHelp : l.foughtHelp}
       </p>
       <div className="drawn-card grid gap-x-6 px-3 py-2 lg:grid-cols-2">
-        <BarList title={l.withKills} entries={withKills} eventId={eventId} mine={mine} />
+        <BarList
+          title={l.withKills}
+          entries={withKills}
+          eventId={eventId}
+          mine={mine}
+          soFar={lists.soFar === true}
+        />
         <BarList
           title={l.topShare}
           help={l.topShareHelp}
           entries={topShare}
           eventId={eventId}
           mine={mine}
+          soFar={lists.soFar === true}
         />
       </div>
     </section>

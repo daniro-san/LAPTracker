@@ -1,6 +1,7 @@
-// `/events/[id]/alliances/[unionId]`: one alliance in one event, then across events (plan Phase 5c, 5e).
-// The totals as one summary band, then the members (same row shape as the main page), then one row
-// per event.
+// `/events/[id]/alliances/[unionId][?show=joined|left][&sort=<key>]`: one alliance in one event, then across
+// events (plan Phase 5c, 5e). The totals as one summary band, then the members (same row shape as the main
+// page), then one row per event. `show` and `sort` start the member list filtered or sorted: the drilldowns
+// from the ledger, the split, War turnout and Kill share land here, on `#members`; such a view is not indexed.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -11,12 +12,12 @@ import { AllianceLinks } from "@/app/_ui/AllianceLinks";
 import { AllianceStatementCard } from "@/app/_ui/AllianceStatement";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
+import { EventMembers } from "@/app/_ui/EventMembers";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { Leadership } from "@/app/_ui/Leadership";
 import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
-import { canCompare, leadership, memberViews, withRoles } from "@/app/_ui/member-views";
-import { MembersExplorer } from "@/app/_ui/MembersExplorer";
+import { leadership, viewsOf } from "@/app/_ui/member-views";
 import { memberScope } from "@/app/_ui/mover-lists";
 import { Movers } from "@/app/_ui/Movers";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
@@ -71,6 +72,7 @@ function Summary({
   metrics,
   ledger,
   canDelta,
+  page,
   clock,
   copy,
 }: {
@@ -78,6 +80,8 @@ function Summary({
   metrics: StatMetric[];
   ledger: Ledger;
   canDelta: boolean;
+  /** This page's path: the split's joiners and leavers open its member list. */
+  page: string;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -100,7 +104,7 @@ function Summary({
                 memberMark={m.memberMark === true}
               />
               {m.split && m.delta !== null && (
-                <SplitMark total={m.delta} split={m.split} name={m.label} />
+                <SplitMark total={m.delta} split={m.split} name={m.label} page={page} />
               )}
             </dd>
           </div>
@@ -179,23 +183,13 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
   }),
 );
 
-function views({ membersBefore, membersAfter, rolesBefore, rolesAfter }: Detail) {
-  return withRoles(memberViews(membersBefore, membersAfter), rolesBefore, rolesAfter);
-}
-
-function MemberList({ detail, canDelta }: { detail: Detail; canDelta: boolean }) {
-  const { before, after, membersBefore, membersAfter } = detail;
-  return (
-    <MembersExplorer
-      members={views(detail)}
-      canDelta={canDelta}
-      compared={canCompare(membersBefore, membersAfter)}
-      capacity={after?.capacity ?? before?.capacity ?? null}
-    />
-  );
-}
-
 type Params = Promise<{ id: string; unionId: string }>;
+type Search = Promise<Record<string, string | string[] | undefined>>;
+type Props = { params: Params; searchParams: Search };
+
+/** A filtered or sorted member list (the drilldowns) is not indexed. */
+const noIndex = (sp: Awaited<Search>) =>
+  sp.show !== undefined || sp.sort !== undefined ? { robots: { index: false } } : {};
 
 /** The two ids, or null when either is not a plain number. */
 async function idsOf(params: Params) {
@@ -204,9 +198,9 @@ async function idsOf(params: Params) {
   return { eventId: Number(p.id), unionId: Number(p.unionId) };
 }
 
-/** `[OGs] OldGrandmas · Sat, Oct 31 · Event Ledger`. */
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const ids = await idsOf(params);
+/** `[OGs] OldGrandmas · Sat, Oct 31 · Event Ledger`. A filtered or sorted member list is not indexed. */
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const [ids, sp] = await Promise.all([idsOf(params), searchParams]);
   const data = ids && (await loadAlliance(ids.eventId, ids.unionId));
   if (!data) return notFoundTitle();
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
@@ -217,6 +211,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: parts.filter(Boolean).join(" · "),
     ...(now?.badgeId != null && previewImage(`/img/badge/${now.badgeId}`, label)),
+    ...noIndex(sp),
   };
 }
 
@@ -236,7 +231,7 @@ function crumbsFor(data: Loaded, eventId: number, label: string, clock: Clock, c
   ];
 }
 
-export default async function AlliancePage({ params }: { params: Params }) {
+export default async function AlliancePage({ params, searchParams }: Props) {
   const ids = await idsOf(params);
   if (!ids) notFound();
   const { eventId, unionId } = ids;
@@ -300,14 +295,14 @@ export default async function AlliancePage({ params }: { params: Params }) {
           metrics={metrics}
           ledger={ledger}
           canDelta={canDelta}
+          page={`/events/${eventId}/alliances/${unionId}`}
           clock={clock}
           copy={copy}
         />
         <AllianceStatementCard statement={statement} clock={clock} locale={locale} copy={copy} />
-        <Leadership members={leadership(views(detail))} />
+        <Leadership members={leadership(viewsOf(detail))} />
         <Movers scopes={[memberScope(movers, null)]} />
-        <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>
-        <MemberList detail={detail} canDelta={canDelta} />
+        <EventMembers detail={detail} canDelta={canDelta} search={searchParams} clock={clock} />
         <AllianceStanding unionId={unionId} clock={clock} copy={copy} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />
       </main>

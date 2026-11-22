@@ -422,6 +422,8 @@ export const es = {
     lowFirst: "Menor primero",
     joined: "Entraron",
     left: "Salieron",
+    joinedReads: "En la lista de miembros al Fin ({to}), no al Inicio ({from}).",
+    leftReads: "En la lista de miembros al Inicio ({from}), no al Fin ({to}).",
   },
   leadership: {
     title: "Liderazgo",
