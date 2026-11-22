@@ -189,6 +189,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.56.0",
+    date: "2026-11-22",
+    title: "One word for the daily update, and Follow-up's groups on the first screen",
+    changes: [
+      'The desk, Me, Insights, the status bar, Alliance settings and the officers\' notification call the end-of-day read the "daily update" (PT "atualização diária", FR "mise à jour quotidienne"), new-member lines included. Shield readings, squad reads and a KvK\'s Start and End reads keep their words.',
+      'Follow-up\'s "How this list works" is closed on every visit, so the groups, "After KvK, offer help" included, start on the first phone screen in English. "Tap a name to write down what they said." stays in sight, and your line "These are notes for you. Nothing is sent and nobody is removed from the alliance." is one tap away.',
+      '/admin/changes: every step only you can do now sits in the one to-do list at the top; releases no longer carry their own "Needs you" box.',
+    ],
+    prs: [669, 670],
+  },
+  {
     version: "v5.55.0",
     date: "2026-11-22",
     title: "Dates and times written one way",
