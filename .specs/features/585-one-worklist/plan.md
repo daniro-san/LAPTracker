@@ -113,9 +113,9 @@ None - no schema, no contract, no dependency; the count rule is code and can be 
 
 22. Follow-up SHALL hold an "After KvK, offer help · n" group from Insights' heavy-hit rule (`insights-kvk.ts` `help`), not on a break, for the week after the KvK; Insights' list SHALL link to it instead of being a list of its own
 
-### S6: a claim you can check (P3) - later PR (F15)
+### S6: a claim you can check (P3) - built in feat/585-claim-check (F15)
 
-23. A "This is me" claim on Home SHALL link the player to their card, say when it was asked, and offer "Not them" (was "Reject") with the same action
+23. A "This is me" claim on Home SHALL link the player to their card (`/w/[slug]/members?m=<uid>`), say the day it was asked in server time ("Asked on Thu, Nov 19 to see their own page."), and offer "Not them" (was "Reject", also on the card's pending line) with the same action and server checks
 
 ## Out of scope
 
