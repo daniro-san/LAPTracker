@@ -8,11 +8,11 @@ export const insightsMoreEn = {
   "insights.kvk.none":
     "No KvK in these weeks has both a Start and an End read yet. This fills in after the next one.",
   "insights.kvk.waitingToday":
-    "Today's KvK is recorded: its Start and End reads are in. Its cost and recovery show here after tonight's daily read at {time} ST.",
+    "Today's KvK is recorded: its Start and End reads are in. Its cost and recovery show here after tonight's daily update at {time} ST.",
   "insights.kvk.waiting":
-    "The KvK of {date} is recorded: its Start and End reads are in. Its cost and recovery show here after the next daily read at {time} ST.",
+    "The KvK of {date} is recorded: its Start and End reads are in. Its cost and recovery show here after the next daily update at {time} ST.",
   "insights.kvk.notInReads":
-    "This page's daily reads start on {date}, so earlier KvKs are not shown here. The next KvK shows here after the daily read at {time} ST on its day.",
+    "This page's daily updates start on {date}, so earlier KvKs are not shown here. The next KvK shows here after the daily update at {time} ST on its day.",
   "insights.kvk.headline":
     "Last KvK, {date}: the alliance lost {lost} of its might, and {back} of that is back.",
   "insights.kvk.headlineNoLoss": "Last KvK, {date}: the alliance lost no might.",
@@ -46,9 +46,9 @@ export const insightsMoreEn = {
   "insights.kvk.help.none": "Nobody from the last KvK is still far below where they were.",
   "insights.squads.head": "Squads seen",
   "insights.squads.based.one":
-    "From the tracker’s squad reads, for the {n} member in the newest daily read. It counts the squads the tracker has seen, not every squad a member has.",
+    "From the tracker’s squad reads, for the {n} member in the newest daily update. It counts the squads the tracker has seen, not every squad a member has.",
   "insights.squads.based.other":
-    "From the tracker’s squad reads, for the {n} members in the newest daily read. It counts the squads the tracker has seen, not every squad a member has.",
+    "From the tracker’s squad reads, for the {n} members in the newest daily update. It counts the squads the tracker has seen, not every squad a member has.",
   "insights.squads.headline":
     "{seen} of {members} members have squads seen; {fresh} of them in the last 24 hours.",
   "insights.squads.headlineNoneFresh":
@@ -98,11 +98,11 @@ export const insightsMorePt: MoreWords = {
   "insights.kvk.none":
     "Nenhuma KvK destas semanas tem ainda leitura de Início e de Fim. Isto se preenche depois da próxima.",
   "insights.kvk.waitingToday":
-    "A KvK de hoje está registrada: as leituras de Início e de Fim estão feitas. O custo e a recuperação aparecem aqui depois da leitura diária desta noite, às {time} ST.",
+    "A KvK de hoje está registrada: as leituras de Início e de Fim estão feitas. O custo e a recuperação aparecem aqui depois da atualização diária desta noite, às {time} ST.",
   "insights.kvk.waiting":
-    "A KvK de {date} está registrada: as leituras de Início e de Fim estão feitas. O custo e a recuperação aparecem aqui depois da próxima leitura diária, às {time} ST.",
+    "A KvK de {date} está registrada: as leituras de Início e de Fim estão feitas. O custo e a recuperação aparecem aqui depois da próxima atualização diária, às {time} ST.",
   "insights.kvk.notInReads":
-    "As leituras diárias desta página começam em {date}, então as KvKs anteriores não aparecem aqui. A próxima KvK aparece aqui depois da leitura diária das {time} ST do dia dela.",
+    "As atualizações diárias desta página começam em {date}, então as KvKs anteriores não aparecem aqui. A próxima KvK aparece aqui depois da atualização diária das {time} ST do dia dela.",
   "insights.kvk.headline":
     "Última KvK, {date}: a aliança perdeu {lost} do poder, e {back} disso já voltou.",
   "insights.kvk.headlineNoLoss": "Última KvK, {date}: a aliança não perdeu poder.",
@@ -136,9 +136,9 @@ export const insightsMorePt: MoreWords = {
   "insights.kvk.help.none": "Ninguém da última KvK continua muito abaixo de onde estava.",
   "insights.squads.head": "Esquadrões vistos",
   "insights.squads.based.one":
-    "Das leituras de esquadrões do tracker, para o {n} membro da leitura diária mais recente. Conta os esquadrões que o tracker viu, não todos os que o membro tem.",
+    "Das leituras de esquadrões do tracker, para o {n} membro da atualização diária mais recente. Conta os esquadrões que o tracker viu, não todos os que o membro tem.",
   "insights.squads.based.other":
-    "Das leituras de esquadrões do tracker, para os {n} membros da leitura diária mais recente. Conta os esquadrões que o tracker viu, não todos os que o membro tem.",
+    "Das leituras de esquadrões do tracker, para os {n} membros da atualização diária mais recente. Conta os esquadrões que o tracker viu, não todos os que o membro tem.",
   "insights.squads.headline":
     "{seen} de {members} membros têm esquadrões vistos; {fresh} deles nas últimas 24 horas.",
   "insights.squads.headlineNoneFresh":
@@ -187,11 +187,11 @@ export const insightsMoreFr: MoreWords = {
   "insights.kvk.none":
     "Aucune KvK de ces semaines n’a encore un relevé de Début et de Fin. Ça se remplit après la prochaine.",
   "insights.kvk.waitingToday":
-    "La KvK d’aujourd’hui est enregistrée : ses relevés de Début et de Fin sont faits. Son coût et la reprise s’affichent ici après le relevé quotidien de ce soir, à {time} ST.",
+    "La KvK d’aujourd’hui est enregistrée : ses relevés de Début et de Fin sont faits. Son coût et la reprise s’affichent ici après la mise à jour quotidienne de ce soir, à {time} ST.",
   "insights.kvk.waiting":
-    "La KvK du {date} est enregistrée : ses relevés de Début et de Fin sont faits. Son coût et la reprise s’affichent ici après le prochain relevé quotidien, à {time} ST.",
+    "La KvK du {date} est enregistrée : ses relevés de Début et de Fin sont faits. Son coût et la reprise s’affichent ici après la prochaine mise à jour quotidienne, à {time} ST.",
   "insights.kvk.notInReads":
-    "Les relevés quotidiens de cette page commencent le {date}, donc les KvK d’avant ne sont pas affichées ici. La prochaine KvK s’affiche ici après le relevé quotidien de {time} ST, le jour même.",
+    "Les mises à jour quotidiennes de cette page commencent le {date}, donc les KvK d’avant ne sont pas affichées ici. La prochaine KvK s’affiche ici après la mise à jour quotidienne de {time} ST, le jour même.",
   "insights.kvk.headline":
     "Dernière KvK, {date} : l’alliance a perdu {lost} de sa puissance, et {back} de cette perte est revenue.",
   "insights.kvk.headlineNoLoss": "Dernière KvK, {date} : l’alliance n’a pas perdu de puissance.",
@@ -225,9 +225,9 @@ export const insightsMoreFr: MoreWords = {
   "insights.kvk.help.none": "Personne de la dernière KvK n’est encore loin de là où il était.",
   "insights.squads.head": "Escouades vues",
   "insights.squads.based.one":
-    "D’après les relevés d’escouades du tracker, pour le {n} membre du relevé quotidien le plus récent. On compte les escouades que le tracker a vues, pas toutes celles qu’un membre a.",
+    "D’après les relevés d’escouades du tracker, pour le {n} membre de la mise à jour quotidienne la plus récente. On compte les escouades que le tracker a vues, pas toutes celles qu’un membre a.",
   "insights.squads.based.other":
-    "D’après les relevés d’escouades du tracker, pour les {n} membres du relevé quotidien le plus récent. On compte les escouades que le tracker a vues, pas toutes celles qu’un membre a.",
+    "D’après les relevés d’escouades du tracker, pour les {n} membres de la mise à jour quotidienne la plus récente. On compte les escouades que le tracker a vues, pas toutes celles qu’un membre a.",
   "insights.squads.headline":
     "{seen} membres sur {members} ont des escouades vues, dont {fresh} ces dernières 24 heures.",
   "insights.squads.headlineNoneFresh":

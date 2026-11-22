@@ -166,7 +166,7 @@ describe("the officers' notifications (D148)", () => {
     await pushNightRead(deps(), db, summary);
     await pushNightRead(deps(), db, summary);
     const got = push.received(alpha.device);
-    expect(got.map((n) => [n.title, n.url])).toEqual([["Roster read failed", "/w/alpha"]]);
+    expect(got.map((n) => [n.title, n.url])).toEqual([["Daily update failed", "/w/alpha"]]);
     expect(push.received(bravo.device)).toEqual([]);
   });
 

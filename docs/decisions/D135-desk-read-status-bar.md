@@ -54,3 +54,5 @@ Why: officers could not tell why a card was not updated yet: the squads read (D1
 **Amendment (2026-11-20, issue 521, D141): the poll follows the ticks.** While a line is running, the 30 s poll asks only in the 5 minutes after each cron-job.org or `tick.yml` tick, when a batch can be running and the database is awake for it anyway. Becoming visible still asks at once. See D141.
 
 **Amendment (2026-11-21, issue 521, D141): the bar reads on the page's connection.** `withPageDb` now keeps one Pool per request, so the frame's read shares the page's connection instead of opening its own. No desk page changed. A failed read still renders nothing and logs `w.read_status.failed` only. See D141.
+
+**Amendment 2026-11-22 (issue 585 batch 4, slice S2):** the roster lines name the daily update by its UI word: "Today’s daily update is late · the cards keep the last numbers · squads wait for it" and "Today’s daily update failed · …" (they read "Today's roster is late" and "Today’s roster read failed"). When each shows is unchanged.

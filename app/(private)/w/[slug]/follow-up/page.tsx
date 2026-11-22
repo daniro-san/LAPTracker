@@ -9,10 +9,7 @@
 // Slice 2: "Needs help" comes first, each row saying since when, who and why, and last week's note is context.
 // Slice 3: one action per row and "Card ›", a line every row shares said once, "How this list works", and
 // the wide frame (D122). Slice 5: "After KvK, offer help" for the week after a KvK, with a jump in the head.
-import { cookies } from "next/headers";
-
 import { getEnv } from "@/lib/env";
-import { FOLLOW_UP_HELP_COOKIE, WORKSPACE_INTRO_COOKIE } from "@/lib/private/cookies";
 import { featureOn } from "@/lib/private/features";
 import { followUpView, type FollowUpView } from "@/lib/private/follow-up";
 import { cardFormats } from "@/lib/private/member-card";
@@ -46,12 +43,6 @@ export default async function FollowUpPage({
   const f = cardFormats(language, page.zone, page.now);
   const groups = groupsOf(data.items, t, f, language, data.kvkDay);
   const open = (await searchParams).m;
-  const jar = await cookies();
-  const help = {
-    seen: jar.has(FOLLOW_UP_HELP_COOKIE),
-    // The first-use cards open over the page until they are skipped or finished (Frame, FirstUse).
-    covered: jar.get(WORKSPACE_INTRO_COOKIE)?.value !== "1",
-  };
   const editor = {
     slug,
     words: editorWords(t),
@@ -69,7 +60,7 @@ export default async function FollowUpPage({
       waiting={page.waiting}
       wide
     >
-      <FollowUpHead data={data} t={t} language={language} help={help} />
+      <FollowUpHead data={data} t={t} language={language} />
       {/* Always mounted, so the saved line with Undo stays after the last member leaves. */}
       <FollowUpList
         slug={slug}

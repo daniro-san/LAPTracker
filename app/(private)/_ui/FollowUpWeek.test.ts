@@ -51,12 +51,7 @@ describe("Follow-up's week around the list (issue 585)", () => {
       createElement(
         Fragment,
         null,
-        createElement(FollowUpHead, {
-          data,
-          t,
-          language: "en",
-          help: { seen: true, covered: false },
-        }),
+        createElement(FollowUpHead, { data, t, language: "en" }),
         createElement(FollowUpFoot, { slug: "ogs", data, t, f }),
       ),
     );
@@ -66,30 +61,24 @@ describe("Follow-up's week around the list (issue 585)", () => {
     expect(html).toContain('href="/w/ogs/members?m=7"');
   });
 
-  it("holds the owner's two lines word for word in How this list works, open on the first visit only, the tap cue always in sight", () => {
+  it("keeps How this list works closed on every visit, the owner's line word for word one tap away and the tap cue in sight (issue 585 batch 4 S2)", () => {
     const data = { early: false, week, items: [], noted: [], zones: [], thefts: [] };
-    const head = (seen: boolean) =>
-      renderToStaticMarkup(
-        createElement(FollowUpHead, {
-          data: data as unknown as FollowUpView,
-          t,
-          language: "en",
-          help: { seen, covered: false },
-        }),
-      );
-    const first = head(false);
-    expect(first).toContain("<details open=");
-    expect(first).toContain(
-      "Say hello, write down what they said, mark how it went. Nothing is sent for you.",
+    const head = renderToStaticMarkup(
+      createElement(FollowUpHead, {
+        data: data as unknown as FollowUpView,
+        t,
+        language: "en",
+      }),
     );
-    expect(first).toContain(
-      "These are notes for you. Nothing is sent and nobody is removed from the alliance.",
-    );
-    // Closed after: the summary still says, in sight, that a name opens the panel (one button per row).
-    const after = head(true);
-    expect(after).not.toContain("<details open=");
-    expect(after).toMatch(
+    // Open, it pushed "After KvK, offer help" below a phone's first screen on a first visit.
+    expect(head).toContain("<details");
+    expect(head).not.toMatch(/<details[^>]*\bopen\b/);
+    expect(head).toMatch(
       /<summary[^>]*>Tap a name to write down what they said\. <span[^>]*>How this list works<\/span><\/summary>/,
+    );
+    // D104: the owner's words, unchanged; D140's line no longer repeats "Nothing is sent".
+    expect(head).toContain(
+      "<p>Say hello, write down what they said, mark how it went.</p><p>These are notes for you. Nothing is sent and nobody is removed from the alliance.</p>",
     );
   });
 
@@ -101,7 +90,6 @@ describe("Follow-up's week around the list (issue 585)", () => {
           data: { early: false, week, items, noted: [], zones: [], thefts: [] } as never,
           t,
           language: "en",
-          help: { seen: true, covered: false },
         }),
       );
     // Two in the group; the member also marked Needs help is in that group instead.
