@@ -62,17 +62,51 @@ export interface Pulse {
   tech: Median | null;
 }
 
-/** The pulse of `reads`; `history` holds them and the reads before, for each day's quest points. */
-export function pulseOf(reads: readonly RosterRead[], history: readonly RosterRead[]): Pulse {
-  const all = reads.flatMap((r) => r.members);
-  const gifts = all.flatMap((m) => (m.dailyTech === null ? [] : [m.dailyTech]));
-  const quests = reads
-    .flatMap((r) => r.members.map((m) => questPoints(history, m.uid, r.day)))
-    .filter((q) => q !== null);
+/** The members of one read who reached a pulse measure (`uids`), out of the `of` it counts. */
+export interface Reached {
+  uids: number[];
+  of: number;
+}
+
+export type PulseMeasure = "quests" | "coins" | "donated";
+
+/**
+ * Who reached each pulse measure in one read (`history` holds it and the reads before, for its quest points),
+ * by the rules `pulseOf` counts with: quest points above 0 out of the members whose day's points are known,
+ * the coin cap and a donation out of every member the read lists. A pulse day's who list (D158 rule 7 (c)).
+ */
+export function reachedOn(
+  read: RosterRead,
+  history: readonly RosterRead[],
+): Record<PulseMeasure, Reached> {
+  const known = read.members.flatMap((m) => {
+    const q = questPoints(history, m.uid, read.day);
+    return q === null ? [] : [{ uid: m.uid, q }];
+  });
+  const of = read.members.length;
+  const who = (keep: (m: RosterMember) => boolean) => read.members.filter(keep).map((m) => m.uid);
   return {
-    quests: share(quests.filter((q) => q !== "none").length, quests.length),
-    coins: share(all.filter((m) => (m.dailyHonor ?? 0) >= COINS_MAX).length, all.length),
-    donated: share(gifts.length, all.length),
+    quests: { uids: known.filter((k) => k.q !== "none").map((k) => k.uid), of: known.length },
+    coins: { uids: who((m) => (m.dailyHonor ?? 0) >= COINS_MAX), of },
+    donated: { uids: who((m) => m.dailyTech !== null), of },
+  };
+}
+
+/** The pulse of `reads`, pooled from each read's `reachedOn`; `history` holds them and the reads before. */
+export function pulseOf(reads: readonly RosterRead[], history: readonly RosterRead[]): Pulse {
+  const each = reads.map((r) => reachedOn(r, history));
+  const pool = (k: PulseMeasure) =>
+    share(
+      each.reduce((a, e) => a + e[k].uids.length, 0),
+      each.reduce((a, e) => a + e[k].of, 0),
+    );
+  const gifts = reads.flatMap((r) =>
+    r.members.flatMap((m) => (m.dailyTech === null ? [] : [m.dailyTech])),
+  );
+  return {
+    quests: pool("quests"),
+    coins: pool("coins"),
+    donated: pool("donated"),
     tech: median(gifts),
   };
 }

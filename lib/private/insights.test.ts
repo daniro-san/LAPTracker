@@ -22,6 +22,7 @@ import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { insightsView, type InsightsView } from "./insights";
 import { flowDaysWords } from "./insights-days-words";
 import type { Pulse, PulseView } from "./insights-rules";
+import { insightsWords } from "./insights-words";
 import { createSession } from "./session";
 
 const OURS = 67111155;
@@ -285,7 +286,7 @@ describe("the Insights read (issue 489)", () => {
     await roster("2026-11-12", FERN, [201, 203]);
     await roster("2026-11-13", FERN, [101]);
 
-    const view = await insightsView(db, access, NOW, ZONE, "2026-11-09");
+    const view = await insightsView(db, access, NOW, ZONE, { pulseWeek: "2026-11-09" });
 
     const week = view.flow?.weeks.find((w) => w.monday === "2026-11-09");
     if (!week) throw new Error("no flow week of Nov 9");
@@ -304,7 +305,7 @@ describe("the Insights read (issue 489)", () => {
     expect(flowLines(view)).toEqual([
       "Week of Nov 9: 3 joined, 1 left. Its days add up to this.",
       "No daily update on Wed, Sat, Sun: a join or leave then shows on the next one.",
-      "Before Tue, Nov 10 nothing can be compared: the first daily update is the starting point.",
+      "These weeks start from the daily update of Mon, Nov 9: there is nothing before it to compare with.",
     ]);
 
     // The pulse's earlier week, day by day: each count's days add up to the week's.
@@ -315,7 +316,68 @@ describe("the Insights read (issue 489)", () => {
     for (const k of ["quests", "coins", "donated"] as const)
       expect(pooled(read, k)).toEqual(pulseWeek?.[k]);
     // This week's days are already on the card; a week that is not the pulse's opens nothing.
-    expect((await insightsView(db, access, NOW, ZONE, "2026-11-16")).pulseWeek).toBeNull();
-    expect((await insightsView(db, access, NOW, ZONE, "2026-11-11")).pulseWeek).toBeNull();
+    expect(
+      (await insightsView(db, access, NOW, ZONE, { pulseWeek: "2026-11-16" })).pulseWeek,
+    ).toBeNull();
+    expect(
+      (await insightsView(db, access, NOW, ZONE, { pulseWeek: "2026-11-11" })).pulseWeek,
+    ).toBeNull();
+  });
+
+  it("shows a flow week none of whose days can show a change as “—”, and dates the card from one daily update (D75)", async () => {
+    const access = await officer();
+    // The first read is Sunday Nov 15, alone in its week: the week of Nov 9 has nothing to compare. The
+    // weeks before it have no read at all.
+    await roster("2026-11-15", OURS, [101, 102], true);
+    await roster("2026-11-16", OURS, [101, 102, 103], true);
+    await roster("2026-11-17", OURS, [101, 103], true);
+
+    const view = await insightsView(db, access, NOW, ZONE);
+    const flow = insightsWords(view, WORKSPACE_DICTIONARIES.en, "en").flow;
+    const weeks = flow?.weeks ?? [];
+    expect(weeks.map((w) => [w.joined.value, w.left.value, w.note ?? null])).toEqual([
+      ["—", "—", "nothing to compare"],
+      ["—", "—", "nothing to compare"],
+      ["—", "—", "nothing to compare"],
+      ["—", "—", "nothing to compare"],
+      ["+1", "−1", null],
+    ]);
+    // A "—" week draws no bar and opens nothing.
+    expect(weeks.slice(0, 4).flatMap((w) => [w.joined.share, w.left.share, w.drill])).toEqual(
+      Array(12).fill(null),
+    );
+    // One start date: the daily update the first change is compared with, as the tenure line says.
+    expect(flow?.based.replace(/\s/g, " ")).toBe(
+      "Based on 3 daily updates in these weeks, since November 15. A change shows on the first daily update after it.",
+    );
+    expect(flow?.tenure.at(-1)?.label.replace(/\s/g, " ")).toBe(
+      "Already here at our first daily update, Nov 15",
+    );
+  });
+
+  it("with more daily updates than the page reads, says where these weeks start and keeps the alliance's first daily update for tenure", async () => {
+    const access = await officer();
+    // 40 daily updates, Oct 10 to Nov 18: the page reads the last 36, and its weeks start on Mon Oct 19.
+    for (let i = 0; i < 40; i++)
+      await roster(
+        new Date(Date.UTC(2026, 9, 10 + i)).toISOString().slice(0, 10),
+        OURS,
+        [101, 102],
+        true,
+      );
+
+    const flow = insightsWords(
+      await insightsView(db, access, NOW, ZONE),
+      WORKSPACE_DICTIONARIES.en,
+      "en",
+    ).flow;
+    // The weeks rest on the read before their first change (Sun Oct 18) and the 31 after it; the members
+    // were already here at the first daily update ever, Oct 10. Each line says which start it gives.
+    expect(flow?.based.replace(/\s/g, " ")).toBe(
+      "Based on 32 daily updates in these weeks, since October 18. A change shows on the first daily update after it.",
+    );
+    expect(flow?.tenure.at(-1)?.label.replace(/\s/g, " ")).toBe(
+      "Already here at our first daily update, Oct 10",
+    );
   });
 });

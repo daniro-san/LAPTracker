@@ -3,25 +3,41 @@
 // function as its week's figure (`pulseDays` beside `pulseOf`, `flowDays` beside the week's moves), so the
 // days add up to the week; the sum line says so, and says which days have no daily update and why they do
 // not count. The pulse's middle donation is a median, which days do not add up to: its line says that.
+// One level further, a day: the pulse's who reached each measure (`reachedOn`, which `pulseOf` counts with;
+// pattern (c), names only, thanks first) and the flow's came-from and went-to bars (counts only, D75).
 import { fill } from "../words";
 import { calendarDates } from "./calendar-words";
 import { NONE } from "./fact-text";
 import type { InsightsView } from "./insights";
 import type { Formats } from "./insights-format";
-import type { Pulse } from "./insights-rules";
+import type { Pulse, PulseMeasure } from "./insights-rules";
+import { setOf } from "./insights-sets";
 import {
+  latestLine,
+  placeRows,
   PULSE_METRICS,
+  pulsePicks,
   pulseValue,
   rosterSize,
   scaled,
   type BarRow,
   type DayBar,
+  type DayPick,
 } from "./insights-words";
+import { gameWeek } from "./member-week";
 
-/** The week a chart opens to its days (its Monday, from the address), or null for the chart itself. */
+/**
+ * The level each chart shows, from the address; null for the chart itself. `pulse` and `flow`: the week a
+ * chart opens to its days (its Monday); `pulseDay` and `flowDay`: a day of them; `kvk`: a KvK's day, open
+ * to its recovery days, and `kvkDay` one of those days.
+ */
 export interface InsightsLevels {
   pulse: string | null;
+  pulseDay: string | null;
   flow: string | null;
+  flowDay: string | null;
+  kvk: string | null;
+  kvkDay: string | null;
 }
 
 export interface PulseDaysWords {
@@ -30,11 +46,19 @@ export interface PulseDaysWords {
   metrics: { label: string; days: DayBar[]; sum: string }[];
   /** "No daily update on Sun: left out.", or null. */
   noRead: string | null;
+  /** The week's days with a daily update, each opening who reached each measure that day. */
+  picks: DayPick[];
 }
 
 export interface FlowDaysWords {
   label: string;
-  days: { label: string; joined: BarRow; left: BarRow }[];
+  /** `drill`: a day with a join or a leave opens its came-from and went-to bars (its day, its moves). */
+  days: {
+    label: string;
+    joined: BarRow;
+    left: BarRow;
+    drill: { key: string; count: number } | null;
+  }[];
   sum: string;
   /** Why a day shows no change: no daily update then, or before the first one that can be compared. */
   notes: string[];
@@ -96,6 +120,7 @@ export function pulseDaysWords(v: InsightsView, f: Formats): PulseDaysWords | nu
     }),
     noRead:
       missing.length > 0 ? fill(f.t["insights.pulse.noRead"], { days: missing.join(", ") }) : null,
+    picks: pulsePicks(level.days, f),
   };
 }
 
@@ -123,10 +148,12 @@ export function flowDaysWords(
     label: weekLabel(week.monday, f),
     days: shown.map((d) => {
       const moves = d.moves === "later" ? null : d.moves;
+      const moved = (moves?.joined.length ?? 0) + (moves?.left.length ?? 0);
       return {
         label: dates.short(d.day),
         joined: bar(moves?.joined.length ?? null, "+", t["insights.flow.joined"]),
         left: bar(moves?.left.length ?? null, "−", t["insights.flow.left"]),
+        drill: moved > 0 ? { key: d.day, count: moved } : null,
       };
     }),
     sum: fill(t["drill.flow.sum"], {
@@ -142,18 +169,120 @@ export function flowDaysWords(
             }),
           ]
         : []),
-      ...(before ? [fill(t["drill.flow.before"], { date: dates.short(flow.from) })] : []),
+      ...(before ? [fill(t["drill.flow.before"], { date: dates.short(flow.since) })] : []),
     ],
+  };
+}
+
+/** The week a day level sits in: its label, and its Monday's level (null: this week, the card itself). */
+export interface DayWeek {
+  label: string;
+  monday: string | null;
+}
+
+/** A pulse day: who reached each measure, each row a count of names in place (pattern (c)). */
+export interface PulseDayWords {
+  /** "Thu, Nov 19": the path's last step. */
+  label: string;
+  week: DayWeek;
+  rows: BarRow[];
+  /** The day's middle donation, a value with no names behind it. */
+  middle: string;
+  sum: string;
+  notes: string[];
+}
+
+/** A flow day: where its joiners came from and its leavers went, against the members (counts only). */
+export interface FlowDayWords {
+  label: string;
+  week: DayWeek;
+  joined: number;
+  left: number;
+  came: BarRow[];
+  went: BarRow[];
+  sum: string;
+}
+
+const MEASURES: PulseMeasure[] = ["quests", "coins", "donated"];
+const MEASURE_NAMES = {
+  quests: "insights.pulse.quests",
+  coins: "insights.pulse.coins",
+  donated: "drill.pulseDay.donated",
+} as const;
+
+/** The pulse week `day` sits in, as its row names it; this week is the card itself (its days are on it). */
+function dayWeek(day: string, thisWeek: string | undefined, f: Formats): DayWeek {
+  const monday = gameWeek(day)[0] as string;
+  return monday === thisWeek
+    ? { label: f.t["insights.pulse.thisWeek"], monday: null }
+    : { label: weekLabel(monday, f), monday };
+}
+
+/** The pulse day the address opens: who did each measure that day, in name order, nobody else (D75). */
+export function pulseDayWords(v: InsightsView, f: Formats): PulseDayWords | null {
+  const level = v.pulseDay;
+  if (!level || !v.pulse) return null;
+  const { t } = f;
+  const label = calendarDates(f.language).short(level.day);
+  const rows = MEASURES.map((k): BarRow => {
+    const r = level.reached[k];
+    const name = t[MEASURE_NAMES[k]];
+    return {
+      label: name,
+      value: r.of > 0 ? fill(t["insights.pulse.questsOf"], { n: r.uids.length, of: r.of }) : NONE,
+      share: r.of > 0 ? r.uids.length / r.of : null,
+      set: setOf("pulse_reached", `${k}-${level.day}`, r.uids, v.people, {
+        ...f,
+        what: `${name} · ${label}`,
+        onward: false,
+      }),
+    };
+  });
+  const unknown = level.reached.coins.of - level.reached.quests.of;
+  return {
+    label,
+    week: dayWeek(level.day, v.pulse.weeks.at(-1)?.monday, f),
+    rows,
+    middle: `${t["insights.pulse.tech"]}: ${latestLine(level.pulse, "tech", f)}`,
+    sum: fill(t["drill.pulseDay.sum"], { day: label }),
+    notes: unknown > 0 ? [fill(t["drill.pulseDay.questsUnknown"], { n: unknown })] : [],
+  };
+}
+
+/** The flow day the address opens: its joiners' and leavers' places, which add up to its counts. */
+export function flowDayWords(v: InsightsView, f: Formats): FlowDayWords | null {
+  const flow = v.flow;
+  const day = flow?.day;
+  if (!flow || !day) return null;
+  const { t } = f;
+  const members = rosterSize(flow.tenure);
+  const label = calendarDates(f.language).short(day.day);
+  const monday = gameWeek(day.day)[0] as string;
+  return {
+    label,
+    // Every flow week, this one too, opens to its days as a level of its own (its row holds no days).
+    week: { label: weekLabel(monday, f), monday },
+    joined: day.joined,
+    left: day.left,
+    came: placeRows(day.cameFrom, members, v.labels, t),
+    went: placeRows(day.wentTo, members, v.labels, t),
+    sum: fill(t["drill.flowDay.sum"], { day: label, joined: day.joined, left: day.left }),
   };
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const one = (x: string | string[] | undefined) => (typeof x === "string" && DAY.test(x) ? x : null);
 
-/** The levels the address asks for (`?pulse=<monday>&flow=<monday>`); anything else is the chart itself. */
-export const levelsOf = (q: { pulse?: string | string[]; flow?: string | string[] }) => ({
+type LevelQuery = Partial<Record<keyof InsightsLevels, string | string[]>>;
+
+/** The levels the address asks for (`?pulse=<monday>&flowDay=<day>…`); anything else is the chart itself. */
+export const levelsOf = (q: LevelQuery): InsightsLevels => ({
   pulse: one(q.pulse),
+  pulseDay: one(q.pulseDay),
   flow: one(q.flow),
+  flowDay: one(q.flowDay),
+  kvk: one(q.kvk),
+  kvkDay: one(q.kvkDay),
 });
 
 /** The Insights address with one chart's level changed and the others kept, landing on that chart's card. */

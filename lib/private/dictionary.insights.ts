@@ -68,12 +68,13 @@ export const insightsEn = {
     "The quiet contributors are ticked. Untick anyone you’d rather not name.",
   "insights.flow.head": "Membership flow",
   "insights.flow.based.one":
-    "Based on {n} daily update since {date}. A change shows on the first daily update after it.",
+    "Based on {n} daily update in these weeks, since {date}. A change shows on the first daily update after it.",
   "insights.flow.based.other":
-    "Based on {n} daily updates since {date}. A change shows on the first daily update after it.",
+    "Based on {n} daily updates in these weeks, since {date}. A change shows on the first daily update after it.",
   "insights.flow.weeks": "Joined and left, week by week",
   "insights.flow.joined": "joined",
   "insights.flow.left": "left",
+  "insights.flow.noCompare": "nothing to compare",
   "insights.flow.joinedWho": "Joined ({n})",
   "insights.flow.leftWho": "Left ({n})",
   "insights.flow.came": "Where newcomers came from",
@@ -164,12 +165,13 @@ export const insightsPt: InsightsWords = {
     "Quem ajuda sem aparecer já vem marcado. Desmarque quem você prefere não citar.",
   "insights.flow.head": "Entradas e saídas",
   "insights.flow.based.one":
-    "Com base em {n} atualização diária desde {date}. Uma mudança aparece na primeira atualização diária depois dela.",
+    "Com base em {n} atualização diária destas semanas, desde {date}. Uma mudança aparece na primeira atualização diária depois dela.",
   "insights.flow.based.other":
-    "Com base em {n} atualizações diárias desde {date}. Uma mudança aparece na primeira atualização diária depois dela.",
+    "Com base em {n} atualizações diárias destas semanas, desde {date}. Uma mudança aparece na primeira atualização diária depois dela.",
   "insights.flow.weeks": "Entraram e saíram, semana a semana",
   "insights.flow.joined": "entraram",
   "insights.flow.left": "saíram",
+  "insights.flow.noCompare": "nada para comparar",
   "insights.flow.joinedWho": "Entradas ({n})",
   "insights.flow.leftWho": "Saídas ({n})",
   "insights.flow.came": "De onde vieram os novos",
@@ -261,12 +263,13 @@ export const insightsFr: InsightsWords = {
     "Ceux qui aident sans bruit sont cochés. Décochez ceux que vous préférez ne pas nommer.",
   "insights.flow.head": "Arrivées et départs",
   "insights.flow.based.one":
-    "D’après {n} mise à jour quotidienne depuis le {date}. Un changement apparaît à la première mise à jour quotidienne qui le suit.",
+    "D’après {n} mise à jour quotidienne de ces semaines, depuis le {date}. Un changement apparaît à la première mise à jour quotidienne qui le suit.",
   "insights.flow.based.other":
-    "D’après {n} mises à jour quotidiennes depuis le {date}. Un changement apparaît à la première mise à jour quotidienne qui le suit.",
+    "D’après {n} mises à jour quotidiennes de ces semaines, depuis le {date}. Un changement apparaît à la première mise à jour quotidienne qui le suit.",
   "insights.flow.weeks": "Arrivées et départs, semaine par semaine",
   "insights.flow.joined": "arrivés",
   "insights.flow.left": "partis",
+  "insights.flow.noCompare": "rien à comparer",
   "insights.flow.joinedWho": "Arrivées ({n})",
   "insights.flow.leftWho": "Départs ({n})",
   "insights.flow.came": "D’où viennent les nouveaux",

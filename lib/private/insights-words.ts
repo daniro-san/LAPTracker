@@ -18,6 +18,7 @@ import {
   type Median,
   type Place,
   type Pulse,
+  type PulseView,
   type Share,
 } from "./insights-rules";
 import { setOf, type MemberSet } from "./insights-sets";
@@ -51,6 +52,32 @@ export interface DayBar {
   of?: string;
 }
 
+/**
+ * A day a chart opens to its next level (D158 rule 7): its weekday, the date said in full for screen
+ * readers, its day (the address's key) and what it counts, for the drilldown's bucket. A row of 44 px
+ * links under a 7-column grid, whose columns are narrower than a tap target at 360 px.
+ */
+export interface DayPick {
+  weekday: string;
+  date: string;
+  key: string;
+  count: number;
+}
+
+export const dayPick = (day: string, count: number, { language }: Formats): DayPick => {
+  const dates = calendarDates(language);
+  return { weekday: dates.weekday(day), date: dates.short(day), key: day, count };
+};
+
+/**
+ * A pulse week's days that open their who lists: those with a daily update, each counting the members it
+ * lists (the coin cap's whole). The card's this week and a week's level both use it.
+ */
+export const pulsePicks = (days: PulseView["days"], f: Formats): DayPick[] =>
+  days.flatMap((d) =>
+    d.pulse && d.pulse !== "later" ? [dayPick(d.day, d.pulse.coins?.of ?? 0, f)] : [],
+  );
+
 export interface PulseMetricWords {
   label: string;
   latest: string;
@@ -59,7 +86,8 @@ export interface PulseMetricWords {
 }
 
 export interface InsightsWords {
-  pulse: { based: string[]; metrics: PulseMetricWords[] } | null;
+  /** `picks`: this week's days with a daily update, each opening who reached each measure that day. */
+  pulse: { based: string[]; metrics: PulseMetricWords[]; picks: DayPick[] } | null;
   effort: {
     based: string[];
     /** "Left out: 3 new, 4 on a break": each kind with members, and who (#678). */
@@ -73,6 +101,8 @@ export interface InsightsWords {
     based: string;
     weeks: {
       label: string;
+      /** Why the week shows "—": none of its days can show a change. */
+      note?: string;
       joined: BarRow;
       left: BarRow;
       /** The week's days link: its Monday, its bucket and its words ("Week of Nov 16, day by day ›"). */
@@ -112,7 +142,7 @@ export function pulseValue(
 export const scaled = (x: number | null, k: Metric, top: number) =>
   x === null ? null : k === "tech" ? (top > 0 ? x / top : 0) : x;
 
-function latestLine(p: Pulse, k: Metric, f: Formats): string {
+export function latestLine(p: Pulse, k: Metric, f: Formats): string {
   const { t } = f;
   if (k === "tech") {
     const [m, d] = [p.tech as Median | null, p.donated];
@@ -197,7 +227,7 @@ function pulseWords(v: NonNullable<InsightsView["pulse"]>, f: Formats): Insights
       })),
     };
   });
-  return { based, metrics };
+  return { based, metrics, picks: pulsePicks(v.days, f) };
 }
 
 /** "[TAG] Name", each part when known; "Not known" for id 0. */
@@ -214,7 +244,7 @@ export const rosterSize = (tenure: NonNullable<InsightsView["flow"]>["tenure"]) 
   tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
 
 /** Where newcomers came from or leavers went, each drawn against the members, not the busiest place. */
-function placeRows(
+export function placeRows(
   list: Place[],
   members: number,
   labels: Map<number, AllianceLabel>,
@@ -290,6 +320,33 @@ const daysLink = (monday: string, count: number, { t, language }: Formats) => ({
   }),
 });
 
+/** Newcomers' growth: how many joined in the last NEWCOMER_DAYS, and how many of them grew their might. */
+function newcomerLines(nc: NonNullable<InsightsView["flow"]>["newcomers"], f: Formats): string[] {
+  const { t, language } = f;
+  return !nc || nc.uids.length === 0
+    ? [t["insights.newcomers.none"]]
+    : [
+        fill(
+          plural(
+            nc.uids.length,
+            {
+              one: t["insights.newcomers.count.one"],
+              other: t["insights.newcomers.count.other"],
+            },
+            language,
+          ),
+          { n: nc.uids.length },
+        ),
+        nc.median
+          ? fill(t["insights.newcomers.grew"], {
+              grew: nc.grew,
+              counted: nc.counted,
+              median: signedPercent(nc.median.value, language),
+            })
+          : t["insights.newcomers.noMight"],
+      ];
+}
+
 function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const flow = v.flow;
   if (!flow) return null;
@@ -299,30 +356,6 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const members = rosterSize(flow.tenure);
   const of = (n: number) => (members > 0 ? n / members : null);
   const last = flow.weeks.length - 1;
-  const nc = flow.newcomers;
-  const newcomers =
-    !nc || nc.uids.length === 0
-      ? [t["insights.newcomers.none"]]
-      : [
-          fill(
-            plural(
-              nc.uids.length,
-              {
-                one: t["insights.newcomers.count.one"],
-                other: t["insights.newcomers.count.other"],
-              },
-              language,
-            ),
-            { n: nc.uids.length },
-          ),
-          nc.median
-            ? fill(t["insights.newcomers.grew"], {
-                grew: nc.grew,
-                counted: nc.counted,
-                median: signedPercent(nc.median.value, language),
-              })
-            : t["insights.newcomers.noMight"],
-        ];
   return {
     based: fill(
       plural(
@@ -330,7 +363,7 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
         { one: t["insights.flow.based.one"], other: t["insights.flow.based.other"] },
         language,
       ),
-      { n: flow.reads, date: dates.sentence(flow.from) },
+      { n: flow.reads, date: dates.sentence(flow.since) },
     ),
     weeks: flow.weeks.map((w, i) => {
       const label =
@@ -338,6 +371,16 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
           ? t["insights.pulse.thisWeek"]
           : fill(t["insights.pulse.week"], { date: dates.dayMonth(w.monday) });
       const moved = w.joined.length + w.left.length;
+      // A week none of whose days can show a change (no read, or before the first comparison) is no
+      // data: "—" and no bar, never 0 (D75).
+      if (!w.days.some((d) => d.moves !== null && d.moves !== "later"))
+        return {
+          label,
+          note: t["insights.flow.noCompare"],
+          drill: null,
+          joined: { label: t["insights.flow.joined"], value: NONE, share: null, set: null },
+          left: { label: t["insights.flow.left"], value: NONE, share: null, set: null },
+        };
       return {
         label,
         // A week with a join or a leave opens its days (D158 rule 7 (b)).
@@ -367,7 +410,7 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
     came: placeRows(flow.cameFrom, members, v.labels, t),
     went: placeRows(flow.wentTo, members, v.labels, t),
     tenure: tenureRows(flow, v.people, f),
-    newcomers,
+    newcomers: newcomerLines(flow.newcomers, f),
   };
 }
 

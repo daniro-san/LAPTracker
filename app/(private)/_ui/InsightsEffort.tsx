@@ -5,7 +5,7 @@
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { InsightsWords } from "@/lib/private/insights-words";
 
-import { Bars, Card, Sub } from "./InsightsSections";
+import { Bars, Card, Sub } from "./InsightsBars";
 import { Caret, Names, SetFold, TapHint } from "./InsightsSets";
 import type { ShareThanksProps } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
