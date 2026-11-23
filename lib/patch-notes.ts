@@ -207,6 +207,15 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.71.0",
+    date: "2026-11-23",
+    title: "A daily welcome for new members",
+    changes: [
+      "Alliance settings → Posts: a third optional post, Welcome new members. Every day, after the end-of-day read (between 23:30 and 00:00 ST), it greets by name the members who joined since yesterday, in the members' channel. It runs only when both days' reads worked, never mentions anyone who left, pings nobody, and posts nothing on a day with no one new. Off until officers turn it on; allowed by default.",
+    ],
+    prs: [766],
+  },
+  {
     version: "v5.70.0",
     date: "2026-11-23",
     title: "A Friday shield reminder for members",
