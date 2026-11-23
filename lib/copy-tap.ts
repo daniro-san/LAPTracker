@@ -19,4 +19,20 @@ export const tapCopy = {
   readoutShare: "{share} ({kills} kills)",
   /** After a line chart's value when the reading was an event's Start or End, not a daily read. */
   readoutEventRead: "event reading",
+  /** Under the readout: opens the chosen interval's kills split by alliance, in the chart's place. */
+  splitLink: "{span} by alliance ›",
+  /** The path's accessible name over a chart's next level. */
+  drillPath: "Where you are in this chart",
+  /** The path's Back step from an interval's split to the whole pulse or strip. */
+  splitBack: "All intervals",
+  /** Under an interval's split: its kills are the alliances' added up; from and to are its two readings. */
+  splitSum: "{kills} kills gained in {span} by the {n} alliances read at {from} and at {to}.",
+  /** The alliances an interval left out, because one of its two readings of them was missing or stale. */
+  splitLeftOut: "Not read at both times, so left out: {names}.",
+  /** The fight clock counts a loss as no gain: said when the alliances' sum is below 0. */
+  splitLoss: "Together they lost kills here; the fight clock counts that as 0.",
+  /** Under the split: the alliances whose kills fell here, drawn and shared as 0. */
+  splitLossPart: "A loss counts as 0 in the bars and shares: {names}.",
+  /** The key to the split's bars: each is a share of the alliances' gains in the interval. */
+  splitKey: "Each bar: the alliance's share of these {kills} kills.",
 } as const;

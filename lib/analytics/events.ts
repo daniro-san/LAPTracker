@@ -73,6 +73,12 @@ export type DrilldownSurface =
 export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone";
 
 /**
+ * The Insights charts that open a week's days in their place (D158 rule 7 (b)): the membership flow and the
+ * week's pulse. On Insights only: never which week.
+ */
+export type InsightsLevel = "flow_days" | "pulse_days";
+
+/**
  * Raid prep's counts of people behind "Show the n ›" (#691): "To remind", "Mark ✓ the n seen" and "Check by
  * hand" (#726).
  */
@@ -89,7 +95,7 @@ export type HomeSet = "new_members" | "noted";
 
 /** Each surface with its own closed list of kinds, so a kind never rides on another page's event. */
 type DrilldownOpened = { count_bucket: CountBucket } & (
-  | { surface: Extract<DrilldownSurface, "insights">; kind: InsightsSet }
+  | { surface: Extract<DrilldownSurface, "insights">; kind: InsightsSet | InsightsLevel }
   | { surface: Extract<DrilldownSurface, "raid_prep">; kind: RaidPrepSet }
   | { surface: Extract<DrilldownSurface, "roll_call">; kind: RollCallSet }
   | { surface: Extract<DrilldownSurface, "home">; kind: HomeSet }
@@ -103,10 +109,15 @@ type DrilldownOpened = { count_bucket: CountBucket } & (
 export type BoardSection = "week" | "notices" | "start_here";
 
 /** Where a public count was tapped to open the people behind it: a ledger row's `+3 joined · −2 left`, a
- * split's "Came in with / Went with" line (ledger or alliance page), a War turnout or a Kill share row. */
-export type PublicDrilldownSurface = "ledger" | "split" | "war_turnout" | "kill_share";
-/** What it opened: the members who joined, who left, or the list by kills gained. */
-export type PublicDrilldownKind = "joined" | "left" | "kills";
+ * split's "Came in with / Went with" line (ledger or alliance page), a War turnout or a Kill share row; or
+ * where a chart's column opened its next level (D158 rule 7 (b)): an event's server pulse, the fight clock. */
+export type PublicDrilldownSurface =
+  "ledger" | "split" | "war_turnout" | "kill_share" | "server_pulse" | "fight_clock";
+/**
+ * What it opened: the members who joined, who left, or the list by kills gained; or an interval's kills
+ * split by alliance.
+ */
+export type PublicDrilldownKind = "joined" | "left" | "kills" | "alliances";
 
 type NoProperties = Record<string, never>;
 

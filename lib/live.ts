@@ -77,6 +77,12 @@ export function standings(start: Slice, samples: readonly Slice[]): Standing[] {
  * sent no update); `missing`: no alliance could be compared (no reading, or stale). */
 export type PulseState = "moved" | "still" | "missing";
 
+/** One alliance's kills in one interval (D158 rule 7 (b)): the parts `kills` adds up. */
+export interface AlliancePart {
+  unionId: number;
+  kills: number;
+}
+
 export interface PulseSlot {
   from: Date;
   to: Date;
@@ -85,6 +91,8 @@ export interface PulseSlot {
   /** How many alliances were compared. */
   alliances: number;
   state: PulseState;
+  /** Each compared alliance's kills, in the order read: `kills` is their sum, `alliances` their count. */
+  parts: AlliancePart[];
 }
 
 const missing = (from: number, to: number): PulseSlot => ({
@@ -93,21 +101,26 @@ const missing = (from: number, to: number): PulseSlot => ({
   kills: null,
   alliances: 0,
   state: "missing",
+  parts: [],
 });
 
-/** One interval's kills over the alliances read fresh in both readings, by their members' `step`. */
+/**
+ * One interval's kills over the alliances read fresh in both readings, by their members' `step`: each
+ * alliance's part, and their sum and count, from the same loop.
+ */
 function compared(prev: Slice, cur: Slice) {
-  let [kills, alliances, changed] = [0, 0, false];
+  let [kills, changed] = [0, false];
+  const parts: AlliancePart[] = [];
   for (const [unionId, was] of prev.alliances) {
     const now = cur.alliances.get(unionId);
     const d = delta(was, now ?? { ...was, isFresh: false });
     if (!d) continue;
     const gained = now?.step ?? d.kills;
     kills += gained;
-    alliances += 1;
+    parts.push({ unionId, kills: gained });
     changed ||= gained !== 0 || d.power !== 0;
   }
-  return { kills, alliances, changed };
+  return { kills, alliances: parts.length, changed, parts };
 }
 
 /**
@@ -130,7 +143,7 @@ export function serverPulse(readings: readonly Slice[], everyMs: number): PulseS
       for (let k = 0; k < gaps; k++) slots.push(missing(edge(k), edge(k + 1)));
       continue;
     }
-    const { kills, alliances, changed } = compared(prev, cur);
+    const { kills, alliances, changed, parts } = compared(prev, cur);
     slots.push(
       alliances === 0
         ? missing(from, to)
@@ -140,6 +153,7 @@ export function serverPulse(readings: readonly Slice[], everyMs: number): PulseS
             kills,
             alliances,
             state: changed ? "moved" : "still",
+            parts,
           },
     );
   }

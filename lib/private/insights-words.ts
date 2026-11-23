@@ -34,6 +34,11 @@ export interface BarRow {
   current?: boolean;
   /** The members the row counts, opened by a tap (#678). */
   set?: MemberSet | null;
+  /**
+   * The week whose days a tap opens in the chart's place (D158 rule 7 (b)): its Monday, and what the row
+   * counts (daily updates, joins and leaves) for the drilldown's bucket.
+   */
+  drill?: { key: string; count: number };
 }
 
 /** One day of this week: the bar and the number under it; "later" days are blank. */
@@ -42,6 +47,8 @@ export interface DayBar {
   value: string;
   share: number | null;
   later: boolean;
+  /** "11/11": the count a share is of, under it, where a week's days must add up (D158 rule 7 (b)). */
+  of?: string;
 }
 
 export interface PulseMetricWords {
@@ -64,7 +71,13 @@ export interface InsightsWords {
   } | null;
   flow: {
     based: string;
-    weeks: { label: string; joined: BarRow; left: BarRow }[];
+    weeks: {
+      label: string;
+      joined: BarRow;
+      left: BarRow;
+      /** The week's days link: its Monday, its bucket and its words ("Week of Nov 16, day by day ›"). */
+      drill: { key: string; count: number; label: string } | null;
+    }[];
     came: BarRow[];
     went: BarRow[];
     tenure: BarRow[];
@@ -79,11 +92,15 @@ const signedPercent = (x: number, language: string) =>
     signDisplay: "exceptZero",
   }).format(x);
 
-type Metric = "quests" | "coins" | "tech";
-const PULSE_METRICS: Metric[] = ["quests", "coins", "tech"];
+export type Metric = "quests" | "coins" | "tech";
+export const PULSE_METRICS: Metric[] = ["quests", "coins", "tech"];
 
 /** A pulse value as a 0–1 length and its words; tech against the highest of the compared values. */
-function pulseValue(p: Pulse, k: Metric, language: string): { x: number | null; text: string } {
+export function pulseValue(
+  p: Pulse,
+  k: Metric,
+  language: string,
+): { x: number | null; text: string } {
   if (k === "tech") {
     const m = p.tech;
     return m ? { x: m.value, text: compact(m.value, language) } : { x: null, text: NONE };
@@ -92,7 +109,7 @@ function pulseValue(p: Pulse, k: Metric, language: string): { x: number | null; 
   return s ? { x: s.n / s.of, text: percent(s.n / s.of, language) } : { x: null, text: NONE };
 }
 
-const scaled = (x: number | null, k: Metric, top: number) =>
+export const scaled = (x: number | null, k: Metric, top: number) =>
   x === null ? null : k === "tech" ? (top > 0 ? x / top : 0) : x;
 
 function latestLine(p: Pulse, k: Metric, f: Formats): string {
@@ -175,6 +192,8 @@ function pulseWords(v: NonNullable<InsightsView["pulse"]>, f: Formats): Insights
               )
             : t["insights.pulse.noReadWeek"],
         current: i === v.weeks.length - 1,
+        // An earlier week with a daily update opens its days; this week's are drawn above its rows.
+        ...(i < v.weeks.length - 1 && w.reads > 0 && { drill: { key: w.monday, count: w.reads } }),
       })),
     };
   });
@@ -191,7 +210,7 @@ function placeLabel(p: Place, labels: Map<number, AllianceLabel>, t: WorkspaceDi
 }
 
 /** The members in the newest daily update: the whole a flow count is drawn against (D158). */
-const rosterSize = (tenure: NonNullable<InsightsView["flow"]>["tenure"]) =>
+export const rosterSize = (tenure: NonNullable<InsightsView["flow"]>["tenure"]) =>
   tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
 
 /** Where newcomers came from or leavers went, each drawn against the members, not the busiest place. */
@@ -262,6 +281,15 @@ function tenureRows(
   ];
 }
 
+/** A flow week's link to its days: its Monday, its joins and leaves, "Week of Nov 16, day by day ›". */
+const daysLink = (monday: string, count: number, { t, language }: Formats) => ({
+  key: monday,
+  count,
+  label: fill(t["drill.byDay"], {
+    week: fill(t["insights.pulse.week"], { date: calendarDates(language).dayMonth(monday) }),
+  }),
+});
+
 function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const flow = v.flow;
   if (!flow) return null;
@@ -309,8 +337,11 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
         i === last
           ? t["insights.pulse.thisWeek"]
           : fill(t["insights.pulse.week"], { date: dates.dayMonth(w.monday) });
+      const moved = w.joined.length + w.left.length;
       return {
         label,
+        // A week with a join or a leave opens its days (D158 rule 7 (b)).
+        drill: moved > 0 ? daysLink(w.monday, moved, f) : null,
         joined: {
           label: t["insights.flow.joined"],
           value: w.joined.length > 0 ? `+${w.joined.length}` : "0",

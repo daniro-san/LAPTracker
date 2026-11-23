@@ -8,6 +8,7 @@ import { withOwnDb } from "@/lib/page";
 import { listEvents, upstreamRows } from "@/lib/queries";
 import { allianceList, eventAllianceIds } from "@/lib/queries/alliance-list";
 import { sampledEventIds } from "@/lib/queries/fight-clock";
+import { allianceNames } from "@/lib/queries/names";
 import { searchPlayers } from "@/lib/queries/player-search";
 
 /** `load`'s value under `name` and `key`, shared by every viewer until the next write. */
@@ -39,6 +40,16 @@ export const sharedEventAllianceIds = (eventId: number) =>
   sharedRead("event-alliances", [eventId], (db) => eventAllianceIds(db, eventId));
 
 /** /players?q=: the matches for one search text. */
+/** Each alliance an event read with its newest tag and name: a fight-clock slot's split names them. */
+export const sharedEventAllianceLabels = (eventId: number) =>
+  sharedRead("event-alliance-labels", [eventId], async (db) => {
+    const names = await allianceNames(db, await eventAllianceIds(db, eventId));
+    return [...names].flatMap(([id, list]) => {
+      const last = list.at(-1);
+      return last ? [{ id, tag: last.tag, name: last.name }] : [];
+    });
+  });
+
 export const sharedPlayerSearch = (q: string) =>
   sharedRead("player-search", [q], (db) => searchPlayers(db, q));
 

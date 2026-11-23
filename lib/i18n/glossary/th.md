@@ -347,6 +347,7 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Hollow dot (a chart reading)        | จุดกลวง                        | `ledger.progressEvents` — a reading drawn as an open dot on the might chart                                                                                      |
 | Bar (kill-vs-might gap)             | แถบ                           | `ledger.carriedGapKey` — the gap bar's key; its figures read in จุด (points), as `ledger.carriedRatioHelp` does                                                   |
 | Event reading (Start or End)        | การอ่านของกิจกรรม               | `ledger.readoutEventRead` — a line chart's value at an event's Start or End, not a daily read                                                                    |
+| by alliance (an interval split)     | แยกตามพันธมิตร                  | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split by alliance                                                                 |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

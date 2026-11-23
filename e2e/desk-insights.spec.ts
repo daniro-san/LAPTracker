@@ -13,12 +13,15 @@ import {
   DAY_MS,
   LEAVER,
   newMembers,
+  lastRosterDay,
   rosterOf,
   seededAt,
+  shown,
   uidOf,
+  usDay,
   ZONE_FACTS,
 } from "./fixtures/seed";
-import { deskFrame, expect, sees, signIn, test } from "./fixtures/test";
+import { deskFrame, expect, hydrated, sees, signIn, test } from "./fixtures/test";
 
 const A = ALLIANCES.a;
 const desk = `/w/${A.slug}`;
@@ -294,4 +297,104 @@ test("Members `?set=` with a key no Insights count has shows the whole list with
   await deskFrame(page, A);
   await expect(page.locator("#members-set")).toHaveCount(0);
   await expect(memberLine(page, A.names[0] as string)).toHaveCount(1);
+});
+
+/** The Monday of the game week (Monday to Sunday) that holds `day`. */
+const mondayOf = (day: string) => {
+  const at = Date.parse(day);
+  return new Date(at - ((new Date(at).getUTCDay() + 6) % 7) * DAY_MS).toISOString().slice(0, 10);
+};
+/** "Week of Nov 9", as a week row and the path name it. */
+const weekOf = (monday: string) =>
+  `Week of ${shown(monday, "en-US", { month: "short", day: "numeric" })}`;
+const scrollOf = (page: Page) => page.evaluate(() => window.scrollY);
+/** The window has not moved: the card stays where it was (Back keeps the scroll position). */
+const stays = (page: Page, y: number) =>
+  expect.poll(async () => Math.abs((await scrollOf(page)) - y)).toBeLessThanOrEqual(2);
+
+test("Insights: a week of the pulse opens its days in the card, which add up to the week, and Back keeps the place (D158 rule 7 (b))", async ({
+  page,
+}) => {
+  // Last week: every day of it has a daily update, with the roster's 11 members, all at the coin cap.
+  const monday = new Date(Date.parse(mondayOf(lastRosterDay())) - 7 * DAY_MS)
+    .toISOString()
+    .slice(0, 10);
+  const memberDays = (A.names.length - 1) * 7;
+  await page.goto(`${desk}/insights`);
+  await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
+  await deskFrame(page, A);
+  const card = page.getByRole("region", { name: "The week’s pulse" });
+  // One row per metric names the week; each opens the same days.
+  const rows = card.getByRole("link", { name: new RegExp(`^${weekOf(monday)} `) });
+  await expect(rows).toHaveCount(3);
+  const coins = rows.nth(1);
+  await hydrated(coins);
+  expect((await coins.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await coins.scrollIntoViewIfNeeded();
+  const y = await scrollOf(page);
+  await coins.click();
+  await expect(page).toHaveURL(`${desk}/insights?pulse=${monday}#insights-pulse`);
+  const path = card.getByRole("navigation", { name: "Where you are in this chart" });
+  await sees(path, "The week’s pulse");
+  await sees(path, weekOf(monday));
+  // The week rows gave way to the week's seven days; the coin cap's days add up to its week.
+  await expect(card.getByText("Week by week")).toHaveCount(0);
+  await sees(
+    card,
+    `${weekOf(monday)}: ${memberDays} of ${memberDays} member-days (each daily update counts each member once). Its days add up to this.`,
+  );
+  // Under each day's share, the count it is of: all 11 members at the cap, every day.
+  const perDay = `${A.names.length - 1}/${A.names.length - 1}`;
+  const coinsDays = card
+    .getByRole("heading", { level: 3, name: "At the 1,000 coin cap" })
+    .locator("xpath=..");
+  await expect(coinsDays.getByText(perDay, { exact: true })).toHaveCount(7);
+  await stays(page, y);
+  const back = path.getByRole("link", { name: "All weeks" });
+  expect((await back.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await back.click();
+  await expect(page).toHaveURL(`${desk}/insights#insights-pulse`);
+  await expect(path).toHaveCount(0);
+  await expect(rows).toHaveCount(3);
+  await stays(page, y);
+  // The address keeps the level: a link to it opens the days.
+  await page.goto(`${desk}/insights?pulse=${monday}`);
+  await sees(
+    page.getByRole("region", { name: "The week’s pulse" }),
+    `${memberDays} of ${memberDays}`,
+  );
+});
+
+test("Insights: the week someone joined and left opens its days, which add up to the week, and Back keeps the place (D158 rule 7 (b))", async ({
+  page,
+}) => {
+  // The joiner and the leaver changed places at the last event: its day's read is the first to show it.
+  const day = calendarOf(seededAt()).events[1] as string;
+  const monday = mondayOf(day);
+  await page.goto(`${desk}/insights`);
+  await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
+  await deskFrame(page, A);
+  const card = page.getByRole("region", { name: "Membership flow" });
+  const open = card.getByRole("link", { name: `${weekOf(monday)}, day by day ›` });
+  await hydrated(open);
+  expect((await open.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await open.scrollIntoViewIfNeeded();
+  const y = await scrollOf(page);
+  await open.click();
+  await expect(page).toHaveURL(`${desk}/insights?flow=${monday}#insights-flow`);
+  const path = card.getByRole("navigation", { name: "Where you are in this chart" });
+  await sees(path, "Membership flow");
+  await sees(path, weekOf(monday));
+  const changed = card.getByRole("listitem").filter({ hasText: usDay(day) });
+  await sees(changed, "+1");
+  await sees(changed, "−1");
+  await sees(card, `${weekOf(monday)}: 1 joined, 1 left. Its days add up to this.`);
+  await sees(card, "Joined and left, day by day");
+  await expect(card.getByRole("link", { name: /day by day/ })).toHaveCount(0);
+  await stays(page, y);
+  await path.getByRole("link", { name: "All weeks" }).click();
+  await expect(page).toHaveURL(`${desk}/insights#insights-flow`);
+  await expect(path).toHaveCount(0);
+  await expect(open).toBeVisible();
+  await stays(page, y);
 });

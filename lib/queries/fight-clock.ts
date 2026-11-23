@@ -66,6 +66,8 @@ export interface EventPulse {
   sampled: boolean;
   /** Null when the event is not sampled; its slots may be empty when its Start or samples cannot be read. */
   clock: EventClock | null;
+  /** The alliances its Start read: a slot's split names the ones not in its parts (D158 rule 7 (b)). */
+  allianceIds: number[];
 }
 
 /**
@@ -85,7 +87,7 @@ export async function eventPulses(
   const out: EventPulse[] = [];
   for (const { id, done } of refs) {
     if (!sampled.has(id)) {
-      out.push({ id, sampled: false, clock: null });
+      out.push({ id, sampled: false, clock: null, allianceIds: [] });
       continue;
     }
     const { start, samples } = readingsOf(await rowsOf(id, done));
@@ -94,6 +96,7 @@ export async function eventPulses(
       id,
       sampled: true,
       clock: eventClock(pulse, everyMin, (at) => serverMinuteOfDay(at, { SERVER_TZ: serverTz })),
+      allianceIds: [...(start?.alliances.keys() ?? [])],
     });
   }
   return out;

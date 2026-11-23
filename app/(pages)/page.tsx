@@ -9,8 +9,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return eventTitle(await loadEventPage(null));
 }
 
-export default async function HomePage() {
-  const { events, homeId, page } = await loadEventPage(null);
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ interval?: string | string[] }>;
+}) {
+  const [{ events, homeId, page }, { interval }] = await Promise.all([
+    loadEventPage(null),
+    searchParams,
+  ]);
   if (!page) return <EmptyEvents />;
-  return <EventView events={events} homeId={homeId} {...page} />;
+  const drill = { path: "/", interval: typeof interval === "string" ? interval : undefined };
+  return <EventView events={events} homeId={homeId} {...page} drill={drill} />;
 }

@@ -146,6 +146,15 @@ export const fr = {
     readoutPulse: "{kills} Kills gagnés · {n} alliances relevées",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "relevé d’événement",
+    splitLink: "{span} par alliance ›",
+    drillPath: "Où vous êtes dans ce graphique",
+    splitBack: "Tous intervalles",
+    splitSum: "{kills} Kills gagnés en {span} par les {n} alliances relevées à {from} et à {to}.",
+    splitLeftOut: "Non relevées aux deux moments, donc laissées de côté : {names}.",
+    splitLoss:
+      "Ensemble, elles ont perdu des Kills ici ; l’horloge des combats compte cela comme 0.",
+    splitLossPart: "Une perte compte pour 0 dans les barres et les parts : {names}.",
+    splitKey: "Chaque barre : la part de l’alliance dans ces {kills} Kills.",
   },
   compare: {
     title: "Événement contre événement",

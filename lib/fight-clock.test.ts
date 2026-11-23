@@ -20,6 +20,7 @@ function pulseOf(cells: { state: PulseState; kills: number }[]): PulseSlot[] {
       kills: c.state === "missing" ? null : c.state === "still" ? 0 : c.kills,
       alliances: c.state === "missing" ? 0 : 3,
       state: c.state,
+      parts: [],
     };
   });
 }

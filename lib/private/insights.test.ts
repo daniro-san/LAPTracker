@@ -18,7 +18,10 @@ import {
 import { shieldChecks } from "../schema-shield";
 import { memberSquads, playerHistory, playerReads } from "../schema-squads";
 import { requireWorkspace } from "./access";
-import { insightsView } from "./insights";
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
+import { insightsView, type InsightsView } from "./insights";
+import { flowDaysWords } from "./insights-days-words";
+import type { Pulse, PulseView } from "./insights-rules";
 import { createSession } from "./session";
 
 const OURS = 67111155;
@@ -107,6 +110,19 @@ async function kvk(at: Date, unionId: number, might: Record<number, [number, num
       })),
     );
   }
+}
+
+/** The days of a pulse week that have a read. */
+const readDays = (days: PulseView["days"]) =>
+  days.flatMap((d) => (d.pulse && d.pulse !== "later" ? [d.pulse] : []));
+/** Days' counts of one kind added up: what the week pools. */
+const pooled = (days: Pulse[], k: "quests" | "coins" | "donated") =>
+  days.reduce((a, p) => ({ n: a.n + (p[k]?.n ?? 0), of: a.of + (p[k]?.of ?? 0) }), { n: 0, of: 0 });
+
+/** The flow week of Nov 9's day level in English: its sum line, then its notes, spaces made plain. */
+function flowLines(view: InsightsView) {
+  const words = flowDaysWords(view, "2026-11-09", { t: WORKSPACE_DICTIONARIES.en, language: "en" });
+  return [words?.sum ?? "", ...(words?.notes ?? [])].map((line) => line.replace(/\s/g, " "));
 }
 
 describe("the Insights read (issue 489)", () => {
@@ -253,5 +269,53 @@ describe("the Insights read (issue 489)", () => {
     const on = new Set([...access.features.on].filter((f) => f !== "shield_check"));
     const off = { ...access, features: { ...access.features, on } };
     expect((await insightsView(db, off, NOW, ZONE)).shield).toBeNull();
+  });
+
+  it("opens a week to its days (D158 rule 7 (b)): the days add up to the week, for the flow and the pulse, and hold only our members", async () => {
+    const access = await officer();
+    // The week of Mon Nov 9: no read on Wed 11, Sat 14 or Sun 15. 103 joins on Tue, 101 leaves and 104
+    // joins across Wed (shown on Thu), 105 joins on Fri.
+    await roster("2026-11-09", OURS, [101, 102], true);
+    await roster("2026-11-10", OURS, [101, 102, 103], true);
+    await roster("2026-11-12", OURS, [102, 103, 104], true);
+    await roster("2026-11-13", OURS, [102, 103, 104, 105], true);
+    await roster("2026-11-16", OURS, [103, 104, 105], true);
+    // Another alliance's members come and go on the same days: none of them is ours.
+    await roster("2026-11-10", FERN, [201, 202]);
+    await roster("2026-11-12", FERN, [201, 203]);
+    await roster("2026-11-13", FERN, [101]);
+
+    const view = await insightsView(db, access, NOW, ZONE, "2026-11-09");
+
+    const week = view.flow?.weeks.find((w) => w.monday === "2026-11-09");
+    if (!week) throw new Error("no flow week of Nov 9");
+    const on = (day: string) => week.days.find((d) => d.day === day)?.moves;
+    expect(on("2026-11-09")).toBeNull(); // the first read: nothing to compare it with
+    expect(on("2026-11-10")).toEqual({ joined: [103], left: [] });
+    expect(on("2026-11-11")).toBeNull(); // no read: its change shows on Thursday
+    expect(on("2026-11-12")).toEqual({ joined: [104], left: [101] });
+    expect(on("2026-11-13")).toEqual({ joined: [105], left: [] });
+    const all = (k: "joined" | "left") =>
+      week.days.flatMap((d) => (d.moves && d.moves !== "later" ? d.moves[k] : []));
+    expect(all("joined")).toEqual(week.joined);
+    expect(all("left")).toEqual(week.left);
+    expect(new Set([...all("joined"), ...all("left")])).toEqual(new Set([101, 103, 104, 105]));
+    // The day level says why a day shows no change: no daily update then, or nothing to compare yet.
+    expect(flowLines(view)).toEqual([
+      "Week of Nov 9: 3 joined, 1 left. Its days add up to this.",
+      "No daily update on Wed, Sat, Sun: a join or leave then shows on the next one.",
+      "Before Tue, Nov 10 nothing can be compared: the first daily update is the starting point.",
+    ]);
+
+    // The pulse's earlier week, day by day: each count's days add up to the week's.
+    const pulseWeek = view.pulse?.weeks.find((w) => w.monday === "2026-11-09");
+    expect(view.pulseWeek?.monday).toBe("2026-11-09");
+    const read = readDays(view.pulseWeek?.days ?? []);
+    expect(read).toHaveLength(pulseWeek?.reads ?? -1);
+    for (const k of ["quests", "coins", "donated"] as const)
+      expect(pooled(read, k)).toEqual(pulseWeek?.[k]);
+    // This week's days are already on the card; a week that is not the pulse's opens nothing.
+    expect((await insightsView(db, access, NOW, ZONE, "2026-11-16")).pulseWeek).toBeNull();
+    expect((await insightsView(db, access, NOW, ZONE, "2026-11-11")).pulseWeek).toBeNull();
   });
 });

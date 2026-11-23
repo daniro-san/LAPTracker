@@ -500,6 +500,7 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | Unknown (a figure not read)           | sconosciuto                           | `members.startUnknown`, `members.endUnknown`, `members.countedAsZero` — a member's Kills figure missing at Start or End; "contato come 0" when the sort counts it as 0                     |
 | KvK matchup                           | Scontro KvK                           | `kvk.title` — the two servers' section; "KvK" stays English                                                                                                                                |
 | War turnout                           | Partecipazione                        | `ledger.fought`, `ledger.foughtSoFar`, `ledger.arrivedTurnout` — the members who fought in a war; the arrival line says "Dalla Partecipazione"                                             |
+| by alliance (an interval split)       | per alleanza                          | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split by alliance                                                                                           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

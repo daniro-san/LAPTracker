@@ -11,10 +11,13 @@ import {
   changedAtLastEvent,
   endOf,
   eventTotals,
+  FILLERS,
+  intervalParts,
   lastRosterDay,
   memberChange,
   memberUid,
   rosterOf,
+  sampleTimes,
   seededAt,
   shown,
   type Side,
@@ -282,4 +285,117 @@ test("the alliance page's split opens Joined again after the list went back to A
     await expect(list.getByRole("link", { name, exact: true })).toBeVisible();
   }
   await noErrorOrEmpty(page);
+});
+
+/** Kills as the pulse writes them: exact under 1,000, compact above. */
+const killsText = (n: number) => (n < 1000 ? n.toLocaleString("en-GB") : big(n));
+
+/**
+ * The first event's samples (seed.ts): the interval the readouts start on (the first of the busiest two),
+ * its time span on the server clock, and its kills by alliance.
+ */
+function busiestInterval() {
+  const times = ["10:00", ...sampleTimes()];
+  const totals = sampleTimes().map((_, i) => intervalParts(i).reduce((a, p) => a + p.kills, 0));
+  const pairs = totals.slice(0, -1).map((t, i) => t + (totals[i + 1] as number));
+  const i = pairs.indexOf(Math.max(...pairs));
+  const parts = intervalParts(i);
+  const [from, to] = [times[i] as string, times[i + 1] as string];
+  // The Start reads both workspaces' alliances and the three fillers; the split names the ones it left out.
+  const all = [ALLIANCES.a, ALLIANCES.b, ...FILLERS];
+  return {
+    i,
+    from,
+    to,
+    span: `${from}–${to}`,
+    parts,
+    total: parts.reduce((a, p) => a + p.kills, 0),
+    leftOut: all.filter((x) => !parts.some((p) => p.unionId === x.unionId)),
+  };
+}
+
+/** `scope` shows one interval's kills by alliance, the sum line, and what it left out. */
+async function seesSplit(scope: Locator, b: ReturnType<typeof busiestInterval>) {
+  const path = scope.getByRole("navigation", { name: "Where you are in this chart" });
+  await sees(path, b.span);
+  for (const p of b.parts) {
+    const row = scope.getByRole("listitem").filter({ hasText: `[${p.tag}] ${p.name}` });
+    await sees(row, killsText(p.kills));
+  }
+  await sees(scope, `Each bar: the alliance's share of these ${killsText(b.total)} kills.`);
+  await sees(
+    scope,
+    `${killsText(b.total)} kills gained in ${b.span} by the ${b.parts.length} alliances read at ${b.from} and at ${b.to}.`,
+  );
+  expect(b.leftOut).toHaveLength(1);
+  const out = b.leftOut.map((x) => `[${x.tag}] ${x.name}`).join(", ");
+  await sees(scope, `Not read at both times, so left out: ${out}.`);
+  return path;
+}
+
+const scrollOf = (page: Page) => page.evaluate(() => window.scrollY);
+/** The window has not moved: the card stays where it was (Back keeps the scroll position). */
+const stays = (page: Page, y: number) =>
+  expect.poll(async () => Math.abs((await scrollOf(page)) - y)).toBeLessThanOrEqual(2);
+
+test("the server pulse opens an interval's kills by alliance, which add up to it, and Back keeps the place (D158 rule 7 (b))", async ({
+  page,
+}) => {
+  const b = busiestInterval();
+  await page.goto("/events/1");
+  const pulse = page.getByRole("region", { name: "Server pulse" });
+  await expect(pulse).toBeVisible();
+  await noError(page);
+  // The readout starts on the busiest interval; the link under it opens that interval's split.
+  const open = pulse.getByRole("link", { name: `${b.span} by alliance ›` });
+  await hydrated(open);
+  expect((await open.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await open.scrollIntoViewIfNeeded();
+  const y = await scrollOf(page);
+  await open.click();
+  await expect(page).toHaveURL(`/events/1?interval=${b.i}#live-pulse`);
+  const path = await seesSplit(pulse, b);
+  await expect(pulse.getByRole("button", { name: "Earlier" })).toHaveCount(0);
+  await stays(page, y);
+  // Back, a 44 px step on the path, gives the interval bars again at the same place.
+  const back = path.getByRole("link", { name: "All intervals" });
+  expect((await back.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await back.click();
+  await expect(page).toHaveURL("/events/1#live-pulse");
+  await expect(path).toHaveCount(0);
+  await expect(open).toBeVisible();
+  await stays(page, y);
+  // The address keeps the level: a link to it opens the split.
+  await page.goto(`/events/1?interval=${b.i}`);
+  await seesSplit(page.getByRole("region", { name: "Server pulse" }), b);
+});
+
+test("the fight clock opens a slot's kills by alliance in its strip's place, and Back keeps the place (D158 rule 7 (b))", async ({
+  page,
+}) => {
+  const b = busiestInterval();
+  // The slot's start on the server clock, in minutes from midnight: the strips line up on it.
+  const [h, m] = b.span.split("–")[0]?.split(":").map(Number) as [number, number];
+  const minute = h * 60 + m;
+  await page.goto("/events/fight-clock");
+  await expect(page.getByRole("heading", { level: 1, name: "Server fight clock" })).toBeVisible();
+  await noError(page);
+  const row = page.locator("#clock-1");
+  const open = row.getByRole("link", { name: `${b.span} by alliance ›` });
+  await hydrated(open);
+  expect((await open.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await open.scrollIntoViewIfNeeded();
+  const y = await scrollOf(page);
+  await open.click();
+  await expect(page).toHaveURL(`/events/fight-clock?event=1&at=${minute}#clock-1`);
+  const path = await seesSplit(row, b);
+  await sees(path, "Server fight clock");
+  await stays(page, y);
+  await path.getByRole("link", { name: "All intervals" }).click();
+  await expect(page).toHaveURL("/events/fight-clock#clock-1");
+  await expect(path).toHaveCount(0);
+  await expect(open).toBeVisible();
+  await stays(page, y);
+  await page.goto(`/events/fight-clock?event=1&at=${minute}`);
+  await seesSplit(page.locator("#clock-1"), b);
 });

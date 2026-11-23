@@ -144,6 +144,16 @@ export const idID = {
     readoutPulse: "{kills} Kills didapat · {n} aliansi dibaca",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "pembacaan event",
+    splitLink: "{span} per aliansi ›",
+    drillPath: "Posisimu di grafik ini",
+    splitBack: "Semua interval",
+    splitSum:
+      "{kills} Kills didapat dalam {span} dari {n} aliansi yang dibaca pada {from} dan {to}.",
+    splitLeftOut: "Salah satu dari dua pembacaan tidak ada, jadi tidak dihitung: {names}.",
+    splitLoss:
+      "Bersama mereka kehilangan Kills di sini; jam perang server menghitungnya sebagai 0.",
+    splitLossPart: "Kehilangan Kills dihitung sebagai 0 di batang dan bagian: {names}.",
+    splitKey: "Tiap batang: bagian aliansi dari {kills} Kills ini.",
   },
   compare: {
     title: "Event vs event",

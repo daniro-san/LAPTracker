@@ -18,11 +18,24 @@ export async function generateMetadata({
   return loaded?.page ? eventTitle(loaded) : notFoundTitle();
 }
 
-export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EventPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ interval?: string | string[] }>;
+}) {
   const id = idOf((await params).id);
   if (id === null) notFound();
-  const { events, homeId, page } = await loadEventPage(id);
+  const [{ events, homeId, page }, { interval }] = await Promise.all([
+    loadEventPage(id),
+    searchParams,
+  ]);
   if (!page) notFound();
+  const drill = {
+    path: `/events/${id}`,
+    interval: typeof interval === "string" ? interval : undefined,
+  };
   // EventView reads the live section: which cache entry it uses depends on the page's End (issue 327).
-  return <EventView events={events} homeId={homeId} {...page} />;
+  return <EventView events={events} homeId={homeId} {...page} drill={drill} />;
 }

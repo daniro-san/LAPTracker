@@ -145,6 +145,15 @@ export const de = {
     readoutPulse: "{kills} Kills gewonnen · {n} Allianzen erfasst",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "Event-Messung",
+    splitLink: "{span} nach Allianz ›",
+    drillPath: "Wo du in diesem Diagramm bist",
+    splitBack: "Alle Intervalle",
+    splitSum:
+      "{kills} Kills gewonnen in {span} von den {n} Allianzen, die bei {from} und bei {to} gemessen wurden.",
+    splitLeftOut: "Nicht zu beiden Zeitpunkten gemessen, daher nicht gezählt: {names}.",
+    splitLoss: "Zusammen haben sie hier Kills verloren; die Kampfuhr zählt das als 0.",
+    splitLossPart: "Ein Verlust zählt in den Balken und Anteilen als 0: {names}.",
+    splitKey: "Jeder Balken: der Anteil der Allianz an diesen {kills} Kills.",
   },
   compare: {
     title: "Event gegen Event",
