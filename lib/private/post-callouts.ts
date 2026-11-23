@@ -76,6 +76,7 @@ export async function calloutsView(
     shield_up: t["posts.shield_up.defaultTitle"],
     welcome: t["posts.welcome.defaultTitle"],
     summary: t["posts.summary.defaultTitle"],
+    kvk: t["posts.kvk.defaultTitle"],
   };
   return postsOf(access).map((post) => ({
     post,

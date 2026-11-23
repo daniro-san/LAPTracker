@@ -125,6 +125,21 @@ describe("the Posts card in Alliance settings (D159)", () => {
     expect(preview(html)).toBe("Every day, between 23:30 and 00:00 ST, in #general.");
   });
 
+  it("shows the KvK recap as going after each KvK, never every week", () => {
+    const html = render({
+      post: "kvk",
+      channels: [{ channel: "members", name: "general" }],
+      day: "Saturday",
+      from: "14:00",
+      to: "14:15",
+    });
+    expect(html).toContain(">KvK recap</h3>");
+    expect(html).toContain("On KvK day (Saturday), after the End is read.");
+    expect(preview(html)).toBe(
+      "After each KvK (Saturday), between 14:00 and 14:15 ST, in #general.",
+    );
+  });
+
   it("counts the title as the server does and marks one over 80 characters", () => {
     expect(render({ title: `  ${"x".repeat(80)}\u200B ` })).toContain("80 of 80 characters");
     const html = render({ title: "x".repeat(81) });

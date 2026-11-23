@@ -65,7 +65,7 @@ test("Posts: an officer turns This week in the alliance on for a channel, and it
   await expect(title).toHaveValue(`${w.name} this week`);
   await sees(next, `Every Monday, between 00:00 and 01:15 ST, in #${leaders}.`);
   const index = page.getByRole("region", { name: "On this page" });
-  await expect(index.getByRole("link", { name: "Posts 1 of 4 on", exact: true })).toBeVisible();
+  await expect(index.getByRole("link", { name: "Posts 1 of 5 on", exact: true })).toBeVisible();
 
   // As the test found it: off.
   await hydrated(on);

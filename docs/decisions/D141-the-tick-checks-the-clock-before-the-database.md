@@ -152,3 +152,5 @@ Page views, admin presses, deploys (`pnpm db:migrate` in the build) and a status
 - The estimate table above does not change.
 
 **Amendment 2026-11-23 (issue 713 part F, D159 amendment): post 4 adds no wake.** The weekly members summary is due on Monday from 00:00 ST, the same clock as post 1, so it goes in the same first tick that opens the database on Monday. Its work, per workspace with it on: the usable rosters' uids of 14 days (one query), its settings, webhooks, the claim, its line and the outcome. The estimate table above does not change.
+
+**Amendment 2026-11-23 (issue 713 part E, D159 amendment): post 5 adds no wake.** The KvK recap is due on the KvK's day (`EVENT_WEEKDAY`) from `SNAPSHOT_AFTER`, when the End's own ticks open the database by the clock; the End runs in the tick's body and the posts after it. Its work, per workspace with it on: the day's event and its End's status (one query), then, once the End has finished, the alliance's Start and End members' uid, name and kills (one query), its settings, webhooks, the claim, its line and the outcome. The estimate table above does not change.
