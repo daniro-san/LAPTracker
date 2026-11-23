@@ -190,6 +190,7 @@ export async function BalanceTrend({
             date={clock.day}
             time={clock.hhmm}
             copy={copy}
+            readout={{ id: "top" }}
           />
           {details && <TrendTable trend={trend} locale={locale} clock={clock} copy={copy} />}
         </div>

@@ -14,6 +14,10 @@ export const drillEn = {
   "drill.set.clear": "Show every member",
   "drill.set.former.one": "1 of them is no longer in the alliance:",
   "drill.set.former.other": "{n} of them are no longer in the alliance:",
+  "drill.earlier": "Earlier",
+  "drill.later": "Later",
+  "drill.day.of": "{v} of {max}",
+  "drill.day.none": "none: in the daily update, nothing sent that day",
 } as const;
 
 type DrillWords = Record<keyof typeof drillEn, string>;
@@ -30,6 +34,10 @@ export const drillPt: DrillWords = {
   "drill.set.clear": "Mostrar todos os membros",
   "drill.set.former.one": "1 deles não está mais na aliança:",
   "drill.set.former.other": "{n} deles não estão mais na aliança:",
+  "drill.earlier": "Antes",
+  "drill.later": "Depois",
+  "drill.day.of": "{v} de {max}",
+  "drill.day.none": "nada: na atualização diária, nada enviado nesse dia",
 };
 
 export const drillFr: DrillWords = {
@@ -44,4 +52,8 @@ export const drillFr: DrillWords = {
   "drill.set.clear": "Afficher tous les membres",
   "drill.set.former.one": "1 d’entre eux n’est plus dans l’alliance :",
   "drill.set.former.other": "{n} d’entre eux ne sont plus dans l’alliance :",
+  "drill.earlier": "Avant",
+  "drill.later": "Après",
+  "drill.day.of": "{v} sur {max}",
+  "drill.day.none": "rien : dans la mise à jour quotidienne, rien envoyé ce jour-là",
 };

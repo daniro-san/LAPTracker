@@ -13,4 +13,10 @@ export const tapCopy = {
   /** The readout's two steps under a pulse or a line chart. */
   readoutEarlier: "Earlier",
   readoutLater: "Later",
+  /** A pulse interval in the readout: its kills and how many alliances were read in it. */
+  readoutPulse: "{kills} kills gained · {n} alliances read",
+  /** One event's slot in the strips' readout: its share of the event's kills, and the kills. */
+  readoutShare: "{share} ({kills} kills)",
+  /** After a line chart's value when the reading was an event's Start or End, not a daily read. */
+  readoutEventRead: "event reading",
 } as const;

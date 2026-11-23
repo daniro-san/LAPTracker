@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Readout } from "@/app/_ui/charts/Readout";
 import { loadFightClock } from "@/app/_ui/event-page";
 import { eventTitle, EventLabel } from "@/app/_ui/EventLabel";
 import type { Clock } from "@/app/_ui/format";
@@ -17,6 +18,7 @@ import {
   mostShare,
   PulseDetails,
   PulseStrip,
+  stripsReadout,
   type Column,
 } from "@/app/_ui/PulseStrip";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
@@ -109,20 +111,21 @@ function SampledRow({
         <span className="mb-2 block text-body-sm tabular-nums">
           {busiestText(own, everyMin, clock, copy, locale)}
         </span>
-        {own.slots.length > 0 ? (
-          <PulseStrip
-            columns={columns}
-            clock={own}
-            most={most}
-            everyMin={everyMin}
-            zone={clock}
-            copy={copy}
-            locale={locale}
-          />
-        ) : (
-          <span className="text-body-sm text-ink/70">{copy.ledger.liveNoReading}</span>
-        )}
       </Link>
+      {/* Outside the link: a tap on a column picks it in the readout under the strips (D158 rule 7 (a)). */}
+      {own.slots.length > 0 ? (
+        <PulseStrip
+          columns={columns}
+          clock={own}
+          most={most}
+          everyMin={everyMin}
+          zone={clock}
+          copy={copy}
+          locale={locale}
+        />
+      ) : (
+        <p className="px-1 text-body-sm text-ink/70">{copy.ledger.liveNoReading}</p>
+      )}
       {details && own.slots.length > 0 && (
         <PulseDetails
           columns={own.slots}
@@ -135,6 +138,39 @@ function SampledRow({
         />
       )}
     </li>
+  );
+}
+
+/** Every event's strip, with one readout for all of them at the chosen slot, kept in view (D158 rule 7 (a)). */
+function Strips(props: { events: FightClockEvent[]; columns: Column[]; most: number; v: View }) {
+  const { events, columns, most, v } = props;
+  const list = (
+    <ul className="grid gap-3">
+      {events.map((e) =>
+        e.pulse.clock ? (
+          <SampledRow key={e.id} event={e} columns={columns} most={most} v={v} />
+        ) : (
+          <OffRow key={e.id} event={e} v={v} />
+        ),
+      )}
+    </ul>
+  );
+  const sampled = events.flatMap((e) =>
+    e.pulse.clock && e.pulse.clock.slots.length > 0
+      ? [{ short: eventTitle(e) ?? v.clock.weekday(e.eventAtUtc), clock: e.pulse.clock }]
+      : [],
+  );
+  if (sampled.length === 0 || columns.length === 0) return list;
+  const l = v.copy.ledger;
+  return (
+    <Readout
+      id="clock"
+      {...stripsReadout(columns, sampled, v.everyMin, v.clock, v.copy, v.locale)}
+      words={{ earlier: l.readoutEarlier, later: l.readoutLater }}
+      sticky
+    >
+      {list}
+    </Readout>
   );
 }
 
@@ -173,15 +209,7 @@ export default async function FightClockPage() {
             <PulseLegend pulse={clocks.flatMap((c) => c.slots)} copy={copy} />
           </div>
         )}
-        <ul className="grid gap-3">
-          {events.map((e) =>
-            e.pulse.clock ? (
-              <SampledRow key={e.id} event={e} columns={columns} most={most} v={v} />
-            ) : (
-              <OffRow key={e.id} event={e} v={v} />
-            ),
-          )}
-        </ul>
+        <Strips events={events} columns={columns} most={most} v={v} />
       </main>
       <SiteFooter copy={copy} />
     </>
