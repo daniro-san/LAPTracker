@@ -209,11 +209,12 @@ export const patchNotes: PatchNote[] = [
   {
     version: "v5.71.0",
     date: "2026-11-23",
-    title: "A daily welcome for new members",
+    title: "A daily welcome for members, a weekly count for officers",
     changes: [
       "Alliance settings → Posts: a third optional post, Welcome new members. Every day, after the end-of-day read (between 23:30 and 00:00 ST), it greets by name the members who joined since yesterday, in the members' channel. It runs only when both days' reads worked, never mentions anyone who left, pings nobody, and posts nothing on a day with no one new. Off until officers turn it on; allowed by default.",
+      "Alliance settings → Posts: a fourth optional post, Weekly members summary, in the leaders' channel only. Every Monday between 00:00 and 01:15 ST it gives last week's counts: how many joined, how many left, the member count on two dated days, and how many of the 7 daily updates it is based on. Counts only: no names, no coins, quests or donations. Off until officers turn it on; allowed by default.",
     ],
-    prs: [766],
+    prs: [766, 768],
   },
   {
     version: "v5.70.0",
