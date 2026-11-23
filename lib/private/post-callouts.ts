@@ -8,6 +8,7 @@ import { z } from "zod";
 import { SHIELD_POST, SHIELD_LANGUAGES, type ShieldLanguage } from "../copy-shield";
 import type { Db } from "../db";
 import { CALLOUT_LIMIT, calloutLength, cleanCallout, discordCallout } from "../post-callout";
+import { POST_CATALOG } from "../post-catalog";
 import { recordFailure } from "../repo/auth-attempts";
 import { calloutOf, calloutsOf, saveCallout } from "../repo/post-touches";
 import { POST_KEYS, type PostKey } from "../schema-discord";
@@ -33,12 +34,16 @@ export interface CalloutView {
   title: string;
 }
 
-/** The posts this alliance can get: the Raid Shield summary only with the check on, garrison with its tab. */
+/**
+ * The posts this alliance can get: the Raid Shield summary only with the check on, garrison with its tab, a
+ * catalog post while the owner allows it (D159).
+ */
 function postsOf(access: WorkspaceAccess): PostKey[] {
   return POST_KEYS.filter(
     (p) =>
       (p !== "shield" || featureOn(access, "shield_check")) &&
-      (p !== "garrison" || featureOn(access, "garrison")),
+      (p !== "garrison" || featureOn(access, "garrison")) &&
+      (p !== "week" || featureOn(access, POST_CATALOG.week.feature)),
   );
 }
 
@@ -64,6 +69,7 @@ export async function calloutsView(
     shield: shieldTitle(shieldLanguage),
     thanks: t["share.discord.title"],
     garrison: t["switches.name.garrison"],
+    week: t["posts.week.defaultTitle"],
   };
   return postsOf(access).map((post) => ({
     post,

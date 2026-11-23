@@ -56,6 +56,8 @@ export const DESK_FEATURES = [
   "push",
   // D156: Alliance settings → Your line on our posts (one post's line changed). Never the text.
   "post_callout",
+  // D159: Alliance settings → Posts (a catalog post turned on or off, or its settings saved), with `post`.
+  "posts",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 
@@ -127,6 +129,10 @@ export interface DeskPlace {
   on_list: boolean;
 }
 
+/** The catalog's posts (D159, `CATALOG_POSTS` in lib/schema-discord.ts): `posts` events say which one. */
+export const DESK_POSTS = ["week"] as const;
+export type DeskPost = (typeof DESK_POSTS)[number];
+
 /**
  * Which alliance an event came from (issue 452): the workspace's slug and its alliance's public tag (null
  * when the caller has no label for it, D133). Neither is personal data. No PostHog groups (a paid add-on).
@@ -174,7 +180,9 @@ export interface ServerEvents {
     command: "send_to_laptracker" | "translate_for_me" | "translate_for_everyone";
   };
   /** A desk write that went through (lib/private/desk-action.ts): which feature, which action. */
-  ws_action: { feature: DeskFeature; action: DeskAction } & Partial<DeskPlace>;
+  ws_action: { feature: DeskFeature; action: DeskAction } & Partial<DeskPlace> & {
+      post?: DeskPost;
+    };
 }
 export type ServerEvent = {
   [E in keyof ServerEvents]: {
@@ -254,6 +262,8 @@ function ownProperties(e: ServerEvent): Wire {
         // Issue 516: Follow-up's records only, two closed values.
         ...(e.properties.from && { from: e.properties.from }),
         ...(e.properties.on_list !== undefined && { on_list: e.properties.on_list }),
+        // D159: which catalog post, one closed value.
+        ...(e.properties.post && { post: e.properties.post }),
       };
   }
 }

@@ -46,6 +46,7 @@ export const featuresAdminCopy = {
     discord_translate_me: "Translate for me",
     discord_translate_everyone: "Translate for everyone",
     post_callouts: "Alliance's line on our posts",
+    post_week: "Post: This week in the alliance (off until the alliance turns it on)",
     squads: "Squads read (own key)",
     shield_check: "Raid Shield check (own key)",
     notice_pictures: "Notice pictures (Neon storage)",

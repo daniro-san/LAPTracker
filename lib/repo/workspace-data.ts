@@ -23,7 +23,13 @@ import {
   workspaceUsers,
 } from "../schema";
 import { startHere, thanksShares, thanksTakedowns } from "../schema-board";
-import { workspaceDiscord, workspacePostTouches, workspaceWebhooks } from "../schema-discord";
+import {
+  postRuns,
+  workspaceDiscord,
+  workspacePosts,
+  workspacePostTouches,
+  workspaceWebhooks,
+} from "../schema-discord";
 import { workspaceFeatures, workspaceUsage } from "../schema-features";
 import { feedback, feedbackPictures } from "../schema-feedback";
 import {
@@ -106,6 +112,8 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "start-here", table: startHere, scope: "workspace" },
   // D156: the alliance's own line on each of our posts, the officers' words like Start here.
   { file: "post-callouts", table: workspacePostTouches, scope: "workspace" },
+  // D159: the alliance's settings of each catalog post (switch, channel, its own title, language).
+  { file: "posts", table: workspacePosts, scope: "workspace" },
   { file: "screenshot-drafts", table: screenshotDrafts, scope: "workspace" },
   { file: "alliance-duel-points", table: allianceDuelPoints, scope: "workspace" },
   { file: "screenshot-checks", table: screenshotChecks, scope: "workspace" },
@@ -135,6 +143,8 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   // D148: officers' devices for notifications, sealed like the webhooks, and what each trigger last sent.
   { file: null, table: pushSubscriptions, scope: "workspace" },
   { file: null, table: pushMarks, scope: "workspace" },
+  // D159: each catalog post's claim per period: codes and counts, like the push marks.
+  { file: null, table: postRuns, scope: "workspace" },
   // D157: what officers and members sent the site's owner; it is for the owner, so never downloaded.
   { file: null, table: feedback, scope: "workspace" },
   { file: null, table: feedbackPictures, scope: "workspace" },

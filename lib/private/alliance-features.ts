@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import type { Db } from "../db";
+import { POST_FEATURES } from "../post-catalog";
 import { latestMemberCounts } from "../queries/rosters";
 import { recordFailure } from "../repo/auth-attempts";
 import { setAllianceSwitch, settingsById } from "../repo/workspace-features";
@@ -24,8 +25,14 @@ import type { WorkspaceAccess } from "./access";
 export const SWITCHES = 60;
 export const SWITCH_WINDOW_MS = 15 * 60_000;
 
+/**
+ * The features the alliance switches here: all but the catalog posts', whose alliance layer is the post's own
+ * switch in Alliance settings → Posts (D159), off until officers turn it on.
+ */
+const SWITCHED_HERE = FEATURES.filter((f) => !POST_FEATURES.has(f));
+
 export const allianceFeatureInput = z
-  .object({ feature: z.enum(FEATURES as [Feature, ...Feature[]]), on: z.boolean() })
+  .object({ feature: z.enum(SWITCHED_HERE as [Feature, ...Feature[]]), on: z.boolean() })
   .strict();
 
 /** One allowed feature as the officers see it, and the tracker calls it spends when on (null: none). */
@@ -53,7 +60,7 @@ export async function allianceFeaturesView(
     latestMemberCounts(db, [access.unionId]),
   ]);
   const members = counts.get(access.unionId) ?? ESTIMATE_MEMBERS;
-  const allowed = FEATURES.filter((f) => found && !found.settings.off.includes(f));
+  const allowed = SWITCHED_HERE.filter((f) => found && !found.settings.off.includes(f));
   const groups = (Object.keys(FEATURE_GROUPS) as FeatureGroup[])
     .map((group) => ({
       group,

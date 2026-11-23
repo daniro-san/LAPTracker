@@ -86,6 +86,8 @@ export const dataEn = {
   "data.file.start-here": "Start here, in each language.",
   "data.file.post-callouts":
     "Your own line on our Discord posts, per post, and who changed it last.",
+  "data.file.posts":
+    "The posts we make for you on our own: each one’s switch, channel, your title and language.",
   "data.file.screenshot-drafts": "Screenshot imports: the text read and the rows found.",
   "data.file.alliance-duel-points": "Alliance Duel points saved from screenshots.",
   "data.file.screenshot-checks": "Rankings checked against the tracker: counts only.",
@@ -186,6 +188,8 @@ export const dataPt: typeof dataEn = {
   "data.file.start-here": "Comece aqui, em cada idioma.",
   "data.file.post-callouts":
     "A sua frase nos nossos posts do Discord, por post, e quem a mudou por último.",
+  "data.file.posts":
+    "Os posts que fazemos por vocês sozinhos: de cada um, se está ligado, o canal, o seu título e o idioma.",
   "data.file.screenshot-drafts": "Importações de prints: o texto lido e as linhas encontradas.",
   "data.file.alliance-duel-points": "Pontos do Alliance Duel salvos de prints.",
   "data.file.screenshot-checks": "Rankings conferidos com o tracker: só contagens.",
@@ -292,6 +296,8 @@ export const dataFr: typeof dataEn = {
   "data.file.start-here": "Commencer ici, dans chaque langue.",
   "data.file.post-callouts":
     "Votre phrase sur nos messages Discord, par message, et qui l’a changée en dernier.",
+  "data.file.posts":
+    "Les messages que nous publions pour vous tout seuls : pour chacun, s’il est allumé, le salon, votre titre et la langue.",
   "data.file.screenshot-drafts": "Les imports de captures : le texte lu et les lignes trouvées.",
   "data.file.alliance-duel-points":
     "Les points de l’Alliance Duel enregistrés depuis des captures.",
