@@ -32,9 +32,11 @@ describe("WhoFought", () => {
   it("shows the first 5 rows of a list and the rest behind Show all", () => {
     const eight = Array.from({ length: 8 }, (_, i) => alliance(i + 1, 20));
     const html = render(eight, eight);
-    expect(html.match(/href="\/events\/7\/alliances\/\d+\?sort=killsDelta#members"/g)).toHaveLength(
-      10,
-    );
+    expect(
+      html.match(
+        /href="\/events\/7\/alliances\/\d+\?sort=killsDelta&amp;from=war_turnout#members"/g,
+      ),
+    ).toHaveLength(10);
     expect(html.match(/Show all \(8\)/g)).toHaveLength(2);
   });
 

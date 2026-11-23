@@ -63,6 +63,7 @@ export function useGrid<T extends { uid: number }>(
   const counts = gridCounts(uids, markOf);
   useOpenedFrom(opened, opened ? counts[opened] : 0);
   return {
+    opened,
     snap,
     counts,
     open,
@@ -186,6 +187,39 @@ function MarkedGroup<T extends { uid: number }>(props: {
   );
 }
 
+/** Opened from a Roll call card's count: one line says why, until another chip is tapped (D158). */
+function ArrivedFrom<T extends { uid: number }>({
+  g,
+  words,
+}: {
+  g: Grid<T>;
+  words: RollSheetWords;
+}) {
+  if (!g.opened || g.snap.label || g.snap.filter !== g.opened) return null;
+  return (
+    <p className="mt-2 border-s-2 border-plum ps-3 text-body-sm">
+      {words[`roll.grid.from.${g.opened}`]}
+    </p>
+  );
+}
+
+/**
+ * A shown set says which it is: no chip is pressed (drilldown panel review). "Show the n ›" on Raid prep
+ * scrolls this line into view: at 360 px the grid can sit below the fold under the counts (D158 rule 7 (c):
+ * the page's own grid is the list).
+ */
+function ShownLine({ label }: { label: string }) {
+  const line = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    line.current?.scrollIntoView({ block: "start" });
+  }, [label]);
+  return (
+    <p ref={line} className="mt-2 scroll-mt-2 text-body-sm font-semibold">
+      {label}
+    </p>
+  );
+}
+
 /** The chips, the tiles and the "Marked" group; `found` is the search, null while it is empty. */
 export function RollGrid<T extends { uid: number }>(props: {
   g: Grid<T>;
@@ -204,24 +238,18 @@ export function RollGrid<T extends { uid: number }>(props: {
   const { list, marked } = g.sectionsOf(props.found);
   const todo = g.snap.filter === "todo";
   const empty = todo ? (props.emptyTodo ?? words["roll.grid.none.todo"]) : words["roll.grid.none"];
-  // A shown set ("Show the n ›" on Raid prep) scrolls its line into view: at 360 px the grid can sit below
-  // the fold under the counts (D158 rule 7 (c), the page's own grid is the list).
-  const shownLine = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    if (g.snap.label) shownLine.current?.scrollIntoView({ block: "start" });
-  }, [g.snap.label]);
   return (
     <>
       {!props.found && props.caption && (
         <p className="mt-1 text-body-sm text-ink/80">{props.caption}</p>
       )}
-      {!props.found && <Filters g={g} words={words} said={props.said} />}
-      {/* A shown set says which it is: no chip is pressed (drilldown panel review). */}
-      {!props.found && g.snap.label && (
-        <p ref={shownLine} className="mt-2 scroll-mt-2 text-body-sm font-semibold">
-          {g.snap.label}
-        </p>
+      {!props.found && (
+        <>
+          <ArrivedFrom g={g} words={words} />
+          <Filters g={g} words={words} said={props.said} />
+        </>
       )}
+      {!props.found && g.snap.label && <ShownLine label={g.snap.label} />}
       {/* With nobody left, the tiles marked meanwhile stay; the line says why (persona review). */}
       {!props.found && (list.length === 0 || (todo && g.counts.todo === 0)) && (
         <p className="py-3 text-ink/80">{empty}</p>

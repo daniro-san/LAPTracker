@@ -76,6 +76,8 @@ describe("WhoCarried", () => {
   it("lets a long tag and name shrink inside the row and links the row to the alliance's page", () => {
     const html = render([row(1, { tag: "ABCDEFG", name: "N".repeat(24) })]);
     expect(html).toContain("min-w-0 flex-1 truncate");
-    expect(html).toContain('href="/events/7/alliances/1?sort=killsDelta#members"');
+    expect(html).toContain(
+      'href="/events/7/alliances/1?sort=killsDelta&amp;from=kill_share#members"',
+    );
   });
 });
