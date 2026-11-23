@@ -207,6 +207,18 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.67.0",
+    date: "2026-11-23",
+    title: "Tap a chart to read it, and see who",
+    changes: [
+      "Charts answer a tap where you are: a line under the chart names the chosen column, its time and its numbers, with ‹ › to step (server pulse, fight clock, compare, a player's line, Me, the member card's last 7 days).",
+      'Insights: a count of members opens its names in place (up to 12), in a sheet on a phone or a side pane on a computer (up to 60), and "Open these n in Members ›" opens the Members list on exactly that set, as one removable chip, in name order.',
+      "A War turnout or Kill share row says why you landed on the alliance's member list (sorted by kills gained), with an × back to the usual order.",
+      "The feedback sheet keeps a focused field clear of its Send bar on a phone.",
+    ],
+    prs: [745, 744],
+  },
+  {
     version: "v5.66.0",
     date: "2026-11-23",
     title: "Honest charts and right daily quest points",
