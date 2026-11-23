@@ -207,6 +207,15 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.69.1",
+    date: "2026-11-23",
+    title: "A test read on raid night",
+    changes: [
+      "One test read at 02:30 ST on Saturday 28 (raid night), about 100 calls, once: it shows how many members the game's map saw after the reset, to decide whether a third Raid Shield read each week is worth it. It never touches Raid prep, the summary or notifications, and it keeps the morning check's calls.",
+    ],
+    prs: [758],
+  },
+  {
     version: "v5.69.0",
     date: "2026-11-23",
     title: "One more level: a day",
