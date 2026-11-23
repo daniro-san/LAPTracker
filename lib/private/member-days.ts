@@ -29,8 +29,8 @@ export interface LastDays {
   /** Might on the newest day with a might against the oldest one; null with fewer than two such days. */
   might: { from: string; change: number } | null;
   /**
-   * The alliance's best member-day in these days, the scale of the quest points and donations bars (D158).
-   * Absent on a member's own page (D142), which draws against their own best day: an alliance figure there
+   * The alliance's best member-day in these days (`allianceBest`), the scale of the quest points and
+   * donations bars (D158). Set by the member card only; absent on a member's own page (D142), which draws against their own best day: an alliance figure there
    * would show other members' values.
    */
   best?: Record<"quests" | "donations", number>;
@@ -53,8 +53,6 @@ export function lastDays(reads: readonly RosterRead[], uid: number): LastDays | 
     return power === null || power === undefined ? [] : [{ day, power }];
   });
   const [first, last] = [mights[0], mights.at(-1)];
-  const inDays = reads.filter((r) => days.includes(r.day)).flatMap((r) => r.members);
-  const best = (k: DayMetric) => Math.max(0, ...inDays.map((m) => m[FIELD[k]] ?? 0));
   return {
     days,
     rows: { quests: row("quests"), coins: row("coins"), donations: row("donations") },
@@ -62,8 +60,20 @@ export function lastDays(reads: readonly RosterRead[], uid: number): LastDays | 
       first && last && first !== last
         ? { from: first.day, change: last.power - first.power }
         : null,
-    best: { quests: best("quests"), donations: best("donations") },
   };
+}
+
+/**
+ * The alliance's best member-day for quest points and donations over `days` (D158): the scale of the member
+ * card's bars. Read once per card, not inside `lastDays`, which Follow-up runs for every member.
+ */
+export function allianceBest(
+  reads: readonly RosterRead[],
+  days: readonly string[],
+): Record<"quests" | "donations", number> {
+  const members = reads.filter((r) => days.includes(r.day)).flatMap((r) => r.members);
+  const best = (k: DayMetric) => Math.max(0, ...members.map((m) => m[FIELD[k]] ?? 0));
+  return { quests: best("quests"), donations: best("donations") };
 }
 
 /** A member's average over the days a daily update lists them, with how many of those days were "none". */

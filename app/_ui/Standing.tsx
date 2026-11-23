@@ -164,7 +164,7 @@ function NotRanked({ list, copy }: { list: Figures["notRanked"]; copy: Dictionar
   );
 }
 
-function StandingBody({
+export function StandingBody({
   standing,
   unionId,
   details,

@@ -15,7 +15,9 @@ import { LABEL } from "./StatTable";
 
 /**
  * A bar against `scale` on a rule-coloured track (Bar, D158), with the cap's tick when `marker` is given.
- * A total split in two draws the whole in seal with the part that fits over it in ink.
+ * A total split in two stacks three bars in one grid cell: the whole in seal, then the part that fits in the
+ * track's own colour and in ink over it, so the 60 % ink looks as on every other bar and only what does not
+ * fit shows seal.
  */
 function Track({
   value,
@@ -36,15 +38,16 @@ function Track({
   if (within === undefined)
     return <Bar axis="row" share={share(value)} tone={tone} reference={marker} className={track} />;
   return (
-    <span className={`relative block ${track}`}>
+    <span className={`grid ${track}`}>
       <Bar
         axis="row"
         share={share(value)}
         tone="bg-seal"
         reference={marker}
-        className="absolute inset-0"
+        className="col-start-1 row-start-1"
       />
-      <Bar axis="row" share={share(within)} tone="bg-ink/60" className="absolute inset-0" />
+      <Bar axis="row" share={share(within)} tone="bg-rule" className="col-start-1 row-start-1" />
+      <Bar axis="row" share={share(within)} tone="bg-ink/60" className="col-start-1 row-start-1" />
     </span>
   );
 }

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { cardFormats } from "./member-card";
-import { daysCard, lastDays, type DaysFormats } from "./member-days";
+import { allianceBest, daysCard, lastDays, type DaysFormats } from "./member-days";
 
 const member = (uid: number, fields: Partial<RosterMember> = {}): RosterMember => ({
   uid,
@@ -107,8 +107,11 @@ describe("the member card's last 7 days (issue 461)", () => {
         member(2, { active: 600, dailyTech: 8000, dailyHonor: 1000 }),
       ]),
     );
-    const card = (uid: number) =>
-      daysCard(lastDays(week, uid) as NonNullable<ReturnType<typeof lastDays>>, t, f);
+    // As the member card reads them: the member's days with the alliance's best member-day.
+    const card = (uid: number) => {
+      const d = lastDays(week, uid) as NonNullable<ReturnType<typeof lastDays>>;
+      return daysCard({ ...d, best: allianceBest(week, d.days) }, t, f);
+    };
     const [quests, coins, donations] = card(1).rows;
     expect(quests?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.5));
     expect(donations?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.25));

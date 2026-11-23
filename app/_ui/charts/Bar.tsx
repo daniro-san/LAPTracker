@@ -2,8 +2,8 @@
 // hooks), so client components can draw it too. Its length is a share of its track, and one zero rule holds
 // everywhere: null (no figure) draws nothing, not even the track; zero or less draws a 1 px hairline; above
 // zero is at least MIN_PX long, so a small value still shows; above 1 fills the track. A bar never gets a fixed
-// minimum such as 6 %, which made a zero or a loss look like a small gain. Its words are sr-only text inside it,
-// never an aria-label on a non-interactive element.
+// minimum such as 6 %, which made a zero or a loss look like a small gain. The drawing is aria-hidden: its words
+// are the row's own text or an sr-only span beside it, never an aria-label on a non-interactive element.
 import type { CSSProperties } from "react";
 
 /** Above zero, a bar is never shorter than this, in px. */
@@ -38,7 +38,6 @@ export function Bar({
   reverse = false,
   tone = "bg-plum/60",
   reference = null,
-  label,
   className = "",
 }: {
   /** The length as a share of the track; null when there is no figure. */
@@ -51,13 +50,10 @@ export function Bar({
   tone?: string;
   /** Where a threshold sits (a cap, 100 %), as a share of the track: a 2 px ink tick across it. */
   reference?: number | null | undefined;
-  /** What the bar says, read out instead of the drawing. */
-  label?: string;
   /** The track's classes: its size and background. */
   className?: string;
 }) {
-  const words = label ? <span className="sr-only">{label}</span> : null;
-  if (share === null || Number.isNaN(share)) return words;
+  if (share === null || Number.isNaN(share)) return null;
   const drawn = box(share, axis, reverse);
   const at = reference === null || reference === undefined ? null : tick(reference, axis, reverse);
   return (
@@ -66,7 +62,6 @@ export function Bar({
       {at && (
         <span aria-hidden="true" className={`absolute bg-ink ${at.className}`} style={at.style} />
       )}
-      {words}
     </span>
   );
 }

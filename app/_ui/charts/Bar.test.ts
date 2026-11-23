@@ -12,9 +12,8 @@ const length = (html: string) =>
   /aria-hidden="true" class="absolute[^"]*" style="([^"]*)"/.exec(html)?.[1];
 
 describe("Bar: one zero rule for every column and row (D158)", () => {
-  it("draws nothing for a missing figure, not even an empty track, and still says its words", () => {
+  it("draws nothing for a missing figure, not even an empty track", () => {
     expect(render({ share: null })).toBe("");
-    expect(render({ share: null, label: "Tue: —" })).toBe('<span class="sr-only">Tue: —</span>');
   });
 
   it("draws a zero as a 1 px hairline, never as a stub that reads like a small gain", () => {
@@ -45,9 +44,9 @@ describe("Bar: one zero rule for every column and row (D158)", () => {
     expect(render({ share: 0.5 })).not.toContain("bg-ink");
   });
 
-  it("puts its words in sr-only text, never in an aria-label", () => {
-    const html = render({ share: 0.5, label: "11:00–11:15: 10200 kills" });
-    expect(html).toContain('<span class="sr-only">11:00–11:15: 10200 kills</span>');
+  it("hides its drawing from screen readers and never names it with an aria-label", () => {
+    const html = render({ share: 0.5, reference: 0.8 });
+    expect(html.match(/aria-hidden="true"/g)).toHaveLength(2);
     expect(html).not.toContain("aria-label");
   });
 });
