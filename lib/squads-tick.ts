@@ -58,7 +58,7 @@ export async function squadsBatch(
     }
     if (origin !== undefined) {
       await shieldTick({ ...deps, origin }, db, startedAt + AFTER_BUDGET_MS);
-      // Issue 726: the one-off probe read of 2026-11-23 02:30 ST; removed by a follow-up PR.
+      // Issue 726: the one-off probe read of 2026-11-28 02:30 ST; removed by a follow-up PR.
       await shieldProbe(deps, db, startedAt + AFTER_BUDGET_MS);
     }
   } catch (error) {

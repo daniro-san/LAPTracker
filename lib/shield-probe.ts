@@ -1,11 +1,13 @@
-// Issue 726: a one-off probe read, approved by the owner on 2026-11-22 with its quota cost (about 100
-// calls, once). On the tick that falls in 02:30–02:45 ST on Mon 2026-11-23, every member of the own alliance
-// (OGs, when its `shield_check` is on) is read once with the Raid Shield checks' call, on the same key. Its
-// readings' map times (`player_reads.map_updated_at`) show when the tracker rescans the map after the reset.
-// The readings land in `player_reads` at 02:30 Monday, outside both windows the checks, Raid prep, the
+// Issue 726: a one-off probe read. It ran first on Mon 2026-11-23 (owner, 2026-11-22); on 2026-11-23 the
+// owner approved one repeat on raid night, with its quota cost (about 100 calls, once). On the tick that
+// falls in 02:30–02:45 ST on Sat 2026-11-28, every member of the own alliance (OGs, when its `shield_check`
+// is on) is read once with the Raid Shield checks' call, on the same key. Its readings' map times
+// (`player_reads.map_updated_at`) show when the tracker rescans the map after the reset.
+// The readings land in `player_reads` at 02:30 Saturday, outside both windows the checks, Raid prep, the
 // member card, the summary and the push read (`passWindows`: Friday 23:00–00:00, Saturday 10:00–12:00 ST),
 // so no check counts them. It writes no Raid prep mark, no shield_checks row, no might version, no post and
-// no push. The `app_alerts` claim (id PROBE_ALERT) makes it run at most once.
+// no push. It keeps the morning check's calls in reserve and makes no call while the day's squads read is
+// still running. The `app_alerts` claim (id PROBE_ALERT) makes it run at most once.
 // REMOVE: a follow-up PR deletes this file, its call in lib/squads-tick.ts and its test (issue 726).
 import { OWN_ALLIANCE_ID, TRACKED_COUNT } from "../config/alliances";
 import type { Db } from "./db";
@@ -22,11 +24,15 @@ import { readOne, startQuota, type Batch, type StartDaily } from "./squads-call"
 import { PACE_MS, type SquadsDeps } from "./squads-read";
 import { squadTargets, type SquadTarget } from "./workspace-keys";
 
-/** The probe's one window, in server time (issue 726, owner 2026-11-22). Removed by the follow-up PR. */
-export const PROBE_WINDOW = { day: "2026-11-23", from: "02:30", to: "02:45" } as const;
+/** The probe's one window, in server time (issue 726, owner 2026-11-23). Removed by the follow-up PR. */
+export const PROBE_WINDOW = { day: "2026-11-28", from: "02:30", to: "02:45" } as const;
 
-/** The probe's claim row in `app_alerts` (1: retired, 2: the tick-silence alert). */
-export const PROBE_ALERT = 3;
+/**
+ * The probe's claim row in `app_alerts` (1: retired, 2: the tick-silence alert, 3: Monday 2026-11-23's
+ * probe). A fresh row: `claimAlert` refuses while the row's last claim is within the gap, and id 3's claim
+ * of Monday is 5 days before Saturday's window.
+ */
+export const PROBE_ALERT = 4;
 
 /** Whether `now` is inside the probe's window. */
 export function probeDue(now: Date, cfg: Parameters<typeof serverInstant>[2]): boolean {
@@ -110,7 +116,10 @@ async function readProbe(deps: SquadsDeps, db: Db, run: Run) {
 
 /**
  * The quota the probe starts from and the reserve it keeps, as the morning check's start: our key, what
- * the day's squads read (or the daily read) left; a workspace key, one /quota call on it (D124).
+ * the day's squads read (or the daily read) left; a workspace key, one /quota call on it (D124). The
+ * reserve is the morning check's own plus its most calls (`SHIELD_CALLS_MAX`): on raid Saturday the
+ * probe and the morning check spend from the same quota day. While the day's squads read is still
+ * running after this tick's batch, `squads_busy` and no call at all: the squads read comes first.
  */
 async function startProbe(
   deps: SquadsDeps,
@@ -118,17 +127,20 @@ async function startProbe(
   run: Run & { target: SquadTarget; daily: StartDaily },
 ) {
   const { target } = run;
+  const squads = await getSquadRead(db, run.day, target.unionId);
+  if (squads?.status === "running")
+    return { remaining: null, reserve: 0, reason: "squads_busy", quotaCalls: 0 };
   const quota = await startQuota(deps, db, {
     daily: run.daily,
     key: target.key,
     signal: run.signal,
   });
-  const squads = target.key ? null : await getSquadRead(db, run.day, target.unionId);
-  const remaining = squads?.quotaRemaining ?? quota.remaining;
+  const remaining = (target.key ? null : squads?.quotaRemaining) ?? quota.remaining;
   const now = deps.now();
-  const reserve = target.key
+  const morning = target.key
     ? SQUADS_SAFETY_MARGIN
     : squadsReserve(now, deps.env, TRACKED_COUNT, await opponentReserve(db, now, deps.env));
+  const reserve = morning + SHIELD_CALLS_MAX;
   const reason = quota.reason ?? (remaining === null ? "quota_unknown" : null);
   return { remaining, reserve, reason, quotaCalls: quota.calls };
 }
