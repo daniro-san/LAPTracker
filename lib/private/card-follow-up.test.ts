@@ -30,12 +30,15 @@ beforeAll(async () => {
   db = await openTestDb();
 });
 
-/** An end-of-day read: 101 lists no daily quests (the offline proxy, D127), 102 lists 30. */
-async function endOfDay(day: string) {
+/**
+ * An end-of-day read: 101 lists no daily quests (the offline proxy, D127); 102 earns 30 a day, so `active`,
+ * the week's running total since Monday's reset (#739), is `total` (30 times the days since Monday).
+ */
+async function endOfDay(day: string, total: number) {
   const at = new Date(`${day}T23:37:00-02:00`);
   const members = [
     { uid: 101, nick_name: "Wren Example", active: null },
-    { uid: 102, nick_name: "Moss Example", active: 30 },
+    { uid: 102, nick_name: "Moss Example", active: total },
   ];
   await db.insert(dailyReads).values({ day, startedAt: at, status: "complete" });
   await db.insert(dailyRosters).values({
@@ -55,7 +58,13 @@ async function endOfDay(day: string) {
 beforeEach(async () => {
   await truncateAll(db);
   await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
-  for (const day of ["2026-11-17", "2026-11-18", "2026-11-19"]) await endOfDay(day);
+  // Tuesday to Thursday: 102's total holds Monday's 30 too.
+  for (const [day, total] of [
+    ["2026-11-17", 60],
+    ["2026-11-18", 90],
+    ["2026-11-19", 120],
+  ] as const)
+    await endOfDay(day, total);
 });
 
 async function signedIn(name: string): Promise<WorkspaceAccess> {

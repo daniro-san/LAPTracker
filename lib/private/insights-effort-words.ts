@@ -10,6 +10,7 @@ import { EFFORT_METRICS, EFFORT_MIN_READS } from "./insights-rules";
 import { setOf, type MemberSet } from "./insights-sets";
 import type { InsightsWords } from "./insights-words";
 import { COINS_MAX } from "./member-days";
+import { QUEST_DAY_CAP } from "./member-week";
 
 /** The members left out of the groups, by kind, with their words; empty kinds left out. */
 function leftOutOf(e: NonNullable<InsightsView["effort"]>, { t, language }: Formats) {
@@ -72,8 +73,10 @@ export function effortWords(
       : []),
   ];
   const groups = EFFORT_METRICS.map((k) => {
-    const top =
-      k === "coins" ? COINS_MAX : Math.max(0, ...e.bands.map((b) => b.medians[k]?.value ?? 0));
+    // Coins and quest points against their daily caps (D158; the quest points cap is provisional, #739).
+    const cap = { coins: COINS_MAX, quests: QUEST_DAY_CAP, tech: null }[k];
+    const top = cap ?? Math.max(0, ...e.bands.map((b) => b.medians[k]?.value ?? 0));
+
     return {
       label: t[`insights.effort.${k}`],
       rows: e.bands.map((b) => {

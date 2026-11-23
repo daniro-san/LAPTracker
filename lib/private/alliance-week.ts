@@ -2,10 +2,11 @@
 // how many reached the 1,000 Alliance Help coin cap and the median of the daily quest points on the newest
 // read's day, and the donations of that read's game week added up. Alliance-level numbers only: nobody is
 // named or ranked. A null on a read that lists a member is none that day (D127); a day with no read is
-// left out and named, never 0 (D75).
+// left out and named, never 0 (D75). The day's quest points come from the week's running total
+// (`questPoints`, #739): with no read of the day before, a member's are no data and left out.
 import type { RosterRead } from "../repo/workspace-rosters";
 import { median, pulseOf, type Median, type Share } from "./insights-rules";
-import { gameWeek } from "./member-week";
+import { gameWeek, questPoints } from "./member-week";
 
 export interface AllianceWeek {
   /** The newest end-of-day read's server day: the coins and quest points are that day's. */
@@ -34,10 +35,14 @@ export function allianceWeek(reads: readonly RosterRead[], today: string): Allia
   const days = [...new Set([...week, ...gameWeek(today)])];
   return {
     day: newest.day,
-    coins: pulseOf([newest]).coins,
+    coins: pulseOf([newest], reads).coins,
     quests: median(
-      newest.members.flatMap((m) => ((m.active ?? 0) > 0 ? [m.active as number] : [])),
+      newest.members.flatMap((m) => {
+        const points = questPoints(reads, m.uid, newest.day);
+        return typeof points === "number" ? [points] : [];
+      }),
     ),
+
     monday: week[0] as string,
     donations: gifts.length === 0 ? null : gifts.reduce((a, b) => a + b, 0),
     // Today's read runs at the end of the day, so today is never "no read" yet.

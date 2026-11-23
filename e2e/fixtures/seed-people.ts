@@ -7,10 +7,11 @@ export type Side = "a" | "b";
 /**
  * The private roster fields' values in each alliance's raw_json (CLAUDE.md "Roster fields"): six-digit map
  * coordinates, and four years no page shows otherwise. Last online falls on a 29 February, which the member
- * card writes as "Feb 29" (no year), so a formatted leak can be seen too. Daily quest points (`active`) and
- * donations (`daily_tech`) are figures no other seeded value or copy line has, one pair per alliance; every
- * member of an alliance has the same, except the quest points of Lantern Keep's linked member around last
- * week (seed.ts `questPointsOf`). Coins (`daily_honor`) sit at their 1,000 cap
+ * card writes as "Feb 29" (no year), so a formatted leak can be seen too. A day's quest points and donations
+ * (`daily_tech`) are figures no other seeded value or copy line has, one pair per alliance, and the quest
+ * points stay under the daily cap (240); every member of an alliance has the same, except the quest points
+ * of Lantern Keep's linked member around last week (seed.ts `questPointsOf`). `active` itself is the week's
+ * running total of those days (seed.ts `questTotalOf`, #739). Coins (`daily_honor`) sit at their 1,000 cap
  * (COINS_MAX), a figure the copy itself writes, so only their key can be looked for.
  */
 export const SENTINELS = {
@@ -19,7 +20,7 @@ export const SENTINELS = {
     y: 713580,
     lastOnline: "2088-02-29T12:00:00Z",
     joined: "2086-05-21T06:07:08Z",
-    active: 647,
+    active: 175,
     tech: 3917,
   },
   b: {
@@ -27,7 +28,9 @@ export const SENTINELS = {
     y: 824682,
     lastOnline: "2092-02-29T12:00:00Z",
     joined: "2090-06-22T07:08:09Z",
-    active: 629,
+    active: 155,
+
+
     tech: 4283,
   },
 } as const;

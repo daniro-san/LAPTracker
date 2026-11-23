@@ -30,8 +30,11 @@ beforeAll(async () => {
 });
 beforeEach(async () => truncateAll(db));
 
-/** Our end-of-day roster of `day`: Wren sends `wren` in each daily field, Lark sends nothing (null). */
-async function roster(day: string, wren: number | null) {
+/**
+ * Our end-of-day roster of `day`: Wren sends `wren` in coins and donations and `total`, the week's running
+ * total, in quest points (#739); Lark sends nothing (null).
+ */
+async function roster(day: string, wren: number | null, total: number) {
   await db.insert(dailyReads).values({ day, startedAt: NOW, status: "complete" });
   await db.insert(dailyRosters).values({
     readDay: day,
@@ -49,7 +52,7 @@ async function roster(day: string, wren: number | null) {
           uid: WREN,
           nick_name: "Wren",
           power: 2_000_000,
-          active: wren,
+          active: total,
           daily_honor: wren,
           daily_tech: wren,
         },
@@ -101,34 +104,42 @@ async function pagesOf(access: WorkspaceAccess, uid: number) {
 
 describe("one average for a member on the card, Me and Insights (#663)", () => {
   it("counts a none day as 0 and names it, leaves the day with no daily update out, and says an all-none week as such", async () => {
-    // Mon to Sun, Nov 16–22: 600, none, none, 600, no daily update (Friday), 600, 600.
-    for (const [day, wren] of [
-      ["2026-11-16", 600],
-      ["2026-11-17", null],
-      ["2026-11-18", null],
-      ["2026-11-19", 600],
-      ["2026-11-21", 600],
-      ["2026-11-22", 600],
+    // Mon to Sun, Nov 16–22: coins and donations 600, none, none, 600, no daily update (Friday), 600, 600;
+    // quest points 200, none, none, 200, no daily update, then 200 on Saturday and Sunday, so Wren's
+    // Saturday is not known (no Friday read to take it from); Lark's is none, with nothing all week (#739).
+    for (const [day, wren, total] of [
+      ["2026-11-16", 600, 200],
+      ["2026-11-17", null, 200],
+      ["2026-11-18", null, 200],
+      ["2026-11-19", 600, 400],
+      ["2026-11-21", 600, 600],
+      ["2026-11-22", 600, 800],
     ] as const)
-      await roster(day, wren);
+      await roster(day, wren, total);
     const access = await officer();
 
+    const wren = { line: "Average 400 · 6 days, of which 2 none", value: 400, days: 6, none: 2 };
+    const lark = { line: "None on all 6 days", value: 0, days: 6, none: 6 };
+    const wrenQuests = {
+      line: "Average 120 · 5 days, of which 2 none",
+      value: 120,
+      days: 5,
+      none: 2,
+    };
     for (const [uid, expected] of [
-      [WREN, { line: "Average 400 · 6 days, of which 2 none", value: 400, none: 2 }],
-      [LARK, { line: "None on all 6 days", value: 0, none: 6 }],
+      [WREN, { quests: wrenQuests, coins: wren, tech: wren }],
+      [LARK, { quests: lark, coins: lark, tech: lark }],
     ] as const) {
       const { card, week, effort } = await pagesOf(access, uid);
       for (const [i, metric] of (["quests", "coins", "tech"] as const).entries()) {
         const insights = effort?.[metric] ?? null;
-        expect(insights, `${uid} ${metric}`).toEqual({
-          value: expected.value,
-          days: 6,
-          none: expected.none,
-        });
-        expect(card[i]?.average, `${uid} ${metric}`).toBe(expected.line);
-        expect(week[i]?.average, `${uid} ${metric}`).toBe(`This week: ${expected.line}`);
+        const { line, ...average } = expected[metric];
+
+        expect(insights, `${uid} ${metric}`).toEqual(average);
+        expect(card[i]?.average, `${uid} ${metric}`).toBe(line);
+        expect(week[i]?.average, `${uid} ${metric}`).toBe(`This week: ${line}`);
         // Insights' own average written by the same words: the same line as the card's and Me's.
-        expect(averageLine(insights, t, (n) => String(n), "en")).toBe(expected.line);
+        expect(averageLine(insights, t, (n) => String(n), "en")).toBe(line);
         // Friday had no daily update: the no-data mark on both, never "none" or 0.
         expect([card[i]?.bars[4]?.value, week[i]?.bars[4]?.value]).toEqual(["—", "—"]);
       }

@@ -321,7 +321,7 @@ export function cardData(
   };
 }
 
-/** The card's last 7 days, drawn against the alliance's best member-day in them (D158). */
+/** The card's last 7 days; donations drawn against the alliance's best member-day in them (D158). */
 function cardDays(reads: Parameters<typeof lastDays>[0], uid: number): LastDays | null {
   const days = lastDays(reads, uid);
   return days && { ...days, best: allianceBest(reads, days.days) };
@@ -338,7 +338,8 @@ export async function memberCard(
     membersView(db, access, at.now, at.zone),
     followUpsOf(db, access, uid),
     factHistory(db, access.workspaceId, FACT_FIELDS, uid),
-    endOfDayReads(db, access.unionId, LAST_DAYS),
+    // One read more: the first day's quest points are its running total less the day before's (#739).
+    endOfDayReads(db, access.unionId, LAST_DAYS + 1),
   ]);
   const member = view.members.find((m) => m.uid === uid);
   if (!member) return null;
