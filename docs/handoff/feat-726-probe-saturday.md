@@ -33,7 +33,7 @@ Part of #726. Owner's approval, 2026-11-23: repeat the probe read on raid night,
 ## Verified
 
 - `pnpm vitest related --run lib/shield-probe.ts lib/shield-probe.test.ts lib/squads-tick.ts lib/tick-gate.ts`: 16 files, 102 tests passed.
-- `pnpm check`: see the report to the orchestrator.
+- `pnpm check`: exit 0 (2002 passed, 4 skipped).
 - Each test fails when broken. I checked each mutation by hand and reverted it:
   - window back on 2026-11-23: all six fail;
   - `PROBE_ALERT` back to 3: "at most once" fails;
