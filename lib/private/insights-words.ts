@@ -27,6 +27,8 @@ export interface BarRow {
   label: string;
   value: string;
   share: number | null;
+  /** Where a threshold sits (100 % on KvK recovery), as a share of the bar's track (D158). */
+  reference?: number;
   note?: string;
   /** The row to read first (this week). */
   current?: boolean;

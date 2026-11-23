@@ -3,6 +3,7 @@
 // from tokens, nothing hover-only). Coins are drawn against their 1,000 cap; the other two against the
 // row's own highest day, since the number under each bar says the amount. A day with no read is the NoData
 // mark, never 0; "none" (the read listed them, nothing sent, D127) is a muted word with no bar.
+import { Bar } from "@/app/_ui/charts/Bar";
 import type { DaysCard, DaysRow } from "@/lib/private/member-days";
 
 import { withNoData } from "./NoData";
@@ -51,14 +52,15 @@ function Row({ row, noData }: { row: DaysRow; noData: string }) {
       )}
       <ol className="mt-1 grid grid-cols-7 gap-0.5 text-center">
         {row.bars.map((b, i) => (
-          <li key={i} aria-label={b.said} className="min-w-0">
+          <li key={i} className="min-w-0">
+            <span className="sr-only">{b.said}</span>
             <span aria-hidden="true" className="flex h-8 items-end justify-center">
-              {b.share !== null && (
-                <span
-                  className="block w-full max-w-6 rounded-t-sm bg-plum/60"
-                  style={{ height: `${Math.max(6, Math.round(b.share * 100))}%` }}
-                />
-              )}
+              <Bar
+                axis="y"
+                share={b.share}
+                tone="rounded-t-sm bg-plum/60"
+                className="h-full w-full max-w-6"
+              />
             </span>
             <span aria-hidden="true" className="block h-px bg-ink/50" />
             <span

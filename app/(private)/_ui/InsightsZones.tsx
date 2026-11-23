@@ -4,6 +4,7 @@
 // its bar (a share of the members with a time zone, D68: label and number in HTML), and now, the reset and
 // KvK on its clock; a tap on the row opens its members' names (issue 678). "Not recorded yet" and usual hours
 // link to Members' own filters, the rules their counts use. The rows are ph-no-capture.
+import { Bar } from "@/app/_ui/charts/Bar";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { InsightsView } from "@/lib/private/insights";
@@ -29,12 +30,7 @@ function RowBody({ r }: { r: ZoneRow }) {
           <Caret />
         </span>
       </span>
-      <span aria-hidden="true" className="mt-1 block h-2 w-full bg-ink/10">
-        <span
-          className="block h-2 bg-plum/60"
-          style={{ width: `${Math.round((r.share ?? 0) * 100)}%` }}
-        />
-      </span>
+      <Bar axis="x" share={r.share} className="mt-1 h-2 w-full bg-ink/10" />
       <span className="mt-0.5 block text-body-sm text-ink/80 tabular-nums">{r.times}</span>
       {r.change && <span className="block text-body-sm text-ink/80">{r.change}</span>}
     </>

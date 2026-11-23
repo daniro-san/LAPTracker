@@ -11,6 +11,7 @@ import type { Dictionary } from "@/lib/copy";
 import type { EventClock } from "@/lib/fight-clock";
 import { fill } from "@/lib/words";
 
+import { Bar } from "./charts/Bar";
 import { compact, shareText, type Clock } from "./format";
 import { MoreBar, LABEL } from "./StatTable";
 
@@ -88,9 +89,11 @@ export function PulseStrip({
               className={`flex min-w-0 flex-col justify-end border-2 px-px pb-px ${outline(i, clock.busiest)}`}
             >
               {s.state === "moved" ? (
-                <div
-                  className={`w-full rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/60"}`}
-                  style={{ height: `${Math.max(6, Math.round(((s.share ?? 0) / most) * 100))}%` }}
+                <Bar
+                  axis="y"
+                  share={(s.share ?? 0) / most}
+                  tone={`rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/60"}`}
+                  className="h-full w-full"
                 />
               ) : s.state === "still" ? (
                 <div className="h-2 w-full rounded-sm border border-dashed border-ink/60" />

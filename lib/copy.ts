@@ -91,8 +91,8 @@ export const en = {
     progressMedian: "Typical {tag} member: {percent}.",
     /** Beside a player's rank in an alliance's roster (`#34`): `in OGs`. `{tag}` is the alliance's tag. */
     rankIn: "in {tag}",
-    /** Under the might chart: what the event marks are, and the Start date of each. */
-    progressEvents: "Event (Start to End): {dates}",
+    /** Under the might chart: what the event bands and their hollow dots are, and the Start date of each. */
+    progressEvents: "Event (Start to End), its readings as hollow dots: {dates}",
     /** Under the might chart. */
     progressWar: "Might often drops in war events. That is expected.",
     /** Fewer than two readings: no chart yet. */

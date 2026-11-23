@@ -49,7 +49,7 @@ export function EffortCard(props: {
       {/* The groups' members once, before the measures: no name beside a group's median (issue 678). */}
       <Sub>{t["insights.effort.who"]}</Sub>
       <TapHint t={t} />
-      <Bars rows={effort.ranges} noData={noData} bare slug={slug} />
+      <Bars rows={effort.ranges} noData={noData} slug={slug} />
       {effort.groups.map((g) => (
         <div key={g.label}>
           <Sub>{g.label}</Sub>

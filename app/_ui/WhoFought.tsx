@@ -14,6 +14,7 @@ import { TURNOUT_MIN_GAINERS, TURNOUT_TOP } from "@/lib/compute";
 import type { AllianceTurnout, TurnoutLists } from "@/lib/queries";
 import { fill } from "@/lib/words";
 
+import { Bar } from "./charts/Bar";
 import { DrilldownLink } from "./DrilldownLink";
 import { allianceLabel, shareText } from "./format";
 import { useCopy, useLocale } from "./LocaleProvider";
@@ -123,15 +124,13 @@ function BarList({
                   {copy.ledger.myAlliance}
                 </span>
               )}
-              <span aria-hidden="true" className="mt-1 block h-2 bg-rule">
-                {/* A share of a few gainers is not a measure: a full bar would read as a strong result. */}
-                {!muted && (
-                  <span
-                    className={`block h-full ${t.unionId === mine ? "bg-yarn" : "bg-ink/60"}`}
-                    style={{ width: `${Math.round(ratio * 1000) / 10}%` }}
-                  />
-                )}
-              </span>
+              {/* A share of a few gainers is not a measure: a full bar would read as a strong result. */}
+              <Bar
+                axis="x"
+                share={muted ? null : ratio}
+                tone={t.unionId === mine ? "bg-yarn" : "bg-ink/60"}
+                className="mt-1 h-2 bg-rule"
+              />
             </RowLink>
           </li>
         ))}

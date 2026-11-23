@@ -134,15 +134,24 @@ function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
           : undefined,
       ),
     ],
-    days:
-      back === null
-        ? []
-        : e.days.map((d) => ({
-            label: dates.weekday(d.day),
-            value: d.share === null ? NONE : percent(d.share, language),
-            share: d.share === null ? null : Math.max(0, Math.min(1, d.share)),
-          })),
+    days: back === null ? [] : recoveryDays(e.days, f),
   };
+}
+
+/**
+ * Each day's share of the loss back, drawn against 100 % with a tick there (D158): the scale is the larger of
+ * 100 % and the highest day, so 112 % and 120 % draw apart, and a day that lost more stays below 0 (Bar draws
+ * a hairline).
+ */
+function recoveryDays(days: KvkEvent["days"], f: Formats): BarRow[] {
+  const dates = calendarDates(f.language);
+  const scale = Math.max(1, ...days.map((d) => d.share ?? 0));
+  return days.map((d) => ({
+    label: dates.weekday(d.day),
+    value: d.share === null ? NONE : percent(d.share, f.language),
+    share: d.share === null ? null : d.share / scale,
+    reference: 1 / scale,
+  }));
 }
 
 /**
