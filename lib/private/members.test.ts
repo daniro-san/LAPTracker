@@ -214,6 +214,8 @@ describe("member facts on the Members tab (#297)", () => {
       "break",
     ]);
     expect(two?.reasons).toEqual([{ kind: "idle", days: 3 }]);
+    // The row's quest points are the newest day's, derived (#739): Thursday's total stayed at Monday's 50.
+    expect([two?.activity, two?.noQuestsOn]).toEqual([null, dayOf(3)]);
     // D127: a new member never gets the offline signal.
     expect(view.members.find((m) => m.uid === 3)).toMatchObject({ isNew: true, reasons: [] });
     // The thanks use the week (D127): Monday's donations and quest points count on Thursday.

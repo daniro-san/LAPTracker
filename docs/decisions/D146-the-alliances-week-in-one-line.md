@@ -20,3 +20,5 @@ Why: the owner approved on 2026-11-19 one line that sums up the alliance's day a
 **Later (issue 466):** the same numbers may go on the public alliance page for the own alliance (D76 allows aggregates there). That needs a read on the public side and the public cache's rules (D143); it is not built here.
 
 **Amendment 2026-11-22 (issue 585 batch 4, slice S2):** the missing days read "no daily update on Tue, Wed, not in the total" (PT "sem atualização diária em …", FR "sans mise à jour quotidienne : …"; it read "no read on Tue, Wed, …"): "daily update" is the glossary's UI word. The rule is unchanged.
+
+**Amendment 2026-11-22 (D127 amended, issue 739):** `active` is the week's running total since Monday's reset, not a day's value. The line's daily quest points are now the median of the newest read's day's derived points (`questPoints`: the day's total less the day before's, the total itself on a Monday), among the members who earned some that day. A member whose day cannot be derived (no read of the day before) is left out of the median. The words are unchanged.

@@ -93,6 +93,16 @@ describe("a day's daily quest points from the week's running total (#739)", () =
     ]);
   });
 
+  it("starts again at the week's boundary, not at a drop: a Monday above Sunday's total is still Monday's whole day", () => {
+    // Member 1 earned 100 in the whole week to Sunday 22, then 230 on Monday 23: no drop, still a reset.
+    const reads = [
+      read("2026-11-22", [member(1, { active: 100 })]),
+      read("2026-11-23", [member(1, { active: 230 })]),
+    ];
+
+    expect(questPoints(reads, 1, "2026-11-23")).toBe(230);
+  });
+
   it("is no data, never 0, when no read of the day before lists the member", () => {
     // Tuesday 17 has no Monday read; on Thursday 19 the Wednesday read does not list member 1.
     const reads = [

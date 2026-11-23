@@ -164,10 +164,11 @@ function rawMember(side: Side, m: Member, k: number, day: string) {
     lv: 25,
     rank_code: k === 0 ? 105 : k < 3 ? 104 : 102,
     rank_label: k === 0 ? "R5" : k < 3 ? "R4" : "R2",
-    // The week's running total (#739); null, never 0, before the member's first quest point of the week.
+    // The week's running total (#739). The game sends null, never 0 (D127): here, before the member's
+    // first quest point of the week.
     active: questTotalOf(side, m.uid, day),
-    // The game sends null, never 0, for none that day (D127).
     daily_honor: DAILY.honor,
+    // The game sends null, never 0, for none that day (D127).
     daily_tech: idle ? null : s.tech,
     x: s.x,
     y: s.y,

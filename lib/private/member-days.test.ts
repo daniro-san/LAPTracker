@@ -128,6 +128,20 @@ describe("the member card's last 7 days (issue 461)", () => {
     );
   });
 
+  it("draws a day above the daily cap as a full bar and still writes its own number (#739)", () => {
+    // Thursday 19's total rose by 250 (a read before the reset can carry a few points past 240).
+    const week = [
+      read("2026-11-18", [member(1, { active: 480 })]),
+      read("2026-11-19", [member(1, { active: 730 })]),
+    ];
+    const [quests] = daysCard(
+      lastDays(week, 1) as NonNullable<ReturnType<typeof lastDays>>,
+      t,
+      f,
+    ).rows;
+    expect(quests?.bars.at(-1)).toMatchObject({ value: "250", share: 1 });
+  });
+
   it("says a week of only none days as none on all of them, never Average 0", () => {
     const week = ["12", "13", "14", "15", "16", "17", "18", "19"].map((d) =>
       read(`2026-11-${d}`, [member(1)]),

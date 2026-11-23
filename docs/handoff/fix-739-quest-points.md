@@ -56,6 +56,16 @@
   - Officer, R5: consistent across card, Insights, Home and Me; nothing leads to a wrong seat, thank-you or check-in. Same notes.
   - Data-honesty reviewer: "honest", no must-fix. The numbers match the rule (175/240 = 72.9 % fill measured at 72.8 %). The cap copy overstated certainty, which I fixed. The other findings are under Open issues.
 - The shots stay in the session scratchpad's `shots/` folder; none are committed.
+- **PR 740 review fixes** (one commit on the rebased branch):
+  - `docs/GLOSSARY.md` "daily quest points" now says it is the week's running total, with the derived day and the provisional cap.
+  - D146 has a dated amendment: the week line's median is of the derived day's points.
+  - `card-follow-up.test.ts`: 102 sends a running total (60, 90, 120: 30 a day from Monday), so it is still an active member off the list for the right reason.
+  - `member-days.test.ts`: a derived day of 250 draws a full bar and writes "250".
+  - `member-week.test.ts`: a Monday total above Sunday's (100, then 230) is Monday's whole day. I checked that a reset detected only on a drop (`total < before`) fails it, with 3 tests red, and then restored the code.
+  - `members.test.ts`: the row's `activity` and `noQuestsOn` are the derived values (null, the newest day) for a member whose total stayed at Monday's 50.
+  - `e2e/fixtures/seed.ts`: the "game sends null, never 0" comment is back on `active`, and on `daily_tech`.
+  - The 0-total missing-read rule stays as built (Decisions above).
+
 
 ## Open issues
 
@@ -64,6 +74,7 @@
 - **Follow-up:** a read about 30 minutes before the reset lets a day carry a few points past the cap. The bar clamps, and the number shows as read. A one-line note on the card could say so.
 - **Follow-up:** the e2e leak scan finds a raw `active` leak only on days when the newest read is a Monday, where the running total equals the sentinel. A sentinel scheme whose weekly multiples are also unique in the page markup would close it.
 - **Follow-up (older copy):** Home's "median" could say "of those who earned some". The Insights effort line "Left out: 1 new" and Home's "11 of 11" next to Insights' "10 members" both confused the officer personas.
+- **Follow-up (pre-existing, from the PR 740 review):** `lib/private/members.ts:344` takes `thanks.activity` from the newest read's game week, even on a Monday. D114 says the thanks cover last week on a Monday (`thanksWeek`), and the donors list has the same shape. Not fixed here.
 - Analytics: no change. No event is added, changed or removed, and no event carries quest points (D76).
 
 ## Next
