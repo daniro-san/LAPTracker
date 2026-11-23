@@ -207,6 +207,18 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.65.0",
+    date: "2026-11-23",
+    title: "Raid prep: check by hand only who the maps can't vouch for",
+    changes: [
+      'Raid prep: "To check by hand: n" lists the members with no shield on a map within 3 h of the reset, with no map that near, or with no reading; each says why, and "Show the n ›" puts them in the grid. Each reading now shows its map\'s day and age against the reset ("map Fri 22:33 ST · 1 h 27 min before reset").',
+      'The tracker no longer writes ✓ or ✗ into Raid prep; officers mark, the readings help. "Mark ✓ the n seen with a shield" and "the rest" leave out the members to check by hand, and "Nobody left to mark" waits until an officer has marked.',
+      'Feedback: on a computer (1280 px and wider) a small "Feedback" badge sits at the bottom left of the desk, the board and Me.',
+      "A one-off test read at 02:30 ST tonight (Mon 23) to see when the game's map is refreshed after the reset; about 100 calls, once.",
+    ],
+    prs: [731, 730, 732],
+  },
+  {
     version: "v5.64.0",
     date: "2026-11-22",
     title: "Your own line on our posts, and feedback from officers and members",
