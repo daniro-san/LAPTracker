@@ -3,7 +3,7 @@
 // catalog post is due nothing is scheduled. Each post's own clock: the week on Monday from 00:00 ST (the
 // first tick after Sunday's end-of-day read, at the latest the 3-hourly heartbeat); the shield-up reminder on
 // Friday from 20:30 ST (the Friday check's tick); the welcome every day from the daily read (its own ticks,
-// 23:30 and 23:45 ST). The posts are made and sent by lib/private/catalog-posts.ts, the one lib/private
+// 23:30 and 23:45 ST); the weekly members summary on Monday from 00:00 ST, like the week. The posts are made and sent by lib/private/catalog-posts.ts, the one lib/private
 // module this file may import (D159), on its own connection: the request's is closed with the response.
 import { after } from "next/server";
 

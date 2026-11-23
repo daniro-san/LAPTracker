@@ -1,5 +1,19 @@
 // daily_reads and daily_rosters (D60): the tick's once-a-day roster read for member history.
-import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
@@ -177,4 +191,30 @@ export async function freshRosterOfDay(
       ),
     );
   return row ?? null;
+}
+
+/**
+ * The alliance's usable rosters (fresh, no error, not empty) from `from` to `to`, server days, oldest first:
+ * each day's member uids and nothing else. The weekly members summary (D159, post 4) counts with it.
+ */
+export async function freshUidsBetween(
+  db: Db,
+  unionId: number,
+  from: string,
+  to: string,
+): Promise<{ day: string; uids: number[] }[]> {
+  return db
+    .select({ day: dailyRosters.readDay, uids: dailyRosters.memberUids })
+    .from(dailyRosters)
+    .where(
+      and(
+        eq(dailyRosters.unionId, unionId),
+        gte(dailyRosters.readDay, from),
+        lte(dailyRosters.readDay, to),
+        isNull(dailyRosters.error),
+        eq(dailyRosters.isFresh, true),
+        gt(dailyRosters.memberCount, 0),
+      ),
+    )
+    .orderBy(asc(dailyRosters.readDay));
 }

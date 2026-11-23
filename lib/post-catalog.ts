@@ -66,6 +66,18 @@ export const POST_CATALOG: Record<CatalogPost, CatalogEntry> = {
     channels: ["members"],
     editable: { weekday: false, picture: false },
   },
+  // 4. Weekly members summary: on Monday, like post 1 (the first tick after Sunday's end-of-day read, D72),
+  // for the officers only: how many joined and left in the week that just ended, and the member count at its
+  // last daily update and at the one before the week. Counts from the rosters' uids only; no name, no other
+  // roster value.
+  summary: {
+    feature: "post_summary",
+    weekday: 0,
+    from: "00:00",
+    audience: "leaders",
+    channels: ["leaders"],
+    editable: { weekday: false, picture: false },
+  },
 };
 
 /** The welcome names at most this many people; more than that in a day is likely a read glitch, so a count. */

@@ -1,0 +1,4 @@
+ALTER TABLE "workspace_post_touches" DROP CONSTRAINT "workspace_post_touches_post_key_check";--> statement-breakpoint
+ALTER TABLE "workspace_posts" DROP CONSTRAINT "workspace_posts_post_key_check";--> statement-breakpoint
+ALTER TABLE "workspace_post_touches" ADD CONSTRAINT "workspace_post_touches_post_key_check" CHECK ("workspace_post_touches"."post_key" in ('shield', 'thanks', 'garrison', 'week', 'shield_up', 'welcome', 'summary'));--> statement-breakpoint
+ALTER TABLE "workspace_posts" ADD CONSTRAINT "workspace_posts_post_key_check" CHECK ("workspace_posts"."post_key" in ('week', 'shield_up', 'welcome', 'summary'));

@@ -547,6 +547,13 @@
       "when": 1795438701861,
       "tag": "0077_post_welcome",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1795442491310,
+      "tag": "0078_post_summary",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,9 @@
 // the day's roster who were not in the day before's. Names are public (`member_names`, never raw_json); no
 // other roster value, and never anyone who left. Only when both days' rosters were read and fresh, so a
 // failed read never makes anyone new; above WELCOME_NAMES_MAX, a count instead of names.
+// Post 4, "Weekly members summary": on Monday, like post 1, to the leaders' channel only, how many joined and
+// left in the week that just ended and the member count at its last daily update and at the one before it.
+// Counts from the rosters' uids only (`member_uids`): no name, no raw_json, no coin, quest or donation value.
 import type { AppContext } from "../app-context";
 import { layOut, type Placed } from "../calendar-layout";
 import type { Db } from "../db";
@@ -20,7 +23,7 @@ import type { Env } from "../env";
 import { breakLinks, discordCallout } from "../post-callout";
 import { POST_CATALOG, postPeriod, WELCOME_NAMES_MAX } from "../post-catalog";
 import { calendarRows } from "../repo/calendar";
-import { freshRosterOfDay, getDailyRead } from "../repo/daily-reads";
+import { freshRosterOfDay, freshUidsBetween, getDailyRead } from "../repo/daily-reads";
 import { liveCallout } from "../repo/post-touches";
 import { settingsById } from "../repo/workspace-features";
 import { claimPostRun, finishPostRun, postsDue, settlePostRun } from "../repo/workspace-posts";
@@ -98,6 +101,42 @@ export function welcomeText(names: string[], language: WorkspaceLanguage): strin
   return fill(t[names.length === 1 ? "posts.welcome.one" : "posts.welcome.names"], { names: list });
 }
 
+/**
+ * The weekly members summary's text for the week before `monday` (Monday to Sunday), from the alliance's
+ * usable rosters (uids only, oldest first): who joined and left between each roster and the one before it,
+ * as Insights' membership flow counts them; the member count at the week's last roster and at the last one
+ * before the week (at most 7 days before it). Null when either is missing: nothing to compare.
+ */
+export function summaryText(
+  rosters: { day: string; uids: number[] }[],
+  monday: string,
+  language: WorkspaceLanguage,
+): string | null {
+  const start = addDays(monday, -7);
+  const base = rosters.filter((r) => r.day < start).at(-1);
+  const week = rosters.filter((r) => r.day >= start && r.day < monday);
+  const end = week.at(-1);
+  if (!base || !end) return null;
+  let [joined, left] = [0, 0];
+  [base, ...week].forEach((read, i, all) => {
+    const prev = all[i - 1];
+    if (!prev) return;
+    const [was, is] = [new Set(prev.uids), new Set(read.uids)];
+    joined += read.uids.filter((uid) => !was.has(uid)).length;
+    left += prev.uids.filter((uid) => !is.has(uid)).length;
+  });
+  const t = WORKSPACE_DICTIONARIES[language];
+  const { short } = calendarDates(language);
+  return [
+    fill(t["posts.summary.week"], { from: short(start), to: short(addDays(monday, -1)) }),
+    fill(t["posts.summary.joined"], { n: joined }),
+    fill(t["posts.summary.left"], { n: left }),
+    fill(t["posts.summary.members"], { day: short(base.day), n: base.uids.length }),
+    fill(t["posts.summary.members"], { day: short(end.day), n: end.uids.length }),
+    fill(t["posts.summary.reads"], { n: week.length }),
+  ].join("\n");
+}
+
 type Due = Awaited<ReturnType<typeof postsDue>>[number];
 
 /**
@@ -137,6 +176,12 @@ const BODIES: Record<
     const joiners = await joinersOf(db, due.unionId, period);
     return joiners && welcomeText(joiners, language);
   },
+  summary: async (db, due, period, language) =>
+    summaryText(
+      await freshUidsBetween(db, due.unionId, addDays(period, -14), addDays(period, -1)),
+      period,
+      language,
+    ),
 };
 
 /**
