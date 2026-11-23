@@ -49,6 +49,19 @@ Part of #713 (part C). Size M: a migration, a new decision, a new route, a new D
   - `app/(private)/_ui/PostCatalog.test.ts` (3);
   - `e2e/desk-posts.spec.ts` (1, phone);
   - updated to the new behaviour: `settings-index.test.ts`, `data-export/route.test.ts`.
+- Review round (PR 761):
+  - #6: `sendWeek` builds the title, the D156 line and the messages first and claims right before the send, so a build that throws leaves no claim.
+  - #5: a week with no entry for members is settled (`post_runs.status` `skipped`, migration 0075 regenerated; still unreleased), so later Monday ticks stop at `postsDue`. A post the owner does not allow (1 read) or a channel with no webhook (2 reads) stays unsettled, so allowing it or pasting the webhook later that day still sends.
+  - #7: `sendDuePosts(db, deps, deadline)`. `schedulePostsTick` gives the posts 120 s from the answer (`POSTS_BUDGET_MS`), and a workspace starts only while 45 s are left (`POST_START_MS`).
+  - #9: the title help names our title in the post's language (`PostView.defaultTitles`).
+  - #10: `postPeriod`'s unused `weekday` parameter removed.
+  - #2, #3: docs/ARCHITECTURE.md's enforcement row says two exceptions, and a Features row for the catalog posts was added. D71 has a dated amendment for the second exception, and D159 lists D71 among the decisions it amends.
+  - Tests:
+    - #4: in `lib/private/catalog-posts.test.ts`, an empty week posts nothing and is settled, and the D156 line sits above the title;
+    - #6: a build that throws leaves the week to the next tick;
+    - #7: a deadline in reach starts no send;
+    - #8: a partly delivered send (`failed`, `sent = 1`) is never taken again;
+    - #1: new `app/(private)/api/w/[slug]/posts/route.test.ts` covers 403, 400 `bad_channel` (a catalog entry narrowed to the leaders' channel in the test, since post 1 offers both), 400 `too_long`, 401, 429, and the events with `post`, none for the same values, never the title. `features/route.test.ts` checks that `post_week` is not listed and is refused.
 
 ## Decisions
 
@@ -56,7 +69,7 @@ Part of #713 (part C). Size M: a migration, a new decision, a new route, a new D
 - The tick sends from `lib/private/catalog-posts.ts` through a second fenced import, like D148. This reuses the calendar's words in three languages, the notice channels with their site fallback, and the notices' split-and-send loop with the forum title, instead of copying them into `lib/`.
 - Only entries marked "Members can see this" are posted, the members' board's rule (D105). Posting every entry to the members' channel would leak leadership-only plans.
 - Officers pick the post's language (EN, PT-BR, FR), as D137's summary does: the tick has no officer whose language it could use.
-- No empty post: a week with no entry for members posts nothing and claims nothing.
+- No empty post: a week with no entry for members posts nothing and is settled as `skipped` (review #5), so an entry added later that Monday does not post that week.
 - Retry: only a send Discord refused with nothing posted, up to 3 times. A send Discord never answered is `unanswered` and is never retried (persona check, adversarial).
 - When it goes: Monday, at the first tick that opens the database. That is the squads queue's tick after Sunday's read, or at the latest the 01:00 ST heartbeat. The gate (`tickMayBeDue`) is not widened.
 
@@ -81,6 +94,11 @@ Part of #713 (part C). Size M: a migration, a new decision, a new route, a new D
   - before the persona round: full suite 103 passed, 11 skipped, no `e2e-outbound.log`;
   - after it, on a fresh build: `e2e/desk-posts.spec.ts` passed on phone.
   - Both servers and the instance were stopped afterwards.
+- Review round (PR 761), on the rebased branch:
+  - `pnpm vitest related --run <changed files>`: 55 files, 313 tests passed;
+  - `pnpm check`: passed (378 test files passed, 2 skipped; 2,020 tests passed, 4 skipped; no migration drift; i18n up to date);
+  - e2e on a fresh build, same instance and ports: `desk-posts.spec.ts` and `desk-callout.spec.ts` passed on phone (wide skipped by design), no `e2e-outbound.log`; servers and instance stopped;
+  - mutation proofs, each reverted: claiming before the build fails only the throwing-build test; sending an event for an unchanged save fails the route's analytics test.
 - Persona check at 360 × 780 (three officers, a product strategist, an adversarial reviewer), recorded in D159 § Persona check. Adopted:
   - "Next post" moved right under the switch, with the no-webhook state in yarn;
   - "No player names";
@@ -101,7 +119,6 @@ Part of #713 (part C). Size M: a migration, a new decision, a new route, a new D
 - Each of 2–5 adds a `CATALOG_POSTS` key, a `POST_CATALOG` entry, its `post_*` feature, `DESK_POSTS` and the check constraints (a migration), and its sender in `lib/private/catalog-posts.ts`. A post whose day can change also widens `postsMayBeDue` and lets the route take `weekday`.
 - From the persona check:
   - a `channel_ready` property on `posts` / `save`;
-  - empty weeks recorded in `post_runs`;
   - a post (or an edit) for entries added mid-week;
   - a message preview on the card;
   - the officer's own time beside ST;

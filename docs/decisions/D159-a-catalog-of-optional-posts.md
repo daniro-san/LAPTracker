@@ -1,4 +1,4 @@
-## D159 — A catalog of optional posts: a code table, two layers, off until the alliance turns a post on, sent once per period in a tick that opens the database anyway; post 1 "This week in the alliance" (2026-11-23, owner, issue 713 part C; amends D125, D129, D134, D141, D156)
+## D159 — A catalog of optional posts: a code table, two layers, off until the alliance turns a post on, sent once per period in a tick that opens the database anyway; post 1 "This week in the alliance" (2026-11-23, owner, issue 713 part C; amends D71, D125, D129, D134, D141, D156)
 
 Why: the owner (issue 713, approved in the chat on 2026-11-22 and recorded on the issue) wants LAPTracker to make a few posts for an alliance on its own, from a catalog: 1 This week in the alliance, 2 Shield-up reminder, 3 Welcome new members, 4 Weekly members summary (leaders' channel), 5 KvK recap. A new alliance gets each post allowed by the owner but off until it turns the post on. This decision builds the catalog and post 1; posts 2 to 5 are follow-ups.
 
@@ -21,14 +21,19 @@ A post goes out only while both say on. With either off nothing is sent and noth
 **Storage** (migration `0075_post_catalog`).
 
 - `workspace_posts(workspace_id → workspaces on delete cascade, post_key, on, channel in (members, leaders), weekday 0–6 or null (the catalog's day), title, picture, language in (en, pt-BR, fr), updated_by → workspace_users on delete set null, updated_at)`, primary key (workspace, post). A save of the values already stored writes nothing.
-- `post_runs(workspace_id → workspaces on delete cascade, post_key, period, status in (posting, posted, failed, unanswered), sent, attempts, at)`, primary key (workspace, post, period). The period is the post's server day (`2026-11-23`).
+- `post_runs(workspace_id → workspaces on delete cascade, post_key, period, status in (posting, posted, failed, unanswered, skipped), sent, attempts, at)`, primary key (workspace, post, period). The period is the post's server day (`2026-11-23`).
 - **At most once** (INVARIANT `posts.once-per-period`, `claimPostRun`): the claim is one insert, or one conditional update of a failed claim. However many ticks overlap, exactly one caller gets it.
+  - The claim comes after the post is built (its title, the alliance's line, its messages), right before the send, so a build that throws leaves no claim and the next tick of the period tries again (review of PR 761).
   - A send that Discord refused with an error before any message went through (`failed`, `sent = 0`) is claimed again by a later tick of the same period, up to 3 attempts.
   - A send Discord never answered (`unanswered`: a timeout or a lost connection) is never sent again: Discord may have posted it, and the adversarial review asked that a lost answer never double the week.
   - A send that got part way is never sent again either, since a second send would repeat its first messages.
 - `workspace_post_touches.post_key` also allows `week` (D156's line).
 
 **When the tick sends** (`lib/posts-tick.ts`, D141). After `runTick`, on a tick that already passed `tickMayBeDue` (so the database is awake), the route calls `schedulePostsTick`. The clock comes first: on a day when no catalog post is due (`postsMayBeDue`) nothing is scheduled and nothing is read. On a due day it sends, after the answer and on its own connection, every post whose period has no claim yet. `tickMayBeDue` is not widened: a post never wakes the database.
+
+The posts have 120 s from the tick's answer (`POSTS_BUDGET_MS`; they run beside the squads batch's 180 s in the function's 300 s). A workspace's send starts only while 45 s of that are left (`POST_START_MS`: the notices' loop gives one post's messages at most 40 s), and the workspaces whose turn did not come wait for the next tick of the period (review of PR 761).
+
+Later ticks of the same Monday stay cheap. A posted, unanswered or settled week drops out of the one query that lists the posts due (`postsDue`), and a week with no entry for members is settled (`skipped`) the first time. A post the owner does not allow costs one read per tick, and a channel with no usable webhook two; neither is settled, so the owner allowing the post or an officer pasting the webhook later that Monday still sends the week.
 
 Post 1's period is Monday, server time, which starts after Sunday's end-of-day read (D72, 23:30 ST). In practice it goes at the first tick that opens the database on Monday: the squads queue's tick after Sunday's read, or at the latest the heartbeat at 01:00 ST (03:00 UTC, D141). Alliance settings says "Every Monday, between 00:00 and 01:15 ST, in #channel." The 01:15 is the end of the first heartbeat slot after 00:00 ST, computed from `SERVER_TZ` and `HEARTBEAT_EVERY_H` (`sendBy`).
 
@@ -38,7 +43,7 @@ Post 1's period is Monday, server time, which starts after Sunday's end-of-day r
 - it reuses the notice channels and their site fallback (`noticeChannels`, D129);
 - it reuses the notices' 2,000-character split and send loop with its forum title (`discordMessages`, `postMessages`, D102), rather than copying any of them into `lib/`.
 
-The module reads the calendar entries members can see and no roster field.
+The module reads the calendar entries members can see and no roster field. This is a second exception to D71's fence, recorded there (amendment 2026-11-23).
 
 **Post 1, "This week in the alliance".**
 
@@ -46,7 +51,7 @@ The module reads the calendar entries members can see and no roster field.
 - Leaves out entries not marked for members, caravan seats, notes, links, the author and every roster field. It names no person (D71, D75).
 - An officer's own words (the post's title, an entry's name) link nothing. `breakLinks` (`lib/post-callout.ts`, split out of D156's `discordCallout`) puts the zero-width break into web addresses, host dots and channel or command mentions. The notices' formatter then escapes markdown and breaks `@everyone`, `@here` and `<@`.
 - Every message carries `allowed_mentions: {"parse": []}`.
-- A week with no entry for members posts nothing and claims nothing: no empty post.
+- A week with no entry for members posts nothing: no empty post. It is settled as `skipped`, so an entry added later that Monday does not post that week.
 - Sent as plain `content` to the chosen channel (the workspace's own webhook, else the site's `WORKSPACE_DISCORD_WEBHOOKS` one, as notices). Without a usable webhook nothing is sent or claimed, and the card says so: "Nothing is posted until the members' channel is set up: paste its webhook under Discord, above."
 - The alliance's line (D156) goes first, then our title in bold, then the week. Split into messages of at most 2,000 characters at line breaks.
 - In a forum channel the first message opens a post whose title (`thread_name`) is the post's title, and the rest go into it.
@@ -57,11 +62,11 @@ The module reads the calendar entries members can see and no roster field.
 - Shown while the owner allows any catalog post. One group per post: its name, what it holds ("… No player names, notes or links. Nothing is posted in a week with none."), and a 44 px "Post it" switch.
 - Right under the switch, "Next post" in plain words: "Every Monday, between 00:00 and 01:15 ST, in #general.", "Off: nothing is posted.", or, in yarn and semibold, "Nothing is posted until the members' channel is set up: paste its webhook under Discord, above." (persona check: below the fold it was missed).
 - A Channel select ("Members' channel (#general)", or "(not set up)") and the day as text ("Every Monday: the calendar week starts then.").
-- A Title field ("Leave it empty for "This week in the alliance".", "n of 80 characters", in seal past it with `aria-invalid`) and a "Language of the post" select.
+- A Title field ("Leave it empty for "This week in the alliance".", our title in the language the post is written in; "n of 80 characters", in seal past it with `aria-invalid`) and a "Language of the post" select.
 - One Save for the card (issue 585's save row). The index has a row "Posts · 1 of 1 on". "Your line on our posts" lists "This week in the alliance" while the owner allows it.
 - `POST /api/w/[slug]/posts {post, on, channel, title, language}`. Officers only, same origin, JSON (401 `signed_out` for a member's or another workspace's session).
   - 403 `not_allowed` when the owner does not allow the post.
-  - 400 `bad_channel` or `too_long`.
+  - 400 `bad_channel` (a channel the catalog does not offer for the post; post 1 offers both) or `too_long`.
   - 429 `rate_limited`: at most 30 saves per 15 minutes per workspace (`auth_attempts` key `posts:ws:<id>`).
   - It answers the cleaned title.
 
@@ -81,7 +86,9 @@ A save of the same values sends nothing, and the title never goes. The posts sen
   - with the switch off, or the owner's not allowed, nothing is sent or claimed, and it goes once both are on;
   - no roster value, member name, note, live link or ping in the body (a sentinel scan with a positive control), and `allowed_mentions` is empty;
   - a long week splits under 2,000 characters, and in a forum the first message carries the title;
-  - a refused send is tried 3 times and no more, and an unanswered one once.
+  - a refused send is tried 3 times and no more, an unanswered one once, and a partly delivered one never again;
+  - an empty week posts nothing and is settled; the alliance's line sits above our title; a build that throws leaves no claim and the next tick sends; a deadline in reach starts no send.
+- `app/(private)/api/w/[slug]/posts/route.test.ts`: the cleaned title, 403 `not_allowed`, 400 `bad_channel` (a catalog entry narrowed to the leaders' channel), 400 `too_long` at 81 graphemes, 401 for a member, 429 on the 31st save; `turn_on`, `save`, `turn_off` with `post`, none for the same values, never the title. `features/route.test.ts`: the Features card lists no `post_week` and refuses it (400).
 - `app/api/tick/posts.test.ts`: `POST /api/tick` on a Monday posts the week after its answer at the 01:00 ST heartbeat, an idle 00:30 ST tick answers 204 and schedules nothing, and the next heartbeat sends nothing more. This is the step the e2e suite cannot drive, since its server runs on the real clock.
 - `PostCatalog.test.ts`: the labels, the next-post line in its three states (the warning in yarn, between the switch and the channel), the title count and the too-long state.
 - E2E `e2e/desk-posts.spec.ts`: an officer turns the post on for the leaders' channel with a title, the next-post line says when and where, and all of it survives a reload; the index counts it on; the test turns it off again.
