@@ -2,12 +2,15 @@
 // goes out once on Monday however many ticks overlap, only while the owner allows it and the alliance has it
 // on, and it holds the week's calendar entries members can see with their server times: no roster field, no
 // person, no note, no link, and it pings no one. The claim comes after the post is built, an empty week is
-// settled without a post, and the tick's deadline stops new sends. Invented names only.
+// settled without a post, and the tick's deadline stops new sends. Post 2, the shield-up reminder, goes once
+// on Friday from 20:30 ST, with the Raid Shield check off too, and names, counts and pings no one. Invented
+// names only.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { testContext, TEST_ENV } from "../app-context.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { POST_CATALOG } from "../post-catalog";
 import { liveCallout } from "../repo/post-touches";
 import { setSwitch } from "../repo/workspace-features";
 import { findWorkspaceBySlug, saveWorkspace } from "../repo/workspaces";
@@ -15,6 +18,7 @@ import { calendarEntries, calendarOccurrences } from "../schema";
 import { postRuns, workspacePosts, workspacePostTouches } from "../schema-discord";
 import { PRIVATE_MARKERS, seedRoster } from "../workspace-data.test-helpers";
 import { sendDuePosts } from "./catalog-posts";
+import { sendBy } from "./post-settings";
 
 // The real read of the alliance's line, which one test makes fail once.
 vi.mock("../repo/post-touches", async (original) => {
@@ -315,5 +319,112 @@ describe("This week in the alliance (D159)", () => {
     const next = sender(MONDAY_0000);
     await next.send();
     expect(next.posts).toHaveLength(1);
+  });
+});
+
+// Post 2 (D159 amendment 2026-11-23): Friday from 20:30 ST, 3 hours before the night check (D137).
+const FRIDAY = "2026-11-27";
+const FRIDAY_2030 = new Date("2026-11-27T22:30:00Z"); // Fri 20:30 ST
+const SHIELD_UP_EN = [
+  "**Shield up before the reset**",
+  "",
+  "Raid tonight at the reset (00:00 ST). Before then, please turn on your shield, take your squads off the wall and bring your troops home: a shield doesn’t protect troops outside. Thanks, everyone!",
+].join("\n");
+
+const turnShieldUpOn = (values: Partial<typeof workspacePosts.$inferInsert> = {}) =>
+  db.insert(workspacePosts).values({
+    workspaceId: ws,
+    postKey: "shield_up",
+    on: true,
+    channel: "members",
+    updatedAt: FRIDAY_2030,
+    ...values,
+  });
+
+describe("Shield-up reminder (D159, post 2)", () => {
+  it("goes out once on Friday from 20:30 ST, however many ticks overlap, with the Raid Shield check off", async () => {
+    await turnShieldUpOn();
+    // It does not lean on the check (D137): with the alliance's check off it still goes.
+    await setSwitch(db, ws, "shield_check", false, FRIDAY_2030);
+    for (const early of [
+      new Date("2026-11-27T22:15:00Z"), // Fri 20:15 ST: the Friday check's tick, before the post's time
+      new Date("2026-11-26T22:30:00Z"), // Thu 20:30 ST
+      new Date("2026-11-23T22:30:00Z"), // Mon 20:30 ST
+    ]) {
+      const tick = sender(early);
+      await tick.send();
+      expect(tick.posts).toEqual([]);
+    }
+
+    const friday = sender(FRIDAY_2030);
+    await Promise.all([friday.send(), friday.send()]);
+    await sender(new Date("2026-11-28T00:00:00Z")).send(); // Fri 22:00 ST, the heartbeat
+    await sender(new Date("2026-11-28T01:30:00Z")).send(); // Fri 23:30 ST, the night check
+    expect(friday.posts).toHaveLength(1);
+    expect(friday.posts[0]?.url).toBe(HOOK);
+    expect(friday.posts[0]?.content).toBe(SHIELD_UP_EN);
+    expect(await db.select().from(postRuns)).toMatchObject([
+      { postKey: "shield_up", period: FRIDAY, status: "posted", sent: 1, attempts: 1 },
+    ]);
+    // Past the reset it is Saturday: a reminder that missed Friday never goes out after the raid began.
+    await db.delete(postRuns);
+    const saturday = sender(new Date("2026-11-28T02:15:00Z")); // Sat 00:15 ST
+    await saturday.send();
+    expect(saturday.posts).toEqual([]);
+  });
+
+  it("sends nothing while its switch is off or the owner does not allow it, and goes once both say on", async () => {
+    await turnShieldUpOn({ on: false });
+    const off = sender(FRIDAY_2030);
+    await off.send();
+    expect(off.posts).toEqual([]);
+
+    await db.update(workspacePosts).set({ on: true });
+    await setSwitch(db, ws, "post_shield_up", false, FRIDAY_2030);
+    const disallowed = sender(FRIDAY_2030);
+    await disallowed.send();
+    expect(disallowed.posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toEqual([]);
+
+    await setSwitch(db, ws, "post_shield_up", true, FRIDAY_2030);
+    const on = sender(new Date("2026-11-28T00:00:00Z")); // Fri 22:00 ST
+    await on.send();
+    expect(on.posts).toHaveLength(1);
+  });
+
+  it("says on the card the tick slot it goes in: Friday 20:30–20:45 ST, Monday's week by 01:15 ST", () => {
+    const { env } = testContext(db, ENV).ctx;
+    expect(sendBy(env, FRIDAY, POST_CATALOG.shield_up.from)).toBe("20:45");
+    expect(sendBy(env, MONDAY, POST_CATALOG.week.from)).toBe("01:15");
+  });
+
+  it("names no one, counts nothing and pings no one, in the post's language", async () => {
+    await seedRoster(db, 67109944);
+    await turnShieldUpOn({ language: "pt-BR", title: "Escudos @everyone" });
+    const { send, posts } = sender(FRIDAY_2030);
+    await send();
+    expect(posts).toHaveLength(1);
+    const content = String(posts[0]?.content);
+    /** The sentinel scan: the roster's private values and name, a ping, and any number but the reset. */
+    const leaks = (text: string) => [
+      ...[...PRIVATE_MARKERS, "Ana Example", "@everyone", "<@"].filter((s) => text.includes(s)),
+      ...(text.replaceAll("00:00", "").match(/\d+/g) ?? []),
+    ];
+    // Positive control: the scan finds what it looks for.
+    expect(leaks("Ana Example: 12 of 97 shields, 00:00 ST, @everyone")).toEqual([
+      "Ana Example",
+      "@everyone",
+      "12",
+      "97",
+    ]);
+    expect(leaks(content)).toEqual([]);
+    expect(content).toBe(
+      [
+        "**Escudos @​everyone**",
+        "",
+        "Raid hoje à noite, no reset (00:00 ST). Antes disso, por favor liguem o escudo, tirem os esquadrões da muralha e tragam as tropas para casa: o escudo não protege tropas fora da cidade. Obrigado, pessoal!",
+      ].join("\n"),
+    );
+    expect(posts[0]?.body.allowed_mentions).toEqual({ parse: [] });
   });
 });

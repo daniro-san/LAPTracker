@@ -2,7 +2,8 @@
 // and the next Monday tick that opens the database posts the week to the members' channel, after its answer.
 // A Monday tick with nothing due answers 204 before any query and schedules no post: the post wakes the
 // database no extra time (D141). This is the end-to-end step the e2e suite cannot drive (its server runs on
-// the real clock). Invented names only.
+// the real clock). Post 2, the shield-up reminder, goes at Friday's 20:30 ST tick, which the Friday check
+// opens anyway. Invented names only.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -95,5 +96,24 @@ describe("the tick's catalog posts (D159)", () => {
 
     // The next heartbeat of the same Monday finds the week posted.
     expect((await tick(new Date("2026-11-30T06:00:00Z"))).posts).toEqual([]);
+  });
+
+  it("posts the shield-up reminder at Friday's 20:30 ST tick, which the Friday check opens anyway", async () => {
+    const ws = (await findWorkspaceBySlug(db, "ash"))?.id ?? 0;
+    await db.insert(workspacePosts).values({
+      workspaceId: ws,
+      postKey: "shield_up",
+      on: true,
+      channel: "members",
+      updatedAt: new Date("2026-11-27T12:00:00Z"),
+    });
+    // Fri 20:15 ST: the Friday check (QUOTA_CHECK_AT 20:00, 45 min) opens the database; too early to post.
+    expect((await tick(new Date("2026-11-27T22:15:00Z"))).posts).toEqual([]);
+    // Fri 20:30 ST: the same window's tick; the reminder goes out after the answer.
+    const due = await tick(new Date("2026-11-27T22:30:00Z"));
+    expect(due.posts).toHaveLength(1);
+    expect(due.posts[0]?.content).toMatch(/^\*\*Shield up before the reset\*\*\n\nRaid tonight/);
+    // Fri 20:45 ST: the window has closed, nothing else is due, so no wake and no post.
+    expect(await tick(new Date("2026-11-27T22:45:00Z"))).toEqual({ status: 204, posts: [] });
   });
 });
