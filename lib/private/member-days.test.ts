@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { cardFormats } from "./member-card";
-import { daysCard, lastDays, type DaysFormats } from "./member-days";
+import { allianceBest, daysCard, lastDays, type DaysFormats } from "./member-days";
 
 const member = (uid: number, fields: Partial<RosterMember> = {}): RosterMember => ({
   uid,
@@ -97,6 +97,29 @@ describe("the member card's last 7 days (issue 461)", () => {
     expect(donations?.average).toBe("Average 4.40K · 5 days, of which 2 none");
     expect(donations?.bars[1]?.value).toBe("12.4K");
     expect(words.might).toBe("Might +1.20M since Fri, Nov 13");
+  });
+
+  it("draws quest points and donations against the alliance's best member-day, so a steady low giver and a steady high giver differ (D158)", () => {
+    // Member 1 sends 300 points and 2,000 a day, member 2 sends 600 points and 8,000 a day, every day.
+    const week = ["13", "14", "15", "16", "17", "18", "19"].map((d) =>
+      read(`2026-11-${d}`, [
+        member(1, { active: 300, dailyTech: 2000, dailyHonor: 1000 }),
+        member(2, { active: 600, dailyTech: 8000, dailyHonor: 1000 }),
+      ]),
+    );
+    // As the member card reads them: the member's days with the alliance's best member-day.
+    const card = (uid: number) => {
+      const d = lastDays(week, uid) as NonNullable<ReturnType<typeof lastDays>>;
+      return daysCard({ ...d, best: allianceBest(week, d.days) }, t, f);
+    };
+    const [quests, coins, donations] = card(1).rows;
+    expect(quests?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.5));
+    expect(donations?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.25));
+    expect(coins?.bars.map((b) => b.share)).toEqual(Array(7).fill(1));
+    expect(card(2).rows[0]?.bars.map((b) => b.share)).toEqual(Array(7).fill(1));
+    expect(card(1).scale).toBe(
+      "Bars: coins out of 1,000; quest points against 600 and donations against 8.00K, the alliance's best day by one member in these 7 days.",
+    );
   });
 
   it("says a week of only none days as none on all of them, never Average 0", () => {

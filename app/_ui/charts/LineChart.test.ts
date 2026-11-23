@@ -56,11 +56,34 @@ describe("LineChart (D68)", () => {
     expect(render(series([3, 3, 3])).match(/>3M</g)).toHaveLength(1);
   });
 
-  it("gives every reading a dot up to 30 readings, and only event readings above", () => {
-    const dots = (page: string) => page.match(/h0/g)?.length;
-    expect(dots(render(series(Array.from({ length: 30 }, (_, i) => 100 + i))))).toBe(30);
-    const many = series(Array.from({ length: 31 }, (_, i) => 100 + i));
-    expect(dots(render(many.map((p, i) => ({ ...p, mark: i % 10 === 0 }))))).toBe(4);
+  it("gives every daily reading a dot up to 30, and above that only the event readings keep theirs", () => {
+    const dots = (page: string) =>
+      /d="([^"]*)" stroke="currentColor" stroke-width="6"/.exec(page)?.[1];
+    const hollow = (page: string) =>
+      /d="([^"]*)" stroke="currentColor" stroke-width="8"/.exec(page)?.[1];
+    expect(
+      dots(render(series(Array.from({ length: 30 }, (_, i) => 100 + i))))?.match(/h0/g),
+    ).toHaveLength(30);
+    const many = series(Array.from({ length: 35 }, (_, i) => 100 + i));
+    const page = render(many.map((p, i) => ({ ...p, mark: i % 10 === 0 })));
+    expect(dots(page)).toBe("");
+    expect(hollow(page)?.match(/h0/g)).toHaveLength(4);
+  });
+
+  it("draws the line from the daily reads only: an event's End dip is a hollow dot, not a fall of the line (D158)", () => {
+    const reads: ChartPoint[] = [
+      ...series([40.0, 40.2, 40.4]),
+      { at: new Date(T0 + 2.5 * DAY), value: 37.0, mark: true }, // the event's End, 9 % lower
+      ...series([40.5, 40.6, 40.7]).map((p) => ({ ...p, at: new Date(p.at.getTime() + 3 * DAY) })),
+    ];
+    const page = render(reads);
+    const ys = lineYs(page);
+    expect(ys).toHaveLength(6);
+    // The daily line stays in the top part of the chart; only the hollow dot sits at the floor.
+    expect(Math.max(...ys)).toBeLessThan(30);
+    expect(/d="M[\d.]+ ([\d.]+)h0" stroke="currentColor" stroke-width="8"/.exec(page)?.[1]).toBe(
+      "100.00",
+    );
   });
 
   it("adds the time to the first and last date when they are the same day", () => {
@@ -72,6 +95,6 @@ describe("LineChart (D68)", () => {
   it("marks an event at least 6 px wide, and a wide event as a tick at each end", () => {
     expect(html).toMatch(/width:max\([\d.]+%, 6px\)/);
     const wide = render(series([100, 90], DAY), [{ from: new Date(T0), to: new Date(T0 + DAY) }]);
-    expect(wide.match(/bg-ink\/50/g)).toHaveLength(2);
+    expect(wide.match(/border-dashed/g)).toHaveLength(2);
   });
 });

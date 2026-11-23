@@ -5,6 +5,7 @@
 // card is in InsightsEffort.tsx.
 import type { ReactNode } from "react";
 
+import { Bar } from "@/app/_ui/charts/Bar";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { BarRow, InsightsWords, PulseMetricWords } from "@/lib/private/insights-words";
 import { fill } from "@/lib/words";
@@ -43,11 +44,10 @@ function RowBody(props: {
   r: BarRow;
   noData: string;
   tone: "plum" | "ink";
-  bare: boolean;
   /** False where the fold's ▾ sits elsewhere (a flow week's, by its label). */
   caret?: boolean;
 }) {
-  const { r, noData, tone, bare, caret = true } = props;
+  const { r, noData, tone, caret = true } = props;
   return (
     <>
       <span className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
@@ -60,36 +60,29 @@ function RowBody(props: {
           {r.note && <span className="ml-2 font-normal text-ink/70">{r.note}</span>}
         </span>
       </span>
-      {!(bare && r.share === null) && (
-        <span aria-hidden="true" className="mt-1 block h-2 w-full bg-ink/10">
-          {r.share !== null && (
-            <span
-              className={`block h-2 ${tone === "plum" ? "bg-plum/60" : "bg-ink/45"}`}
-              style={{ width: `${Math.round(Math.max(0, Math.min(1, r.share)) * 100)}%` }}
-            />
-          )}
-        </span>
-      )}
+      <Bar
+        axis="row"
+        share={r.share}
+        tone={tone === "plum" ? "bg-plum/60" : "bg-ink/45"}
+        className="mt-1 h-2 w-full bg-ink/10"
+      />
     </>
   );
 }
 
 /**
- * Horizontal bars: label and number on one line, the bar under them, a muted note after the number.
- * `bare`: a row with no share draws no empty track. A row with a set opens its names under it (`slug`
- * makes their links).
+ * Horizontal bars: label and number on one line, the bar under them, a muted note after the number. A row
+ * with no share draws no bar (D158). A row with a set opens its names under it (`slug` makes their links).
  */
 export function Bars({
   rows,
   noData,
   tone = "plum",
-  bare = false,
   slug = "",
 }: {
   rows: BarRow[];
   noData: string;
   tone?: "plum" | "ink";
-  bare?: boolean;
   slug?: string;
 }) {
   return (
@@ -104,12 +97,12 @@ export function Bars({
               kind={r.set.kind}
               setKey={r.set.key}
               count={r.set.people.length}
-              summary={<RowBody r={r} noData={noData} tone={tone} bare={bare} />}
+              summary={<RowBody r={r} noData={noData} tone={tone} />}
             >
               <Names set={r.set} slug={slug} label={`${r.label}: ${r.value}`} />
             </SetFold>
           ) : (
-            <RowBody r={r} noData={noData} tone={tone} bare={bare} />
+            <RowBody r={r} noData={noData} tone={tone} />
           )}
         </li>
       ))}
@@ -122,21 +115,18 @@ function Days({ metric, noData }: { metric: PulseMetricWords; noData: string }) 
   return (
     <ol className="mt-2 grid grid-cols-7 gap-0.5 text-center">
       {metric.days.map((d) => (
-        <li
-          key={d.weekday}
-          className="min-w-0"
-          aria-label={d.later ? undefined : `${d.weekday}: ${d.value}`}
-        >
+        <li key={d.weekday} className="min-w-0">
+          {!d.later && <span className="sr-only">{`${d.weekday}: ${d.value}`}</span>}
           <span aria-hidden="true" className="block text-[12px] leading-4 text-ink/70">
             {d.weekday}
           </span>
           <span aria-hidden="true" className="flex h-8 items-end justify-center">
-            {d.share !== null && (
-              <span
-                className="block w-full max-w-6 rounded-t-sm bg-plum/60"
-                style={{ height: `${Math.max(6, Math.round(d.share * 100))}%` }}
-              />
-            )}
+            <Bar
+              axis="column"
+              share={d.share}
+              tone="rounded-t-sm bg-plum/60"
+              className="h-full w-full max-w-6"
+            />
           </span>
           <span aria-hidden="true" className="block h-px bg-ink/50" />
           <span aria-hidden="true" className="block truncate text-[12px] leading-5 tabular-nums">
@@ -189,13 +179,7 @@ function WeekBars({ w, noData }: { w: FlowWeek; noData: string }) {
       <span className="grid grid-cols-2 gap-x-3">
         {([w.joined, w.left] as const).map((r, i) => (
           <span key={i} className="block border-t border-rule py-1.5">
-            <RowBody
-              r={r}
-              noData={noData}
-              tone={i === 0 ? "plum" : "ink"}
-              bare={false}
-              caret={false}
-            />
+            <RowBody r={r} noData={noData} tone={i === 0 ? "plum" : "ink"} caret={false} />
           </span>
         ))}
       </span>

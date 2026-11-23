@@ -60,7 +60,7 @@ export const uk = {
     progressMight: "Ви: {change} з {date}.",
     progressMedian: "Типовий учасник {tag}: {percent}.",
     rankIn: "в {tag}",
-    progressEvents: "Подія (від Початку до Кінця): {dates}",
+    progressEvents: "Подія (від Початку до Кінця); її знімки позначено порожніми крапками: {dates}",
     progressWar: "Might часто падає під час бойових подій. Так і має бути.",
     progressEmpty: "Для графіка ще замало знімків.",
     chart: "{label}: {first} на {from}, {last} на {to}",
@@ -125,8 +125,8 @@ export const uk = {
     carriedHelp:
       "Частка кожного альянсу в Kills, набраних від «Початку» до «Кінця» учасниками з обох списків, поруч із його часткою в Might на «Початку». Захисники і гравці підтримки не набирають Kills.",
     carriedTotal: "Усі альянси ({n}): набрано {kills} Kills, {might} Might на «Початку»",
-    carriedMightMark: "Частка Might на «Початку»",
-    carriedKillsMark: "Частка набраних Kills",
+    carriedGapKey:
+      "Смуга: частка Kills мінус частка Might, у відсоткових пунктах. Праворуч від 0: частка Kills вища.",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} з Kills",
     carriedSpread: "{low}–{high} за {n} подіями",
@@ -247,7 +247,7 @@ export const uk = {
       "Might альянсу з {from} змінився на {growth}. Сума відстежуваних альянсів змінилася на {server}.",
     server: "Відстежувані альянси",
     growthSince: "{growth} з {from}",
-    trend: "Місце {first} на {from}, {last} на {to}",
+    was: "було {rank} на {from}",
     thisAlliance: "Цей альянс",
     detailsHelp: "Місце в кожен день, від найстарішого: {days}.",
     few: "Для порівняння альянсів ще замало щоденних оновлень.",

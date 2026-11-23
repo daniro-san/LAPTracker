@@ -302,6 +302,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | matchup                           | karşılaşma                      | `kvk.title` — the two servers' KvK pairing                                                                                        |
 | per 1B might                      | 1B Might başına                 | `kvk.killsPer1B`, `kvk.help` — kills for each billion might; 1B as the numbers write it (D78)                                     |
 | member list                       | üye listesi                     | `members.joinedReads`, `members.leftReads` — an alliance's players as read at Start or End                                        |
+| bar (a chart's bar)               | Çubuk                           | `ledger.carriedGapKey` — the gap bar's key; other bar charts' keys reuse it                                                       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

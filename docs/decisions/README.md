@@ -165,3 +165,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D155 — The KvK opponent's tags suggested from its server's ranks board: one read per (KvK, server) from /admin, tags, names and might only (2026-11-22, owner, issue 306; amends D133 and D152)](D155-opponent-tags-from-its-servers-ranks-board.md)
 - [D156 — An alliance's own line on our posts: one line per post, at most 120 graphemes, never translated, pinging and linking no one; notices take none (2026-11-22, owner, issue 713)](D156-an-alliance-s-own-line-on-our-posts.md)
 - [D157 — Feedback: our own form on the desk and the board, collect only, kept 180 days, read on /admin/feedback (2026-11-22, owner, issue 713 part H; amends D77, D115, D125)](D157-feedback-our-own-form-collect-only.md)
+- [D158 — Charts: honest scales, one bar with one zero rule, and four tap patterns (2026-11-22, owner, issue 736; amends D68, D83, D90, D136, D153)](D158-charts-honest-scales-and-tap-to-read.md)

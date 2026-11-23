@@ -180,6 +180,23 @@ describe("KvK cost and recovery (issue 489)", () => {
     ]);
   });
 
+  it("draws each recovery day against 100 % or the highest day, with the 100 % tick, and a day that lost more below zero (D158)", () => {
+    // KvK of Saturday 14 cost 20 (100 → 80); the nights after: 82 (10 % back), 104 (120 %), 78 (−10 %).
+    const after = [
+      nightRead("2026-11-14", [member(1, 80)]),
+      nightRead("2026-11-15", [member(1, 82)]),
+      nightRead("2026-11-16", [member(1, 104)]),
+      nightRead("2026-11-17", [member(1, 78)]),
+    ];
+    const kvk = kvkOf([kvkOn("2026-11-14", 100, 80)], after, ZONE, new Set(), SAT_EVENING);
+    const days = kvkWords(kvk, "2026-11-17", f, "23:30").events[0]?.days ?? [];
+
+    expect(days.map((d) => d.value)).toEqual(["10%", "120%", "-10%"]);
+    // The scale is 120 %, so 120 % fills the column and 100 % sits at five sixths of it on every day.
+    expect(days.map((d) => d.share)).toEqual([0.1 / 1.2, 1, -0.1 / 1.2]);
+    expect(days.map((d) => d.reference)).toEqual([1 / 1.2, 1 / 1.2, 1 / 1.2]);
+  });
+
   it("with the reads starting after the last KvK, says when they start instead of claiming no KvK happened", () => {
     // The daily reads start on Tuesday 17; the KvK of Saturday 14 has both reads but no read covers it.
     const late = reads.filter((r) => r.day >= "2026-11-17");

@@ -183,6 +183,7 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | member list                           | Members-Liste                          | `members.joinedReads`, `members.leftReads` — the member list, with "Members" kept as the game term                                           |
 | unknown                               | unbekannt                              | `members.startUnknown`, `members.endUnknown` — a Start or End read that is missing                                                           |
 | counted as 0                          | als 0 gezählt                          | `members.countedAsZero` — a missing read counted as zero in the sum                                                                          |
+| percentage points, spelled out        | Prozentpunkte                          | `ledger.carriedGapKey` — the bar's key only, where "points" is spelled out; elsewhere %-Pkt.                                                 |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

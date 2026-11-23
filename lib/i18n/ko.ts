@@ -61,7 +61,7 @@ export const ko = {
     progressMight: "내 변화: {date} 이후 {change}.",
     progressMedian: "{tag} 전형적인 멤버: {percent}.",
     rankIn: "{tag} 소속",
-    progressEvents: "이벤트 (시작~종료): {dates}",
+    progressEvents: "이벤트 (시작~종료), 그 기록은 빈 점으로 표시: {dates}",
     progressWar: "전쟁 이벤트에서는 전투력이 자주 떨어져요. 그건 정상이에요.",
     progressEmpty: "차트를 그리기엔 아직 기록이 부족해요.",
     chart: "{label}: {first} ({from}), {last} ({to})",
@@ -121,8 +121,8 @@ export const ko = {
     carriedHelp:
       "시작부터 종료까지 두 명단에 모두 있는 멤버가 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다. 수비와 지원 플레이어는 처치를 획득하지 못합니다.",
     carriedTotal: "전체 {n}개 연맹: 획득 처치 {kills}, 시작 때 전투력 {might}",
-    carriedMightMark: "시작 때 전투력 몫",
-    carriedKillsMark: "획득 처치 몫",
+    carriedGapKey:
+      "막대: 처치 몫에서 전투력 몫을 뺀 값, %p 단위. 0 오른쪽: 처치 몫이 더 높다는 뜻입니다.",
     carriedShares: "전투력 {might} · 처치 {kills}",
     carriedTurnout: "처치가 늘어난 인원 {share}",
     carriedSpread: "{n}개 이벤트, {low}–{high}",
@@ -241,7 +241,7 @@ export const ko = {
     leadGrowth: "{from} 이후 전투력은 {growth} 변했습니다. 추적 연맹 합계는 {server} 변했습니다.",
     server: "추적 연맹 합계",
     growthSince: "{from} 이후 {growth}",
-    trend: "{from} 순위 {first}, {to} 순위 {last}",
+    was: "{from}에는 {rank}",
     thisAlliance: "이 연맹",
     detailsHelp: "날마다 순위, 오래된 날부터: {days}.",
     few: "연맹을 비교하기엔 아직 일일 업데이트가 부족해요.",

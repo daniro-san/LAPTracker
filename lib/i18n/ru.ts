@@ -60,7 +60,7 @@ export const ru = {
     progressMight: "Вы: {change} с {date}.",
     progressMedian: "Типичный участник {tag}: {percent}.",
     rankIn: "в {tag}",
-    progressEvents: "Событие (Начало – Конец): {dates}",
+    progressEvents: "Событие (Начало – Конец), его чтения пустыми точками: {dates}",
     progressWar: "Мощь часто падает в военных событиях. Так и должно быть.",
     progressEmpty: "Для графика пока мало чтений.",
     chart: "{label}: {first} на {from}, {last} на {to}",
@@ -125,8 +125,8 @@ export const ru = {
     carriedHelp:
       "Доля каждого альянса в убийствах рядом с его долей мощи. Убийства, набранные от «Начала» до «Конца» участниками, которые есть в обоих списках, мощь на «Начале». Защитники и игроки поддержки убийств не получают.",
     carriedTotal: "Все альянсы ({n}): набрано убийств {kills}, мощи в «Начале» {might}",
-    carriedMightMark: "Доля мощи на «Начало»",
-    carriedKillsMark: "Доля набранных убийств",
+    carriedGapKey:
+      "Полоса: доля убийств минус доля мощи, в процентных пунктах. Справа от 0: доля убийств выше.",
     carriedShares: "Мощь {might} · Убийства {kills}",
     carriedTurnout: "{share} с убийствами",
     carriedSpread: "{low}–{high} по {n} событиям",
@@ -247,7 +247,7 @@ export const ru = {
       "С {from} его мощь изменилась на {growth}. Сумма отслеживаемых альянсов изменилась на {server}.",
     server: "Отслеживаемые альянсы",
     growthSince: "{growth} с {from}",
-    trend: "Место {first} на {from}, {last} на {to}",
+    was: "ранее {rank} на {from}",
     thisAlliance: "Этот альянс",
     detailsHelp: "Место в каждый день, от самого раннего: {days}.",
     few: "Для сравнения альянсов пока мало ежедневных обновлений.",

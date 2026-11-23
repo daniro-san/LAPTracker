@@ -329,6 +329,8 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | KvK matchup                           | KvK-matchup                                 | `kvk.title`, `kvk.versus` — the event page's KvK section                                                |
 | Start to End                          | Begin–Einde                                 | `kvk.change`, `kvk.changeLater` — the change from the Start read to the End read                        |
 | Might change                          | Might-verschil                              | `kvk.mightChange`, `kvk.changeLine` — the Might difference from Start to End                            |
+| bar (chart)                           | balk                                        | `ledger.carriedGapKey` — one bar of the kill-share vs might-share gap                                   |
+| hollow dot                            | open stip                                   | `ledger.progressEvents` — a reading inside an event band on the might chart                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

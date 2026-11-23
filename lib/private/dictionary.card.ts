@@ -25,6 +25,8 @@ export const cardEn = {
   "card.days.might": "Might {delta} since {date}",
   "card.days.mightSame": "Might unchanged since {date}",
   "card.days.early": "The last 7 days come with the first daily update.",
+  "card.days.scale":
+    "Bars: coins out of 1,000; quest points against {quests} and donations against {donations}, the alliance's best day by one member in these 7 days.",
   "card.info.dates": "Show when each was updated",
   "card.info.hideDates": "Hide the dates",
   "card.info.showMap": "Show map position",
@@ -72,6 +74,8 @@ export const cardPt: CardWords = {
   "card.days.might": "Might {delta} desde {date}",
   "card.days.mightSame": "Might igual desde {date}",
   "card.days.early": "Os últimos 7 dias vêm com a primeira atualização diária.",
+  "card.days.scale":
+    "Barras: moedas de 1.000; pontos de missões contra {quests} e doações contra {donations}, o melhor dia de um membro da aliança nestes 7 dias.",
   "card.info.dates": "Mostrar quando cada um mudou",
   "card.info.hideDates": "Ocultar as datas",
   "card.info.showMap": "Mostrar a posição no mapa",
@@ -115,6 +119,8 @@ export const cardFr: CardWords = {
   "card.days.might": "Might {delta} depuis le {date}",
   "card.days.mightSame": "Might inchangé depuis le {date}",
   "card.days.early": "Les 7 derniers jours arrivent avec la première mise à jour quotidienne.",
+  "card.days.scale":
+    "Barres : pièces sur 1 000 ; points de quêtes face à {quests} et dons face à {donations}, le meilleur jour d’un membre de l’alliance sur ces 7 jours.",
   "card.info.dates": "Afficher quand chacun a changé",
   "card.info.hideDates": "Masquer les dates",
   "card.info.showMap": "Afficher la position sur la carte",

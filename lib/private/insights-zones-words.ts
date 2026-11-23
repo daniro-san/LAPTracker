@@ -46,6 +46,8 @@ export interface ZonesWords {
     rows: ZoneRow[];
     /** "Not recorded yet": the count; null when every member has a time zone. */
     missing: string | null;
+    /** Its bar: the members with no time zone, out of all members, on the rows' scale (D158). */
+    missingShare: number;
     /** The server hours with the most members in their usual hours; null with fewer than 2 groups. */
     usual: Usual | null;
   } | null;
@@ -196,12 +198,13 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
       legend: fill(t["insights.zones.legend"], {
         now: server.time(m.now),
         kvk: server.at(m.kvk),
-        known,
+        members: c.members,
       }),
       rows: groups.map((g, i) => ({
         label: nameOf(g, f, "insights.zones.row"),
         value: String(g.uids.length),
-        share: g.uids.length / known,
+        // Out of every member, not only those with a time zone (D158): 2 of 11 is not 2 of 3.
+        share: g.uids.length / c.members,
         set: setOf("zone", `zone-${i}`, g.uids, f.people, language),
         times: fill(t["insights.zones.times"], {
           now: clockText(clockOf(g, m.now, f, false)),
@@ -211,6 +214,7 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
         change: changeOf(g, m, f),
       })),
       missing: c.members > known ? String(c.members - known) : null,
+      missingShare: (c.members - known) / c.members,
       usual: groups.length >= 2 ? usualLine(c, known, f) : null,
     },
   };
