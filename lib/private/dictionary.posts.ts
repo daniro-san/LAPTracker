@@ -1,11 +1,11 @@
 // Alliance settings → Posts (#713 part C, D159): the catalog of posts LAPTracker makes on its own, and each
-// post's own words (its title, what it holds, its day; post 2's text), in English, Brazilian Portuguese and
+// post's own words (its title, what it holds, its day; the text of posts 2 and 3), in English, Brazilian Portuguese and
 // French: one module the settings dictionaries spread. The post itself takes its title and the calendar's words in the language
 // officers pick for it. French puts a no-break space before : and inside « ».
 export const postsEn = {
   "posts.head": "Posts",
   "posts.lead":
-    "Posts LAPTracker can make for you on its own, on a set day. Each one is off until you turn it on. They name no one and ping no one.",
+    "Posts LAPTracker can make for you on its own, on a set day. Each one is off until you turn it on. They ping no one, and only the welcome names anyone: the members who just joined.",
   "posts.week.name": "This week in the alliance",
   "posts.week.what":
     "The week’s calendar entries marked “Members can see this”, with their times in server time (ST). No player names, notes or links. Nothing is posted in a week with none.",
@@ -18,6 +18,17 @@ export const postsEn = {
   "posts.shield_up.body":
     "The raid starts at the reset (00:00 ST). Before then, please make sure your shield is on, take your squads off the wall and bring your troops home: a shield doesn’t protect troops outside. Thanks, everyone!",
   "posts.shield_up.day": "Every {day} evening, before the raid at the reset (00:00 ST).",
+  "posts.welcome.name": "Welcome new members",
+  "posts.welcome.what":
+    "Every day after the end-of-day read, a warm welcome that names the members who joined since the day before. Never anyone who left. Over 15 new members, just the count. Nothing is posted on a day with no one new, or when either day’s read failed.",
+  "posts.welcome.defaultTitle": "Welcome to our new members",
+  "posts.welcome.one":
+    "Welcome, {names}! We’re glad you’re here. Say hello, and ask us anything you need.",
+  "posts.welcome.names":
+    "Welcome, {names}! We’re glad you’re here. Say hello, and ask us anything you need.",
+  "posts.welcome.count":
+    "Welcome to our {n} new members! We’re glad you’re here. Say hello, and ask us anything you need.",
+  "posts.welcome.day": "Every day, after the end-of-day read.",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
   "posts.channel.members": "Members’ channel",
@@ -31,6 +42,7 @@ export const postsEn = {
   "posts.language": "Language of the post",
   "posts.preview": "Next post",
   "posts.when": "Every {day}, between {from} and {to} ST, in #{channel}.",
+  "posts.whenDaily": "Every day, between {from} and {to} ST, in #{channel}.",
   "posts.off": "Off: nothing is posted.",
   "posts.noChannel":
     "Nothing is posted until the {channel} is set up: paste its webhook under Discord, above.",
@@ -43,12 +55,15 @@ export const postsEn = {
   "callouts.post.shield_up": "Shield-up reminder",
   "callouts.where.shield_up": "Goes above the shield-up reminder, on Friday evening.",
   "activity.callout.shield_up": "{who} changed the line on the “Shield-up reminder”",
+  "callouts.post.welcome": "Welcome new members",
+  "callouts.where.welcome": "Goes above the welcome, on a day with new members.",
+  "activity.callout.welcome": "{who} changed the line on “Welcome new members”",
 };
 
 export const postsPt: typeof postsEn = {
   "posts.head": "Posts",
   "posts.lead":
-    "Posts que o LAPTracker pode fazer por vocês sozinho, num dia fixo. Cada um fica desligado até vocês ligarem. Eles não citam nem marcam ninguém.",
+    "Posts que o LAPTracker pode fazer por vocês sozinho, num dia fixo. Cada um fica desligado até vocês ligarem. Eles não marcam ninguém, e só as boas-vindas citam nomes: os membros que acabaram de entrar.",
   "posts.week.name": "Esta semana na aliança",
   "posts.week.what":
     "Os eventos da semana no calendário marcados “Os membros podem ver isto”, com os horários do servidor (ST). Sem nomes de jogadores, notas ou links. Nada sai numa semana sem nenhum.",
@@ -61,6 +76,17 @@ export const postsPt: typeof postsEn = {
   "posts.shield_up.body":
     "O raid começa no reset (00:00 ST). Antes disso, por favor confirmem que o escudo está ligado, tirem os esquadrões da muralha e tragam as tropas para casa: o escudo não protege tropas fora da cidade. Obrigado, pessoal!",
   "posts.shield_up.day": "Toda {day} à noite, antes do raid no reset (00:00 ST).",
+  "posts.welcome.name": "Boas-vindas aos novos membros",
+  "posts.welcome.what":
+    "Todo dia, depois da leitura do fim do dia, boas-vindas calorosas com o nome de quem entrou desde o dia anterior. Nunca cita quem saiu. Com mais de 15 novos membros, só o número. Nada sai num dia sem ninguém novo, ou quando a leitura de um dos dois dias falhou.",
+  "posts.welcome.defaultTitle": "Boas-vindas aos novos membros",
+  "posts.welcome.one":
+    "Boas-vindas, {names}! Que bom ter você aqui. Diga oi e pergunte o que precisar.",
+  "posts.welcome.names":
+    "Boas-vindas, {names}! Que bom ter vocês aqui. Digam oi e perguntem o que precisarem.",
+  "posts.welcome.count":
+    "Boas-vindas aos nossos {n} novos membros! Que bom ter vocês aqui. Digam oi e perguntem o que precisarem.",
+  "posts.welcome.day": "Todo dia, depois da leitura do fim do dia.",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
   "posts.channel.members": "Canal dos membros",
@@ -74,6 +100,7 @@ export const postsPt: typeof postsEn = {
   "posts.language": "Idioma do post",
   "posts.preview": "Próximo post",
   "posts.when": "Toda {day}, entre {from} e {to} ST, em #{channel}.",
+  "posts.whenDaily": "Todo dia, entre {from} e {to} ST, em #{channel}.",
   "posts.off": "Desligado: nada é postado.",
   "posts.noChannel":
     "Nada é postado até o {channel} ser configurado: cole o webhook dele em Discord, acima.",
@@ -86,12 +113,15 @@ export const postsPt: typeof postsEn = {
   "callouts.post.shield_up": "Lembrete do escudo",
   "callouts.where.shield_up": "Vai acima do lembrete do escudo, na sexta à noite.",
   "activity.callout.shield_up": "{who} mudou a frase do “Lembrete do escudo”",
+  "callouts.post.welcome": "Boas-vindas aos novos membros",
+  "callouts.where.welcome": "Vai acima das boas-vindas, num dia com membros novos.",
+  "activity.callout.welcome": "{who} mudou a frase das “Boas-vindas aos novos membros”",
 };
 
 export const postsFr: typeof postsEn = {
   "posts.head": "Messages",
   "posts.lead":
-    "Des messages que LAPTracker peut publier pour vous tout seul, un jour fixe. Chacun reste éteint jusqu’à ce que vous l’allumiez. Ils ne nomment ni ne mentionnent personne.",
+    "Des messages que LAPTracker peut publier pour vous tout seul, un jour fixe. Chacun reste éteint jusqu’à ce que vous l’allumiez. Ils ne mentionnent personne, et seul l’accueil nomme quelqu’un : les membres qui viennent d’arriver.",
   "posts.week.name": "Cette semaine dans l’alliance",
   "posts.week.what":
     "Les entrées du calendrier de la semaine marquées « Les membres peuvent voir ceci », avec leurs heures du serveur (ST). Sans noms de joueurs, notes ni liens. Rien n’est publié une semaine sans aucune.",
@@ -104,6 +134,17 @@ export const postsFr: typeof postsEn = {
   "posts.shield_up.body":
     "Le raid commence au reset (00:00 ST). D’ici là, pensez à vérifier que votre bouclier est actif, retirer vos escouades du mur et ramener vos troupes à la maison : le bouclier ne protège pas les troupes dehors. Merci à tous !",
   "posts.shield_up.day": "Chaque {day} soir, avant le raid au reset (00:00 ST).",
+  "posts.welcome.name": "Bienvenue aux nouveaux membres",
+  "posts.welcome.what":
+    "Chaque jour après la lecture de fin de journée, un accueil chaleureux qui nomme les membres arrivés depuis la veille. Jamais ceux qui sont partis. Au-delà de 15 nouveaux membres, seulement le nombre. Rien n’est publié un jour sans nouveau membre, ni quand la lecture de l’un des deux jours a échoué.",
+  "posts.welcome.defaultTitle": "Bienvenue aux nouveaux membres",
+  "posts.welcome.one":
+    "Bienvenue, {names} ! Nous sommes ravis de vous compter parmi nous. Dites bonjour, et demandez-nous ce dont vous avez besoin.",
+  "posts.welcome.names":
+    "Bienvenue, {names} ! Nous sommes ravis de vous compter parmi nous. Dites bonjour, et demandez-nous ce dont vous avez besoin.",
+  "posts.welcome.count":
+    "Bienvenue à nos {n} nouveaux membres ! Nous sommes ravis de vous compter parmi nous. Dites bonjour, et demandez-nous ce dont vous avez besoin.",
+  "posts.welcome.day": "Chaque jour, après la lecture de fin de journée.",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",
   "posts.channel.members": "Salon des membres",
@@ -117,6 +158,7 @@ export const postsFr: typeof postsEn = {
   "posts.language": "Langue du message",
   "posts.preview": "Prochain message",
   "posts.when": "Chaque {day}, entre {from} et {to} ST, dans #{channel}.",
+  "posts.whenDaily": "Chaque jour, entre {from} et {to} ST, dans #{channel}.",
   "posts.off": "Éteint : rien n’est publié.",
   "posts.noChannel":
     "Rien n’est publié tant que le {channel} n’est pas configuré : collez son webhook sous Discord, plus haut.",
@@ -129,4 +171,7 @@ export const postsFr: typeof postsEn = {
   "callouts.post.shield_up": "Rappel du bouclier",
   "callouts.where.shield_up": "Au-dessus du rappel du bouclier, le vendredi soir.",
   "activity.callout.shield_up": "{who} a changé la phrase du « Rappel du bouclier »",
+  "callouts.post.welcome": "Bienvenue aux nouveaux membres",
+  "callouts.where.welcome": "Au-dessus de l’accueil, un jour avec de nouveaux membres.",
+  "activity.callout.welcome": "{who} a changé la phrase de « Bienvenue aux nouveaux membres »",
 };

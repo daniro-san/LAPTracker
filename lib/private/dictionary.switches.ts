@@ -35,6 +35,7 @@ export const switchesEn = {
   // D159: switched in Alliance settings → Posts, never on this card; named for type completeness.
   "switches.name.post_week": "This week in the alliance",
   "switches.name.post_shield_up": "Shield-up reminder",
+  "switches.name.post_welcome": "Welcome new members",
   "switches.name.squads": "Squads from the tracker",
   "switches.name.shield_check": "Raid Shield check",
   "switches.name.notice_pictures": "Notice pictures",
@@ -79,6 +80,7 @@ export const switchesPt: typeof switchesEn = {
   "switches.name.post_callouts": "Sua frase nos nossos posts",
   "switches.name.post_week": "Esta semana na aliança",
   "switches.name.post_shield_up": "Lembrete do escudo",
+  "switches.name.post_welcome": "Boas-vindas aos novos membros",
   "switches.name.squads": "Esquadrões do tracker",
   "switches.name.shield_check": "Conferência do Escudo de raid",
   "switches.name.notice_pictures": "Imagens dos avisos",
@@ -122,6 +124,7 @@ export const switchesFr: typeof switchesEn = {
   "switches.name.post_callouts": "Votre phrase sur nos messages",
   "switches.name.post_week": "Cette semaine dans l’alliance",
   "switches.name.post_shield_up": "Rappel du bouclier",
+  "switches.name.post_welcome": "Bienvenue aux nouveaux membres",
   "switches.name.squads": "Escouades du tracker",
   "switches.name.shield_check": "Vérification du Bouclier de raid",
   "switches.name.notice_pictures": "Images des annonces",

@@ -74,6 +74,7 @@ export async function calloutsView(
     garrison: t["switches.name.garrison"],
     week: t["posts.week.defaultTitle"],
     shield_up: t["posts.shield_up.defaultTitle"],
+    welcome: t["posts.welcome.defaultTitle"],
   };
   return postsOf(access).map((post) => ({
     post,

@@ -101,8 +101,8 @@ function nextPost(row: PostView, v: Values, t: WorkspaceDictionary) {
     const channel = t[`posts.channel.${v.channel}`].toLowerCase();
     return { text: fill(t["posts.noChannel"], { channel }), warn: true };
   }
-  const when = { day: row.day, from: row.from, to: row.to, channel: target.name };
-  return { text: fill(t["posts.when"], when), warn: false };
+  const when = { day: row.day ?? "", from: row.from, to: row.to, channel: target.name };
+  return { text: fill(t[row.day === null ? "posts.whenDaily" : "posts.when"], when), warn: false };
 }
 
 /**
@@ -199,7 +199,7 @@ function PostFields(props: {
       </label>
       <p className="mt-3">
         <span className="block font-medium">{t["posts.day"]}</span>
-        {fill(t[`posts.${row.post}.day`], { day: row.day })}
+        {fill(t[`posts.${row.post}.day`], { day: row.day ?? "" })}
       </p>
       <TitleField
         post={row.post}

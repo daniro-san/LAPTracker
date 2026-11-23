@@ -28,6 +28,7 @@ export const FEATURE_GROUPS = {
     "post_callouts",
     "post_week",
     "post_shield_up",
+    "post_welcome",
   ],
   data: ["squads", "shield_check", "notice_pictures", "export"],
 } as const;

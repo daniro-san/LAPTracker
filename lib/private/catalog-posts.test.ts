@@ -3,14 +3,14 @@
 // on, and it holds the week's calendar entries members can see with their server times: no roster field, no
 // person, no note, no link, and it pings no one. The claim comes after the post is built, an empty week is
 // settled without a post, and the tick's deadline stops new sends. Post 2, the shield-up reminder, goes once
-// on Friday from 20:30 ST, with the Raid Shield check off too, and names, counts and pings no one. Invented
-// names only.
+// on Friday from 20:30 ST, with the Raid Shield check off too, and names, counts and pings no one. Post 3,
+// the welcome, is in catalog-posts-welcome.test.ts. Invented names only.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { testContext, TEST_ENV } from "../app-context.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { POST_CATALOG } from "../post-catalog";
+import { fromOf, POST_CATALOG } from "../post-catalog";
 import { liveCallout } from "../repo/post-touches";
 import { setSwitch } from "../repo/workspace-features";
 import { findWorkspaceBySlug, saveWorkspace } from "../repo/workspaces";
@@ -396,6 +396,8 @@ describe("Shield-up reminder (D159, post 2)", () => {
     const { env } = testContext(db, ENV).ctx;
     expect(sendBy(env, FRIDAY, POST_CATALOG.shield_up.from)).toBe("20:45");
     expect(sendBy(env, MONDAY, POST_CATALOG.week.from)).toBe("01:15");
+    // Post 3: the end-of-day read's own tick, 23:30 ST, so 23:45.
+    expect(sendBy(env, MONDAY, fromOf("welcome", env))).toBe("23:45");
   });
 
   it("names no one, counts nothing and pings no one, in the post's language", async () => {
