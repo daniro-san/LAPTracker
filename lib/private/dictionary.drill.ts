@@ -31,23 +31,21 @@ export const drillEn = {
   "drill.flow.noRead": "No daily update on {days}: a join or leave then shows on the next one.",
   "drill.flow.before":
     "The daily update of {date} is the starting point: there is nothing before it to compare with.",
-  "drill.pulse.pick": "Who did it on a day:",
+  "drill.pulse.pick": "Open a day to see who did it:",
   "drill.pulseDay.donated": "Donated",
   "drill.pulseDay.sum":
     "{day}: the members behind each count, in name order. Only those who did it are named.",
-  "drill.pulseDay.questsUnknown":
-    "Daily quest points: not known for {n}, who are not in the day before’s daily update.",
+  "drill.pulseDay.questsUnknown": "Daily quest points: not known for {n}.",
   "drill.flowDay.sum": "{day}: {joined} joined, {left} left. The places below add up to this.",
   "drill.flowDay.nobodyJoined": "Nobody joined that day.",
   "drill.flowDay.nobodyLeft": "Nobody left that day.",
   "drill.kvk.pick": "A day’s numbers:",
   "drill.kvk.back": "All KvKs",
   "drill.kvkDay.on": "On {date}",
-  "drill.kvkDay.sum": "{day}: {back} of the might they lost is back. Its column shows the same.",
+  "drill.kvkDay.sum": "{day}: {back} of the might they lost is back.",
   "drill.kvkDay.noLoss": "{day}: these members lost no might in this KvK.",
-  "drill.kvkDay.all": "Counted: the {n} members this KvK counts.",
-  "drill.kvkDay.some":
-    "Counted: {n} of the {of} members this KvK counts. Not in this day’s daily update: {missing}.",
+  "drill.kvkDay.counted": "Counted: {n} of the {of} members this KvK counts.",
+  "drill.kvkDay.missing": "Not in this day’s daily update: {missing}.",
 } as const;
 
 type DrillWords = Record<keyof typeof drillEn, string>;
@@ -80,23 +78,21 @@ export const drillPt: DrillWords = {
   "drill.flow.noRead": "Sem atualização diária em {days}: uma entrada ou saída aparece na próxima.",
   "drill.flow.before":
     "A atualização diária de {date} é o ponto de partida: não há nada antes dela para comparar.",
-  "drill.pulse.pick": "Quem fez, por dia:",
+  "drill.pulse.pick": "Abra um dia para ver quem fez:",
   "drill.pulseDay.donated": "Doaram",
   "drill.pulseDay.sum":
     "{day}: os membros por trás de cada contagem, em ordem de nome. Só aparece quem fez.",
-  "drill.pulseDay.questsUnknown":
-    "Pontos de missões diárias: sem dados para {n}, que não estão na atualização diária do dia anterior.",
+  "drill.pulseDay.questsUnknown": "Pontos de missões diárias: sem dados para {n}.",
   "drill.flowDay.sum": "{day}: {joined} entraram, {left} saíram. Os lugares abaixo somam isso.",
   "drill.flowDay.nobodyJoined": "Ninguém entrou nesse dia.",
   "drill.flowDay.nobodyLeft": "Ninguém saiu nesse dia.",
   "drill.kvk.pick": "Os números de um dia:",
   "drill.kvk.back": "Todas as KvKs",
   "drill.kvkDay.on": "Em {date}",
-  "drill.kvkDay.sum": "{day}: {back} do poder que perderam voltou. A coluna do dia mostra o mesmo.",
+  "drill.kvkDay.sum": "{day}: {back} do poder que perderam voltou.",
   "drill.kvkDay.noLoss": "{day}: estes membros não perderam poder nesta KvK.",
-  "drill.kvkDay.all": "Contados: os {n} membros que esta KvK conta.",
-  "drill.kvkDay.some":
-    "Contados: {n} dos {of} membros que esta KvK conta. Fora da atualização diária deste dia: {missing}.",
+  "drill.kvkDay.counted": "Contados: {n} dos {of} membros que esta KvK conta.",
+  "drill.kvkDay.missing": "Fora da atualização diária deste dia: {missing}.",
 };
 
 export const drillFr: DrillWords = {
@@ -128,12 +124,11 @@ export const drillFr: DrillWords = {
     "Pas de mise à jour quotidienne le {days} : une arrivée ou un départ apparaît alors à la suivante.",
   "drill.flow.before":
     "La mise à jour quotidienne du {date} est le point de départ : il n’y a rien avant elle à comparer.",
-  "drill.pulse.pick": "Qui l’a fait, par jour :",
+  "drill.pulse.pick": "Ouvrez un jour pour voir qui l’a fait :",
   "drill.pulseDay.donated": "Ont donné",
   "drill.pulseDay.sum":
     "{day} : les membres derrière chaque nombre, par ordre de nom. Seuls ceux qui l’ont fait sont nommés.",
-  "drill.pulseDay.questsUnknown":
-    "Points de quêtes quotidiennes : inconnus pour {n}, absents de la mise à jour quotidienne de la veille.",
+  "drill.pulseDay.questsUnknown": "Points de quêtes quotidiennes : inconnus pour {n}.",
   "drill.flowDay.sum":
     "{day} : {joined} arrivés, {left} partis. Les lieux ci-dessous font ce total.",
   "drill.flowDay.nobodyJoined": "Personne n’est arrivé ce jour-là.",
@@ -141,10 +136,8 @@ export const drillFr: DrillWords = {
   "drill.kvk.pick": "Les chiffres d’un jour :",
   "drill.kvk.back": "Toutes les KvK",
   "drill.kvkDay.on": "Le {date}",
-  "drill.kvkDay.sum":
-    "{day} : {back} de la puissance perdue est revenue. Sa colonne montre la même chose.",
+  "drill.kvkDay.sum": "{day} : {back} de la puissance perdue est revenue.",
   "drill.kvkDay.noLoss": "{day} : ces membres n’ont pas perdu de puissance dans cette KvK.",
-  "drill.kvkDay.all": "Comptés : les {n} membres que cette KvK compte.",
-  "drill.kvkDay.some":
-    "Comptés : {n} des {of} membres que cette KvK compte. Absents de la mise à jour quotidienne de ce jour : {missing}.",
+  "drill.kvkDay.counted": "Comptés : {n} des {of} membres que cette KvK compte.",
+  "drill.kvkDay.missing": "Absents de la mise à jour quotidienne de ce jour : {missing}.",
 };

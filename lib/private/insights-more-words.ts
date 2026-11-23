@@ -154,7 +154,11 @@ function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
       ),
     ],
     days: back === null ? [] : recoveryDays(e.days, f),
-    picks: back === null ? [] : e.days.map((d) => dayPick(d.day, d.members, f)),
+    // A day whose read lists none of the counted members has no numbers (its column is "—"): no link (D75).
+    picks:
+      back === null
+        ? []
+        : e.days.flatMap((d) => (d.members > 0 ? [dayPick(d.day, d.members, f)] : [])),
   };
 }
 
@@ -212,14 +216,13 @@ function kvkDayWords(e: KvkEvent, d: KvkDay, f: Formats): KvkDayWords {
       d.share === null
         ? fill(t["drill.kvkDay.noLoss"], { day })
         : fill(t["drill.kvkDay.sum"], { day, back: percent(d.share, language) }),
-    counted:
-      d.members === e.members
-        ? fill(t["drill.kvkDay.all"], { n: d.members })
-        : fill(t["drill.kvkDay.some"], {
-            n: d.members,
-            of: e.members,
-            missing: e.members - d.members,
-          }),
+    // Always out of the KvK's counted members, so a day that lists fewer says so (persona panel).
+    counted: [
+      fill(t["drill.kvkDay.counted"], { n: d.members, of: e.members }),
+      ...(d.members < e.members
+        ? [fill(t["drill.kvkDay.missing"], { missing: e.members - d.members })]
+        : []),
+    ].join(" "),
   };
 }
 
@@ -232,7 +235,7 @@ export function kvkLevelWords(
 ): KvkLevelWords | null {
   const e = kvk.events.find((x) => x.day === asked.kvk);
   if (!e) return null;
-  const day = e.days.find((d) => d.day === asked.kvkDay);
+  const day = e.days.find((d) => d.day === asked.kvkDay && d.members > 0);
   return { event: eventWords(e, newest, f), day: day ? kvkDayWords(e, day, f) : null };
 }
 

@@ -289,6 +289,8 @@ export function FlowDay(props: {
         day={level.label}
         {...{ hrefs, t }}
       />
+      {/* The day's count first, then the places it is made of (persona panel). */}
+      <p className="mt-1 text-body-sm font-medium tabular-nums">{level.sum}</p>
       <Sub>{t["insights.flow.came"]}</Sub>
       {level.joined > 0 ? (
         <Bars rows={level.came} noData={noData} />
@@ -301,10 +303,7 @@ export function FlowDay(props: {
       ) : (
         <p className="text-body-sm">{t["drill.flowDay.nobodyLeft"]}</p>
       )}
-      <p className="mt-2 border-t border-rule pt-2 text-body-sm font-medium tabular-nums">
-        {level.sum}
-      </p>
-      <p className="text-body-sm text-ink/80">{t["insights.flow.places"]}</p>
+      <p className="mt-1 text-body-sm text-ink/80">{t["insights.flow.places"]}</p>
     </>
   );
 }

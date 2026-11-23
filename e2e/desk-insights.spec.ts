@@ -437,8 +437,11 @@ test("Insights: a day someone joined and left opens where they came from and wen
   await sees(card, `${usDay(day)}: 1 joined, 1 left. The places below add up to this.`);
   for (const name of [...changedAtLastEvent("a", "joined"), ...changedAtLastEvent("a", "left")])
     await expect(card.getByText(name)).toHaveCount(0);
-  // The window's own places give way to the day's: one "Where newcomers came from" on the card.
+  // Under the day's path, nothing of the whole period: one "Where newcomers came from", no tenure.
   await expect(card.getByRole("heading", { name: "Where newcomers came from" })).toHaveCount(1);
+  await expect(
+    card.getByRole("heading", { name: "How long members have been with us" }),
+  ).toHaveCount(0);
   await stays(page, y);
   const back = path.getByRole("link", { name: weekOf(monday) }).first();
   expect((await back.boundingBox())?.height).toBeGreaterThanOrEqual(44);
@@ -538,7 +541,7 @@ test("Insights: a KvK recovery day opens its numbers, the share its column shows
   await sees(path, "KvK cost and recovery");
   await sees(path, `KvK ${usDay(kvk)}`);
   await sees(path, usDay(day));
-  await sees(card, `Counted: the ${counted.length} members this KvK counts.`);
+  await sees(card, `Counted: ${counted.length} of the ${counted.length} members this KvK counts.`);
   await expect(card).toContainText(
     new RegExp(`Before \\(Start read\\)\\s*${compactLarge(before, "en")}`),
   );
@@ -546,10 +549,7 @@ test("Insights: a KvK recovery day opens its numbers, the share its column shows
     new RegExp(`After \\(End read\\)\\s*${compactLarge(after, "en")}`),
   );
   await expect(card).toContainText(new RegExp(`${compactLarge(then, "en")}\\s*${back} back`));
-  await sees(
-    card,
-    `${usDay(day)}: ${back} of the might they lost is back. Its column shows the same.`,
-  );
+  await sees(card, `${usDay(day)}: ${back} of the might they lost is back.`);
   // Back: that KvK with its days unfolded, the day's link again.
   await path
     .getByRole("link", { name: `KvK ${usDay(kvk)}` })

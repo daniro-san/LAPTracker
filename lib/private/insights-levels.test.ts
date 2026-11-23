@@ -161,9 +161,7 @@ describe("a chart's day level (D158 rule 7, issue 752)", () => {
     ]);
     // The names stay in place: no Members link (pattern (c), in place only).
     expect(words.rows.map((r) => r.set?.onward)).toEqual([null, null, null]);
-    expect(words.notes).toEqual([
-      "Daily quest points: not known for 1, who are not in the day before’s daily update.",
-    ]);
+    expect(words.notes).toEqual(["Daily quest points: not known for 1."]);
     expect(words.week).toEqual({ label: "This week", monday: null });
     // A day with no read, or before the pulse's weeks, opens nothing.
     for (const pulseDay of ["2026-11-15", "2026-09-01"])
@@ -228,7 +226,8 @@ describe("a chart's day level (D158 rule 7, issue 752)", () => {
 
   it("opens a KvK recovery day to its numbers: the share its column shows, and the members that day's read leaves out", async () => {
     const access = await officer();
-    // Sat 14's KvK: 101 from 20M to 5M, 102 from 10M to 8M. 102 is not in Sunday's read.
+    // Sat 14's KvK: 101 from 20M to 5M, 102 from 10M to 8M. 102 is not in Sunday's read, and Monday's
+    // lists neither of them (only 103, who was not in the KvK).
     await kvk(new Date("2026-11-14T14:00:00Z"), OURS, {
       101: [20_000_000, 5_000_000],
       102: [10_000_000, 8_000_000],
@@ -236,7 +235,8 @@ describe("a chart's day level (D158 rule 7, issue 752)", () => {
     // Roster might is uid × 100k: 101 at 10.1M, 102 at 10.2M.
     await roster("2026-11-14", OURS, [101, 102]);
     await roster("2026-11-15", OURS, [101]);
-    await roster("2026-11-16", OURS, [101, 102]);
+    await roster("2026-11-16", OURS, [103]);
+    await roster("2026-11-17", OURS, [101, 102]);
 
     const view = await insightsView(db, access, NOW, ZONE);
     const e = must(view.kvk.events[0], "KvK");
@@ -247,15 +247,21 @@ describe("a chart's day level (D158 rule 7, issue 752)", () => {
       before,
       after,
       then,
-      share: expect.closeTo((then - after) / (before - after), 10),
+      share: members > 0 ? expect.closeTo((then - after) / (before - after), 10) : null,
     });
     expect(e.days).toEqual([
       day("2026-11-15", 1, 20_000_000, 5_000_000, 10_100_000),
-      day("2026-11-16", 2, 30_000_000, 13_000_000, 20_300_000),
+      day("2026-11-16", 0, 0, 0, 0),
+      day("2026-11-17", 2, 30_000_000, 13_000_000, 20_300_000),
     ]);
-    const columns = must(kvkWords(view.kvk, "2026-11-16", f, "23:30").events[0], "KvK words").days;
+    const words = must(kvkWords(view.kvk, "2026-11-17", f, "23:30").events[0], "KvK words");
+    const columns = words.days;
+    // Monday's read lists none of them: its column is "—", and it opens nothing (D75).
+    expect(columns[1]?.value).toBe("—");
+    expect(words.picks.map((p) => p.key)).toEqual(["2026-11-15", "2026-11-17"]);
     const asked = (kvkDay: string) =>
-      kvkLevelWords(view.kvk, "2026-11-16", { kvk: "2026-11-14", kvkDay }, f);
+      kvkLevelWords(view.kvk, "2026-11-17", { kvk: "2026-11-14", kvkDay }, f);
+    expect(asked("2026-11-16")).toMatchObject({ event: { day: "2026-11-14" }, day: null });
     const sun = must(asked("2026-11-15")?.day, "Sunday");
     expect(sun.might.map((r) => [plain(r.label), r.value, r.note])).toEqual([
       ["Before (Start read)", "20.0M", undefined],
@@ -263,17 +269,17 @@ describe("a chart's day level (D158 rule 7, issue 752)", () => {
       ["On Nov 15", "10.1M", "34% back"],
     ]);
     expect(plain(sun.sum)).toBe(
-      `Sun, Nov 15: ${columns[0]?.value} of the might they lost is back. Its column shows the same.`,
+      `Sun, Nov 15: ${columns[0]?.value} of the might they lost is back.`,
     );
     expect(sun.counted).toBe(
       "Counted: 1 of the 2 members this KvK counts. Not in this day’s daily update: 1.",
     );
-    const mon = must(asked("2026-11-16")?.day, "Monday");
-    expect(mon.counted).toBe("Counted: the 2 members this KvK counts.");
-    expect(mon.sum).toContain(`${columns[1]?.value} of the might`);
+    const tue = must(asked("2026-11-17")?.day, "Tuesday");
+    expect(tue.counted).toBe("Counted: 2 of the 2 members this KvK counts.");
+    expect(tue.sum).toContain(`${columns[2]?.value} of the might`);
     // The KvK alone opens its days; a day outside them, or another KvK's day, opens no day.
-    expect(asked("2026-11-17")).toMatchObject({ event: { day: "2026-11-14" }, day: null });
+    expect(asked("2026-11-18")).toMatchObject({ event: { day: "2026-11-14" }, day: null });
     const other = { kvk: "2026-11-07", kvkDay: "2026-11-15" };
-    expect(kvkLevelWords(view.kvk, "2026-11-16", other, f)).toBeNull();
+    expect(kvkLevelWords(view.kvk, "2026-11-17", other, f)).toBeNull();
   });
 });

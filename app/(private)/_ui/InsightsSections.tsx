@@ -194,13 +194,18 @@ function Weeks(props: {
   );
 }
 
-/** The window's came-from and went-to bars, under the weeks or a week's days. */
-function Places(props: {
+/**
+ * The card's whole-period parts under its weeks: where people came from and went, how long members have
+ * been with us, newcomers' growth. A week or a day level leaves them out, so nothing under its path reads
+ * as that week's or that day's (persona panel).
+ */
+function WholePeriod(props: {
   flow: NonNullable<InsightsWords["flow"]>;
   t: WorkspaceDictionary;
   noData: string;
+  slug: string;
 }) {
-  const { flow, t, noData } = props;
+  const { flow, t, noData, slug } = props;
   const joinedAny = flow.came.length > 0;
   const leftAny = flow.went.length > 0;
   return (
@@ -220,6 +225,15 @@ function Places(props: {
       {(joinedAny || leftAny) && (
         <p className="mt-1 text-body-sm text-ink/80">{t["insights.flow.places"]}</p>
       )}
+      <Sub>{t["insights.tenure.head"]}</Sub>
+      <p className="text-body-sm text-ink/80">{t["insights.tenure.based"]}</p>
+      <Bars rows={flow.tenure} noData={noData} sets={{ slug, t }} />
+      <Sub>{t["insights.newcomers.head"]}</Sub>
+      {flow.newcomers.map((line) => (
+        <p key={line} className="text-body-sm">
+          {line}
+        </p>
+      ))}
     </>
   );
 }
@@ -236,10 +250,7 @@ export function FlowCard({
   flow: NonNullable<InsightsWords["flow"]>;
   /** The week the address opens to its days, in the weeks' place; null for the weeks. */
   level: FlowDaysWords | null;
-  /**
-   * The day the address opens to its came-from and went-to bars, in the weeks' place; the window's own
-   * places then give way to it, so the card never shows two "Where newcomers came from".
-   */
+  /** The day the address opens to its came-from and went-to bars, in the weeks' place. */
   day: FlowDayWords | null;
   nav: LevelNav;
   t: WorkspaceDictionary;
@@ -251,26 +262,18 @@ export function FlowCard({
     <Card id={FLOW_CARD} title={t["insights.flow.head"]} based={[flow.based]}>
       {day ? (
         <FlowDay level={day} {...{ hrefs, t, noData }} />
+      ) : level ? (
+        <>
+          <Sub>{t["drill.flow.days"]}</Sub>
+          <FlowDays level={level} hrefs={hrefs} t={t} noData={noData} />
+        </>
       ) : (
         <>
-          <Sub>{level ? t["drill.flow.days"] : t["insights.flow.weeks"]}</Sub>
-          {level ? (
-            <FlowDays level={level} hrefs={hrefs} t={t} noData={noData} />
-          ) : (
-            <Weeks {...{ flow, nav, t, noData, slug }} />
-          )}
-          <Places {...{ flow, t, noData }} />
+          <Sub>{t["insights.flow.weeks"]}</Sub>
+          <Weeks {...{ flow, nav, t, noData, slug }} />
+          <WholePeriod {...{ flow, t, noData, slug }} />
         </>
       )}
-      <Sub>{t["insights.tenure.head"]}</Sub>
-      <p className="text-body-sm text-ink/80">{t["insights.tenure.based"]}</p>
-      <Bars rows={flow.tenure} noData={noData} sets={{ slug, t }} />
-      <Sub>{t["insights.newcomers.head"]}</Sub>
-      {flow.newcomers.map((line) => (
-        <p key={line} className="text-body-sm">
-          {line}
-        </p>
-      ))}
     </Card>
   );
 }
