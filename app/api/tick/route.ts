@@ -42,7 +42,7 @@ export function POST(request: Request): Promise<Response> {
     scheduleSquadsBatch(ctx, origin);
     // D148: officers' notifications on a tick that opened the database anyway (counts only, after the answer).
     schedulePushTick(ctx, tick);
-    // D159: the catalog posts due today (Monday's week post), on the same terms.
+    // D159: the catalog posts due now (the week, the shield-up reminder, the welcome), on the same terms.
     schedulePostsTick(ctx);
     switch (tick.kind) {
       case "idle":
