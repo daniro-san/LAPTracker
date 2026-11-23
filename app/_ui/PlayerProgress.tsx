@@ -156,7 +156,12 @@ export async function PlayerProgress({ progress, clock }: { progress: Progress; 
         <div className="drawn-card p-3">
           <p className="mb-3">{summaryText(progress, clock, locale, copy)}</p>
           <h3 className={`mb-1 ${LABEL}`}>{l.might}</h3>
-          <LineChart points={pointsOf(readings, "power")} label={l.might} {...chart} />
+          <LineChart
+            points={pointsOf(readings, "power")}
+            label={l.might}
+            readout={{ id: "might" }}
+            {...chart}
+          />
           <p className={`mt-2 flex flex-wrap items-center gap-x-3 text-sm ${MUTED}`}>
             {bands.length > 0 && (
               <span className="inline-flex items-center gap-2">
@@ -172,7 +177,13 @@ export async function PlayerProgress({ progress, clock }: { progress: Progress; 
             <span>{l.progressWar}</span>
           </p>
           <h3 className={`mb-1 mt-4 ${LABEL}`}>{l.kills}</h3>
-          <LineChart points={pointsOf(readings, "kills")} label={l.kills} small {...chart} />
+          <LineChart
+            points={pointsOf(readings, "kills")}
+            label={l.kills}
+            small
+            readout={{ id: "kills" }}
+            {...chart}
+          />
           {details && (
             <div className="mt-2">
               <MoreBar

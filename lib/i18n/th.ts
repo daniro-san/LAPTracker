@@ -124,6 +124,14 @@ export const th = {
     carriedRatioHelp:
       "+6 pts: สัดส่วน Kills สูงกว่าสัดส่วน Might อยู่ 6 จุด เมื่อมี 3 กิจกรรมขึ้นไป บรรทัดใต้ตัวเลขจะแสดงสัดส่วน Kills เป็นกี่เท่าของสัดส่วน Might เรียงจากต่ำสุดถึงสูงสุด",
     carriedPoints: "pts",
+    arrivedTurnout: "จากผู้ร่วมศึก: เรียงตาม Kills ที่เพิ่มในกิจกรรมนี้ มากที่สุดก่อน",
+    arrivedKillShare: "จากสัดส่วน Kills เทียบ สัดส่วน Might: เรียงตาม Kills ที่เพิ่มในกิจกรรมนี้ มากที่สุดก่อน",
+    arrivedClear: "แสดงลำดับปกติ",
+    readoutEarlier: "ก่อนหน้า",
+    readoutLater: "ถัดไป",
+    readoutPulse: "{kills} Kills ที่เพิ่ม · อ่านแล้ว {n} พันธมิตร",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "การอ่านของกิจกรรม",
   },
   compare: {
     title: "กิจกรรม เทียบ กิจกรรม",

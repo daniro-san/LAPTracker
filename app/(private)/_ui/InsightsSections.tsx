@@ -10,7 +10,7 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { BarRow, InsightsWords, PulseMetricWords } from "@/lib/private/insights-words";
 import { fill } from "@/lib/words";
 
-import { Caret, Names, SetFold, TapHint } from "./InsightsSets";
+import { Caret, membersHref, Names, SetFold, SetRow, TapHint } from "./InsightsSets";
 import { withNoData } from "./NoData";
 
 export function Card({
@@ -78,29 +78,29 @@ export function Bars({
   rows,
   noData,
   tone = "plum",
-  slug = "",
+  sets,
 }: {
   rows: BarRow[];
   noData: string;
   tone?: "plum" | "ink";
-  slug?: string;
+  /** Where a row's set opens its names: the workspace's address and its words. */
+  sets?: { slug: string; t: WorkspaceDictionary };
 }) {
   return (
     <ul className="mt-1">
       {rows.map((r, i) => (
         <li
           key={i}
-          className={`border-t border-rule ${r.set ? "" : "py-1.5"} ${r.current ? "font-semibold" : ""}`}
+          className={`border-t border-rule ${r.set && sets ? "" : "py-1.5"} ${r.current ? "font-semibold" : ""}`}
         >
-          {r.set ? (
-            <SetFold
-              kind={r.set.kind}
-              setKey={r.set.key}
-              count={r.set.people.length}
+          {r.set && sets ? (
+            <SetRow
+              set={r.set}
+              slug={sets.slug}
+              t={sets.t}
+              label={r.set.title}
               summary={<RowBody r={r} noData={noData} tone={tone} />}
-            >
-              <Names set={r.set} slug={slug} label={`${r.label}: ${r.value}`} />
-            </SetFold>
+            />
           ) : (
             <RowBody r={r} noData={noData} tone={tone} />
           )}
@@ -189,6 +189,53 @@ function WeekBars({ w, noData }: { w: FlowWeek; noData: string }) {
 
 type FlowWeek = NonNullable<InsightsWords["flow"]>["weeks"][number];
 
+/** A week's row: one fold over its names at full width, joined then left (issue 678), or its bars alone. */
+function WeekRow(props: {
+  w: FlowWeek;
+  i: number;
+  t: WorkspaceDictionary;
+  noData: string;
+  slug: string;
+}) {
+  const { w, t, noData, slug } = props;
+  if (!w.joined.set && !w.left.set)
+    return (
+      <div className="py-1.5">
+        <WeekBars w={w} noData={noData} />
+      </div>
+    );
+  return (
+    <SetFold
+      kind="flow_week"
+      setKey={`week-${props.i}`}
+      count={(w.joined.set?.people.length ?? 0) + (w.left.set?.people.length ?? 0)}
+      title={`${t["insights.flow.weeks"]} · ${w.label}`}
+      // Members lists the joiners only: past 60 the fold links there only when nobody left that week, so
+      // the link holds exactly what the count counts; otherwise both lists open in the sheet.
+      far={w.joined.set && !w.left.set ? membersHref(slug, w.joined.set) : null}
+      summary={<WeekBars w={w} noData={noData} />}
+      t={t}
+    >
+      {(
+        [
+          [w.joined.set, "insights.flow.joinedWho"],
+          [w.left.set, "insights.flow.leftWho"],
+        ] as const
+      ).map(([set, key]) => {
+        if (!set) return null;
+        // "Joined (1)": a noun and the count, never the bar's "−1" over a name.
+        const head = fill(t[key], { n: set.people.length });
+        return (
+          <div key={key}>
+            <h4 className="text-body-sm font-semibold">{head}</h4>
+            <Names set={set} slug={slug} label={`${w.label}: ${head}`} />
+          </div>
+        );
+      })}
+    </SetFold>
+  );
+}
+
 export function FlowCard({
   flow,
   t,
@@ -209,36 +256,7 @@ export function FlowCard({
       <ul className="mt-1">
         {flow.weeks.map((w, i) => (
           <li key={w.label} className="border-t border-rule">
-            {w.joined.set || w.left.set ? (
-              // One fold per week, its names at full width: joined, then left (issue 678).
-              <SetFold
-                kind="flow_week"
-                setKey={`week-${i}`}
-                count={(w.joined.set?.people.length ?? 0) + (w.left.set?.people.length ?? 0)}
-                summary={<WeekBars w={w} noData={noData} />}
-              >
-                {(
-                  [
-                    [w.joined.set, "insights.flow.joinedWho"],
-                    [w.left.set, "insights.flow.leftWho"],
-                  ] as const
-                ).map(([set, key]) => {
-                  if (!set) return null;
-                  // "Joined (1)": a noun and the count, never the bar's "−1" over a name.
-                  const head = fill(t[key], { n: set.people.length });
-                  return (
-                    <div key={key}>
-                      <h4 className="text-body-sm font-semibold">{head}</h4>
-                      <Names set={set} slug={slug} label={`${w.label}: ${head}`} />
-                    </div>
-                  );
-                })}
-              </SetFold>
-            ) : (
-              <div className="py-1.5">
-                <WeekBars w={w} noData={noData} />
-              </div>
-            )}
+            <WeekRow w={w} i={i} t={t} noData={noData} slug={slug} />
           </li>
         ))}
       </ul>
@@ -259,7 +277,7 @@ export function FlowCard({
       )}
       <Sub>{t["insights.tenure.head"]}</Sub>
       <p className="text-body-sm text-ink/80">{t["insights.tenure.based"]}</p>
-      <Bars rows={flow.tenure} noData={noData} slug={slug} />
+      <Bars rows={flow.tenure} noData={noData} sets={{ slug, t }} />
       <Sub>{t["insights.newcomers.head"]}</Sub>
       {flow.newcomers.map((line) => (
         <p key={line} className="text-body-sm">

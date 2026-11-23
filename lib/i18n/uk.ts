@@ -133,6 +133,15 @@ export const uk = {
     carriedRatioHelp:
       "+6 в. п.: частка Kills на 6 в. п. вища за частку Might. Якщо подій три або більше, рядок під ним дає діапазон частки Kills у кратних частки Might, від найменшого до найбільшого.",
     carriedPoints: "в. п.",
+    arrivedTurnout: "З «Участі у війні»: спершу більше Kills, набраних у цій події.",
+    arrivedKillShare:
+      "З «Частки Kills проти частки Might»: спершу більше Kills, набраних у цій події.",
+    arrivedClear: "Показати звичайний порядок",
+    readoutEarlier: "Раніше",
+    readoutLater: "Пізніше",
+    readoutPulse: "{kills} Kills набрано · {n} альянсів у знімках",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "знімок події",
   },
   compare: {
     title: "Подія проти події",

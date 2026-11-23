@@ -2,10 +2,12 @@
 // workspace dictionaries spread. People first (D75): nobody is ranked, the only names are a thanks list,
 // a day with no read never counts, and every section says what it rests on. French puts a no-break space
 // before : ; ? !.
+import { drillEn, drillFr, drillPt } from "./dictionary.drill";
 import { insightsMoreEn, insightsMoreFr, insightsMorePt } from "./dictionary.insights-more";
 import { insightsZonesEn, insightsZonesFr, insightsZonesPt } from "./dictionary.insights-zones";
 
 export const insightsEn = {
+  ...drillEn,
   ...insightsMoreEn,
   ...insightsZonesEn,
   "members.view.insights": "Insights",
@@ -100,6 +102,7 @@ export const insightsEn = {
 type InsightsWords = Record<keyof typeof insightsEn, string>;
 
 export const insightsPt: InsightsWords = {
+  ...drillPt,
   ...insightsMorePt,
   ...insightsZonesPt,
   "members.view.insights": "Análises",
@@ -193,6 +196,7 @@ export const insightsPt: InsightsWords = {
 };
 
 export const insightsFr: InsightsWords = {
+  ...drillFr,
   ...insightsMoreFr,
   ...insightsZonesFr,
   "members.view.insights": "Analyses",

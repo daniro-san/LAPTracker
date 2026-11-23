@@ -18,6 +18,7 @@ import { mergeCopy } from "./copy-merge";
 import { splitCopy } from "./copy-split";
 import { standingCopy } from "./copy-standing";
 import { alliancesCopy, statementCopy } from "./copy-statement";
+import { tapCopy } from "./copy-tap";
 import { warCopy } from "./copy-war";
 
 /** The public pages' strings in English: the source every other language's dictionary follows. */
@@ -101,6 +102,7 @@ export const en = {
     chart: "{label}: {first} on {from}, {last} on {to}",
     ...liveCopy,
     ...warCopy,
+    ...tapCopy,
   },
   /** Event vs event (D57, #177): two events' in-event changes side by side. */
   compare: {

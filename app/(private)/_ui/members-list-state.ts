@@ -67,8 +67,19 @@ function useAddress(address: string) {
   }, [address]);
 }
 
-/** The groups in order: the heading (default order only), the rest, then "—" and On a break. */
-function groupsOf(rows: ListRow[], order: Order) {
+/**
+ * The groups in order: the heading (default order only), the rest, then "—" and On a break. An Insights set
+ * (`?set=`) is one group in name order until the officer picks an order, so a set never reads as a ranking
+ * (D75, D158); `names` is the page language's collation then, else null.
+ */
+function groupsOf(rows: ListRow[], order: Order, names: Intl.Collator | null) {
+  if (names)
+    return {
+      heading: [],
+      groups: [
+        { key: "main" as const, rows: [...rows].sort((a, b) => names.compare(a.name, b.name)) },
+      ],
+    };
   const sorted = orderMembers(rows, order);
   const byRank = order === "rank";
   // Every member the count above the list names, a member with no rank read included (ADV-9).
@@ -95,13 +106,17 @@ export function useMembersList(props: {
   /** Before the first end-of-day read nothing is computed: Who shows "—" (D75). */
   early: boolean;
   sheetOpen: boolean;
+  /** The page language: an Insights set's names are in its collation. */
+  language: string;
 }) {
   const { rows } = props;
   const [query, setQuery] = useState(props.initialQuery);
   const [hour, setHour] = useState(props.initialQuery.time?.hour ?? props.hour);
   const [chosen, setChosen] = useState<Order | null>(props.initialOrder);
   const stored = useSyncExternalStore(noSubscribe, readOrder, () => null);
-  const order = chosen ?? stored ?? "rank";
+  // An Insights set keeps the default order (name order, D75) until an order is picked on this page: the
+  // stored one is neither applied nor written into the address, so a reload or a shared link is no ranking.
+  const order = chosen ?? (query.set ? "rank" : (stored ?? "rank"));
   const [depth, setDepth] = useState(PAGE);
   const focusFrom = useRef<number | null>(null);
   const clock = useMemo(
@@ -119,7 +134,18 @@ export function useMembersList(props: {
     () => (props.sheetOpen ? sheetCounts(rows, query, clock, langs) : null),
     [props.sheetOpen, rows, query, clock, langs],
   );
-  const { heading, groups } = useMemo(() => groupsOf(kept, order), [kept, order]);
+  const named = query.set !== null && chosen === null;
+  const { heading, groups } = useMemo(
+    () =>
+      groupsOf(
+        kept,
+        order,
+        named
+          ? new Intl.Collator(props.language, { numeric: true, ignorePunctuation: true })
+          : null,
+      ),
+    [kept, order, named, props.language],
+  );
   useAddress(queryString(query, order));
   useEffect(() => {
     if (focusFrom.current === null) return;
@@ -146,6 +172,7 @@ export function useMembersList(props: {
     focusFrom.current = depth;
     setDepth(depth + PAGE);
   };
+  // "Clear filters" and "Search everyone" mean everyone: an Insights set goes too.
   const clearFilters = () => change({ ...NO_QUERY, q: query.q });
   return {
     ...{ query, order, depth, hour, clock, langs, kept, noZone, noLanguage, chips, sheet },

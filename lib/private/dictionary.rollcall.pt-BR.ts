@@ -143,4 +143,7 @@ export const rollPt: RollWords = {
   "roll.grid.more": "Mostrar mais {n}",
   "roll.grid.none.todo": "Ninguém falta marcar.",
   "roll.grid.none": "Ninguém aqui.",
+  "roll.grid.from.todo": "Vindo da lista da Chamada: os membros ainda sem marca.",
+  "roll.grid.from.yes": "Vindo da lista da Chamada: os membros marcados ✓.",
+  "roll.grid.from.no": "Vindo da lista da Chamada: os membros marcados ✗.",
 };

@@ -158,6 +158,10 @@ export interface DaysCard {
   noData: string;
   /** What the bars are drawn against, with the alliance's best member-days; null on a member's own page. */
   scale: string | null;
+  /** Each day under the rows, a tap or a step away (D158 rule 7 (a)): its date and each row's value. */
+  readout: { label: string; line: string }[];
+  /** The readout's ‹ › names. */
+  steps: { earlier: string; later: string };
 }
 
 export interface DaysFormats {
@@ -194,6 +198,39 @@ function rowOf(metric: DayMetric, d: LastDays, t: WorkspaceDictionary, f: DaysFo
   return { metric, label: t[`card.days.${metric}`], average, bars };
 }
 
+/**
+ * Each day as the readout under the rows says it (D158 rule 7 (a)): its date, then each row's value against
+ * what it is drawn against where that is a cap ("180 of 240"), and what "none" means when a row has it.
+ */
+function dayReadout(d: LastDays, t: WorkspaceDictionary, f: DaysFormats) {
+  const cap: Record<DayMetric, number | null> = {
+    quests: QUEST_DAY_CAP,
+    coins: COINS_MAX,
+    donations: null,
+  };
+  return d.days.map((day, i) => {
+    const cells = DAY_METRICS.map((m) => [m, d.rows[m][i]] as const);
+    const parts = cells.map(([m, c]) => {
+      const show = m === "donations" ? f.compact : f.number;
+      const max = cap[m];
+      const value =
+        typeof c === "number"
+          ? max === null
+            ? show(c)
+            : fill(t["drill.day.of"], { v: show(c), max: show(max) })
+          : c === "none"
+            ? t["members.don.nothing"]
+            : t["members.don.none"];
+      return `${t[`card.days.${m}`]} ${value}`;
+    });
+    const none = cells.some(([, c]) => c !== null && c !== undefined && typeof c !== "number");
+    return {
+      label: f.date(day),
+      line: [...parts, ...(none ? [t["drill.day.none"]] : [])].join(" · "),
+    };
+  });
+}
+
 /** The card's words for the last 7 days. */
 export function daysCard(d: LastDays, t: WorkspaceDictionary, f: DaysFormats): DaysCard {
   const might = d.might
@@ -206,6 +243,8 @@ export function daysCard(d: LastDays, t: WorkspaceDictionary, f: DaysFormats): D
     head: t["card.days.head"],
     days: d.days.map((day) => ({ weekday: f.weekday(day), day: f.dayOfMonth(day) })),
     rows: DAY_METRICS.map((m) => rowOf(m, d, t, f)),
+    readout: dayReadout(d, t, f),
+    steps: { earlier: t["drill.earlier"], later: t["drill.later"] },
     might,
     noData: t["nodata.mark"],
     scale: d.best

@@ -135,6 +135,16 @@ export const itIT = {
     carriedRatioHelp:
       "+6 pp: la quota di Kills è di 6 punti sopra la quota di Might. Con 3 eventi o più, la riga sotto mostra la quota di Kills come multiplo della quota di Might, dal più basso al più alto.",
     carriedPoints: "pp",
+    arrivedTurnout:
+      "Dalla Partecipazione: ordinati per Kills guadagnate in questo evento, prima i più alti.",
+    arrivedKillShare:
+      "Dalla Quota Kills vs quota Might: ordinati per Kills guadagnate in questo evento, prima i più alti.",
+    arrivedClear: "Torna all’ordine abituale",
+    readoutEarlier: "Precedente",
+    readoutLater: "Successiva",
+    readoutPulse: "{kills} Kills guadagnate · {n} alleanze lette",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "lettura d’evento",
   },
   compare: {
     title: "Confronto tra eventi",

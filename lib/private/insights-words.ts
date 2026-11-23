@@ -226,7 +226,13 @@ function tenureRows(
     label,
     value: String(uids.length),
     share: members > 0 ? uids.length / members : 0,
-    set: from >= NEWCOMER_DAYS ? setOf("tenure", key, uids, people, language) : null,
+    set:
+      from >= NEWCOMER_DAYS
+        ? setOf("tenure", key, uids, people, {
+            ...f,
+            what: `${t["insights.tenure.head"]} · ${label}`,
+          })
+        : null,
   });
   const over = TENURE_DAYS.at(-1) ?? 0;
   return [
@@ -298,24 +304,35 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
       ),
       { n: flow.reads, date: dates.sentence(flow.from) },
     ),
-    weeks: flow.weeks.map((w, i) => ({
-      label:
+    weeks: flow.weeks.map((w, i) => {
+      const label =
         i === last
           ? t["insights.pulse.thisWeek"]
-          : fill(t["insights.pulse.week"], { date: dates.dayMonth(w.monday) }),
-      joined: {
-        label: t["insights.flow.joined"],
-        value: w.joined.length > 0 ? `+${w.joined.length}` : "0",
-        share: of(w.joined.length),
-        set: setOf("flow_week", `joined-${w.monday}`, w.joined, v.people, language),
-      },
-      left: {
-        label: t["insights.flow.left"],
-        value: w.left.length > 0 ? `−${w.left.length}` : "0",
-        share: of(w.left.length),
-        set: setOf("flow_week", `left-${w.monday}`, w.left, v.people, language),
-      },
-    })),
+          : fill(t["insights.pulse.week"], { date: dates.dayMonth(w.monday) });
+      return {
+        label,
+        joined: {
+          label: t["insights.flow.joined"],
+          value: w.joined.length > 0 ? `+${w.joined.length}` : "0",
+          share: of(w.joined.length),
+          set: setOf("flow_week", `joined-${w.monday}`, w.joined, v.people, {
+            ...f,
+            what: `${t["drill.joined"]} · ${label}`,
+          }),
+        },
+        // Leavers are not on Members' list: each name opens the former-member card, with no onward link.
+        left: {
+          label: t["insights.flow.left"],
+          value: w.left.length > 0 ? `−${w.left.length}` : "0",
+          share: of(w.left.length),
+          set: setOf("flow_week", `left-${w.monday}`, w.left, v.people, {
+            ...f,
+            what: `${t["drill.left"]} · ${label}`,
+            onward: false,
+          }),
+        },
+      };
+    }),
     came: placeRows(flow.cameFrom, members, v.labels, t),
     went: placeRows(flow.wentTo, members, v.labels, t),
     tenure: tenureRows(flow, v.people, f),

@@ -124,6 +124,14 @@ export const zhCN = {
     carriedRatioHelp:
       "+6 pts：Kills 占比比 Might 占比高 6 个百分点。有 3 次活动或以上时，下方一行给出 Kills 占比是 Might 占比的多少倍，从低到高。",
     carriedPoints: "pts",
+    arrivedTurnout: "来自参战人数：按本次活动获得的 Kills 排序，最多的在前。",
+    arrivedKillShare: "来自 Kills 占比 对 Might 占比：按本次活动获得的 Kills 排序，最多的在前。",
+    arrivedClear: "恢复常规顺序",
+    readoutEarlier: "更早",
+    readoutLater: "更晚",
+    readoutPulse: "获得 {kills} Kills · 已读取 {n} 个联盟",
+    readoutShare: "{share}（{kills} Kills）",
+    readoutEventRead: "活动读取",
   },
   statement: {
     title: "宣言与加入",

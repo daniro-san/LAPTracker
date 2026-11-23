@@ -22,7 +22,12 @@ const HEAD = "font-subhead text-display-sm";
 const chartCopy = (language: WorkspaceLanguage): Dictionary =>
   language === "en" ? en : withEnglish(TRANSLATIONS[language]);
 
-function Chart(props: { series: Series; language: WorkspaceLanguage; f: ChartFormats }) {
+function Chart(props: {
+  id: string;
+  series: Series;
+  language: WorkspaceLanguage;
+  f: ChartFormats;
+}) {
   const { series, f } = props;
   return (
     <div className="mt-3">
@@ -35,6 +40,7 @@ function Chart(props: { series: Series; language: WorkspaceLanguage; f: ChartFor
         time={() => ""}
         small
         copy={chartCopy(props.language)}
+        readout={{ id: props.id }}
       />
     </div>
   );
@@ -61,8 +67,8 @@ export function MeProgress(props: {
       <p className="mt-1 text-body-sm text-ink/75">{t["me.progress.lead"]}</p>
       {kvk && <p className="mt-2 font-semibold">{kvk}</p>}
       {!might && !kills && <p className="mt-2 text-body-sm">{t["me.progress.early"]}</p>}
-      {might && <Chart series={might} language={props.language} f={props.f} />}
-      {kills && <Chart series={kills} language={props.language} f={props.f} />}
+      {might && <Chart id="might" series={might} language={props.language} f={props.f} />}
+      {kills && <Chart id="kills" series={kills} language={props.language} f={props.f} />}
     </section>
   );
 }

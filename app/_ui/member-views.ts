@@ -249,6 +249,19 @@ export function filterFromUrl(
 /** The id of the alliance page's member list heading, where every drilldown lands. */
 export const MEMBERS_ID = "members";
 
-/** An alliance page's member list with Joined or Left on, or sorted by one figure: a drilldown's target. */
-export const drillHref = (page: string, q: { show: "joined" | "left" } | { sort: SortKey }) =>
-  `${page}?${new URLSearchParams(q).toString()}#${MEMBERS_ID}`;
+/** The event page's charts whose rows open the member list sorted, so it says why on arrival (D158). */
+export const ARRIVALS = ["war_turnout", "kill_share"] as const;
+export type Arrival = (typeof ARRIVALS)[number];
+
+/** The chart that opened the list (`from=`, a system boundary), or null. */
+export const arrivalOf = (raw: unknown): Arrival | null => ARRIVALS.find((a) => a === raw) ?? null;
+
+/**
+ * An alliance page's member list with Joined or Left on, or sorted by one figure: a drilldown's target.
+ * `from` names the chart that opened it, for the arrival line.
+ */
+export const drillHref = (
+  page: string,
+  q: { show: "joined" | "left" } | { sort: SortKey },
+  from?: Arrival,
+) => `${page}?${new URLSearchParams({ ...q, ...(from && { from }) }).toString()}#${MEMBERS_ID}`;

@@ -132,6 +132,16 @@ export const ptBR = {
     carriedRatioHelp:
       "+6 pts: a fatia de kills fica 6 pontos acima da fatia de Might. Com 3 eventos ou mais, a linha abaixo dá a fatia de kills como múltiplo da fatia de Might, do menor ao maior.",
     carriedPoints: "pts",
+    arrivedTurnout:
+      "Vindo de “Participação”: ordenado pelos kills ganhos neste evento, maior primeiro.",
+    arrivedKillShare:
+      "Vindo de “Fatia de kills vs fatia de might”: ordenado pelos kills ganhos neste evento, maior primeiro.",
+    arrivedClear: "Mostrar a ordem usual",
+    readoutEarlier: "Mais cedo",
+    readoutLater: "Mais tarde",
+    readoutPulse: "{kills} kills ganhos · {n} alianças lidas",
+    readoutShare: "{share} ({kills} kills)",
+    readoutEventRead: "leitura do evento",
   },
   compare: {
     title: "Evento contra evento",

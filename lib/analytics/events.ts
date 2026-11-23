@@ -63,7 +63,8 @@ export type RollCallType = "raid_prep" | "other";
  * The desk pages whose counts open their members (#678: Insights; Raid prep and Roll call come with #691;
  * Home and the read status bar with drilldown batch C).
  */
-export type DrilldownSurface = "insights" | "raid_prep" | "roll_call" | "home" | "status_bar";
+export type DrilldownSurface =
+  "insights" | "raid_prep" | "roll_call" | "home" | "status_bar" | "members";
 
 /**
  * The Insights sets an officer can open (#678; `MemberSet.kind` in lib/private/insights-sets.ts), the
@@ -94,6 +95,8 @@ type DrilldownOpened = { count_bucket: CountBucket } & (
   | { surface: Extract<DrilldownSurface, "home">; kind: HomeSet }
   /** The Raid Shield check's line: "Raid prep ›" tapped, its bucket the members seen with a shield. */
   | { surface: Extract<DrilldownSurface, "status_bar">; kind: "shield" }
+  /** Members opened on an Insights set (`?set=`, D158): "Open these n in Members ›" or a link past 60. */
+  | { surface: Extract<DrilldownSurface, "members">; kind: InsightsSet }
 );
 
 /** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */

@@ -4,29 +4,36 @@
 // alliance's best member-day in the 7 days (D158), said in a line under the rows (a member's own page keeps
 // their own best day). A day with no read is the NoData mark, never 0; "none" (the read listed them, nothing sent, D127) is a muted word with no bar.
 import { Bar } from "@/app/_ui/charts/Bar";
+import { Readout } from "@/app/_ui/charts/Readout";
 import type { DaysCard, DaysRow } from "@/lib/private/member-days";
 
 import { withNoData } from "./NoData";
+
+/** A day's column: the readout's chosen day is tinted in every row. */
+const DAY = "cursor-pointer rounded-sm aria-[current=true]:bg-plum/10";
 
 export function MemberLastDays({ days }: { days: DaysCard }) {
   return (
     <section className="mt-3">
       {days.head && <h3 className="text-body-sm font-semibold">{days.head}</h3>}
-      {/* The days once, over the three rows; each bar also says its own date to screen readers. */}
-      <ol
-        aria-hidden="true"
-        className="mt-1 grid grid-cols-7 gap-0.5 text-center text-[12px] leading-4 text-ink/70"
-      >
-        {days.days.map((d) => (
-          <li key={`${d.weekday}${d.day}`}>
-            <span className="block whitespace-nowrap">{d.weekday}</span>
-            <span className="block tabular-nums">{d.day}</span>
-          </li>
+      {/* A tap on a day, or ‹ ›, names its values against their caps under the rows (D158 rule 7 (a)). */}
+      <Readout id="days" items={days.readout} initial={days.readout.length - 1} words={days.steps}>
+        {/* The days once, over the three rows; each bar also says its own date to screen readers. */}
+        <ol
+          aria-hidden="true"
+          className="mt-1 grid grid-cols-7 gap-0.5 text-center text-[12px] leading-4 text-ink/70"
+        >
+          {days.days.map((d, i) => (
+            <li key={`${d.weekday}${d.day}`} data-at={i} className={DAY}>
+              <span className="block whitespace-nowrap">{d.weekday}</span>
+              <span className="block tabular-nums">{d.day}</span>
+            </li>
+          ))}
+        </ol>
+        {days.rows.map((row) => (
+          <Row key={row.metric} row={row} noData={days.noData} />
         ))}
-      </ol>
-      {days.rows.map((row) => (
-        <Row key={row.metric} row={row} noData={days.noData} />
-      ))}
+      </Readout>
       {days.scale && <p className="mt-2 text-body-sm text-ink/80">{days.scale}</p>}
       {days.might && <p className="mt-2 text-body-sm tabular-nums">{days.might}</p>}
     </section>
@@ -53,7 +60,7 @@ function Row({ row, noData }: { row: DaysRow; noData: string }) {
       )}
       <ol className="mt-1 grid grid-cols-7 gap-0.5 text-center">
         {row.bars.map((b, i) => (
-          <li key={i} className="min-w-0">
+          <li key={i} data-at={i} className={`min-w-0 ${DAY}`}>
             <span className="sr-only">{b.said}</span>
             <span aria-hidden="true" className="flex h-8 items-end justify-center">
               <Bar

@@ -190,10 +190,25 @@ describe("the address", () => {
       who: "new" as const,
       time: { mode: "day" as const, hour: 18 },
       lang: "pt",
+      set: null,
     };
     const text = queryString(query, "kills-asc");
     expect(pickQuery(new URLSearchParams(text), languages)).toEqual(query);
     expect(new URLSearchParams(text).get("order")).toBe("kills-asc");
     expect(queryString({ ...NO_QUERY, ask: "any" }, "rank")).toBe("ask=1");
+  });
+
+  it("keeps an Insights set the server built only while the address names it, and lists only its members", () => {
+    const set = { ref: "zone:zone-m180-m180-m180", uids: [2, 3] };
+    const params = new URLSearchParams(queryString({ ...NO_QUERY, set }, "rank"));
+    expect(params.get("set")).toBe(set.ref);
+    expect(pickQuery(params, [], set).set).toEqual(set);
+    // A set built for another address is not this one's.
+    expect(pickQuery(new URLSearchParams("set=zone:zone-p60-p60-p60"), [], set).set).toBeNull();
+    const rows = [1, 2, 3, 4].map((uid) => m(uid));
+    expect(keepMembers(rows, { ...NO_QUERY, set }, clock).kept.map((r) => r.uid)).toEqual([2, 3]);
+    // The other filters still apply inside the set.
+    const named = keepMembers(rows, { ...NO_QUERY, set, q: "P3" }, clock);
+    expect(named.kept.map((r) => r.uid)).toEqual([3]);
   });
 });

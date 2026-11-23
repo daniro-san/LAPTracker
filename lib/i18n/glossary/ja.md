@@ -67,6 +67,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Hollow dot                | 白丸                      | `ledger.progressEvents` — a reading on the might chart, drawn as a hollow dot                                                                 |
 | Server fight clock        | サーバーの戦闘時計        | `ledger.fightClock`, `ledger.fightClockLink`, `ledger.comparePulse*` — events side by side on the server clock                                |
 | Outlined                  | 囲み線                    | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event                                                     |
+| Readout                   | 読み取りの内訳            | `ledger.readout*` — the values under a pulse or line chart after a tap, with the Earlier / Later steps                                        |
 | English                   | ja                        | Key and use                                                                                                                                   |
 | ------------------------- | ------------------------- | --------------------------------------------------------------------------------------                                                        |
 | Server 325 · Event Ledger | サーバー325・イベント台帳 | `site.ledger` — the page title                                                                                                                |

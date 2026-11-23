@@ -133,6 +133,16 @@ export const sv = {
     carriedRatioHelp:
       "+6 %-enh.: Kills-andelen ligger 6 %-enh. över Might-andelen. Med 3 event eller fler visar raden under Kills-andelen som en multipel av Might-andelen, från lägst till högst.",
     carriedPoints: "%-enh.",
+    arrivedTurnout:
+      "Från Krigsdeltagande: sorterat efter Kills vunna i det här eventet, flest först.",
+    arrivedKillShare:
+      "Från Kills-andel mot Might-andel: sorterat efter Kills vunna i det här eventet, flest först.",
+    arrivedClear: "Visa vanlig ordning",
+    readoutEarlier: "Tidigare",
+    readoutLater: "Senare",
+    readoutPulse: "{kills} Kills vunna · {n} allianser avlästa",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "eventavläsning",
   },
   compare: {
     title: "Event mot event",

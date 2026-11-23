@@ -142,6 +142,9 @@ export const rollEn = {
   "roll.grid.more": "Show {n} more",
   "roll.grid.none.todo": "Nobody left to mark.",
   "roll.grid.none": "No one here.",
+  "roll.grid.from.todo": "From the Roll call list: the members not marked yet.",
+  "roll.grid.from.yes": "From the Roll call list: the members marked ✓.",
+  "roll.grid.from.no": "From the Roll call list: the members marked ✗.",
 } as const;
 
 export type RollKey = keyof typeof rollEn;

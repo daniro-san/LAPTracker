@@ -28,18 +28,37 @@ export const drilldownOf = (kind: InsightsSet, count: number) => ({
   count_bucket: countBucket(count),
 });
 
+/** The kinds opened on this page view, in place or in the sheet (SetSheet): each is counted once. */
+const counted = new Set<InsightsSet>();
+
+/** Counts `ws_drilldown_opened` for a set of `count` opened, once per kind per page view. */
+export function countOpen(kind: InsightsSet, count: number) {
+  if (counted.has(kind)) return;
+  counted.add(kind);
+  track("ws_drilldown_opened", drilldownOf(kind, count));
+}
+
+/** Opens every fold around `el` (a zone row sits inside the card's "Show the details") and shows it. */
+export function revealSet(el: Element) {
+  for (
+    let d = el.parentElement?.closest("details") ?? null;
+    d;
+    d = d.parentElement?.closest("details") ?? null
+  )
+    d.open = true;
+  el.scrollIntoView({ block: "start" });
+}
+
 export function InsightsSetMemory() {
   useEffect(() => {
-    const counted = new Set<string>();
+    counted.clear();
     let restoring: HTMLDetailsElement | null = null;
     const id = openSetId(window.location.hash);
     const found = id ? document.getElementById(id) : null;
     if (found instanceof HTMLDetailsElement) {
       restoring = found;
-      // A zone row sits inside the card's "Show the details": open every fold around it too.
-      for (let d: Element | null = found; d; d = d.parentElement?.closest("details") ?? null)
-        (d as HTMLDetailsElement).open = true;
-      found.scrollIntoView({ block: "start" });
+      found.open = true;
+      revealSet(found);
     }
     const onToggle = (e: Event) => {
       const d = e.target;
@@ -47,12 +66,8 @@ export function InsightsSetMemory() {
       const url = new URL(window.location.href);
       if (d.open) {
         url.hash = d.id;
-        const kind = d.dataset.set as InsightsSet;
         // A set opened again after Back is not counted as a new open.
-        if (d !== restoring && !counted.has(kind)) {
-          counted.add(kind);
-          track("ws_drilldown_opened", drilldownOf(kind, Number(d.dataset.count)));
-        }
+        if (d !== restoring) countOpen(d.dataset.set as InsightsSet, Number(d.dataset.count));
       } else if (url.hash === `#${d.id}`) url.hash = "";
       restoring = null;
       window.history.replaceState(window.history.state, "", url);

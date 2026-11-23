@@ -135,6 +135,16 @@ export const de = {
     carriedRatioHelp:
       "+6 %-Pkt.: Der Kills-Anteil liegt 6 Punkte über dem Might-Anteil. Ab 3 Events zeigt die Zeile darunter den Kills-Anteil als Vielfaches des Might-Anteils, vom niedrigsten bis zum höchsten.",
     carriedPoints: "%-Pkt.",
+    arrivedTurnout:
+      "Aus „Beteiligung am Krieg“: nach den in diesem Event gewonnenen Kills sortiert, die meisten zuerst.",
+    arrivedKillShare:
+      "Aus „Kills-Anteil gegen Might-Anteil“: nach den in diesem Event gewonnenen Kills sortiert, die meisten zuerst.",
+    arrivedClear: "Übliche Reihenfolge zeigen",
+    readoutEarlier: "Früher",
+    readoutLater: "Später",
+    readoutPulse: "{kills} Kills gewonnen · {n} Allianzen erfasst",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "Event-Messung",
   },
   compare: {
     title: "Event gegen Event",

@@ -147,4 +147,7 @@ export const rollFr: RollWords = {
   "roll.grid.more": "Afficher {n} de plus",
   "roll.grid.none.todo": "Plus personne à marquer.",
   "roll.grid.none": "Personne ici.",
+  "roll.grid.from.todo": "Depuis la liste de l’Appel : les membres pas encore marqués.",
+  "roll.grid.from.yes": "Depuis la liste de l’Appel : les membres marqués ✓.",
+  "roll.grid.from.no": "Depuis la liste de l’Appel : les membres marqués ✗.",
 };
