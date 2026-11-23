@@ -13,7 +13,8 @@ Part of #726. Owner's approval, 2026-11-22: "agenda uma leitura hoje às 2:30…
   - Each call is `readOne`, the checks' call: no `fresh`, no retry, a 429/401/403 stops the read and marks a workspace key as the checks do. The answers go to `player_reads` (and `member_squads`, `player_history`) as the checks store them.
   - One `shield.probe` run-log line (and its console mirror): `union_id`, `members`, `calls`, `players`, `failed`, `quota_remaining`, `reason`. No uid, name or shield value.
 - `lib/squads-tick.ts`: `squadsBatch` calls `shieldProbe` after `shieldTick`, within the same `after` budget (`AFTER_BUDGET_MS`).
-- `lib/shield-probe.test.ts`: two PGlite tests (below).
+- `lib/tick-gate.ts`: `tickMayBeDue` opens for the probe's window (`probeDue`). Without it, `/api/tick` answered 204 at 02:30 ST on Monday with the squads queue settled, and `squadsBatch` never ran (found in the review of PR #732).
+- `lib/shield-probe.test.ts`: four PGlite tests: the window and the claim; no mark, post, might version or check status; `quota_low`; and a tick at 04:31Z with the squads queue settled that passes the gate and whose `squadsBatch` runs the probe.
 - D137: dated amendment.
 
 ## Decisions
@@ -32,7 +33,8 @@ Part of #726. Owner's approval, 2026-11-22: "agenda uma leitura hoje às 2:30…
 
 - `pnpm vitest related --run lib/shield-probe.ts lib/squads-tick.ts lib/shield-probe.test.ts`: 7 files, 48 tests passed.
 - `pnpm check`: see the report to the orchestrator.
-- Each test fails when broken (checked by hand, then reverted): without the claim guard the first test fails (12 extra calls); with the window starting 02:29 the first test fails; with one `fetch` to a Discord URL added to the probe the second test fails.
+- Each test fails when broken (checked by hand, then reverted): without the claim guard the first test fails (12 extra calls); with the window starting 02:29 the first test fails; with one `fetch` to a Discord URL added to the probe the second test fails; with the target's `workspaceId` kept (a might write) the second test fails; without the `quota_low` check the third fails; without the gate's `probeDue` line the fourth fails.
+- After the gate fix: `pnpm vitest related --run lib/tick-gate.ts lib/shield-probe.test.ts` 15 files, 96 tests passed; `pnpm check` exit 0 (1952 passed, 4 skipped).
 - No upstream call was made: the tests stub `/v1/players`.
 
 ## Open issues
