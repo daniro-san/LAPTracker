@@ -194,6 +194,7 @@ function WeekBars({ w, noData }: { w: FlowWeek; noData: string }) {
       <span className="block text-body-sm font-semibold">
         {w.label}
         {(w.joined.set || w.left.set) && <Caret />}
+        {w.note && <span className="ml-2 font-normal text-ink/70">{w.note}</span>}
       </span>
       <span className="grid grid-cols-2 gap-x-3">
         {([w.joined, w.left] as const).map((r, i) => (

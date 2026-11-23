@@ -77,6 +77,9 @@ export interface InsightsView {
   flow: {
     /** The first day a change can be seen (the second read in the window). */
     from: string;
+    /** The read the first change is seen against (the one before `from`): the card's one start date. */
+    since: string;
+    /** End-of-day reads from `since` on. */
     reads: number;
     /** Who joined and who left in each week (uids), and on each of its days (D158 rule 7 (b)). */
     weeks: { monday: string; joined: number[]; left: number[]; days: FlowDay[] }[];
@@ -193,7 +196,9 @@ async function flowPart(
   zone: string,
 ) {
   const newest = reads.at(-1) as Reads[number];
-  const from = reads.find((r, i) => i > 0 && r.day >= (weeks[0] ?? ""))?.day ?? newest.day;
+  const first = reads.findIndex((r, i) => i > 0 && r.day >= (weeks[0] ?? ""));
+  const from = reads[first]?.day ?? newest.day;
+  const since = reads[first - 1]?.day ?? from;
   const moves = movesOf(reads, from);
   const moved = [...new Set([...moves.joined, ...moves.left].map((m) => m.uid))];
   const [rosters, tags] = await Promise.all([
@@ -211,7 +216,8 @@ async function flowPart(
   const readDays = new Set(reads.map((r) => r.day));
   const flow: InsightsView["flow"] = {
     from,
-    reads: reads.filter((r) => r.day >= from).length,
+    since,
+    reads: reads.filter((r) => r.day >= since).length,
     weeks: weeks.map((monday) => ({
       monday,
       joined: inWeek(moves.joined, monday),

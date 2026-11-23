@@ -142,7 +142,7 @@ export function flowDaysWords(
             }),
           ]
         : []),
-      ...(before ? [fill(t["drill.flow.before"], { date: dates.short(flow.from) })] : []),
+      ...(before ? [fill(t["drill.flow.before"], { date: dates.short(flow.since) })] : []),
     ],
   };
 }

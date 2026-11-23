@@ -30,7 +30,7 @@ export const drillEn = {
   "drill.flow.sum": "{week}: {joined} joined, {left} left. Its days add up to this.",
   "drill.flow.noRead": "No daily update on {days}: a join or leave then shows on the next one.",
   "drill.flow.before":
-    "Before {date} nothing can be compared: the first daily update is the starting point.",
+    "The daily update of {date} is the starting point: there is nothing before it to compare with.",
 } as const;
 
 type DrillWords = Record<keyof typeof drillEn, string>;
@@ -62,7 +62,7 @@ export const drillPt: DrillWords = {
   "drill.flow.sum": "{week}: {joined} entraram, {left} saíram. Os dias somam isso.",
   "drill.flow.noRead": "Sem atualização diária em {days}: uma entrada ou saída aparece na próxima.",
   "drill.flow.before":
-    "Antes de {date} não há com o que comparar: a primeira atualização diária é o ponto de partida.",
+    "A atualização diária de {date} é o ponto de partida: não há nada antes dela para comparar.",
 };
 
 export const drillFr: DrillWords = {
@@ -93,5 +93,5 @@ export const drillFr: DrillWords = {
   "drill.flow.noRead":
     "Pas de mise à jour quotidienne le {days} : une arrivée ou un départ apparaît alors à la suivante.",
   "drill.flow.before":
-    "Avant le {date}, rien à comparer : la première mise à jour quotidienne est le point de départ.",
+    "La mise à jour quotidienne du {date} est le point de départ : il n’y a rien avant elle à comparer.",
 };

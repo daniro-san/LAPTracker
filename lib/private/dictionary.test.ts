@@ -187,10 +187,10 @@ const SENTENCE_CALLERS: Record<string, [string, string][]> = {
     ],
   ],
   "insights.flow.based.one": [
-    ["lib/private/insights-words.ts", "{ n: flow.reads, date: dates.sentence(flow.from) }"],
+    ["lib/private/insights-words.ts", "{ n: flow.reads, date: dates.sentence(flow.since) }"],
   ],
   "insights.flow.based.other": [
-    ["lib/private/insights-words.ts", "{ n: flow.reads, date: dates.sentence(flow.from) }"],
+    ["lib/private/insights-words.ts", "{ n: flow.reads, date: dates.sentence(flow.since) }"],
   ],
   "invite.expires": [
     [

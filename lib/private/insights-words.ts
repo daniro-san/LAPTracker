@@ -73,6 +73,8 @@ export interface InsightsWords {
     based: string;
     weeks: {
       label: string;
+      /** Why the week shows "—": none of its days can show a change. */
+      note?: string;
       joined: BarRow;
       left: BarRow;
       /** The week's days link: its Monday, its bucket and its words ("Week of Nov 16, day by day ›"). */
@@ -290,6 +292,33 @@ const daysLink = (monday: string, count: number, { t, language }: Formats) => ({
   }),
 });
 
+/** Newcomers' growth: how many joined in the last NEWCOMER_DAYS, and how many of them grew their might. */
+function newcomerLines(nc: NonNullable<InsightsView["flow"]>["newcomers"], f: Formats): string[] {
+  const { t, language } = f;
+  return !nc || nc.uids.length === 0
+    ? [t["insights.newcomers.none"]]
+    : [
+        fill(
+          plural(
+            nc.uids.length,
+            {
+              one: t["insights.newcomers.count.one"],
+              other: t["insights.newcomers.count.other"],
+            },
+            language,
+          ),
+          { n: nc.uids.length },
+        ),
+        nc.median
+          ? fill(t["insights.newcomers.grew"], {
+              grew: nc.grew,
+              counted: nc.counted,
+              median: signedPercent(nc.median.value, language),
+            })
+          : t["insights.newcomers.noMight"],
+      ];
+}
+
 function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const flow = v.flow;
   if (!flow) return null;
@@ -299,30 +328,6 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const members = rosterSize(flow.tenure);
   const of = (n: number) => (members > 0 ? n / members : null);
   const last = flow.weeks.length - 1;
-  const nc = flow.newcomers;
-  const newcomers =
-    !nc || nc.uids.length === 0
-      ? [t["insights.newcomers.none"]]
-      : [
-          fill(
-            plural(
-              nc.uids.length,
-              {
-                one: t["insights.newcomers.count.one"],
-                other: t["insights.newcomers.count.other"],
-              },
-              language,
-            ),
-            { n: nc.uids.length },
-          ),
-          nc.median
-            ? fill(t["insights.newcomers.grew"], {
-                grew: nc.grew,
-                counted: nc.counted,
-                median: signedPercent(nc.median.value, language),
-              })
-            : t["insights.newcomers.noMight"],
-        ];
   return {
     based: fill(
       plural(
@@ -330,7 +335,7 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
         { one: t["insights.flow.based.one"], other: t["insights.flow.based.other"] },
         language,
       ),
-      { n: flow.reads, date: dates.sentence(flow.from) },
+      { n: flow.reads, date: dates.sentence(flow.since) },
     ),
     weeks: flow.weeks.map((w, i) => {
       const label =
@@ -338,6 +343,16 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
           ? t["insights.pulse.thisWeek"]
           : fill(t["insights.pulse.week"], { date: dates.dayMonth(w.monday) });
       const moved = w.joined.length + w.left.length;
+      // A week none of whose days can show a change (no read, or before the first comparison) is no
+      // data: "—" and no bar, never 0 (D75).
+      if (!w.days.some((d) => d.moves !== null && d.moves !== "later"))
+        return {
+          label,
+          note: t["insights.flow.noCompare"],
+          drill: null,
+          joined: { label: t["insights.flow.joined"], value: NONE, share: null, set: null },
+          left: { label: t["insights.flow.left"], value: NONE, share: null, set: null },
+        };
       return {
         label,
         // A week with a join or a leave opens its days (D158 rule 7 (b)).
@@ -367,7 +382,7 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
     came: placeRows(flow.cameFrom, members, v.labels, t),
     went: placeRows(flow.wentTo, members, v.labels, t),
     tenure: tenureRows(flow, v.people, f),
-    newcomers,
+    newcomers: newcomerLines(flow.newcomers, f),
   };
 }
 
