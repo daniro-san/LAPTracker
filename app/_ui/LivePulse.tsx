@@ -133,13 +133,13 @@ function PulseReadout(props: {
       items={pulseReadout(progress, clock, copy, props.locale)}
       initial={busiest?.index ?? pulse.length - 1}
       words={{ earlier: copy.ledger.readoutEarlier, later: copy.ledger.readoutLater }}
+      after={<ReadoutLink links={links} surface="server_pulse" kind="alliances" />}
     >
       <Bars progress={progress} clock={clock} copy={copy} />
       <div className="mt-1 flex justify-between gap-2 text-body-sm tabular-nums text-ink/70">
         <span>{clock.hhmm((pulse[0] as Progress["pulse"][number]).from)}</span>
         <span>{clock.time((pulse.at(-1) as Progress["pulse"][number]).to)}</span>
       </div>
-      <ReadoutLink links={links} surface="server_pulse" kind="alliances" />
     </Readout>
   );
 }

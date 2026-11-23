@@ -42,6 +42,8 @@ export function Readout(props: {
   /** Kept at the bottom of the window while the chart scrolls (many strips: the fight clock). */
   sticky?: boolean;
   children: ReactNode;
+  /** Under the readout line: what the chosen column opens (a `ReadoutLink`). */
+  after?: ReactNode;
 }) {
   const { id, items } = props;
   const [at, setAt] = useState(props.initial);
@@ -68,9 +70,9 @@ export function Readout(props: {
     setAt(Math.max(0, Math.min(items.length - 1, i)));
   };
   const item = items[at];
+  // A tap on a column is a shortcut to it; the steps below are the keyboard's and the screen reader's way.
   return (
     <div>
-      {/* A tap on a column is a shortcut to it; the steps below are the keyboard's and the screen reader's way. */}
       <div
         ref={box}
         onClick={(e) => {
@@ -112,6 +114,7 @@ export function Readout(props: {
           </button>
         </div>
       )}
+      <Chosen.Provider value={at}>{props.after}</Chosen.Provider>
     </div>
   );
 }

@@ -53,6 +53,7 @@ export function PulseDays(props: {
         name={t["drill.path"]}
         back={{ href: top, label: t["drill.back"] }}
         steps={[{ label: t["insights.pulse.head"], href: top }, { label: level.label }]}
+        sticky
       />
       {level.noRead && <p className="text-body-sm text-ink/80">{level.noRead}</p>}
       {level.metrics.map((m) => (
@@ -93,6 +94,7 @@ export function FlowDays(props: {
         name={t["drill.path"]}
         back={{ href: top, label: t["drill.back"] }}
         steps={[{ label: t["insights.flow.head"], href: top }, { label: level.label }]}
+        sticky
       />
       <ul className="mt-1">
         {level.days.map((d) => (
