@@ -1,6 +1,9 @@
 // The event page's KvK matchup (D152, issue 306): our top n alliances and the opponent's at the Start, side by
 // side, and from Start to End over the members in both readings. Alliance-level figures only, the same neutral
-// colours for both sides, no chart (D68). Cards stack below 640 px.
+// colours for both sides, no chart (D68). Below 640 px each part is one table, a row per measure and a column
+// per server, so the two figures sit side by side (D158); from 640 px the two cards stand side by side.
+import type { ReactNode } from "react";
+
 import { SERVER } from "@/config/alliances";
 import { type Dictionary } from "@/lib/copy";
 import type { Side, SideAlliance } from "@/lib/kvk";
@@ -22,6 +25,53 @@ function Figure({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+interface PairRow {
+  label: string;
+  values: [string, string];
+}
+
+/** Below 640 px: a row per measure, a column per server; `heads` hold each side's name and its note. */
+function PairTable(props: { caption: string; heads: [ReactNode, ReactNode]; rows: PairRow[] }) {
+  const cell = "py-1 pl-2 text-right align-top";
+  return (
+    <table className="mt-2 w-full border-collapse text-body-sm tabular-nums sm:hidden">
+      <caption className="sr-only">{props.caption}</caption>
+      <thead>
+        <tr className="border-b border-rule">
+          <td />
+          {props.heads.map((h, i) => (
+            <th key={i} scope="col" className={`${cell} font-semibold`}>
+              {h}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {props.rows.map((r) => (
+          <tr key={r.label} className="border-b border-rule last:border-0">
+            <th scope="row" className="py-1 text-left align-top font-normal text-ink/80">
+              {r.label}
+            </th>
+            {r.values.map((v, i) => (
+              <td key={i} className={`${cell} font-semibold`}>
+                {v}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/** A side's name over its column, with its note (when it was read, how many were read or counted) under it. */
+const head = (k: Words, server: number, note: string) => (
+  <>
+    {fill(k.side, { server })}
+    <span className="block font-normal text-ink/70">{note}</span>
+  </>
+);
 
 /** One side at the Start: its four figures. */
 function StartCard(props: {
@@ -125,6 +175,75 @@ function AllianceList(props: {
   );
 }
 
+type Sides = [Pick<Shown, "server" | "side" | "note">, Pick<Shown, "server" | "side" | "note">];
+interface Shown {
+  server: number;
+  side: Side;
+  note: string | null;
+}
+
+/** Both sides at the Start in one table, below 640 px. */
+function StartTable(props: { sides: Sides; clock: Clock; locale: string; k: Words }) {
+  const { sides, k, locale } = props;
+  const both = (f: (side: Side) => string): [string, string] => [
+    f(sides[0].side),
+    f(sides[1].side),
+  ];
+  return (
+    <PairTable
+      caption={k.title}
+      heads={
+        [0, 1].map((i) => {
+          const s = sides[i as 0 | 1];
+          const read = fill(k.readAt, { time: props.clock.time(s.side.readAt) });
+          return head(k, s.server, s.note ? `${read} · ${s.note}` : read);
+        }) as [ReactNode, ReactNode]
+      }
+      rows={[
+        { label: k.might, values: both((s) => compact(s.might, locale)) },
+        { label: k.kills, values: both((s) => compact(s.kills, locale)) },
+        {
+          label: k.killsPer1B,
+          values: both((s) => (s.killsPer1B === null ? "—" : compact(s.killsPer1B, locale))),
+        },
+        {
+          label: k.heavy,
+          values: both((s) => fill(k.heavyValue, { h: s.heavy, m: compact(s.members, locale) })),
+        },
+      ]}
+    />
+  );
+}
+
+/** Both sides from Start to End in one table, below 640 px; a side with nothing counted reads "—". */
+function ChangeTable(props: { sides: Sides; n: number; locale: string; k: Words }) {
+  const { sides, k, locale } = props;
+  const both = (f: (c: NonNullable<Side["change"]>) => string): [string, string] =>
+    [sides[0].side.change, sides[1].side.change].map((c) => (c && c.counted > 0 ? f(c) : "—")) as [
+      string,
+      string,
+    ];
+  return (
+    <PairTable
+      caption={k.change}
+      heads={
+        [0, 1].map((i) => {
+          const s = sides[i as 0 | 1];
+          const c = s.side.change;
+          const note = c
+            ? `${fill(k.counted, { c: c.counted, n: props.n })} · ${fill(k.overMembers, { m: compact(c.members, locale) })}`
+            : "";
+          return head(k, s.server, note);
+        }) as [ReactNode, ReactNode]
+      }
+      rows={[
+        { label: k.mightChange, values: both((c) => signed(c.might, locale)) },
+        { label: k.killsGained, values: both((c) => `+${compact(c.kills, locale)}`) },
+      ]}
+    />
+  );
+}
+
 /** The section, in the request's language and on its clock. */
 export async function Matchup(props: {
   data: EventMatchup;
@@ -137,7 +256,7 @@ export async function Matchup(props: {
   const { n, us, them } = data.matchup;
   const failed = data.tags - data.read;
   const coverage = fill(k.tagsRead, { read: data.read, k: data.tags });
-  const sides = [
+  const sides: Sides = [
     { server: SERVER, side: us, note: null },
     { server: data.server, side: them, note: coverage },
   ];
@@ -150,7 +269,8 @@ export async function Matchup(props: {
         {fill(k.versus, { us: SERVER, them: data.server, n })}
         {failed > 0 && ` · ${coverage}`}
       </p>
-      <div className="mt-2 grid max-w-3xl gap-3 sm:grid-cols-2">
+      <StartTable sides={sides} clock={clock} locale={locale} k={k} />
+      <div className="mt-2 hidden max-w-3xl gap-3 sm:grid sm:grid-cols-2">
         {sides.map((s) => (
           <StartCard key={s.server} {...s} clock={clock} locale={locale} k={k} />
         ))}
@@ -159,16 +279,10 @@ export async function Matchup(props: {
       <h3 className="mt-4 font-subhead text-display-sm">{k.change}</h3>
       {data.ended ? (
         <>
-          <div className="mt-2 grid max-w-3xl gap-3 sm:grid-cols-2">
+          <ChangeTable sides={sides} n={n} locale={locale} k={k} />
+          <div className="mt-2 hidden max-w-3xl gap-3 sm:grid sm:grid-cols-2">
             {sides.map((s) => (
-              <ChangeCard
-                key={s.server}
-                server={s.server}
-                side={s.side}
-                n={n}
-                locale={locale}
-                k={k}
-              />
+              <ChangeCard key={s.server} {...s} n={n} locale={locale} k={k} />
             ))}
           </div>
           <p className="mt-2 text-body-sm text-ink/70">{k.changeHelp}</p>

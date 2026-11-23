@@ -162,18 +162,37 @@ test("an event with a KvK opponent shows both servers at the Start and from Star
     rows.reduce((t, r) => t + r[i], 0);
   const start = OPPONENT.alliances.flatMap((a) => a.start);
   const end = OPPONENT.alliances.flatMap((a) => a.end);
-  const card = (name: string) => section.getByRole("group", { name, exact: true });
-  const theirStart = card(`Server ${OPPONENT.server}`);
-  await sees(theirStart, `Might ${big(sum(start, 0))}`);
-  await sees(theirStart, `Kills ${big(sum(start, 1))}`);
-  await sees(theirStart, "2 of 2 alliances read");
-  await sees(theirStart, "Members with 60M+ might 1 of 4");
   const ours = eventTotals("a", "before").might + eventTotals("b", "before").might;
-  await sees(card("Server 325"), `Might ${big(ours)}`);
-  const theirChange = card(`Server ${OPPONENT.server} · Start to End`);
-  await sees(theirChange, "2 of 2 alliances counted");
-  await sees(theirChange, `Might change ${MINUS}${big(sum(start, 0) - sum(end, 0))}`);
-  await sees(theirChange, `Kills gained +${big(sum(end, 1) - sum(start, 1))}`);
+  const mightChange = `${MINUS}${big(sum(start, 0) - sum(end, 0))}`;
+  const killsGained = `+${big(sum(end, 1) - sum(start, 1))}`;
+  if ((page.viewportSize()?.width ?? 0) < 640) {
+    // Below 640 px each part is one table: a row per measure, ours then theirs side by side (D158).
+    const table = (name: string) => section.getByRole("table", { name, exact: true });
+    const row = (name: string, measure: string) =>
+      table(name)
+        .getByRole("row")
+        .filter({ has: page.getByRole("rowheader", { name: measure, exact: true }) });
+    await sees(table("KvK matchup"), `Server ${OPPONENT.server}`);
+    await sees(table("KvK matchup"), "2 of 2 alliances read");
+    await sees(row("KvK matchup", "Might"), `Might ${big(ours)} ${big(sum(start, 0))}`);
+    await sees(row("KvK matchup", "Kills"), big(sum(start, 1)));
+    await sees(row("KvK matchup", "Members with 60M+ might"), "1 of 4");
+    await sees(table("Start to End"), "2 of 2 alliances counted");
+    await sees(row("Start to End", "Might change"), mightChange);
+    await sees(row("Start to End", "Kills gained"), killsGained);
+  } else {
+    const card = (name: string) => section.getByRole("group", { name, exact: true });
+    const theirStart = card(`Server ${OPPONENT.server}`);
+    await sees(theirStart, `Might ${big(sum(start, 0))}`);
+    await sees(theirStart, `Kills ${big(sum(start, 1))}`);
+    await sees(theirStart, "2 of 2 alliances read");
+    await sees(theirStart, "Members with 60M+ might 1 of 4");
+    await sees(card("Server 325"), `Might ${big(ours)}`);
+    const theirChange = card(`Server ${OPPONENT.server} · Start to End`);
+    await sees(theirChange, "2 of 2 alliances counted");
+    await sees(theirChange, `Might change ${mightChange}`);
+    await sees(theirChange, `Kills gained ${killsGained}`);
+  }
   await noErrorOrEmpty(page);
   expect(await sideways(page)).toBe(false);
 });
