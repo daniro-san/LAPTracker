@@ -8,6 +8,7 @@ import { after } from "next/server";
 
 import { secretsOf, type AppContext } from "./app-context";
 import { recordAppError } from "./app-errors";
+import { shieldProbe } from "./shield-probe";
 import { shieldTick } from "./shield-tick";
 import { SQUADS_BATCH_MS, squadsQueueDay } from "./squads";
 import { runSquadsBatch, type SquadsRun } from "./squads-read";
@@ -55,8 +56,11 @@ export async function squadsBatch(
       if (!press || outcome.kind === "idle" || !outcome.more || outcome.calls === 0) break;
       if (ctx.now().getTime() - startedAt + SQUADS_BATCH_MS > press.budgetMs) break;
     }
-    if (origin !== undefined)
+    if (origin !== undefined) {
       await shieldTick({ ...deps, origin }, db, startedAt + AFTER_BUDGET_MS);
+      // Issue 726: the one-off probe read of 2026-11-23 02:30 ST; removed by a follow-up PR.
+      await shieldProbe(deps, db, startedAt + AFTER_BUDGET_MS);
+    }
   } catch (error) {
     const route = press?.route ?? "/api/tick";
     await recordAppError(ctx, { route, kind: "after", digest: null, error, handled: true });
