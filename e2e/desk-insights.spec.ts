@@ -16,7 +16,6 @@ import {
   IDLE_UIDS,
   JOINER,
   LEAVER,
-  memberChange,
   newMembers,
   lastRosterDay,
   rosterOf,
@@ -270,7 +269,9 @@ test("Insights: a group's names end with “Open these n in Members ›”, whic
     r.url().endsWith("/members?set=effort_range:range-0"),
   );
   await onward.click();
-  await expect(page).toHaveURL(`${desk}/members?set=effort_range:range-0`);
+  // Compared decoded: once hydrated, Members writes its own address back with ":" as "%3A".
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${desk}/members`);
+  expect(new URL(page.url()).searchParams.get("set")).toBe("effort_range:range-0");
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
   // One chip names the set with the chart's own sentence; the list holds exactly its members.
   const chip = page.locator("#members-set");
@@ -504,35 +505,32 @@ test("Insights: a day of the pulse opens who did each, in name order, and only t
 test("Insights: a KvK recovery day opens its numbers, the share its column shows, and Back gives that KvK's days (D158 rule 7 (b))", async ({
   page,
 }) => {
+  // The older KvK (two Saturdays back): its recovery days always lie in the past, whatever today is.
   const { events, today } = calendarOf(seededAt());
-  const kvk = events[1] as string;
+  const kvk = events[0] as string;
   const day = new Date(Date.parse(kvk) + DAY_MS).toISOString().slice(0, 10);
-  await page.goto(`${desk}/insights`);
-  await deskFrame(page, A);
-  const card = page.getByRole("region", { name: "KvK cost and recovery" });
-  await card.getByText("Show the details").first().click();
-  const pick = card.getByRole("link", { name: usDay(day) });
-  // On a Sunday the newest daily update is the KvK's own: no recovery day yet.
-  if (day >= new Date(today).toISOString().slice(0, 10)) {
-    await expect(pick).toHaveCount(0);
-    return;
-  }
-  // Counted: in the Start, the End and the newest daily update (not the joiner, not the leaver).
-  const counted = A.names.flatMap((_, k) => (k === JOINER || k === LEAVER ? [] : [k]));
-  const before = eventTotals("a", "before").might - memberChange("a").left;
-  const after = eventTotals("a", "after").might - memberChange("a").joined;
+  // Counted: in its Start, its End and its last recovery read (everyone but the joiner, not yet with us).
+  // It lost 3M each, and nobody more (the heavy hit is the last KvK's).
+  const counted = A.names.flatMap((_, k) => (k === JOINER ? [] : [k]));
+  const before = eventTotals("a", "before").might;
+  const after = before - 3_000_000 * counted.length;
   const index = 14 - (today - Date.parse(day)) / DAY_MS;
   const then = counted.reduce((s, k) => s + rosterOf("a", k, index).might, 0);
   const back = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 0 }).format(
     (then - after) / (before - after),
   );
-  // The newest KvK's column says the same share.
-  const newest = card
-    .getByRole("heading", { level: 3, name: `KvK ${usDay(kvk)}` })
-    .locator("xpath=..");
+  await page.goto(`${desk}/insights`);
+  await deskFrame(page, A);
+  const card = page.getByRole("region", { name: "KvK cost and recovery" });
+  await card.getByText("Show the details").first().click();
+  // An older KvK folds to one line; open it, and its column says the share.
+  const line = card.locator("summary").filter({ hasText: new RegExp(`^KvK ${usDay(kvk)} ·`) });
+  await line.click();
+  const older = line.locator("xpath=..");
   await expect(
-    newest.getByText(`${shown(day, "en-US", { weekday: "short" })}: ${back}`),
+    older.getByText(`${shown(day, "en-US", { weekday: "short" })}: ${back}`),
   ).toHaveCount(1);
+  const pick = older.getByRole("link", { name: usDay(day) });
   await hydrated(pick);
   expect((await pick.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await pick.click();

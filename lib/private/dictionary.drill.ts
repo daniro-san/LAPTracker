@@ -30,7 +30,7 @@ export const drillEn = {
   "drill.flow.sum": "{week}: {joined} joined, {left} left. Its days add up to this.",
   "drill.flow.noRead": "No daily update on {days}: a join or leave then shows on the next one.",
   "drill.flow.before":
-    "The daily update of {date} is the starting point: there is nothing before it to compare with.",
+    "These weeks start from the daily update of {date}: there is nothing before it to compare with.",
   "drill.pulse.pick": "Open a day to see who did it:",
   "drill.pulseDay.donated": "Donated",
   "drill.pulseDay.sum":
@@ -77,7 +77,7 @@ export const drillPt: DrillWords = {
   "drill.flow.sum": "{week}: {joined} entraram, {left} saíram. Os dias somam isso.",
   "drill.flow.noRead": "Sem atualização diária em {days}: uma entrada ou saída aparece na próxima.",
   "drill.flow.before":
-    "A atualização diária de {date} é o ponto de partida: não há nada antes dela para comparar.",
+    "Estas semanas partem da atualização diária de {date}: não há nada antes dela para comparar.",
   "drill.pulse.pick": "Abra um dia para ver quem fez:",
   "drill.pulseDay.donated": "Doaram",
   "drill.pulseDay.sum":
@@ -123,7 +123,7 @@ export const drillFr: DrillWords = {
   "drill.flow.noRead":
     "Pas de mise à jour quotidienne le {days} : une arrivée ou un départ apparaît alors à la suivante.",
   "drill.flow.before":
-    "La mise à jour quotidienne du {date} est le point de départ : il n’y a rien avant elle à comparer.",
+    "Ces semaines partent de la mise à jour quotidienne du {date} : il n’y a rien avant elle à comparer.",
   "drill.pulse.pick": "Ouvrez un jour pour voir qui l’a fait :",
   "drill.pulseDay.donated": "Ont donné",
   "drill.pulseDay.sum":

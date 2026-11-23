@@ -163,8 +163,10 @@ describe("a chart's day level (D158 rule 7, issue 752)", () => {
     expect(words.rows.map((r) => r.set?.onward)).toEqual([null, null, null]);
     expect(words.notes).toEqual(["Daily quest points: not known for 1."]);
     expect(words.week).toEqual({ label: "This week", monday: null });
-    // A day with no read, or before the pulse's weeks, opens nothing.
-    for (const pulseDay of ["2026-11-15", "2026-09-01"])
+    // A day with no read opens nothing, nor does a read before the pulse's weeks (from Mon Oct 19): the
+    // page reads it, but no column shows it.
+    await dailies("2026-10-12", OURS, { 101: [100, 1000, 500] });
+    for (const pulseDay of ["2026-11-15", "2026-10-12"])
       expect((await insightsView(db, access, NOW, ZONE, { pulseDay })).pulseDay).toBeNull();
 
     // The other alliance's workspace, at the same address, names its own members only.

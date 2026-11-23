@@ -305,7 +305,7 @@ describe("the Insights read (issue 489)", () => {
     expect(flowLines(view)).toEqual([
       "Week of Nov 9: 3 joined, 1 left. Its days add up to this.",
       "No daily update on Wed, Sat, Sun: a join or leave then shows on the next one.",
-      "The daily update of Mon, Nov 9 is the starting point: there is nothing before it to compare with.",
+      "These weeks start from the daily update of Mon, Nov 9: there is nothing before it to compare with.",
     ]);
 
     // The pulse's earlier week, day by day: each count's days add up to the week's.
@@ -348,10 +348,36 @@ describe("the Insights read (issue 489)", () => {
     );
     // One start date: the daily update the first change is compared with, as the tenure line says.
     expect(flow?.based.replace(/\s/g, " ")).toBe(
-      "Based on 3 daily updates since November 15. A change shows on the first daily update after it.",
+      "Based on 3 daily updates in these weeks, since November 15. A change shows on the first daily update after it.",
     );
     expect(flow?.tenure.at(-1)?.label.replace(/\s/g, " ")).toBe(
       "Already here at our first daily update, Nov 15",
+    );
+  });
+
+  it("with more daily updates than the page reads, says where these weeks start and keeps the alliance's first daily update for tenure", async () => {
+    const access = await officer();
+    // 40 daily updates, Oct 10 to Nov 18: the page reads the last 36, and its weeks start on Mon Oct 19.
+    for (let i = 0; i < 40; i++)
+      await roster(
+        new Date(Date.UTC(2026, 9, 10 + i)).toISOString().slice(0, 10),
+        OURS,
+        [101, 102],
+        true,
+      );
+
+    const flow = insightsWords(
+      await insightsView(db, access, NOW, ZONE),
+      WORKSPACE_DICTIONARIES.en,
+      "en",
+    ).flow;
+    // The weeks rest on the read before their first change (Sun Oct 18) and the 31 after it; the members
+    // were already here at the first daily update ever, Oct 10. Each line says which start it gives.
+    expect(flow?.based.replace(/\s/g, " ")).toBe(
+      "Based on 32 daily updates in these weeks, since October 18. A change shows on the first daily update after it.",
+    );
+    expect(flow?.tenure.at(-1)?.label.replace(/\s/g, " ")).toBe(
+      "Already here at our first daily update, Oct 10",
     );
   });
 });

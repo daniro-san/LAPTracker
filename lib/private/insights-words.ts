@@ -18,6 +18,7 @@ import {
   type Median,
   type Place,
   type Pulse,
+  type PulseView,
   type Share,
 } from "./insights-rules";
 import { setOf, type MemberSet } from "./insights-sets";
@@ -67,6 +68,15 @@ export const dayPick = (day: string, count: number, { language }: Formats): DayP
   const dates = calendarDates(language);
   return { weekday: dates.weekday(day), date: dates.short(day), key: day, count };
 };
+
+/**
+ * A pulse week's days that open their who lists: those with a daily update, each counting the members it
+ * lists (the coin cap's whole). The card's this week and a week's level both use it.
+ */
+export const pulsePicks = (days: PulseView["days"], f: Formats): DayPick[] =>
+  days.flatMap((d) =>
+    d.pulse && d.pulse !== "later" ? [dayPick(d.day, d.pulse.coins?.of ?? 0, f)] : [],
+  );
 
 export interface PulseMetricWords {
   label: string;
@@ -217,10 +227,7 @@ function pulseWords(v: NonNullable<InsightsView["pulse"]>, f: Formats): Insights
       })),
     };
   });
-  const picks = v.days.flatMap((d) =>
-    d.pulse && d.pulse !== "later" ? [dayPick(d.day, d.pulse.coins?.of ?? 0, f)] : [],
-  );
-  return { based, metrics, picks };
+  return { based, metrics, picks: pulsePicks(v.days, f) };
 }
 
 /** "[TAG] Name", each part when known; "Not known" for id 0. */

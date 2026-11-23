@@ -145,7 +145,6 @@ function Side({ r, noData, tone }: { r: BarRow; noData: string; tone: string }) 
   );
 }
 
-/** A flow week's days, joined and left side by side, then the line its days add up to. */
 /** A flow day's label and its joined and left side by side. */
 function FlowDayRow({ d, noData }: { d: FlowDaysWords["days"][number]; noData: string }) {
   return (
@@ -166,6 +165,7 @@ function FlowDayRow({ d, noData }: { d: FlowDaysWords["days"][number]; noData: s
   );
 }
 
+/** A flow week's days, joined and left side by side, then the line its days add up to. */
 export function FlowDays(props: {
   level: FlowDaysWords;
   hrefs: DayHrefs;

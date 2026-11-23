@@ -88,7 +88,10 @@ export interface InsightsView {
   flow: {
     /** The first day a change can be seen (the second read in the window). */
     from: string;
-    /** The read the first change is seen against (the one before `from`): the card's one start date. */
+    /**
+     * The read the first change is seen against (the one before `from`): where these weeks start. With fewer
+     * reads than the window holds it is the alliance's first daily update, the tenure line's date.
+     */
     since: string;
     /** End-of-day reads from `since` on. */
     reads: number;
@@ -231,7 +234,7 @@ async function flowPart(
   const inWeek = (list: { uid: number; day: string }[], monday: string) =>
     list.filter((m) => m.day >= monday && m.day < addDays(monday, 7)).map((m) => m.uid);
   const readDays = new Set(reads.map((r) => r.day));
-  const on = (list: Move[]) => list.filter((m) => m.day === asked && asked >= from);
+  const on = (list: Move[]) => list.filter((m) => m.day === asked);
   const [dayJoined, dayLeft] = [on(moves.joined), on(moves.left)];
   const flow: InsightsView["flow"] = {
     from,

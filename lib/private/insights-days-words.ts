@@ -13,10 +13,10 @@ import type { Formats } from "./insights-format";
 import type { Pulse, PulseMeasure } from "./insights-rules";
 import { setOf } from "./insights-sets";
 import {
-  dayPick,
   latestLine,
   placeRows,
   PULSE_METRICS,
+  pulsePicks,
   pulseValue,
   rosterSize,
   scaled,
@@ -120,9 +120,7 @@ export function pulseDaysWords(v: InsightsView, f: Formats): PulseDaysWords | nu
     }),
     noRead:
       missing.length > 0 ? fill(f.t["insights.pulse.noRead"], { days: missing.join(", ") }) : null,
-    picks: level.days.flatMap((d) =>
-      d.pulse && d.pulse !== "later" ? [dayPick(d.day, d.pulse.coins?.of ?? 0, f)] : [],
-    ),
+    picks: pulsePicks(level.days, f),
   };
 }
 
