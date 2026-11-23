@@ -2,19 +2,22 @@
 // on the same connection and inside the same `after`, the read that is due now for each alliance whose
 // `shield_check` is on (D134): Friday's burst from 23:30 ST, Saturday's morning read from the alliance's
 // morning time. Then each alliance's leaders' message is posted or edited, and its officers notified when a
-// read is over or its count changed (lib/push-uses.ts, D148). Nothing runs at other times. The tick no
-// longer marks Raid prep from the readings (D137, 2026-11-22, issue 726): officers mark, the tiles show the
-// readings, until the officers' marks and the readings are shown to agree (lib/raid-prep-fill.ts keeps the
-// fill for that day).
+// read is over or its count changed (lib/push-uses.ts, D148). Nothing runs at other times. The tick makes
+// the week's Raid prep roll call when there is none, but no longer marks it from the readings (D137,
+// 2026-11-22, issue 726): officers mark, the tiles show the readings, until the officers' marks and the
+// readings are shown to agree (lib/raid-prep-fill.ts keeps the fill for that day).
 import type { Db } from "./db";
 import type { Env } from "./env";
 import { pushShield } from "./push-uses";
+import { weekRaidPrep } from "./raid-prep-fill";
 import { getDailyRead } from "./repo/daily-reads";
 import { allShieldSettings } from "./repo/shield-checks";
+import { settingsById } from "./repo/workspace-features";
 import { shieldWindowOpen } from "./shield-check";
 import { postShieldSummary, type PostDeps } from "./shield-post";
 import { passesAt, shieldMorning, shieldNight, type ShieldTarget } from "./shield-read";
 import type { SquadsDeps } from "./squads-read";
+import { resolveFeatures } from "./workspace-features";
 import { squadTargets } from "./workspace-keys";
 
 /** The shield-check alliances, each with its own settings. */
@@ -77,10 +80,27 @@ export async function shieldTick(deps: TickDeps, db: Db, deadline: number): Prom
   const post: PostDeps = { env: deps.env, fetch: deps.fetch, now: deps.now, origin: deps.origin };
   for (const d of due)
     await postShieldSummary(post, db, { day: d.day, target: d.target, pass: d.pass });
+  // Each workspace's Raid prep on its own: one that fails never stops the others, and its error leaves as a
+  // code only (D71).
+  let failed = false;
+  for (const d of due) await ensurePrep(db, d.day, d.target).catch(() => (failed = true));
   // D148: the officers' notifications last, all at once (each send has its own 5 s timeout); one that
-  // fails never fails the read or the summary: a code-only line.
+  // fails never fails the read, the summary or the roll call: a code-only line.
   const pushed = await Promise.allSettled(
     due.map((d) => pushShield(deps, db, { day: d.day, target: d.target, pass: d.pass })),
   );
   if (pushed.some((p) => p.status === "rejected")) console.error("push.failed", { use: "shield" });
+  if (failed) throw new Error("raid_prep_fill_failed");
+}
+
+/**
+ * The week's Raid prep roll call for the check of Friday `day`, made when there is none (`weekRaidPrep`'s
+ * rules, D137), with no mark (issue 726). Only while the Roll call tab is on; an archived one is left alone.
+ */
+async function ensurePrep(db: Db, day: string, target: ShieldTarget) {
+  if (target.workspaceId === null) return;
+  const found = await settingsById(db, target.workspaceId);
+  if (!found || !resolveFeatures(found.settings, []).on.has("roll_call")) return;
+  const prep = await weekRaidPrep(db, target.workspaceId, day);
+  if (prep && prep.callId === null) await prep.make();
 }

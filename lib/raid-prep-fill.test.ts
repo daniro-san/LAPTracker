@@ -107,12 +107,17 @@ const tick = (d: ReturnType<typeof deps>) =>
   shieldTick(d as Parameters<typeof shieldTick>[0], db, d.at.getTime() + 180_000);
 
 describe("Raid prep's fill from the tracker (D137, 2026-11-21)", () => {
-  it("reads the alliance in Friday's tick but marks no Raid prep: officers mark (issue 726)", async () => {
+  it("adds the week's Raid prep in Friday's tick with no mark: officers mark (issue 726)", async () => {
     await tick(deps(FRI));
-    // The tick read the members (a guard that it ran), and wrote no roll call and no mark.
+    // The tick read the members (a guard that it ran), made the roll call, and wrote no mark.
     expect((await db.select().from(playerReads)).length).toBeGreaterThan(0);
-    expect(await calls()).toEqual([]);
+    const [call, ...more] = await calls();
+    expect(more).toEqual([]);
+    expect(call).toMatchObject({ kind: "shield", day: "2026-11-21", createdBy: null });
     expect(await marks()).toEqual([]);
+    // A second tick finds it: still one roll call.
+    await tick(deps(new Date(FRI.getTime() + 15 * 60_000)));
+    expect(await calls()).toHaveLength(1);
   });
 
   it("marks Saturday's ✗ No shield seen for a Friday ✓ the morning reading no longer sees", async () => {

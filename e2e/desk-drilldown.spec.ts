@@ -110,7 +110,7 @@ test("Raid prep: To check by hand shows exactly its members, each map with its d
   // Each listed tile says why, and each map says its day and its age against the reset.
   const [k, r] = Object.entries(SHIELD_READINGS).find(([n]) => Number(n) === HAND_CHECK[1]) ?? [];
   const tile = prepTiles(page).filter({ hasText: B.names[Number(k)] as string });
-  await sees(tile, "Check by hand · map over 3 h from the reset");
+  await sees(tile, "Check by hand · no map within 3 h of the reset");
   for (const map of [r?.night, r?.morning]) if (map) await sees(tile, mapLine(map.at));
   await sees(prepTiles(page).filter({ hasText: hand[3] as string }), "Check by hand · no reading");
 });

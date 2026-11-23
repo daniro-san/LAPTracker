@@ -25,7 +25,7 @@ Part of #726 (Raid Shield trust). Size S for the list as asked. The persona deci
      - no map that near, or
      - no reading.
    - An officer's own Shield mark takes a member off the list, at once on the page.
-   - Each listed tile says why: "Check by hand · no shield seen", "· map over 3 h from the reset", "· no reading".
+   - Each listed tile says why: "Check by hand · no shield seen", "· no map within 3 h of the reset", "· no reading".
    - Listed members open first among those not set.
    - **Each map's day and age.** The tile's bracket reads "(map Fri 22:33 ST · 1 h 27 min before reset)" (`prep-data.ts`), in EN, PT-BR and FR. The weekday is in the officer's language. The age counts from the map's minute.
    - **"Nobody left to mark"** shows only after an officer has marked either part, or pressed Checked (`PrepView.looked`, plus taps on the open page). Before that the grid says "No officer has marked yet: every Shield mark so far is the tracker’s." (`RollGrid`'s new `emptyTodo`).
@@ -41,7 +41,7 @@ Part of #726 (Raid Shield trust). Size S for the list as asked. The persona deci
      - the same in French;
      - "Nobody left to mark" is hidden while every mark is the tracker's;
      - it shows once an officer marks.
-   - `lib/raid-prep-fill.test.ts`: Friday's tick reads the alliance and writes no roll call and no mark. It replaces two tests that asserted the tick's fill.
+   - `lib/raid-prep-fill.test.ts`: Friday's tick reads the alliance, adds the week's Raid prep with no mark, and a second tick adds no other. It replaces two tests that asserted the tick's fill.
    - E2E: `e2e/fixtures/seed-shield.ts` turns the check on for Moss Hollow, with readings for its last raid shaped like Nov 21 (invented names). `e2e/desk-drilldown.spec.ts` gets the flow "To check by hand shows exactly its members, each map with its day and age". Its values are computed from the seed.
 5. **Analytics** (`docs/analytics/tracking-plan.md`):
    - `ws_drilldown_opened` on `raid_prep` gains `kind` `hand`.
@@ -71,6 +71,13 @@ Part of #726 (Raid Shield trust). Size S for the list as asked. The persona deci
   - the full suite: 80 passed, 8 skipped (per-project skips that were already there).
 - 360 px captures in EN and FR were looked at before the panel (not committed).
 
+## Review of PR #731 (2026-11-22)
+
+- Fixed (confirmed): the tick again makes the week's Raid prep roll call when there is none (`ensurePrep` in `lib/shield-tick.ts`, through `weekRaidPrep`), and writes no mark. Test: Friday's tick with no roll call adds one with zero marks; a second tick adds no other.
+- Fixed (confirmed): the page's live list now follows the server's rule (each row's reason from the readings, plus the current marks), so a mark an officer clears on the page puts the member back (`RaidPrepMarks.tsx`).
+- Fixed (plausible): a reading with no map time is no map near the reset, so the member stays on the list (`handReason` takes only the checkpoints that have a map time). The tag "map over 3 h from the reset" became "no map within 3 h of the reset" (PT "nenhum mapa a até 3 h do reset", FR "aucune carte à moins de 3 h du reset"), which is true for both cases. Test: "keeps a member whose reading has no map time on the list". It fails on the old rule.
+- Left as follow-ups, as the coordinator asked: the review's suggestion 5 and finding 4 (see the review on PR #731).
+
 ## Open issues
 
 - Tracker marks written before this change stay, with "from the tracker" and the Checked notice. Production should hold few or none: the tracker's marks shipped after the Nov 21 reads.
@@ -88,7 +95,8 @@ Part of #726 (Raid Shield trust). Size S for the list as asked. The persona deci
   - the answer line's map span and "before/after the reset" (spike option 2's headline);
   - French singular for "the rest";
   - agreement after each raid on Insights (spike option 5), counted from officer taps, before the tracker's fill is turned back on;
-  - a shorter "How this works" (spike option 6).
+  - a shorter "How this works" (spike option 6);
+  - the review of PR #731: suggestion 5 and finding 4.
 - Fri 2026-11-27: the owner tests. Sat 2026-11-28: the side-by-side test. Officers' own marks are now the only marks written, so after the raid the agreement query compares them with the map nearest the reset.
 - Before release: a patch-notes entry in `lib/patch-notes.ts` ("The tracker no longer marks Raid prep; To check by hand lists who to scout"). No new-alliance guide screenshots needed: not an onboarding or settings flow.
 

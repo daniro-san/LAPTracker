@@ -70,10 +70,15 @@ export const HAND_MAP_MS = 3 * 3_600_000;
 /**
  * The member's reason to be checked by hand; null when every map within 3 h of the reset, and at least one,
  * saw a shield. A map before the reset and one after it that disagree leave 00:00 ST unknown (panel review).
+ * `maps`: the hint's checkpoints that have a map time; a reading without one is no map near the reset.
  */
-export function handReason(hint: TrackerHint | null, reset: number): HandReason | null {
+export function handReason(
+  hint: TrackerHint | null,
+  maps: Checkpoint[],
+  reset: number,
+): HandReason | null {
   if (!hint || hint.checkpoints.length === 0) return "no_reading";
-  const near = hint.checkpoints.filter((c) => Math.abs(c.at - reset) <= HAND_MAP_MS);
+  const near = maps.filter((c) => Math.abs(c.at - reset) <= HAND_MAP_MS);
   if (near.length === 0) return "old_map";
   return near.every((c) => c.on) ? null : "not_seen";
 }
@@ -218,7 +223,10 @@ function trackerOf(
 ): Pick<PrepRow, "tracker" | "hand"> {
   if (!check.tracker) return { tracker: null, hand: null };
   const hint = read.morning || read.night ? hintOf(read.night, read.morning) : null;
-  return { tracker: hint, hand: handReason(hint, check.reset) };
+  // A checkpoint's time falls back to the read's when the map's is missing: not a map, for the list.
+  const mapped = (r: StoredReading | null) => (r?.mapAt ? r : null);
+  const maps = hintOf(mapped(read.night), mapped(read.morning)).checkpoints;
+  return { tracker: hint, hand: handReason(hint, maps, check.reset) };
 }
 
 /**

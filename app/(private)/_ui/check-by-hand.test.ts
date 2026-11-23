@@ -186,7 +186,7 @@ describe("Raid prep: To check by hand (issue 726)", () => {
     // map and 04:36's, both over 3 h away. 104: no reading. 106: none at 22:33, one at 00:31: 00:00 unknown.
     expect(page.head.hand).toEqual([102, 103, 104, 106]);
     expect(page.prep[102]?.hand).toBe("Check by hand · no shield seen");
-    expect(page.prep[103]?.hand).toBe("Check by hand · map over 3 h from the reset");
+    expect(page.prep[103]?.hand).toBe("Check by hand · no map within 3 h of the reset");
     expect(page.prep[104]?.hand).toBe("Check by hand · no reading");
     expect(page.prep[101]?.hand).toBeNull();
     const html = render(page);
@@ -195,6 +195,21 @@ describe("Raid prep: To check by hand (issue 726)", () => {
     expect(taggedTiles(html)).toEqual(["Briar Holt", "Cedar Moss", "Dove Lark", "Fern Ash"]);
     // "Mark ✓ the n seen with a shield" leaves them out: 101 only, not 102, 103 or 106.
     expect(html).toContain(">Mark ✓ the 1 seen with a shield</button>");
+  });
+
+  it("keeps a member whose reading has no map time on the list: no map near the reset", async () => {
+    // Fri 23:31 ST, a shield seen but no map time: the read's own time is no map.
+    await db.insert(playerReads).values({
+      unionId: OGS,
+      uid: 104,
+      readAt: at("2026-11-21T01:31:00Z"),
+      shieldType: 0,
+      shielding: 1,
+      mapUpdatedAt: null,
+    });
+    const page = await raidPrep({});
+    expect(page.head.hand).toContain(104);
+    expect(page.prep[104]?.hand).toBe("Check by hand · no map within 3 h of the reset");
   });
 
   it("does not say Nobody left to mark while every mark is the tracker's", async () => {

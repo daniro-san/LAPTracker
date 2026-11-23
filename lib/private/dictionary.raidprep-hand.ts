@@ -8,7 +8,7 @@ export const handEn = {
   "roll.prep.hand.shown": "The {n} to check by hand",
   "roll.prep.hand.shown.one": "The 1 to check by hand",
   "roll.prep.hand.not_seen": "Check by hand · no shield seen",
-  "roll.prep.hand.old_map": "Check by hand · map over 3 h from the reset",
+  "roll.prep.hand.old_map": "Check by hand · no map within 3 h of the reset",
   "roll.prep.hand.no_reading": "Check by hand · no reading",
   "roll.prep.hand.help":
     "To check by hand lists the members with no shield on a map within 3 h of the reset (00:00 ST), with no map that near, or with no reading. The tracker does not mark Raid prep: your own ✓ or ✗ takes a member off the list.",
@@ -27,7 +27,7 @@ export const handPt: HandWords = {
   "roll.prep.hand.shown": "Os {n} para conferir à mão",
   "roll.prep.hand.shown.one": "O 1 para conferir à mão",
   "roll.prep.hand.not_seen": "Conferir à mão · sem escudo visto",
-  "roll.prep.hand.old_map": "Conferir à mão · mapa a mais de 3 h do reset",
+  "roll.prep.hand.old_map": "Conferir à mão · nenhum mapa a até 3 h do reset",
   "roll.prep.hand.no_reading": "Conferir à mão · sem leitura",
   "roll.prep.hand.help":
     "Para conferir à mão lista os membros sem escudo num mapa a até 3 h do reset (00:00 ST), sem mapa tão perto, ou sem leitura. O tracker não marca a Preparação do raid: a sua própria ✓ ou ✗ tira o membro da lista.",
@@ -45,7 +45,7 @@ export const handFr: HandWords = {
   "roll.prep.hand.shown": "Les {n} à vérifier à la main",
   "roll.prep.hand.shown.one": "Le 1 à vérifier à la main",
   "roll.prep.hand.not_seen": "À vérifier à la main · pas de bouclier vu",
-  "roll.prep.hand.old_map": "À vérifier à la main · carte à plus de 3 h du reset",
+  "roll.prep.hand.old_map": "À vérifier à la main · aucune carte à moins de 3 h du reset",
   "roll.prep.hand.no_reading": "À vérifier à la main · pas de lecture",
   "roll.prep.hand.help":
     "À vérifier à la main liste les membres sans bouclier sur une carte à moins de 3 h du reset (00:00 ST), sans carte aussi proche, ou sans lecture. Le tracker ne marque pas la Préparation du raid : votre propre ✓ ou ✗ retire un membre de la liste.",
