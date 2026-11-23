@@ -4,8 +4,10 @@
 // for new alliances by default), the alliance turns it on in Alliance settings → Posts (off until it does,
 // `workspace_posts`). A post goes out at most once per period (`post_runs`), only in a tick that opens the
 // database anyway (D141). Pure and browser-safe: the settings card reads it too.
-import { serverDay, serverWeekday, type ScheduleConfig } from "./schedule";
+import { hhmm } from "./calendar-time";
+import { serverDay, serverMinuteOfDay, serverWeekday, type ScheduleConfig } from "./schedule";
 import type { CatalogPost, PostChannel } from "./schema-discord";
+import { NIGHT_MINUTE } from "./shield-check";
 import type { Feature } from "./workspace-features";
 
 /** The officers' title: at most this many graphemes, once cleaned like a line (lib/post-callout.ts). */
@@ -19,6 +21,8 @@ export interface CatalogEntry {
    * database that day, which on a Monday follows Sunday's end-of-day read (D72, D141).
    */
   weekday: number;
+  /** The earliest server time ("HH:MM") it goes out that day: the first tick that opens the database from then. */
+  from: string;
   /** Who reads it; the channel it goes to by default. */
   audience: PostChannel;
   /** The channels officers may pick. */
@@ -32,8 +36,20 @@ export const POST_CATALOG: Record<CatalogPost, CatalogEntry> = {
   week: {
     feature: "post_week",
     weekday: 0,
+    from: "00:00",
     audience: "members",
     channels: ["members", "leaders"],
+    editable: { weekday: false, picture: false },
+  },
+  // 2. Shield-up reminder: on Friday, 3 hours before the Raid Shield check's night read (23:30 ST, D137), a
+  // reminder to the members to put their shield up before the raid at the reset. No names, no counts.
+  // Due from 20:30 ST: the Friday check's tick (QUOTA_CHECK_AT, D141) opens the database then anyway.
+  shield_up: {
+    feature: "post_shield_up",
+    weekday: 4,
+    from: hhmm(NIGHT_MINUTE - 3 * 60),
+    audience: "members",
+    channels: ["members"],
     editable: { weekday: false, picture: false },
   },
 };
@@ -47,13 +63,19 @@ export const POST_FEATURES: ReadonlySet<Feature> = new Set(
 const weekdayAt = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
   (serverWeekday(now, cfg) + 6) % 7;
 
-/** The period a post is due in at `now`: its server day ("2026-11-23") when `now` falls on it, else null. */
+/**
+ * The period a post is due in at `now`: its server day ("2026-11-23") when `now` falls on it at or after the
+ * post's `from`, else null.
+ */
 export function postPeriod(
   post: CatalogPost,
   now: Date,
   cfg: Pick<ScheduleConfig, "SERVER_TZ">,
 ): string | null {
-  return weekdayAt(now, cfg) === POST_CATALOG[post].weekday ? serverDay(now, cfg) : null;
+  const entry = POST_CATALOG[post];
+  const due =
+    weekdayAt(now, cfg) === entry.weekday && hhmm(serverMinuteOfDay(now, cfg)) >= entry.from;
+  return due ? serverDay(now, cfg) : null;
 }
 
 /** Whether any catalog post can be due at `now`, by the clock alone: no query before this holds. */

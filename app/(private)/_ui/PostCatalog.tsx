@@ -199,7 +199,7 @@ function PostFields(props: {
       </label>
       <p className="mt-3">
         <span className="block font-medium">{t["posts.day"]}</span>
-        {fill(t["posts.day.fixed"], { day: row.day })}
+        {fill(t[`posts.${row.post}.day`], { day: row.day })}
       </p>
       <TitleField
         post={row.post}

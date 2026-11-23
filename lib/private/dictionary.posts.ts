@@ -1,6 +1,6 @@
-// Alliance settings → Posts (#713 part C, D159): the catalog of posts LAPTracker makes on its own, and post 1's
-// own words (its title and what it holds), in English, Brazilian Portuguese and French: one module the
-// settings dictionaries spread. The post itself takes its title and the calendar's words in the language
+// Alliance settings → Posts (#713 part C, D159): the catalog of posts LAPTracker makes on its own, and each
+// post's own words (its title, what it holds, its day; post 2's text), in English, Brazilian Portuguese and
+// French: one module the settings dictionaries spread. The post itself takes its title and the calendar's words in the language
 // officers pick for it. French puts a no-break space before : and inside « ».
 export const postsEn = {
   "posts.head": "Posts",
@@ -10,13 +10,20 @@ export const postsEn = {
   "posts.week.what":
     "The week’s calendar entries marked “Members can see this”, with their times in server time (ST). No player names, notes or links. Nothing is posted in a week with none.",
   "posts.week.defaultTitle": "This week in the alliance",
+  "posts.week.day": "Every {day}: the calendar week starts then.",
+  "posts.shield_up.name": "Shield-up reminder",
+  "posts.shield_up.what":
+    "A friendly reminder before the raid at the reset (00:00 ST): shield up, squads off the wall, troops home. No player names or counts. It works with or without the Raid Shield check.",
+  "posts.shield_up.defaultTitle": "Shield up before the reset",
+  "posts.shield_up.body":
+    "The raid starts at the reset (00:00 ST). Before then, please make sure your shield is on, take your squads off the wall and bring your troops home: a shield doesn’t protect troops outside. Thanks, everyone!",
+  "posts.shield_up.day": "Every {day} evening, before the raid at the reset (00:00 ST).",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
   "posts.channel.members": "Members’ channel",
   "posts.channel.leaders": "Leaders’ channel",
   "posts.channel.notSet": "{channel} (not set up)",
   "posts.day": "Day",
-  "posts.day.fixed": "Every {day}: the calendar week starts then.",
   "posts.title": "Title",
   "posts.titleHelp": "Leave it empty for “{title}”.",
   "posts.titleCount": "{n} of 80 characters",
@@ -33,6 +40,9 @@ export const postsEn = {
   "callouts.post.week": "This week in the alliance",
   "callouts.where.week": "Goes above the week’s calendar post, on Monday.",
   "activity.callout.week": "{who} changed the line on “This week in the alliance”",
+  "callouts.post.shield_up": "Shield-up reminder",
+  "callouts.where.shield_up": "Goes above the shield-up reminder, on Friday evening.",
+  "activity.callout.shield_up": "{who} changed the line on the “Shield-up reminder”",
 };
 
 export const postsPt: typeof postsEn = {
@@ -43,13 +53,20 @@ export const postsPt: typeof postsEn = {
   "posts.week.what":
     "Os eventos da semana no calendário marcados “Os membros podem ver isto”, com os horários do servidor (ST). Sem nomes de jogadores, notas ou links. Nada sai numa semana sem nenhum.",
   "posts.week.defaultTitle": "Esta semana na aliança",
+  "posts.week.day": "Toda {day}: é quando a semana do calendário começa.",
+  "posts.shield_up.name": "Lembrete do escudo",
+  "posts.shield_up.what":
+    "Um lembrete amigável antes do raid no reset (00:00 ST): escudo ligado, esquadrões fora da muralha, tropas em casa. Sem nomes de jogadores nem contagens. Funciona com ou sem a Conferência do Escudo de raid.",
+  "posts.shield_up.defaultTitle": "Escudo ligado antes do reset",
+  "posts.shield_up.body":
+    "O raid começa no reset (00:00 ST). Antes disso, por favor confirmem que o escudo está ligado, tirem os esquadrões da muralha e tragam as tropas para casa: o escudo não protege tropas fora da cidade. Obrigado, pessoal!",
+  "posts.shield_up.day": "Toda {day} à noite, antes do raid no reset (00:00 ST).",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
   "posts.channel.members": "Canal dos membros",
   "posts.channel.leaders": "Canal dos líderes",
   "posts.channel.notSet": "{channel} (não configurado)",
   "posts.day": "Dia",
-  "posts.day.fixed": "Toda {day}: é quando a semana do calendário começa.",
   "posts.title": "Título",
   "posts.titleHelp": "Deixe vazio para “{title}”.",
   "posts.titleCount": "{n} de 80 caracteres",
@@ -66,6 +83,9 @@ export const postsPt: typeof postsEn = {
   "callouts.post.week": "Esta semana na aliança",
   "callouts.where.week": "Vai acima do post do calendário da semana, na segunda.",
   "activity.callout.week": "{who} mudou a frase de “Esta semana na aliança”",
+  "callouts.post.shield_up": "Lembrete do escudo",
+  "callouts.where.shield_up": "Vai acima do lembrete do escudo, na sexta à noite.",
+  "activity.callout.shield_up": "{who} mudou a frase do “Lembrete do escudo”",
 };
 
 export const postsFr: typeof postsEn = {
@@ -76,13 +96,20 @@ export const postsFr: typeof postsEn = {
   "posts.week.what":
     "Les entrées du calendrier de la semaine marquées « Les membres peuvent voir ceci », avec leurs heures du serveur (ST). Sans noms de joueurs, notes ni liens. Rien n’est publié une semaine sans aucune.",
   "posts.week.defaultTitle": "Cette semaine dans l’alliance",
+  "posts.week.day": "Chaque {day} : la semaine du calendrier commence ce jour-là.",
+  "posts.shield_up.name": "Rappel du bouclier",
+  "posts.shield_up.what":
+    "Un rappel amical avant le raid au reset (00:00 ST) : bouclier actif, escouades retirées du mur, troupes à la maison. Sans noms de joueurs ni chiffres. Il marche avec ou sans la Vérification du Bouclier de raid.",
+  "posts.shield_up.defaultTitle": "Bouclier actif avant le reset",
+  "posts.shield_up.body":
+    "Le raid commence au reset (00:00 ST). D’ici là, pensez à vérifier que votre bouclier est actif, retirer vos escouades du mur et ramener vos troupes à la maison : le bouclier ne protège pas les troupes dehors. Merci à tous !",
+  "posts.shield_up.day": "Chaque {day} soir, avant le raid au reset (00:00 ST).",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",
   "posts.channel.members": "Salon des membres",
   "posts.channel.leaders": "Salon des chefs",
   "posts.channel.notSet": "{channel} (pas configuré)",
   "posts.day": "Jour",
-  "posts.day.fixed": "Chaque {day} : la semaine du calendrier commence ce jour-là.",
   "posts.title": "Titre",
   "posts.titleHelp": "Laissez vide pour « {title} ».",
   "posts.titleCount": "{n} sur 80 caractères",
@@ -99,4 +126,7 @@ export const postsFr: typeof postsEn = {
   "callouts.post.week": "Cette semaine dans l’alliance",
   "callouts.where.week": "Au-dessus du message du calendrier de la semaine, le lundi.",
   "activity.callout.week": "{who} a changé la phrase de « Cette semaine dans l’alliance »",
+  "callouts.post.shield_up": "Rappel du bouclier",
+  "callouts.where.shield_up": "Au-dessus du rappel du bouclier, le vendredi soir.",
+  "activity.callout.shield_up": "{who} a changé la phrase du « Rappel du bouclier »",
 };
