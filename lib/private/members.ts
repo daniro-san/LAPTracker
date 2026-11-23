@@ -340,6 +340,9 @@ export async function membersView(
   const members = newest.members.map((m) => rowOf(m, week, signals)).sort(order);
   // D75: thanks are a comparison, so members on a break are left out of them.
   const counted = members.filter((m) => !onBreak(m));
+  // The week the thanks cover (D114): this game week, or last week on a Monday, so reads after it are left out.
+  const thanksEnd = gameWeek(thanksWeek(today))[6] as string;
+  const thanksReads = reads.filter((r) => r.day <= thanksEnd);
   return {
     readAt: newest.at,
     early: false,
@@ -347,8 +350,7 @@ export async function membersView(
     members,
     thanks: {
       donors: topOf(counted, (m) => m.weekTotal),
-      activity: topOf(counted, (m) => weekQuestPoints(reads, m.uid)),
-      // The week the thanks cover (D114): this game week, or last week on a Monday.
+      activity: topOf(counted, (m) => weekQuestPoints(thanksReads, m.uid)),
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),

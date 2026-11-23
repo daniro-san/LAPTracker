@@ -223,6 +223,24 @@ describe("member facts on the Members tab (#297)", () => {
     expect(view.thanks.activity).toEqual([{ uid: 2, name: "P2", value: 50 }]);
   });
 
+  it("shows last week's quest points in the thanks on a Monday (D114)", async () => {
+    // NOW is Monday 2026-11-16: the newest read is the new week's, with 30 points so far.
+    await endOfDay(OGS, dayOf(0), {
+      1: { tech: null, active: 400 },
+      2: { tech: null, active: 200 },
+    });
+    await endOfDay(OGS, dayOf(6), {
+      1: { tech: null, active: 700 },
+      2: { tech: null, active: 600 },
+    });
+    await endOfDay(OGS, dayOf(7), { 1: { tech: null, active: 30 }, 2: { tech: null, active: 40 } });
+    const view = await membersView(db, await signedIn("ogs"), NOW, ZONE);
+    expect(view.thanks.activity).toEqual([
+      { uid: 1, name: "P1", value: 700 },
+      { uid: 2, name: "P2", value: 600 },
+    ]);
+  });
+
   it("shows an officer's status instead of the computed one; On a break also clears reasons and thanks", async () => {
     // All three donated on Monday (2 the most), then had no quests and no donations on 3 reads.
     const monday = (tech: number) => ({ tech, active: 50 });
