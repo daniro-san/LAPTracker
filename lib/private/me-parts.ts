@@ -2,7 +2,7 @@
 // and kills over 30 days, their recovery since KvK, and the lines of where they are needed. People first
 // (D75): only their own numbers, never another member's, a rank, an average of others or a "below" word;
 // a day with no read is "No reading" and never counts (D127); "none" is a read that lists them with nothing
-// that day.
+// that day. A day's quest points come from the week's running total (`questDay`, #739).
 import type { OwnDay } from "../repo/me";
 import { KVK_MINUTE, raidOf } from "../shield-check";
 import { fill } from "../words";
@@ -19,20 +19,30 @@ import {
   type DaysCard,
   type DaysFormats,
 } from "./member-days";
+import { questDay } from "./member-week";
 import type { Mark, RollKind } from "./roll-call-rules";
 import { callTitle, markWord } from "./roll-call-words";
 
-const FIELD = { quests: "active", coins: "daily_honor", donations: "daily_tech" } as const;
+const FIELD = { coins: "daily_honor", donations: "daily_tech" } as const;
 /** The might and kills chart covers this many days up to the newest read. */
 export const PROGRESS_DAYS = 30;
 
 const numberOf = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
-/** A day's value: a number, "none" (listed, nothing sent), null (no read listing them) or "later". */
+/** The member's `active` (the week's running total) on `day`: 0 when sent null; null with no read listing them. */
+function totalOn(days: readonly OwnDay[], day: string): number | null {
+  const d = days.find((r) => r.day === day);
+  return d?.listed && d.daily ? (numberOf(d.daily.active) ?? 0) : null;
+}
+
+/** A day's value: a number, "none" (listed, nothing that day), null (no read listing them) or "later". */
 function cellOf(days: readonly OwnDay[], day: string, metric: DayMetric): DayCell | "later" {
   const newest = days.at(-1)?.day ?? "";
   if (day > newest) return "later";
+  if (metric === "quests")
+    return questDay(day, totalOn(days, day), totalOn(days, addDays(day, -1)));
   const d = days.find((r) => r.day === day);
+
   if (!d?.listed || !d.daily) return null;
   return numberOf(d.daily[FIELD[metric]]) ?? "none";
 }

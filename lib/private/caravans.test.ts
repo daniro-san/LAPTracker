@@ -4,27 +4,36 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { endOfDayReads } from "../repo/workspace-rosters";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { calendarDays, createEntry } from "./calendar";
 import type { NewEntry } from "./calendar-model";
 import { caravanSuggestions } from "./caravans";
+import { WEEK_READS, weekQuestPoints } from "./member-week";
 import { teamView } from "./roll-call-view";
 import { createSession } from "./session";
 
 const OGS = 67111155;
-const NOW = new Date("2026-11-18T12:00:00Z");
+// Monday 23 01:40 UTC: Sunday 23:40 ST, after Sunday's end-of-day read.
+const NOW = new Date("2026-11-23T01:40:00Z");
 const UIDS = [101, 102, 103, 104];
 const ZONE = "Etc/GMT+2";
 /**
- * Each member's daily quest points (`active`) on three end-of-day reads. The newest day alone ranks 102
- * (500), 104 (100), then 101 and 103 with none; the week ranks 101 (900), 102 (500), 104 (300), 103.
+ * Each member's `active` on the week's seven end-of-day reads, Monday 16 to Sunday 22: the running total
+ * since Monday's reset (#739). 101 earned 240 on Monday and Tuesday and nothing after (week 480), 102
+ * earned 230 on Sunday only, 103 nothing, 104 100 every day (week 700). The week ranks 104, 101, 102, 103;
+ * the reads added up would rank 101 (3,120) above 104 (2,800), and Sunday alone 102, 104, 101.
  */
 const ACTIVE: [string, (number | null)[]][] = [
-  ["2026-11-16", [600, null, null, 100]],
-  ["2026-11-17", [300, null, null, 100]],
-  ["2026-11-18", [null, 500, null, 100]],
+  ["2026-11-16", [240, null, null, 100]],
+  ["2026-11-17", [480, null, null, 200]],
+  ["2026-11-18", [480, null, null, 300]],
+  ["2026-11-19", [480, null, null, 400]],
+  ["2026-11-20", [480, null, null, 500]],
+  ["2026-11-21", [480, null, null, 600]],
+  ["2026-11-22", [480, 230, null, 700]],
 ];
 
 let db: Db;
@@ -74,16 +83,19 @@ async function entry(access: WorkspaceAccess, e: Partial<NewEntry>) {
   return { entry: made.id, week: "2026-11-16" };
 }
 
-describe("the week's daily quest points in the picks (D127)", () => {
-  it("ranks caravan suggestions and Elixir team picks by the week's sum, not the newest day's", async () => {
+describe("the week's daily quest points in the picks (D127, #739)", () => {
+  it("is Sunday's running total, never the week's reads added up, and ranks caravan suggestions and Elixir team picks by it", async () => {
+    const reads = await endOfDayReads(db, OGS, WEEK_READS);
+    expect(UIDS.map((uid) => weekQuestPoints(reads, uid))).toEqual([480, 230, null, 700]);
+
     const ana = await signedIn("Ana");
     await entry(ana, { kind: "caravan" });
     const caravans = await calendarDays(db, ana, "2026-11-16", "2026-11-22");
     const [suggested] = (await caravanSuggestions(db, ana, caravans, ZONE)).values();
-    expect(suggested?.map((s) => s.uid)).toEqual([101, 102, 104]);
+    expect(suggested?.map((s) => s.uid)).toEqual([104, 101, 102]);
 
     const elixir = await entry(ana, { kind: "elixir", variant: "A" } as Partial<NewEntry>);
     const team = await teamView(db, ana, elixir, "en", ZONE);
-    expect(team?.rows.map((r) => r.uid)).toEqual([101, 102, 104, 103]);
+    expect(team?.rows.map((r) => r.uid)).toEqual([104, 101, 102, 103]);
   });
 });

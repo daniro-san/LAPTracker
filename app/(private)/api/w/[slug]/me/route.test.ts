@@ -116,7 +116,7 @@ beforeEach(async () => {
   const [a, b] = [alpha?.id ?? 0, bravo?.id ?? 0];
   // Last week, then this game week (T0 is Saturday 2026-11-07, server time).
   await roster(ALPHA, "2026-10-28", ALPHA_PEOPLE(900, 7000));
-  await roster(ALPHA, "2026-11-03", ALPHA_PEOPLE(1000, 7700));
+  await roster(ALPHA, "2026-11-02", ALPHA_PEOPLE(1000, 7700));
   await roster(ALPHA, "2026-11-06", ALPHA_PEOPLE(1100, 7777));
   await roster(BRAVO, "2026-11-06", [[202, "Cy Invented", 3000, 303]]);
   await db.insert(memberSquads).values(
@@ -211,13 +211,15 @@ describe("a member's own page (D142, issue 471)", () => {
     expect(await values("alpha:Ana Invented")).toBeNull();
     const ana = { user: users["alpha:Ana Invented"], uid: 101 };
     await post("member-links", "alpha:Rook", { action: "approve", ...ana });
-    // Monday to Friday of this game week: no reading Monday, 501 on Tuesday and Friday.
-    const own = ["—", "501", "—", "—", "501"];
+    // Monday to Friday of this game week: 501 on Monday and Friday, no reading in between. Quest points
+    // are the week's running total (#739): Monday's are 501, Friday's not known without Thursday's read.
+    const own = ["501", "—", "—", "—", "501"];
     expect(await values("alpha:Ana Invented")).toEqual([
-      ["quests", own],
+      ["quests", ["501", "—", "—", "—", "—"]],
       ["coins", own],
       ["donations", own],
     ]);
+
     // Bobby, linked to the other player, sees that player's 909 and never Ana's 501.
     await linked("alpha:Bobby", 102);
     const bobby = JSON.stringify(await shown("alpha:Bobby"));

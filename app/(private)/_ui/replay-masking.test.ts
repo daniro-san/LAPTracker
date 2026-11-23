@@ -160,9 +160,11 @@ describe("session replay on a member's own page (D142)", () => {
       kills: 2_345_678,
       daily: { active, daily_honor: 640, daily_tech: 4321 },
     });
-    // Last week's Wednesday, then this week's Monday to Wednesday.
-    const days = [day("2026-11-11", 512), day("2026-11-16", 345), day("2026-11-17", 777)];
-    const week = weekCard([...days, day("2026-11-18", 401)], "2026-11-19", t, daysFormats(t, f));
+    // Last week's Monday, then this week's Monday to Wednesday: `active` is the week's running total
+    // (#739), so the days read 345, 777 and 401.
+    const days = [day("2026-11-09", 512), day("2026-11-16", 345), day("2026-11-17", 1122)];
+    const week = weekCard([...days, day("2026-11-18", 1523)], "2026-11-19", t, daysFormats(t, f));
+
     const html = renderToStaticMarkup(
       createElement(MeWeek, { view: { week } as Extract<MeView, { left: false }>, t }),
     );
