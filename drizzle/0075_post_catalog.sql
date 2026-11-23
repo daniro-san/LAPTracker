@@ -7,7 +7,7 @@ CREATE TABLE "post_runs" (
 	"attempts" smallint DEFAULT 1 NOT NULL,
 	"at" timestamp with time zone NOT NULL,
 	CONSTRAINT "post_runs_workspace_id_post_key_period_pk" PRIMARY KEY("workspace_id","post_key","period"),
-	CONSTRAINT "post_runs_status_check" CHECK ("post_runs"."status" in ('posting', 'posted', 'failed', 'unanswered'))
+	CONSTRAINT "post_runs_status_check" CHECK ("post_runs"."status" in ('posting', 'posted', 'failed', 'unanswered', 'skipped'))
 );
 --> statement-breakpoint
 CREATE TABLE "workspace_posts" (

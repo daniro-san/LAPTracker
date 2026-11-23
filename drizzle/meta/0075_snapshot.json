@@ -1,5 +1,5 @@
 {
-  "id": "1e4a89fa-1dd6-4c65-bb03-7582cae31e75",
+  "id": "24bf0216-4873-42d0-a942-6641607a128e",
   "prevId": "eb4c60f4-85cf-471a-a47d-22d7cfbc88cf",
   "version": "7",
   "dialect": "postgresql",
@@ -6947,7 +6947,7 @@
       "checkConstraints": {
         "post_runs_status_check": {
           "name": "post_runs_status_check",
-          "value": "\"post_runs\".\"status\" in ('posting', 'posted', 'failed', 'unanswered')"
+          "value": "\"post_runs\".\"status\" in ('posting', 'posted', 'failed', 'unanswered', 'skipped')"
         }
       },
       "isRLSEnabled": false

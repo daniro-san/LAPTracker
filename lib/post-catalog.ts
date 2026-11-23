@@ -52,10 +52,8 @@ export function postPeriod(
   post: CatalogPost,
   now: Date,
   cfg: Pick<ScheduleConfig, "SERVER_TZ">,
-  weekday: number | null = null,
 ): string | null {
-  const day = weekday ?? POST_CATALOG[post].weekday;
-  return weekdayAt(now, cfg) === day ? serverDay(now, cfg) : null;
+  return weekdayAt(now, cfg) === POST_CATALOG[post].weekday ? serverDay(now, cfg) : null;
 }
 
 /** Whether any catalog post can be due at `now`, by the clock alone: no query before this holds. */

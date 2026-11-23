@@ -21,6 +21,11 @@ const week: PostView = {
   channel: "members",
   title: "",
   language: "en",
+  defaultTitles: {
+    en: "This week in the alliance",
+    "pt-BR": "Esta semana na aliança",
+    fr: "Cette semaine dans l’alliance",
+  },
   channels: [
     { channel: "members", name: "general" },
     { channel: "leaders", name: null },
@@ -53,6 +58,10 @@ describe("the Posts card in Alliance settings (D159)", () => {
     expect(html).toContain("Leave it empty for “This week in the alliance”.");
     expect(html).toMatch(/<span class="font-medium">Language of the post<\/span><select/);
     expect(preview(html)).toBe("Every Monday, between 00:00 and 01:15 ST, in #general.");
+    // The title help names our title in the language the post is written in, not the officer's.
+    expect(render({ language: "fr" })).toContain(
+      "Leave it empty for “Cette semaine dans l’alliance”.",
+    );
   });
 
   it("says right under the switch that nothing is posted while off, or while its channel has no webhook", () => {

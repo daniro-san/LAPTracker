@@ -15,7 +15,7 @@ import { POST_CATALOG, postPeriod } from "../post-catalog";
 import { calendarRows } from "../repo/calendar";
 import { liveCallout } from "../repo/post-touches";
 import { settingsById } from "../repo/workspace-features";
-import { claimPostRun, finishPostRun, postsDue } from "../repo/workspace-posts";
+import { claimPostRun, finishPostRun, postsDue, settlePostRun } from "../repo/workspace-posts";
 import type { CatalogPost } from "../schema-discord";
 import { resolveFeatures } from "../workspace-features";
 import { addDays } from "./calendar-time";
@@ -76,8 +76,14 @@ async function weekOf(db: Db, workspaceId: number, monday: string) {
 
 type Due = Awaited<ReturnType<typeof postsDue>>[number];
 
-/** One workspace's week post: claimed, sent, and its outcome kept. */
+/**
+ * One workspace's week post: built in full, then claimed, sent, and its outcome kept. A week with no entry for
+ * members is settled as `skipped`, so the later ticks of that Monday stop at the one query that lists the
+ * posts due (review of PR 761). A post the owner does not allow (one read) or a channel with no usable webhook
+ * (two) is not settled: the owner may allow it, or an officer paste the webhook, later that day.
+ */
 async function sendWeek(db: Db, deps: PostsDeps, due: Due, period: string, post: CatalogPost) {
+  const run = { workspaceId: due.workspaceId, post, period };
   const found = await settingsById(db, due.workspaceId);
   // The owner's layer (D134): a post the owner does not allow is never sent, whatever its switch says.
   if (!found || !resolveFeatures(found.settings, []).on.has(POST_CATALOG[post].feature)) return;
@@ -86,13 +92,13 @@ async function sendWeek(db: Db, deps: PostsDeps, due: Due, period: string, post:
   if (!channel) return;
   const language = languageOf(due.language);
   const text = weekText(await weekOf(db, due.workspaceId, period), language);
-  if (text === null) return;
-  const run = { workspaceId: due.workspaceId, post, period };
-  if (!(await claimPostRun(db, { ...run, at: deps.now() }))) return;
+  if (text === null) return settlePostRun(db, { ...run, at: deps.now() });
   const title = postTitle(due.title, WORKSPACE_DICTIONARIES[language]);
   // D156: the alliance's own line above our title, while its `post_callouts` is on.
   const lead = discordCallout(await liveCallout(db, due.workspaceId, post));
   const messages = discordMessages(title, [{ name: "", text }], !channel.forum, lead);
+  // The claim comes last: nothing that can throw stands between it and the send (review of PR 761).
+  if (!(await claimPostRun(db, { ...run, at: deps.now() }))) return;
   const { sent, status } = await postMessages(deps.fetch, channel, title, messages);
   const done = sent === messages.length;
   // No answer at all (a timeout) may still have posted: never tried again, so the week is never doubled.
@@ -106,14 +112,26 @@ async function sendWeek(db: Db, deps: PostsDeps, due: Due, period: string, post:
 }
 
 /**
- * Every catalog post due now, for every workspace that has it on. Nothing is read when no post is due today
- * (the clock first); one workspace that fails never stops the others, and its error leaves as a code.
+ * A workspace's send starts only while this long is left before the deadline: the notices' loop gives all
+ * the messages of one post at most 40 s, plus its reads and writes.
  */
-export async function sendDuePosts(db: Db, deps: PostsDeps): Promise<void> {
+export const POST_START_MS = 45_000;
+
+/**
+ * Every catalog post due now, for every workspace that has it on, until `deadline` (epoch ms, the tick's
+ * budget): no workspace starts once less than POST_START_MS is left, and the rest wait for the next tick.
+ * Nothing is read when no post is due today (the clock first); one workspace that fails never stops the
+ * others, and its error leaves as a code.
+ */
+export async function sendDuePosts(db: Db, deps: PostsDeps, deadline: number): Promise<void> {
   const now = deps.now();
   const period = postPeriod("week", now, deps.env);
   if (period === null) return;
   for (const due of await postsDue(db, "week", period)) {
+    if (Date.now() + POST_START_MS > deadline) {
+      privateLog("posts.week.deadline");
+      return;
+    }
     await sendWeek(db, deps, due, period, "week").catch((error: unknown) => {
       privateLog("posts.week.error");
       deps.report(error, { route: "lib/private/catalog-posts.ts", kind: "w.posts.send_failed" });

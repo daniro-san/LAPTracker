@@ -1,18 +1,30 @@
 // The catalog's post 1, "This week in the alliance" (#713 part C, D159), against a real Postgres (PGlite): it
 // goes out once on Monday however many ticks overlap, only while the owner allows it and the alliance has it
 // on, and it holds the week's calendar entries members can see with their server times: no roster field, no
-// person, no note, no link, and it pings no one. Invented names only.
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+// person, no note, no link, and it pings no one. The claim comes after the post is built, an empty week is
+// settled without a post, and the tick's deadline stops new sends. Invented names only.
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { testContext, TEST_ENV } from "../app-context.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { liveCallout } from "../repo/post-touches";
 import { setSwitch } from "../repo/workspace-features";
 import { findWorkspaceBySlug, saveWorkspace } from "../repo/workspaces";
 import { calendarEntries, calendarOccurrences } from "../schema";
-import { postRuns, workspacePosts } from "../schema-discord";
+import { postRuns, workspacePosts, workspacePostTouches } from "../schema-discord";
 import { PRIVATE_MARKERS, seedRoster } from "../workspace-data.test-helpers";
 import { sendDuePosts } from "./catalog-posts";
+
+// The real read of the alliance's line, which one test makes fail once.
+vi.mock("../repo/post-touches", async (original) => {
+  const real = await original<typeof import("../repo/post-touches")>();
+  return { ...real, liveCallout: vi.fn(real.liveCallout) };
+});
+
+/** No deadline in reach, and one already passed. */
+const OPEN = Number.MAX_SAFE_INTEGER;
+const PASSED = 0;
 
 const MONDAY = "2026-11-23";
 const MONDAY_0000 = new Date("2026-11-23T02:00:00Z"); // Mon 00:00 ST, after Sunday's 23:30 ST read
@@ -66,10 +78,10 @@ const entry = (values: Partial<typeof calendarEntries.$inferInsert>) =>
     .returning({ id: calendarEntries.id });
 
 /** The tick's sender at `now`, with Discord as the test context's stand-in (or `fetch`). */
-function sender(now: Date, fetch?: typeof globalThis.fetch) {
+function sender(now: Date, fetch?: typeof globalThis.fetch, deadline = OPEN) {
   const { ctx, posts } = testContext(db, ENV);
   const deps = { env: ENV, fetch: fetch ?? ctx.fetch, now: () => now, report: ctx.report };
-  return { send: () => sendDuePosts(db, deps), posts };
+  return { send: () => sendDuePosts(db, deps, deadline), posts };
 }
 
 describe("This week in the alliance (D159)", () => {
@@ -192,7 +204,8 @@ describe("This week in the alliance (D159)", () => {
       WORKSPACE_DISCORD_WEBHOOKS: { nse: { members: { url: HOOK, name: "members", forum: true } } },
     };
     const { ctx } = testContext(db, env);
-    await sendDuePosts(db, { env, fetch: forum, now: () => MONDAY_0000, report: ctx.report });
+    const deps = { env, fetch: forum, now: () => MONDAY_0000, report: ctx.report };
+    await sendDuePosts(db, deps, OPEN);
     expect(sent.length).toBeGreaterThan(1);
     for (const s of sent) expect(String(s.body.content).length).toBeLessThanOrEqual(2000);
     expect(sent[0]?.body.thread_name).toBe("This week in the alliance");
@@ -227,5 +240,80 @@ describe("This week in the alliance (D159)", () => {
     expect(await db.select().from(postRuns)).toMatchObject([
       { status: "unanswered", sent: 0, attempts: 1 },
     ]);
+
+    // A send that got part way (one message of two reached Discord) is never taken again.
+    await db.delete(postRuns);
+    await db.insert(postRuns).values({
+      workspaceId: ws,
+      postKey: "week",
+      period: MONDAY,
+      status: "failed",
+      sent: 1,
+      at: MONDAY_0000,
+    });
+    const partly = sender(MONDAY_0000);
+    await partly.send();
+    expect(partly.posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toMatchObject([
+      { status: "failed", sent: 1, attempts: 1 },
+    ]);
+  });
+
+  it("posts nothing in a week with no entry for members, and settles that week", async () => {
+    await turnOn();
+    await entry({ kind: "other", title: "Officers only plan", forMembers: false });
+    const monday = sender(MONDAY_0000);
+    await monday.send();
+    expect(monday.posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toMatchObject([
+      { period: MONDAY, status: "skipped", sent: 0 },
+    ]);
+    // Settled: a later tick of the same Monday reads nothing more for it, even with an entry added since.
+    await entry({});
+    const later = sender(new Date("2026-11-23T05:00:00Z")); // Mon 03:00 ST
+    await later.send();
+    expect(later.posts).toEqual([]);
+  });
+
+  it("opens with the alliance's own line, above our title (D156)", async () => {
+    await turnOn();
+    await entry({});
+    await db.insert(workspacePostTouches).values({
+      workspaceId: ws,
+      postKey: "week",
+      callout: "Let's go, family @everyone",
+      updatedAt: MONDAY_0000,
+    });
+    const { send, posts } = sender(MONDAY_0000);
+    await send();
+    expect(String(posts[0]?.content).split("\n").slice(0, 2)).toEqual([
+      "Let's go, family @\u200Beveryone",
+      "**This week in the alliance**",
+    ]);
+  });
+
+  it("claims the week only once the post is built: a build that throws leaves it to the next tick", async () => {
+    await turnOn();
+    await entry({});
+    vi.mocked(liveCallout).mockRejectedValueOnce(new Error("connection lost"));
+    const failed = sender(MONDAY_0000);
+    await failed.send();
+    expect(failed.posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toEqual([]);
+    const next = sender(new Date("2026-11-23T05:00:00Z")); // Mon 03:00 ST
+    await next.send();
+    expect(next.posts).toHaveLength(1);
+  });
+
+  it("starts no send once the tick's deadline is near, and leaves the week to the next tick", async () => {
+    await turnOn();
+    await entry({});
+    const late = sender(MONDAY_0000, undefined, PASSED);
+    await late.send();
+    expect(late.posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toEqual([]);
+    const next = sender(MONDAY_0000);
+    await next.send();
+    expect(next.posts).toHaveLength(1);
   });
 });

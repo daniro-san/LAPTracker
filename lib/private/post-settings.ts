@@ -20,7 +20,7 @@ import {
 import { HEARTBEAT_EVERY_H } from "../tick-gate";
 import type { WorkspaceAccess } from "./access";
 import { addDays, hhmm } from "./calendar-time";
-import { WORKSPACE_LANGUAGES, type WorkspaceLanguage } from "./dictionary";
+import { WORKSPACE_DICTIONARIES, WORKSPACE_LANGUAGES, type WorkspaceLanguage } from "./dictionary";
 import type { WebhookView } from "./discord-webhooks";
 import { featureOn } from "./features";
 
@@ -46,6 +46,8 @@ export interface PostView {
   channel: PostChannel;
   title: string;
   language: WorkspaceLanguage;
+  /** Our title in each language the post can be written in: the title help follows the post's language. */
+  defaultTitles: Record<WorkspaceLanguage, string>;
   /** The channels the post may go to, each with the name officers gave it (null: not set up). */
   channels: { channel: PostChannel; name: string | null }[];
   /** The post's server weekday in the officer's words ("Monday"), and the window its tick falls in (ST). */
@@ -96,6 +98,12 @@ export async function postsView(
       channel: row?.channel ?? entry.audience,
       title: row?.title ?? "",
       language: (row?.language ?? "en") as WorkspaceLanguage,
+      defaultTitles: Object.fromEntries(
+        WORKSPACE_LANGUAGES.map((l) => [
+          l,
+          WORKSPACE_DICTIONARIES[l][`posts.${post}.defaultTitle`],
+        ]),
+      ) as Record<WorkspaceLanguage, string>,
       channels: entry.channels.map((c) => ({ channel: c, name: nameOf(c) })),
       day: weekdays.format(new Date(`${sampleDay(weekday)}T00:00:00Z`)),
       from: "00:00",

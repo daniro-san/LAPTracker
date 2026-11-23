@@ -123,6 +123,8 @@ function NextPost(props: { row: PostView; v: Values; t: WorkspaceDictionary }) {
 function TitleField(props: {
   post: CatalogPost;
   title: string;
+  /** Our title in the language the post is written in. */
+  defaultTitle: string;
   onChange: (title: string) => void;
   t: WorkspaceDictionary;
 }) {
@@ -136,7 +138,7 @@ function TitleField(props: {
         {t["posts.title"]}
       </label>
       <p id={`${id}-help`} className="text-body-sm text-ink/75">
-        {fill(t["posts.titleHelp"], { title: t[`posts.${post}.defaultTitle`] })}
+        {fill(t["posts.titleHelp"], { title: props.defaultTitle })}
       </p>
       <input
         id={id}
@@ -202,6 +204,7 @@ function PostFields(props: {
       <TitleField
         post={row.post}
         title={v.title}
+        defaultTitle={row.defaultTitles[v.language]}
         onChange={(title) => props.onChange({ title })}
         t={t}
       />

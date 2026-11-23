@@ -106,6 +106,27 @@ export async function claimPostRun(
 }
 
 /**
+ * A period with nothing to post (a week with no entry for members): settled as `skipped`, so the later ticks
+ * of the period read nothing more for it. A claim already there stays as it is.
+ */
+export async function settlePostRun(
+  db: Db,
+  run: { workspaceId: number; post: CatalogPost; period: string; at: Date },
+): Promise<void> {
+  await db
+    .insert(r)
+    .values({
+      workspaceId: run.workspaceId,
+      postKey: run.post,
+      period: run.period,
+      status: "skipped",
+      attempts: 0,
+      at: run.at,
+    })
+    .onConflictDoNothing();
+}
+
+/**
  * The claim's outcome: posted; failed (Discord answered with an error) or unanswered (no answer: it may have
  * posted, so it is never tried again), with how many messages Discord took.
  */
