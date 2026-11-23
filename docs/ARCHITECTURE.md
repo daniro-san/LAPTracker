@@ -39,7 +39,7 @@ Pure modules take the clock and every input as arguments: `lib/compute`, `lib/bu
 - `lib/screenshot` imports nothing from the project.
 - `lib/ai` imports nothing from the project: a request carries only the officer's text (D81).
 - Nothing in `lib/` imports from `app/`.
-- Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). One exception (D148): `lib/push-tick.ts` imports `lib/private/push-roll-calls.ts` and nothing else of it. `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71); `lib/push` and `lib/report-error`, which it reaches, import neither (D115).
+- Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). Two exceptions: `lib/push-tick.ts` imports `lib/private/push-roll-calls.ts` and nothing else of it (D148), and `lib/posts-tick.ts` imports `lib/private/catalog-posts.ts` and nothing else of it (D159). `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71); `lib/push` and `lib/report-error`, which it reaches, import neither (D115).
 
 No DI container, no base classes, no event bus, no generic repository. `Deps` is the collector's injection boundary. Routes get theirs from `getAppContext()` in `lib/app-context.ts`, the one module route tests replace (`vi.mock`); a Next `route.ts` may export only handlers and segment config, so it cannot take arguments.
 
