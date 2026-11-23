@@ -340,9 +340,11 @@ export async function membersView(
   const members = newest.members.map((m) => rowOf(m, week, signals)).sort(order);
   // D75: thanks are a comparison, so members on a break are left out of them.
   const counted = members.filter((m) => !onBreak(m));
-  // The week the thanks cover (D114): this game week, or last week on a Monday, so reads after it are left out.
-  const thanksDays = gameWeek(thanksWeek(today));
-  const thanksReads = reads.filter((r) => r.day <= (thanksDays[6] as string));
+  // The week the thanks cover (D114): the game week of the newest read up to the end of this game week, or of
+  // last week on a Monday. Both lists use it, so a missed import leaves them on the same week.
+  const lastDay = gameWeek(thanksWeek(today))[6] as string;
+  const thanksReads = reads.filter((r) => r.day <= lastDay);
+  const thanksDays = gameWeek(thanksReads.at(-1)?.day ?? lastDay);
   return {
     readAt: newest.at,
     early: false,
