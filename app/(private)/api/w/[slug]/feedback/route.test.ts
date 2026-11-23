@@ -9,10 +9,11 @@ import { testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { FEEDBACK_BODY_MAX } from "@/lib/private/feedback";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { authAttempts, workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceFeatures } from "@/lib/schema-features";
-import { feedback } from "@/lib/schema-feedback";
+import { feedback, feedbackPictures } from "@/lib/schema-feedback";
 
 import { POST } from "./route";
 
@@ -67,8 +68,15 @@ const IDEA = {
 async function send(
   who: string | null,
   body: object,
-  { ip = "203.0.113.7", origin = ORIGIN }: { ip?: string; origin?: string } = {},
+  {
+    ip = "203.0.113.7",
+    origin = ORIGIN,
+    length,
+  }: { ip?: string; origin?: string; length?: string | null } = {},
 ) {
+  const json = JSON.stringify(body);
+  // As a browser's fetch states it; `null` leaves it out, as a chunked body would.
+  const stated = length === undefined ? String(Buffer.byteLength(json)) : length;
   const request = new Request(`${ORIGIN}/api/w/alpha/feedback`, {
     method: "POST",
     headers: {
@@ -76,9 +84,10 @@ async function send(
       "sec-fetch-site": origin === ORIGIN ? "same-origin" : "cross-site",
       "content-type": "application/json",
       "x-real-ip": ip,
+      ...(stated !== null && { "content-length": stated }),
       ...(who && { cookie: `${SESSION_COOKIE}=${tokens[who] ?? ""}` }),
     },
-    body: JSON.stringify(body),
+    body: json,
   });
   const res = await POST(request, { params: Promise.resolve({ slug: "alpha" }) });
   return { status: res.status, body: (await res.json()) as Record<string, unknown> };
@@ -185,5 +194,77 @@ describe("Send feedback: the day's limits (D157)", () => {
       expect((await send("alpha:officer", IDEA, { ip: `192.0.2.${n}` })).status).toBe(200);
     expect((await send("alpha:officer", IDEA, { ip: "192.0.2.99" })).status).toBe(429);
     expect(await rows()).toHaveLength(20);
+  });
+});
+
+/** An invented PNG header that says `side` × `side` px, padded to `size` bytes (the server reads the header only). */
+function png(side: number, size = 64): Uint8Array {
+  const b = new Uint8Array(size);
+  b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]);
+  new DataView(b.buffer).setUint32(16, side);
+  new DataView(b.buffer).setUint32(20, side);
+  return b;
+}
+const b64 = (b: Uint8Array) => Buffer.from(b).toString("base64");
+
+describe("Send feedback: one picture (D157 amended 2026-11-22, D119's checks)", () => {
+  it("stores the picture with its row, typed by its bytes, and nothing about it in the row itself", async () => {
+    const bytes = png(800);
+    expect((await send("alpha:officer", { ...IDEA, picture: b64(bytes) })).status).toBe(200);
+    const [row] = await rows();
+    const pictures = await db.select().from(feedbackPictures);
+    expect(pictures).toEqual([
+      {
+        feedbackId: row?.id,
+        workspaceId: row?.workspaceId,
+        data: bytes,
+        type: "image/png",
+        width: 800,
+        height: 800,
+        bytes: 64,
+        hash: expect.stringMatching(/^[0-9a-f]{16}$/) as string,
+      },
+    ]);
+  });
+
+  it("takes a picture of exactly 400 KB and 1600 px, and refuses one byte or one pixel more, storing and counting nothing", async () => {
+    expect((await send("alpha:officer", { ...IDEA, picture: b64(png(1601)) })).status).toBe(422);
+    const over = await send("alpha:officer", { ...IDEA, picture: b64(png(10, 409_601)) });
+    expect(over).toEqual({ status: 413, body: { code: "too_large" } });
+    expect(await rows()).toEqual([]);
+    expect(await db.select().from(authAttempts)).toEqual([]);
+    const fits = await send("alpha:officer", { ...IDEA, picture: b64(png(1600, 409_600)) });
+    expect(fits.status).toBe(200);
+    expect(await db.select({ bytes: feedbackPictures.bytes }).from(feedbackPictures)).toEqual([
+      { bytes: 409_600 },
+    ]);
+  });
+
+  it("refuses a wrong type by its bytes (a GIF, an SVG), whatever it claims, and stores nothing", async () => {
+    const gif = new TextEncoder().encode("GIF89a\x01\x00\x01\x00");
+    const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"/>');
+    for (const bytes of [gif, svg])
+      expect(await send("alpha:officer", { ...IDEA, picture: b64(bytes) })).toEqual({
+        status: 415,
+        body: { code: "wrong_type" },
+      });
+    expect((await send("alpha:officer", { ...IDEA, picture: "not base64!" })).status).toBe(400);
+    expect(await rows()).toEqual([]);
+    expect(await db.select().from(feedbackPictures)).toEqual([]);
+  });
+});
+
+describe("Send feedback: the body's size is known before it is read (D157, as D119)", () => {
+  it("refuses a body without a Content-Length (411) and one that states more than the cap (413), storing nothing", async () => {
+    expect(await send("alpha:officer", IDEA, { length: null })).toEqual({
+      status: 411,
+      body: { code: "length_required" },
+    });
+    expect(await send("alpha:officer", IDEA, { length: String(FEEDBACK_BODY_MAX + 1) })).toEqual({
+      status: 413,
+      body: { code: "too_large" },
+    });
+    expect(await rows()).toEqual([]);
+    expect(await db.select().from(authAttempts)).toEqual([]);
   });
 });

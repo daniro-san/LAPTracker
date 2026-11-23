@@ -1,6 +1,8 @@
 // /admin/feedback (D157, issue 713): what officers and members sent from the desk and the board, newest
 // first, filtered by kind and status (links, so the filter is in the address), each with the owner's status.
-// English only (D48). Session first (issue 218): locked, the PIN card and no database read.
+// English only (D48). Session first (issue 218): locked, the PIN card and no database read. A send's picture
+// shows under its text, from the PIN-gated /admin/feedback/picture/[id] (a plain img: next/image's optimiser
+// would fetch it without the owner's session).
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { FeedbackStatus } from "@/app/_ui/admin/FeedbackStatus";
 import { requestServerClock } from "@/app/_ui/locale";
@@ -118,6 +120,18 @@ export default async function FeedbackPage({
               </span>
             </p>
             <p className="break-words whitespace-pre-line">{f.text}</p>
+            {f.picture && (
+              <a href={f.picture.src} className="inline-block max-w-full">
+                <img
+                  src={f.picture.src}
+                  alt={t.picture}
+                  width={f.picture.width}
+                  height={f.picture.height}
+                  loading="lazy"
+                  className="block h-auto max-h-96 w-auto max-w-full border border-rule object-contain"
+                />
+              </a>
+            )}
             <p className="break-words text-body-sm text-ink/70">{f.path}</p>
             <FeedbackStatus id={f.id} status={f.status} />
           </li>
