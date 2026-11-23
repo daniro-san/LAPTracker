@@ -207,6 +207,16 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.68.0",
+    date: "2026-11-23",
+    title: "Tap a chart to open the next one",
+    changes: [
+      'Server pulse and fight clock: a chosen interval opens its kills by alliance ("10:45–11:00 by alliance ›"), with the alliances left out named and a loss counted as 0 and named.',
+      'Insights: an earlier week\'s pulse opens its seven days, and a membership flow week opens its days (joined and left counts, "—" where no daily update came). A path with Back sits above each level, and the address reopens it.',
+    ],
+    prs: [751],
+  },
+  {
     version: "v5.67.1",
     date: "2026-11-23",
     title: "Monday's thanks cover last week",

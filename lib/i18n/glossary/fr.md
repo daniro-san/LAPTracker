@@ -81,6 +81,9 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | event reading | relevé d’événement | `ledger.readoutEventRead` — a line chart's value at an event's Start or End, not a daily read |
 | Earlier / Later | Plus tôt / Plus tard | `ledger.readoutEarlier`, `ledger.readoutLater` — the readout's two steps under a pulse or a line chart |
 | Start to End | Du Début à la Fin | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — one alliance's change between its Start and End readings |
+| by alliance | par alliance | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split by alliance |
+| All intervals | Tous intervalles | `ledger.splitBack` — the path's Back step from an interval's split; two words, a label |
+| loss (noun) | perte | `ledger.splitLossPart` — an alliance whose Kills fell in an interval, counted as 0; the verb in `ledger.splitLoss` is `perdu` |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

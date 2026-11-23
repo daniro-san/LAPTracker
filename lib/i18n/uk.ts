@@ -142,6 +142,15 @@ export const uk = {
     readoutPulse: "{kills} Kills набрано · {n} альянсів у знімках",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "знімок події",
+    splitLink: "{span} за альянсами ›",
+    drillPath: "Де ви в цьому графіку",
+    splitBack: "Усі інтервали",
+    splitSum:
+      "{kills} Kills набрано за {span} альянсами ({n}), що мають знімки на {from} і на {to}.",
+    splitLeftOut: "Бракує одного з двох знімків, тому не враховано: {names}.",
+    splitLoss: "Разом тут вони втратили Kills; годинник боїв рахує це як 0.",
+    splitLossPart: "Втрата в смугах і частках рахується як 0: {names}.",
+    splitKey: "Кожна смуга: частка альянсу в цих {kills} Kills.",
   },
   compare: {
     title: "Подія проти події",

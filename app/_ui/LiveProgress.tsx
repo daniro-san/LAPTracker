@@ -12,7 +12,7 @@ import { fill } from "@/lib/words";
 
 import type { ComparisonRow } from "./event-rows";
 import { allianceLabel, compact, signOf, type Clock } from "./format";
-import { Pulse } from "./LivePulse";
+import { Pulse, type PulseDrill } from "./LivePulse";
 import { LiveRefresh } from "./LiveRefresh";
 import { LiveStandings } from "./LiveStandings";
 import { AllianceBadge } from "./Pictures";
@@ -200,6 +200,7 @@ export async function LiveSections({
   copy,
   locale,
   placement,
+  drill,
 }: {
   progress: Progress;
   eventId: number;
@@ -211,6 +212,8 @@ export async function LiveSections({
   locale: string;
   /** Live: above the ledger. Finished: below it. */
   placement: "above" | "below";
+  /** The page's address and the interval its query splits. */
+  drill: PulseDrill;
 }) {
   if (progress.live !== (placement === "above") || progress.readings === 0) return null;
   const details = await isOn("chart-details");
@@ -224,7 +227,10 @@ export async function LiveSections({
           {copy.ledger.liveDuring}
         </h2>
       )}
-      <Pulse progress={progress} details={details} clock={clock} copy={copy} locale={locale} />
+      <Pulse
+        {...{ progress, details, clock, copy, locale, drill }}
+        labels={new Map(rows.map((r) => [r.unionId, allianceLabel(r.tag, r.name)]))}
+      />
       <Standings
         progress={progress}
         eventId={eventId}

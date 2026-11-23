@@ -91,19 +91,29 @@ export interface PulseView {
   weeks: WeekPulse[];
 }
 
+/**
+ * The game week that starts on `monday`, day by day: each day's pulse from its one read (`pulseOf`, as the
+ * week's own pulse pools them, so the days' counts add up to the week's), null for no read, "later" after the
+ * newest read. The week's days on the Insights card, and a week row's next level (D158 rule 7 (b)).
+ */
+export function pulseDays(reads: readonly RosterRead[], monday: string): PulseView["days"] {
+  const newest = reads.at(-1)?.day ?? "";
+  const byDay = new Map(reads.map((r) => [r.day, r]));
+  return gameWeek(monday).map((day) => {
+    const read = byDay.get(day);
+    return {
+      day,
+      pulse: day > newest ? ("later" as const) : read ? pulseOf([read], reads) : null,
+    };
+  });
+}
+
 /** The week of the newest read, day by day, and each of the PULSE_WEEKS weeks pooled. */
 export function pulseView(reads: readonly RosterRead[]): PulseView | null {
   const newest = reads.at(-1);
   if (!newest) return null;
   const week = gameWeek(newest.day);
-  const byDay = new Map(reads.map((r) => [r.day, r]));
-  const days = week.map((day) => {
-    const read = byDay.get(day);
-    return {
-      day,
-      pulse: day > newest.day ? ("later" as const) : read ? pulseOf([read], reads) : null,
-    };
-  });
+  const days = pulseDays(reads, week[0] as string);
   const weeks = Array.from({ length: PULSE_WEEKS }, (_, i) => {
     const monday = isoDay(dayMs(week[0] as string) - (PULSE_WEEKS - 1 - i) * 7 * DAY_MS);
     const inWeek = reads.filter((r) => gameWeek(r.day)[0] === monday);
@@ -244,6 +254,41 @@ export function movesOf(reads: readonly RosterRead[], from: string) {
     left.push(...prev.members.filter((m) => !is.has(m.uid)).map(move));
   });
   return { joined, left };
+}
+
+/**
+ * One day of a flow week (D158 rule 7 (b)): who joined and who left in the read of that day; null when the
+ * day can show no change (no read that day, or before `from`, the first read with one before it); "later"
+ * after the newest read.
+ */
+export interface FlowDay {
+  day: string;
+  moves: { joined: number[]; left: number[] } | null | "later";
+}
+
+/**
+ * The days of the week that starts on `monday`, from the same moves its week row counts: a move is dated by
+ * the read that first shows it, so every move of the week falls on one of its days with a read, and the days'
+ * joined and left add up to the week's. A change across a day with no read shows on the next read's day.
+ */
+export function flowDays(
+  moves: { joined: readonly Move[]; left: readonly Move[] },
+  monday: string,
+  readDays: ReadonlySet<string>,
+  from: string,
+  newest: string,
+): FlowDay[] {
+  const on = (list: readonly Move[], day: string) =>
+    list.filter((m) => m.day === day).map((m) => m.uid);
+  return gameWeek(monday).map((day) => ({
+    day,
+    moves:
+      day > newest
+        ? "later"
+        : day < from || !readDays.has(day)
+          ? null
+          : { joined: on(moves.joined, day), left: on(moves.left, day) },
+  }));
 }
 
 /** One sighting of a player in another alliance's usable daily roster, or a history row's alliance. */

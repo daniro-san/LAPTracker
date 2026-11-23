@@ -1,5 +1,5 @@
 // The e2e seed (issue 477): two alliances with a workspace each, three filler alliances, 14 days of daily
-// rosters, two past Saturday events, this week's Raid prep and a cheese roll call, an officer's and a member's
+// rosters, two past Saturday events (the first with 15-minute samples), this week's Raid prep and a cheese roll call, an officer's and a member's
 // session per workspace, and a Lantern Keep member marked Needs help (issue 585). Invented names only. Dates follow the day the suite runs, in server time (UTC−2),
 // so every run sees the same week shape. Each alliance's roster rows carry its own sentinel values for the
 // private roster fields, so a test can tell a leak, and whose it is, from any page or answer.
@@ -346,6 +346,70 @@ function eventRows(events: string[]): string[] {
   });
 }
 
+/**
+ * The first event's 15-minute samples (D158 rule 7 (b)): 10:15 to 12:00 server time, after its Start at 10:00.
+ * In interval i (the reading before to sample i) each member of Lantern Keep and Moss Hollow gains
+ * SAMPLE_STEPS[side][i] kills, and each filler gains SAMPLE_STEPS.filler[i]; the first filler is stale in
+ * the sample STALE_SAMPLE, so the two intervals that read it leave it out. The End adds more than these.
+ */
+export const SAMPLE_STEPS = {
+  a: [1_000, 2_000, 4_000, 9_000, 12_000, 6_000, 3_000, 1_000],
+  b: [500, 1_500, 2_000, 3_000, 8_000, 4_000, 2_000, 500],
+  filler: [200, 300, 500, 800, 1_000, 600, 300, 100],
+} as const;
+export const STALE_SAMPLE = 3;
+/** Each sample's time, server time. */
+export const sampleTimes = () =>
+  SAMPLE_STEPS.a.map((_, i) => {
+    const m = 10 * 60 + 15 * (i + 1);
+    return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  });
+const sumTo = (steps: readonly number[], j: number) => steps.slice(0, j + 1).reduce((a, b) => a + b, 0);
+
+/** The members of each side at the first event's Start, as its samples list them. */
+const firstEventMembers = (side: Side) => members(side, 0).filter((_, k) => onRoster(side, k, false));
+
+/**
+ * Interval i's kills by alliance (from the Start, or the sample before, to sample i): what its split shows,
+ * the alliances read fresh in both readings only.
+ */
+export function intervalParts(i: number): { unionId: number; tag: string; name: string; kills: number }[] {
+  const sides = (["a", "b"] as const).map((side) => ({
+    ...ALLIANCES[side],
+    kills: (SAMPLE_STEPS[side][i] as number) * firstEventMembers(side).length,
+  }));
+  const stale = i === STALE_SAMPLE || i === STALE_SAMPLE + 1;
+  const fillers = FILLERS.filter((_, n) => !(stale && n === 0)).map((f) => ({
+    ...f,
+    kills: SAMPLE_STEPS.filler[i] as number,
+  }));
+  return [...sides, ...fillers];
+}
+
+function sampleRows(day: string): string[] {
+  return sampleTimes().flatMap((time, j) => {
+    const sid = 5 + j;
+    const at = `${day}T${time}:00-02:00`;
+    const lines = [
+      `insert into snapshots (id, event_id, phase, slot_at, started_at, finished_at, status, calls_used, duration_ms) values (${sid}, 1, 'sample', '${at}', '${at}', '${at}', 'complete', 5, 4000);`,
+    ];
+    for (const side of ["a", "b"] as const) {
+      const { unionId, tag, name } = ALLIANCES[side];
+      const list = firstEventMembers(side).map((m) => ({ ...m, kills: m.kills + sumTo(SAMPLE_STEPS[side], j) }));
+      const total = (f: (m: Member) => number) => list.reduce((t, m) => t + f(m), 0);
+      lines.push(
+        `insert into alliance_snapshots (snapshot_id, union_id, tag, name, member_count, total_power, total_kills, source, is_fresh, source_updated_at, member_uids, member_names, member_power, member_kills) values (${sid}, ${unionId}, '${tag}', ${q(name)}, ${list.length}, ${total((m) => m.power)}, ${total((m) => m.kills)}, 'v1', true, '${at}', ${arr(list.map((m) => m.uid))}, ${arr(list.map((m) => m.name))}, ${arr(list.map((m) => m.power))}, ${arr(list.map((m) => m.kills))});`,
+      );
+    }
+    FILLERS.forEach((f, n) =>
+      lines.push(
+        `insert into alliance_snapshots (snapshot_id, union_id, tag, name, member_count, total_power, total_kills, source, is_fresh, source_updated_at) values (${sid}, ${f.unionId}, '${f.tag}', ${q(f.name)}, 2, 30000000, ${900_000 + sumTo(SAMPLE_STEPS.filler, j)}, 'v1', ${!(n === 0 && j === STALE_SAMPLE)}, '${at}');`,
+      ),
+    );
+    return lines;
+  });
+}
+
 function workspaceRows(): string[] {
   const lines: string[] = [];
   for (const [n, side] of (["a", "b"] as const).entries()) {
@@ -439,6 +503,7 @@ export function seedSql(now: Date): string {
     `insert into tracked_sets (day, alliance_ids, source, created_at) values ('${last}', '{${all.map((x) => x.unionId)}}', 'board', '${last}T22:00:00-02:00');`,
     ...dailyReads(cal.today, cal.events[1] as string),
     ...eventRows(cal.events),
+    ...sampleRows(cal.events[0] as string),
     ...workspaceRows(),
     ...rollCallRows(cal),
     // Moss Hollow's Raid Shield check of the last raid (issue 726).

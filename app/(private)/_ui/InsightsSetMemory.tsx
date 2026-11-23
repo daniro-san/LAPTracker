@@ -8,7 +8,7 @@
 import { useEffect } from "react";
 
 import { countBucket } from "@/lib/analytics/count-bucket";
-import { track, type InsightsSet } from "@/lib/analytics/events";
+import { track, type InsightsLevel, type InsightsSet } from "@/lib/analytics/events";
 
 const PREFIX = "who-";
 
@@ -22,17 +22,20 @@ export function openSetId(hash: string): string | null {
 }
 
 /** What `ws_drilldown_opened` carries for an opened Insights set: the page, its kind, its size as a bucket. */
-export const drilldownOf = (kind: InsightsSet, count: number) => ({
+export const drilldownOf = (kind: InsightsSet | InsightsLevel, count: number) => ({
   surface: "insights" as const,
   kind,
   count_bucket: countBucket(count),
 });
 
-/** The kinds opened on this page view, in place or in the sheet (SetSheet): each is counted once. */
-const counted = new Set<InsightsSet>();
+/**
+ * The kinds opened on this page view, in place, in the sheet (SetSheet) or as a chart's next level
+ * (InsightsDrillLink): each is counted once.
+ */
+const counted = new Set<InsightsSet | InsightsLevel>();
 
 /** Counts `ws_drilldown_opened` for a set of `count` opened, once per kind per page view. */
-export function countOpen(kind: InsightsSet, count: number) {
+export function countOpen(kind: InsightsSet | InsightsLevel, count: number) {
   if (counted.has(kind)) return;
   counted.add(kind);
   track("ws_drilldown_opened", drilldownOf(kind, count));

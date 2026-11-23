@@ -115,7 +115,7 @@ describe("eventPulses", () => {
     const id = await seedEvent("2026-11-14", []);
     const rowsOf = vi.fn(OPTIONS.rowsOf);
     expect(await eventPulses(db, [{ id, done: true }], { ...OPTIONS, rowsOf })).toEqual([
-      { id, sampled: false, clock: null },
+      { id, sampled: false, clock: null, allianceIds: [] },
     ]);
     expect(rowsOf).not.toHaveBeenCalled();
   });

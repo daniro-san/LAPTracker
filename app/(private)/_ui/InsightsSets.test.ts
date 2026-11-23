@@ -61,6 +61,7 @@ describe("where an Insights count opens its names", () => {
         weeks: [
           {
             label: "Week of Nov 9",
+            drill: null,
             joined: {
               label: "joined",
               value: `+${joined}`,
@@ -87,7 +88,10 @@ describe("where an Insights count opens its names", () => {
         tenure: [],
         newcomers: [],
       };
-      return renderToStaticMarkup(createElement(FlowCard, { flow, t, noData: "—", slug: "ogs" }));
+      const nav = { base: "/w/ogs/insights", levels: { pulse: null, flow: null } };
+      return renderToStaticMarkup(
+        createElement(FlowCard, { flow, level: null, nav, t, noData: "—", slug: "ogs" }),
+      );
     };
     // 61 joined, nobody left: the count is the joiners, and Members lists exactly them.
     expect(week(61, 0)).toContain('href="/w/ogs/members?set=flow_week:joined-2026-11-09"');

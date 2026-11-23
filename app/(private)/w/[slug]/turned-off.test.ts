@@ -106,7 +106,7 @@ describe("a page turned off for the alliance (D126, issue 483)", () => {
       () => NoticesPage({ params, searchParams }),
       () => StartHerePage({ params }),
       () => BoardPage({ params }),
-      () => InsightsPage({ params }),
+      () => InsightsPage({ params, searchParams }),
     ];
     for (const page of pages) expect(await outcome(page)).toBe("→ /w/ogs");
   });

@@ -1,17 +1,35 @@
 // The Insights page's sections (issue 489), server-rendered: one drawn card per section, each opening with
 // what it rests on, then HTML bars (D68: hand-built, the label and the number in HTML beside every bar,
 // token colours, nothing hover-only). A missing number is the NoData mark, never 0 (D75). A count that
-// stands for a set of members opens its names (issue 678), in name order with nothing beside a name. The effort
-// card is in InsightsEffort.tsx.
+// stands for a set of members opens its names (issue 678), in name order with nothing beside a name. A week row
+// of the pulse or the flow opens that week's days in the chart's place (D158 rule 7 (b), InsightsDays.tsx).
+// The effort card is in InsightsEffort.tsx.
 import type { ReactNode } from "react";
 
 import { Bar } from "@/app/_ui/charts/Bar";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
-import type { BarRow, InsightsWords, PulseMetricWords } from "@/lib/private/insights-words";
+import {
+  levelHref,
+  type FlowDaysWords,
+  type InsightsLevels,
+  type PulseDaysWords,
+} from "@/lib/private/insights-days-words";
+import type { BarRow, InsightsWords } from "@/lib/private/insights-words";
 import { fill } from "@/lib/words";
 
+import { Days, FlowDays, PulseDays } from "./InsightsDays";
+import { InsightsDrillLink } from "./InsightsDrillLink";
 import { Caret, membersHref, Names, SetFold, SetRow, TapHint } from "./InsightsSets";
 import { withNoData } from "./NoData";
+
+/** Where a chart's levels link: the Insights page's address and the levels it shows now. */
+export interface LevelNav {
+  base: string;
+  levels: InsightsLevels;
+}
+
+const PULSE_CARD = "insights-pulse";
+const FLOW_CARD = "insights-flow";
 
 export function Card({
   id,
@@ -51,7 +69,14 @@ function RowBody(props: {
   return (
     <>
       <span className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
-        <span className="min-w-0">{r.label}</span>
+        <span className="min-w-0">
+          {r.label}
+          {r.drill && (
+            <span aria-hidden="true" className="ml-1 text-plum">
+              ›
+            </span>
+          )}
+        </span>
         <span className="whitespace-nowrap tabular-nums">
           <span className={r.set ? "font-semibold text-plum" : undefined}>
             {withNoData(r.value, noData)}
@@ -79,21 +104,33 @@ export function Bars({
   noData,
   tone = "plum",
   sets,
+  drill,
 }: {
   rows: BarRow[];
   noData: string;
   tone?: "plum" | "ink";
   /** Where a row's set opens its names: the workspace's address and its words. */
   sets?: { slug: string; t: WorkspaceDictionary };
+  /** Where a row's week opens its days (D158 rule 7 (b)): the week's pulse. */
+  drill?: LevelNav;
 }) {
   return (
     <ul className="mt-1">
       {rows.map((r, i) => (
         <li
           key={i}
-          className={`border-t border-rule ${r.set && sets ? "" : "py-1.5"} ${r.current ? "font-semibold" : ""}`}
+          className={`border-t border-rule ${(r.set && sets) || (r.drill && drill) ? "" : "py-1.5"} ${r.current ? "font-semibold" : ""}`}
         >
-          {r.set && sets ? (
+          {r.drill && drill ? (
+            <InsightsDrillLink
+              href={levelHref(drill.base, drill.levels, { pulse: r.drill.key }, PULSE_CARD)}
+              kind="pulse_days"
+              count={r.drill.count}
+              className="tint-button block min-h-11 py-1.5"
+            >
+              <RowBody r={r} noData={noData} tone={tone} />
+            </InsightsDrillLink>
+          ) : r.set && sets ? (
             <SetRow
               set={r.set}
               slug={sets.slug}
@@ -110,60 +147,42 @@ export function Bars({
   );
 }
 
-/** This week's seven days, one column each: the bar, a hairline, the number under it. */
-function Days({ metric, noData }: { metric: PulseMetricWords; noData: string }) {
-  return (
-    <ol className="mt-2 grid grid-cols-7 gap-0.5 text-center">
-      {metric.days.map((d) => (
-        <li key={d.weekday} className="min-w-0">
-          {!d.later && <span className="sr-only">{`${d.weekday}: ${d.value}`}</span>}
-          <span aria-hidden="true" className="block text-[12px] leading-4 text-ink/70">
-            {d.weekday}
-          </span>
-          <span aria-hidden="true" className="flex h-8 items-end justify-center">
-            <Bar
-              axis="column"
-              share={d.share}
-              tone="rounded-t-sm bg-plum/60"
-              className="h-full w-full max-w-6"
-            />
-          </span>
-          <span aria-hidden="true" className="block h-px bg-ink/50" />
-          <span aria-hidden="true" className="block truncate text-[12px] leading-5 tabular-nums">
-            {d.later ? "" : withNoData(d.value, noData)}
-          </span>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 export function Sub({ children }: { children: ReactNode }) {
   return <h3 className="mt-3 text-body-sm font-semibold">{children}</h3>;
 }
 
 export function PulseCard({
   pulse,
+  level,
+  nav,
   t,
   noData,
 }: {
   pulse: NonNullable<InsightsWords["pulse"]>;
+  /** The week the address opens to its days, in the card's place; null for the card itself. */
+  level: PulseDaysWords | null;
+  nav: LevelNav;
   t: WorkspaceDictionary;
   noData: string;
 }) {
+  const top = levelHref(nav.base, nav.levels, { pulse: null }, PULSE_CARD);
   return (
-    <Card id="insights-pulse" title={t["insights.pulse.head"]} based={pulse.based}>
-      {pulse.metrics.map((m) => (
-        <div key={m.label} className="mt-3 border-t-2 border-rule pt-2">
-          <h3 className="font-semibold">{m.label}</h3>
-          <p className="text-body-sm tabular-nums">{withNoData(m.latest, noData)}</p>
-          <Days metric={m} noData={noData} />
-          <p className="mt-2 text-[12px] font-semibold text-ink/70 uppercase">
-            {t["insights.pulse.weeks"]}
-          </p>
-          <Bars rows={m.weeks} noData={noData} />
-        </div>
-      ))}
+    <Card id={PULSE_CARD} title={t["insights.pulse.head"]} based={level ? [] : pulse.based}>
+      {level ? (
+        <PulseDays level={level} top={top} t={t} noData={noData} />
+      ) : (
+        pulse.metrics.map((m) => (
+          <div key={m.label} className="mt-3 border-t-2 border-rule pt-2">
+            <h3 className="font-semibold">{m.label}</h3>
+            <p className="text-body-sm tabular-nums">{withNoData(m.latest, noData)}</p>
+            <Days days={m.days} noData={noData} />
+            <p className="mt-2 text-[12px] font-semibold text-ink/70 uppercase">
+              {t["insights.pulse.weeks"]}
+            </p>
+            <Bars rows={m.weeks} noData={noData} drill={nav} />
+          </div>
+        ))
+      )}
     </Card>
   );
 }
@@ -236,30 +255,66 @@ function WeekRow(props: {
   );
 }
 
+/** The weeks, joined then left, each week with a join or a leave linking to its days under its row. */
+function Weeks(props: {
+  flow: NonNullable<InsightsWords["flow"]>;
+  nav: LevelNav;
+  t: WorkspaceDictionary;
+  noData: string;
+  slug: string;
+}) {
+  const { flow, nav, t, noData, slug } = props;
+  return (
+    <>
+      <TapHint t={t} />
+      <ul className="mt-1">
+        {flow.weeks.map((w, i) => (
+          <li key={w.label} className="border-t border-rule">
+            <WeekRow w={w} i={i} t={t} noData={noData} slug={slug} />
+            {w.drill && (
+              <InsightsDrillLink
+                href={levelHref(nav.base, nav.levels, { flow: w.drill.key }, FLOW_CARD)}
+                kind="flow_days"
+                count={w.drill.count}
+                className="tint-button inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline"
+              >
+                {w.drill.label}
+              </InsightsDrillLink>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 export function FlowCard({
   flow,
+  level,
+  nav,
   t,
   noData,
   slug,
 }: {
   flow: NonNullable<InsightsWords["flow"]>;
+  /** The week the address opens to its days, in the weeks' place; null for the weeks. */
+  level: FlowDaysWords | null;
+  nav: LevelNav;
   t: WorkspaceDictionary;
   noData: string;
   slug: string;
 }) {
   const joinedAny = flow.came.length > 0;
   const leftAny = flow.went.length > 0;
+  const top = levelHref(nav.base, nav.levels, { flow: null }, FLOW_CARD);
   return (
-    <Card id="insights-flow" title={t["insights.flow.head"]} based={[flow.based]}>
-      <Sub>{t["insights.flow.weeks"]}</Sub>
-      <TapHint t={t} />
-      <ul className="mt-1">
-        {flow.weeks.map((w, i) => (
-          <li key={w.label} className="border-t border-rule">
-            <WeekRow w={w} i={i} t={t} noData={noData} slug={slug} />
-          </li>
-        ))}
-      </ul>
+    <Card id={FLOW_CARD} title={t["insights.flow.head"]} based={[flow.based]}>
+      <Sub>{level ? t["drill.flow.days"] : t["insights.flow.weeks"]}</Sub>
+      {level ? (
+        <FlowDays level={level} top={top} t={t} noData={noData} />
+      ) : (
+        <Weeks {...{ flow, nav, t, noData, slug }} />
+      )}
       <Sub>{t["insights.flow.came"]}</Sub>
       {joinedAny ? (
         <Bars rows={flow.came} noData={noData} />

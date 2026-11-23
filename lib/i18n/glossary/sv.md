@@ -119,6 +119,8 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Bar                                   | Stapel                                 | `ledger.carriedGapKey` — a bar in a chart, here the gap between two shares                                                                                                                                  |
 | hollow (dots)                         | ihåliga prickar                        | `ledger.progressEvents` — the event readings in the might chart                                                                                                                                             |
 | Start to End                          | Början till Slut                       | `kvk.change`, `kvk.changeLater` — the Start and End readings compared                                                                                                                                       |
+| by alliance (an interval split)       | per allians                            | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split by alliance                                                                                                            |
+| interval                              | intervall                              | `ledger.liveInterval`, `ledger.splitBack` — a reading window or a pulse slot                                                                                                                                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

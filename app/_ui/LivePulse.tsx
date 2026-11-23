@@ -11,13 +11,33 @@ import type { EventProgress } from "@/lib/queries";
 import { fill } from "@/lib/words";
 
 import { Bar } from "./charts/Bar";
-import { Readout, type ReadoutItem } from "./charts/Readout";
+import { DrillPath } from "./charts/DrillPath";
+import { Readout, ReadoutLink, type ReadoutItem } from "./charts/Readout";
 import { compact, shareText, type Clock } from "./format";
 import { Num } from "./Num";
+import { PulseSplit } from "./PulseSplit";
 import { FIGHT_CLOCK_PATH } from "./PulseStrip";
 import { LABEL, MoreBar } from "./StatTable";
 
 type Progress = EventProgress;
+
+/** The anchor of the pulse: an interval's split opens there, and a link to it lands there. */
+export const PULSE_ID = "live-pulse";
+
+/**
+ * Where the pulse is drawn and which interval's split the address asks for (`?interval=<i>`, D158 rule 7
+ * (b)): `path` is the page's own address, without the query.
+ */
+export interface PulseDrill {
+  path: string;
+  interval: string | undefined;
+}
+
+/** The interval `?interval=` names, when it is one the pulse can split: compared, with a gain or a loss. */
+export function splitOf(pulse: Progress["pulse"], raw: string | undefined): number | null {
+  const i = raw !== undefined && /^\d{1,3}$/.test(raw) ? Number(raw) : -1;
+  return pulse[i]?.state === "moved" ? i : null;
+}
 
 /** One bar per interval: a filled bar for a gain (a plum hairline for 0 kills, D158), a hollow stub when the
  * game sent no update, an ink hairline when nothing could be compared; the busiest two intervals are underlined. */
@@ -80,21 +100,40 @@ function pulseReadout(
   }));
 }
 
-/** The bars, the first and last times under them, and the readout of the chosen interval (D158 rule 7 (a)). */
+/**
+ * The bars, the first and last times under them, and the readout of the chosen interval (D158 rule 7 (a)),
+ * with the link to that interval's split by alliance (rule 7 (b)).
+ */
 function PulseReadout(props: {
   progress: Progress;
   clock: Clock;
   copy: Dictionary;
   locale: string;
+  path: string;
 }) {
   const { progress, clock, copy } = props;
   const { pulse, busiest } = progress;
+  const links = pulse.flatMap((s, i) =>
+    s.state === "moved"
+      ? [
+          {
+            at: i,
+            href: `${props.path}?interval=${i}#${PULSE_ID}`,
+            label: fill(copy.ledger.splitLink, {
+              span: `${clock.hhmm(s.from)}–${clock.hhmm(s.to)}`,
+            }),
+            count: s.alliances,
+          },
+        ]
+      : [],
+  );
   return (
     <Readout
       id="pulse"
       items={pulseReadout(progress, clock, copy, props.locale)}
       initial={busiest?.index ?? pulse.length - 1}
       words={{ earlier: copy.ledger.readoutEarlier, later: copy.ledger.readoutLater }}
+      after={<ReadoutLink links={links} surface="server_pulse" kind="alliances" />}
     >
       <Bars progress={progress} clock={clock} copy={copy} />
       <div className="mt-1 flex justify-between gap-2 text-body-sm tabular-nums text-ink/70">
@@ -102,6 +141,40 @@ function PulseReadout(props: {
         <span>{clock.time((pulse.at(-1) as Progress["pulse"][number]).to)}</span>
       </div>
     </Readout>
+  );
+}
+
+/** An interval's kills by alliance in the pulse's place, under its path back to every interval. */
+function IntervalSplit(props: {
+  slot: Progress["pulse"][number];
+  read: number[];
+  drill: PulseDrill;
+  labels: ReadonlyMap<number, string>;
+  clock: Clock;
+  copy: Dictionary;
+  locale: string;
+}) {
+  const { slot, clock, copy } = props;
+  const times = { from: clock.hhmm(slot.from), to: clock.hhmm(slot.to) };
+  const span = `${times.from}–${times.to}`;
+  const top = `${props.drill.path}#${PULSE_ID}`;
+  return (
+    <>
+      <DrillPath
+        name={copy.ledger.drillPath}
+        back={{ href: top, label: copy.ledger.splitBack }}
+        steps={[{ label: copy.ledger.livePulse, href: top }, { label: span }]}
+      />
+      <PulseSplit
+        parts={slot.parts}
+        kills={slot.kills ?? 0}
+        read={props.read}
+        times={times}
+        labels={props.labels}
+        copy={copy}
+        locale={props.locale}
+      />
+    </>
   );
 }
 
@@ -138,34 +211,18 @@ export function PulseLegend({
   );
 }
 
-/** Kills gained per interval as bars, the busiest two intervals underlined and named, the numbers under
- * Details while `details` (the `chart-details` flag, D91) is on. */
-export function Pulse({
-  progress,
-  details,
-  clock,
-  copy,
-  locale,
-}: {
+/** The busiest span in a sentence (or the kills so far), and while live the last interval against the peak. */
+function PulseSummary(props: {
   progress: Progress;
-  details: boolean;
   clock: Clock;
   copy: Dictionary;
   locale: string;
 }) {
+  const { progress, clock, copy, locale } = props;
   const { pulse, busiest } = progress;
-  if (pulse.length === 0) return null;
-  const alliances = Math.max(...pulse.map((s) => s.alliances));
   const last = pulse.at(-1);
-  if (!last) return null;
   return (
-    <section aria-labelledby="live-pulse" className="mb-6">
-      <h3 id="live-pulse" className="font-subhead text-display-sm leading-tight">
-        {copy.ledger.livePulse}
-      </h3>
-      <p className="text-body-sm text-ink/70">
-        {fill(copy.ledger.livePulseHelp, { n: alliances, min: progress.everyMin })}
-      </p>
+    <>
       {busiest ? (
         <p className="mt-2 font-medium tabular-nums">
           {fill(progress.live ? copy.ledger.liveBusiest : copy.ledger.liveBusiestDone, {
@@ -183,7 +240,7 @@ export function Pulse({
           </p>
         )
       )}
-      {busiest && progress.live && last.kills !== null && (
+      {busiest && progress.live && last && last.kills !== null && (
         <p className="text-body-sm tabular-nums text-ink/70">
           {fill(copy.ledger.liveLast, {
             min: progress.everyMin,
@@ -192,8 +249,55 @@ export function Pulse({
           })}
         </p>
       )}
-      <PulseReadout progress={progress} clock={clock} copy={copy} locale={locale} />
-      <PulseLegend pulse={pulse} copy={copy} />
+    </>
+  );
+}
+
+/** Kills gained per interval as bars, the busiest two intervals underlined and named, the numbers under
+ * Details while `details` (the `chart-details` flag, D91) is on. */
+export function Pulse({
+  progress,
+  details,
+  clock,
+  copy,
+  locale,
+  drill,
+  labels,
+}: {
+  progress: Progress;
+  details: boolean;
+  clock: Clock;
+  copy: Dictionary;
+  locale: string;
+  drill: PulseDrill;
+  /** Each alliance's "[TAG] Name", for an interval's split. */
+  labels: ReadonlyMap<number, string>;
+}) {
+  const { pulse } = progress;
+  if (pulse.length === 0) return null;
+  const split = splitOf(pulse, drill.interval);
+  const alliances = Math.max(...pulse.map((s) => s.alliances));
+  return (
+    <section aria-labelledby={PULSE_ID} className="mb-6">
+      <h3 id={PULSE_ID} className="scroll-mt-20 font-subhead text-display-sm leading-tight">
+        {copy.ledger.livePulse}
+      </h3>
+      <p className="text-body-sm text-ink/70">
+        {fill(copy.ledger.livePulseHelp, { n: alliances, min: progress.everyMin })}
+      </p>
+      <PulseSummary {...{ progress, clock, copy, locale }} />
+      {split === null ? (
+        <>
+          <PulseReadout {...{ progress, clock, copy, locale }} path={drill.path} />
+          <PulseLegend pulse={pulse} copy={copy} />
+        </>
+      ) : (
+        <IntervalSplit
+          slot={pulse[split] as Progress["pulse"][number]}
+          read={progress.standings.map((s) => s.unionId)}
+          {...{ drill, labels, clock, copy, locale }}
+        />
+      )}
       <p className="mt-1">
         <TextLink href={FIGHT_CLOCK_PATH} className="inline-flex min-h-11 items-center">
           {copy.ledger.fightClockLink}

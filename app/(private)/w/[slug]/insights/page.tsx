@@ -13,6 +13,7 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { thanksSwitches } from "@/lib/private/features";
 import { insightsView } from "@/lib/private/insights";
+import { flowDaysWords, levelsOf, pulseDaysWords } from "@/lib/private/insights-days-words";
 import { kvkWords, shieldWords, squadsWords } from "@/lib/private/insights-more-words";
 import { insightsWords } from "@/lib/private/insights-words";
 
@@ -43,23 +44,36 @@ function Margin({ t }: { t: WorkspaceDictionary }) {
   );
 }
 
-export default async function InsightsPage({ params }: { params: Promise<{ slug: string }> }) {
-  const page = await openRollCall(
+/** The page's read, after the access check (D71): the view, with the pulse week `pulseWeek` day by day. */
+const openInsights = (params: Promise<{ slug: string }>, pulseWeek: string | null) =>
+  openRollCall(
     params,
     "insights",
     async (db, access, _today, _language, zone) => {
       const now = new Date();
       const [view, channels] = await Promise.all([
-        insightsView(db, access, now, zone),
+        insightsView(db, access, now, zone, pulseWeek),
         channelNames(db, access, getEnv()),
       ]);
       return { view, channel: channels.members, now };
     },
     "insights",
   );
+
+export default async function InsightsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  /** A chart's next level (D158 rule 7 (b)): the week whose days the pulse or the flow shows. */
+  searchParams: Promise<{ pulse?: string | string[]; flow?: string | string[] }>;
+}) {
+  const levels = levelsOf(await searchParams);
+  const page = await openInsights(params, levels.pulse);
   const { access, slug, t, language, today, data } = page;
   const words = insightsWords(data.view, t, language);
   const noData = t["nodata.mark"];
+  const nav = { base: `/w/${slug}/insights`, levels };
   const quiet = words.effort?.quiet ?? [];
   const share = sharePropsFor({
     slug,
@@ -76,10 +90,22 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
     <p className="mt-2">{t["insights.early"]}</p>
   ) : (
     <>
-      {words.pulse && <PulseCard pulse={words.pulse} t={t} noData={noData} />}
+      {words.pulse && (
+        <PulseCard
+          pulse={words.pulse}
+          level={pulseDaysWords(data.view, { t, language })}
+          {...{ nav, t, noData }}
+        />
+      )}
       <InsightsSetMemory />
       {words.effort && <EffortCard effort={words.effort} {...{ t, noData, share, slug }} />}
-      {words.flow && <FlowCard flow={words.flow} t={t} noData={noData} slug={slug} />}
+      {words.flow && (
+        <FlowCard
+          flow={words.flow}
+          level={flowDaysWords(data.view, levels.flow, { t, language })}
+          {...{ nav, t, noData, slug }}
+        />
+      )}
       <KvkCard
         kvk={kvkWords(data.view.kvk, data.view.newest, { t, language }, getEnv().DAILY_ROSTER_AT)}
         followUp={data.view.kvkFollowUp}

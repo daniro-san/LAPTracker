@@ -145,6 +145,15 @@ export const tr = {
     readoutPulse: "{kills} Kills kazanıldı · {n} ittifak okundu",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "etkinlik okuması",
+    splitLink: "{span} ittifaklara göre ›",
+    drillPath: "Bu grafikte bulunduğun yer",
+    splitBack: "Tüm aralıklar",
+    splitSum:
+      "{from} ve {to} itibarıyla okunan {n} ittifakın {span} içinde kazandığı {kills} Kills.",
+    splitLeftOut: "İki okumadan biri eksik, bu yüzden dışarıda bırakıldı: {names}.",
+    splitLoss: "Bu aralıkta ittifaklar birlikte Kills kaybetti; Sunucu savaş saati bunu 0 sayar.",
+    splitLossPart: "Çubuklarda ve paylarda kayıp 0 sayılır: {names}.",
+    splitKey: "Her çubuk: ittifakın bu {kills} Kills içindeki payı.",
   },
   compare: {
     title: "Etkinlik karşılaştırma",
