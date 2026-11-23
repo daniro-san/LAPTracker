@@ -27,6 +27,7 @@ export const FEATURE_GROUPS = {
     "discord_translate_everyone",
     "post_callouts",
     "post_week",
+    "post_shield_up",
   ],
   data: ["squads", "shield_check", "notice_pictures", "export"],
 } as const;

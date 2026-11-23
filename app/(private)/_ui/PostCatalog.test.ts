@@ -76,6 +76,32 @@ describe("the Posts card in Alliance settings (D159)", () => {
     );
   });
 
+  it("shows the shield-up reminder with its Friday evening time and only the members' channel", () => {
+    const shieldUp: PostView = {
+      ...week,
+      post: "shield_up",
+      defaultTitles: {
+        en: "Shield up before the reset",
+        "pt-BR": "Escudo ligado antes do reset",
+        fr: "Bouclier actif avant le reset",
+      },
+      channels: [{ channel: "members", name: "general" }],
+      day: "Friday",
+      from: "20:30",
+      to: "20:45",
+    };
+    const html = renderToStaticMarkup(
+      createElement(PostCatalog, { slug: "nse", rows: [week, shieldUp], t, language: "en" }),
+    );
+    const group = html.slice(html.indexOf('aria-labelledby="post-shield_up-name"'));
+    expect(group).toContain(">Shield-up reminder</h3>");
+    expect(group).toContain("No player names or counts.");
+    expect(group).toContain("Every Friday evening, before the raid at the reset (00:00 ST).");
+    expect(group).toContain("Leave it empty for “Shield up before the reset”.");
+    expect(preview(group)).toBe("Every Friday, between 20:30 and 20:45 ST, in #general.");
+    expect(group).not.toContain('<option value="leaders"');
+  });
+
   it("counts the title as the server does and marks one over 80 characters", () => {
     expect(render({ title: `  ${"x".repeat(80)}\u200B ` })).toContain("80 of 80 characters");
     const html = render({ title: "x".repeat(81) });

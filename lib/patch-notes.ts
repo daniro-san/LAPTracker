@@ -207,13 +207,23 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.70.0",
+    date: "2026-11-23",
+    title: "A Friday shield reminder for members",
+    changes: [
+      "Alliance settings → Posts: a second optional post, the Shield-up reminder. Every Friday from 20:30 ST (3 hours before the night check) it asks members, in their channel, to make sure their shield is on before the 00:00 ST reset, take squads off the wall and bring troops home. It names and counts no one and pings nobody. Off until officers turn it on; allowed by default.",
+    ],
+    prs: [763],
+  },
+  {
     version: "v5.69.1",
     date: "2026-11-23",
-    title: "A test read on raid night",
+    title: "Optional posts, and a test read on raid night",
     changes: [
+      'Alliance settings → Posts: a catalog of posts we write for the alliance, each off until officers turn it on. The first is "This week in the alliance": every Monday, the week\'s calendar entries marked for members, with ST times, to the channel officers pick (no player names, notes or links; nobody pinged). You allow it per alliance on /admin (allowed by default).',
       "One test read at 02:30 ST on Saturday 28 (raid night), about 100 calls, once: it shows how many members the game's map saw after the reset, to decide whether a third Raid Shield read each week is worth it. It never touches Raid prep, the summary or notifications, and it keeps the morning check's calls.",
     ],
-    prs: [758],
+    prs: [761, 758],
   },
   {
     version: "v5.69.0",

@@ -11,7 +11,7 @@ import { CALLOUT_LIMIT, calloutLength, cleanCallout, discordCallout } from "../p
 import { POST_CATALOG } from "../post-catalog";
 import { recordFailure } from "../repo/auth-attempts";
 import { calloutOf, calloutsOf, saveCallout } from "../repo/post-touches";
-import { POST_KEYS, type PostKey } from "../schema-discord";
+import { CATALOG_POSTS, POST_KEYS, type CatalogPost, type PostKey } from "../schema-discord";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import { featureOn } from "./features";
@@ -43,9 +43,12 @@ function postsOf(access: WorkspaceAccess): PostKey[] {
     (p) =>
       (p !== "shield" || featureOn(access, "shield_check")) &&
       (p !== "garrison" || featureOn(access, "garrison")) &&
-      (p !== "week" || featureOn(access, POST_CATALOG.week.feature)),
+      (!isCatalog(p) || featureOn(access, POST_CATALOG[p].feature)),
   );
 }
+
+const isCatalog = (p: PostKey): p is CatalogPost =>
+  (CATALOG_POSTS as readonly string[]).includes(p);
 
 /** The Raid Shield summary's title in the language the officers picked for it (D137). */
 function shieldTitle(language: WorkspaceLanguage | null) {
@@ -70,6 +73,7 @@ export async function calloutsView(
     thanks: t["share.discord.title"],
     garrison: t["switches.name.garrison"],
     week: t["posts.week.defaultTitle"],
+    shield_up: t["posts.shield_up.defaultTitle"],
   };
   return postsOf(access).map((post) => ({
     post,
