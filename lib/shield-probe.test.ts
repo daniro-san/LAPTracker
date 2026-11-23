@@ -5,7 +5,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
-import { TEST_ENV } from "./app-context.test-helpers";
+import { TEST_ENV, testContext } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { shieldReadings } from "./repo/shield-checks";
@@ -14,11 +14,13 @@ import { dailyReads, dailyRosters, runLogs } from "./schema";
 import { memberFacts } from "./schema-facts";
 import { rollCallMarks } from "./schema-rollcall";
 import { shieldChecks } from "./schema-shield";
-import { playerReads } from "./schema-squads";
+import { playerReads, squadReads } from "./schema-squads";
 import { passWindows } from "./shield-check";
 import { shieldProbe } from "./shield-probe";
 import type { SquadsDeps } from "./squads-read";
+import { squadsBatch } from "./squads-tick";
 import { playerAnswer } from "./squads.test-helpers";
+import { squadsMayRun, tickMayBeDue } from "./tick-gate";
 
 /** Mon 2026-11-23 02:30 ST (UTC−2): the probe's tick. Its quota day is Sunday's daily read. */
 const AT = new Date("2026-11-23T04:30:00Z");
@@ -84,7 +86,17 @@ function deps(now: Date) {
           shieldType: 0,
           mapUpdatedAt: new Date("2026-11-23T02:31:00Z"),
         };
-        return playerAnswer(uid, [], quota, { facts });
+        // A squad in every answer: a read that wrote "Main squad might" would write a member fact.
+        const squad = {
+          squad: 1,
+          power: 1000 + uid,
+          soldiers: null,
+          soldierLoad: null,
+          seenAt: new Date("2026-11-23T02:31:00Z"),
+          heroes: [],
+          troops: [],
+        };
+        return playerAnswer(uid, [squad], quota, { facts });
       },
       fetchQuota: () => Promise.reject(new Error("no quota call on LAP_API_KEY")),
     },
@@ -138,5 +150,38 @@ describe("the probe read of 2026-11-23 (issue 726)", () => {
       for (const pass of [w.night, w.morning])
         expect(await shieldReadings(db, OWN_ALLIANCE_ID, pass.from, pass.to)).toEqual([]);
     }
+  });
+
+  it("makes no call when the read would cut into the reserve", async () => {
+    // 110 − 21 = 89 left: 12 members would leave 77, under the margin of 100.
+    await db.update(dailyReads).set({ quotaRemainingBefore: 110 });
+    const d = deps(AT);
+    await probe(d);
+    expect(d.calls).toEqual([]);
+    const lines = await db.select().from(runLogs);
+    expect(lines.map((l) => [l.code, l.data])).toEqual([
+      ["shield.probe", expect.objectContaining({ calls: 0, reason: "quota_low" })],
+    ]);
+  });
+
+  it("opens the tick's gate at 04:31Z with the squads queue settled, and the tick's batch runs the probe", async () => {
+    await db.insert(squadReads).values({
+      day: DAY,
+      unionId: OWN_ALLIANCE_ID,
+      status: "done",
+      startedAt: new Date("2026-11-23T01:31:00Z"),
+      members: UIDS.length,
+      quotaRemaining: 700,
+    });
+    const { ctx, clock } = testContext(db);
+    clock.now = new Date("2026-11-23T04:31:00Z");
+    const stub = deps(clock.now);
+    ctx.v1 = { ...ctx.v1, fetchPlayer: stub.v1.fetchPlayer };
+    // Nothing else is due: the squads queue is settled.
+    expect(await squadsMayRun(ctx, db)).toBe(false);
+    expect(await tickMayBeDue(ctx, db)).toBe(true);
+    // What /api/tick's `after` runs (scheduleSquadsBatch).
+    await squadsBatch(ctx, undefined, "https://laptracker.test");
+    expect(stub.calls.toSorted((x, y) => x - y)).toEqual(UIDS);
   });
 });
