@@ -2,8 +2,9 @@
 
 // One member's tile on Raid prep (issue 474, D137; a grid tile since issue 412, compact since issue 585):
 // the name and the Shield's word beside its ✓ / ✗ pair (44 px, the same button again clears), the tracker's
-// checkpoints, one line each with its map scan's server time ("Night check: shield seen (map from 22:33
-// ST)"), the Squads off the wall pair only when the page shows it or the member has a wall mark, and one footer line: the ready private message in the member's
+// checkpoints, one line each with its map scan's day, server time and age against the reset ("Night check:
+// shield seen (map Fri 22:33 ST · 1 h 27 min before reset)", issue 726), "Check by hand" while the member is
+// on that list, the Squads off the wall pair only when the page shows it or the member has a wall mark, and one footer line: the ready private message in the member's
 // language with only the parts not yet ✓. The tracker's line is a hint (D75). A mark the tick wrote from
 // the tracker's reading says "from the tracker" beside it (D137, 2026-11-21).
 import { useState, type ReactNode } from "react";
@@ -72,8 +73,11 @@ function TrackerLine({ tr, marked }: { tr: PrepTrackerView; marked: boolean }) {
       {tr.checks.map((c) => (
         <p key={c.text}>
           <span className={c.on ? "text-ink/80" : notSeen}>{c.text}</span>{" "}
-          {/* In brackets, so it wraps as a unit on a narrow tile (four columns at 1280). */}
-          <span className="text-label whitespace-nowrap text-ink/75">{`(${c.scan})`}</span>
+          {/* In brackets, the map and its age each kept whole, so they wrap as units on a narrow tile. */}
+          <span className="text-label text-ink/75">
+            <span className="whitespace-nowrap">{`(${c.scan}`}</span>{" "}
+            <span className="whitespace-nowrap">{`· ${c.age})`}</span>
+          </span>
         </p>
       ))}
     </div>
@@ -166,6 +170,8 @@ export function RaidPrepRow(props: {
   showWall: boolean;
   /** The Shield ✓ is still the tick's (no officer wrote it since): "from the tracker". */
   fromTracker: boolean;
+  /** "Check by hand · no reading" while the member is on that list (issue 726); else null. */
+  hand: string | null;
   note: string | undefined;
   when: "reset" | "kvk";
   words: RollSheetWords;
@@ -197,6 +203,7 @@ export function RaidPrepRow(props: {
         onTap={props.onShield}
       />
       {prep?.tracker && <TrackerLine tr={prep.tracker} marked={props.shield !== null} />}
+      {props.hand && <p className="text-body-sm font-semibold text-yarn">{props.hand}</p>}
       {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
       {(props.showWall || props.wall !== null) && (
         <WallPart name={row.name} mark={props.wall} words={words} onTap={props.onWall} />

@@ -1,5 +1,6 @@
 // Raid prep's fill from the tracker (D137, amendments 2026-11-21) against a real Postgres (PGlite), stubs
-// only: the tick fills the week's Raid prep after each Raid Shield reading and makes it when missing. The
+// only. Since issue 726 (D137, 2026-11-22) the tick no longer runs it: officers mark, and the fill waits for
+// the day the officers' marks and the readings are shown to agree. It makes the week's Raid prep when missing. The
 // night check writes ✓ only for those seen with a shield; the morning check writes ✓ or ✗ No shield seen,
 // as new versions. Both as the tracker's, never over an officer's mark, never for an away member, never
 // twice, and nothing with the check off.
@@ -11,7 +12,6 @@ import { TEST_ENV } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { fillRaidPrep } from "./raid-prep-fill";
-import { setSwitch } from "./repo/workspace-features";
 import { saveWorkspace } from "./repo/workspaces";
 import { calendarEntries, dailyReads, dailyRosters, memberFacts } from "./schema";
 import { rollCallMarks, rollCalls } from "./schema-rollcall";
@@ -107,22 +107,17 @@ const tick = (d: ReturnType<typeof deps>) =>
   shieldTick(d as Parameters<typeof shieldTick>[0], db, d.at.getTime() + 180_000);
 
 describe("Raid prep's fill from the tracker (D137, 2026-11-21)", () => {
-  it("adds the week's Raid prep in Friday's tick and marks ✓ only those seen, as the tracker's", async () => {
+  it("adds the week's Raid prep in Friday's tick with no mark: officers mark (issue 726)", async () => {
     await tick(deps(FRI));
+    // The tick read the members (a guard that it ran), made the roll call, and wrote no mark.
+    expect((await db.select().from(playerReads)).length).toBeGreaterThan(0);
     const [call, ...more] = await calls();
     expect(more).toEqual([]);
     expect(call).toMatchObject({ kind: "shield", day: "2026-11-21", createdBy: null });
-    expect((await marks()).map((m) => [m.uid, m.mark, m.byTracker, m.writtenBy])).toEqual([
-      [101, "yes", true, null],
-      [103, "yes", true, null],
-      [105, "yes", true, null],
-    ]);
-  });
-
-  it("does nothing while the Raid Shield check is off", async () => {
-    await setSwitch(db, ws, "shield_check", false, FRI);
-    await tick(deps(FRI));
-    expect(await calls()).toEqual([]);
+    expect(await marks()).toEqual([]);
+    // A second tick finds it: still one roll call.
+    await tick(deps(new Date(FRI.getTime() + 15 * 60_000)));
+    expect(await calls()).toHaveLength(1);
   });
 
   it("marks Saturday's ✗ No shield seen for a Friday ✓ the morning reading no longer sees", async () => {

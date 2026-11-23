@@ -46,12 +46,18 @@ export const toRemind = <R extends { uid: number }>(
 
 /**
  * Who "Mark ✓ the n seen with a shield" marks (D137), in the rows' order: the asked members with no Shield
- * mark that the newest reading saw with a shield. Its n, the members "Show the n ›" puts in the grid and
- * the marks it writes are this one list.
+ * mark that the newest reading saw with a shield, less those on "To check by hand" (`hand`, issue 726: no
+ * map near the reset vouches for them). Its n, the members "Show the n ›" puts in the grid and the marks it
+ * writes are this one list.
  */
-export const toAccept = <R extends { uid: number }>(notSet: R[], seen: readonly number[]) => {
+export const toAccept = <R extends { uid: number }>(
+  notSet: R[],
+  seen: readonly number[],
+  hand: readonly number[],
+) => {
   const on = new Set(seen);
-  return notSet.filter((row) => on.has(row.uid));
+  const listed = new Set(hand);
+  return notSet.filter((row) => on.has(row.uid) && !listed.has(row.uid));
 };
 
 /**

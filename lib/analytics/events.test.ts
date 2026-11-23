@@ -122,7 +122,6 @@ const SERVER_EVENTS = [
   "$ai_generation",
   "discord_command_used",
   "ws_action",
-  "ws_roll_call_marked",
 ] as const;
 
 describe("the tracking plan (D115)", () => {

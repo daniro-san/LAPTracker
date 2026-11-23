@@ -5,8 +5,10 @@
 // tracker's map scan, and the tracker's own marks are shown "from the tracker" until an officer checks them
 // (D137, 2026-11-21). One vocabulary (issue 585): the Raid Shield check has a night check and a morning
 // check, on this page, on Insights, in settings and in the Discord summary. French puts a no-break space
-// before : and ?. The first-glance words (issue 585) are in dictionary.raidprep-glance.ts.
+// before : and ?. The first-glance words (issue 585) are in dictionary.raidprep-glance.ts, "Check by hand"
+// (issue 726) in dictionary.raidprep-hand.ts.
 import { glanceEn, glanceFr, glancePt } from "./dictionary.raidprep-glance";
+import { handEn, handFr, handPt } from "./dictionary.raidprep-hand";
 
 export const prepEn = {
   "roll.prep.shield": "Shield",
@@ -25,15 +27,16 @@ export const prepEn = {
   "roll.prep.notSeenLeft": "{n} not seen yet, left out",
   "roll.prep.notSeenLeft.one": "{n} not seen yet, left out",
   ...glanceEn,
+  ...handEn,
   "roll.prep.read.none":
     "Night check: Friday from 23:30 ST. Morning check: Saturday from {time} ST. The tracker reads every member at each.",
   "roll.prep.read.unread": "{n} not read yet",
   "roll.prep.hint":
-    "The tracker sees a shield at its map scan, every 1 to 7 hours. The times on the cards are those scans, in server time (ST). A shield turned on after the scan is not seen yet: after the night check those members stay not set; the morning check marks ✗ No shield seen, a dated reading so you know whom to remind.",
+    "The tracker sees a shield at its map scan, every 1 to 7 hours. The times on the cards are those scans, in server time (ST), with how far each is from the reset. A shield turned on after the scan is not seen yet.",
   "roll.prep.accept": "Mark ✓ the {n} seen with a shield",
   "roll.prep.accept.one": "Mark ✓ the 1 seen with a shield",
   "roll.prep.acceptHelp":
-    "The tracker marks the night check (✓ for everyone seen with a shield) and the morning check (✓ or ✗ No shield seen), each “from the tracker”, for you to check. It never changes a mark an officer made. “Mark ✓ the n seen with a shield” marks anyone seen since.",
+    "“Mark ✓ the n seen with a shield” marks ✓ those seen with a shield who are not on To check by hand. Those marks say “from the tracker”.",
   "roll.prep.accepted": "{n} marked from the tracker",
   "roll.prep.fromTracker": "from the tracker",
   "roll.prep.check":
@@ -103,15 +106,16 @@ export const prepPt: PrepWords = {
   "roll.prep.notSeenLeft": "{n} ainda sem escudo visto, deixados de fora",
   "roll.prep.notSeenLeft.one": "{n} ainda sem escudo visto, deixado de fora",
   ...glancePt,
+  ...handPt,
   "roll.prep.read.none":
     "Conferência da noite: sexta a partir das 23:30 ST. Conferência da manhã: sábado a partir das {time} ST. O tracker lê todos os membros em cada uma.",
   "roll.prep.read.unread": "{n} ainda sem leitura",
   "roll.prep.hint":
-    "O tracker vê o escudo na varredura do mapa, a cada 1 a 7 horas. Os horários nos cartões são dessas varreduras, no horário do servidor (ST). Um escudo ligado depois da varredura ainda não foi visto: depois da conferência da noite esses membros ficam sem marcação; a conferência da manhã marca ✗ Sem escudo visto, uma leitura com horário para você saber quem lembrar.",
+    "O tracker vê o escudo na varredura do mapa, a cada 1 a 7 horas. Os horários nos cartões são dessas varreduras, no horário do servidor (ST), com a distância de cada uma até o reset. Um escudo ligado depois da varredura ainda não foi visto.",
   "roll.prep.accept": "Marcar ✓ os {n} vistos com escudo",
   "roll.prep.accept.one": "Marcar ✓ o 1 visto com escudo",
   "roll.prep.acceptHelp":
-    "O tracker marca a conferência da noite (✓ para quem foi visto com escudo) e a da manhã (✓ ou ✗ Sem escudo visto), cada uma “pelo tracker”, para você conferir. Ele nunca muda uma marca feita por um oficial. “Marcar ✓ os n vistos com escudo” marca quem foi visto depois.",
+    "“Marcar ✓ os n vistos com escudo” marca ✓ os vistos com escudo que não estão em Para conferir à mão. Essas marcas dizem “pelo tracker”.",
   "roll.prep.accepted": "{n} marcados pelo tracker",
   "roll.prep.fromTracker": "pelo tracker",
   "roll.prep.check":
@@ -180,15 +184,16 @@ export const prepFr: PrepWords = {
   "roll.prep.notSeenLeft": "{n} pas encore vus, laissés de côté",
   "roll.prep.notSeenLeft.one": "{n} pas encore vu, laissé de côté",
   ...glanceFr,
+  ...handFr,
   "roll.prep.read.none":
     "Vérification du soir : vendredi à partir de 23:30 ST. Vérification du matin : samedi à partir de {time} ST. Le tracker lit chaque membre à chacune.",
   "roll.prep.read.unread": "{n} pas encore lus",
   "roll.prep.hint":
-    "Le tracker voit un bouclier lors de son scan de la carte, toutes les 1 à 7 heures. Les heures sur les cartes sont celles de ces scans, à l’heure du serveur (ST). Un bouclier activé après le scan n’est pas encore vu : après la vérification du soir ces membres restent non définis ; la vérification du matin marque ✗ Pas de bouclier vu, une lecture datée pour savoir qui relancer.",
+    "Le tracker voit un bouclier lors de son scan de la carte, toutes les 1 à 7 heures. Les heures sur les cartes sont celles de ces scans, à l’heure du serveur (ST), avec leur écart au reset. Un bouclier activé après le scan n’est pas encore vu.",
   "roll.prep.accept": "Marquer ✓ les {n} vus avec un bouclier",
   "roll.prep.accept.one": "Marquer ✓ le 1 vu avec un bouclier",
   "roll.prep.acceptHelp":
-    "Le tracker marque la vérification du soir (✓ pour ceux vus avec un bouclier) et celle du matin (✓ ou ✗ Pas de bouclier vu), chacune « d’après le tracker », à vérifier. Il ne change jamais une marque faite par un officier. « Marquer ✓ les n vus avec un bouclier » marque ceux vus depuis.",
+    "« Marquer ✓ les n vus avec un bouclier » marque ✓ ceux vus avec un bouclier qui ne sont pas dans À vérifier à la main. Ces marques indiquent « d’après le tracker ».",
   "roll.prep.accepted": "{n} marqués d’après le tracker",
   "roll.prep.fromTracker": "d’après le tracker",
   "roll.prep.check":

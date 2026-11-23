@@ -60,11 +60,47 @@ function ShowChip(props: {
   );
 }
 
+/**
+ * "Check by hand: 24" and "Show the 24 ›" (issue 726): the members whose map nearest the reset does not
+ * vouch for 00:00 ST, live (an officer's own mark takes one off); null before any reading.
+ */
+function HandLine(props: {
+  rows: MarkRowView[];
+  words: RollSheetWords;
+  language: string;
+  onShow: ShowSet;
+}) {
+  const { rows, words } = props;
+  return (
+    <p className="mt-1 flex flex-wrap items-center gap-2">
+      <span className="text-body-sm font-semibold tabular-nums">
+        {rows.length === 0
+          ? words["roll.prep.hand.none"]
+          : fill(words["roll.prep.hand"], { n: rows.length })}
+      </span>
+      {rows.length > 0 && (
+        <ShowChip
+          kind="hand"
+          rows={rows}
+          line={{ one: words["roll.prep.hand.shown.one"], other: words["roll.prep.hand.shown"] }}
+          words={words}
+          language={props.language}
+          onShow={props.onShow}
+        />
+      )}
+    </p>
+  );
+}
+
 /** The card at the top: the answer first, the Shield marks' counts, the summary's state, "Mark ✓ the n". */
 export function TrackerBar(props: {
   page: { head: PrepHeadView; words: RollSheetWords; slug: string; language: string };
-  /** Who "Mark ✓ the n seen with a shield" marks (`toAccept`): its n, "Show the n ›" and its writes. */
-  accept: MarkRowView[];
+  sets: {
+    /** Who "Mark ✓ the n seen with a shield" marks (`toAccept`): its n, "Show the n ›" and its writes. */
+    accept: MarkRowView[];
+    /** "Check by hand" (issue 726), live; null before any reading. */
+    hand: MarkRowView[] | null;
+  };
   counts: Record<"todo" | "yes" | "no" | "all", number>;
   m: ReturnType<typeof useMarks>;
   onShow: ShowSet;
@@ -73,7 +109,7 @@ export function TrackerBar(props: {
   const [done, setDone] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (head.answer === null) return null;
-  const acceptable = props.accept.map((row) => row.uid);
+  const acceptable = props.sets.accept.map((row) => row.uid);
   const accept = async () => {
     setBusy(true);
     const written = await props.m.bulk({ action: "accept", uids: acceptable });
@@ -88,6 +124,9 @@ export function TrackerBar(props: {
       <p className="font-semibold tabular-nums">{head.answer}</p>
       {head.next && <p className="text-body-sm">{head.next}</p>}
       <p className="text-body-sm tabular-nums">{marksLine(props.counts, words)}</p>
+      {props.sets.hand && (
+        <HandLine rows={props.sets.hand} words={words} language={language} onShow={props.onShow} />
+      )}
       {head.discord && (
         <p className="flex flex-wrap items-center gap-x-3 text-body-sm text-ink/80">
           <span>{head.discord.text}</span>
@@ -110,7 +149,7 @@ export function TrackerBar(props: {
           </button>
           <ShowChip
             kind="accept"
-            rows={props.accept}
+            rows={props.sets.accept}
             line={{
               one: words["roll.prep.accept.shown.one"],
               other: words["roll.prep.accept.shown"],
@@ -239,7 +278,11 @@ export function RemindBar(props: {
 export const prepNotes = (head: PrepHeadView, words: RollSheetWords) => [
   ...(head.answer === null
     ? []
-    : [...(head.hint ? [head.hint] : []), words["roll.prep.acceptHelp"]]),
+    : [
+        ...(head.hint ? [head.hint] : []),
+        words["roll.prep.hand.help"],
+        words["roll.prep.acceptHelp"],
+      ]),
   words["roll.prep.wall.help"],
   words["roll.prep.copyHelp"],
 ];
