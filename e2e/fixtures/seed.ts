@@ -142,7 +142,8 @@ const idleOn = (uid: number, day: string) => IDLE_UIDS.has(uid) && day >= daysAg
  * `active` as the game sends it on `day`'s read: not a day's value but the quest points since that game
  * week's reset, Monday to `day` added up (#739); null while it is 0 (the game sends null, never 0).
  */
-export function questTotalOf(side: Side, uid: number, day: string): number | null {
+function questTotalOf(side: Side, uid: number, day: string): number | null {
+
   const at = Date.parse(day);
   const monday = at - ((new Date(at).getUTCDay() + 6) % 7) * DAY_MS;
   let total = 0;

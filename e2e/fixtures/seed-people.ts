@@ -20,7 +20,7 @@ export const SENTINELS = {
     y: 713580,
     lastOnline: "2088-02-29T12:00:00Z",
     joined: "2086-05-21T06:07:08Z",
-    active: 215,
+    active: 175,
     tech: 3917,
   },
   b: {
@@ -28,7 +28,8 @@ export const SENTINELS = {
     y: 824682,
     lastOnline: "2092-02-29T12:00:00Z",
     joined: "2090-06-22T07:08:09Z",
-    active: 165,
+    active: 155,
+
 
     tech: 4283,
   },
