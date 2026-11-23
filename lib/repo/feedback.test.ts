@@ -1,11 +1,12 @@
-// D157: the daily job deletes feedback older than 180 days and keeps everything at or after that edge.
+// D157: the daily job deletes feedback older than 180 days and keeps everything at or after that edge; a
+// row's picture goes with it.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { feedback } from "../schema-feedback";
-import { purgeOldFeedback } from "./feedback";
+import { feedback, feedbackPictures } from "../schema-feedback";
+import { insertFeedback, purgeOldFeedback } from "./feedback";
 
 let db: Db;
 beforeAll(async () => {
@@ -35,6 +36,33 @@ describe("the feedback purge (D157)", () => {
     expect((await db.select({ text: feedback.text }).from(feedback)).map((r) => r.text)).toEqual([
       "edge",
       "month",
+    ]);
+  });
+});
+
+describe("a send's picture and the purge (D157 amended 2026-11-22)", () => {
+  it("deletes the picture of a row past 180 days with it and keeps a newer row's", async () => {
+    const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1]);
+    for (const [text, ms] of [
+      ["old", 181 * DAY_MS],
+      ["new", DAY_MS],
+    ] as const)
+      await insertFeedback(
+        db,
+        {
+          area: "board",
+          kind: "problem",
+          text,
+          path: "/w/alpha/board",
+          language: "en",
+          tier: "member",
+          createdAt: new Date(T0.getTime() - ms),
+        },
+        { data, type: "image/png", width: 1, height: 1, bytes: data.length, hash: text },
+      );
+    expect(await purgeOldFeedback(db, T0)).toBe(1);
+    expect(await db.select({ hash: feedbackPictures.hash }).from(feedbackPictures)).toEqual([
+      { hash: "new" },
     ]);
   });
 });

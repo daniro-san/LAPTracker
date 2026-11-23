@@ -16,4 +16,5 @@ export const feedbackAdminCopy = {
   saving: "Saving…",
   failed: "Could not save the status. Try again.",
   gone: "This item is gone (purged or deleted).",
+  picture: "The picture sent with it",
 } as const;

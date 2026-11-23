@@ -10,6 +10,7 @@ import {
   FEEDBACK_TIERS,
 } from "./feedback-words";
 import { workspaces } from "./schema";
+import { bytea } from "./schema-notices";
 
 /**
  * One send, kept 180 days (purged by the daily job) and deleted with its workspace (D125). Never who sent it:
@@ -39,5 +40,39 @@ export const feedback = pgTable(
     check("feedback_status_check", sql`${t.status} in ('new', 'read', 'issue', 'dropped')`),
     check("feedback_tier_check", sql`${t.tier} in ('officer', 'member')`),
     check("feedback_language_check", sql`${t.language} in ('en', 'pt-BR', 'fr')`),
+  ],
+);
+
+/**
+ * A send's one picture (D157 amended 2026-11-22), checked as a notice's is (D119): WebP, JPEG or PNG, at most
+ * 400 KB and 1600 px a side, re-encoded in the browser, so EXIF is gone. Deleted with its row (the 180-day
+ * purge) and with its workspace (D125); never downloaded, and served only on /admin/feedback (PIN).
+ * `hash` is the bytes' SHA-256 (hex, first 16), the picture's ETag and the version in its URL.
+ */
+export const feedbackPictures = pgTable(
+  "feedback_pictures",
+  {
+    feedbackId: integer("feedback_id")
+      .primaryKey()
+      .references(() => feedback.id, { onDelete: "cascade" }),
+    workspaceId: integer("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
+    data: bytea("data").notNull(),
+    type: text("type").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    bytes: integer("bytes").notNull(),
+    hash: text("hash").notNull(),
+  },
+  (t) => [
+    check(
+      "feedback_pictures_type_check",
+      sql`${t.type} in ('image/webp', 'image/jpeg', 'image/png')`,
+    ),
+    check("feedback_pictures_bytes_check", sql`${t.bytes} between 1 and 409600`),
+    check(
+      "feedback_pictures_side_check",
+      sql`${t.width} between 1 and 1600 and ${t.height} between 1 and 1600`,
+    ),
+    check("feedback_pictures_data_check", sql`octet_length(${t.data}) between 1 and 409600`),
   ],
 );
