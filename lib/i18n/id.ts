@@ -152,6 +152,7 @@ export const idID = {
     splitLeftOut: "Salah satu dari dua pembacaan tidak ada, jadi tidak dihitung: {names}.",
     splitLoss:
       "Bersama mereka kehilangan Kills di sini; jam perang server menghitungnya sebagai 0.",
+    splitLossPart: "Kehilangan Kills dihitung sebagai 0 di batang dan bagian: {names}.",
     splitKey: "Tiap batang: bagian aliansi dari {kills} Kills ini.",
   },
   compare: {

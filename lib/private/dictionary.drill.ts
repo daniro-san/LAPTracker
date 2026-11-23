@@ -26,7 +26,7 @@ export const drillEn = {
   "drill.pulse.sum":
     "{week}: {n} of {of} member-days (each daily update counts each member once). Its days add up to this.",
   "drill.pulse.median":
-    "{week}: middle donation {value}. A middle value is not a total, so the days do not add up to it. Donated: {n} of {of} member-days; its days add up to this.",
+    "{week}: middle donation {value}, from the {n} of {of} member-days with a donation. Each day shows its own middle value, and middle values do not add up to the week’s.",
   "drill.flow.sum": "{week}: {joined} joined, {left} left. Its days add up to this.",
   "drill.flow.noRead": "No daily update on {days}: a join or leave then shows on the next one.",
   "drill.flow.before":
@@ -58,7 +58,7 @@ export const drillPt: DrillWords = {
   "drill.pulse.sum":
     "{week}: {n} de {of} membro-dias (cada atualização diária conta cada membro uma vez). Os dias somam isso.",
   "drill.pulse.median":
-    "{week}: doação do meio {value}. Um valor do meio não é um total, então os dias não somam isso. Doaram: {n} de {of} membro-dias; os dias somam isso.",
+    "{week}: doação do meio {value}, dos {n} de {of} membro-dias com doação. Cada dia mostra o seu próprio valor do meio, e valores do meio não somam o da semana.",
   "drill.flow.sum": "{week}: {joined} entraram, {left} saíram. Os dias somam isso.",
   "drill.flow.noRead": "Sem atualização diária em {days}: uma entrada ou saída aparece na próxima.",
   "drill.flow.before":
@@ -88,7 +88,7 @@ export const drillFr: DrillWords = {
   "drill.pulse.sum":
     "{week} : {n} sur {of} jours-membres (chaque mise à jour quotidienne compte chaque membre une fois). Ses jours font ce total.",
   "drill.pulse.median":
-    "{week} : don du milieu {value}. Une valeur du milieu n’est pas un total : les jours ne font pas ce total. Ont donné : {n} sur {of} jours-membres ; ses jours font ce total.",
+    "{week} : don du milieu {value}, sur les {n} jours-membres avec un don parmi {of}. Chaque jour montre sa propre valeur du milieu, et des valeurs du milieu ne s’additionnent pas en celle de la semaine.",
   "drill.flow.sum": "{week} : {joined} arrivés, {left} partis. Ses jours font ce total.",
   "drill.flow.noRead":
     "Pas de mise à jour quotidienne le {days} : une arrivée ou un départ apparaît alors à la suivante.",

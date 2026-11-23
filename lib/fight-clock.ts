@@ -32,6 +32,11 @@ export interface ClockSlot {
    * their sum is a loss, which `kills` counts as 0.
    */
   parts: AlliancePart[];
+  /**
+   * The two readings the slot compares (the Start, off the grid, for the first): what a split names, not
+   * the grid times `at` lines the strips up on.
+   */
+  read: { from: Date; to: Date };
 }
 
 export interface ClockBusiest {
@@ -80,6 +85,7 @@ export function eventClock(
     state: s.state,
     alliances: s.alliances,
     parts: s.parts,
+    read: { from: s.from, to: s.to },
   }));
   const compared = pulse.filter((s) => s.kills !== null).length;
   const found =

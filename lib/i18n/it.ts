@@ -152,6 +152,7 @@ export const itIT = {
       "{kills} Kills guadagnate in {span} dalle {n} alleanze lette alle {from} e alle {to}.",
     splitLeftOut: "Manca una delle due letture, quindi escluse: {names}.",
     splitLoss: "Insieme hanno perso Kills qui: l’orologio dei combattimenti lo conta come 0.",
+    splitLossPart: "Una perdita conta come 0 nelle barre e nelle quote: {names}.",
     splitKey: "Ogni barra: la quota dell’alleanza su questi {kills} Kills.",
   },
   compare: {

@@ -13,12 +13,13 @@ Pattern (b) of D158 rule 7: a tap opens the next level as a chart in the same ca
   - Under each event's strip, the chosen column's link opens the same split in that strip's place.
   - `ClockSlot.parts` comes from the pulse slot. `EventPulse.allianceIds` lists the Start's alliances, so the split can name the ones left out.
   - When the parts add up to a loss, which the fight clock counts as 0, a line says so.
-  - Alliance names come from `allianceNames` (`loadAllianceLabels` in `app/_ui/event-page.ts`), read only when a slot is open.
+  - Alliance names come from `allianceNames`, through the shared public cache (`sharedEventAllianceLabels` in `app/_ui/public-reads.ts`, D143), read only when a slot is open.
+  - The split names the slot's two real reading times (`ClockSlot.read`): the first slot starts at the off-grid Start, not on the grid.
 - **Insights, the week's pulse, a week to its days** (`?pulse=<monday>`):
   - Each earlier week row is a link (this week's days are already drawn above the rows).
   - The card shows that week's seven day columns for each measure. Under each day's share is the count it is of ("11/11").
   - The sum line reads "Week of Nov 9: 77 of 77 member-days (each daily update counts each member once). Its days add up to this."
-  - For the middle donation, the line says a median does not add up to the week, and that the donated counts do.
+  - For the middle donation, the line gives the week's median and how many member-days donated, and says each day shows its own median and medians do not add up.
   - The days come from `pulseDays` (`lib/private/insights-rules.ts`). It sits beside `pulseOf` and is now used for this week's days too.
 - **Insights, membership flow, a week to its days** (`?flow=<monday>`):
   - "Week of Nov 16, day by day ›" sits under each week that has a join or a leave.
@@ -60,6 +61,15 @@ Pattern (b) of D158 rule 7: a tap opens the next level as a chart in the same ca
   - the flow link named by its own week ("Week of Nov 16, day by day ›"), and "Joined and left, day by day" as the heading at the day level.
 
 - **Translation spot-check**: 12 translators wrote "Not read at both times" as "read at neither time", which is wrong. I rewrote those `splitLeftOut` strings by hand as "one of the two readings is missing" (es, it, pt-BR, id, ru, uk, tr, ja, ko, zh-CN, th, vi), then stamped.
+
+- **Review of PR 751, fixed**:
+  - The fight clock's split names its real reading times.
+  - An alliance that lost kills is drawn and shared as 0, so the shares are of the gains and never pass 100 %. A line names that alliance (new public key `splitLossPart`, translated and stamped). Unit test: `app/_ui/PulseSplit.test.ts`.
+  - The middle-donation line no longer claims its days add up.
+  - `lib/private/insights.test.ts` asserts the flow level's sum line and its two notes word for word.
+  - The fight clock's alliance names come through the shared public cache.
+  - The D158 amendment says the split names the alliances it leaves out.
+  - Checked after these fixes: `pnpm check` green (373 test files, 1,995 tests, i18n fresh in 17 languages); e2e `public.spec.ts` and `desk-insights.spec.ts`, phone and wide, 32 of 32 passed.
 
 ## Deviations
 
@@ -104,6 +114,8 @@ Pattern (b) of D158 rule 7: a tap opens the next level as a chart in the same ca
 - **No e2e shows a day with "—" at the flow day level**: every seeded day in that week has a read. The PGlite test covers it.
 
 ## Next
+
+This PR is `Part of #736`. The orchestrator opens a follow-up issue for the parts of issue 736 not built here:
 
 - A flow day to its came-from and went-to bars, and a pulse day to who reached it (pattern (c), thanks first). Both need child reads beside `cameFrom` and `pulseOf`.
 - KvK recovery: from a KvK to its days (report section 4).

@@ -151,6 +151,7 @@ export const pl = {
       "{kills} zdobytych Kills w ciągu {span} przez sojusze ({n}) odczytane o {from} i o {to}.",
     splitLeftOut: "Nie odczytane w obu terminach, więc pominięte: {names}.",
     splitLoss: "Razem straciły Kills w tym odstępie; zegar walk serwera liczy to jako 0.",
+    splitLossPart: "Strata liczy się jako 0 w słupkach i udziałach: {names}.",
     splitKey: "Każdy słupek: udział sojuszu w tych {kills} Kills.",
   },
   compare: {

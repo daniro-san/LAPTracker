@@ -138,6 +138,7 @@ export const th = {
     splitSum: "{kills} Kills ที่เพิ่มในช่วง {span} จากพันธมิตร {n} แห่งที่อ่านเมื่อ {from} และ {to}",
     splitLeftOut: "ขาดการอ่านหนึ่งในสองครั้ง จึงไม่นับ: {names}",
     splitLoss: "รวมกันแล้ว Kills ลดลงในช่วงนี้ นาฬิกาการรบนับเป็น 0",
+    splitLossPart: "การลดลงนับเป็น 0 ในแถบและส่วนแบ่ง: {names}",
     splitKey: "แต่ละแถบ: ส่วนแบ่งของพันธมิตรใน Kills {kills} นี้",
   },
   compare: {

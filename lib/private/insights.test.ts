@@ -18,7 +18,9 @@ import {
 import { shieldChecks } from "../schema-shield";
 import { memberSquads, playerHistory, playerReads } from "../schema-squads";
 import { requireWorkspace } from "./access";
-import { insightsView } from "./insights";
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
+import { insightsView, type InsightsView } from "./insights";
+import { flowDaysWords } from "./insights-days-words";
 import type { Pulse, PulseView } from "./insights-rules";
 import { createSession } from "./session";
 
@@ -116,6 +118,12 @@ const readDays = (days: PulseView["days"]) =>
 /** Days' counts of one kind added up: what the week pools. */
 const pooled = (days: Pulse[], k: "quests" | "coins" | "donated") =>
   days.reduce((a, p) => ({ n: a.n + (p[k]?.n ?? 0), of: a.of + (p[k]?.of ?? 0) }), { n: 0, of: 0 });
+
+/** The flow week of Nov 9's day level in English: its sum line, then its notes, spaces made plain. */
+function flowLines(view: InsightsView) {
+  const words = flowDaysWords(view, "2026-11-09", { t: WORKSPACE_DICTIONARIES.en, language: "en" });
+  return [words?.sum ?? "", ...(words?.notes ?? [])].map((line) => line.replace(/\s/g, " "));
+}
 
 describe("the Insights read (issue 489)", () => {
   it("finds where joiners came from and leavers went, leaves a member on a break out, and shows no private field", async () => {
@@ -292,6 +300,12 @@ describe("the Insights read (issue 489)", () => {
     expect(all("joined")).toEqual(week.joined);
     expect(all("left")).toEqual(week.left);
     expect(new Set([...all("joined"), ...all("left")])).toEqual(new Set([101, 103, 104, 105]));
+    // The day level says why a day shows no change: no daily update then, or nothing to compare yet.
+    expect(flowLines(view)).toEqual([
+      "Week of Nov 9: 3 joined, 1 left. Its days add up to this.",
+      "No daily update on Wed, Sat, Sun: a join or leave then shows on the next one.",
+      "Before Tue, Nov 10 nothing can be compared: the first daily update is the starting point.",
+    ]);
 
     // The pulse's earlier week, day by day: each count's days add up to the week's.
     const pulseWeek = view.pulse?.weeks.find((w) => w.monday === "2026-11-09");

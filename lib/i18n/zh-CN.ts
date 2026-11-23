@@ -138,6 +138,7 @@ export const zhCN = {
     splitSum: "{from} 与 {to} 两次都读取到的 {n} 个联盟，在 {span} 内共获得 {kills} Kills。",
     splitLeftOut: "两次读取中缺了一次，因此未计入：{names}。",
     splitLoss: "这些联盟合计失去了 Kills；服务器战斗时钟把这记作 0。",
+    splitLossPart: "失去 Kills 的联盟在柱条和份额中记作 0：{names}。",
     splitKey: "每根柱条：该联盟占这 {kills} Kills 的份额。",
   },
   statement: {

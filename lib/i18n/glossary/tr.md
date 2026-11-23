@@ -304,6 +304,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | member list                       | üye listesi                     | `members.joinedReads`, `members.leftReads` — an alliance's players as read at Start or End                                        |
 | War turnout                       | Savaşa katılım                  | `ledger.fought`, `ledger.arrivedTurnout` — the event's section on kills gained by members; its row opens the member list          |
 | bar (a chart's bar)               | Çubuk                           | `ledger.carriedGapKey` — the gap bar's key; other bar charts' keys reuse it                                                       |
+| loss (an alliance's kills fell)   | kayıp                           | `ledger.splitLoss`, `ledger.splitLossPart` — a fall in kills across an interval; drawn and shared as 0                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

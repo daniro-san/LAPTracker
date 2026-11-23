@@ -150,6 +150,7 @@ export const sv = {
       "{kills} Kills vunna under {span} av de {n} allianserna, avlästa vid {from} och vid {to}.",
     splitLeftOut: "Inte avlästa vid båda tiderna, så de utelämnas: {names}.",
     splitLoss: "Tillsammans förlorade de Kills här; stridsklockan räknar det som 0.",
+    splitLossPart: "En förlust räknas som 0 i staplarna och andelarna: {names}.",
     splitKey: "Varje stapel: alliansens andel av dessa {kills} Kills.",
   },
   compare: {

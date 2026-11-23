@@ -144,6 +144,7 @@ export const ko = {
     splitSum: "{from} 및 {to}에 읽은 연맹 {n}개가 {span} 동안 획득한 처치 {kills}.",
     splitLeftOut: "두 시점 중 한 번을 읽지 못해 집계 제외: {names}.",
     splitLoss: "이 구간에서는 모두 더하면 처치가 줄었어요. 서버 전투 시계는 그것을 0으로 집계해요.",
+    splitLossPart: "막대와 몫에서는 처치가 줄어든 연맹을 0으로 집계해요: {names}.",
     splitKey: "각 막대: 이 {kills} 처치 중 연맹의 몫.",
   },
   compare: {

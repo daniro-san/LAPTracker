@@ -153,6 +153,7 @@ export const fr = {
     splitLeftOut: "Non relevées aux deux moments, donc laissées de côté : {names}.",
     splitLoss:
       "Ensemble, elles ont perdu des Kills ici ; l’horloge des combats compte cela comme 0.",
+    splitLossPart: "Une perte compte pour 0 dans les barres et les parts : {names}.",
     splitKey: "Chaque barre : la part de l’alliance dans ces {kills} Kills.",
   },
   compare: {

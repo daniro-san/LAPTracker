@@ -36,15 +36,19 @@ export function PulseSplit({
 }) {
   const l = copy.ledger;
   const sum = parts.reduce((a, p) => a + p.kills, 0);
-  const whole = Math.max(0, kills);
+  // The bars and shares are of the gains: a loss counts as 0 there (said under the list), so no share
+  // passes 100 % and they add up to the key's figure (D158).
+  const gain = (p: AlliancePart) => Math.max(0, p.kills);
+  const whole = parts.reduce((a, p) => a + gain(p), 0);
   const rows = [...parts].sort((a, b) => b.kills - a.kills || a.unionId - b.unionId);
   const name = (id: number) => labels.get(id) ?? String(id);
   const counted = new Set(parts.map((p) => p.unionId));
   const out = read.filter((id) => !counted.has(id));
+  const lost = rows.filter((p) => p.kills < 0).map((p) => name(p.unionId));
   return (
     <div>
       <p className="mt-2 text-body-sm text-ink/70">
-        {fill(l.splitKey, { kills: signed(sum, locale) })}
+        {fill(l.splitKey, { kills: signed(whole, locale) })}
       </p>
       <ul className="mt-1">
         {rows.map((p) => (
@@ -54,15 +58,13 @@ export function PulseSplit({
               <span className="whitespace-nowrap tabular-nums">
                 <span className="font-semibold">{signed(p.kills, locale)}</span>
                 {whole > 0 && (
-                  <span className="ml-2 text-ink/70">
-                    {shareText(Math.max(0, p.kills) / whole, locale)}
-                  </span>
+                  <span className="ml-2 text-ink/70">{shareText(gain(p) / whole, locale)}</span>
                 )}
               </span>
             </span>
             <Bar
               axis="row"
-              share={whole > 0 ? p.kills / whole : 0}
+              share={whole > 0 ? gain(p) / whole : 0}
               tone="bg-plum/60"
               className="mt-1 h-2 w-full bg-ink/10"
             />
@@ -80,6 +82,11 @@ export function PulseSplit({
       {out.length > 0 && (
         <p className="text-body-sm text-ink/70">
           {fill(l.splitLeftOut, { names: out.map(name).join(", ") })}
+        </p>
+      )}
+      {lost.length > 0 && (
+        <p className="text-body-sm text-ink/70">
+          {fill(l.splitLossPart, { names: lost.join(", ") })}
         </p>
       )}
       {sum !== kills && <p className="text-body-sm text-ink/70">{l.splitLoss}</p>}

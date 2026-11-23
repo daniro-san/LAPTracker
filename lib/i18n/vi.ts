@@ -148,6 +148,7 @@ export const vi = {
     splitLeftOut: "Thiếu một trong hai lần đọc, nên không tính: {names}.",
     splitLoss:
       "Gộp lại, các liên minh này giảm tiêu diệt ở đây; đồng hồ giao tranh máy chủ tính là 0.",
+    splitLossPart: "Mức giảm tiêu diệt được tính là 0 ở các thanh và phần tiêu diệt: {names}.",
     splitKey: "Mỗi thanh: phần tiêu diệt của liên minh trong {kills} tiêu diệt này.",
   },
   compare: {

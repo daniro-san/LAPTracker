@@ -146,6 +146,7 @@ export const ja = {
     splitSum: "{span}に、{from}と{to}の両方で読み取った{n}同盟が獲得した {kills} Kills。",
     splitLeftOut: "2回の読み取りのうち1回がないため集計外：{names}。",
     splitLoss: "ここでは合計で Kills が減りました。戦闘時計では0として集計します。",
+    splitLossPart: "Kills が減った同盟は、棒と割合では0として集計します：{names}。",
     splitKey: "各棒：この {kills} Kills のうち、同盟が占める割合。",
   },
   compare: {

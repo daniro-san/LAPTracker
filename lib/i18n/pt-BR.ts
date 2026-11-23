@@ -148,6 +148,7 @@ export const ptBR = {
     splitSum: "{kills} kills ganhos em {span} pelas {n} alianças lidas em {from} e em {to}.",
     splitLeftOut: "Falta uma das duas leituras, então ficaram de fora: {names}.",
     splitLoss: "Juntas, elas perderam kills aqui; o relógio de lutas conta isso como 0.",
+    splitLossPart: "Uma perda conta como 0 nas barras e nas fatias: {names}.",
     splitKey: "Cada barra: a fatia da aliança nestes {kills} kills.",
   },
   compare: {

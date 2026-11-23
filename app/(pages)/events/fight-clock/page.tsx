@@ -9,12 +9,13 @@ import Link from "next/link";
 
 import { DrillPath } from "@/app/_ui/charts/DrillPath";
 import { Readout, ReadoutLink } from "@/app/_ui/charts/Readout";
-import { loadAllianceLabels, loadFightClock } from "@/app/_ui/event-page";
+import { loadFightClock } from "@/app/_ui/event-page";
 import { eventTitle, EventLabel } from "@/app/_ui/EventLabel";
-import type { Clock } from "@/app/_ui/format";
+import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { LIVE_DURING_ID } from "@/app/_ui/LiveProgress";
 import { PulseLegend } from "@/app/_ui/LivePulse";
 import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
+import { sharedEventAllianceLabels } from "@/app/_ui/public-reads";
 import { PulseSplit } from "@/app/_ui/PulseSplit";
 import {
   busiestText,
@@ -84,11 +85,9 @@ interface Split {
 }
 
 const rowId = (id: number) => `clock-${id}`;
-const timesOf = (at: Date, v: View) => ({
-  from: v.clock.hhmm(at),
-  to: v.clock.hhmm(new Date(at.getTime() + v.everyMin * 60_000)),
-});
-const spanOf = (at: Date, v: View) => `${timesOf(at, v).from}–${timesOf(at, v).to}`;
+/** A column's slot on the grid, "12:00–12:15": the strips' and the readout's name for it. */
+const spanOf = (at: Date, v: View) =>
+  `${v.clock.hhmm(at)}–${v.clock.hhmm(new Date(at.getTime() + v.everyMin * 60_000))}`;
 
 /** The slot `?event=&at=` names, when that event has it and it moved. */
 function splitOf(events: FightClockEvent[], event: unknown, at: unknown) {
@@ -100,7 +99,9 @@ function splitOf(events: FightClockEvent[], event: unknown, at: unknown) {
 
 /** A slot's kills by alliance in its strip's place, under the path back to every slot. */
 function SlotSplit({ event, split, v }: { event: FightClockEvent; split: Split; v: View }) {
-  const span = spanOf(split.slot.at, v);
+  // The split names the two readings it compares: the first slot's starts at the off-grid Start.
+  const times = { from: v.clock.hhmm(split.slot.read.from), to: v.clock.hhmm(split.slot.read.to) };
+  const span = `${times.from}–${times.to}`;
   const top = `${FIGHT_CLOCK_PATH}#${rowId(event.id)}`;
   const l = v.copy.ledger;
   return (
@@ -114,7 +115,7 @@ function SlotSplit({ event, split, v }: { event: FightClockEvent; split: Split; 
         parts={split.slot.parts}
         kills={split.slot.kills ?? 0}
         read={event.pulse.allianceIds}
-        times={timesOf(split.slot.at, v)}
+        times={times}
         labels={split.labels}
         copy={v.copy}
         locale={v.locale}
@@ -274,13 +275,13 @@ export default async function FightClockPage({
   const picked = splitOf(events, query.event, query.at);
   const split = picked && {
     ...picked,
-    // The alliances it shows and the ones it names as left out.
-    labels: await loadAllianceLabels([
-      ...new Set([
-        ...(events.find((e) => e.id === picked.event)?.pulse.allianceIds ?? []),
-        ...picked.slot.parts.map((p) => p.unionId),
+    // The event's alliances, shown and named as left out, from the shared public cache (D143).
+    labels: new Map(
+      (await sharedEventAllianceLabels(picked.event)).map((a) => [
+        a.id,
+        allianceLabel(a.tag, a.name),
       ]),
-    ]),
+    ),
   };
   const v: View = { everyMin, details, clock, copy, locale, split };
   const sampled = new Set(events.filter((e) => e.pulse.sampled).map((e) => e.id));

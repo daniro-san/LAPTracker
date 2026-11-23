@@ -31,6 +31,8 @@ export const tapCopy = {
   splitLeftOut: "Not read at both times, so left out: {names}.",
   /** The fight clock counts a loss as no gain: said when the alliances' sum is below 0. */
   splitLoss: "Together they lost kills here; the fight clock counts that as 0.",
-  /** The key to the split's bars: each is a share of the kills the sum line adds up. */
+  /** Under the split: the alliances whose kills fell here, drawn and shared as 0. */
+  splitLossPart: "A loss counts as 0 in the bars and shares: {names}.",
+  /** The key to the split's bars: each is a share of the alliances' gains in the interval. */
   splitKey: "Each bar: the alliance's share of these {kills} kills.",
 } as const;

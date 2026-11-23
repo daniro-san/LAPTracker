@@ -151,6 +151,7 @@ export const nl = {
       "{kills} Kills gewonnen in {span} door de {n} allianties gemeten om {from} en om {to}.",
     splitLeftOut: "Niet op beide momenten gemeten, dus weggelaten: {names}.",
     splitLoss: "Samen verloren ze hier Kills; de strijdklok telt dat als 0.",
+    splitLossPart: "Een verlies telt als 0 in de balken en aandelen: {names}.",
     splitKey: "Elke balk: het aandeel van de alliantie in deze {kills} Kills.",
   },
   compare: {

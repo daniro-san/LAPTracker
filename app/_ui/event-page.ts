@@ -17,9 +17,7 @@ import {
   type RowsOf,
 } from "@/lib/queries/fight-clock";
 import { eventProgressOf, progressRows } from "@/lib/queries/live";
-import { allianceNames } from "@/lib/queries/names";
 
-import { allianceLabel } from "./format";
 import { requestClock, requestCopy } from "./locale";
 import { sharedEvents, sharedRead } from "./public-reads";
 
@@ -93,17 +91,6 @@ export const loadFightClock = cache(async () => {
   const data = await withPageDb((db) => getFightClock(db, getAppContext().now(), options));
   return { ...data, everyMin: options.everyMin };
 });
-
-/** Each alliance's newest "[TAG] Name" from the public events' reads, for a fight-clock slot's split. */
-export async function loadAllianceLabels(ids: number[]): Promise<Map<number, string>> {
-  const names = await withPageDb((db) => allianceNames(db, ids));
-  return new Map(
-    [...names].flatMap(([id, list]) => {
-      const last = list.at(-1);
-      return last ? [[id, allianceLabel(last.tag, last.name)] as const] : [];
-    }),
-  );
-}
 
 /** Events A and B of the compare page on their samples (D86), once per request. */
 export const loadComparePulses = cache(
