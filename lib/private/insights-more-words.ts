@@ -8,12 +8,14 @@ import { calendarDates } from "./calendar-words";
 import type { WorkspaceKey } from "./dictionary";
 import { NONE } from "./fact-text";
 import { compact, percent, type Formats } from "./insights-format";
-import type { KvkEvent, KvkView } from "./insights-kvk";
+import type { KvkDay, KvkEvent, KvkView } from "./insights-kvk";
 import { SHIELD_WEEKS, type PassShare, type ShieldWeek } from "./insights-shield";
 import { FRESH_HOURS, SQUAD_COUNTS, type SquadsCoverage } from "./insights-squads";
-import type { BarRow } from "./insights-words";
+import { dayPick, type BarRow, type DayPick } from "./insights-words";
 
 export interface KvkEventWords {
+  /** The event's server day: the address's `?kvk=`. */
+  day: string;
   label: string;
   /** One line for an older event's fold: "KvK Sat, Nov 7 · lost 13% · 50% back". */
   line: string;
@@ -21,6 +23,22 @@ export interface KvkEventWords {
   might: BarRow[];
   /** The share of the loss back on each read from the day after; empty when nothing was lost. */
   days: BarRow[];
+  /** The same days, each opening its numbers (D158 rule 7 (b)); empty when nothing was lost. */
+  picks: DayPick[];
+}
+
+/** A recovery day's numbers (D158 rule 7 (b)): the might its column's share is made of. */
+export interface KvkDayWords {
+  label: string;
+  might: BarRow[];
+  sum: string;
+  counted: string;
+}
+
+/** The KvK the address opens to its recovery days (`?kvk=`), and one of its days (`?kvkDay=`). */
+export interface KvkLevelWords {
+  event: KvkEventWords;
+  day: KvkDayWords | null;
 }
 
 export interface KvkWords {
@@ -107,6 +125,7 @@ function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
   const back = backOf(e);
   const date = dates.short(e.day);
   return {
+    day: e.day,
     label: fill(t["insights.kvk.event"], { date }),
     line:
       back === null
@@ -135,6 +154,7 @@ function eventWords(e: KvkEvent, newest: string, f: Formats): KvkEventWords {
       ),
     ],
     days: back === null ? [] : recoveryDays(e.days, f),
+    picks: back === null ? [] : e.days.map((d) => dayPick(d.day, d.members, f)),
   };
 }
 
@@ -152,6 +172,68 @@ function recoveryDays(days: KvkEvent["days"], f: Formats): BarRow[] {
     share: d.share === null ? null : d.share / scale,
     reference: 1 / scale,
   }));
+}
+
+/**
+ * One recovery day's numbers: the Start, End and that day's might of the members its read lists, drawn
+ * against the largest as the event's own rows are, the share back they make (its column's), and how many
+ * of the event's counted members that is.
+ */
+function kvkDayWords(e: KvkEvent, d: KvkDay, f: Formats): KvkDayWords {
+  const { t, language } = f;
+  const dates = calendarDates(language);
+  const top = Math.max(d.before, d.after, d.then);
+  const row = (label: string, n: number, note?: string): BarRow => ({
+    label,
+    value: compact(n, language),
+    share: top > 0 ? n / top : null,
+    ...(note && { note }),
+  });
+  const lost = d.before > 0 ? (d.before - d.after) / d.before : 0;
+  const day = dates.short(d.day);
+  return {
+    label: day,
+    might: [
+      row(t["insights.kvk.before"], d.before),
+      row(
+        t["insights.kvk.after"],
+        d.after,
+        lost > 0 ? fill(t["insights.kvk.lostNote"], { lost: percent(lost, language) }) : undefined,
+      ),
+      row(
+        fill(t["drill.kvkDay.on"], { date: dates.dayMonth(d.day) }),
+        d.then,
+        d.share !== null
+          ? fill(t["insights.kvk.backNote"], { back: percent(d.share, language) })
+          : undefined,
+      ),
+    ],
+    sum:
+      d.share === null
+        ? fill(t["drill.kvkDay.noLoss"], { day })
+        : fill(t["drill.kvkDay.sum"], { day, back: percent(d.share, language) }),
+    counted:
+      d.members === e.members
+        ? fill(t["drill.kvkDay.all"], { n: d.members })
+        : fill(t["drill.kvkDay.some"], {
+            n: d.members,
+            of: e.members,
+            missing: e.members - d.members,
+          }),
+  };
+}
+
+/** The KvK level the address asks for: the event `kvk` names, and its recovery day `kvkDay`, if any. */
+export function kvkLevelWords(
+  kvk: KvkView,
+  newest: string,
+  asked: { kvk: string | null; kvkDay: string | null },
+  f: Formats,
+): KvkLevelWords | null {
+  const e = kvk.events.find((x) => x.day === asked.kvk);
+  if (!e) return null;
+  const day = e.days.find((d) => d.day === asked.kvkDay);
+  return { event: eventWords(e, newest, f), day: day ? kvkDayWords(e, day, f) : null };
 }
 
 /**

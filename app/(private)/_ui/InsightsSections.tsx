@@ -4,184 +4,89 @@
 // stands for a set of members opens its names (issue 678), in name order with nothing beside a name. A week row
 // of the pulse or the flow opens that week's days in the chart's place (D158 rule 7 (b), InsightsDays.tsx).
 // The effort card is in InsightsEffort.tsx.
-import type { ReactNode } from "react";
-
-import { Bar } from "@/app/_ui/charts/Bar";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import {
   levelHref,
   type FlowDaysWords,
+  type FlowDayWords,
   type InsightsLevels,
   type PulseDaysWords,
+  type PulseDayWords,
 } from "@/lib/private/insights-days-words";
-import type { BarRow, InsightsWords } from "@/lib/private/insights-words";
+import type { InsightsWords } from "@/lib/private/insights-words";
 import { fill } from "@/lib/words";
 
-import { Days, FlowDays, PulseDays } from "./InsightsDays";
+import { Bars, Card, FLOW_CARD, PULSE_CARD, RowBody, Sub, type LevelNav } from "./InsightsBars";
+import {
+  DayPicks,
+  Days,
+  FlowDay,
+  FlowDays,
+  PulseDay,
+  PulseDays,
+  type DayHrefs,
+} from "./InsightsDays";
 import { InsightsDrillLink } from "./InsightsDrillLink";
-import { Caret, membersHref, Names, SetFold, SetRow, TapHint } from "./InsightsSets";
+import { Caret, membersHref, Names, SetFold, TapHint } from "./InsightsSets";
 import { withNoData } from "./NoData";
 
-/** Where a chart's levels link: the Insights page's address and the levels it shows now. */
-export interface LevelNav {
-  base: string;
-  levels: InsightsLevels;
-}
-
-const PULSE_CARD = "insights-pulse";
-const FLOW_CARD = "insights-flow";
-
-export function Card({
-  id,
-  title,
-  based,
-  children,
-}: {
-  id: string;
-  title: string;
-  based: string[];
-  children?: ReactNode;
-}) {
-  return (
-    <section aria-labelledby={id} className="drawn-card mt-4 px-4 py-3 first:mt-0">
-      <h2 id={id} className="font-subhead text-display-sm">
-        {title}
-      </h2>
-      {based.map((line) => (
-        <p key={line} className="text-body-sm text-ink/80">
-          {line}
-        </p>
-      ))}
-      {children}
-    </section>
-  );
-}
-
-/** A bar row's label and number on one line, the bar under them; a set's count is plum with its ▾. */
-function RowBody(props: {
-  r: BarRow;
-  noData: string;
-  tone: "plum" | "ink";
-  /** False where the fold's ▾ sits elsewhere (a flow week's, by its label). */
-  caret?: boolean;
-}) {
-  const { r, noData, tone, caret = true } = props;
-  return (
-    <>
-      <span className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
-        <span className="min-w-0">
-          {r.label}
-          {r.drill && (
-            <span aria-hidden="true" className="ml-1 text-plum">
-              ›
-            </span>
-          )}
-        </span>
-        <span className="whitespace-nowrap tabular-nums">
-          <span className={r.set ? "font-semibold text-plum" : undefined}>
-            {withNoData(r.value, noData)}
-          </span>
-          {r.set && caret && <Caret />}
-          {r.note && <span className="ml-2 font-normal text-ink/70">{r.note}</span>}
-        </span>
-      </span>
-      <Bar
-        axis="row"
-        share={r.share}
-        tone={tone === "plum" ? "bg-plum/60" : "bg-ink/45"}
-        className="mt-1 h-2 w-full bg-ink/10"
-      />
-    </>
-  );
-}
-
-/**
- * Horizontal bars: label and number on one line, the bar under them, a muted note after the number. A row
- * with no share draws no bar (D158). A row with a set opens its names under it (`slug` makes their links).
- */
-export function Bars({
-  rows,
-  noData,
-  tone = "plum",
-  sets,
-  drill,
-}: {
-  rows: BarRow[];
-  noData: string;
-  tone?: "plum" | "ink";
-  /** Where a row's set opens its names: the workspace's address and its words. */
-  sets?: { slug: string; t: WorkspaceDictionary };
-  /** Where a row's week opens its days (D158 rule 7 (b)): the week's pulse. */
-  drill?: LevelNav;
-}) {
-  return (
-    <ul className="mt-1">
-      {rows.map((r, i) => (
-        <li
-          key={i}
-          className={`border-t border-rule ${(r.set && sets) || (r.drill && drill) ? "" : "py-1.5"} ${r.current ? "font-semibold" : ""}`}
-        >
-          {r.drill && drill ? (
-            <InsightsDrillLink
-              href={levelHref(drill.base, drill.levels, { pulse: r.drill.key }, PULSE_CARD)}
-              kind="pulse_days"
-              count={r.drill.count}
-              className="tint-button block min-h-11 py-1.5"
-            >
-              <RowBody r={r} noData={noData} tone={tone} />
-            </InsightsDrillLink>
-          ) : r.set && sets ? (
-            <SetRow
-              set={r.set}
-              slug={sets.slug}
-              t={sets.t}
-              label={r.set.title}
-              summary={<RowBody r={r} noData={noData} tone={tone} />}
-            />
-          ) : (
-            <RowBody r={r} noData={noData} tone={tone} />
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-export function Sub({ children }: { children: ReactNode }) {
-  return <h3 className="mt-3 text-body-sm font-semibold">{children}</h3>;
+/** A card's level links: the card itself, a week of it (null: this week) and a day of it. */
+function dayHrefs(nav: LevelNav, card: string, week: "pulse" | "flow"): DayHrefs {
+  const day = week === "pulse" ? "pulseDay" : "flowDay";
+  const at = (change: Partial<InsightsLevels>) => levelHref(nav.base, nav.levels, change, card);
+  return {
+    top: at({ [week]: null, [day]: null }),
+    week: (monday) => at({ [week]: monday, [day]: null }),
+    day: (d) => at({ [day]: d }),
+  };
 }
 
 export function PulseCard({
   pulse,
   level,
+  day,
   nav,
   t,
   noData,
+  slug,
 }: {
   pulse: NonNullable<InsightsWords["pulse"]>;
   /** The week the address opens to its days, in the card's place; null for the card itself. */
   level: PulseDaysWords | null;
+  /** The day the address opens to who reached each measure; it comes before the week. */
+  day: PulseDayWords | null;
   nav: LevelNav;
   t: WorkspaceDictionary;
   noData: string;
+  slug: string;
 }) {
-  const top = levelHref(nav.base, nav.levels, { pulse: null }, PULSE_CARD);
+  const hrefs = dayHrefs(nav, PULSE_CARD, "pulse");
   return (
-    <Card id={PULSE_CARD} title={t["insights.pulse.head"]} based={level ? [] : pulse.based}>
-      {level ? (
-        <PulseDays level={level} top={top} t={t} noData={noData} />
+    <Card id={PULSE_CARD} title={t["insights.pulse.head"]} based={level || day ? [] : pulse.based}>
+      {day ? (
+        <PulseDay level={day} {...{ hrefs, t, noData, slug }} />
+      ) : level ? (
+        <PulseDays level={level} hrefs={hrefs} t={t} noData={noData} />
       ) : (
-        pulse.metrics.map((m) => (
-          <div key={m.label} className="mt-3 border-t-2 border-rule pt-2">
-            <h3 className="font-semibold">{m.label}</h3>
-            <p className="text-body-sm tabular-nums">{withNoData(m.latest, noData)}</p>
-            <Days days={m.days} noData={noData} />
-            <p className="mt-2 text-[12px] font-semibold text-ink/70 uppercase">
-              {t["insights.pulse.weeks"]}
-            </p>
-            <Bars rows={m.weeks} noData={noData} drill={nav} />
-          </div>
-        ))
+        <>
+          <DayPicks
+            label={t["drill.pulse.pick"]}
+            picks={pulse.picks}
+            href={hrefs.day}
+            kind="pulse_day"
+          />
+          {pulse.metrics.map((m) => (
+            <div key={m.label} className="mt-3 border-t-2 border-rule pt-2">
+              <h3 className="font-semibold">{m.label}</h3>
+              <p className="text-body-sm tabular-nums">{withNoData(m.latest, noData)}</p>
+              <Days days={m.days} noData={noData} />
+              <p className="mt-2 text-[12px] font-semibold text-ink/70 uppercase">
+                {t["insights.pulse.weeks"]}
+              </p>
+              <Bars rows={m.weeks} noData={noData} drill={nav} />
+            </div>
+          ))}
+        </>
       )}
     </Card>
   );
@@ -289,33 +194,17 @@ function Weeks(props: {
   );
 }
 
-export function FlowCard({
-  flow,
-  level,
-  nav,
-  t,
-  noData,
-  slug,
-}: {
+/** The window's came-from and went-to bars, under the weeks or a week's days. */
+function Places(props: {
   flow: NonNullable<InsightsWords["flow"]>;
-  /** The week the address opens to its days, in the weeks' place; null for the weeks. */
-  level: FlowDaysWords | null;
-  nav: LevelNav;
   t: WorkspaceDictionary;
   noData: string;
-  slug: string;
 }) {
+  const { flow, t, noData } = props;
   const joinedAny = flow.came.length > 0;
   const leftAny = flow.went.length > 0;
-  const top = levelHref(nav.base, nav.levels, { flow: null }, FLOW_CARD);
   return (
-    <Card id={FLOW_CARD} title={t["insights.flow.head"]} based={[flow.based]}>
-      <Sub>{level ? t["drill.flow.days"] : t["insights.flow.weeks"]}</Sub>
-      {level ? (
-        <FlowDays level={level} top={top} t={t} noData={noData} />
-      ) : (
-        <Weeks {...{ flow, nav, t, noData, slug }} />
-      )}
+    <>
       <Sub>{t["insights.flow.came"]}</Sub>
       {joinedAny ? (
         <Bars rows={flow.came} noData={noData} />
@@ -330,6 +219,48 @@ export function FlowCard({
       )}
       {(joinedAny || leftAny) && (
         <p className="mt-1 text-body-sm text-ink/80">{t["insights.flow.places"]}</p>
+      )}
+    </>
+  );
+}
+
+export function FlowCard({
+  flow,
+  level,
+  day,
+  nav,
+  t,
+  noData,
+  slug,
+}: {
+  flow: NonNullable<InsightsWords["flow"]>;
+  /** The week the address opens to its days, in the weeks' place; null for the weeks. */
+  level: FlowDaysWords | null;
+  /**
+   * The day the address opens to its came-from and went-to bars, in the weeks' place; the window's own
+   * places then give way to it, so the card never shows two "Where newcomers came from".
+   */
+  day: FlowDayWords | null;
+  nav: LevelNav;
+  t: WorkspaceDictionary;
+  noData: string;
+  slug: string;
+}) {
+  const hrefs = dayHrefs(nav, FLOW_CARD, "flow");
+  return (
+    <Card id={FLOW_CARD} title={t["insights.flow.head"]} based={[flow.based]}>
+      {day ? (
+        <FlowDay level={day} {...{ hrefs, t, noData }} />
+      ) : (
+        <>
+          <Sub>{level ? t["drill.flow.days"] : t["insights.flow.weeks"]}</Sub>
+          {level ? (
+            <FlowDays level={level} hrefs={hrefs} t={t} noData={noData} />
+          ) : (
+            <Weeks {...{ flow, nav, t, noData, slug }} />
+          )}
+          <Places {...{ flow, t, noData }} />
+        </>
       )}
       <Sub>{t["insights.tenure.head"]}</Sub>
       <p className="text-body-sm text-ink/80">{t["insights.tenure.based"]}</p>

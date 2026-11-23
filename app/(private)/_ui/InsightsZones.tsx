@@ -14,8 +14,8 @@ import { NOT_RECORDED, usualAt } from "@/lib/private/insights-zones";
 import { zonesWordsAt, type ZoneRow } from "@/lib/private/insights-zones-words";
 import { queryString } from "@/lib/private/members-list";
 
+import { Card } from "./InsightsBars";
 import { Fold } from "./InsightsMore";
-import { Card } from "./InsightsSections";
 import { Caret, SetRow, TapHint } from "./InsightsSets";
 
 const LINK =

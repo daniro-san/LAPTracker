@@ -1,14 +1,64 @@
 // A week's days on Insights (D158 rule 7 (b), chart to chart): the seven day columns of the week's pulse, and
 // the next level a week row opens in its chart's place, under its path and a 44 px Back step, with the line
-// that says its days add up to the week. Server-rendered, every number in HTML (D68); the level is in the
-// address (`?pulse=` / `?flow=`), so a link reopens it.
+// that says its days add up to the week; then a day's level: the pulse's who lists (pattern (c), names in
+// place) and the flow's came-from and went-to bars (counts only, D75). Server-rendered, every number in HTML
+// (D68); the level is in the address (`?pulse=`, `?pulseDay=`, `?flow=`, `?flowDay=`), so a link reopens it.
 import { Bar } from "@/app/_ui/charts/Bar";
 import { DrillPath } from "@/app/_ui/charts/DrillPath";
+import type { InsightsLevel } from "@/lib/analytics/events";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
-import type { FlowDaysWords, PulseDaysWords } from "@/lib/private/insights-days-words";
-import type { BarRow, DayBar } from "@/lib/private/insights-words";
+import type {
+  FlowDaysWords,
+  FlowDayWords,
+  PulseDaysWords,
+  PulseDayWords,
+} from "@/lib/private/insights-days-words";
+import type { BarRow, DayBar, DayPick } from "@/lib/private/insights-words";
 
+import { Bars, Sub } from "./InsightsBars";
+import { InsightsDrillLink } from "./InsightsDrillLink";
+import { TapHint } from "./InsightsSets";
 import { withNoData } from "./NoData";
+
+/** Where a day level links: the card itself, the week it sits in, and a day of it. */
+export interface DayHrefs {
+  top: string;
+  week: (monday: string | null) => string;
+  day: (day: string) => string;
+}
+
+/**
+ * The days under a 7-column grid as a row of 44 px links, each opening that day's level: a column is about
+ * 40 px wide at 360 px, narrower than a tap target. The weekday shows; the full date is the link's name.
+ */
+export function DayPicks(props: {
+  label: string;
+  picks: DayPick[];
+  href: (day: string) => string;
+  kind: InsightsLevel;
+}) {
+  if (props.picks.length === 0) return null;
+  return (
+    <div className="mt-2">
+      <p className="text-body-sm text-ink/80">{props.label}</p>
+      <ul className="mt-1 flex flex-wrap gap-1">
+        {props.picks.map((p) => (
+          <li key={p.key}>
+            <InsightsDrillLink
+              href={props.href(p.key)}
+              kind={props.kind}
+              count={p.count}
+              className="tint-button inline-flex min-h-11 min-w-11 items-center justify-center border border-plum/40 px-2 text-body-sm font-semibold text-plum"
+            >
+              <span aria-hidden="true">{p.weekday}</span>
+              <span className="sr-only">{p.date}</span>
+            </InsightsDrillLink>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 /** A week's seven days, one column each: the bar, a hairline, the number under it. */
 export function Days({ days, noData }: { days: DayBar[]; noData: string }) {
@@ -51,21 +101,26 @@ export function Days({ days, noData }: { days: DayBar[]; noData: string }) {
 /** A pulse week's days, each metric as its seven columns and the line its days add up to. */
 export function PulseDays(props: {
   level: PulseDaysWords;
-  /** The card's own address: the weeks again. */
-  top: string;
+  hrefs: DayHrefs;
   t: WorkspaceDictionary;
   noData: string;
 }) {
-  const { level, top, t, noData } = props;
+  const { level, hrefs, t, noData } = props;
   return (
     <>
       <DrillPath
         name={t["drill.path"]}
-        back={{ href: top, label: t["drill.back"] }}
-        steps={[{ label: t["insights.pulse.head"], href: top }, { label: level.label }]}
+        back={{ href: hrefs.top, label: t["drill.back"] }}
+        steps={[{ label: t["insights.pulse.head"], href: hrefs.top }, { label: level.label }]}
         sticky
       />
       {level.noRead && <p className="text-body-sm text-ink/80">{level.noRead}</p>}
+      <DayPicks
+        label={t["drill.pulse.pick"]}
+        picks={level.picks}
+        href={hrefs.day}
+        kind="pulse_day"
+      />
       {level.metrics.map((m) => (
         <div key={m.label} className="mt-3 border-t-2 border-rule pt-2">
           <h3 className="font-semibold">{m.label}</h3>
@@ -91,29 +146,57 @@ function Side({ r, noData, tone }: { r: BarRow; noData: string; tone: string }) 
 }
 
 /** A flow week's days, joined and left side by side, then the line its days add up to. */
+/** A flow day's label and its joined and left side by side. */
+function FlowDayRow({ d, noData }: { d: FlowDaysWords["days"][number]; noData: string }) {
+  return (
+    <>
+      <span className="block text-body-sm font-semibold">
+        {d.label}
+        {d.drill && (
+          <span aria-hidden="true" className="ml-1 text-plum">
+            ›
+          </span>
+        )}
+      </span>
+      <span className="grid grid-cols-2 gap-x-3">
+        <Side r={d.joined} noData={noData} tone="bg-plum/60" />
+        <Side r={d.left} noData={noData} tone="bg-ink/45" />
+      </span>
+    </>
+  );
+}
+
 export function FlowDays(props: {
   level: FlowDaysWords;
-  top: string;
+  hrefs: DayHrefs;
   t: WorkspaceDictionary;
   noData: string;
 }) {
-  const { level, top, t, noData } = props;
+  const { level, hrefs, t, noData } = props;
   return (
     <>
       <DrillPath
         name={t["drill.path"]}
-        back={{ href: top, label: t["drill.back"] }}
-        steps={[{ label: t["insights.flow.head"], href: top }, { label: level.label }]}
+        back={{ href: hrefs.top, label: t["drill.back"] }}
+        steps={[{ label: t["insights.flow.head"], href: hrefs.top }, { label: level.label }]}
         sticky
       />
       <ul className="mt-1">
         {level.days.map((d) => (
-          <li key={d.label} className="border-t border-rule py-1.5">
-            <span className="block text-body-sm font-semibold">{d.label}</span>
-            <span className="grid grid-cols-2 gap-x-3">
-              <Side r={d.joined} noData={noData} tone="bg-plum/60" />
-              <Side r={d.left} noData={noData} tone="bg-ink/45" />
-            </span>
+          <li key={d.label} className={`border-t border-rule ${d.drill ? "" : "py-1.5"}`}>
+            {/* A day with a join or a leave opens where they came from and went (D158 rule 7 (b)). */}
+            {d.drill ? (
+              <InsightsDrillLink
+                href={hrefs.day(d.drill.key)}
+                kind="flow_day"
+                count={d.drill.count}
+                className="tint-button block min-h-11 py-1.5"
+              >
+                <FlowDayRow d={d} noData={noData} />
+              </InsightsDrillLink>
+            ) : (
+              <FlowDayRow d={d} noData={noData} />
+            )}
           </li>
         ))}
       </ul>
@@ -125,6 +208,103 @@ export function FlowDays(props: {
           {n}
         </p>
       ))}
+    </>
+  );
+}
+
+/** A day level's path: the chart, the week the day sits in, the day; Back goes to the week. */
+function DayPath(props: {
+  head: string;
+  week: string;
+  day: string;
+  hrefs: DayHrefs;
+  monday: string | null;
+  t: WorkspaceDictionary;
+}) {
+  const week = props.hrefs.week(props.monday);
+  return (
+    <DrillPath
+      name={props.t["drill.path"]}
+      back={{ href: week, label: props.week }}
+      steps={[
+        { label: props.head, href: props.hrefs.top },
+        { label: props.week, href: week },
+        { label: props.day },
+      ]}
+      sticky
+    />
+  );
+}
+
+/**
+ * A pulse day: each measure's count of the members who reached it, its names in place under a tap (pattern
+ * (c), in name order, only those who did it), then the day's middle donation and the lines it rests on.
+ */
+export function PulseDay(props: {
+  level: PulseDayWords;
+  hrefs: DayHrefs;
+  t: WorkspaceDictionary;
+  noData: string;
+  slug: string;
+}) {
+  const { level, hrefs, t, noData, slug } = props;
+  return (
+    <>
+      <DayPath
+        head={t["insights.pulse.head"]}
+        week={level.week.label}
+        monday={level.week.monday}
+        day={level.label}
+        {...{ hrefs, t }}
+      />
+      <TapHint t={t} />
+      <Bars rows={level.rows} noData={noData} sets={{ slug, t }} />
+      <p className="mt-2 border-t border-rule pt-2 text-body-sm tabular-nums">
+        {withNoData(level.middle, noData)}
+      </p>
+      <p className="mt-2 border-t border-rule pt-2 text-body-sm font-medium">{level.sum}</p>
+      {level.notes.map((n) => (
+        <p key={n} className="text-body-sm text-ink/80">
+          {n}
+        </p>
+      ))}
+    </>
+  );
+}
+
+/** A flow day: where its joiners came from and its leavers went, against the members, counts only (D75). */
+export function FlowDay(props: {
+  level: FlowDayWords;
+  hrefs: DayHrefs;
+  t: WorkspaceDictionary;
+  noData: string;
+}) {
+  const { level, hrefs, t, noData } = props;
+  return (
+    <>
+      <DayPath
+        head={t["insights.flow.head"]}
+        week={level.week.label}
+        monday={level.week.monday}
+        day={level.label}
+        {...{ hrefs, t }}
+      />
+      <Sub>{t["insights.flow.came"]}</Sub>
+      {level.joined > 0 ? (
+        <Bars rows={level.came} noData={noData} />
+      ) : (
+        <p className="text-body-sm">{t["drill.flowDay.nobodyJoined"]}</p>
+      )}
+      <Sub>{t["insights.flow.went"]}</Sub>
+      {level.left > 0 ? (
+        <Bars rows={level.went} noData={noData} tone="ink" />
+      ) : (
+        <p className="text-body-sm">{t["drill.flowDay.nobodyLeft"]}</p>
+      )}
+      <p className="mt-2 border-t border-rule pt-2 text-body-sm font-medium tabular-nums">
+        {level.sum}
+      </p>
+      <p className="text-body-sm text-ink/80">{t["insights.flow.places"]}</p>
     </>
   );
 }

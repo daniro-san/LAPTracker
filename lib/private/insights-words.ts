@@ -51,6 +51,23 @@ export interface DayBar {
   of?: string;
 }
 
+/**
+ * A day a chart opens to its next level (D158 rule 7): its weekday, the date said in full for screen
+ * readers, its day (the address's key) and what it counts, for the drilldown's bucket. A row of 44 px
+ * links under a 7-column grid, whose columns are narrower than a tap target at 360 px.
+ */
+export interface DayPick {
+  weekday: string;
+  date: string;
+  key: string;
+  count: number;
+}
+
+export const dayPick = (day: string, count: number, { language }: Formats): DayPick => {
+  const dates = calendarDates(language);
+  return { weekday: dates.weekday(day), date: dates.short(day), key: day, count };
+};
+
 export interface PulseMetricWords {
   label: string;
   latest: string;
@@ -59,7 +76,8 @@ export interface PulseMetricWords {
 }
 
 export interface InsightsWords {
-  pulse: { based: string[]; metrics: PulseMetricWords[] } | null;
+  /** `picks`: this week's days with a daily update, each opening who reached each measure that day. */
+  pulse: { based: string[]; metrics: PulseMetricWords[]; picks: DayPick[] } | null;
   effort: {
     based: string[];
     /** "Left out: 3 new, 4 on a break": each kind with members, and who (#678). */
@@ -114,7 +132,7 @@ export function pulseValue(
 export const scaled = (x: number | null, k: Metric, top: number) =>
   x === null ? null : k === "tech" ? (top > 0 ? x / top : 0) : x;
 
-function latestLine(p: Pulse, k: Metric, f: Formats): string {
+export function latestLine(p: Pulse, k: Metric, f: Formats): string {
   const { t } = f;
   if (k === "tech") {
     const [m, d] = [p.tech as Median | null, p.donated];
@@ -199,7 +217,10 @@ function pulseWords(v: NonNullable<InsightsView["pulse"]>, f: Formats): Insights
       })),
     };
   });
-  return { based, metrics };
+  const picks = v.days.flatMap((d) =>
+    d.pulse && d.pulse !== "later" ? [dayPick(d.day, d.pulse.coins?.of ?? 0, f)] : [],
+  );
+  return { based, metrics, picks };
 }
 
 /** "[TAG] Name", each part when known; "Not known" for id 0. */
@@ -216,7 +237,7 @@ export const rosterSize = (tenure: NonNullable<InsightsView["flow"]>["tenure"]) 
   tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
 
 /** Where newcomers came from or leavers went, each drawn against the members, not the busiest place. */
-function placeRows(
+export function placeRows(
   list: Place[],
   members: number,
   labels: Map<number, AllianceLabel>,

@@ -286,7 +286,7 @@ describe("the Insights read (issue 489)", () => {
     await roster("2026-11-12", FERN, [201, 203]);
     await roster("2026-11-13", FERN, [101]);
 
-    const view = await insightsView(db, access, NOW, ZONE, "2026-11-09");
+    const view = await insightsView(db, access, NOW, ZONE, { pulseWeek: "2026-11-09" });
 
     const week = view.flow?.weeks.find((w) => w.monday === "2026-11-09");
     if (!week) throw new Error("no flow week of Nov 9");
@@ -316,8 +316,12 @@ describe("the Insights read (issue 489)", () => {
     for (const k of ["quests", "coins", "donated"] as const)
       expect(pooled(read, k)).toEqual(pulseWeek?.[k]);
     // This week's days are already on the card; a week that is not the pulse's opens nothing.
-    expect((await insightsView(db, access, NOW, ZONE, "2026-11-16")).pulseWeek).toBeNull();
-    expect((await insightsView(db, access, NOW, ZONE, "2026-11-11")).pulseWeek).toBeNull();
+    expect(
+      (await insightsView(db, access, NOW, ZONE, { pulseWeek: "2026-11-16" })).pulseWeek,
+    ).toBeNull();
+    expect(
+      (await insightsView(db, access, NOW, ZONE, { pulseWeek: "2026-11-11" })).pulseWeek,
+    ).toBeNull();
   });
 
   it("shows a flow week none of whose days can show a change as “—”, and dates the card from one daily update (D75)", async () => {

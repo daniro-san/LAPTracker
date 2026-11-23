@@ -31,7 +31,9 @@ import {
   movesOf,
   newcomersOf,
   pulseDays,
+  pulseOf,
   pulseView,
+  reachedOn,
   PULSE_WEEKS,
   quietOf,
   tenureOf,
@@ -40,8 +42,12 @@ import {
   type Effort,
   type Elsewhere,
   type FlowDay,
+  type Move,
   type Place,
+  type Pulse,
+  type PulseMeasure,
   type PulseView,
+  type Reached,
 } from "./insights-rules";
 import { shieldFridays, shieldWeeksOf, shieldWindows, type ShieldWeek } from "./insights-shield";
 import { squadsCoverageOf, type SquadsCoverage } from "./insights-squads";
@@ -63,6 +69,11 @@ export interface InsightsView {
    * has that week with a read; null otherwise. This week's days are `pulse.days`.
    */
   pulseWeek: { monday: string; days: PulseView["days"] } | null;
+  /**
+   * A day of the pulse when the address asks for it (`?pulseDay=`) and the pulse's weeks have its read: who
+   * reached each measure that day (D158 rule 7 (c)) and the day's pulse, the column it opens from.
+   */
+  pulseDay: { day: string; reached: Record<PulseMeasure, Reached>; pulse: Pulse } | null;
   effort: {
     /** The reads averaged over: the first and last day, and how many. */
     from: string;
@@ -85,6 +96,11 @@ export interface InsightsView {
     weeks: { monday: string; joined: number[]; left: number[]; days: FlowDay[] }[];
     cameFrom: Place[];
     wentTo: Place[];
+    /**
+     * A flow day when the address asks for it (`?flowDay=`) and it holds a join or a leave: where that day's
+     * joiners came from and its leavers went, from the same sightings as the window's (D158 rule 7 (b)).
+     */
+    day: { day: string; joined: number; left: number; cameFrom: Place[]; wentTo: Place[] } | null;
     /** Members first seen under 14, 30, 90 days ago, more, and since our first read (its day). */
     tenure: ReturnType<typeof tenureOf>;
     firstRead: string;
@@ -194,6 +210,7 @@ async function flowPart(
   firstSeen: Map<number, string>,
   oldest: string,
   zone: string,
+  asked: string | null | undefined,
 ) {
   const newest = reads.at(-1) as Reads[number];
   const first = reads.findIndex((r, i) => i > 0 && r.day >= (weeks[0] ?? ""));
@@ -214,6 +231,8 @@ async function flowPart(
   const inWeek = (list: { uid: number; day: string }[], monday: string) =>
     list.filter((m) => m.day >= monday && m.day < addDays(monday, 7)).map((m) => m.uid);
   const readDays = new Set(reads.map((r) => r.day));
+  const on = (list: Move[]) => list.filter((m) => m.day === asked && asked >= from);
+  const [dayJoined, dayLeft] = [on(moves.joined), on(moves.left)];
   const flow: InsightsView["flow"] = {
     from,
     since,
@@ -226,6 +245,16 @@ async function flowPart(
     })),
     cameFrom: came,
     wentTo: went,
+    day:
+      asked && dayJoined.length + dayLeft.length > 0
+        ? {
+            day: asked,
+            joined: dayJoined.length,
+            left: dayLeft.length,
+            cameFrom: cameFrom(dayJoined, seen, access.unionId),
+            wentTo: wentTo(dayLeft, seen, access.unionId),
+          }
+        : null,
     tenure: tenureOf(
       newest.members.map((m) => m.uid),
       firstSeen,
@@ -255,6 +284,7 @@ const noReadYet = (): InsightsView => ({
   newest: null,
   pulse: null,
   pulseWeek: null,
+  pulseDay: null,
   effort: null,
   flow: null,
   kvk: { events: [], waiting: null, readsFrom: null },
@@ -268,21 +298,36 @@ const noReadYet = (): InsightsView => ({
 });
 
 /** The earlier pulse week `monday` names, day by day, when the pulse has it with a read. */
-function pulseWeekOf(reads: Reads, pulse: PulseView | null, monday: string | null) {
+function pulseWeekOf(reads: Reads, pulse: PulseView | null, monday?: string | null) {
   const week = pulse?.weeks.slice(0, -1).find((w) => w.monday === monday && w.reads > 0);
   return week ? { monday: week.monday, days: pulseDays(reads, week.monday) } : null;
 }
 
+/** A day of the pulse's weeks with a read, who reached each measure and its pulse; null otherwise. */
+function pulseDayOf(reads: Reads, pulse: PulseView | null, day?: string | null) {
+  const read = reads.find((r) => r.day === day && r.day >= (pulse?.weeks[0]?.monday ?? "~"));
+  return read
+    ? { day: read.day, reached: reachedOn(read, reads), pulse: pulseOf([read], reads) }
+    : null;
+}
+
+/** The levels the address opens a chart to (D158 rule 7): a pulse week's Monday, a pulse day, a flow day. */
+export interface AskedLevels {
+  pulseWeek?: string | null;
+  pulseDay?: string | null;
+  flowDay?: string | null;
+}
+
 /**
  * The Insights page of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ).
- * `pulseWeek` is the Monday of the pulse week the address opens to its days (`?pulse=`), if any.
+ * `asked`: the levels the address opens (`?pulse=`, `?pulseDay=`, `?flowDay=`), if any.
  */
 export async function insightsView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
   zone: string,
-  pulseWeek: string | null = null,
+  asked: AskedLevels = {},
 ): Promise<InsightsView> {
   const [reads, firstSeen, facts] = await Promise.all([
     endOfDayReads(db, access.unionId, READS),
@@ -303,7 +348,7 @@ export async function insightsView(
     Date.parse(`${addDays(reads[0]?.day ?? newest.day, KVK_READ_FROM)}T00:00:00Z`),
   );
   const [{ flow, labels, moves }, events, sightings, passes] = await Promise.all([
-    flowPart(db, access, reads, weeks, firstSeen, oldest, zone),
+    flowPart(db, access, reads, weeks, firstSeen, oldest, zone, asked.flowDay),
     scheduledEventMight(db, access.unionId, since),
     squadsOn ? latestSquadSightings(db, access.unionId) : [],
     fridays ? shieldPassCounts(db, access.unionId, shieldWindows(fridays, zone)) : [],
@@ -324,7 +369,8 @@ export async function insightsView(
   return {
     newest: newest.day,
     pulse,
-    pulseWeek: pulseWeekOf(reads, pulse, pulseWeek),
+    pulseWeek: pulseWeekOf(reads, pulse, asked.pulseWeek),
+    pulseDay: pulseDayOf(reads, pulse, asked.pulseDay),
     effort: effortPart(reads, firstSeen, oldest, away),
     flow,
     kvk,

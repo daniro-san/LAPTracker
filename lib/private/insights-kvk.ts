@@ -33,6 +33,20 @@ export interface KvkMember {
   back: number;
 }
 
+/**
+ * One recovery day: the counted members that day's read lists with a might (`members`), their might at the
+ * Start and End and on that day, and the share of their loss back (null: they lost nothing). A day's
+ * numbers (D158 rule 7 (b)) and its column are the same figures.
+ */
+export interface KvkDay {
+  day: string;
+  members: number;
+  before: number;
+  after: number;
+  then: number;
+  share: number | null;
+}
+
 export interface KvkEvent {
   at: Date;
   /** When the End read started: a follow-up record from then on was written after the KvK (#585 S5). */
@@ -53,8 +67,8 @@ export interface KvkEvent {
   before: number;
   after: number;
   now: number;
-  /** Each read from the day after, for a week until the next event: the share of the loss back (null: nothing lost). */
-  days: { day: string; share: number | null }[];
+  /** Each read from the day after, for a week until the next event: the share of the loss back. */
+  days: KvkDay[];
   /** The newest event only: every counted member in name order, and who might want help. */
   people: KvkMember[];
   help: { uid: number; name: string }[];
@@ -94,13 +108,18 @@ function eventOf(
   });
   if (counted.length === 0) return null;
   const inCount = new Set(counted.map((m) => m.uid));
-  const days = later.map((r) => {
+  const days = later.map((r): KvkDay => {
     const power = new Map(r.members.map((m) => [m.uid, m.power]));
     const here = counted.filter((m) => typeof power.get(m.uid) === "number");
     const then = sum(here.map((m) => power.get(m.uid) as number));
+    const [before, after] = [sum(here.map((m) => m.before)), sum(here.map((m) => m.after))];
     return {
       day: r.day,
-      share: recovered(sum(here.map((m) => m.before)), sum(here.map((m) => m.after)), then),
+      members: here.length,
+      before,
+      after,
+      then,
+      share: recovered(before, after, then),
     };
   });
   const people = newest.event
