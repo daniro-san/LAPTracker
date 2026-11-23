@@ -341,15 +341,15 @@ export async function membersView(
   // D75: thanks are a comparison, so members on a break are left out of them.
   const counted = members.filter((m) => !onBreak(m));
   // The week the thanks cover (D114): this game week, or last week on a Monday, so reads after it are left out.
-  const thanksEnd = gameWeek(thanksWeek(today))[6] as string;
-  const thanksReads = reads.filter((r) => r.day <= thanksEnd);
+  const thanksDays = gameWeek(thanksWeek(today));
+  const thanksReads = reads.filter((r) => r.day <= (thanksDays[6] as string));
   return {
     readAt: newest.at,
     early: false,
     week,
     members,
     thanks: {
-      donors: topOf(counted, (m) => m.weekTotal),
+      donors: topOf(counted, (m) => weekTotal(weekDonations(thanksReads, thanksDays, m.uid))),
       activity: topOf(counted, (m) => weekQuestPoints(thanksReads, m.uid)),
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
     },
