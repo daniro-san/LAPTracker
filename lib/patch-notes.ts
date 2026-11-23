@@ -207,6 +207,16 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.69.0",
+    date: "2026-11-23",
+    title: "One more level: a day",
+    changes: [
+      'Insights: a membership flow day opens where its newcomers came from and where its leavers went (counts only); a pulse day shows "n of N members" for each measure, and a tap opens the names of who did it (for officers, no ranking); a KvK recovery day shows might at Start, at End and that day for the members it counts.',
+      'Flow weeks with nothing to compare show "—", never 0, and each start date says which start it is.',
+    ],
+    prs: [755],
+  },
+  {
     version: "v5.68.0",
     date: "2026-11-23",
     title: "Tap a chart to open the next one",
