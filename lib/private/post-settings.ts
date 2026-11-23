@@ -79,6 +79,16 @@ export function sendBy(cfg: ScheduleConfig, day: string, from: string): string {
 /** A day on the given weekday (0 = Monday), any week: the windows are the same every week. */
 const sampleDay = (weekday: number) => addDays("2026-11-23", weekday);
 
+/**
+ * The end of a post's window on the card. A post due from the daily read (`read`) may go until 00:00 ST:
+ * the read's automatic retry can come at any tick of its window before midnight (D72), and the period ends
+ * then. Any other post: `sendBy`.
+ */
+const windowEnd = (post: CatalogPost, cfg: ScheduleConfig, weekday: number | null) =>
+  POST_CATALOG[post].from === "read"
+    ? "00:00"
+    : sendBy(cfg, sampleDay(weekday ?? 0), fromOf(post, cfg));
+
 /** The card's rows: the catalog posts the owner allows, as saved (off by default); null when none is. */
 export async function postsView(
   db: Db,
@@ -118,7 +128,7 @@ export async function postsView(
       channels: entry.channels.map((c) => ({ channel: c, name: nameOf(c) })),
       day: dayName(weekday),
       from,
-      to: sendBy(cfg, sampleDay(weekday ?? 0), from),
+      to: windowEnd(post, cfg, weekday),
     };
   });
 }

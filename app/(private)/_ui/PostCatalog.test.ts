@@ -102,6 +102,29 @@ describe("the Posts card in Alliance settings (D159)", () => {
     expect(group).not.toContain('<option value="leaders"');
   });
 
+  it("shows the welcome as a daily post: every day after the daily update, until 00:00 ST", () => {
+    const welcome: PostView = {
+      ...week,
+      post: "welcome",
+      defaultTitles: {
+        en: "Welcome to our new members",
+        "pt-BR": "Boas-vindas aos novos membros",
+        fr: "Bienvenue aux nouveaux membres",
+      },
+      channels: [{ channel: "members", name: "general" }],
+      day: null,
+      from: "23:30",
+      to: "00:00",
+    };
+    const html = renderToStaticMarkup(
+      createElement(PostCatalog, { slug: "nse", rows: [welcome], t, language: "en" }),
+    );
+    expect(html).toContain(">Welcome new members</h3>");
+    expect(html).toContain("Never anyone who left.");
+    expect(html).toContain("Every day, after the daily update.");
+    expect(preview(html)).toBe("Every day, between 23:30 and 00:00 ST, in #general.");
+  });
+
   it("counts the title as the server does and marks one over 80 characters", () => {
     expect(render({ title: `  ${"x".repeat(80)}\u200B ` })).toContain("80 of 80 characters");
     const html = render({ title: "x".repeat(81) });

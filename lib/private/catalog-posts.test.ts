@@ -10,7 +10,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { testContext, TEST_ENV } from "../app-context.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { fromOf, POST_CATALOG } from "../post-catalog";
+import { POST_CATALOG } from "../post-catalog";
 import { liveCallout } from "../repo/post-touches";
 import { setSwitch } from "../repo/workspace-features";
 import { findWorkspaceBySlug, saveWorkspace } from "../repo/workspaces";
@@ -396,8 +396,6 @@ describe("Shield-up reminder (D159, post 2)", () => {
     const { env } = testContext(db, ENV).ctx;
     expect(sendBy(env, FRIDAY, POST_CATALOG.shield_up.from)).toBe("20:45");
     expect(sendBy(env, MONDAY, POST_CATALOG.week.from)).toBe("01:15");
-    // Post 3: the end-of-day read's own tick, 23:30 ST, so 23:45.
-    expect(sendBy(env, MONDAY, fromOf("welcome", env))).toBe("23:45");
   });
 
   it("names no one, counts nothing and pings no one, in the post's language", async () => {

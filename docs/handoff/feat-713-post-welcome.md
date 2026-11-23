@@ -18,7 +18,7 @@ Part of #713 (part D). Size S–M: a catalog entry, a migration that widens two 
   - `BODIES` now take the `Due` row. A body may return `undefined` ("cannot tell yet"), which sends nothing and does not settle the period. `null` still settles it as `skipped`.
   - `PostsDeps.env` gains `DAILY_ROSTER_AT`.
 - `lib/private/post-settings.ts`: `PostView.day` is `null` for a daily post. `from` comes from `fromOf`.
-- `PostCatalog.tsx`: a daily post's next-post line uses `posts.whenDaily` ("Every day, between 23:30 and 23:45 ST, in #channel.").
+- `PostCatalog.tsx`: a daily post's next-post line uses `posts.whenDaily` ("Every day, between 23:30 and 00:00 ST, in #channel."); a post due from the read ends its window at 00:00 ST (review of PR 766).
 - Owner layer: `post_welcome` in D134's Discord group, allowed by default. /admin label "Post: Welcome new members (off until the alliance turns it on)", and `switches.name.post_welcome` in EN, PT-BR and FR.
 - Copy in `lib/private/dictionary.posts.ts` (EN, PT-BR, FR):
   - `posts.welcome.name`, `.what`, `.defaultTitle`, `.one`, `.names`, `.count`, `.day`;
@@ -33,7 +33,7 @@ Part of #713 (part D). Size S–M: a catalog entry, a migration that widens two 
   - `.claude/rules/private.md` and `REVIEW.md` lines for `lib/posts-tick.ts` now say the welcome names new members by public name.
 - Tests:
   - new `lib/private/catalog-posts-welcome.test.ts` (5);
-  - `catalog-posts.test.ts`: the welcome's card bound, 23:45;
+  - review of PR 766: `breakLinks` on a name (`evil.example`), the PT-BR one-name form, `postsView` with no weekday (23:30–00:00), and the card's daily line in `PostCatalog.test.ts`;
   - `app/api/tick/route.test.ts`: the 23:30 ST read tick now schedules two `after` tasks (squads, then posts);
   - `e2e/desk-posts.spec.ts`: the index reads "Posts 1 of 3 on".
 
@@ -49,7 +49,7 @@ Part of #713 (part D). Size S–M: a catalog entry, a migration that widens two 
 ## Deviations
 
 - The task's test list does not include a tick-level test. I did not add a welcome case to `app/api/tick/posts.test.ts`. The existing tick test changed only its `after` count (see Built). The sender tests cover the 23:30 and 23:45 ST ticks directly.
-- The card's bound for the welcome reads 23:30–23:45 ST. When the 23:30 read fails and its retry succeeds at 23:45, the post goes out between 23:45 and 24:00 ST.
+- The card's bound for the welcome first read 23:30–23:45 ST (`sendBy`'s first slot). Review of PR 766: it now reads 23:30–00:00 ST, because the read's retry can send until midnight.
 
 ## Verified
 
@@ -63,6 +63,10 @@ Part of #713 (part D). Size S–M: a catalog entry, a migration that widens two 
   - with `>=` instead of `>` for the limit, the count test fails;
   - without the claim's check, the once tests of all three posts fail.
 - E2E not run. It needs a local Postgres instance and a built server. The only e2e change is the index count string.
+- Review round (PR 766):
+  - findings 1–4 fixed: the tests above, the card's 00:00 ST bound, and the D141 amendment, the `lib/posts-tick.ts` header and the `eslint.config.mjs` zone comment now cover all catalog posts;
+  - suggestion 4 (one `getDailyRead` per tick instead of per workspace) skipped: it is not a one-line move, because each workspace's body is built in its own call;
+  - mutation proofs, each reverted: without `breakLinks` on names, without the one-name form, with the card's end from `sendBy`, and with the weekly line for a daily post, a test fails each time.
 - Persona check on the wording (text only, no screenshot): two officers (EN as a second language; PT-BR, in her 50s) and a D75 reviewer, recorded in the D159 amendment. Adopted: "daily update" in the card copy.
 
 ## Open issues
@@ -76,6 +80,7 @@ Part of #713 (part D). Size S–M: a catalog entry, a migration that widens two 
 
 - Posts 4 and 5 (issue 713 parts F and E). Post 4 can use `freshRosterOfDay` for its joined and left counts.
 - Follow-up from the persona check: a member who joins on a day whose read failed is never welcomed later. Add a catch-up only if officers ask.
+- Follow-up (review suggestion 4): read the day's `daily_reads` row once per tick, not once per workspace with the welcome on.
 - Follow-up: a welcome case in `app/api/tick/posts.test.ts` (`POST /api/tick` at 23:30 ST with seeded rosters).
 
 What was missing from the task prompt? Whether a stale roster (`is_fresh` false) counts as a successful read, and whether a day with a failed read should be settled or left open for the read's retry.

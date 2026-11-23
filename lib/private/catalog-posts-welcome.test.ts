@@ -14,7 +14,9 @@ import { findWorkspaceBySlug, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { postRuns, workspacePosts } from "../schema-discord";
 import { PRIVATE_MARKERS } from "../workspace-data.test-helpers";
+import type { WorkspaceAccess } from "./access";
 import { sendDuePosts, welcomeText } from "./catalog-posts";
+import { postsView } from "./post-settings";
 
 const HOOK = "https://discord.com/api/webhooks/9000/nse-members";
 const ENV = {
@@ -219,6 +221,36 @@ describe("Welcome new members (D159, post 3)", () => {
     const on = sender(TUESDAY_2345);
     await on.send();
     expect(on.posts).toHaveLength(1);
+  });
+
+  it("breaks a web address in a name so it links nothing, and greets one newcomer in the singular", async () => {
+    await readDay(MONDAY, MONDAY_ROSTER);
+    await readDay(TUESDAY, [...MONDAY_ROSTER, [7, "evil.example"]]);
+    await turnWelcomeOn({ language: "pt-BR" });
+    const { send, posts } = sender(TUESDAY_2330);
+    await send();
+    expect(posts[0]?.content).toBe(
+      [
+        "**Boas-vindas aos novos membros**",
+        "",
+        "Boas-vindas, evil\u200b.example! Que bom ter você aqui. Diga oi e pergunte o que precisar.",
+      ].join("\n"),
+    );
+  });
+
+  it("shows on the card as a daily post, with no day name, until 00:00 ST", async () => {
+    const access = {
+      workspaceId: ws,
+      features: { on: new Set(["post_welcome"]) },
+    } as unknown as WorkspaceAccess;
+    const channels = [
+      { channel: "members", state: "set", name: "general", forum: false, savedAt: null },
+    ] as const;
+    const env = testContext(db, ENV).ctx.env;
+    const rows = await postsView(db, access, [...channels], env, "en");
+    expect(rows).toMatchObject([
+      { post: "welcome", day: null, from: "23:30", to: "00:00", channels: [{ name: "general" }] },
+    ]);
   });
 
   it("carries no private field, no other roster value and no ping, in the post's language", async () => {
