@@ -207,6 +207,17 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.66.0",
+    date: "2026-11-23",
+    title: "Honest charts and right daily quest points",
+    changes: [
+      "Daily quest points were wrong everywhere: the game sends a running total for the week (it resets on Monday), and we showed it as one day's points. Each day's points are now worked out from two reads, so Last 7 days, Me, Insights, the alliance's week line, the Members list and the thanks, caravan, garrison and Elixir picks show real daily figures. Quest bars are drawn against 240 a day for now; confirm 230 or 240.",
+      "Charts tell the truth at a glance: zero draws as zero (no small stub), a player's line joins daily reads only (an event's Start and End are dots in its band), KvK recovery has a 100% line, membership flow and time zones are drawn against all members, the rank sparklines are gone (a moved rank says \"was #6 on Nov 9\"), Kill share vs might share is one bar of the gap, and the KvK matchup is a table on a phone.",
+      "Feedback can carry one picture (up to 400 KB). Only you see it on /admin/feedback; it is deleted with the feedback after 180 days.",
+    ],
+    prs: [740, 738, 734],
+  },
+  {
     version: "v5.65.0",
     date: "2026-11-23",
     title: "Raid prep: check by hand only who the maps can't vouch for",
