@@ -16,7 +16,9 @@ export function Days({ days, noData }: { days: DayBar[]; noData: string }) {
     <ol className="mt-2 grid grid-cols-7 gap-0.5 text-center">
       {days.map((d) => (
         <li key={d.weekday} className="min-w-0">
-          {!d.later && <span className="sr-only">{`${d.weekday}: ${d.value}`}</span>}
+          {!d.later && (
+            <span className="sr-only">{`${d.weekday}: ${d.value}${d.of ? ` (${d.of})` : ""}`}</span>
+          )}
           <span aria-hidden="true" className="block text-[12px] leading-4 text-ink/70">
             {d.weekday}
           </span>
@@ -32,6 +34,14 @@ export function Days({ days, noData }: { days: DayBar[]; noData: string }) {
           <span aria-hidden="true" className="block truncate text-[12px] leading-5 tabular-nums">
             {d.later ? "" : withNoData(d.value, noData)}
           </span>
+          {d.of && (
+            <span
+              aria-hidden="true"
+              className="block truncate text-[12px] leading-4 text-ink/70 tabular-nums"
+            >
+              {d.of}
+            </span>
+          )}
         </li>
       ))}
     </ol>

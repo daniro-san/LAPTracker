@@ -77,6 +77,11 @@ export function pulseDaysWords(v: InsightsView, f: Formats): PulseDaysWords | nu
       );
       // Donations are drawn against the highest middle value among the week's days.
       const top = Math.max(0, ...days.map((x) => x?.x ?? 0));
+      // Under each day's share, the count it is of, so the days can be added up by eye.
+      const of = (p: Pulse | null | "later") => {
+        const s = k === "tech" || !p || p === "later" ? null : p[k];
+        return s ? { of: `${s.n}/${s.of}` } : {};
+      };
       return {
         label: f.t[`insights.pulse.${k}`],
         days: level.days.map((d, i) => ({
@@ -84,6 +89,7 @@ export function pulseDaysWords(v: InsightsView, f: Formats): PulseDaysWords | nu
           value: d.pulse === "later" ? "" : (days[i]?.text ?? NONE),
           share: scaled(days[i]?.x ?? null, k, top),
           later: d.pulse === "later",
+          ...of(d.pulse),
         })),
         sum: pulseSum(week, k, label, f),
       };

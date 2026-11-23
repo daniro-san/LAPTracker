@@ -341,8 +341,14 @@ test("Insights: a week of the pulse opens its days in the card, which add up to 
   await expect(card.getByText("Week by week")).toHaveCount(0);
   await sees(
     card,
-    `${weekOf(monday)}: ${memberDays} of ${memberDays}, each member counted once per daily update. Its days add up to this.`,
+    `${weekOf(monday)}: ${memberDays} of ${memberDays} member-days (each daily update counts each member once). Its days add up to this.`,
   );
+  // Under each day's share, the count it is of: all 11 members at the cap, every day.
+  const perDay = `${A.names.length - 1}/${A.names.length - 1}`;
+  const coinsDays = card
+    .getByRole("heading", { level: 3, name: "At the 1,000 coin cap" })
+    .locator("xpath=..");
+  await expect(coinsDays.getByText(perDay, { exact: true })).toHaveCount(7);
   await stays(page, y);
   const back = path.getByRole("link", { name: "All weeks" });
   expect((await back.boundingBox())?.height).toBeGreaterThanOrEqual(44);
@@ -365,12 +371,11 @@ test("Insights: the week someone joined and left opens its days, which add up to
   // The joiner and the leaver changed places at the last event: its day's read is the first to show it.
   const day = calendarOf(seededAt()).events[1] as string;
   const monday = mondayOf(day);
-  const row = monday === mondayOf(lastRosterDay()) ? "This week" : weekOf(monday);
   await page.goto(`${desk}/insights`);
   await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
   await deskFrame(page, A);
   const card = page.getByRole("region", { name: "Membership flow" });
-  const open = card.getByRole("link", { name: `${row}: Day by day ›` });
+  const open = card.getByRole("link", { name: `${weekOf(monday)}, day by day ›` });
   await hydrated(open);
   expect((await open.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await open.scrollIntoViewIfNeeded();
@@ -384,7 +389,8 @@ test("Insights: the week someone joined and left opens its days, which add up to
   await sees(changed, "+1");
   await sees(changed, "−1");
   await sees(card, `${weekOf(monday)}: 1 joined, 1 left. Its days add up to this.`);
-  await expect(card.getByRole("link", { name: /Day by day/ })).toHaveCount(0);
+  await sees(card, "Joined and left, day by day");
+  await expect(card.getByRole("link", { name: /day by day/ })).toHaveCount(0);
   await stays(page, y);
   await path.getByRole("link", { name: "All weeks" }).click();
   await expect(page).toHaveURL(`${desk}/insights#insights-flow`);

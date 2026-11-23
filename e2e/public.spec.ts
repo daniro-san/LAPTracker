@@ -11,6 +11,7 @@ import {
   changedAtLastEvent,
   endOf,
   eventTotals,
+  FILLERS,
   intervalParts,
   lastRosterDay,
   memberChange,
@@ -299,13 +300,17 @@ function busiestInterval() {
   const pairs = totals.slice(0, -1).map((t, i) => t + (totals[i + 1] as number));
   const i = pairs.indexOf(Math.max(...pairs));
   const parts = intervalParts(i);
+  const [from, to] = [times[i] as string, times[i + 1] as string];
+  // The Start reads both workspaces' alliances and the three fillers; the split names the ones it left out.
+  const all = [ALLIANCES.a, ALLIANCES.b, ...FILLERS];
   return {
     i,
-    span: `${times[i]}–${times[i + 1]}`,
+    from,
+    to,
+    span: `${from}–${to}`,
     parts,
     total: parts.reduce((a, p) => a + p.kills, 0),
-    // The Start reads both workspaces' alliances and the three fillers.
-    leftOut: 5 - parts.length,
+    leftOut: all.filter((x) => !parts.some((p) => p.unionId === x.unionId)),
   };
 }
 
@@ -317,12 +322,14 @@ async function seesSplit(scope: Locator, b: ReturnType<typeof busiestInterval>) 
     const row = scope.getByRole("listitem").filter({ hasText: `[${p.tag}] ${p.name}` });
     await sees(row, killsText(p.kills));
   }
+  await sees(scope, `Each bar: the alliance's share of these ${killsText(b.total)} kills.`);
   await sees(
     scope,
-    `${killsText(b.total)} kills gained in ${b.span}: the ${b.parts.length} alliances read in both readings, added up.`,
+    `${killsText(b.total)} kills gained in ${b.span} by the ${b.parts.length} alliances read at ${b.from} and at ${b.to}.`,
   );
-  expect(b.leftOut).toBe(1);
-  await sees(scope, "1 alliance was not read in both readings and is left out.");
+  expect(b.leftOut).toHaveLength(1);
+  const out = b.leftOut.map((x) => `[${x.tag}] ${x.name}`).join(", ");
+  await sees(scope, `Not read at both times, so left out: ${out}.`);
   return path;
 }
 

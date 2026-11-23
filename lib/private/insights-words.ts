@@ -47,6 +47,8 @@ export interface DayBar {
   value: string;
   share: number | null;
   later: boolean;
+  /** "11/11": the count a share is of, under it, where a week's days must add up (D158 rule 7 (b)). */
+  of?: string;
 }
 
 export interface PulseMetricWords {
@@ -69,7 +71,13 @@ export interface InsightsWords {
   } | null;
   flow: {
     based: string;
-    weeks: { label: string; joined: BarRow; left: BarRow; drill: BarRow["drill"] | null }[];
+    weeks: {
+      label: string;
+      joined: BarRow;
+      left: BarRow;
+      /** The week's days link: its Monday, its bucket and its words ("Week of Nov 16, day by day ›"). */
+      drill: { key: string; count: number; label: string } | null;
+    }[];
     came: BarRow[];
     went: BarRow[];
     tenure: BarRow[];
@@ -273,6 +281,15 @@ function tenureRows(
   ];
 }
 
+/** A flow week's link to its days: its Monday, its joins and leaves, "Week of Nov 16, day by day ›". */
+const daysLink = (monday: string, count: number, { t, language }: Formats) => ({
+  key: monday,
+  count,
+  label: fill(t["drill.byDay"], {
+    week: fill(t["insights.pulse.week"], { date: calendarDates(language).dayMonth(monday) }),
+  }),
+});
+
 function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   const flow = v.flow;
   if (!flow) return null;
@@ -324,7 +341,7 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
       return {
         label,
         // A week with a join or a leave opens its days (D158 rule 7 (b)).
-        drill: moved > 0 ? { key: w.monday, count: moved } : null,
+        drill: moved > 0 ? daysLink(w.monday, moved, f) : null,
         joined: {
           label: t["insights.flow.joined"],
           value: w.joined.length > 0 ? `+${w.joined.length}` : "0",

@@ -147,7 +147,7 @@ function PulseReadout(props: {
 /** An interval's kills by alliance in the pulse's place, under its path back to every interval. */
 function IntervalSplit(props: {
   slot: Progress["pulse"][number];
-  read: number;
+  read: number[];
   drill: PulseDrill;
   labels: ReadonlyMap<number, string>;
   clock: Clock;
@@ -155,7 +155,8 @@ function IntervalSplit(props: {
   locale: string;
 }) {
   const { slot, clock, copy } = props;
-  const span = `${clock.hhmm(slot.from)}–${clock.hhmm(slot.to)}`;
+  const times = { from: clock.hhmm(slot.from), to: clock.hhmm(slot.to) };
+  const span = `${times.from}–${times.to}`;
   const top = `${props.drill.path}#${PULSE_ID}`;
   return (
     <>
@@ -168,7 +169,7 @@ function IntervalSplit(props: {
         parts={slot.parts}
         kills={slot.kills ?? 0}
         read={props.read}
-        span={span}
+        times={times}
         labels={props.labels}
         copy={copy}
         locale={props.locale}
@@ -293,7 +294,7 @@ export function Pulse({
       ) : (
         <IntervalSplit
           slot={pulse[split] as Progress["pulse"][number]}
-          read={progress.standings.length}
+          read={progress.standings.map((s) => s.unionId)}
           {...{ drill, labels, clock, copy, locale }}
         />
       )}

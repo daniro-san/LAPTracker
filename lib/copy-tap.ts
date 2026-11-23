@@ -25,13 +25,12 @@ export const tapCopy = {
   drillPath: "Where you are in this chart",
   /** The path's Back step from an interval's split to the whole pulse or strip. */
   splitBack: "All intervals",
-  /** Under an interval's split: its kills are the alliances' added up. */
-  splitSum: "{kills} kills gained in {span}: the {n} alliances read in both readings, added up.",
+  /** Under an interval's split: its kills are the alliances' added up; from and to are its two readings. */
+  splitSum: "{kills} kills gained in {span} by the {n} alliances read at {from} and at {to}.",
   /** The alliances an interval left out, because one of its two readings of them was missing or stale. */
-  splitLeftOutOne: "{n} alliance was not read in both readings and is left out.",
-  splitLeftOutOther: "{n} alliances were not read in both readings and are left out.",
+  splitLeftOut: "Not read at both times, so left out: {names}.",
   /** The fight clock counts a loss as no gain: said when the alliances' sum is below 0. */
   splitLoss: "Together they lost kills here; the fight clock counts that as 0.",
-  /** The key to the split's bars. */
-  splitKey: "Each bar: the alliance's share of the interval's kills.",
+  /** The key to the split's bars: each is a share of the kills the sum line adds up. */
+  splitKey: "Each bar: the alliance's share of these {kills} kills.",
 } as const;

@@ -84,8 +84,11 @@ interface Split {
 }
 
 const rowId = (id: number) => `clock-${id}`;
-const spanOf = (at: Date, v: View) =>
-  `${v.clock.hhmm(at)}–${v.clock.hhmm(new Date(at.getTime() + v.everyMin * 60_000))}`;
+const timesOf = (at: Date, v: View) => ({
+  from: v.clock.hhmm(at),
+  to: v.clock.hhmm(new Date(at.getTime() + v.everyMin * 60_000)),
+});
+const spanOf = (at: Date, v: View) => `${timesOf(at, v).from}–${timesOf(at, v).to}`;
 
 /** The slot `?event=&at=` names, when that event has it and it moved. */
 function splitOf(events: FightClockEvent[], event: unknown, at: unknown) {
@@ -110,8 +113,8 @@ function SlotSplit({ event, split, v }: { event: FightClockEvent; split: Split; 
       <PulseSplit
         parts={split.slot.parts}
         kills={split.slot.kills ?? 0}
-        read={event.pulse.alliances}
-        span={span}
+        read={event.pulse.allianceIds}
+        times={timesOf(split.slot.at, v)}
         labels={split.labels}
         copy={v.copy}
         locale={v.locale}
@@ -271,7 +274,13 @@ export default async function FightClockPage({
   const picked = splitOf(events, query.event, query.at);
   const split = picked && {
     ...picked,
-    labels: await loadAllianceLabels(picked.slot.parts.map((p) => p.unionId)),
+    // The alliances it shows and the ones it names as left out.
+    labels: await loadAllianceLabels([
+      ...new Set([
+        ...(events.find((e) => e.id === picked.event)?.pulse.allianceIds ?? []),
+        ...picked.slot.parts.map((p) => p.unionId),
+      ]),
+    ]),
   };
   const v: View = { everyMin, details, clock, copy, locale, split };
   const sampled = new Set(events.filter((e) => e.pulse.sampled).map((e) => e.id));

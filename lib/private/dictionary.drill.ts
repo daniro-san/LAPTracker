@@ -20,12 +20,13 @@ export const drillEn = {
   "drill.day.of": "{v} of {max}",
   "drill.day.none": "none: in the daily update, nothing sent that day",
   "drill.path": "Where you are in this chart",
-  "drill.byDay": "Day by day ›",
+  "drill.byDay": "{week}, day by day ›",
   "drill.back": "All weeks",
+  "drill.flow.days": "Joined and left, day by day",
   "drill.pulse.sum":
-    "{week}: {n} of {of}, each member counted once per daily update. Its days add up to this.",
+    "{week}: {n} of {of} member-days (each daily update counts each member once). Its days add up to this.",
   "drill.pulse.median":
-    "{week}: {value} is the middle of all its donations. A middle value is not a sum, so the days’ values do not add up to it. Donated: {n} of {of}; its days add up to this.",
+    "{week}: middle donation {value}. A middle value is not a total, so the days do not add up to it. Donated: {n} of {of} member-days; its days add up to this.",
   "drill.flow.sum": "{week}: {joined} joined, {left} left. Its days add up to this.",
   "drill.flow.noRead": "No daily update on {days}: a join or leave then shows on the next one.",
   "drill.flow.before":
@@ -51,12 +52,13 @@ export const drillPt: DrillWords = {
   "drill.day.of": "{v} de {max}",
   "drill.day.none": "nada: na atualização diária, nada enviado nesse dia",
   "drill.path": "Onde você está neste gráfico",
-  "drill.byDay": "Dia a dia ›",
+  "drill.byDay": "{week}, dia a dia ›",
   "drill.back": "Todas as semanas",
+  "drill.flow.days": "Entraram e saíram, dia a dia",
   "drill.pulse.sum":
-    "{week}: {n} de {of}, cada membro contado uma vez por atualização diária. Os dias somam isso.",
+    "{week}: {n} de {of} membro-dias (cada atualização diária conta cada membro uma vez). Os dias somam isso.",
   "drill.pulse.median":
-    "{week}: {value} é o valor do meio de todas as doações. Um valor do meio não é uma soma, então os valores dos dias não somam isso. Doaram: {n} de {of}; os dias somam isso.",
+    "{week}: doação do meio {value}. Um valor do meio não é um total, então os dias não somam isso. Doaram: {n} de {of} membro-dias; os dias somam isso.",
   "drill.flow.sum": "{week}: {joined} entraram, {left} saíram. Os dias somam isso.",
   "drill.flow.noRead": "Sem atualização diária em {days}: uma entrada ou saída aparece na próxima.",
   "drill.flow.before":
@@ -80,12 +82,13 @@ export const drillFr: DrillWords = {
   "drill.day.of": "{v} sur {max}",
   "drill.day.none": "rien : dans la mise à jour quotidienne, rien envoyé ce jour-là",
   "drill.path": "Où vous êtes dans ce graphique",
-  "drill.byDay": "Jour par jour ›",
+  "drill.byDay": "{week}, jour par jour ›",
   "drill.back": "Toutes les semaines",
+  "drill.flow.days": "Arrivés et partis, jour par jour",
   "drill.pulse.sum":
-    "{week} : {n} sur {of}, chaque membre compté une fois par mise à jour quotidienne. Ses jours font ce total.",
+    "{week} : {n} sur {of} jours-membres (chaque mise à jour quotidienne compte chaque membre une fois). Ses jours font ce total.",
   "drill.pulse.median":
-    "{week} : {value} est la valeur du milieu de tous ses dons. Une valeur du milieu n’est pas une somme : les valeurs des jours ne font pas ce total. Ont donné : {n} sur {of} ; ses jours font ce total.",
+    "{week} : don du milieu {value}. Une valeur du milieu n’est pas un total : les jours ne font pas ce total. Ont donné : {n} sur {of} jours-membres ; ses jours font ce total.",
   "drill.flow.sum": "{week} : {joined} arrivés, {left} partis. Ses jours font ce total.",
   "drill.flow.noRead":
     "Pas de mise à jour quotidienne le {days} : une arrivée ou un départ apparaît alors à la suivante.",

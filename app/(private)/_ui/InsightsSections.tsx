@@ -278,8 +278,7 @@ function Weeks(props: {
                 count={w.drill.count}
                 className="tint-button inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline"
               >
-                <span className="sr-only">{`${w.label}: `}</span>
-                {t["drill.byDay"]}
+                {w.drill.label}
               </InsightsDrillLink>
             )}
           </li>
@@ -310,7 +309,7 @@ export function FlowCard({
   const top = levelHref(nav.base, nav.levels, { flow: null }, FLOW_CARD);
   return (
     <Card id={FLOW_CARD} title={t["insights.flow.head"]} based={[flow.based]}>
-      <Sub>{t["insights.flow.weeks"]}</Sub>
+      <Sub>{level ? t["drill.flow.days"] : t["insights.flow.weeks"]}</Sub>
       {level ? (
         <FlowDays level={level} top={top} t={t} noData={noData} />
       ) : (

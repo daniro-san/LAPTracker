@@ -255,7 +255,10 @@ describe("eventProgress", () => {
       expect(s.parts.reduce((a, x) => a + x.kills, 0)).toBe(s.kills);
       expect(s.parts).toHaveLength(s.alliances);
     }
-    // What the split says it leaves out: the Start's alliances not among the parts.
-    expect(p?.pulse.map((s) => (p?.standings.length ?? 0) - s.parts.length)).toEqual([0, 1, 1]);
+    // What the split names as left out: the Start's alliances not among the parts.
+    const read = p?.standings.map((s) => s.unionId) ?? [];
+    expect(
+      p?.pulse.map((s) => read.filter((id) => !s.parts.some((x) => x.unionId === id))),
+    ).toEqual([[], [3], [3]]);
   });
 });

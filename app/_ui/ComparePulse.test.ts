@@ -39,7 +39,7 @@ const html = (a: EventPulse, b: EventPulse) =>
 
 describe("ComparePulse (D86)", () => {
   it("is a frame with the reason, and no strip, when event A has no samples", () => {
-    const out = html({ id: 1, sampled: false, clock: null, alliances: 0 }, sampled);
+    const out = html({ id: 1, sampled: false, clock: null, allianceIds: [] }, sampled);
     expect(out).toContain(reasonA);
     expect(out).not.toContain(help);
     expect(out).not.toContain("A · ");
