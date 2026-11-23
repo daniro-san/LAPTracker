@@ -140,6 +140,13 @@ export const ja = {
     readoutPulse: "{kills} Kills 獲得 · {n} 同盟を読み取り",
     readoutShare: "{share}（{kills} Kills）",
     readoutEventRead: "イベントの読み取り",
+    splitLink: "{span}を同盟別に ›",
+    drillPath: "このグラフでの現在位置",
+    splitBack: "すべての間隔",
+    splitSum: "{span}に、{from}と{to}の両方で読み取った{n}同盟が獲得した {kills} Kills。",
+    splitLeftOut: "2回の読み取りのうち1回がないため集計外：{names}。",
+    splitLoss: "ここでは合計で Kills が減りました。戦闘時計では0として集計します。",
+    splitKey: "各棒：この {kills} Kills のうち、同盟が占める割合。",
   },
   compare: {
     title: "イベント比較",

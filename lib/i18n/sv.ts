@@ -143,6 +143,14 @@ export const sv = {
     readoutPulse: "{kills} Kills vunna · {n} allianser avlästa",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "eventavläsning",
+    splitLink: "{span} per allians ›",
+    drillPath: "Var du är i diagrammet",
+    splitBack: "Alla intervall",
+    splitSum:
+      "{kills} Kills vunna under {span} av de {n} allianserna, avlästa vid {from} och vid {to}.",
+    splitLeftOut: "Inte avlästa vid båda tiderna, så de utelämnas: {names}.",
+    splitLoss: "Tillsammans förlorade de Kills här; stridsklockan räknar det som 0.",
+    splitKey: "Varje stapel: alliansens andel av dessa {kills} Kills.",
   },
   compare: {
     title: "Event mot event",

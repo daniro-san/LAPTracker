@@ -142,6 +142,14 @@ export const ru = {
     readoutPulse: "{kills} убийств набрано · {n} альянсов прочитано",
     readoutShare: "{share} ({kills} убийств)",
     readoutEventRead: "чтение события",
+    splitLink: "{span} по альянсам ›",
+    drillPath: "Где вы на этом графике",
+    splitBack: "Все интервалы",
+    splitSum:
+      "{kills} убийств набрано за {span}: сумма {n} альянсов, прочитанных на {from} и на {to}.",
+    splitLeftOut: "Нет одного из двух чтений, поэтому не учтены: {names}.",
+    splitLoss: "Вместе здесь убийств стало меньше; хронология боёв сервера считает это за 0.",
+    splitKey: "Каждая полоса: доля альянса в этих {kills} убийствах.",
   },
   compare: {
     title: "Событие против события",

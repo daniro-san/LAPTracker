@@ -169,6 +169,7 @@ Words already used in `lib/i18n/es.ts`. Reuse them so the pages stay consistent;
 | Start / End                           | Inicio / Fin                            | `kvk.*`, `ledger.liveDone` — the event's two readings; "de Inicio a Fin"                                                        |
 | KvK matchup                           | Enfrentamiento KvK                      | `kvk.title` — the event page's two-server section                                                                               |
 | Start unknown / End unknown           | Inicio desconocido / Fin desconocido    | `members.startUnknown`, `endUnknown` — a `—` Kills change whose reading is missing; `countedAsZero` follows as "contado como 0" |
+| by alliance                           | por alianza                             | `ledger.splitLink`, `splitBack`, `splitSum`, `splitKey` — a chart's kills split by alliance                                     |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

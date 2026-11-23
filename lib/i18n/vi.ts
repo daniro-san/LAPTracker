@@ -140,6 +140,15 @@ export const vi = {
     readoutPulse: "{kills} tiêu diệt tăng · {n} liên minh được đọc",
     readoutShare: "{share} ({kills} tiêu diệt)",
     readoutEventRead: "lần đọc sự kiện",
+    splitLink: "{span} theo liên minh ›",
+    drillPath: "Bạn đang ở đâu trong biểu đồ này",
+    splitBack: "Mọi chu kỳ",
+    splitSum:
+      "{kills} tiêu diệt tăng trong {span} từ {n} liên minh được đọc lúc {from} và lúc {to}.",
+    splitLeftOut: "Thiếu một trong hai lần đọc, nên không tính: {names}.",
+    splitLoss:
+      "Gộp lại, các liên minh này giảm tiêu diệt ở đây; đồng hồ giao tranh máy chủ tính là 0.",
+    splitKey: "Mỗi thanh: phần tiêu diệt của liên minh trong {kills} tiêu diệt này.",
   },
   compare: {
     title: "Sự kiện so với sự kiện",

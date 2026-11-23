@@ -144,6 +144,14 @@ export const pl = {
     readoutPulse: "Zdobyte Kills: {kills} · sojusze odczytane: {n}",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "odczyt wydarzenia",
+    splitLink: "{span} według sojuszy ›",
+    drillPath: "Gdzie jesteś na tym wykresie",
+    splitBack: "Wszystkie odstępy",
+    splitSum:
+      "{kills} zdobytych Kills w ciągu {span} przez sojusze ({n}) odczytane o {from} i o {to}.",
+    splitLeftOut: "Nie odczytane w obu terminach, więc pominięte: {names}.",
+    splitLoss: "Razem straciły Kills w tym odstępie; zegar walk serwera liczy to jako 0.",
+    splitKey: "Każdy słupek: udział sojuszu w tych {kills} Kills.",
   },
   compare: {
     title: "Wydarzenie vs wydarzenie",

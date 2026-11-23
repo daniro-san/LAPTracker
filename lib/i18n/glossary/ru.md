@@ -75,6 +75,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Lookup                        | запрос                         | `alliances.get*`, `alliances.usedUp`, `alliances.failed` — one fetch of an alliance's data    |
 | Start to End                  | Начало – Конец                 | `kvk.change`, `kvk.changeLater` — the KvK card's change from Start to End and its note        |
 | event reading                 | чтение события                 | `ledger.readoutEventRead` — a line chart's value at an event's Start or End, not a daily read |
+| Interval                      | Интервал                       | `ledger.liveInterval`, `ledger.splitBack` — a span of minutes in a pulse or the fight clock   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

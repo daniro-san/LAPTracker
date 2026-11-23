@@ -144,6 +144,14 @@ export const nl = {
     readoutPulse: "{kills} Kills gewonnen · {n} allianties gemeten",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "eventmeting",
+    splitLink: "{span} per alliantie ›",
+    drillPath: "Waar je in deze grafiek bent",
+    splitBack: "Alle intervallen",
+    splitSum:
+      "{kills} Kills gewonnen in {span} door de {n} allianties gemeten om {from} en om {to}.",
+    splitLeftOut: "Niet op beide momenten gemeten, dus weggelaten: {names}.",
+    splitLoss: "Samen verloren ze hier Kills; de strijdklok telt dat als 0.",
+    splitKey: "Elke balk: het aandeel van de alliantie in deze {kills} Kills.",
   },
   compare: {
     title: "Event tegen event",

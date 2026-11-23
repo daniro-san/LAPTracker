@@ -82,6 +82,7 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | lookup (an alliance's details)      | запит                       | `alliances.get`, `alliances.getNote`, `alliances.usedUp`, `alliances.failed`, `alliances.tooMany` — one request for an alliance's details   |
 | Earlier / Later (a readout's steps) | Раніше / Пізніше            | `ledger.readoutEarlier`, `ledger.readoutLater` — the two steps under a pulse or a line chart                                                |
 | Matchup                             | двобій                      | `kvk.title`, `kvk.versus` — the two servers' KvK face-off                                                                                   |
+| split by alliance                   | за альянсами                | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's Kills split by alliance                                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

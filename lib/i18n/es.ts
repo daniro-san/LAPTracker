@@ -145,6 +145,13 @@ export const es = {
     readoutPulse: "{kills} Kills ganados · {n} alianzas leídas",
     readoutShare: "{share} ({kills} Kills)",
     readoutEventRead: "lectura del evento",
+    splitLink: "{span} por alianza ›",
+    drillPath: "Dónde estás en este gráfico",
+    splitBack: "Intervalos",
+    splitSum: "{kills} Kills ganados en {span} por las {n} alianzas leídas en {from} y en {to}.",
+    splitLeftOut: "Falta una de las dos lecturas, así que quedan fuera: {names}.",
+    splitLoss: "Juntas perdieron Kills aquí; el reloj de combate lo cuenta como 0.",
+    splitKey: "Cada barra: la parte de esta alianza en estos {kills} Kills.",
   },
   compare: {
     title: "Evento contra evento",
