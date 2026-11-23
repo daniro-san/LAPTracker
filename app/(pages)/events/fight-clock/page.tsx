@@ -2,19 +2,23 @@
 // first; the columns are the event's 15-minute slots on the server clock, so noon is noon in every row; a
 // slot's box is as high as its share of that event's kills. An event with no readings (every event before
 // the first sampled one) is a disabled row with the reason in words: it appears in the sampled views as
-// soon as it has samples, with no further change.
+// soon as it has samples, with no further change. A slot's link under a strip opens that slot's kills split
+// by alliance in the strip's place (`?event=<id>&at=<minute>`, D158 rule 7 (b)).
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Readout } from "@/app/_ui/charts/Readout";
-import { loadFightClock } from "@/app/_ui/event-page";
+import { DrillPath } from "@/app/_ui/charts/DrillPath";
+import { Readout, ReadoutLink } from "@/app/_ui/charts/Readout";
+import { loadAllianceLabels, loadFightClock } from "@/app/_ui/event-page";
 import { eventTitle, EventLabel } from "@/app/_ui/EventLabel";
 import type { Clock } from "@/app/_ui/format";
 import { LIVE_DURING_ID } from "@/app/_ui/LiveProgress";
 import { PulseLegend } from "@/app/_ui/LivePulse";
 import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
+import { PulseSplit } from "@/app/_ui/PulseSplit";
 import {
   busiestText,
+  FIGHT_CLOCK_PATH,
   mostShare,
   PulseDetails,
   PulseStrip,
@@ -26,7 +30,7 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import { clockColumns, type OffReason } from "@/lib/fight-clock";
+import { clockColumns, type ClockSlot, type OffReason } from "@/lib/fight-clock";
 import { isOn } from "@/lib/flags";
 import { homeEvent, type FightClockEvent } from "@/lib/queries";
 import { fill } from "@/lib/words";
@@ -69,6 +73,74 @@ interface View {
   clock: Clock;
   copy: Dictionary;
   locale: string;
+  /** The slot the address splits by alliance, with the alliances' names; null for none. */
+  split: Split | null;
+}
+
+interface Split {
+  event: number;
+  slot: ClockSlot;
+  labels: Map<number, string>;
+}
+
+const rowId = (id: number) => `clock-${id}`;
+const spanOf = (at: Date, v: View) =>
+  `${v.clock.hhmm(at)}–${v.clock.hhmm(new Date(at.getTime() + v.everyMin * 60_000))}`;
+
+/** The slot `?event=&at=` names, when that event has it and it moved. */
+function splitOf(events: FightClockEvent[], event: unknown, at: unknown) {
+  if (typeof event !== "string" || typeof at !== "string" || !/^\d{1,9}$/.test(event)) return null;
+  const e = events.find((x) => x.id === Number(event));
+  const slot = e?.pulse.clock?.slots.find((s) => String(s.minute) === at);
+  return e && slot?.state === "moved" ? { event: e.id, slot } : null;
+}
+
+/** A slot's kills by alliance in its strip's place, under the path back to every slot. */
+function SlotSplit({ event, split, v }: { event: FightClockEvent; split: Split; v: View }) {
+  const span = spanOf(split.slot.at, v);
+  const top = `${FIGHT_CLOCK_PATH}#${rowId(event.id)}`;
+  const l = v.copy.ledger;
+  return (
+    <div className="px-1">
+      <DrillPath
+        name={l.drillPath}
+        back={{ href: top, label: l.splitBack }}
+        steps={[{ label: l.fightClock, href: top }, { label: span }]}
+      />
+      <PulseSplit
+        parts={split.slot.parts}
+        kills={split.slot.kills ?? 0}
+        read={event.pulse.alliances}
+        span={span}
+        labels={split.labels}
+        copy={v.copy}
+        locale={v.locale}
+      />
+    </div>
+  );
+}
+
+/** Under a strip: the chosen column's link to its slot split by alliance, where the slot moved. */
+function SlotLinks({ event, columns, v }: { event: FightClockEvent; columns: Column[]; v: View }) {
+  const slots = new Map((event.pulse.clock?.slots ?? []).map((s) => [s.minute, s]));
+  const links = columns.flatMap((c, at) => {
+    const s = slots.get(c.minute);
+    return s?.state === "moved"
+      ? [
+          {
+            at,
+            href: `${FIGHT_CLOCK_PATH}?event=${event.id}&at=${c.minute}#${rowId(event.id)}`,
+            label: fill(v.copy.ledger.splitLink, { span: spanOf(s.at, v) }),
+            count: s.alliances,
+          },
+        ]
+      : [];
+  });
+  return (
+    <div className="px-1">
+      <ReadoutLink links={links} surface="fight_clock" kind="alliances" />
+    </div>
+  );
 }
 
 /** An event with no readings: muted, not a link, the reason in one line. */
@@ -101,7 +173,7 @@ function SampledRow({
   if (!own) return null;
   const label = eventTitle(event) ?? clock.weekday(event.eventAtUtc);
   return (
-    <li className="border-b border-rule pb-1">
+    <li id={rowId(event.id)} className="scroll-mt-20 border-b border-rule pb-1">
       <Link
         href={`/events/${event.id}#${LIVE_DURING_ID}`}
         className="tint-button block min-h-11 px-1 py-1"
@@ -113,16 +185,21 @@ function SampledRow({
         </span>
       </Link>
       {/* Outside the link: a tap on a column picks it in the readout under the strips (D158 rule 7 (a)). */}
-      {own.slots.length > 0 ? (
-        <PulseStrip
-          columns={columns}
-          clock={own}
-          most={most}
-          everyMin={everyMin}
-          zone={clock}
-          copy={copy}
-          locale={locale}
-        />
+      {v.split?.event === event.id ? (
+        <SlotSplit event={event} split={v.split} v={v} />
+      ) : own.slots.length > 0 ? (
+        <>
+          <PulseStrip
+            columns={columns}
+            clock={own}
+            most={most}
+            everyMin={everyMin}
+            zone={clock}
+            copy={copy}
+            locale={locale}
+          />
+          <SlotLinks event={event} columns={columns} v={v} />
+        </>
       ) : (
         <p className="px-1 text-body-sm text-ink/70">{copy.ledger.liveNoReading}</p>
       )}
@@ -174,19 +251,29 @@ function Strips(props: { events: FightClockEvent[]; columns: Column[]; most: num
   );
 }
 
-export default async function FightClockPage() {
-  const [data, clock, copy, locale, details] = await Promise.all([
+export default async function FightClockPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ event?: string | string[]; at?: string | string[] }>;
+}) {
+  const [data, clock, copy, locale, details, query] = await Promise.all([
     loadFightClock(),
     requestClock(),
     requestCopy(),
     requestLocale(),
     isOn("chart-details"),
+    searchParams,
   ]);
   const { listed, events, everyMin } = data;
   const l = copy.ledger;
   const clocks = events.flatMap((e) => (e.pulse.clock ? [e.pulse.clock] : []));
   const [columns, most] = [clockColumns(clocks), mostShare(clocks)];
-  const v: View = { everyMin, details, clock, copy, locale };
+  const picked = splitOf(events, query.event, query.at);
+  const split = picked && {
+    ...picked,
+    labels: await loadAllianceLabels(picked.slot.parts.map((p) => p.unionId)),
+  };
+  const v: View = { everyMin, details, clock, copy, locale, split };
   const sampled = new Set(events.filter((e) => e.pulse.sampled).map((e) => e.id));
   return (
     <>

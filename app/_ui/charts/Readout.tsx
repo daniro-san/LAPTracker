@@ -5,8 +5,16 @@
 // (`aria-current`). The line is announced (`aria-live`). The choice is in the address fragment
 // (`#at-<id>-<i>`, replaceState: no jump, no history entry), so Back to the page shows the same column. The
 // chart itself stays server-rendered; this is D68's one small client part. The busiest or newest column is
-// chosen first.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+// chosen first. A `ReadoutLink` inside the chart shows the next level of the chosen column, if it has one
+// (D158 rule 7 (b)).
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+
+import type { PublicDrilldownKind, PublicDrilldownSurface } from "@/lib/analytics/events";
+
+import { DrilldownLink } from "../DrilldownLink";
+
+/** The column the readout around a part has chosen. */
+const Chosen = createContext<number | null>(null);
 
 export interface ReadoutItem {
   /** "11:00–11:15", the column's name. */
@@ -70,7 +78,7 @@ export function Readout(props: {
           if (col) go(Number(col.dataset.at));
         }}
       >
-        {props.children}
+        <Chosen.Provider value={at}>{props.children}</Chosen.Provider>
       </div>
       {item && (
         <div
@@ -105,5 +113,33 @@ export function Readout(props: {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The link to the chosen column's next level, a chart of its parts ("11:00–11:15 by alliance ›"), where the
+ * columns it names have one: nothing for a column with no entry. Inside a `Readout`; a tap counts
+ * `drilldown_opened` with a bucket of the parts.
+ */
+export function ReadoutLink(props: {
+  links: { at: number; href: string; label: string; count: number }[];
+  surface: PublicDrilldownSurface;
+  kind: PublicDrilldownKind;
+}) {
+  const at = useContext(Chosen);
+  const hit = props.links.find((l) => l.at === at);
+  if (!hit) return null;
+  return (
+    <DrilldownLink
+      href={hit.href}
+      scroll={false}
+      prefetch={false}
+      surface={props.surface}
+      kind={props.kind}
+      count={hit.count}
+      className="tint-button inline-flex min-h-11 items-center px-1 text-body-sm font-semibold underline"
+    >
+      {hit.label}
+    </DrilldownLink>
   );
 }

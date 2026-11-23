@@ -2,7 +2,13 @@
 // each event's slots on the server clock with their share of the event's kills, its busiest rolling
 // 30 minutes, which slots two events both cover, and why an event without samples is off. The slots come
 // from `serverPulse` (lib/live.ts), so a slot's state means the same here as on the event page.
-import { BUSIEST_MIN_INTERVALS, busiestSpan, type PulseSlot, type PulseState } from "./live";
+import {
+  BUSIEST_MIN_INTERVALS,
+  busiestSpan,
+  type AlliancePart,
+  type PulseSlot,
+  type PulseState,
+} from "./live";
 
 /** An event created a day ahead, or running, has no After row yet: it is waiting for its readings for this long. */
 export const WAITING_MS = 24 * 60 * 60_000;
@@ -21,6 +27,11 @@ export interface ClockSlot {
   state: PulseState;
   /** Alliances compared in the slot. */
   alliances: number;
+  /**
+   * Each compared alliance's kills in the slot, from `serverPulse`: they add up to `kills`, except when
+   * their sum is a loss, which `kills` counts as 0.
+   */
+  parts: AlliancePart[];
 }
 
 export interface ClockBusiest {
@@ -68,6 +79,7 @@ export function eventClock(
     share: gained[i] === null ? null : kills > 0 ? (gained[i] as number) / kills : 0,
     state: s.state,
     alliances: s.alliances,
+    parts: s.parts,
   }));
   const compared = pulse.filter((s) => s.kills !== null).length;
   const found =

@@ -183,4 +183,79 @@ describe("eventProgress", () => {
     // 50 + 60 by the two who stayed, 30 by the joiner since his first reading.
     expect(p?.standings[0]?.change).toEqual({ power: 0, kills: 140 });
   });
+
+  it("splits each interval by alliance (D158 rule 7 (b)): the parts add up to its kills, and an alliance not read fresh in both readings is left out", async () => {
+    const eventId = await seedEvent([], true);
+    const [start] = await db.select({ id: allianceSnapshots.snapshotId }).from(allianceSnapshots);
+    const startId = (start as { id: number }).id;
+    // Alliances 2 and 3 at the Start (alliance 1 is the seed's); 3 is stale at 12:30.
+    await db.insert(allianceSnapshots).values(
+      [2, 3].map((unionId) => ({
+        snapshotId: startId,
+        unionId,
+        totalPower: 1000,
+        totalKills: 1000 * unionId,
+        source: "v1" as const,
+        isFresh: true,
+      })),
+    );
+    const readings: [string, number, number, number, boolean][] = [
+      // time, kills of alliances 1, 2 and 3, whether 3 is fresh
+      ["12:15", 130, 2050, 3010, true],
+      ["12:30", 190, 2070, 3500, false],
+      ["12:45", 200, 2170, 3600, true],
+    ];
+    for (const [time, k1, k2, k3, fresh3] of readings) {
+      const [snap] = await db
+        .insert(snapshots)
+        .values({
+          eventId,
+          phase: "sample",
+          slotAt: at(time),
+          startedAt: at(time),
+          status: "complete",
+        })
+        .returning({ id: snapshots.id });
+      await db.insert(allianceSnapshots).values(
+        (
+          [
+            [1, k1, true],
+            [2, k2, true],
+            [3, k3, fresh3],
+          ] as const
+        ).map(([unionId, totalKills, isFresh]) => ({
+          snapshotId: (snap as { id: number }).id,
+          unionId,
+          totalPower: 1000,
+          totalKills,
+          source: "v1" as const,
+          isFresh,
+        })),
+      );
+    }
+    const p = await eventProgress(db, eventId, { now: at("17:00"), ...EVERY });
+    const parts = p?.pulse.map((s) => s.parts.map((x) => [x.unionId, x.kills])) ?? [];
+    expect(parts).toEqual([
+      [
+        [1, 30],
+        [2, 50],
+        [3, 10],
+      ],
+      // 3 is stale at 12:30: left out of both intervals that read it.
+      [
+        [1, 60],
+        [2, 20],
+      ],
+      [
+        [1, 10],
+        [2, 100],
+      ],
+    ]);
+    for (const s of p?.pulse ?? []) {
+      expect(s.parts.reduce((a, x) => a + x.kills, 0)).toBe(s.kills);
+      expect(s.parts).toHaveLength(s.alliances);
+    }
+    // What the split says it leaves out: the Start's alliances not among the parts.
+    expect(p?.pulse.map((s) => (p?.standings.length ?? 0) - s.parts.length)).toEqual([0, 1, 1]);
+  });
 });

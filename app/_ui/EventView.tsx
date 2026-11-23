@@ -28,6 +28,7 @@ import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { LiveSections, LiveStrip } from "./LiveProgress";
+import type { PulseDrill } from "./LivePulse";
 import { requestClock, requestCopy, requestLocale } from "./locale";
 import { Matchup } from "./Matchup";
 import { allianceScope, memberScope } from "./mover-lists";
@@ -220,19 +221,15 @@ function endTime(detail: Detail): Date | null {
   return end ? (end.finishedAt ?? end.startedAt) : null;
 }
 
-export async function EventView({
-  events,
-  homeId,
-  detail,
-  changes,
-  names,
-  ranks,
-  movers,
-  turnout,
-  carried,
-  previous,
-  matchup,
-}: Page & { events: Events; homeId: number | null }) {
+type ViewProps = Page & {
+  events: Events;
+  homeId: number | null;
+  /** The page's address and the pulse interval its query splits (`?interval=`, D158 rule 7 (b)). */
+  drill: PulseDrill;
+};
+
+export async function EventView({ events, homeId, drill, ...page }: ViewProps) {
+  const { detail, changes, names, ranks, movers, turnout, carried, previous, matchup } = page;
   const now = new Date();
   const [clock, copy, locale, progress] = await Promise.all([
     requestClock(),
@@ -244,7 +241,15 @@ export async function EventView({
     sinceLast(r, previous, clock, copy),
   );
   const moverScopes = moverScopesOf(movers, detail.id, changes, copy);
-  const liveProps = { eventId: detail.id, rows, endAt: endTime(detail), clock, copy, locale };
+  const liveProps = {
+    eventId: detail.id,
+    rows,
+    endAt: endTime(detail),
+    clock,
+    copy,
+    locale,
+    drill,
+  };
   const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));
   return (
     <>
