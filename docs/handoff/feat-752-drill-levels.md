@@ -21,7 +21,9 @@ Pattern (b) of D158 rule 7 goes one level further. Each new level shows in its c
   - `KvkDay` (`lib/private/insights-kvk.ts`) carries those sums from the same loop that makes the column.
   - The KvK alone (`?kvk=`) shows its recovery days unfolded. That is the level Back returns to.
 - **Fix: flow weeks with nothing to compare.** A week none of whose days can show a change (no daily update, or only the first one) shows "—" with "nothing to compare", no bar and no link. It never shows 0.
-- **Fix: one start date.** The flow card's based line and the day level's starting-point line both name the daily update the first change is compared with (`flow.since`). It is the date the tenure line gives ("since November 9" and "first daily update, Nov 9").
+- **Fix: start dates.** The flow card's based line now says where its weeks start: "Based on 14 daily updates in these weeks, since November 9." The day level's line says the same: "These weeks start from the daily update of …". Both use `flow.since`, the daily update the first change is compared with.
+  - With fewer daily updates than the page reads (36), that is the alliance's first one, the date the tenure line gives (the seed: Nov 9 in both).
+  - With more, the tenure line keeps the alliance's first daily update ("Already here at our first daily update, Oct 10") and the based line names the weeks' start ("in these weeks, since October 18"). Each line says which start it gives.
 - **Shared parts:** `Card`, `Sub`, `Bars`, `RowBody` and `LevelNav` moved from `InsightsSections.tsx` to `app/(private)/_ui/InsightsBars.tsx`, so the day levels can use them without an import cycle. `DayPicks` (`InsightsDays.tsx`) is the row of day links.
 - **Analytics** (dated Changed line and updated row in `docs/analytics/tracking-plan.md`): `ws_drilldown_opened` on `insights` gains `kind` `flow_day`, `pulse_day`, `kvk_day` (counted on the tap) and `pulse_reached` (a pulse day's who list opened). Each is a bucket only, once per kind per page view.
 - **Copy:** desk only, in `lib/private/dictionary.drill.ts` and `insights.flow.noCompare`, in EN, PT-BR and FR. No public copy changed, so translate-copy was not needed (`pnpm check`: i18n up to date).
@@ -48,6 +50,14 @@ Pattern (b) of D158 rule 7 goes one level further. Each new level shows in its c
 - **Not adopted:**
   - A 7-column grid of day links. (328 − 32) / 7 is about 42 px, under 44.
   - Every other point is in Open issues.
+
+- **Review of PR 755, fixed:**
+  - D139 has a dated amendment: a pulse day names who did each measure (officers only, names only, no ranking, no Members link), citing the owner's approval of 2026-11-22. D158's amendment cites it too.
+  - The KvK e2e opens a recovery day of the older KvK (two Saturdays back), which is always in the past, so the test asserts the level on every day of the week. It no longer returns early on a Sunday.
+  - The pulse-day test's "outside the pulse's weeks" case uses a day that has a read (Oct 12), so it fails without `pulseDayOf`'s window guard (checked by removing the guard).
+  - Start dates reworded, with a test of more than 36 daily updates (above).
+  - One `pulsePicks` (`insights-words.ts`) for the card and the week level; the stale comment above `FlowDayRow` moved to `FlowDays`; the flow day's filter drops its always-true clause.
+  - The flaky `?set=` e2e compares the decoded `set` parameter, since Members writes its address back with `%3A` once hydrated.
 
 ## Deviations
 
@@ -77,7 +87,7 @@ Pattern (b) of D158 rule 7 goes one level further. Each new level shows in its c
     - "1 of the 2" with one left out;
     - a read listing none of them is "—", has no link and opens nothing;
     - another KvK's day opens nothing.
-- In `lib/private/insights.test.ts`: the "—" weeks with "nothing to compare", no bar and no link; one start date in the based line and the tenure line.
+- In `lib/private/insights.test.ts`: the "—" weeks with "nothing to compare", no bar and no link; the same date in the based line and the tenure line with a short history; with 40 daily updates, "in these weeks, since October 18" and "our first daily update, Oct 10".
 - E2E on my own Postgres (port 54417) and ports (app 3767, bridge 54767, stub 3769), phone 360 and wide 1280. In `desk-insights.spec.ts`, one test per level, on seed values:
   - **Flow day:** the event day's row, the path, "Not known 1" under both headings, the sum line, no names, no tenure, Back to the week at the same scroll position.
   - **Pulse day:** on Moss Hollow, whose idle members sent nothing on the newest read, each row's "n of 8" and exactly its names; Back.
@@ -86,6 +96,7 @@ Pattern (b) of D158 rule 7 goes one level further. Each new level shows in its c
 - **Final runs:**
   - `desk-insights`, `desk-kvk`, `desk-drilldown` and `isolation`: 51 passed, 1 failed. The failure was the earlier test "a group's names end with Open these n in Members ›" (wide). `toHaveURL` saw `%3A` for `:` in `?set=`; this PR does not touch that path.
   - `desk-insights.spec.ts` with `--repeat-each 3`: 54 of 54 passed.
+- After the review fixes (PR 755): `pnpm vitest related` (467 tests) and `pnpm check` are green: 374 files and 2,000 tests pass. `desk-insights.spec.ts`, phone and wide, on my own Postgres and ports: 18 of 18 passed, twice (once after a fresh build).
 - My Postgres and servers are stopped.
 
 ## Open issues
@@ -97,13 +108,11 @@ Pattern (b) of D158 rule 7 goes one level further. Each new level shows in its c
   - "nothing to compare" (flow) and "no daily update" (pulse) word the same empty weeks two ways. Three empty weeks take three rows.
   - The KvK column's 100 % tick has no label.
   - The words "Start read" and "End read", "Share of the loss back" and "middle value" are hard for an ESL reader.
-- **The flaky e2e** above (`?set=` URL encoding, wide, under load).
 - **The pulse-day inference limit** is recorded in D158: an officer can tell who is not named, and with one donor the middle donation is that member's.
 
 ## Next
 
 - Follow-up issue for the panel's pre-existing points above: `DrillPath` on wide and phone, flow week naming, signs, empty-week wording, the 100 % tick label and the ESL wording.
-- Follow-up: make the `?set=` e2e wait for the URL as the page writes it (`%3A`), or compare decoded.
 - At release: patch notes, and new guide screenshots of Insights (pulse, flow and KvK cards).
 
 What was missing from the task prompt? Whether the flow card's week level (PR 751) should also drop its whole-period parts once the day level does. I did it, on the dataviz reviewer's advice.
