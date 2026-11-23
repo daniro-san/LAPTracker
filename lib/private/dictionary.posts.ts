@@ -1,5 +1,5 @@
 // Alliance settings → Posts (#713 part C, D159): the catalog of posts LAPTracker makes on its own, and each
-// post's own words (its title, what it holds, its day; the text of posts 2 and 3), in English, Brazilian Portuguese and
+// post's own words (its title, what it holds, its day; the text of posts 2 to 4), in English, Brazilian Portuguese and
 // French: one module the settings dictionaries spread. The post itself takes its title and the calendar's words in the language
 // officers pick for it. French puts a no-break space before : and inside « ».
 export const postsEn = {
@@ -29,6 +29,16 @@ export const postsEn = {
   "posts.welcome.count":
     "Welcome to our {n} new members! We’re glad you’re here. Say hello, and ask us anything you need.",
   "posts.welcome.day": "Every day, after the daily update.",
+  "posts.summary.name": "Weekly members summary",
+  "posts.summary.what":
+    "Every Monday, for the officers: how many members joined and left in the week that just ended, and the member count at its last daily update and at the one before the week. Counts only, no names. Nothing is posted when there is no daily update to compare.",
+  "posts.summary.defaultTitle": "Members last week",
+  "posts.summary.week": "{from} to {to}",
+  "posts.summary.joined": "Joined: {n}",
+  "posts.summary.left": "Left: {n}",
+  "posts.summary.members": "Members on {day}: {n}",
+  "posts.summary.reads": "From {n} of 7 daily updates this week.",
+  "posts.summary.day": "Every {day}, for the week that just ended.",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
   "posts.channel.members": "Members’ channel",
@@ -58,6 +68,9 @@ export const postsEn = {
   "callouts.post.welcome": "Welcome new members",
   "callouts.where.welcome": "Goes above the welcome, on a day with new members.",
   "activity.callout.welcome": "{who} changed the line on “Welcome new members”",
+  "callouts.post.summary": "Weekly members summary",
+  "callouts.where.summary": "Goes above the weekly members summary, on Monday.",
+  "activity.callout.summary": "{who} changed the line on the “Weekly members summary”",
 };
 
 export const postsPt: typeof postsEn = {
@@ -87,6 +100,16 @@ export const postsPt: typeof postsEn = {
   "posts.welcome.count":
     "Boas-vindas aos nossos {n} novos membros! Que bom ter vocês aqui. Digam oi e perguntem o que precisarem.",
   "posts.welcome.day": "Todo dia, depois da atualização diária.",
+  "posts.summary.name": "Resumo semanal dos membros",
+  "posts.summary.what":
+    "Toda segunda, para os oficiais: quantos membros entraram e saíram na semana que acabou, e o número de membros na última atualização diária dela e na anterior à semana. Só números, sem nomes. Nada sai quando não há atualização diária para comparar.",
+  "posts.summary.defaultTitle": "Membros na semana passada",
+  "posts.summary.week": "{from} a {to}",
+  "posts.summary.joined": "Entraram: {n}",
+  "posts.summary.left": "Saíram: {n}",
+  "posts.summary.members": "Membros em {day}: {n}",
+  "posts.summary.reads": "Com base em {n} de 7 atualizações diárias da semana.",
+  "posts.summary.day": "Toda {day}, sobre a semana que acabou.",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
   "posts.channel.members": "Canal dos membros",
@@ -116,6 +139,9 @@ export const postsPt: typeof postsEn = {
   "callouts.post.welcome": "Boas-vindas aos novos membros",
   "callouts.where.welcome": "Vai acima das boas-vindas, num dia com membros novos.",
   "activity.callout.welcome": "{who} mudou a frase das “Boas-vindas aos novos membros”",
+  "callouts.post.summary": "Resumo semanal dos membros",
+  "callouts.where.summary": "Vai acima do resumo semanal dos membros, na segunda.",
+  "activity.callout.summary": "{who} mudou a frase do “Resumo semanal dos membros”",
 };
 
 export const postsFr: typeof postsEn = {
@@ -145,6 +171,16 @@ export const postsFr: typeof postsEn = {
   "posts.welcome.count":
     "Bienvenue à nos {n} nouveaux membres ! Nous sommes ravis de vous compter parmi nous. Dites bonjour, et demandez-nous ce dont vous avez besoin.",
   "posts.welcome.day": "Chaque jour, après la mise à jour quotidienne.",
+  "posts.summary.name": "Bilan hebdomadaire des membres",
+  "posts.summary.what":
+    "Chaque lundi, pour les officiers : combien de membres sont arrivés et partis pendant la semaine écoulée, et le nombre de membres à sa dernière mise à jour quotidienne et à celle d’avant la semaine. Seulement des nombres, aucun nom. Rien n’est publié quand aucune mise à jour quotidienne ne permet de comparer.",
+  "posts.summary.defaultTitle": "Les membres la semaine dernière",
+  "posts.summary.week": "Du {from} au {to}",
+  "posts.summary.joined": "Arrivés : {n}",
+  "posts.summary.left": "Partis : {n}",
+  "posts.summary.members": "Membres le {day} : {n}",
+  "posts.summary.reads": "D’après {n} des 7 mises à jour quotidiennes de la semaine.",
+  "posts.summary.day": "Chaque {day}, pour la semaine écoulée.",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",
   "posts.channel.members": "Salon des membres",
@@ -174,4 +210,7 @@ export const postsFr: typeof postsEn = {
   "callouts.post.welcome": "Bienvenue aux nouveaux membres",
   "callouts.where.welcome": "Au-dessus de l’accueil, un jour avec de nouveaux membres.",
   "activity.callout.welcome": "{who} a changé la phrase de « Bienvenue aux nouveaux membres »",
+  "callouts.post.summary": "Bilan hebdomadaire des membres",
+  "callouts.where.summary": "Au-dessus du bilan hebdomadaire des membres, le lundi.",
+  "activity.callout.summary": "{who} a changé la phrase du « Bilan hebdomadaire des membres »",
 };
