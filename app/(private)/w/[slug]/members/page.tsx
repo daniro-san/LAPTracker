@@ -106,10 +106,11 @@ async function readPage(
   const access = await requireWorkspace(db, p.slug, p.jar, now, RENEW_MS);
   if (!access.ok) return { access, waiting: 0, ...REFUSED };
   const env = getEnv();
-  // Built by the same functions as the Insights count that linked here, for this workspace only.
-  const set =
+  // Built by the same functions as the Insights count that linked here, for this workspace only; read
+  // beside the members' own reads, not before them.
+  const shown =
     p.set && !showFormer
-      ? await shownSet(db, access, p.set, p.words, {
+      ? shownSet(db, access, p.set, p.words, {
           now,
           serverZone: zone,
           kvkWeekday: env.EVENT_WEEKDAY,
@@ -119,11 +120,12 @@ async function readPage(
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
   const members = membersWithProgress(db, access, now, zone);
-  const [view, channels, followUp] = await Promise.all([
+  const [view, channels, followUp, set] = await Promise.all([
     members,
     channelNames(db, access, getEnv()),
     // Issue 585: Follow-up's numbers for the head, as soon as the members view is in.
     showFormer ? null : members.then((v) => followUpCounts(db, access, v, now, zone)),
+    shown,
   ]);
   return {
     access,

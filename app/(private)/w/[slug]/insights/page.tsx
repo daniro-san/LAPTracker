@@ -91,7 +91,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
       {data.view.shield && (
         <ShieldCard shield={shieldWords(data.view.shield, { t, language })} t={t} noData={noData} />
       )}
-      <ZonesCard view={data.view} now={data.now} {...{ today, slug, t, language }} />
+      <ZonesCard view={data.view} now={data.now} {...{ slug, t, language }} />
     </>
   );
   return (

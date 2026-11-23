@@ -210,7 +210,9 @@ function WeekRow(props: {
       setKey={`week-${props.i}`}
       count={(w.joined.set?.people.length ?? 0) + (w.left.set?.people.length ?? 0)}
       title={`${t["insights.flow.weeks"]} · ${w.label}`}
-      far={w.joined.set ? membersHref(slug, w.joined.set) : null}
+      // Members lists the joiners only: past 60 the fold links there only when nobody left that week, so
+      // the link holds exactly what the count counts; otherwise both lists open in the sheet.
+      far={w.joined.set && !w.left.set ? membersHref(slug, w.joined.set) : null}
       summary={<WeekBars w={w} noData={noData} />}
       t={t}
     >

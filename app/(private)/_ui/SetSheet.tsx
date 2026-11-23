@@ -6,7 +6,7 @@
 // card then Back opens it again; in the pane on the page's entry. Closing gives the focus back to the row
 // without scrolling. Opening counts `ws_drilldown_opened` once per kind (InsightsSetMemory); reopening from
 // the fragment does not.
-import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import type { InsightsSet } from "@/lib/analytics/events";
@@ -61,9 +61,17 @@ export function SetSheet(props: {
   useLayoutEffect(() => {
     if (open) writeHash(id);
   }, [open, id]);
+  // A tap opens the pane with the focus on its title, as the sheet does; a reopen from the fragment does not.
+  const tapped = useRef(false);
+  useEffect(() => {
+    if (!open || wide !== true || !tapped.current) return;
+    tapped.current = false;
+    pane?.querySelector<HTMLElement>("[data-sheet-title]")?.focus({ preventScroll: true });
+  }, [open, wide, pane]);
   const show = () => {
     countOpen(props.kind, props.count);
     window.dispatchEvent(new CustomEvent(PANE_ID, { detail: id }));
+    tapped.current = true;
     setOpen(true);
   };
   const close = () => {
@@ -79,7 +87,8 @@ export function SetSheet(props: {
       <button
         id={id}
         type="button"
-        aria-haspopup="dialog"
+        // Below 1024 px a dialog (the sheet); from 1024 px the pane in the margin, which this row controls.
+        {...(wide === true ? { "aria-controls": PANE_ID } : { "aria-haspopup": "dialog" as const })}
         aria-expanded={open}
         onClick={show}
         className={props.className}

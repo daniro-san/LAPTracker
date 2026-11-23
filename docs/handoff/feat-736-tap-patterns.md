@@ -19,7 +19,7 @@
     - for an unknown key;
     - for a week's leavers.
   - `MemberQuery.set` is `{ ref, uids }`. `pickQuery` keeps it only while the address names it. `queryString` writes `set=`, and `keepMembers`, the chip counts and the Filters sheet counts filter on the uids.
-  - On the page there is one removable chip under "From Insights", and its × is 44 px. Rows look as on any day, in name order until the officer picks an order. A line names the set's members who have left, each linked to their former-member card. The chip scrolls into view on arrival. "Clear filters" keeps the set; only its × removes it.
+  - On the page there is one removable chip under "From Insights", and its × is 44 px. Rows look as on any day, in name order until the officer picks an order. A line names the set's members who have left, each linked to their former-member card. The chip scrolls into view on arrival. Its ×, "Clear filters" and "Search everyone" remove the set; the × moves the focus to the search field.
 - **(a) Readouts** (new `app/_ui/charts/Readout.tsx`, a client part): a line under the chart names the chosen column with its numbers. It has 44 px ‹ › steps and `aria-live`. A tap on a column (`data-at`) jumps to it, and the chosen column is marked with `aria-current`. The choice is in the fragment (`#at-<id>-<i>`, replaceState). Used in:
   - the server pulse, starting on the busiest interval: "11:00–11:15 · 10.2K kills gained · 5 alliances read";
   - the compare page: one readout for both strips;
@@ -38,6 +38,16 @@
 - **Copy**:
   - Desk: `lib/private/dictionary.drill.ts`, and `roll.grid.from.*` in EN, PT-BR and FR.
   - Public: `lib/copy-tap.ts`, translated into 17 languages with the translate-copy skill and stamped.
+- **Review fixes (PR 745)**:
+  - Members reads the `?set=` set beside its own reads, not before them.
+  - A week fold past 60 links to Members only when nobody left that week; otherwise both lists open in the sheet. Unit test in `InsightsSets.test.ts`.
+  - The chip's × moves the focus to the search field.
+  - From 1024 px the row has `aria-controls="who-pane"` instead of `aria-haspopup="dialog"`, and a tap moves the focus to the pane's title.
+  - While a set is on, the stored order is neither applied nor written into the address. "Clear filters" and "Search everyone" clear the set too.
+  - The arrival line shows only while the list keeps ± Kills, most first.
+  - The another-workspace test has a positive control: the same key in its own workspace lists its members.
+  - The Time zones card and Members `?set=zone:…` both build their words with `zonesWordsAt`.
+  - D158 has a dated amendment: (a), (c) and (d) are built, (b) is still to build.
 
 ## Decisions
 
@@ -79,7 +89,6 @@
 
 - The sheet and pane path has no e2e: the seed has no Insights set of 13 or more. A seeded alliance with 13 or more in one band would let `desk-drilldown.spec.ts` check the sheet at 360 and the pane at 1280.
 - The fight clock readout line can wrap to several lines when many events are sampled.
-- D158's "Not done here" still lists the tap patterns. It could say that rule 7's (a), (c) and (d) are built, and that (b) is still to build.
 
 ## Next
 

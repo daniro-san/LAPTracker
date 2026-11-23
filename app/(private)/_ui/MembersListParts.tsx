@@ -141,7 +141,11 @@ export function SetChip({ s, set }: { s: ListState; set: ListSet }) {
         <button
           type="button"
           aria-label={set.clear}
-          onClick={() => s.change({ set: null })}
+          onClick={() => {
+            s.change({ set: null });
+            // The chip goes with its ×: the focus goes on to the search, the list's first control.
+            document.getElementById("members-search")?.focus();
+          }}
           className="flex min-h-11 min-w-11 shrink-0 items-center justify-center text-lg focus-visible:outline-paper"
         >
           <span aria-hidden="true">×</span>
@@ -196,7 +200,8 @@ export function CountLine(props: {
   copy: string;
 }) {
   const { s, t } = props;
-  const anyFilter = s.query.r4 || s.query.ask !== null || sheetFilters(s.query) > 0;
+  const anyFilter =
+    s.query.r4 || s.query.ask !== null || s.query.set !== null || sheetFilters(s.query) > 0;
   const total = fill(t["members.count"], { n: s.kept.length, total: props.total });
   return (
     <>

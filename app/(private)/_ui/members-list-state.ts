@@ -114,7 +114,9 @@ export function useMembersList(props: {
   const [hour, setHour] = useState(props.initialQuery.time?.hour ?? props.hour);
   const [chosen, setChosen] = useState<Order | null>(props.initialOrder);
   const stored = useSyncExternalStore(noSubscribe, readOrder, () => null);
-  const order = chosen ?? stored ?? "rank";
+  // An Insights set keeps the default order (name order, D75) until an order is picked on this page: the
+  // stored one is neither applied nor written into the address, so a reload or a shared link is no ranking.
+  const order = chosen ?? (query.set ? "rank" : (stored ?? "rank"));
   const [depth, setDepth] = useState(PAGE);
   const focusFrom = useRef<number | null>(null);
   const clock = useMemo(
@@ -170,8 +172,8 @@ export function useMembersList(props: {
     focusFrom.current = depth;
     setDepth(depth + PAGE);
   };
-  // An Insights set has its own × on its chip.
-  const clearFilters = () => change({ ...NO_QUERY, q: query.q, set: query.set });
+  // "Clear filters" and "Search everyone" mean everyone: an Insights set goes too.
+  const clearFilters = () => change({ ...NO_QUERY, q: query.q });
   return {
     ...{ query, order, depth, hour, clock, langs, kept, noZone, noLanguage, chips, sheet },
     ...{ heading, groups, early: props.early },

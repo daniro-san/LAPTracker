@@ -3,37 +3,21 @@
 // The set is read for the signed-in workspace's own alliance only: a key from another workspace, a band or a
 // week that holds nobody today, or the Insights tab turned off, gives nothing. Names only, no measure (D75).
 import type { Db } from "../db";
-import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
 import { featureOn } from "./features";
 import { insightsView, type InsightsView } from "./insights";
 import type { Formats } from "./insights-format";
 import type { MemberSet, SetRef, Who } from "./insights-sets";
 import { insightsWords } from "./insights-words";
-import { nextKvk, nextReset } from "./insights-zones";
-import { zonesWords } from "./insights-zones-words";
+import { zonesWordsAt, type ZoneClock } from "./insights-zones-words";
 
-/** The schedule's KvK start (EVENT_WEEKDAY, EVENT_TIME) and the server's zone. */
-export interface SetClock {
-  now: Date;
-  serverZone: string;
-  kvkWeekday: number;
-  kvkTime: string;
-}
+/** The page's instant, the server's zone and the KvK start: the Time zones card's own clock. */
+export type SetClock = ZoneClock;
 
 /** Every set the Insights page shows for `view`, from the words its cards draw. */
 export function insightsSets(view: InsightsView, f: Formats, c: SetClock): MemberSet[] {
   const words = insightsWords(view, f.t, f.language);
-  const today = serverDay(c.now, { SERVER_TZ: c.serverZone });
-  const zones = zonesWords(
-    view.zones,
-    {
-      now: c.now,
-      reset: nextReset(today, c.serverZone),
-      kvk: nextKvk(c.now, today, c.serverZone, c.kvkWeekday, c.kvkTime),
-    },
-    { ...f, serverZone: c.serverZone, today, people: view.people },
-  );
+  const zones = zonesWordsAt(view.zones, view.people, f, c);
   return [
     ...(words.effort?.ranges ?? []).map((r) => r.set),
     ...(words.effort?.leftOut ?? []).map((k) => k.set),

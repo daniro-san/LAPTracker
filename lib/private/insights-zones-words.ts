@@ -5,6 +5,7 @@
 // with no bar, never in a share (D75). Each group's row carries its members, its count that list's length
 // (#678); not recorded and usual hours link to Members' own filters (`NOT_RECORDED`, `usualAt`).
 import { dateWords } from "../date-words";
+import { serverDay } from "../schedule";
 import { fill, plural } from "../words";
 import { dayIn, hhmm, offsetText } from "./calendar-time";
 import { type Formats } from "./insights-format";
@@ -14,12 +15,44 @@ import {
   busiestHours,
   cityOf,
   knownOf,
+  nextKvk,
+  nextReset,
   usualHours,
   zoneGroups,
   type Moments,
   type ZoneCounts,
   type ZoneGroup,
 } from "./insights-zones";
+
+/** The page's instant, the server's zone and the schedule's KvK start (EVENT_WEEKDAY, EVENT_TIME). */
+export interface ZoneClock {
+  now: Date;
+  serverZone: string;
+  kvkWeekday: number;
+  kvkTime: string;
+}
+
+/**
+ * The Time zones card's words at `c`: its moments (now, the next reset, the next KvK) and server day from one
+ * place, so the card and Members' `?set=zone:…` group members under the same keys.
+ */
+export function zonesWordsAt(
+  zones: ZoneCounts,
+  people: ZoneFormats["people"],
+  f: Formats,
+  c: ZoneClock,
+): ZonesWords {
+  const today = serverDay(c.now, { SERVER_TZ: c.serverZone });
+  return zonesWords(
+    zones,
+    {
+      now: c.now,
+      reset: nextReset(today, c.serverZone),
+      kvk: nextKvk(c.now, today, c.serverZone, c.kvkWeekday, c.kvkTime),
+    },
+    { ...f, serverZone: c.serverZone, today, people },
+  );
+}
 
 /** Cities named in a group's label; the rest are "and N more". */
 const CITIES = 2;

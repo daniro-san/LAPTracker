@@ -258,6 +258,9 @@ test("Insights: a group's names end with “Open these n in Members ›”, whic
   await expect(effort.getByRole("list", { name: title }).getByRole("link")).toHaveText(names);
   const onward = effort.getByRole("link", { name: `Open these ${top.length} in Members ›` });
   expect((await onward.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  const arrived = page.waitForResponse((r) =>
+    r.url().endsWith("/members?set=effort_range:range-0"),
+  );
   await onward.click();
   await expect(page).toHaveURL(`${desk}/members?set=effort_range:range-0`);
   await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
@@ -267,7 +270,8 @@ test("Insights: a group's names end with “Open these n in Members ›”, whic
   await sees(chip, title);
   for (const name of names) await expect(memberLine(page, name)).toHaveCount(1);
   for (const name of others) await expect(memberLine(page, name)).toHaveCount(0);
-  // A reload builds the same set again on the server.
+  // A reload builds the same set again on the server; the page's own answer is read first, for the leak guard.
+  await (await arrived).finished();
   await page.reload();
   await sees(page.locator("#members-set"), title);
   for (const name of others) await expect(memberLine(page, name)).toHaveCount(0);
@@ -276,6 +280,8 @@ test("Insights: a group's names end with “Open these n in Members ›”, whic
   expect((await clear.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await clear.click();
   await expect(page.locator("#members-set")).toHaveCount(0);
+  // The chip went with its ×: the focus is on the search, not lost to the page.
+  await expect(page.getByRole("searchbox", { name: "Search members" })).toBeFocused();
   await expect(memberLine(page, others[0] as string)).toHaveCount(1);
   await expect(page).toHaveURL(`${desk}/members`);
 });

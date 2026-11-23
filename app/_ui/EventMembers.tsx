@@ -44,21 +44,26 @@ export async function EventMembers({
       <h2 id={MEMBERS_ID} className="mb-2 mt-8 scroll-mt-20 font-subhead text-display-md">
         {copy.ledger.members}
       </h2>
-      {arrival && (
-        <p className="mb-2 flex items-center justify-between gap-2 border-l-2 border-yarn pl-3 text-sm">
-          <span className="min-w-0">
-            {arrival === "war_turnout" ? copy.ledger.arrivedTurnout : copy.ledger.arrivedKillShare}
-          </span>
-          <a
-            href={`${page}#${MEMBERS_ID}`}
-            aria-label={copy.ledger.arrivedClear}
-            className="tint-button flex min-h-11 min-w-11 shrink-0 items-center justify-center text-lg"
-          >
-            <span aria-hidden="true">×</span>
-          </a>
-        </p>
-      )}
       <MembersExplorer
+        // Shown while the list keeps the sort it was opened with (± Kills, most first).
+        arrival={
+          arrival && (
+            <p className="mb-2 flex items-center justify-between gap-2 border-l-2 border-yarn pl-3 text-sm">
+              <span className="min-w-0">
+                {arrival === "war_turnout"
+                  ? copy.ledger.arrivedTurnout
+                  : copy.ledger.arrivedKillShare}
+              </span>
+              <a
+                href={`${page}#${MEMBERS_ID}`}
+                aria-label={copy.ledger.arrivedClear}
+                className="tint-button flex min-h-11 min-w-11 shrink-0 items-center justify-center text-lg"
+              >
+                <span aria-hidden="true">×</span>
+              </a>
+            </p>
+          )
+        }
         // A link to this page with another filter remounts the list, so it starts from the new URL.
         key={`${initial.show}:${initial.sort}`}
         members={members}

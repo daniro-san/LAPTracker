@@ -272,8 +272,17 @@ describe("Insights' counts open exactly the members they count (#678)", () => {
     const { token } = await createSession(db, other?.id ?? 0, userId, NOW, null, "officer");
     const theirs = await requireWorkspace(db, "oth", { get: () => ({ value: token }) }, NOW);
     if (!theirs.ok) throw new Error("no access");
-    for (const s of ours)
-      expect(await shownSet(db, theirs, { kind: s.kind, key: s.key }, f, CLOCK)).toBeNull();
+    for (const s of ours) {
+      const ref = { kind: s.kind, key: s.key };
+      // The same key in its own workspace lists its members; in the other, nothing.
+      const own = await shownSet(db, access, ref, f, CLOCK);
+      expect([s.key, own?.uids.length ?? 0]).toEqual([
+        s.key,
+        s.people.filter((p) => p.current).length,
+      ]);
+      expect(own?.uids.length).toBeGreaterThan(0);
+      expect(await shownSet(db, theirs, ref, f, CLOCK)).toBeNull();
+    }
   });
 
   it("links “Not recorded yet” and usual hours to Members with the very query they count with", () => {
