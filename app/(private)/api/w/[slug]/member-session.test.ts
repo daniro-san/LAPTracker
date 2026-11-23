@@ -89,6 +89,11 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     POST: { body: { action: "unsubscribe", endpoint: "https://fcm.googleapis.com/fcm/send/x" } },
   },
   "callouts/route.ts": { POST: { body: { post: "thanks", callout: "Thanks, family" } } },
+  "posts/route.ts": {
+    POST: {
+      body: { post: "week", on: true, channel: "members", title: "", language: "en" },
+    },
+  },
   "raid-prep/route.ts": {
     POST: { body: { morningMinute: 600, discord: false, language: "en" } },
   },

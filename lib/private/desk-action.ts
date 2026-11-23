@@ -11,6 +11,7 @@ import {
   type DeskAction,
   type DeskFeature,
   type DeskPlace,
+  type DeskPost,
 } from "../analytics/server";
 import type { AppContext } from "../app-context";
 import type { WorkspaceAccess } from "./access";
@@ -28,8 +29,11 @@ export function withActionEvent(
   feature: DeskFeature,
   action: DeskAction,
   response: Response,
-  /** Follow-up's records (issue 516): from the tab or a card, and whether the member was on the list. */
-  place?: DeskPlace,
+  /**
+   * Follow-up's records (issue 516): from the tab or a card, and whether the member was on the list; or a
+   * catalog post's switch or settings (D159): which post.
+   */
+  place?: DeskPlace | { post: DeskPost },
 ): Response {
   if (!response.ok || !analyticsKey(ctx.env)) return response;
   const person = analyticsPersonId(access.user.id, ctx.env.CRON_SECRET);

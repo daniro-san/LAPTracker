@@ -2,7 +2,13 @@
 // calls and thefts, imports, and the key and data requests. Invented names and values only.
 import type { Db } from "./db";
 import { memberFollowUps, rollCallMarks, rollCalls, rollCallTeam } from "./schema";
-import { workspaceDiscord, workspacePostTouches, workspaceWebhooks } from "./schema-discord";
+import {
+  postRuns,
+  workspaceDiscord,
+  workspacePosts,
+  workspacePostTouches,
+  workspaceWebhooks,
+} from "./schema-discord";
 import { workspaceFeatures, workspaceUsage } from "./schema-features";
 import { feedback, feedbackPictures } from "./schema-feedback";
 import {
@@ -265,6 +271,19 @@ async function seedCallout(db: Db, ws: number, officer: number) {
     updatedBy: officer,
     updatedAt: SEED_AT,
   });
+  // D159: the week post turned on with the alliance's own title, and Monday's claim.
+  await db.insert(workspacePosts).values({
+    workspaceId: ws,
+    postKey: "week",
+    on: true,
+    channel: "members",
+    title: "Our week",
+    updatedBy: officer,
+    updatedAt: SEED_AT,
+  });
+  await db
+    .insert(postRuns)
+    .values({ workspaceId: ws, postKey: "week", period: WEEK, status: "posted", at: SEED_AT });
 }
 
 /** D148: an officer's sealed device (never downloaded, like the webhook) and a trigger's mark. */

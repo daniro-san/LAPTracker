@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
+import { schedulePostsTick } from "@/lib/posts-tick";
 import { schedulePushTick } from "@/lib/push-tick";
 import { finishTick, startTick } from "@/lib/repo/ticks";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
@@ -41,6 +42,8 @@ export function POST(request: Request): Promise<Response> {
     scheduleSquadsBatch(ctx, origin);
     // D148: officers' notifications on a tick that opened the database anyway (counts only, after the answer).
     schedulePushTick(ctx, tick);
+    // D159: the catalog posts due today (Monday's week post), on the same terms.
+    schedulePostsTick(ctx);
     switch (tick.kind) {
       case "idle":
         return new Response(null, { status: 204 });

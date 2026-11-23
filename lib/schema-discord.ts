@@ -12,6 +12,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -67,8 +68,12 @@ export const workspaceWebhooks = pgTable(
   ],
 );
 
-/** The posts an alliance may put its own line on (#713, D156). */
-export const POST_KEYS = ["shield", "thanks", "garrison"] as const;
+/** The catalog's optional posts (#713 part C, D159), in build order; lib/post-catalog.ts describes each. */
+export const CATALOG_POSTS = ["week"] as const;
+export type CatalogPost = (typeof CATALOG_POSTS)[number];
+
+/** The posts an alliance may put its own line on (#713, D156), the catalog's posts included (D159). */
+export const POST_KEYS = ["shield", "thanks", "garrison", ...CATALOG_POSTS] as const;
 export type PostKey = (typeof POST_KEYS)[number];
 
 /**
@@ -91,7 +96,68 @@ export const workspacePostTouches = pgTable(
     primaryKey({ columns: [t.workspaceId, t.postKey] }),
     check(
       "workspace_post_touches_post_key_check",
-      sql`${t.postKey} in ('shield', 'thanks', 'garrison')`,
+      sql`${t.postKey} in ('shield', 'thanks', 'garrison', 'week')`,
     ),
+  ],
+);
+
+/** The channels a catalog post may go to: the workspace's two notice channels (D129). */
+export const POST_CHANNELS = ["members", "leaders"] as const;
+export type PostChannel = (typeof POST_CHANNELS)[number];
+
+/**
+ * The alliance's own settings of one catalog post (#713 part C, D159): its switch (the alliance's layer of
+ * D134; the owner's is the post's feature), the channel, the weekday where the catalog lets it change (null:
+ * the catalog's day), the officers' title (empty: ours, in the post's language), the picture where the post
+ * has one, and the language it is written in. No row: off. Deleted with the workspace and downloaded (D125).
+ */
+export const workspacePosts = pgTable(
+  "workspace_posts",
+  {
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    postKey: text("post_key", { enum: CATALOG_POSTS }).notNull(),
+    on: boolean("on").notNull().default(false),
+    channel: text("channel", { enum: POST_CHANNELS }).notNull(),
+    /** 0 = Monday … 6 = Sunday, server time; null: the catalog's day. */
+    weekday: smallint("weekday"),
+    title: text("title").notNull().default(""),
+    picture: boolean("picture").notNull().default(false),
+    language: text("language").notNull().default("en"),
+    updatedBy: integer("updated_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    updatedAt: tstz("updated_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.postKey] }),
+    check("workspace_posts_post_key_check", sql`${t.postKey} in ('week')`),
+    check("workspace_posts_channel_check", sql`${t.channel} in ('members', 'leaders')`),
+    check("workspace_posts_weekday_check", sql`${t.weekday} between 0 and 6`),
+    check("workspace_posts_language_check", sql`${t.language} in ('en', 'pt-BR', 'fr')`),
+  ],
+);
+
+/**
+ * One catalog post's send for one period (D159): the claim that makes it go out at most once per workspace,
+ * post and period (a server day, "2026-11-23"), however many ticks overlap. `sent`: the messages Discord
+ * took. A failed send that reached Discord with nothing is claimed again by a later tick of the same period,
+ * up to 3 attempts. Counts and codes only; deleted with the workspace, never downloaded (D125).
+ */
+export const postRuns = pgTable(
+  "post_runs",
+  {
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    postKey: text("post_key", { enum: CATALOG_POSTS }).notNull(),
+    period: text("period").notNull(),
+    status: text("status", { enum: ["posting", "posted", "failed"] }).notNull(),
+    sent: integer("sent").notNull().default(0),
+    attempts: smallint("attempts").notNull().default(1),
+    at: tstz("at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.postKey, t.period] }),
+    check("post_runs_status_check", sql`${t.status} in ('posting', 'posted', 'failed')`),
   ],
 );
