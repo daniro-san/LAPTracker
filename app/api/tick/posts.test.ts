@@ -112,7 +112,7 @@ describe("the tick's catalog posts (D159)", () => {
     // Fri 20:30 ST: the same window's tick; the reminder goes out after the answer.
     const due = await tick(new Date("2026-11-27T22:30:00Z"));
     expect(due.posts).toHaveLength(1);
-    expect(due.posts[0]?.content).toMatch(/^\*\*Shield up before the reset\*\*\n\nRaid tonight/);
+    expect(due.posts[0]?.content).toMatch(/^\*\*Shield up before the reset\*\*\n\nThe raid starts/);
     // Fri 20:45 ST: the window has closed, nothing else is due, so no wake and no post.
     expect(await tick(new Date("2026-11-27T22:45:00Z"))).toEqual({ status: 204, posts: [] });
   });

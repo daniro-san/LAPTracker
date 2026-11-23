@@ -328,7 +328,7 @@ const FRIDAY_2030 = new Date("2026-11-27T22:30:00Z"); // Fri 20:30 ST
 const SHIELD_UP_EN = [
   "**Shield up before the reset**",
   "",
-  "Raid tonight at the reset (00:00 ST). Before then, please turn on your shield, take your squads off the wall and bring your troops home: a shield doesn’t protect troops outside. Thanks, everyone!",
+  "The raid starts at the reset (00:00 ST). Before then, please make sure your shield is on, take your squads off the wall and bring your troops home: a shield doesn’t protect troops outside. Thanks, everyone!",
 ].join("\n");
 
 const turnShieldUpOn = (values: Partial<typeof workspacePosts.$inferInsert> = {}) =>
@@ -422,7 +422,7 @@ describe("Shield-up reminder (D159, post 2)", () => {
       [
         "**Escudos @​everyone**",
         "",
-        "Raid hoje à noite, no reset (00:00 ST). Antes disso, por favor liguem o escudo, tirem os esquadrões da muralha e tragam as tropas para casa: o escudo não protege tropas fora da cidade. Obrigado, pessoal!",
+        "O raid começa no reset (00:00 ST). Antes disso, por favor confirmem que o escudo está ligado, tirem os esquadrões da muralha e tragam as tropas para casa: o escudo não protege tropas fora da cidade. Obrigado, pessoal!",
       ].join("\n"),
     );
     expect(posts[0]?.body.allowed_mentions).toEqual({ parse: [] });

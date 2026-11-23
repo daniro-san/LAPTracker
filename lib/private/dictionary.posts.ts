@@ -16,7 +16,7 @@ export const postsEn = {
     "A friendly reminder before the raid at the reset (00:00 ST): shield up, squads off the wall, troops home. No player names or counts. It works with or without the Raid Shield check.",
   "posts.shield_up.defaultTitle": "Shield up before the reset",
   "posts.shield_up.body":
-    "Raid tonight at the reset (00:00 ST). Before then, please turn on your shield, take your squads off the wall and bring your troops home: a shield doesn’t protect troops outside. Thanks, everyone!",
+    "The raid starts at the reset (00:00 ST). Before then, please make sure your shield is on, take your squads off the wall and bring your troops home: a shield doesn’t protect troops outside. Thanks, everyone!",
   "posts.shield_up.day": "Every {day} evening, before the raid at the reset (00:00 ST).",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
@@ -59,7 +59,7 @@ export const postsPt: typeof postsEn = {
     "Um lembrete amigável antes do raid no reset (00:00 ST): escudo ligado, esquadrões fora da muralha, tropas em casa. Sem nomes de jogadores nem contagens. Funciona com ou sem a Conferência do Escudo de raid.",
   "posts.shield_up.defaultTitle": "Escudo ligado antes do reset",
   "posts.shield_up.body":
-    "Raid hoje à noite, no reset (00:00 ST). Antes disso, por favor liguem o escudo, tirem os esquadrões da muralha e tragam as tropas para casa: o escudo não protege tropas fora da cidade. Obrigado, pessoal!",
+    "O raid começa no reset (00:00 ST). Antes disso, por favor confirmem que o escudo está ligado, tirem os esquadrões da muralha e tragam as tropas para casa: o escudo não protege tropas fora da cidade. Obrigado, pessoal!",
   "posts.shield_up.day": "Toda {day} à noite, antes do raid no reset (00:00 ST).",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
@@ -102,7 +102,7 @@ export const postsFr: typeof postsEn = {
     "Un rappel amical avant le raid au reset (00:00 ST) : bouclier actif, escouades retirées du mur, troupes à la maison. Sans noms de joueurs ni chiffres. Il marche avec ou sans la Vérification du Bouclier de raid.",
   "posts.shield_up.defaultTitle": "Bouclier actif avant le reset",
   "posts.shield_up.body":
-    "Raid ce soir au reset (00:00 ST). D’ici là, pensez à activer votre bouclier, retirer vos escouades du mur et ramener vos troupes à la maison : le bouclier ne protège pas les troupes dehors. Merci à tous !",
+    "Le raid commence au reset (00:00 ST). D’ici là, pensez à vérifier que votre bouclier est actif, retirer vos escouades du mur et ramener vos troupes à la maison : le bouclier ne protège pas les troupes dehors. Merci à tous !",
   "posts.shield_up.day": "Chaque {day} soir, avant le raid au reset (00:00 ST).",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",
