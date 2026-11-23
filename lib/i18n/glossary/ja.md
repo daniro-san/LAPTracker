@@ -64,6 +64,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Kill share                | Kills の割合              | `ledger.carried`, `carriedKillsMark` — the share of kills gained                                                                              |
 | Might share               | Might の割合              | `ledger.carried`, `carriedMightMark` — the share of might at Start                                                                            |
 | pts (percentage points)   | pt                        | `ledger.carriedPoints` — a gap after the sign, `+6.1 pt`                                                                                      |
+| Hollow dot                | 白丸                      | `ledger.progressEvents` — a reading on the might chart, drawn as a hollow dot                                                                 |
 | Server fight clock        | サーバーの戦闘時計        | `ledger.fightClock`, `ledger.fightClockLink`, `ledger.comparePulse*` — events side by side on the server clock                                |
 | Outlined                  | 囲み線                    | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event                                                     |
 | English                   | ja                        | Key and use                                                                                                                                   |

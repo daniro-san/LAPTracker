@@ -60,7 +60,7 @@ export const de = {
     progressMight: "Du: {change} seit {date}.",
     progressMedian: "Typisches Mitglied von {tag}: {percent}.",
     rankIn: "in {tag}",
-    progressEvents: "Event (Beginn bis Ende): {dates}",
+    progressEvents: "Event (Beginn bis Ende), seine Erfassungen als umrandete Punkte: {dates}",
     progressWar: "Bei Kriegs-Events sinkt Might oft. Das ist zu erwarten.",
     progressEmpty: "Noch nicht genug Erfassungen für ein Diagramm.",
     chart: "{label}: {first} am {from}, {last} am {to}",
@@ -127,8 +127,8 @@ export const de = {
     carriedHelp:
       "Der Anteil jeder Allianz an den Kills, die ihre Mitglieder in beiden Listen von Beginn bis Ende gewonnen haben, neben ihrem Anteil am Might bei Beginn. Verteidiger und Support-Spieler sammeln keine Kills.",
     carriedTotal: "Alle {n} Allianzen: {kills} Kills gewonnen, {might} Might bei Beginn",
-    carriedMightMark: "Might-Anteil bei Beginn",
-    carriedKillsMark: "Kills-Anteil gewonnen",
+    carriedGapKey:
+      "Balken: Kills-Anteil minus Might-Anteil, in Prozentpunkten. Rechts von 0 ist der Kills-Anteil höher.",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} mit gewonnenen Kills",
     carriedSpread: "{low}–{high} über {n} Events",
@@ -251,7 +251,7 @@ export const de = {
       "Das Might der Allianz hat sich seit {from} um {growth} verändert. Die Summe der erfassten Allianzen hat sich um {server} verändert.",
     server: "Erfasste Allianzen",
     growthSince: "{growth} seit {from}",
-    trend: "Rang {first} am {from}, {last} am {to}",
+    was: "war {rank} am {from}",
     thisAlliance: "Diese Allianz",
     detailsHelp: "Rang an jedem Tag, der älteste zuerst: {days}.",
     few: "Noch nicht genug Tagesabrufe, um die Allianzen zu vergleichen.",

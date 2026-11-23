@@ -160,7 +160,12 @@ export async function PlayerProgress({ progress, clock }: { progress: Progress; 
           <p className={`mt-2 flex flex-wrap items-center gap-x-3 text-sm ${MUTED}`}>
             {bands.length > 0 && (
               <span className="inline-flex items-center gap-2">
-                <span aria-hidden="true" className="inline-block h-3 w-1.5 shrink-0 bg-ink/50" />
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-3 w-3 shrink-0 items-center justify-center border-x border-dashed border-ink/50 bg-ink/10"
+                >
+                  <span className="size-2 rounded-full border-2 border-ink bg-paper" />
+                </span>
                 {fill(l.progressEvents, { dates: eventDates })}
               </span>
             )}

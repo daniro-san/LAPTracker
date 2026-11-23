@@ -18,8 +18,9 @@ export const standingCopy = {
   server: "Tracked alliances",
   /** Beside each row's might: its change since the period's first day, `{growth}` a signed percent. */
   growthSince: "{growth} since {from}",
-  /** The sparkline's accessible name; `{first}` and `{last}` are ranks (`#6`), `{from}` and `{to}` dates. */
-  trend: "Rank {first} on {from}, {last} on {to}",
+  /** Beside a row whose rank moved (D158, in place of a sparkline): its rank on the period's first day,
+   * `{rank}` like `#6`, `{from}` that day. Shown only when the rank moved. */
+  was: "was {rank} on {from}",
   /** The chip on the page's own alliance row in the list. */
   thisAlliance: "This alliance",
   /** Details: the ranks day by day. `{days}` are the dates, oldest first. */

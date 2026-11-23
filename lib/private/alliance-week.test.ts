@@ -38,16 +38,27 @@ describe("the alliance's week in one line (issue 466)", () => {
     expect(allianceWeek([newest], "2026-11-20")?.coins).toEqual({ n: 2, of: 4 });
   });
 
-  it("takes the median quest points of those who did daily quests on the newest read", () => {
-    const newest = read("2026-11-19", [
-      member(1, { active: 300 }),
-      member(2, { active: null }),
-      member(3, { active: 700 }),
-      member(4, { active: 500 }),
-    ]);
-    expect(allianceWeek([newest], "2026-11-20")?.quests).toEqual({ value: 500, of: 3 });
-    const none = read("2026-11-19", [member(1, { active: null })]);
-    expect(allianceWeek([none], "2026-11-20")?.quests).toBeNull();
+  it("takes the median of the newest day's quest points, from the week's running total, of those who did daily quests that day (#739)", () => {
+    // Wednesday 18 to Thursday 19: member 1 earned 100, member 2 none (the total stayed), member 3 200,
+    // member 4 150, and member 5 is not on Wednesday's read, so their day is not known.
+    const reads = [
+      read("2026-11-18", [
+        member(1, { active: 400 }),
+        member(2, { active: 480 }),
+        member(3, { active: 500 }),
+        member(4, { active: null }),
+      ]),
+      read("2026-11-19", [
+        member(1, { active: 500 }),
+        member(2, { active: 480 }),
+        member(3, { active: 700 }),
+        member(4, { active: 150 }),
+        member(5, { active: 900 }),
+      ]),
+    ];
+    expect(allianceWeek(reads, "2026-11-20")?.quests).toEqual({ value: 150, of: 3 });
+    const none = [read("2026-11-18", [member(1)]), read("2026-11-19", [member(1)])];
+    expect(allianceWeek(none, "2026-11-20")?.quests).toBeNull();
   });
 
   it("adds up the donations of the newest read's game week only", () => {

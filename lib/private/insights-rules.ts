@@ -2,10 +2,11 @@
 // day and against the 4 weeks before, effort in each quarter of might with the "Quiet contributors" thanks,
 // and the membership flow (joined and left per week, where people came from and went, how long members have
 // been with us, newcomers' growth). Only end-of-day reads (D72) are counted: a day with no read is left
-// out, never 0 (D75). A null on a read that lists a member is "none that day" (D127). Nobody is ranked.
+// out, never 0 (D75). A null on a read that lists a member is "none that day" (D127). A day's quest points
+// come from the week's running total (`questPoints`, #739). Nobody is ranked.
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
 import { COINS_MAX, dayAverage, type DayAverage } from "./member-days";
-import { DAY_MS, gameWeek, isoDay } from "./member-week";
+import { DAY_MS, gameWeek, isoDay, questPoints } from "./member-week";
 
 /** This game week and the 4 before it. */
 export const PULSE_WEEKS = 5;
@@ -48,7 +49,10 @@ const share = (n: number, of: number): Share | null => (of > 0 ? { n, of } : nul
  * on a read that lists a member is none that day (D127): no quest points, not at the cap, no donation.
  */
 export interface Pulse {
-  /** Members with daily quest points above 0. */
+  /**
+   * Members with daily quest points above 0 that day, out of those whose day's points are known
+   * (`questPoints`: a day whose day before has no read is no data, D75).
+   */
   quests: Share | null;
   /** Members at the 1,000 coin cap. */
   coins: Share | null;
@@ -58,11 +62,15 @@ export interface Pulse {
   tech: Median | null;
 }
 
-export function pulseOf(reads: readonly RosterRead[]): Pulse {
+/** The pulse of `reads`; `history` holds them and the reads before, for each day's quest points. */
+export function pulseOf(reads: readonly RosterRead[], history: readonly RosterRead[]): Pulse {
   const all = reads.flatMap((r) => r.members);
   const gifts = all.flatMap((m) => (m.dailyTech === null ? [] : [m.dailyTech]));
+  const quests = reads
+    .flatMap((r) => r.members.map((m) => questPoints(history, m.uid, r.day)))
+    .filter((q) => q !== null);
   return {
-    quests: share(all.filter((m) => (m.active ?? 0) > 0).length, all.length),
+    quests: share(quests.filter((q) => q !== "none").length, quests.length),
     coins: share(all.filter((m) => (m.dailyHonor ?? 0) >= COINS_MAX).length, all.length),
     donated: share(gifts.length, all.length),
     tech: median(gifts),
@@ -91,12 +99,15 @@ export function pulseView(reads: readonly RosterRead[]): PulseView | null {
   const byDay = new Map(reads.map((r) => [r.day, r]));
   const days = week.map((day) => {
     const read = byDay.get(day);
-    return { day, pulse: day > newest.day ? ("later" as const) : read ? pulseOf([read]) : null };
+    return {
+      day,
+      pulse: day > newest.day ? ("later" as const) : read ? pulseOf([read], reads) : null,
+    };
   });
   const weeks = Array.from({ length: PULSE_WEEKS }, (_, i) => {
     const monday = isoDay(dayMs(week[0] as string) - (PULSE_WEEKS - 1 - i) * 7 * DAY_MS);
     const inWeek = reads.filter((r) => gameWeek(r.day)[0] === monday);
-    return { monday, reads: inWeek.length, ...pulseOf(inWeek) };
+    return { monday, reads: inWeek.length, ...pulseOf(inWeek, reads) };
   });
   return { days, weeks };
 }
@@ -104,7 +115,8 @@ export function pulseView(reads: readonly RosterRead[]): PulseView | null {
 /**
  * One member's averages over the reads among the last EFFORT_READS that list them, by the member card's and
  * Me's rule (`dayAverage`, owner 2026-11-22, #663): a null on such a read is none that day and counts as 0
- * (D127), so one big day does not stand for a week; a day with no read is left out (D75).
+ * (D127), so one big day does not stand for a week; a day with no read is left out (D75), and so is a day
+ * whose quest points are no data (`questPoints`: no read of the day before, #739).
  */
 export interface Effort {
   uid: number;
@@ -115,27 +127,28 @@ export interface Effort {
   tech: DayAverage | null;
 }
 
-const EFFORT_FIELDS = { quests: "active", coins: "dailyHonor", tech: "dailyTech" } as const;
-export type EffortMetric = keyof typeof EFFORT_FIELDS;
-export const EFFORT_METRICS = Object.keys(EFFORT_FIELDS) as EffortMetric[];
+const EFFORT_FIELDS = { coins: "dailyHonor", tech: "dailyTech" } as const;
+export type EffortMetric = "quests" | keyof typeof EFFORT_FIELDS;
+export const EFFORT_METRICS: EffortMetric[] = ["quests", "coins", "tech"];
 
 /** Each member of the newest read with a might, minus `leftOut`, with their averages. */
 export function effortsOf(reads: readonly RosterRead[], leftOut: ReadonlySet<number>): Effort[] {
   const recent = reads.slice(-EFFORT_READS);
   const newest = recent.at(-1);
   if (!newest) return [];
-  const rows = (uid: number) =>
-    recent.flatMap((r) => r.members.filter((m) => m.uid === uid)) as RosterMember[];
   return newest.members.flatMap((m) => {
     if (m.power === null || leftOut.has(m.uid)) return [];
-    const seen = rows(m.uid);
-    const avg = (k: EffortMetric) => dayAverage(seen.map((s) => s[EFFORT_FIELDS[k]] ?? "none"));
+    const listing = recent.filter((r) => r.members.some((x) => x.uid === m.uid));
+    const seen = listing.map((r) => r.members.find((x) => x.uid === m.uid) as RosterMember);
+    const avg = (k: keyof typeof EFFORT_FIELDS) =>
+      dayAverage(seen.map((s) => s[EFFORT_FIELDS[k]] ?? "none"));
     return [
       {
         uid: m.uid,
         name: m.name,
         might: m.power,
-        quests: avg("quests"),
+        quests: dayAverage(listing.map((r) => questPoints(reads, m.uid, r.day))),
+
         coins: avg("coins"),
         tech: avg("tech"),
       },

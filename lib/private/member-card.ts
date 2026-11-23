@@ -30,7 +30,14 @@ import { followUpsOf, helpMarksOf } from "./follow-up";
 import { historyLine, markLines } from "./follow-up-rules";
 import { cardLink, type CardLink } from "./me-link";
 import { daysFormats, duelText, quietDayLine, toAskLine, versionLines } from "./member-card-parts";
-import { daysCard, lastDays, LAST_DAYS, type DaysCard, type LastDays } from "./member-days";
+import {
+  allianceBest,
+  daysCard,
+  lastDays,
+  LAST_DAYS,
+  type DaysCard,
+  type LastDays,
+} from "./member-days";
 import { memberOrigin } from "./member-origin";
 import { squadsCard, type SquadsCard } from "./member-squads";
 import { membersView, type MemberRow } from "./members";
@@ -314,6 +321,12 @@ export function cardData(
   };
 }
 
+/** The card's last 7 days; donations drawn against the alliance's best member-day in them (D158). */
+function cardDays(reads: Parameters<typeof lastDays>[0], uid: number): LastDays | null {
+  const days = lastDays(reads, uid);
+  return days && { ...days, best: allianceBest(reads, days.days) };
+}
+
 /** One member's card in `language`, or null when the uid is not in the workspace's own alliance. */
 export async function memberCard(
   db: Db,
@@ -325,7 +338,8 @@ export async function memberCard(
     membersView(db, access, at.now, at.zone),
     followUpsOf(db, access, uid),
     factHistory(db, access.workspaceId, FACT_FIELDS, uid),
-    endOfDayReads(db, access.unionId, LAST_DAYS),
+    // One read more: the first day's quest points are its running total less the day before's (#739).
+    endOfDayReads(db, access.unionId, LAST_DAYS + 1),
   ]);
   const member = view.members.find((m) => m.uid === uid);
   if (!member) return null;
@@ -357,7 +371,7 @@ export async function memberCard(
     followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
     previous,
     thisWeek,
-    days: lastDays(reads, uid),
+    days: cardDays(reads, uid),
     origin,
     history,
   });

@@ -35,6 +35,7 @@ import {
   KVK_REASON_ON,
   missingOf,
   OFFLINE_GRACE_DAYS,
+  questPoints,
   topOf,
   weekDonations,
   weekQuestPoints,
@@ -64,9 +65,12 @@ export interface MemberRow {
   /** Lifetime kills from the read (public); null when not sent. */
   kills: number | null;
   sanctuary: number | null;
-  /** Daily quest points in the newest end-of-day read (D127); null when it sent none. */
+  /**
+   * Daily quest points on the newest end-of-day read's day (`questPoints`, D127, #739); null when none were
+   * earned that day or the day's points are not known.
+   */
   activity: number | null;
-  /** The newest read's server day when it sent no daily quest points: none that day (D127). */
+  /** The newest read's server day when no daily quest points were earned that day: none that day (D127). */
   noQuestsOn: string | null;
   /** The newest read's server day when it sent no donations: none that day (D127). */
   noDonationsOn: string | null;
@@ -180,10 +184,12 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
           : []),
       ];
   const missing = missingOf(m, donations);
+  const quests = questPoints(s.reads, m.uid, newest.day);
   return {
     ...plainRow(m, week, s.firstSeen),
-    activity: m.active,
-    noQuestsOn: m.active === null ? newest.day : null,
+    activity: typeof quests === "number" ? quests : null,
+    noQuestsOn: quests === "none" ? newest.day : null,
+
     noDonationsOn: m.dailyTech === null ? newest.day : null,
     honor: m.dailyHonor,
     donations,

@@ -38,7 +38,7 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | kill share                | phần tiêu diệt               | `ledger.carried`, `ledger.carriedHelp` — an alliance's share of the kills gained                                   |
 | might share               | phần Lực Chiến               | `ledger.carriedMightMark` — an alliance's share of the might at Start                                              |
 | pts (percentage points)   | điểm %                       | `ledger.carriedPoints` — after a gap, `+6.1 điểm %`                                                                |
-| Standing                  | thứ hạng                     | `standing.title`, `standing.trend`, `standing.lead` — an alliance's rank by might over time                        |
+| Standing                  | thứ hạng                     | `standing.title`, `standing.was`, `standing.lead` — an alliance's rank by might over time                          |
 | Tracked alliances         | Liên minh theo dõi           | `standing.server`, `balance.total` — the sum of the tracked alliances, never the server                            |
 | daily update              | lần đọc hằng ngày            | `flow.notCounted`, `balance.trendHelp`, `standing.help`, `history.daily` — the once-a-day read of the member lists |
 | Statement                 | Tuyên bố                     | `statement.title` — the alliance's own in-game text, not ours                                                      |

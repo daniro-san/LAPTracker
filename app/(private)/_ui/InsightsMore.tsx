@@ -7,6 +7,7 @@
 // only: no lineup, no names.
 import type { ReactNode } from "react";
 
+import { Bar } from "@/app/_ui/charts/Bar";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type {
   KvkEventWords,
@@ -38,22 +39,28 @@ export function Fold(props: { summary: ReactNode; className?: string; children: 
   );
 }
 
-/** The share of the loss back on each day after the event, one column a day, the number under the bar. */
+/**
+ * The share of the loss back on each day after the event, one column a day, the number under the bar, and
+ * a tick at 100 % across the columns (D158): a day past 100 % draws taller than it, a day that lost more a
+ * hairline.
+ */
 function RecoveryDays({ days, noData }: { days: BarRow[]; noData: string }) {
   return (
     <ol className="mt-2 grid grid-cols-7 gap-0.5 text-center">
       {days.map((d) => (
-        <li key={d.label} className="min-w-0" aria-label={`${d.label}: ${d.value}`}>
+        <li key={d.label} className="min-w-0">
+          <span className="sr-only">{`${d.label}: ${d.value}`}</span>
           <span aria-hidden="true" className="block text-[12px] leading-4 text-ink/70">
             {d.label}
           </span>
           <span aria-hidden="true" className="flex h-8 items-end justify-center">
-            {d.share !== null && (
-              <span
-                className="block w-full max-w-6 rounded-t-sm bg-plum/60"
-                style={{ height: `${Math.max(6, Math.round(d.share * 100))}%` }}
-              />
-            )}
+            <Bar
+              axis="column"
+              share={d.share}
+              reference={d.reference ?? null}
+              tone="rounded-t-sm bg-plum/60"
+              className="h-full w-full max-w-6"
+            />
           </span>
           <span aria-hidden="true" className="block h-px bg-ink/50" />
           <span aria-hidden="true" className="block truncate text-[12px] leading-5 tabular-nums">
@@ -237,7 +244,7 @@ export function ShieldCard({
               {w.rows.length === 0 ? (
                 <p className="pb-1.5 text-body-sm text-ink/70">{t["insights.shield.noReading"]}</p>
               ) : (
-                <Bars rows={w.rows} noData={noData} bare />
+                <Bars rows={w.rows} noData={noData} />
               )}
             </li>
           ))}

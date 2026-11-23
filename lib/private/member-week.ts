@@ -1,7 +1,7 @@
 // The Members tab's arithmetic (issue #296, D75), pure: the game week of an alliance's end-of-day reads,
-// each member's donations per server day and the week's total, the week's daily quest points, the offline
-// proxy, who is new, what is missing, and the week's thanks. Data that was not captured is null: shown as
-// "—", never 0, never counted.
+// each member's donations per server day and the week's total, a day's and the week's daily quest points,
+// the offline proxy, who is new, what is missing, and the week's thanks. Data that was not captured is
+// null: shown as "—", never 0, never counted.
 import { NEW_MEMBER_DAYS } from "../queries/might-unchanged";
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
 
@@ -26,6 +26,7 @@ const dayMs = (day: string) => Date.parse(`${day}T00:00:00Z`);
 /** A day as YYYY-MM-DD (UTC). */
 export const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export const nextDay = (day: string) => isoDay(dayMs(day) + DAY_MS);
+const previousDay = (day: string) => isoDay(dayMs(day) - DAY_MS);
 
 /** The seven server days, Monday to Sunday (the game's week, owner's prototype v5), that hold `day`. */
 export function gameWeek(day: string): string[] {
@@ -40,24 +41,19 @@ export function gameWeek(day: string): string[] {
  */
 export type DayValue = number | "none" | null | "later";
 
-/** Per day of `week`, the member's `field` in that day's end-of-day read. */
-function weekDays(
+/** Per day of `week`, the member's donations (`daily_tech`) in that day's end-of-day read. */
+export function weekDonations(
   reads: readonly RosterRead[],
   week: string[],
   uid: number,
-  field: "dailyTech" | "active",
 ): DayValue[] {
   const newest = reads.at(-1)?.day ?? "";
   return week.map((day) => {
     if (day > newest) return "later";
     const member = reads.find((r) => r.day === day)?.members.find((m) => m.uid === uid);
-    return member ? (member[field] ?? "none") : null;
+    return member ? (member.dailyTech ?? "none") : null;
   });
 }
-
-/** Per day of `week`, the member's donations (`daily_tech`) in that day's end-of-day read. */
-export const weekDonations = (reads: readonly RosterRead[], week: string[], uid: number) =>
-  weekDays(reads, week, uid, "dailyTech");
 
 /** The sum of the days with data; null when no day has any (D75: a day with no data never counts). */
 export function weekTotal(days: DayValue[]): number | null {
@@ -66,12 +62,57 @@ export function weekTotal(days: DayValue[]): number | null {
 }
 
 /**
- * The member's daily quest points (`active`) summed over the days of the newest read's game week that
- * have a read (D127): thanks and picks use the week, not one day's number. Null when no day has any.
+ * The most daily quest points a member can earn in one server day: 240, so 1,680 a week (7 × 240).
+ * PROVISIONAL, not confirmed by the owner, who thinks it may be 230 (#739): every end-of-day read fits 240
+ * (Tuesday reads at 480, Sunday reads above 7 × 230 = 1,610), and those do not fit 230. The quest points
+ * bars are drawn against it (D158, amended 2026-11-22).
+ */
+export const QUEST_DAY_CAP = 240;
+
+/** A day's daily quest points: a number, "none" (none earned that day), or null (no data). */
+export type QuestDay = number | "none" | null;
+
+/**
+ * A day's daily quest points from the game's `active`, which is not a day's value: it is the quest points
+ * since the week's reset, Monday at the daily reset (D127, amended 2026-11-22, #739). `total` is `active` on
+ * `day`'s end-of-day read and `before` on the read of the server day before, each null when no read of that
+ * day lists the member; a read that lists the member with `active` null counts as 0 so far this week.
+ * - On a Monday the day's points are `total` itself: the count starts at 0 at the reset.
+ * - On any other day they are `total − before`. With no read of the day before they are no data (null),
+ *   never 0 (D75), unless `total` is 0: nothing yet this week, so nothing that day either.
+ * - 0 is "none" (#663: it counts as 0 in averages and is written "none"); a drop inside one week has no
+ *   meaning, so it is no data too.
+ */
+export function questDay(day: string, total: number | null, before: number | null): QuestDay {
+  if (total === null) return null;
+  const base = gameWeek(day)[0] === day ? 0 : before;
+  if (base === null) return total === 0 ? "none" : null;
+  const points = total - base;
+  return points < 0 ? null : points === 0 ? "none" : points;
+}
+
+/** The member's `active` on the read of `day`: 0 for null on a read that lists them; null for no such read. */
+function totalOn(reads: readonly RosterRead[], day: string, uid: number): number | null {
+  const m = reads.find((r) => r.day === day)?.members.find((x) => x.uid === uid);
+  return m ? (m.active ?? 0) : null;
+}
+
+/** The member's daily quest points on `day` (`questDay`), from the alliance's end-of-day reads. */
+export const questPoints = (reads: readonly RosterRead[], uid: number, day: string): QuestDay =>
+  questDay(day, totalOn(reads, day, uid), totalOn(reads, previousDay(day), uid));
+
+/**
+ * The member's daily quest points in the newest read's game week (D127, amended 2026-11-22, #739): `active`
+ * on the newest read of that week that lists them, which already holds the week so far. Thanks and picks
+ * use the week, not one day's number. Null when no read of the week lists them or the week has none.
  */
 export function weekQuestPoints(reads: readonly RosterRead[], uid: number): number | null {
-  const newest = reads.at(-1);
-  return newest ? weekTotal(weekDays(reads, gameWeek(newest.day), uid, "active")) : null;
+  const week = gameWeek(reads.at(-1)?.day ?? "1970-01-01");
+  const total = reads
+    .filter((r) => week.includes(r.day))
+    .findLast((r) => r.members.some((m) => m.uid === uid))
+    ?.members.find((m) => m.uid === uid)?.active;
+  return total ? total : null;
 }
 
 /** The offline proxy's evidence (D75): the end-of-day reads in a row with nothing that day. */
@@ -80,11 +121,12 @@ export interface Idle {
 }
 
 /**
- * Daily quest points (`active`) and donations (`daily_tech`) both null on end-of-day reads of consecutive
- * server days that list the member, counted back from the newest read (D127). The game sends null, never
- * 0, so null on a read that succeeded and lists the member is "nothing today". `reads` holds only reads
- * that succeeded: a failed or missing day ends the run, and so does a read that does not list the member.
- * Null when the run is shorter than IDLE_READS.
+ * No daily quest points that day (`questPoints` is "none") and no donations (`daily_tech` null) on end-of-day
+ * reads of consecutive server days that list the member, counted back from the newest read (D127, amended
+ * 2026-11-22, #739). The game sends null, never 0, so a null `daily_tech` on a read that succeeded and lists
+ * the member is "nothing today". `reads` holds only reads that succeeded: a failed or missing day ends the
+ * run, and so do a read that does not list the member and a day whose quest points are no data. Null when
+ * the run is shorter than IDLE_READS.
  */
 export function idleRun(reads: RosterRead[], uid: number): Idle | null {
   let days = 0;
@@ -93,7 +135,7 @@ export function idleRun(reads: RosterRead[], uid: number): Idle | null {
     const later = reads[i + 1];
     if (later && nextDay(read.day) !== later.day) break;
     const m = read.members.find((x) => x.uid === uid);
-    if (!m || m.active !== null || m.dailyTech !== null) break;
+    if (!m || m.dailyTech !== null || questPoints(reads, uid, read.day) !== "none") break;
     days++;
   }
   return days < IDLE_READS ? null : { days };

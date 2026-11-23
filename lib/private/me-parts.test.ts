@@ -28,13 +28,14 @@ const day = (d: string, active: unknown, power: number | null = 1000, listed = t
 
 describe("a member's own week (D142)", () => {
   it("says none, no data and no daily update yet apart, and puts their own last week beside it", () => {
-    // Today is Thursday 2026-11-05; the newest read is Wednesday's.
+    // Today is Thursday 2026-11-05; the newest read is Wednesday's. `active` is the running total since
+    // Monday's reset (#739): 300 and 500 last Monday and Tuesday; 600, none and 400 this week.
     const days = [
-      day("2026-10-27", 300),
-      day("2026-10-28", 500),
+      day("2026-10-26", 300),
+      day("2026-10-27", 800),
       day("2026-11-02", 600),
-      day("2026-11-03", null),
-      day("2026-11-04", 400),
+      day("2026-11-03", 600),
+      day("2026-11-04", 1000),
     ];
     const card = weekCard(days, "2026-11-05", t, f);
     const quests = card?.rows.find((r) => r.metric === "quests");
@@ -45,14 +46,15 @@ describe("a member's own week (D142)", () => {
     expect(quests?.last).toBe("Last week: Average 400 · 2 days");
     expect(weekCard([], "2026-11-05", t, f)).toBeNull();
     // Only "none" so far: said as such, never "Average 0"; last week stays a plain line, never a target.
-    const early = weekCard([day("2026-10-28", 500), day("2026-11-02", null)], "2026-11-02", t, f);
+    const early = weekCard([day("2026-10-26", 500), day("2026-11-02", null)], "2026-11-02", t, f);
     expect(early?.rows[0]).toMatchObject({
       average: "This week: None on 1 day",
       last: "Last week: Average 500 · 1 day",
     });
     // A day with no daily update is no average at all, not a "none".
     const noUpdate = { ...day("2026-11-02", 500), daily: null };
-    const quiet = [day("2026-10-27", null), day("2026-10-28", null), noUpdate];
+    const quiet = [day("2026-10-26", null), day("2026-10-27", null), noUpdate];
+
     expect(weekCard(quiet, "2026-11-02", t, f)?.rows[0]).toMatchObject({
       average: "This week: no average yet",
       last: "Last week: None on all 2 days",

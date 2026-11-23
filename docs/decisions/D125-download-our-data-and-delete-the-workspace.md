@@ -56,3 +56,5 @@ Why: the desk opens to other alliances (issue 438). The owner (2026-11-19): an a
 
 **Amendment 2026-11-22 (issue 713, D156).** `workspace_post_touches` (each post's own line, who changed it last) is in the list: downloaded as `post-callouts.csv`, the officers' own words like Start here, and deleted with the workspace.
 **Amendment (2026-11-22, issue 713, D157).** `feedback` is in the list with scope `workspace` (through `workspace_id`): deleted with the workspace and never downloaded. A member's feedback is addressed to the site's owner, not to the officers who download the workspace. The workspace's feedback day counter (`day:feedback:ws:<id>`) is deleted with the other counters.
+
+**Amendment (2026-11-22, issue 713, D157 amended).** `feedback_pictures` is in the list with scope `workspace` (through its `workspace_id`, also `cascade` from its feedback row): deleted with the workspace and never downloaded, like `feedback`.

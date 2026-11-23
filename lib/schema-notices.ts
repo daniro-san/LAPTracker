@@ -182,8 +182,11 @@ export const noticeReviewOutcomes = pgTable(
   ],
 );
 
-/** Postgres bytea as bytes (D119): Neon's driver gives a Buffer, PGlite a Uint8Array; both are Uint8Array. */
-const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+/**
+ * Postgres bytea as bytes (D119): Neon's driver gives a Buffer, PGlite a Uint8Array; both are Uint8Array.
+ * Feedback's picture uses it too (D157).
+ */
+export const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
   dataType: () => "bytea",
   toDriver: (value) => Buffer.from(value.buffer, value.byteOffset, value.byteLength),
 });

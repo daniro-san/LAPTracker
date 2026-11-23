@@ -4,10 +4,15 @@ import { eq, lt } from "drizzle-orm";
 
 import type { Db } from "../db";
 import type { FeedbackStatus } from "../feedback-words";
-import { feedback } from "../schema-feedback";
+import { feedback, feedbackPictures } from "../schema-feedback";
 import { DAY_KEY_PREFIX } from "./auth-attempts";
 
 export type FeedbackRow = Omit<typeof feedback.$inferInsert, "id" | "status">;
+/** A send's one picture, already checked (D119's checkPicture). */
+export type FeedbackPictureRow = Omit<
+  typeof feedbackPictures.$inferInsert,
+  "feedbackId" | "workspaceId"
+>;
 
 /** How long a row is kept (D157). */
 export const FEEDBACK_DAYS = 180;
@@ -16,8 +21,19 @@ export const FEEDBACK_DAYS = 180;
 export const feedbackLimitKey = (workspaceId: number) =>
   `${DAY_KEY_PREFIX}feedback:ws:${workspaceId}`;
 
-export async function insertFeedback(db: Db, row: FeedbackRow): Promise<void> {
-  await db.insert(feedback).values(row);
+/** The row and its picture together, so a send is never stored half. */
+export async function insertFeedback(
+  db: Db,
+  row: FeedbackRow,
+  picture: FeedbackPictureRow | null = null,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [saved] = await tx.insert(feedback).values(row).returning({ id: feedback.id });
+    if (picture && saved)
+      await tx
+        .insert(feedbackPictures)
+        .values({ ...picture, feedbackId: saved.id, workspaceId: row.workspaceId });
+  });
 }
 
 /** The owner's status on one row; false when there is no such row. */
@@ -36,7 +52,7 @@ export async function setFeedbackStatus(
 
 /**
  * INVARIANT feedback.purged-180-days: deletes the rows created more than 180 days before `now`, through
- * feedback_created_at_idx. Returns how many went. Run once a day by the tick, beside app_errors' purge.
+ * feedback_created_at_idx; a row's picture goes with it (cascade). Returns how many went. Run once a day by the tick, beside app_errors' purge.
  */
 export async function purgeOldFeedback(db: Db, now: Date): Promise<number> {
   const before = new Date(now.getTime() - FEEDBACK_DAYS * 86_400_000);

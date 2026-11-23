@@ -1,18 +1,22 @@
 // The member card's "Last 7 days" (issue 461, D127, D136): daily quest points, Alliance Help coins (out of
 // 1,000) and donations on each of the 7 server days up to the newest end-of-day read, the average, and might
-// since the first of those days. A day with no read of the member is null ("—"); a read that lists them with
-// nothing sent is "none" (D127), written "none". The average is `dayAverage`, the one rule the card, Me and
+// since the first of those days. A day's quest points come from the week's running total (`questPoints`, D127
+// amended 2026-11-22, #739) and are drawn against the daily cap (`QUEST_DAY_CAP`, provisional). Donations have
+// no known daily cap, so their bars are drawn against the alliance's best member-day in the same 7 days
+// (D158): a steady low giver and a steady high giver no longer look alike. A day with no read of the member
+// (and, for quest points, a day whose day before has no read) is null ("—"); a read that lists them with
+// nothing that day is "none" (D127), written "none". The average is `dayAverage`, the one rule the card, Me and
 // Insights share (owner, 2026-11-22, #663): a "none" day counts as 0 and the line names it; a day with no
 // read never counts.
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
 import { fill, plural } from "../words";
 import type { WorkspaceDictionary } from "./dictionary";
 import { NONE } from "./fact-text";
-import { DAY_MS, isoDay } from "./member-week";
+import { DAY_MS, isoDay, QUEST_DAY_CAP, questPoints } from "./member-week";
 
 export const DAY_METRICS = ["quests", "coins", "donations"] as const;
 export type DayMetric = (typeof DAY_METRICS)[number];
-const FIELD = { quests: "active", coins: "dailyHonor", donations: "dailyTech" } as const;
+const FIELD = { coins: "dailyHonor", donations: "dailyTech" } as const;
 /** Alliance Help coins stop at 1,000 a day (D127): their bars are drawn against it. */
 export const COINS_MAX = 1000;
 export const LAST_DAYS = 7;
@@ -26,6 +30,12 @@ export interface LastDays {
   rows: Record<DayMetric, DayCell[]>;
   /** Might on the newest day with a might against the oldest one; null with fewer than two such days. */
   might: { from: string; change: number } | null;
+  /**
+   * The alliance's best member-day for donations in these days (`allianceBest`), the scale of the donations
+   * bars (D158). Set by the member card only; absent on a member's own page (D142), which draws against their
+   * own best day: an alliance figure there would show other members' values.
+   */
+  best?: { donations: number };
 }
 
 /** The member's last 7 days from the alliance's end-of-day reads; null before the first read. */
@@ -39,7 +49,8 @@ export function lastDays(reads: readonly RosterRead[], uid: number): LastDays | 
   const members: (RosterMember | undefined)[] = days.map((day) =>
     reads.find((r) => r.day === day)?.members.find((m) => m.uid === uid),
   );
-  const row = (k: DayMetric): DayCell[] => members.map((m) => (m ? (m[FIELD[k]] ?? "none") : null));
+  const row = (k: keyof typeof FIELD): DayCell[] =>
+    members.map((m) => (m ? (m[FIELD[k]] ?? "none") : null));
   const mights = days.flatMap((day, i) => {
     const power = members[i]?.power;
     return power === null || power === undefined ? [] : [{ day, power }];
@@ -47,12 +58,28 @@ export function lastDays(reads: readonly RosterRead[], uid: number): LastDays | 
   const [first, last] = [mights[0], mights.at(-1)];
   return {
     days,
-    rows: { quests: row("quests"), coins: row("coins"), donations: row("donations") },
+    rows: {
+      quests: days.map((day) => questPoints(reads, uid, day)),
+      coins: row("coins"),
+      donations: row("donations"),
+    },
     might:
       first && last && first !== last
         ? { from: first.day, change: last.power - first.power }
         : null,
   };
+}
+
+/**
+ * The alliance's best member-day for donations over `days` (D158): the scale of the member card's donations
+ * bars. Read once per card, not inside `lastDays`, which Follow-up runs for every member.
+ */
+export function allianceBest(
+  reads: readonly RosterRead[],
+  days: readonly string[],
+): { donations: number } {
+  const members = reads.filter((r) => days.includes(r.day)).flatMap((r) => r.members);
+  return { donations: Math.max(0, ...members.map((m) => m.dailyTech ?? 0)) };
 }
 
 /** A member's average over the days a daily update lists them, with how many of those days were "none". */
@@ -129,6 +156,8 @@ export interface DaysCard {
   might: string | null;
   /** The name of the marker drawn where a value is "—". */
   noData: string;
+  /** What the bars are drawn against, with the alliance's best member-days; null on a member's own page. */
+  scale: string | null;
 }
 
 export interface DaysFormats {
@@ -141,15 +170,15 @@ export interface DaysFormats {
   language: string;
 }
 
-function rowOf(
-  metric: DayMetric,
-  cells: DayCell[],
-  days: string[],
-  t: WorkspaceDictionary,
-  f: DaysFormats,
-): DaysRow {
+function rowOf(metric: DayMetric, d: LastDays, t: WorkspaceDictionary, f: DaysFormats): DaysRow {
+  const [cells, days] = [d.rows[metric], d.days];
   const numbers = cells.filter((c): c is number => typeof c === "number");
-  const scale = metric === "coins" ? COINS_MAX : Math.max(1, ...numbers);
+  const scale =
+    metric === "coins"
+      ? COINS_MAX
+      : metric === "quests"
+        ? QUEST_DAY_CAP
+        : Math.max(1, d.best?.donations ?? 0, ...numbers);
   const show = metric === "donations" ? f.compact : f.number;
   const bars = cells.map((c, i): DayBar => {
     const value = typeof c === "number" ? show(c) : c === "none" ? t["members.don.nothing"] : NONE;
@@ -176,8 +205,14 @@ export function daysCard(d: LastDays, t: WorkspaceDictionary, f: DaysFormats): D
   return {
     head: t["card.days.head"],
     days: d.days.map((day) => ({ weekday: f.weekday(day), day: f.dayOfMonth(day) })),
-    rows: DAY_METRICS.map((m) => rowOf(m, d.rows[m], d.days, t, f)),
+    rows: DAY_METRICS.map((m) => rowOf(m, d, t, f)),
     might,
     noData: t["nodata.mark"],
+    scale: d.best
+      ? fill(t["card.days.scale"], {
+          quests: f.number(QUEST_DAY_CAP),
+          donations: f.compact(Math.max(1, d.best.donations)),
+        })
+      : null,
   };
 }

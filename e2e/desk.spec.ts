@@ -209,9 +209,14 @@ test("Members: a card opens from the list and stays closed once closed, after a 
   await expect(card.getByRole("heading", { name: "Last 7 days" })).toBeVisible();
   await sees(card, `Daily quest points Average ${DAILY.active} · 7 days`);
   await sees(card, `Donations Average ${big(DAILY.tech)} · 7 days`);
+  // Each bar says its day and value in sr-only text inside its list item (D158), not an aria-label.
   await expect(
-    card.getByRole("listitem", { name: `${usDay(lastRosterDay())}: ${DAILY.active}` }),
+    card.getByRole("listitem").filter({ hasText: `${usDay(lastRosterDay())}: ${DAILY.active}` }),
   ).toBeVisible();
+  // What the bars are drawn against: coins and quest points their daily caps, donations the alliance's best
+  // member-day (D158, #739).
+  await sees(card, "Bars: coins out of 1,000 and quest points out of");
+  await sees(card, `donations against ${big(DAILY.tech)}, the alliance's best day`);
   const change = rosterOf("a", k).might - rosterOf("a", k, 7).might;
   await sees(card, `Might +${big(change)} since ${usDay(daysAgo(7))}`);
   // Issue 516: "Talked to them" on the card records it; the card is read again and its week line names it

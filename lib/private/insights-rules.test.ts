@@ -10,6 +10,7 @@ import {
   newcomersOf,
   pulseView,
   quietOf,
+  type PulseView,
   tenureOf,
   wentTo,
 } from "./insights-rules";
@@ -39,43 +40,47 @@ const read = (day: string, members: RosterMember[]): RosterRead => ({
 
 describe("the week's pulse (issue 489)", () => {
   it("counts each day's read, leaves a day with no read out, and pools each of the 5 weeks", () => {
+    // `active` is the running total since Monday's reset (#739). On Tuesday member 1's stayed at 200 (no
+    // quests that day) and they sent no coins, and member 2 sent no donation: each counts as none, out of
+    // the members the read lists. Wednesday 2026-11-18 has no read, so Thursday's quest points are no data.
     const reads = [
-      read("2026-11-09", [member(1), member(2)]),
-      // Wednesday 2026-11-18 has no read; on Thursday one member did no quests (null: none that day, D127)
-      // and one sent no coins: both count as none, out of the members the read lists.
-      read("2026-11-16", [member(1), member(2, { dailyHonor: 400 })]),
-      read("2026-11-17", [member(1), member(2)]),
-      read("2026-11-19", [
-        member(1, { active: null, dailyHonor: null }),
-        member(2, { dailyTech: null }),
+      read("2026-11-09", [member(1, { active: 200 }), member(2, { active: 200 })]),
+      read("2026-11-16", [member(1, { active: 200 }), member(2, { active: 200, dailyHonor: 400 })]),
+      read("2026-11-17", [
+        member(1, { active: 200, dailyHonor: null }),
+        member(2, { active: 400, dailyTech: null }),
       ]),
+      read("2026-11-19", [member(1, { active: 600 }), member(2, { active: 600 })]),
     ];
-    const v = pulseView(reads);
-    expect(
-      v?.days.map((d) => (d.pulse === null || d.pulse === "later" ? d.pulse : "read")),
-    ).toEqual(["read", "read", null, "read", "later", "later", "later"]);
-    const thursday = v?.days[3]?.pulse;
-    expect(thursday).toEqual({
+    const v = pulseView(reads) as PulseView;
+    expect(v.days.map((d) => (d.pulse === null || d.pulse === "later" ? d.pulse : "read"))).toEqual(
+      ["read", "read", null, "read", "later", "later", "later"],
+    );
+    expect(v.days[1]?.pulse).toEqual({
       quests: { n: 1, of: 2 },
       coins: { n: 1, of: 2 },
       donated: { n: 1, of: 2 },
       tech: { value: 5000, of: 1 },
     });
-    expect(v?.weeks.map((w) => [w.monday, w.reads])).toEqual([
+    expect(v.days[3]?.pulse).toMatchObject({ quests: null });
+    expect(v.weeks.map((w) => [w.monday, w.reads])).toEqual([
       ["2026-10-19", 0],
       ["2026-10-26", 0],
       ["2026-11-02", 0],
       ["2026-11-09", 1],
       ["2026-11-16", 3],
     ]);
-    expect(v?.weeks[4]?.quests).toEqual({ n: 5, of: 6 });
-    expect(v?.weeks[4]?.coins).toEqual({ n: 4, of: 6 });
-    expect(v?.weeks[0]?.quests).toBeNull();
+    // Monday 2 of 2, Tuesday 1 of 2, Thursday not known.
+    expect(v.weeks[4]?.quests).toEqual({ n: 3, of: 4 });
+    expect(v.weeks[4]?.coins).toEqual({ n: 4, of: 6 });
+    expect(v.weeks[0]?.quests).toBeNull();
   });
 });
 
 describe("effort at every might level (issue 489)", () => {
-  // Eight members: might 1M … 8M. The two lowest do the most; 8 is left out (on a break).
+  // Eight members: might 1M … 8M. The two lowest do the most; 8 is left out (on a break). `active` is the
+  // running total since Monday's reset (#739): Tuesday 17 has no Monday read, so its quest points are no
+  // data; members 5 to 7 are first listed with a total on Wednesday, so only their Thursday counts.
   const mk = (uid: number, active: number | null, tech: number | null) =>
     member(uid, {
       name: `Name ${String.fromCharCode(105 - uid)}`,
@@ -84,15 +89,24 @@ describe("effort at every might level (issue 489)", () => {
       dailyTech: tech,
     });
   const reads = [
-    read("2026-11-18", [mk(1, 900, 9000), mk(2, 800, 8000), mk(3, 100, 100), mk(4, 200, 200)]),
+    read("2026-11-17", [mk(1, 100, 9000), mk(2, 100, 8000), mk(3, 100, 100), mk(4, 100, 200)]),
+    read("2026-11-18", [
+      mk(1, 1000, 9000),
+      mk(2, 900, 8000),
+      mk(3, 200, 100),
+      mk(4, 300, 200),
+      mk(5, 100, 300),
+      mk(6, 100, 400),
+      mk(7, 100, 500),
+    ]),
     read("2026-11-19", [
-      mk(1, 900, 9000),
-      mk(2, 700, 8000),
-      mk(3, null, 100),
-      mk(4, 200, 200),
-      mk(5, 300, 300),
-      mk(6, 400, 400),
-      mk(7, 500, 500),
+      mk(1, 1900, 9000),
+      mk(2, 1600, 8000),
+      mk(3, 200, 100),
+      mk(4, 500, 200),
+      mk(5, 400, 300),
+      mk(6, 500, 400),
+      mk(7, 600, 500),
       mk(8, 999, 99_999),
     ]),
   ];

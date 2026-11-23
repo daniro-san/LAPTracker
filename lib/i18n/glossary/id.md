@@ -375,6 +375,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | KvK matchup                           | Pertandingan KvK                    | `kvk.title` — the event page's section; KvK stays English                                                                  |
 | Reading                               | pembacaan                           | `kvk.overMembers`, `kvk.noChange` — one read of a server's data at the Start or the End                                    |
 | Unknown                               | tidak diketahui                     | `members.startUnknown`, `members.endUnknown`, `members.countedAsZero` — a member's Kills figure not read at Start or End   |
+| Bar / hollow dot                      | batang / titik kosong               | `ledger.carriedGapKey`, `ledger.progressEvents` — a chart's bar, and an event's reading drawn as a hollow dot              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

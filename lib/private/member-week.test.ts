@@ -8,6 +8,8 @@ import {
   isNewMember,
   OFFLINE_GRACE_DAYS,
   missingOf,
+  questDay,
+  questPoints,
   topOf,
   weekDonations,
   weekQuestPoints,
@@ -66,17 +68,77 @@ describe("the game week's donations (issue #296)", () => {
   });
 });
 
-describe("the week's daily quest points (D127)", () => {
-  it("sums the days of the newest read's game week, so thanks and picks never hang on one day", () => {
-    // Sunday 8 is the week before; on Wednesday 11, the newest read, member 1 has no quests yet.
+describe("a day's daily quest points from the week's running total (#739)", () => {
+  // `active` counts the quest points since Monday's reset: Mon 16 to Wed 18 here.
+  it("is the value itself on a Monday, whatever the Sunday before read", () => {
+    expect(questDay("2026-11-16", 240, 1660)).toBe(240);
+    expect(questDay("2026-11-16", 240, null)).toBe(240);
+  });
+
+  it("is the value less the day before's inside the week", () => {
+    expect(questDay("2026-11-17", 480, 240)).toBe(240);
+    expect(questDay("2026-11-18", 655, 480)).toBe(175);
+  });
+
+  it("starts again at the Monday reset, from Saturday through Sunday into Monday", () => {
+    // Sat 21, Sun 22, Mon 23: the Monday read is lower than Sunday's and is still Monday's whole day.
     const reads = [
-      read("2026-11-08", [member(1, { active: 999 }), member(2, { active: 999 })]),
-      read("2026-11-09", [member(1, { active: 700 }), member(2, { active: null })]),
-      read("2026-11-10", [member(1, { active: 300 }), member(2, { active: null })]),
-      read("2026-11-11", [member(1, { active: null }), member(2, { active: null })]),
+      read("2026-11-21", [member(1, { active: 1445 })]),
+      read("2026-11-22", [member(1, { active: 1660 })]),
+      read("2026-11-23", [member(1, { active: 230 })]),
     ];
 
-    expect(weekQuestPoints(reads, 1)).toBe(1000);
+    expect(["2026-11-22", "2026-11-23"].map((day) => questPoints(reads, 1, day))).toEqual([
+      215, 230,
+    ]);
+  });
+
+  it("starts again at the week's boundary, not at a drop: a Monday above Sunday's total is still Monday's whole day", () => {
+    // Member 1 earned 100 in the whole week to Sunday 22, then 230 on Monday 23: no drop, still a reset.
+    const reads = [
+      read("2026-11-22", [member(1, { active: 100 })]),
+      read("2026-11-23", [member(1, { active: 230 })]),
+    ];
+
+    expect(questPoints(reads, 1, "2026-11-23")).toBe(230);
+  });
+
+  it("is no data, never 0, when no read of the day before lists the member", () => {
+    // Tuesday 17 has no Monday read; on Thursday 19 the Wednesday read does not list member 1.
+    const reads = [
+      read("2026-11-17", [member(1, { active: 480 })]),
+      read("2026-11-18", [member(2, { active: 300 })]),
+      read("2026-11-19", [member(1, { active: 900 })]),
+    ];
+
+    expect(questPoints(reads, 1, "2026-11-17")).toBeNull();
+    expect(questPoints(reads, 1, "2026-11-19")).toBeNull();
+  });
+
+  it("is no data when the total drops inside one week", () => {
+    expect(questDay("2026-11-18", 400, 480)).toBeNull();
+  });
+
+  it("is none on a day the total did not move, and on a read that sent null, even with no read the day before", () => {
+    expect(questDay("2026-11-18", 480, 480)).toBe("none");
+    // The game sends null for no points yet this week: 0 so far, so Wednesday's null is none that day,
+    // although Tuesday had no read.
+    const reads = [read("2026-11-18", [member(1, { active: null })])];
+    expect(questPoints(reads, 1, "2026-11-18")).toBe("none");
+  });
+});
+
+describe("the week's daily quest points (D127, #739)", () => {
+  it("is the newest read of the game week, which holds the week so far, never the days added up", () => {
+    // Sunday 8 is the week before; member 1 did 240 on Monday and Tuesday and none on Wednesday 11, the newest read.
+    const reads = [
+      read("2026-11-08", [member(1, { active: 1660 }), member(2, { active: 1660 })]),
+      read("2026-11-09", [member(1, { active: 240 }), member(2, { active: null })]),
+      read("2026-11-10", [member(1, { active: 480 }), member(2, { active: null })]),
+      read("2026-11-11", [member(1, { active: 480 }), member(2, { active: null })]),
+    ];
+
+    expect(weekQuestPoints(reads, 1)).toBe(480);
     expect(weekQuestPoints(reads, 2)).toBeNull();
     // The garrison's "active" signal reads the same week.
     expect([1, 2].map((uid) => signalsOf(reads, [])(uid).active)).toEqual([true, null]);
@@ -87,11 +149,13 @@ describe("the offline proxy (D75, D127)", () => {
   const none = { active: null, dailyTech: null };
 
   it("is a reason after 3 end-of-day reads in a row with no quest points and no donations", () => {
+    // Member 1 did 700 quest points on Monday 9 and none after: the running total stays at 700.
+    const idle = { active: 700, dailyTech: null };
     const reads = [
       read("2026-11-09", [member(1, { active: 700 }), member(2, none)]),
-      read("2026-11-10", [member(1, none), member(2, none)]),
-      read("2026-11-11", [member(1, none), member(2, { active: null, dailyTech: 500 })]),
-      read("2026-11-12", [member(1, none), member(2, none)]),
+      read("2026-11-10", [member(1, idle), member(2, none)]),
+      read("2026-11-11", [member(1, idle), member(2, { active: null, dailyTech: 500 })]),
+      read("2026-11-12", [member(1, idle), member(2, none)]),
     ];
 
     expect(idleRun(reads, 1)).toEqual({ days: 3 });

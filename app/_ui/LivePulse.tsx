@@ -10,6 +10,7 @@ import { type Dictionary } from "@/lib/copy";
 import type { EventProgress } from "@/lib/queries";
 import { fill } from "@/lib/words";
 
+import { Bar } from "./charts/Bar";
 import { compact, shareText, type Clock } from "./format";
 import { Num } from "./Num";
 import { FIGHT_CLOCK_PATH } from "./PulseStrip";
@@ -17,11 +18,8 @@ import { LABEL, MoreBar } from "./StatTable";
 
 type Progress = EventProgress;
 
-const barHeight = (kills: number, most: number) =>
-  `${Math.max(6, Math.round((kills / most) * 100))}%`;
-
-/** One bar per interval: a filled bar for a gain, a hollow stub when the game sent no update, a hairline
- * when nothing could be compared; the busiest two intervals are underlined. */
+/** One bar per interval: a filled bar for a gain (a plum hairline for 0 kills, D158), a hollow stub when the
+ * game sent no update, an ink hairline when nothing could be compared; the busiest two intervals are underlined. */
 function Bars({ progress, clock, copy }: { progress: Progress; clock: Clock; copy: Dictionary }) {
   const { pulse, busiest } = progress;
   const most = Math.max(1, ...pulse.map((s) => s.kills ?? 0));
@@ -36,9 +34,11 @@ function Bars({ progress, clock, copy }: { progress: Progress; clock: Clock; cop
             className={`flex h-full min-w-0 flex-1 flex-col justify-end border-b-2 pb-0.5 ${inBusiest ? "border-plum" : "border-transparent"}`}
           >
             {s.kills !== null && s.state === "moved" ? (
-              <div
-                className={`w-full rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/60"}`}
-                style={{ height: barHeight(Math.max(0, s.kills), most) }}
+              <Bar
+                axis="column"
+                share={s.kills / most}
+                tone={`rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/60"}`}
+                className="h-full w-full"
               />
             ) : s.state === "still" ? (
               <div className="h-2 w-full rounded-sm border border-dashed border-ink/60" />

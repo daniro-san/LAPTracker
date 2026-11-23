@@ -28,7 +28,7 @@ export const insightsZonesEn = {
   "insights.zones.changeReset": "Clocks change before the reset",
   "insights.zones.changeKvk": "Clocks change before KvK",
   "insights.zones.legend":
-    "Times on their own clock: now ({now} ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK ({kvk} ST). Bar: share of the {known} members with a time zone.",
+    "Times on their own clock: now ({now} ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK ({kvk} ST). Bar: share of all {members} members.",
   "insights.zones.notRecorded": "Not recorded yet",
   "insights.zones.notCounted": "Not counted in any group.",
   "insights.zones.add": "Add their time zone ›",
@@ -67,7 +67,7 @@ export const insightsZonesPt: ZonesWords = {
   "insights.zones.changeReset": "O relógio muda antes do reset",
   "insights.zones.changeKvk": "O relógio muda antes do KvK",
   "insights.zones.legend":
-    "Horários no relógio deles: agora ({now} ST), no próximo reset das 00:00 ST (o raid começa no reset antes do KvK) e no KvK ({kvk} ST). Barra: parcela dos {known} membros com fuso horário.",
+    "Horários no relógio deles: agora ({now} ST), no próximo reset das 00:00 ST (o raid começa no reset antes do KvK) e no KvK ({kvk} ST). Barra: parcela de todos os {members} membros.",
   "insights.zones.notRecorded": "Ainda não registrado",
   "insights.zones.notCounted": "Fora de todos os grupos.",
   "insights.zones.add": "Adicionar o fuso deles ›",
@@ -106,7 +106,7 @@ export const insightsZonesFr: ZonesWords = {
   "insights.zones.changeReset": "L’heure change avant le reset",
   "insights.zones.changeKvk": "L’heure change avant le KvK",
   "insights.zones.legend":
-    "Heures sur leur propre horloge : maintenant ({now} ST), au prochain reset de 00:00 ST (le raid commence à celui d’avant le KvK) et au KvK ({kvk} ST). Barre : part des {known} membres avec un fuseau horaire.",
+    "Heures sur leur propre horloge : maintenant ({now} ST), au prochain reset de 00:00 ST (le raid commence à celui d’avant le KvK) et au KvK ({kvk} ST). Barre : part de l’ensemble des {members} membres.",
   "insights.zones.notRecorded": "Pas encore noté",
   "insights.zones.notCounted": "Hors de tout groupe.",
   "insights.zones.add": "Ajouter leur fuseau horaire ›",

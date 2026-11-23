@@ -8,31 +8,49 @@ import { type Dictionary } from "@/lib/copy";
 import type { MergePage, MergeSide } from "@/lib/queries";
 import { fill } from "@/lib/words";
 
+import { Bar } from "./charts/Bar";
 import { allianceLabel, type Clock } from "./format";
 import { Num } from "./Num";
 import { LABEL } from "./StatTable";
 
-/** A bar's box: a rule-coloured track; the parts are drawn in it by width, in percent of `scale`. */
-function Track({ children, marker }: { children: ReactNode; marker?: number }) {
+/**
+ * A bar against `scale` on a rule-coloured track (Bar, D158), with the cap's tick when `marker` is given.
+ * A total split in two stacks three bars in one grid cell: the whole in seal, then the part that fits in the
+ * track's own colour and in ink over it, so the 60 % ink looks as on every other bar and only what does not
+ * fit shows seal.
+ */
+function Track({
+  value,
+  within,
+  scale,
+  tone = "bg-ink/60",
+  marker,
+}: {
+  value: number | null;
+  /** The part of `value` that fits, drawn over it; the rest shows in seal. */
+  within?: number;
+  scale: number;
+  tone?: string;
+  marker?: number;
+}) {
+  const share = (n: number | null) => (n === null || scale <= 0 ? null : n / scale);
+  const track = "mt-1 h-2 bg-rule";
+  if (within === undefined)
+    return <Bar axis="row" share={share(value)} tone={tone} reference={marker} className={track} />;
   return (
-    <span aria-hidden="true" className="relative mt-1 block h-2 bg-rule">
-      <span className="flex h-full">{children}</span>
-      {marker !== undefined && (
-        <span
-          className="absolute -top-1 bottom-[-4px] w-0.5 bg-ink"
-          style={{ left: `${marker * 100}%` }}
-        />
-      )}
+    <span className={`grid ${track}`}>
+      <Bar
+        axis="row"
+        share={share(value)}
+        tone="bg-seal"
+        reference={marker}
+        className="col-start-1 row-start-1"
+      />
+      <Bar axis="row" share={share(within)} tone="bg-rule" className="col-start-1 row-start-1" />
+      <Bar axis="row" share={share(within)} tone="bg-ink/60" className="col-start-1 row-start-1" />
     </span>
   );
 }
-
-const part = (value: number, scale: number, tone: string) => (
-  <span
-    className={`block h-full ${tone}`}
-    style={{ width: `${scale > 0 ? Math.round((value / scale) * 1000) / 10 : 0}%` }}
-  />
-);
 
 /** One labelled bar with its figure beside the label. */
 function BarRow({
@@ -73,7 +91,6 @@ function Members({
   const m = copy.merge;
   const scale = Math.max(r.capacity, r.members, a.members, b.members);
   const marker = r.capacity / scale;
-  const ok = "bg-ink/60";
   return (
     <section>
       <SectionTitle>{m.membersTitle}</SectionTitle>
@@ -84,17 +101,14 @@ function Members({
             label={allianceLabel(s.tag, s.name)}
             figure={`${s.members} / ${s.capacity ?? r.capacity}`}
           >
-            <Track marker={marker}>{part(s.members, scale, ok)}</Track>
+            <Track value={s.members} scale={scale} marker={marker} />
           </BarRow>
         ))}
         <BarRow
           label={<span className="font-semibold">{m.together}</span>}
           figure={`${r.members} / ${r.capacity}`}
         >
-          <Track marker={marker}>
-            {part(r.within, scale, ok)}
-            {part(r.leftOut, scale, "bg-seal")}
-          </Track>
+          <Track value={r.members} within={r.within} scale={scale} marker={marker} />
         </BarRow>
       </ul>
       <p className="mt-1 text-body-sm text-ink/70">
@@ -132,27 +146,24 @@ function Might({
       <ul className="divide-y divide-rule">
         {[a, b].map((s) => (
           <BarRow key={s.unionId} label={allianceLabel(s.tag, s.name)} figure={<Num n={s.power} />}>
-            <Track>{part(s.power ?? 0, scale, "bg-ink/60")}</Track>
+            <Track value={s.power} scale={scale} />
           </BarRow>
         ))}
         <BarRow
           label={<span className="font-semibold">{`${m.together} · ${m.withEveryone}`}</span>}
           figure={<Num n={r.mightAll} />}
         >
-          <Track>
-            {part(r.mightWithin, scale, "bg-ink/60")}
-            {part(r.mightLeftOut, scale, "bg-seal")}
-          </Track>
+          <Track value={r.mightAll} within={r.mightWithin} scale={scale} />
         </BarRow>
         <BarRow
           label={<span className="font-semibold">{`${m.together} · ${m.withinCap}`}</span>}
           figure={<Num n={r.mightWithin} />}
         >
-          <Track>{part(r.mightWithin, scale, "bg-ink/60")}</Track>
+          <Track value={r.mightWithin} scale={scale} />
         </BarRow>
         {r.overCap && (
           <BarRow label={m.leftOut} figure={<Num n={r.mightLeftOut} />}>
-            <Track>{part(r.mightLeftOut, scale, "bg-seal")}</Track>
+            <Track value={r.mightLeftOut} scale={scale} tone="bg-seal" />
           </BarRow>
         )}
       </ul>
