@@ -161,7 +161,8 @@ export default defineConfig(
   },
   {
     // D159, the second exception: the tick's catalog posts are made and sent by one lib/private module, which
-    // reads only the calendar entries members can see and no roster field.
+    // reads the calendar entries members can see, and for the welcome the joiners' public names; never a
+    // private roster field.
     files: ["lib/posts-tick.ts"],
     rules: {
       "import-x/no-restricted-paths": restrict([

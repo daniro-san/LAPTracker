@@ -62,6 +62,7 @@ export async function postsDue(db: Db, post: CatalogPost, period: string) {
     .select({
       workspaceId: p.workspaceId,
       slug: workspaces.slug,
+      unionId: workspaces.unionId,
       channel: p.channel,
       title: p.title,
       language: p.language,

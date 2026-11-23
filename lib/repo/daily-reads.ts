@@ -154,3 +154,27 @@ export async function lastMemberUids(
     .orderBy(dailyRosters.unionId, desc(dailyRosters.readDay));
   return new Map(rows.map((r) => [r.unionId, r.uids]));
 }
+
+/**
+ * The alliance's members (uids and their public names) in the day's roster, only when that roster was read
+ * and is fresh; null for an error row, a stale roster or none. The welcome post (D159, post 3) compares two
+ * days with it, so a failed or stale read never makes anyone new.
+ */
+export async function freshRosterOfDay(
+  db: Db,
+  day: string,
+  unionId: number,
+): Promise<{ uids: number[]; names: string[] } | null> {
+  const [row] = await db
+    .select({ uids: dailyRosters.memberUids, names: dailyRosters.memberNames })
+    .from(dailyRosters)
+    .where(
+      and(
+        eq(dailyRosters.readDay, day),
+        eq(dailyRosters.unionId, unionId),
+        isNull(dailyRosters.error),
+        eq(dailyRosters.isFresh, true),
+      ),
+    );
+  return row ?? null;
+}

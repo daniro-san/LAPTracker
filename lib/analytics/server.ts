@@ -130,7 +130,7 @@ export interface DeskPlace {
 }
 
 /** The catalog's posts (D159, `CATALOG_POSTS` in lib/schema-discord.ts): `posts` events say which one. */
-export const DESK_POSTS = ["week", "shield_up"] as const;
+export const DESK_POSTS = ["week", "shield_up", "welcome"] as const;
 export type DeskPost = (typeof DESK_POSTS)[number];
 
 /**

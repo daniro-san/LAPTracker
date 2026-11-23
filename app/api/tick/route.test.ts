@@ -336,7 +336,8 @@ describe("POST /api/tick", () => {
 
     clock.now = new Date("2026-11-11T01:30:00Z"); // Tuesday 23:30 server time: the daily read answers
     expect((await tick()).status).toBe(200);
-    expect(later).toHaveLength(1);
+    // The squads batch first, then the catalog posts due from the daily read (D159, the welcome).
+    expect(later).toHaveLength(2);
     expect(players).toEqual([]); // nothing before the answer
     await later[0]?.();
     const own = (OWN_ALLIANCE_ID * 10 + 1) as number;

@@ -9,17 +9,23 @@
 // Post 2, "Shield-up reminder": on Friday from 20:30 ST, 3 hours before the Raid Shield check's night read
 // (D137), one fixed reminder to put the shield up before the reset, take the squads off the wall and bring
 // the troops home. It reads nothing about members: no name, no count, and it works with the check off.
+// Post 3, "Welcome new members": every day after the end-of-day read (D72), a welcome naming the members in
+// the day's roster who were not in the day before's. Names are public (`member_names`, never raw_json); no
+// other roster value, and never anyone who left. Only when both days' rosters were read and fresh, so a
+// failed read never makes anyone new; above WELCOME_NAMES_MAX, a count instead of names.
 import type { AppContext } from "../app-context";
 import { layOut, type Placed } from "../calendar-layout";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { breakLinks, discordCallout } from "../post-callout";
-import { POST_CATALOG, postPeriod } from "../post-catalog";
+import { POST_CATALOG, postPeriod, WELCOME_NAMES_MAX } from "../post-catalog";
 import { calendarRows } from "../repo/calendar";
+import { freshRosterOfDay, getDailyRead } from "../repo/daily-reads";
 import { liveCallout } from "../repo/post-touches";
 import { settingsById } from "../repo/workspace-features";
 import { claimPostRun, finishPostRun, postsDue, settlePostRun } from "../repo/workspace-posts";
 import { CATALOG_POSTS, type CatalogPost } from "../schema-discord";
+import { fill } from "../words";
 import { resolveFeatures } from "../workspace-features";
 import { addDays } from "./calendar-time";
 import { calendarDates, stOf, titleOf } from "./calendar-words";
@@ -35,7 +41,10 @@ import { discordMessages } from "./notice-formats";
 import { postMessages } from "./notice-publish";
 
 export interface PostsDeps {
-  env: Pick<Env, "SERVER_TZ" | "WORKSPACE_KEYS_SECRET" | "WORKSPACE_DISCORD_WEBHOOKS">;
+  env: Pick<
+    Env,
+    "SERVER_TZ" | "DAILY_ROSTER_AT" | "WORKSPACE_KEYS_SECRET" | "WORKSPACE_DISCORD_WEBHOOKS"
+  >;
   fetch: typeof fetch;
   now: () => Date;
   report: AppContext["report"];
@@ -77,25 +86,57 @@ async function weekOf(db: Db, workspaceId: number, monday: string) {
   return layOut(entries, rows, monday, sunday);
 }
 
+/**
+ * The welcome's text: the new members by name, joined as the post's language lists them ("Ana, Bo and
+ * Cy"), or their count above WELCOME_NAMES_MAX; null when no one is new. A name links nothing.
+ */
+export function welcomeText(names: string[], language: WorkspaceLanguage): string | null {
+  if (names.length === 0) return null;
+  const t = WORKSPACE_DICTIONARIES[language];
+  if (names.length > WELCOME_NAMES_MAX) return fill(t["posts.welcome.count"], { n: names.length });
+  const list = new Intl.ListFormat(language, { type: "conjunction" }).format(names.map(breakLinks));
+  return fill(t[names.length === 1 ? "posts.welcome.one" : "posts.welcome.names"], { names: list });
+}
+
 type Due = Awaited<ReturnType<typeof postsDue>>[number];
 
 /**
- * Each post's text in the post's language for the period, or null when it has nothing to say (settled as
- * `skipped`). The shield-up reminder is the same words every Friday: no member, count or reading in it.
+ * The members in the day's roster who were not in the day before's, by name; undefined until the day's
+ * end-of-day read is over and both rosters were read and fresh. Who left is never looked at.
+ */
+async function joinersOf(db: Db, unionId: number, day: string): Promise<string[] | undefined> {
+  const read = await getDailyRead(db, day);
+  if (!read || read.status === "running") return undefined;
+  const today = await freshRosterOfDay(db, day, unionId);
+  const before = today && (await freshRosterOfDay(db, addDays(day, -1), unionId));
+  if (!today || !before) return undefined;
+  const known = new Set(before.uids);
+  return today.names.filter((_, i) => !known.has(today.uids[i] as number));
+}
+
+/**
+ * Each post's text in the post's language for the period; null when it has nothing to say (settled as
+ * `skipped`); undefined when it cannot tell yet (not settled: a later tick of the period looks again). The
+ * shield-up reminder is the same words every Friday: no member, count or reading in it. The welcome waits
+ * for the day's read and both days' rosters: a read that failed or is still running names no one.
  */
 const BODIES: Record<
   CatalogPost,
   (
     db: Db,
-    workspaceId: number,
+    due: Due,
     period: string,
     language: WorkspaceLanguage,
-  ) => Promise<string | null>
+  ) => Promise<string | null | undefined>
 > = {
-  week: async (db, workspaceId, period, language) =>
-    weekText(await weekOf(db, workspaceId, period), language),
-  shield_up: async (_db, _workspaceId, _period, language) =>
+  week: async (db, due, period, language) =>
+    weekText(await weekOf(db, due.workspaceId, period), language),
+  shield_up: async (_db, _due, _period, language) =>
     WORKSPACE_DICTIONARIES[language]["posts.shield_up.body"],
+  welcome: async (db, due, period, language) => {
+    const joiners = await joinersOf(db, due.unionId, period);
+    return joiners && welcomeText(joiners, language);
+  },
 };
 
 /**
@@ -113,7 +154,8 @@ async function sendPost(db: Db, deps: PostsDeps, due: Due, period: string, post:
   const channel = (await noticeChannels(db, ws, deps))[due.channel];
   if (!channel) return;
   const language = languageOf(due.language);
-  const text = await BODIES[post](db, due.workspaceId, period, language);
+  const text = await BODIES[post](db, due, period, language);
+  if (text === undefined) return;
   if (text === null) return settlePostRun(db, { ...run, at: deps.now() });
   const title = postTitle(post, due.title, WORKSPACE_DICTIONARIES[language]);
   // D156: the alliance's own line above our title, while its `post_callouts` is on.

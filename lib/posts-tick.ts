@@ -1,9 +1,10 @@
-// The tick's catalog posts (#713 part C, D159), after its answer. No new cron and no extra wake of the
-// database (D141): the route calls this only on a tick that opened it anyway, and the clock comes first, so
-// on a day no catalog post is due nothing is scheduled. On a Monday (server day) that is the first tick after
-// Sunday's end-of-day read: the squads queue's, or at the latest the 3-hourly heartbeat. The posts are made
-// and sent by lib/private/catalog-posts.ts, the one lib/private module this file may import (D159), on its
-// own connection: the request's is closed with the response.
+// The tick's catalog posts (#713, D159), after its answer. No new cron and no extra wake of the database
+// (D141): the route calls this only on a tick that opened it anyway, and the clock comes first, so when no
+// catalog post is due nothing is scheduled. Each post's own clock: the week on Monday from 00:00 ST (the
+// first tick after Sunday's end-of-day read, at the latest the 3-hourly heartbeat); the shield-up reminder on
+// Friday from 20:30 ST (the Friday check's tick); the welcome every day from the daily read (its own ticks,
+// 23:30 and 23:45 ST). The posts are made and sent by lib/private/catalog-posts.ts, the one lib/private
+// module this file may import (D159), on its own connection: the request's is closed with the response.
 import { after } from "next/server";
 
 import type { AppContext } from "./app-context";

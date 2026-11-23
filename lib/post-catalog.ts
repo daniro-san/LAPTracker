@@ -17,12 +17,15 @@ export interface CatalogEntry {
   /** The owner's layer (D134): /admin's switch and "Defaults for new alliances". */
   feature: Feature;
   /**
-   * When it is due: on this server weekday (0 = Monday … 6 = Sunday), in the first tick that opens the
-   * database that day, which on a Monday follows Sunday's end-of-day read (D72, D141).
+   * When it is due: on this server weekday (0 = Monday … 6 = Sunday), or every day (null), in the first tick
+   * that opens the database that day, which on a Monday follows Sunday's end-of-day read (D72, D141).
    */
-  weekday: number;
-  /** The earliest server time ("HH:MM") it goes out that day: the first tick that opens the database from then. */
-  from: string;
+  weekday: number | null;
+  /**
+   * The earliest server time ("HH:MM") it goes out that day: the first tick that opens the database from then.
+   * `read`: the day's end-of-day read (DAILY_ROSTER_AT, D72), whose own ticks open the database.
+   */
+  from: string | "read";
   /** Who reads it; the channel it goes to by default. */
   audience: PostChannel;
   /** The channels officers may pick. */
@@ -52,6 +55,26 @@ export const POST_CATALOG: Record<CatalogPost, CatalogEntry> = {
     channels: ["members"],
     editable: { weekday: false, picture: false },
   },
+  // 3. Welcome new members: every day, after the end-of-day read (D72), the members in today's roster who were
+  // not in yesterday's, by name (public, D22), only when both reads worked; above WELCOME_NAMES_MAX a count.
+  // Never anyone who left. A day with no one new posts nothing.
+  welcome: {
+    feature: "post_welcome",
+    weekday: null,
+    from: "read",
+    audience: "members",
+    channels: ["members"],
+    editable: { weekday: false, picture: false },
+  },
+};
+
+/** The welcome names at most this many people; more than that in a day is likely a read glitch, so a count. */
+export const WELCOME_NAMES_MAX = 15;
+
+/** The server time a post is due from: its own, or the day's end-of-day read for `read`. */
+export const fromOf = (post: CatalogPost, cfg: Pick<ScheduleConfig, "DAILY_ROSTER_AT">) => {
+  const { from } = POST_CATALOG[post];
+  return from === "read" ? cfg.DAILY_ROSTER_AT : from;
 };
 
 /** The catalog's owner switches: shown in /admin, never in Alliance settings → Features (D159). */
@@ -70,14 +93,17 @@ const weekdayAt = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
 export function postPeriod(
   post: CatalogPost,
   now: Date,
-  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ" | "DAILY_ROSTER_AT">,
 ): string | null {
-  const entry = POST_CATALOG[post];
+  const { weekday } = POST_CATALOG[post];
   const due =
-    weekdayAt(now, cfg) === entry.weekday && hhmm(serverMinuteOfDay(now, cfg)) >= entry.from;
+    (weekday === null || weekdayAt(now, cfg) === weekday) &&
+    hhmm(serverMinuteOfDay(now, cfg)) >= fromOf(post, cfg);
   return due ? serverDay(now, cfg) : null;
 }
 
 /** Whether any catalog post can be due at `now`, by the clock alone: no query before this holds. */
-export const postsMayBeDue = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
-  (Object.keys(POST_CATALOG) as CatalogPost[]).some((p) => postPeriod(p, now, cfg) !== null);
+export const postsMayBeDue = (
+  now: Date,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ" | "DAILY_ROSTER_AT">,
+) => (Object.keys(POST_CATALOG) as CatalogPost[]).some((p) => postPeriod(p, now, cfg) !== null);

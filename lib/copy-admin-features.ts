@@ -48,6 +48,7 @@ export const featuresAdminCopy = {
     post_callouts: "Alliance's line on our posts",
     post_week: "Post: This week in the alliance (off until the alliance turns it on)",
     post_shield_up: "Post: Shield-up reminder (off until the alliance turns it on)",
+    post_welcome: "Post: Welcome new members (off until the alliance turns it on)",
     squads: "Squads read (own key)",
     shield_check: "Raid Shield check (own key)",
     notice_pictures: "Notice pictures (Neon storage)",

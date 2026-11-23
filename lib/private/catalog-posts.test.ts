@@ -3,8 +3,8 @@
 // on, and it holds the week's calendar entries members can see with their server times: no roster field, no
 // person, no note, no link, and it pings no one. The claim comes after the post is built, an empty week is
 // settled without a post, and the tick's deadline stops new sends. Post 2, the shield-up reminder, goes once
-// on Friday from 20:30 ST, with the Raid Shield check off too, and names, counts and pings no one. Invented
-// names only.
+// on Friday from 20:30 ST, with the Raid Shield check off too, and names, counts and pings no one. Post 3,
+// the welcome, is in catalog-posts-welcome.test.ts. Invented names only.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { testContext, TEST_ENV } from "../app-context.test-helpers";

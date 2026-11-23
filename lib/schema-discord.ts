@@ -69,7 +69,7 @@ export const workspaceWebhooks = pgTable(
 );
 
 /** The catalog's optional posts (#713 part C, D159), in build order; lib/post-catalog.ts describes each. */
-export const CATALOG_POSTS = ["week", "shield_up"] as const;
+export const CATALOG_POSTS = ["week", "shield_up", "welcome"] as const;
 export type CatalogPost = (typeof CATALOG_POSTS)[number];
 
 /** The posts an alliance may put its own line on (#713, D156), the catalog's posts included (D159). */
@@ -96,7 +96,7 @@ export const workspacePostTouches = pgTable(
     primaryKey({ columns: [t.workspaceId, t.postKey] }),
     check(
       "workspace_post_touches_post_key_check",
-      sql`${t.postKey} in ('shield', 'thanks', 'garrison', 'week', 'shield_up')`,
+      sql`${t.postKey} in ('shield', 'thanks', 'garrison', 'week', 'shield_up', 'welcome')`,
     ),
   ],
 );
@@ -130,7 +130,7 @@ export const workspacePosts = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.workspaceId, t.postKey] }),
-    check("workspace_posts_post_key_check", sql`${t.postKey} in ('week', 'shield_up')`),
+    check("workspace_posts_post_key_check", sql`${t.postKey} in ('week', 'shield_up', 'welcome')`),
     check("workspace_posts_channel_check", sql`${t.channel} in ('members', 'leaders')`),
     check("workspace_posts_weekday_check", sql`${t.weekday} between 0 and 6`),
     check("workspace_posts_language_check", sql`${t.language} in ('en', 'pt-BR', 'fr')`),

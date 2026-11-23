@@ -27,7 +27,7 @@ The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?privat
 - [ ] Served only through `lib/private` (`lib/repo/me.ts` and `lib/repo/workspace-rosters.ts` read them from `raw_json` for it), and only to pages and handlers under `app/(private)/w/[slug]` and `app/(private)/api/w/[slug]`, after `requireWorkspace`, for rows of that workspace's own alliance.
 - [ ] The one member exception (D142): the member's own `daily_tech`, `daily_honor` and `active`, only on `/w/[slug]/board/me`, behind `requireBoard` and an officer-approved player link, for that link's uid, in the page's HTML rendered per request with `Cache-Control: private, no-store`. Only that page renders them (through `meView`); any other place a member could see them needs a decision first.
 - [ ] `lib/push-tick.ts` takes counts only from `lib/private/push-roll-calls.ts`, never a field or a name (D148).
-- [ ] `lib/posts-tick.ts` calls only `lib/private/catalog-posts.ts`, whose posts carry the calendar entries members can see and never a roster field or a person (D159).
+- [ ] `lib/posts-tick.ts` calls only `lib/private/catalog-posts.ts`, whose posts carry the calendar entries members can see and never a field of this table (D159). The one person it names: the welcome post (D159 amendment 2026-11-23, post 3) names new members by their public name (`member_names`, never `raw_json`), nothing else about them.
 
 ## Where they must never go
 

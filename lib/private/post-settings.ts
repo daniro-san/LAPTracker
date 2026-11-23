@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import type { Db } from "../db";
 import { calloutLength, cleanCallout } from "../post-callout";
-import { POST_CATALOG, POST_TITLE_LIMIT } from "../post-catalog";
+import { fromOf, POST_CATALOG, POST_TITLE_LIMIT } from "../post-catalog";
 import { recordFailure } from "../repo/auth-attempts";
 import { postsOf, savePost } from "../repo/workspace-posts";
 import { serverInstant, serverMinuteOfDay, type ScheduleConfig } from "../schedule";
@@ -50,8 +50,11 @@ export interface PostView {
   defaultTitles: Record<WorkspaceLanguage, string>;
   /** The channels the post may go to, each with the name officers gave it (null: not set up). */
   channels: { channel: PostChannel; name: string | null }[];
-  /** The post's server weekday in the officer's words ("Monday"), and the window its tick falls in (ST). */
-  day: string;
+  /**
+   * The post's server weekday in the officer's words ("Monday"; null: every day), and the window its tick
+   * falls in (ST).
+   */
+  day: string | null;
   from: string;
   to: string;
 }
@@ -76,6 +79,16 @@ export function sendBy(cfg: ScheduleConfig, day: string, from: string): string {
 /** A day on the given weekday (0 = Monday), any week: the windows are the same every week. */
 const sampleDay = (weekday: number) => addDays("2026-11-23", weekday);
 
+/**
+ * The end of a post's window on the card. A post due from the daily read (`read`) may go until 00:00 ST:
+ * the read's automatic retry can come at any tick of its window before midnight (D72), and the period ends
+ * then. Any other post: `sendBy`.
+ */
+const windowEnd = (post: CatalogPost, cfg: ScheduleConfig, weekday: number | null) =>
+  POST_CATALOG[post].from === "read"
+    ? "00:00"
+    : sendBy(cfg, sampleDay(weekday ?? 0), fromOf(post, cfg));
+
 /** The card's rows: the catalog posts the owner allows, as saved (off by default); null when none is. */
 export async function postsView(
   db: Db,
@@ -88,6 +101,9 @@ export async function postsView(
   if (allowed.length === 0) return null;
   const saved = await postsOf(db, access.workspaceId);
   const weekdays = new Intl.DateTimeFormat(language, { weekday: "long", timeZone: "UTC" });
+  // A daily post (no weekday) has no day name, and its window is the same every day.
+  const dayName = (weekday: number | null) =>
+    weekday === null ? null : weekdays.format(new Date(`${sampleDay(weekday)}T00:00:00Z`));
   const nameOf = (c: PostChannel) => {
     const v = channels.find((x) => x.channel === c);
     return v && (v.state === "set" || v.state === "site") ? v.name : null;
@@ -96,6 +112,7 @@ export async function postsView(
     const entry = POST_CATALOG[post];
     const row = saved.get(post);
     const weekday = row?.weekday ?? entry.weekday;
+    const from = fromOf(post, cfg);
     return {
       post,
       on: row?.on ?? false,
@@ -109,9 +126,9 @@ export async function postsView(
         ]),
       ) as Record<WorkspaceLanguage, string>,
       channels: entry.channels.map((c) => ({ channel: c, name: nameOf(c) })),
-      day: weekdays.format(new Date(`${sampleDay(weekday)}T00:00:00Z`)),
-      from: entry.from,
-      to: sendBy(cfg, sampleDay(weekday), entry.from),
+      day: dayName(weekday),
+      from,
+      to: windowEnd(post, cfg, weekday),
     };
   });
 }
