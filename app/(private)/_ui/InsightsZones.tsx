@@ -16,7 +16,7 @@ import { queryString } from "@/lib/private/members-list";
 
 import { Fold } from "./InsightsMore";
 import { Card } from "./InsightsSections";
-import { Caret, Names, SetFold, TapHint } from "./InsightsSets";
+import { Caret, SetRow, TapHint } from "./InsightsSets";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
@@ -101,14 +101,13 @@ export function ZonesCard(props: {
               (r) =>
                 r.set && (
                   <li key={r.label} className="border-t border-rule">
-                    <SetFold
-                      kind="zone"
-                      setKey={r.set.key}
-                      count={r.set.people.length}
+                    <SetRow
+                      set={r.set}
+                      slug={slug}
+                      t={t}
+                      label={r.set.title}
                       summary={<RowBody r={r} />}
-                    >
-                      <Names set={r.set} slug={slug} label={`${r.label}: ${r.value}`} />
-                    </SetFold>
+                    />
                   </li>
                 ),
             )}

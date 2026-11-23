@@ -30,7 +30,7 @@ import type { ListRow, ListWords } from "./member-list-data";
 import { MemberCell, MemberListRow, toAskText, type Column, type RowProps } from "./MemberListRow";
 import { useMembersList, type ListState } from "./members-list-state";
 import { MembersFilters } from "./MembersFilters";
-import { CountLine, Empty, More, StickyBar } from "./MembersListParts";
+import { CountLine, Empty, More, SetChip, StickyBar, type ListSet } from "./MembersListParts";
 import { withNoData } from "./NoData";
 import { stepRow } from "./open-member";
 import { useMinute } from "./YourTime";
@@ -80,6 +80,8 @@ export interface MembersListProps {
   sheetHeader: string;
   /** Follow-up's address while its tab is on (D126): the first group points at the week's list. */
   followUp: string | null;
+  /** The Insights set the page was opened on (`?set=`), or null. */
+  set?: ListSet | null;
 }
 
 /** The open member, kept by the page's roster (`?m=`, D122). */
@@ -283,6 +285,7 @@ export function MembersList(props: MembersListProps & OpenProps) {
         if (uid !== null && props.wide) props.onOpen(uid, true);
       }}
     >
+      {props.set && <SetChip s={s} set={props.set} />}
       <StickyBar s={s} t={t} column={COLUMN[s.order]} onFilters={() => setFilters(true)} />
       <CountLine
         s={s}

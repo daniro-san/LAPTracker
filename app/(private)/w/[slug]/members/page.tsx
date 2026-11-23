@@ -22,6 +22,8 @@ import { featureOn, thanksSwitches } from "@/lib/private/features";
 import { followUpCounts, type WeekCounts } from "@/lib/private/follow-up";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
+import type { Formats } from "@/lib/private/insights-format";
+import { pickSetRef, setRefText, type SetRef } from "@/lib/private/insights-sets";
 import { cardFormats } from "@/lib/private/member-card";
 import {
   membersView,
@@ -31,6 +33,7 @@ import {
   type MembersView,
 } from "@/lib/private/members";
 import { pickOrder, pickQuery } from "@/lib/private/members-list";
+import { shownSet, type ShownSet } from "@/lib/private/members-set";
 import { sheetHeader } from "@/lib/private/members-sheet";
 import {
   dismissedMembers,
@@ -41,7 +44,7 @@ import {
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
-import { fill } from "@/lib/words";
+import { fill, plural } from "@/lib/words";
 
 import { AllianceWeekLine, allianceWeekParts } from "../../../_ui/AllianceWeekLine";
 import { CheckInLine, checkInLink } from "../../../_ui/CheckInLine";
@@ -57,6 +60,7 @@ import {
 } from "../../../_ui/member-lifecycle-data";
 import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersHead } from "../../../_ui/MembersHead";
+import type { ListSet } from "../../../_ui/MembersListParts";
 import { MembersRoster } from "../../../_ui/MembersRoster";
 import { MembersSource } from "../../../_ui/MembersSource";
 import { MembersThanks } from "../../../_ui/MembersThanks";
@@ -93,11 +97,25 @@ async function readPage(
     now: Date;
     zone: string;
     showFormer: boolean;
+    /** `?set=` (D158) and the words its title is written in. */
+    set: SetRef | null;
+    words: Formats;
   },
 ) {
   const { now, zone, showFormer } = p;
   const access = await requireWorkspace(db, p.slug, p.jar, now, RENEW_MS);
   if (!access.ok) return { access, waiting: 0, ...REFUSED };
+  const env = getEnv();
+  // Built by the same functions as the Insights count that linked here, for this workspace only.
+  const set =
+    p.set && !showFormer
+      ? await shownSet(db, access, p.set, p.words, {
+          now,
+          serverZone: zone,
+          kvkWeekday: env.EVENT_WEEKDAY,
+          kvkTime: env.EVENT_TIME,
+        })
+      : null;
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
   const members = membersWithProgress(db, access, now, zone);
@@ -111,6 +129,7 @@ async function readPage(
     access,
     waiting: await toReviewCount(db, access, now),
     view,
+    set,
     // D126: the thanks sheet's switches.
     switches: { ...thanksSwitches(access), channel: channels.members },
     // The list's own read (photos and past names); the card route never runs it (issue 337).
@@ -128,7 +147,14 @@ async function readPage(
 
 /** Refused: nothing is shown, so nothing is switched on. */
 const NO_SWITCHES: ThanksSwitches = { board: false, writing: false, channel: null };
-const REFUSED = { view: null, rows: [], lifecycle: null, switches: NO_SWITCHES, followUp: null };
+const REFUSED = {
+  view: null,
+  rows: [],
+  lifecycle: null,
+  switches: NO_SWITCHES,
+  followUp: null,
+  set: null,
+};
 
 /**
  * The editor's words, the add sheet saying when the nightly roster is read (D106), and whether "Read from a
@@ -144,6 +170,49 @@ function plainSearch(query: Record<string, string | string[] | undefined>): URLS
   return new URLSearchParams(
     Object.entries(query).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])),
   );
+}
+
+/** "Import the old spreadsheets", at the end of the list's column, so nothing follows the list and its pane (D122). */
+function ImportLink({ slug, t }: { slug: string; t: WorkspaceDictionary }) {
+  return (
+    <p className="mt-6">
+      <a
+        href={`/w/${slug}/import`}
+        className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+      >
+        {t["members.import"]}
+      </a>
+    </p>
+  );
+}
+
+/** The chip's words for an Insights set, and its members who have left (D158). */
+function listSet(
+  set: ShownSet,
+  slug: string,
+  t: WorkspaceDictionary,
+  language: WorkspaceLanguage,
+): ListSet {
+  const n = set.former.length;
+  return {
+    kind: set.ref.kind,
+    title: set.title,
+    from: t["drill.set.from"],
+    clear: t["drill.set.clear"],
+    formerLine:
+      n === 0
+        ? null
+        : fill(
+            plural(
+              n,
+              { one: t["drill.set.former.one"], other: t["drill.set.former.other"] },
+              language,
+            ),
+            { n },
+          ),
+    former: set.former.map((p) => ({ uid: p.uid, name: p.name })),
+    slug,
+  };
 }
 
 /** The page head's actions (D122): the page's one main action (D109), new values for several members at
@@ -194,16 +263,25 @@ export default async function MembersPage({
   const search = plainSearch(await searchParams);
   const at = search.get("view") === "former" ? "former" : "members";
   const showFormer = at === "former";
+  const { language, t } = await workspaceWords();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, rows, waiting, lifecycle, switches, followUp } = await withPageDb((db) =>
-    readPage(db, { slug, jar, now, zone: env.SERVER_TZ, showFormer }),
+  const { access, view, rows, waiting, lifecycle, switches, followUp, set } = await withPageDb(
+    (db) =>
+      readPage(db, {
+        slug,
+        jar,
+        now,
+        zone: env.SERVER_TZ,
+        showFormer,
+        set: pickSetRef(search.get("set")),
+        words: { t, language },
+      }),
   );
   if (!access.ok) {
     refuse(slug, access.reason, `/w/${slug}/members`);
     redirect(`/w/${slug}`);
   }
   if (!view || !lifecycle) notFound();
-  const { language, t } = await workspaceWords();
   const f = cardFormats(language, env.SERVER_TZ, now);
   const editor = {
     slug,
@@ -214,16 +292,7 @@ export default async function MembersPage({
   };
   const roster = !showFormer && view.readAt !== null;
   // At the end of the list's column, so nothing follows the list and its pane (D122).
-  const importLink = (
-    <p className="mt-6">
-      <a
-        href={`/w/${slug}/import`}
-        className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
-      >
-        {t["members.import"]}
-      </a>
-    </p>
-  );
+  const importLink = <ImportLink slug={slug} t={t} />;
   return (
     <SignedInFrame access={access} language={language} t={t} current={at} waiting={waiting} wide>
       <PageActions>
@@ -249,7 +318,7 @@ export default async function MembersPage({
           </>
         ) : (
           <Roster
-            {...{ slug, view, rows, t, language, search, now, editor, switches, followUp }}
+            {...{ slug, view, rows, t, language, search, now, editor, switches, followUp, set }}
             foot={importLink}
             readAt={view.readAt}
             zone={env.SERVER_TZ}
@@ -282,8 +351,10 @@ function Roster(props: {
   /** D126: the thanks sheet's switches. */
   switches: ThanksSwitches;
   followUp: WeekCounts | null;
+  /** The Insights set `?set=` names, built on the server; null without one. */
+  set: ShownSet | null;
 }) {
-  const { slug, view, t, language, now, zone } = props;
+  const { slug, view, t, language, now, zone, set } = props;
   const f = cardFormats(language, zone, now);
   const today = serverDay(now, { SERVER_TZ: zone });
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
@@ -324,7 +395,12 @@ function Roster(props: {
         early: view.early,
         words: listWords(t),
         language,
-        initialQuery: pickQuery(props.search, LANGUAGES),
+        initialQuery: pickQuery(
+          props.search,
+          LANGUAGES,
+          set && { ref: setRefText(set.ref), uids: set.uids },
+        ),
+        set: set && listSet(set, slug, t, language),
         initialOrder: pickOrder(props.search.get("order")),
         today,
         hour: Number(clockIn(now.getTime(), zone, today).time.slice(0, 2)),

@@ -12,7 +12,7 @@ import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { LANGUAGES } from "./fact-fields";
 import { insightsView } from "./insights";
-import type { MemberSet } from "./insights-sets";
+import { pickSetRef, SET_KINDS, type MemberSet, type SetRef } from "./insights-sets";
 import { insightsWords } from "./insights-words";
 import { nextKvk, nextReset, NOT_RECORDED, usualAt, usualHours } from "./insights-zones";
 import { zonesWords } from "./insights-zones-words";
@@ -21,10 +21,12 @@ import {
   clockAt,
   keepMembers,
   listMember,
+  NO_QUERY,
   pickQuery,
   queryString,
   type MemberQuery,
 } from "./members-list";
+import { insightsSets, shownSet } from "./members-set";
 import { createSession } from "./session";
 
 const OURS = 67111155;
@@ -33,6 +35,9 @@ const ZONE = "Etc/GMT+2";
 const NOW = new Date("2026-11-22T15:00:00Z");
 const TODAY = "2026-11-22";
 const t = WORKSPACE_DICTIONARIES.en;
+const f = { t, language: "en" as const };
+/** KvK on Saturday 12:00 ST (EVENT_WEEKDAY 6, EVENT_TIME). */
+const CLOCK = { now: NOW, serverZone: ZONE, kvkWeekday: 6, kvkTime: "12:00" };
 
 let db: Db;
 beforeAll(async () => {
@@ -218,6 +223,57 @@ describe("Insights' counts open exactly the members they count (#678)", () => {
     );
     expect(listed.flat().length).toBeGreaterThan(0);
     expect(byHour).toEqual(listed.map((l) => l.length));
+  });
+
+  it("shows on Members `?set=` exactly the current members each count counts, its leavers apart (D158)", async () => {
+    const access = await alliance();
+    const view = await insightsView(db, access, NOW, ZONE);
+    const sets = insightsSets(view, f, CLOCK);
+    // Every kind the page opens is here: groups, left out, weeks, tenure and zones.
+    expect(new Set(sets.map((s) => s.kind))).toEqual(new Set(SET_KINDS));
+    for (const set of sets) {
+      const ref = pickSetRef(`${set.kind}:${set.key}`);
+      const shown = ref && (await shownSet(db, access, ref, f, CLOCK));
+      if (!set.onward) {
+        // A week's leavers are not on Members' list: no Members view of them.
+        expect(shown).toBeNull();
+        continue;
+      }
+      const current = set.people.filter((p) => p.current).map((p) => p.uid);
+      expect([set.key, shown?.uids]).toEqual([set.key, current]);
+      expect(shown?.former).toEqual(set.people.filter((p) => !p.current));
+      expect(shown?.title).toBe(set.title);
+      const listed = await membersList(access, {
+        ...NO_QUERY,
+        set: { ref: `${set.kind}:${set.key}`, uids: shown?.uids ?? [] },
+      });
+      expect([set.key, listed.sort()]).toEqual([set.key, [...current].sort()]);
+    }
+  });
+
+  it("gives no set for an unknown key, a malformed one, or another workspace's alliance", async () => {
+    const access = await alliance();
+    const view = await insightsView(db, access, NOW, ZONE);
+    const ours = insightsSets(view, f, CLOCK).filter((s) => s.onward);
+    expect(ours.length).toBeGreaterThan(0);
+    for (const raw of ["effort_range:range-9", "zone:zone-p0-p0-p0", "flow_week:joined-2026-01-05"])
+      expect(await shownSet(db, access, pickSetRef(raw) as SetRef, f, CLOCK)).toBeNull();
+    for (const raw of ["insights:range-0", "effort_range:", "effort_range:RANGE-0", "tenure:a b"])
+      expect(pickSetRef(raw)).toBeNull();
+    // Another workspace, over an alliance with no daily update: none of our sets, none of our members.
+    await saveWorkspace(db, {
+      unionId: OURS + 1,
+      slug: "oth",
+      discordGuildId: "3",
+      leaderRoleIds: ["4"],
+    });
+    const other = await findWorkspaceBySlug(db, "oth");
+    const userId = await recordSignIn(db, other?.id ?? 0, "oth-bo", "Bo", NOW);
+    const { token } = await createSession(db, other?.id ?? 0, userId, NOW, null, "officer");
+    const theirs = await requireWorkspace(db, "oth", { get: () => ({ value: token }) }, NOW);
+    if (!theirs.ok) throw new Error("no access");
+    for (const s of ours)
+      expect(await shownSet(db, theirs, { kind: s.kind, key: s.key }, f, CLOCK)).toBeNull();
   });
 
   it("links “Not recorded yet” and usual hours to Members with the very query they count with", () => {

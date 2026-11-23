@@ -101,6 +101,10 @@ const clockInSentence = (c: ReturnType<typeof clockOf>, f: Formats) =>
     ? fill(f.t["insights.zones.atDay"], { day: c.day, time: c.time })
     : fill(f.t["insights.zones.at"], { time: c.time });
 
+/** A group's key from its offsets now, at the reset and at KvK ("zone-m180-m180-m180"): stable across days. */
+const zoneKey = (g: ZoneGroup) =>
+  `zone-${[g.offsets.now, g.offsets.reset, g.offsets.kvk].map((o) => `${o < 0 ? "m" : "p"}${Math.abs(o)}`).join("-")}`;
+
 /** "Clocks change before KvK" or "… before the reset": the earlier moment whose offset is not now's. */
 function changeOf(g: ZoneGroup, m: Moments, f: Formats): string | null {
   const moments = [
@@ -200,12 +204,15 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
         kvk: server.at(m.kvk),
         members: c.members,
       }),
-      rows: groups.map((g, i) => ({
+      rows: groups.map((g) => ({
         label: nameOf(g, f, "insights.zones.row"),
         value: String(g.uids.length),
         // Out of every member, not only those with a time zone (D158): 2 of 11 is not 2 of 3.
         share: g.uids.length / c.members,
-        set: setOf("zone", `zone-${i}`, g.uids, f.people, language),
+        set: setOf("zone", zoneKey(g), g.uids, f.people, {
+          ...f,
+          what: `${t["insights.zones.head"]} · ${nameOf(g, f, "insights.zones.row")}`,
+        }),
         times: fill(t["insights.zones.times"], {
           now: clockText(clockOf(g, m.now, f, false)),
           reset: clockText(clockOf(g, m.reset, f, false)),

@@ -3,6 +3,10 @@
 // The Members list's pieces (issue 337): the slim sticky block (search, Filters, the two chips, the column
 // labels), the count line naming every filter on, with Clear filters and Copy, the "Not shown" lines, the
 // empty states and "Show more".
+import { useEffect, useRef } from "react";
+
+import { countBucket } from "@/lib/analytics/count-bucket";
+import { track, type InsightsSet } from "@/lib/analytics/events";
 import { chip } from "@/lib/brand/components/controls";
 import { keepMembers, NO_QUERY, sheetFilters } from "@/lib/private/members-list";
 import { fill } from "@/lib/words";
@@ -91,6 +95,74 @@ export function StickyBar(props: {
         </span>
         <span className="w-12 text-right">{t["list.col.week"]}</span>
       </div>
+    </div>
+  );
+}
+
+/** The Insights set the page was opened on (`?set=`, D158), with its words and its members who have left. */
+export interface ListSet {
+  kind: InsightsSet;
+  title: string;
+  /** "From Insights", above the chip. */
+  from: string;
+  /** The ×'s name: "Show every member". */
+  clear: string;
+  /** "2 of them are no longer in the alliance:", or null when all are. */
+  formerLine: string | null;
+  former: { uid: number; name: string }[];
+  slug: string;
+}
+
+/**
+ * One removable chip naming the set, and its members who have left, each to their former-member card.
+ * Opening Members on a set counts as one drilldown (surface `members`), once per page view.
+ */
+export function SetChip({ s, set }: { s: ListState; set: ListSet }) {
+  const on = s.query.set !== null;
+  const counted = useRef(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!on || counted.current) return;
+    counted.current = true;
+    // The page's lead (the read, the thanks) comes first: land on why the list is short.
+    box.current?.scrollIntoView({ block: "start" });
+    track("ws_drilldown_opened", {
+      surface: "members",
+      kind: set.kind,
+      count_bucket: countBucket((s.query.set?.uids.length ?? 0) + set.former.length),
+    });
+  }, [on, set, s.query.set]);
+  if (!on) return null;
+  return (
+    <div ref={box} id="members-set" className="mt-3 scroll-mt-2">
+      <p className="text-body-sm text-ink/80">{set.from}</p>
+      <p className="mt-1 inline-flex max-w-full items-center gap-1 rounded-sm bg-plum ps-3 text-body-sm font-medium text-paper">
+        <span className="min-w-0 py-2">{set.title}</span>
+        <button
+          type="button"
+          aria-label={set.clear}
+          onClick={() => s.change({ set: null })}
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center text-lg focus-visible:outline-paper"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </p>
+      {set.formerLine && (
+        <p className="ph-no-capture mt-1 text-body-sm">
+          {set.formerLine}{" "}
+          {set.former.map((p, i) => (
+            <span key={p.uid}>
+              {i > 0 && ", "}
+              <a
+                href={`/w/${set.slug}/members?view=former&m=${p.uid}`}
+                className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+              >
+                <bdi translate="no">{p.name}</bdi>
+              </a>
+            </span>
+          ))}
+        </p>
+      )}
     </div>
   );
 }

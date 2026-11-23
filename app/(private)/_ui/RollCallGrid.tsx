@@ -204,6 +204,12 @@ export function RollGrid<T extends { uid: number }>(props: {
   const { list, marked } = g.sectionsOf(props.found);
   const todo = g.snap.filter === "todo";
   const empty = todo ? (props.emptyTodo ?? words["roll.grid.none.todo"]) : words["roll.grid.none"];
+  // A shown set ("Show the n ›" on Raid prep) scrolls its line into view: at 360 px the grid can sit below
+  // the fold under the counts (D158 rule 7 (c), the page's own grid is the list).
+  const shownLine = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (g.snap.label) shownLine.current?.scrollIntoView({ block: "start" });
+  }, [g.snap.label]);
   return (
     <>
       {!props.found && props.caption && (
@@ -212,7 +218,9 @@ export function RollGrid<T extends { uid: number }>(props: {
       {!props.found && <Filters g={g} words={words} said={props.said} />}
       {/* A shown set says which it is: no chip is pressed (drilldown panel review). */}
       {!props.found && g.snap.label && (
-        <p className="mt-2 text-body-sm font-semibold">{g.snap.label}</p>
+        <p ref={shownLine} className="mt-2 scroll-mt-2 text-body-sm font-semibold">
+          {g.snap.label}
+        </p>
       )}
       {/* With nobody left, the tiles marked meanwhile stay; the line says why (persona review). */}
       {!props.found && (list.length === 0 || (todo && g.counts.todo === 0)) && (
