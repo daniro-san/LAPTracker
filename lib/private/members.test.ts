@@ -223,6 +223,45 @@ describe("member facts on the Members tab (#297)", () => {
     expect(view.thanks.activity).toEqual([{ uid: 2, name: "P2", value: 50 }]);
   });
 
+  it("shows last week's quest points in the thanks on a Monday (D114)", async () => {
+    // NOW is Monday 2026-11-16: the newest read is the new week's, with 30 points so far.
+    await endOfDay(OGS, dayOf(0), {
+      1: { tech: null, active: 400 },
+      2: { tech: null, active: 200 },
+    });
+    await endOfDay(OGS, dayOf(6), {
+      1: { tech: null, active: 700 },
+      2: { tech: null, active: 600 },
+    });
+    await endOfDay(OGS, dayOf(7), { 1: { tech: null, active: 30 }, 2: { tech: null, active: 40 } });
+    const view = await membersView(db, await signedIn("ogs"), NOW, ZONE);
+    expect(view.thanks.activity).toEqual([
+      { uid: 1, name: "P1", value: 700 },
+      { uid: 2, name: "P2", value: 600 },
+    ]);
+  });
+
+  it("shows last week's donations in the thanks on a Monday (D114)", async () => {
+    // NOW is Monday 2026-11-16: the newest read is the new week's, where member 2 donated the most.
+    await endOfDay(OGS, dayOf(0), { 1: { tech: 900, active: 1 }, 2: { tech: 100, active: 1 } });
+    await endOfDay(OGS, dayOf(7), { 1: { tech: 5, active: 1 }, 2: { tech: 50, active: 1 } });
+    const view = await membersView(db, await signedIn("ogs"), NOW, ZONE);
+    expect(view.thanks.donors).toEqual([
+      { uid: 1, name: "P1", value: 900 },
+      { uid: 2, name: "P2", value: 100 },
+    ]);
+  });
+
+  it("keeps both thanks lists on the newest read's week when a week's reads are missing (D114)", async () => {
+    // Wednesday 2026-11-18 with no read since the week of Nov 9: donors and activity both cover that week.
+    await endOfDay(OGS, dayOf(0), { 1: { tech: 900, active: 500 } });
+    await endOfDay(OGS, dayOf(1), { 1: { tech: null, active: 500 } });
+    const wednesday = new Date("2026-11-18T12:00:00Z");
+    const view = await membersView(db, await signedIn("ogs"), wednesday, ZONE);
+    expect(view.thanks.donors).toEqual([{ uid: 1, name: "P1", value: 900 }]);
+    expect(view.thanks.activity).toEqual([{ uid: 1, name: "P1", value: 500 }]);
+  });
+
   it("shows an officer's status instead of the computed one; On a break also clears reasons and thanks", async () => {
     // All three donated on Monday (2 the most), then had no quests and no donations on 3 reads.
     const monday = (tech: number) => ({ tech, active: 50 });

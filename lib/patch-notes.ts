@@ -207,6 +207,15 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.67.1",
+    date: "2026-11-23",
+    title: "Monday's thanks cover last week",
+    changes: [
+      "Members tab thanks: on a Monday the activity and donors lists now show last week, as the weekly thanks should; both lists always cover the same week, even when a day's read is missing.",
+    ],
+    prs: [748],
+  },
+  {
     version: "v5.67.0",
     date: "2026-11-23",
     title: "Tap a chart to read it, and see who",
