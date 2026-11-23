@@ -533,6 +533,13 @@
       "when": 1795434198210,
       "tag": "0075_post_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1795436196321,
+      "tag": "0076_post_shield_up",
+      "breakpoints": true
     }
   ]
 }

@@ -17,7 +17,7 @@ import {
   type CatalogPost,
   type PostChannel,
 } from "../schema-discord";
-import { HEARTBEAT_EVERY_H } from "../tick-gate";
+import { tickClockDue } from "../tick-gate";
 import type { WorkspaceAccess } from "./access";
 import { addDays, hhmm } from "./calendar-time";
 import { WORKSPACE_DICTIONARIES, WORKSPACE_LANGUAGES, type WorkspaceLanguage } from "./dictionary";
@@ -56,17 +56,21 @@ export interface PostView {
   to: string;
 }
 
-const HOUR_MS = 3_600_000;
+const QUARTER_MS = 15 * 60_000;
 
 /**
- * The latest server time a post due at 00:00 ST goes out: the end of the first heartbeat slot at or after
- * it (D141: a tick opens the database every HEARTBEAT_EVERY_H hours, in their first 15 minutes, UTC).
+ * The latest server time a post due from `from` on `day` goes out: the end of the first tick slot (:00, :15,
+ * :30, :45 UTC) at or after it in which the clock alone opens the database (D141's `tickClockDue`: the
+ * Friday check, the daily read, the event, the heartbeat every HEARTBEAT_EVERY_H hours). Monday 00:00 ST:
+ * the 01:00 ST heartbeat, so 01:15; Friday 20:30 ST: the Friday check's last tick, so 20:45. The heartbeat
+ * is always one of them, so the search ends within HEARTBEAT_EVERY_H hours.
  */
-export function sendBy(cfg: Pick<ScheduleConfig, "SERVER_TZ">, day: string): string {
-  const start = serverInstant(day, "00:00", cfg).getTime();
-  const every = HEARTBEAT_EVERY_H * HOUR_MS;
-  const slot = Math.ceil(start / every) * every;
-  return hhmm(serverMinuteOfDay(new Date(slot + 15 * 60_000), cfg));
+export function sendBy(cfg: ScheduleConfig, day: string, from: string): string {
+  const start = Math.ceil(serverInstant(day, from, cfg).getTime() / QUARTER_MS) * QUARTER_MS;
+  for (let t = start; ; t += QUARTER_MS) {
+    if (tickClockDue(new Date(t), cfg))
+      return hhmm(serverMinuteOfDay(new Date(t + QUARTER_MS), cfg));
+  }
 }
 
 /** A day on the given weekday (0 = Monday), any week: the windows are the same every week. */
@@ -77,7 +81,7 @@ export async function postsView(
   db: Db,
   access: WorkspaceAccess,
   channels: WebhookView[],
-  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
+  cfg: ScheduleConfig,
   language: WorkspaceLanguage,
 ): Promise<PostView[] | null> {
   const allowed = CATALOG_POSTS.filter((p) => featureOn(access, POST_CATALOG[p].feature));
@@ -106,8 +110,8 @@ export async function postsView(
       ) as Record<WorkspaceLanguage, string>,
       channels: entry.channels.map((c) => ({ channel: c, name: nameOf(c) })),
       day: weekdays.format(new Date(`${sampleDay(weekday)}T00:00:00Z`)),
-      from: "00:00",
-      to: sendBy(cfg, sampleDay(weekday)),
+      from: entry.from,
+      to: sendBy(cfg, sampleDay(weekday), entry.from),
     };
   });
 }
