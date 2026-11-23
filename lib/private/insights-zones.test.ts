@@ -137,7 +137,10 @@ describe("the Insights Time zones card (owner, 2026-11-22)", () => {
       "Time zone recorded for 3 of the 5 members in the newest daily update.",
     );
     expect(words.details?.missing).toBe("2");
-    expect(words.details?.rows.map((r) => [r.label, r.share])).toEqual([["Manila · UTC+8", 1]]);
+    // Each bar is out of all 5 members (D158): Manila is 3 of 5, not 3 of the 3 with a time zone, and
+    // "Not recorded yet" is 2 of 5 on the same scale.
+    expect(words.details?.rows.map((r) => [r.label, r.share])).toEqual([["Manila · UTC+8", 3 / 5]]);
+    expect(words.details?.missingShare).toBe(2 / 5);
   });
 
   it("splits zones whose clocks change before the reset, each on its own clock, and joins them after", async () => {
@@ -212,7 +215,7 @@ describe("the Insights Time zones card (owner, 2026-11-22)", () => {
       ["Kiritimati · UTC+14", "Now Mon 05:00 · Reset 16:00 · KvK Sun 04:00"],
     ]);
     expect(words.details?.legend).toBe(
-      "Times on their own clock: now (13:00 ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK (Sat, Nov 28, 12:00 ST). Bar: share of the 5 members with a time zone.",
+      "Times on their own clock: now (13:00 ST), at the next 00:00 ST reset (the raid starts at the one before KvK) and at KvK (Sat, Nov 28, 12:00 ST). Bar: share of all 5 members.",
     );
   });
 

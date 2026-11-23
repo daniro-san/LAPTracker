@@ -172,6 +172,9 @@ describe("Insights' counts open exactly the members they count (#678)", () => {
       "−1",
       [{ uid: 109, name: "P109", current: false }],
     ]);
+    // Each bar is drawn against the 9 members in the newest daily update, so one joiner is a short bar, not
+    // the full width of the busiest week (D158).
+    expect([week?.joined.share, week?.left.share]).toEqual([1 / 9, 1 / 9]);
     // The weeks before had nobody join or leave: nothing to open.
     expect(weeks.slice(0, -1).flatMap((w) => [w.joined.set, w.left.set])).toEqual(
       weeks.slice(0, -1).flatMap(() => [null, null]),

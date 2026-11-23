@@ -190,16 +190,21 @@ function placeLabel(p: Place, labels: Map<number, AllianceLabel>, t: WorkspaceDi
   return isolate(parts.length > 0 ? parts.join(" ") : String(p.unionId));
 }
 
+/** The members in the newest daily update: the whole a flow count is drawn against (D158). */
+const rosterSize = (tenure: NonNullable<InsightsView["flow"]>["tenure"]) =>
+  tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
+
+/** Where newcomers came from or leavers went, each drawn against the members, not the busiest place. */
 function placeRows(
   list: Place[],
+  members: number,
   labels: Map<number, AllianceLabel>,
   t: WorkspaceDictionary,
 ): BarRow[] {
-  const top = Math.max(1, ...list.map((p) => p.n));
   return list.map((p) => ({
     label: placeLabel(p, labels, t),
     value: String(p.n),
-    share: p.n / top,
+    share: members > 0 ? p.n / members : null,
   }));
 }
 
@@ -216,8 +221,7 @@ function tenureRows(
 ): BarRow[] {
   const { t, language } = f;
   const tenure = flow.tenure;
-  const members =
-    tenure.under.reduce((a, b) => a + b.length, 0) + tenure.over.length + tenure.sinceStart.length;
+  const members = rosterSize(tenure);
   const row = (label: string, uids: number[], key: string, from: number): BarRow => ({
     label,
     value: String(uids.length),
@@ -257,7 +261,9 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
   if (!flow) return null;
   const { t, language } = f;
   const dates = calendarDates(language);
-  const top = Math.max(1, ...flow.weeks.flatMap((w) => [w.joined.length, w.left.length]));
+  // Each week's joined and left are drawn against the members, so one newcomer is a short bar (D158).
+  const members = rosterSize(flow.tenure);
+  const of = (n: number) => (members > 0 ? n / members : null);
   const last = flow.weeks.length - 1;
   const nc = flow.newcomers;
   const newcomers =
@@ -300,18 +306,18 @@ function flowWords(v: InsightsView, f: Formats): InsightsWords["flow"] {
       joined: {
         label: t["insights.flow.joined"],
         value: w.joined.length > 0 ? `+${w.joined.length}` : "0",
-        share: w.joined.length / top,
+        share: of(w.joined.length),
         set: setOf("flow_week", `joined-${w.monday}`, w.joined, v.people, language),
       },
       left: {
         label: t["insights.flow.left"],
         value: w.left.length > 0 ? `−${w.left.length}` : "0",
-        share: w.left.length / top,
+        share: of(w.left.length),
         set: setOf("flow_week", `left-${w.monday}`, w.left, v.people, language),
       },
     })),
-    came: placeRows(flow.cameFrom, v.labels, t),
-    went: placeRows(flow.wentTo, v.labels, t),
+    came: placeRows(flow.cameFrom, members, v.labels, t),
+    went: placeRows(flow.wentTo, members, v.labels, t),
     tenure: tenureRows(flow, v.people, f),
     newcomers,
   };

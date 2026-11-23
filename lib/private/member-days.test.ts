@@ -99,6 +99,26 @@ describe("the member card's last 7 days (issue 461)", () => {
     expect(words.might).toBe("Might +1.20M since Fri, Nov 13");
   });
 
+  it("draws quest points and donations against the alliance's best member-day, so a steady low giver and a steady high giver differ (D158)", () => {
+    // Member 1 sends 300 points and 2,000 a day, member 2 sends 600 points and 8,000 a day, every day.
+    const week = ["13", "14", "15", "16", "17", "18", "19"].map((d) =>
+      read(`2026-11-${d}`, [
+        member(1, { active: 300, dailyTech: 2000, dailyHonor: 1000 }),
+        member(2, { active: 600, dailyTech: 8000, dailyHonor: 1000 }),
+      ]),
+    );
+    const card = (uid: number) =>
+      daysCard(lastDays(week, uid) as NonNullable<ReturnType<typeof lastDays>>, t, f);
+    const [quests, coins, donations] = card(1).rows;
+    expect(quests?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.5));
+    expect(donations?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.25));
+    expect(coins?.bars.map((b) => b.share)).toEqual(Array(7).fill(1));
+    expect(card(2).rows[0]?.bars.map((b) => b.share)).toEqual(Array(7).fill(1));
+    expect(card(1).scale).toBe(
+      "Bars: coins out of 1,000; quest points against 600 and donations against 8.00K, the alliance's best day by one member in these 7 days.",
+    );
+  });
+
   it("says a week of only none days as none on all of them, never Average 0", () => {
     const week = ["13", "14", "15", "16", "17", "18", "19"].map((d) =>
       read(`2026-11-${d}`, [member(1)]),

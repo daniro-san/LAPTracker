@@ -1,9 +1,11 @@
 // The Insights page's Time zones card (owner, 2026-11-22), server-rendered: the largest group and its reset,
 // and how many have a time zone, show without a tap; the rows, "Not recorded yet" and the usual-hours line
 // sit behind "Show the details" (44 px), as the other cards. Each row: its cities and offset with the count,
-// its bar (a share of the members with a time zone, D68: label and number in HTML), and now, the reset and
+// its bar (a share of all the members, D158: label and number in HTML; "Not recorded yet" on the same scale), and now, the reset and
 // KvK on its clock; a tap on the row opens its members' names (issue 678). "Not recorded yet" and usual hours
 // link to Members' own filters, the rules their counts use. The rows are ph-no-capture.
+import type { ReactNode } from "react";
+
 import { Bar } from "@/app/_ui/charts/Bar";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -34,6 +36,27 @@ function RowBody({ r }: { r: ZoneRow }) {
       <span className="mt-0.5 block text-body-sm text-ink/80 tabular-nums">{r.times}</span>
       {r.change && <span className="block text-body-sm text-ink/80">{r.change}</span>}
     </>
+  );
+}
+
+/** "Not recorded yet": its count and its bar on the rows' scale, then the link to add them. */
+function NotRecorded(props: {
+  count: string;
+  share: number;
+  add: ReactNode;
+  t: WorkspaceDictionary;
+}) {
+  const { t } = props;
+  return (
+    <li className="border-t-2 border-rule py-1.5">
+      <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
+        <span className="min-w-0 font-semibold">{t["insights.zones.notRecorded"]}</span>
+        <span className="tabular-nums">{props.count}</span>
+      </p>
+      <Bar axis="x" share={props.share} tone="bg-ink/45" className="mt-1 h-2 w-full bg-ink/10" />
+      <p className="mt-0.5 text-body-sm text-ink/80">{t["insights.zones.notCounted"]}</p>
+      <p className="text-body-sm">{props.add}</p>
+    </li>
   );
 }
 
@@ -89,16 +112,7 @@ export function ZonesCard(props: {
                   </li>
                 ),
             )}
-            {d.missing && (
-              <li className="border-t-2 border-rule py-1.5">
-                <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm">
-                  <span className="min-w-0 font-semibold">{t["insights.zones.notRecorded"]}</span>
-                  <span className="tabular-nums">{d.missing}</span>
-                </p>
-                <p className="mt-0.5 text-body-sm text-ink/80">{t["insights.zones.notCounted"]}</p>
-                <p className="text-body-sm">{add}</p>
-              </li>
-            )}
+            {d.missing && <NotRecorded count={d.missing} share={d.missingShare} add={add} t={t} />}
           </ul>
           {d.usual && (
             <div className="border-t-2 border-rule pt-1.5">

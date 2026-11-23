@@ -1,8 +1,8 @@
 // The member card's "Last 7 days" (issue 461, D136): daily quest points, Alliance Help coins and donations
 // per server day as small HTML bars (D68: hand-built, labels and numbers in HTML beside every bar, colours
 // from tokens, nothing hover-only). Coins are drawn against their 1,000 cap; the other two against the
-// row's own highest day, since the number under each bar says the amount. A day with no read is the NoData
-// mark, never 0; "none" (the read listed them, nothing sent, D127) is a muted word with no bar.
+// alliance's best member-day in the 7 days (D158), said in a line under the rows (a member's own page keeps
+// their own best day). A day with no read is the NoData mark, never 0; "none" (the read listed them, nothing sent, D127) is a muted word with no bar.
 import { Bar } from "@/app/_ui/charts/Bar";
 import type { DaysCard, DaysRow } from "@/lib/private/member-days";
 
@@ -27,6 +27,7 @@ export function MemberLastDays({ days }: { days: DaysCard }) {
       {days.rows.map((row) => (
         <Row key={row.metric} row={row} noData={days.noData} />
       ))}
+      {days.scale && <p className="mt-2 text-body-sm text-ink/80">{days.scale}</p>}
       {days.might && <p className="mt-2 text-body-sm tabular-nums">{days.might}</p>}
     </section>
   );
