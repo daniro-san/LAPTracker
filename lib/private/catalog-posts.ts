@@ -95,7 +95,9 @@ async function sendWeek(db: Db, deps: PostsDeps, due: Due, period: string, post:
   const messages = discordMessages(title, [{ name: "", text }], !channel.forum, lead);
   const { sent, status } = await postMessages(deps.fetch, channel, title, messages);
   const done = sent === messages.length;
-  await finishPostRun(db, run, { status: done ? "posted" : "failed", sent });
+  // No answer at all (a timeout) may still have posted: never tried again, so the week is never doubled.
+  const outcome = done ? "posted" : status === null ? "unanswered" : "failed";
+  await finishPostRun(db, run, { status: outcome, sent });
   privateLog(done ? "posts.week.sent" : "posts.week.failed", {
     sent,
     of: messages.length,

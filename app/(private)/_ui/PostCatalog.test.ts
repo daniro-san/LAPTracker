@@ -55,10 +55,15 @@ describe("the Posts card in Alliance settings (D159)", () => {
     expect(preview(html)).toBe("Every Monday, between 00:00 and 01:15 ST, in #general.");
   });
 
-  it("says nothing is posted while it is off, or while its channel has no webhook", () => {
+  it("says right under the switch that nothing is posted while off, or while its channel has no webhook", () => {
     expect(preview(render({ on: false }))).toBe("Off: nothing is posted.");
-    expect(preview(render({ channel: "leaders" }))).toBe(
+    const html = render({ channel: "leaders" });
+    expect(preview(html)).toBe(
       "Nothing is posted until the leaders’ channel is set up: paste its webhook under Discord, above.",
+    );
+    // On with no webhook is a warning in yarn, and it sits between the switch and the channel.
+    expect(html).toMatch(
+      /Post it.*<figure.*<p class="font-semibold text-yarn">Nothing is posted.*Channel/s,
     );
   });
 

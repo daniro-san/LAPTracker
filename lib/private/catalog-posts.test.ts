@@ -201,7 +201,7 @@ describe("This week in the alliance (D159)", () => {
     expect(sent.slice(1).every((s) => s.url.endsWith("&thread_id=777"))).toBe(true);
   });
 
-  it("tries a send Discord refused again at a later tick, up to 3 times", async () => {
+  it("tries a send Discord refused again, up to 3 times, and never one Discord did not answer", async () => {
     await turnOn();
     await entry({});
     let calls = 0;
@@ -213,6 +213,19 @@ describe("This week in the alliance (D159)", () => {
     expect(calls).toBe(3);
     expect(await db.select().from(postRuns)).toMatchObject([
       { status: "failed", sent: 0, attempts: 3 },
+    ]);
+
+    // A timeout may still have posted: the next ticks leave it, so the week is never doubled.
+    await db.delete(postRuns);
+    calls = 0;
+    const silent: typeof fetch = async () => {
+      calls++;
+      throw new DOMException("The operation timed out.", "TimeoutError");
+    };
+    for (let tick = 0; tick < 3; tick++) await sender(MONDAY_0000, silent).send();
+    expect(calls).toBe(1);
+    expect(await db.select().from(postRuns)).toMatchObject([
+      { status: "unanswered", sent: 0, attempts: 1 },
     ]);
   });
 });

@@ -8,7 +8,7 @@ export const postsEn = {
     "Posts LAPTracker can make for you on its own, on a set day. Each one is off until you turn it on. They name no one and ping no one.",
   "posts.week.name": "This week in the alliance",
   "posts.week.what":
-    "The week’s calendar entries marked “Members can see this”, with their times in server time (ST). No names, notes or links. Nothing is posted in a week with none.",
+    "The week’s calendar entries marked “Members can see this”, with their times in server time (ST). No player names, notes or links. Nothing is posted in a week with none.",
   "posts.week.defaultTitle": "This week in the alliance",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
@@ -41,7 +41,7 @@ export const postsPt: typeof postsEn = {
     "Posts que o LAPTracker pode fazer por vocês sozinho, num dia fixo. Cada um fica desligado até vocês ligarem. Eles não citam nem marcam ninguém.",
   "posts.week.name": "Esta semana na aliança",
   "posts.week.what":
-    "Os eventos da semana no calendário marcados “Os membros podem ver isto”, com os horários do servidor (ST). Sem nomes, notas ou links. Nada sai numa semana sem nenhum.",
+    "Os eventos da semana no calendário marcados “Os membros podem ver isto”, com os horários do servidor (ST). Sem nomes de jogadores, notas ou links. Nada sai numa semana sem nenhum.",
   "posts.week.defaultTitle": "Esta semana na aliança",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
@@ -74,7 +74,7 @@ export const postsFr: typeof postsEn = {
     "Des messages que LAPTracker peut publier pour vous tout seul, un jour fixe. Chacun reste éteint jusqu’à ce que vous l’allumiez. Ils ne nomment ni ne mentionnent personne.",
   "posts.week.name": "Cette semaine dans l’alliance",
   "posts.week.what":
-    "Les entrées du calendrier de la semaine marquées « Les membres peuvent voir ceci », avec leurs heures du serveur (ST). Sans noms, notes ni liens. Rien n’est publié une semaine sans aucune.",
+    "Les entrées du calendrier de la semaine marquées « Les membres peuvent voir ceci », avec leurs heures du serveur (ST). Sans noms de joueurs, notes ni liens. Rien n’est publié une semaine sans aucune.",
   "posts.week.defaultTitle": "Cette semaine dans l’alliance",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",

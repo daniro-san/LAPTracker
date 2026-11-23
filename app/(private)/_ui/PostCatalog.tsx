@@ -1,9 +1,10 @@
 "use client";
 
 // Alliance settings → Posts (#713 part C, D159): the catalog posts the site's owner allows this alliance, each
-// off until an officer turns it on. Per post: what it holds, its switch, its channel, its day, its title (empty:
-// ours) with "n of 80 characters", the language it is written in, and the next post in plain words ("Every
-// Monday, between 00:00 and 01:15 ST, in #members."). Every control has a visible label and is 44 px tall.
+// off until an officer turns it on. Per post: what it holds, its switch with the next post in plain words right
+// under it ("Every Monday, between 00:00 and 01:15 ST, in #members.", or in yarn why nothing will go out), its
+// channel, its day, its title (empty: ours) with "n of 80 characters", and the language it is written in.
+// Every control has a visible label and is 44 px tall.
 // One Save for the card (SaveRow, issue 585), which sends each changed post in turn and stops at the first
 // refusal, keeping what was chosen.
 import { useRouter } from "next/navigation";
@@ -92,14 +93,30 @@ function channelLabel(c: { channel: PostChannel; name: string | null }, t: Works
   return c.name ? `${name} (#${c.name})` : fill(t["posts.channel.notSet"], { channel: name });
 }
 
-/** The next post in plain words: when and where, or why nothing is posted. */
+/** The next post in plain words: when and where, or why nothing is posted (`warn`: on, yet nothing goes). */
 function nextPost(row: PostView, v: Values, t: WorkspaceDictionary) {
-  if (!v.on) return t["posts.off"];
+  if (!v.on) return { text: t["posts.off"], warn: false };
   const target = row.channels.find((c) => c.channel === v.channel);
   if (!target?.name) {
-    return fill(t["posts.noChannel"], { channel: t[`posts.channel.${v.channel}`].toLowerCase() });
+    const channel = t[`posts.channel.${v.channel}`].toLowerCase();
+    return { text: fill(t["posts.noChannel"], { channel }), warn: true };
   }
-  return fill(t["posts.when"], { day: row.day, from: row.from, to: row.to, channel: target.name });
+  const when = { day: row.day, from: row.from, to: row.to, channel: target.name };
+  return { text: fill(t["posts.when"], when), warn: false };
+}
+
+/**
+ * Right under the switch (persona check, D159): what the switch and the channel lead to, so an officer who
+ * ticks it with no webhook sees at once that nothing will go out.
+ */
+function NextPost(props: { row: PostView; v: Values; t: WorkspaceDictionary }) {
+  const next = nextPost(props.row, props.v, props.t);
+  return (
+    <figure className="mt-2 border-l-2 border-rule pl-3">
+      <figcaption className="font-medium">{props.t["posts.preview"]}</figcaption>
+      <p className={next.warn ? "font-semibold text-yarn" : undefined}>{next.text}</p>
+    </figure>
+  );
 }
 
 /** The officers' title: empty for ours, counted as the server counts it (cleaned, in graphemes). */
@@ -163,6 +180,7 @@ function PostFields(props: {
           onChange={(e) => props.onChange({ on: e.target.checked })}
         />
       </div>
+      <NextPost row={row} v={v} t={t} />
       <label className="mt-3 grid justify-items-start gap-2">
         <span className="font-medium">{t["posts.channel"]}</span>
         <select
@@ -201,10 +219,6 @@ function PostFields(props: {
           ))}
         </select>
       </label>
-      <figure className="mt-3 border-l-2 border-rule pl-3">
-        <figcaption className="text-label text-ink/75">{t["posts.preview"]}</figcaption>
-        <p className="mt-1">{nextPost(row, v, t)}</p>
-      </figure>
     </div>
   );
 }

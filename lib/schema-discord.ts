@@ -140,8 +140,9 @@ export const workspacePosts = pgTable(
 /**
  * One catalog post's send for one period (D159): the claim that makes it go out at most once per workspace,
  * post and period (a server day, "2026-11-23"), however many ticks overlap. `sent`: the messages Discord
- * took. A failed send that reached Discord with nothing is claimed again by a later tick of the same period,
- * up to 3 attempts. Counts and codes only; deleted with the workspace, never downloaded (D125).
+ * took. A send Discord refused (`failed`) before any message went through is claimed again by a later tick of
+ * the same period, up to 3 attempts; one Discord never answered (`unanswered`: a timeout, so it may have
+ * posted) never is. Counts and codes only; deleted with the workspace, never downloaded (D125).
  */
 export const postRuns = pgTable(
   "post_runs",
@@ -151,13 +152,16 @@ export const postRuns = pgTable(
       .references(() => workspaces.id, { onDelete: "cascade" }),
     postKey: text("post_key", { enum: CATALOG_POSTS }).notNull(),
     period: text("period").notNull(),
-    status: text("status", { enum: ["posting", "posted", "failed"] }).notNull(),
+    status: text("status", { enum: ["posting", "posted", "failed", "unanswered"] }).notNull(),
     sent: integer("sent").notNull().default(0),
     attempts: smallint("attempts").notNull().default(1),
     at: tstz("at").notNull(),
   },
   (t) => [
     primaryKey({ columns: [t.workspaceId, t.postKey, t.period] }),
-    check("post_runs_status_check", sql`${t.status} in ('posting', 'posted', 'failed')`),
+    check(
+      "post_runs_status_check",
+      sql`${t.status} in ('posting', 'posted', 'failed', 'unanswered')`,
+    ),
   ],
 );

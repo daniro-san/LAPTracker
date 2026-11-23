@@ -80,8 +80,8 @@ export async function postsDue(db: Db, post: CatalogPost, period: string) {
 
 /**
  * INVARIANT posts.once-per-period: the claim of one post's period for one workspace. True for exactly one
- * caller, however many ticks overlap: the insert, or the retake of a failed claim that reached Discord with
- * nothing (with attempts left), both one statement.
+ * caller, however many ticks overlap: the insert, or the retake of a claim Discord refused before any message
+ * went through (with attempts left), both one statement. An unanswered send is never retaken.
  */
 export async function claimPostRun(
   db: Db,
@@ -105,11 +105,14 @@ export async function claimPostRun(
   return claimed.length > 0;
 }
 
-/** The claim's outcome: posted, or failed with how many messages Discord took. */
+/**
+ * The claim's outcome: posted; failed (Discord answered with an error) or unanswered (no answer: it may have
+ * posted, so it is never tried again), with how many messages Discord took.
+ */
 export async function finishPostRun(
   db: Db,
   run: { workspaceId: number; post: CatalogPost; period: string },
-  done: { status: "posted" | "failed"; sent: number },
+  done: { status: "posted" | "failed" | "unanswered"; sent: number },
 ): Promise<void> {
   await db
     .update(r)
