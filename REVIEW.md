@@ -38,7 +38,7 @@ Read by `/code-review` and by `/pr-review` (through `.claude/pr-review.md`) on e
 
 ## Workspace privacy (D71, D75, D142; checklist in `.claude/rules/private.md`)
 
-- [ ] `lib/private` is imported only where the `import-x/no-restricted-paths` zones in `eslint.config.mjs` allow (`app/(private)`, `lib/push-tick.ts` → `push-roll-calls.ts` for counts only, D148, and `lib/posts-tick.ts` → `catalog-posts.ts`, the catalog posts with no roster field, D159).
+- [ ] `lib/private` is imported only where the `import-x/no-restricted-paths` zones in `eslint.config.mjs` allow (`app/(private)`, `lib/push-tick.ts` → `push-roll-calls.ts` for counts only, D148, and `lib/posts-tick.ts` → `catalog-posts.ts`, the catalog posts with no private roster field; only the welcome names new members, by public name, D159).
 - [ ] Every page or handler under `app/(private)/w/[slug]` and `app/(private)/api/w/[slug]` that returns a blocked key calls `requireWorkspace` first. The one member exception is D142: the member's own `daily_tech`, `daily_honor` and `active`, only on their own page `/w/[slug]/board/me`, behind `requireBoard` and an approved player link, rendered per request with `Cache-Control: private, no-store`.
 - [ ] Every read is filtered to the workspace's own alliance (or the member's own uid); no query can return another alliance's or another member's private rows.
 - [ ] No blocked key reaches a log line, `run_logs`, `app_errors`, a Discord message, an AI or translation request, an analytics event or property, or a shared cache (D143 caches hold public reads only; desk and private data never enter them). Analytics events and properties carry no member names (D115).

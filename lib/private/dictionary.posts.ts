@@ -20,7 +20,7 @@ export const postsEn = {
   "posts.shield_up.day": "Every {day} evening, before the raid at the reset (00:00 ST).",
   "posts.welcome.name": "Welcome new members",
   "posts.welcome.what":
-    "Every day after the end-of-day read, a warm welcome that names the members who joined since the day before. Never anyone who left. Over 15 new members, just the count. Nothing is posted on a day with no one new, or when either day’s read failed.",
+    "Every day after the daily update, a warm welcome that names the members who joined since the day before. Never anyone who left. Over 15 new members, just the count. Nothing is posted on a day with no one new, or when either day’s update failed.",
   "posts.welcome.defaultTitle": "Welcome to our new members",
   "posts.welcome.one":
     "Welcome, {names}! We’re glad you’re here. Say hello, and ask us anything you need.",
@@ -28,7 +28,7 @@ export const postsEn = {
     "Welcome, {names}! We’re glad you’re here. Say hello, and ask us anything you need.",
   "posts.welcome.count":
     "Welcome to our {n} new members! We’re glad you’re here. Say hello, and ask us anything you need.",
-  "posts.welcome.day": "Every day, after the end-of-day read.",
+  "posts.welcome.day": "Every day, after the daily update.",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
   "posts.channel.members": "Members’ channel",
@@ -78,7 +78,7 @@ export const postsPt: typeof postsEn = {
   "posts.shield_up.day": "Toda {day} à noite, antes do raid no reset (00:00 ST).",
   "posts.welcome.name": "Boas-vindas aos novos membros",
   "posts.welcome.what":
-    "Todo dia, depois da leitura do fim do dia, boas-vindas calorosas com o nome de quem entrou desde o dia anterior. Nunca cita quem saiu. Com mais de 15 novos membros, só o número. Nada sai num dia sem ninguém novo, ou quando a leitura de um dos dois dias falhou.",
+    "Todo dia, depois da atualização diária, boas-vindas calorosas com o nome de quem entrou desde o dia anterior. Nunca cita quem saiu. Com mais de 15 novos membros, só o número. Nada sai num dia sem ninguém novo, ou quando a atualização de um dos dois dias falhou.",
   "posts.welcome.defaultTitle": "Boas-vindas aos novos membros",
   "posts.welcome.one":
     "Boas-vindas, {names}! Que bom ter você aqui. Diga oi e pergunte o que precisar.",
@@ -86,7 +86,7 @@ export const postsPt: typeof postsEn = {
     "Boas-vindas, {names}! Que bom ter vocês aqui. Digam oi e perguntem o que precisarem.",
   "posts.welcome.count":
     "Boas-vindas aos nossos {n} novos membros! Que bom ter vocês aqui. Digam oi e perguntem o que precisarem.",
-  "posts.welcome.day": "Todo dia, depois da leitura do fim do dia.",
+  "posts.welcome.day": "Todo dia, depois da atualização diária.",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
   "posts.channel.members": "Canal dos membros",
@@ -136,7 +136,7 @@ export const postsFr: typeof postsEn = {
   "posts.shield_up.day": "Chaque {day} soir, avant le raid au reset (00:00 ST).",
   "posts.welcome.name": "Bienvenue aux nouveaux membres",
   "posts.welcome.what":
-    "Chaque jour après la lecture de fin de journée, un accueil chaleureux qui nomme les membres arrivés depuis la veille. Jamais ceux qui sont partis. Au-delà de 15 nouveaux membres, seulement le nombre. Rien n’est publié un jour sans nouveau membre, ni quand la lecture de l’un des deux jours a échoué.",
+    "Chaque jour après la mise à jour quotidienne, un accueil chaleureux qui nomme les membres arrivés depuis la veille. Jamais ceux qui sont partis. Au-delà de 15 nouveaux membres, seulement le nombre. Rien n’est publié un jour sans nouveau membre, ni quand la mise à jour de l’un des deux jours a échoué.",
   "posts.welcome.defaultTitle": "Bienvenue aux nouveaux membres",
   "posts.welcome.one":
     "Bienvenue, {names} ! Nous sommes ravis de vous compter parmi nous. Dites bonjour, et demandez-nous ce dont vous avez besoin.",
@@ -144,7 +144,7 @@ export const postsFr: typeof postsEn = {
     "Bienvenue, {names} ! Nous sommes ravis de vous compter parmi nous. Dites bonjour, et demandez-nous ce dont vous avez besoin.",
   "posts.welcome.count":
     "Bienvenue à nos {n} nouveaux membres ! Nous sommes ravis de vous compter parmi nous. Dites bonjour, et demandez-nous ce dont vous avez besoin.",
-  "posts.welcome.day": "Chaque jour, après la lecture de fin de journée.",
+  "posts.welcome.day": "Chaque jour, après la mise à jour quotidienne.",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",
   "posts.channel.members": "Salon des membres",
