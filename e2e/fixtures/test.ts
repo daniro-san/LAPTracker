@@ -24,7 +24,17 @@ import {
 import { compactLarge } from "../../lib/compact";
 import { errorsCopy } from "../../lib/copy-errors";
 import { BASE_URL } from "../env";
-import { ALLIANCES, AVATAR_SENTINEL, SENTINELS, TOKENS, WORKSPACES, type Side } from "./seed";
+import {
+  ALLIANCES,
+  AVATAR_SENTINEL,
+  lastRosterDay,
+  questTotalOf,
+  SENTINELS,
+  TOKENS,
+  uidOf,
+  WORKSPACES,
+  type Side,
+} from "./seed";
 
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost"]);
 const HOST = new URL(BASE_URL).hostname;
@@ -54,12 +64,16 @@ const KEYS: [string, RegExp][] = [
 
 function sentinelPatterns(side: Side): [string, RegExp][] {
   const s = SENTINELS[side];
+  // A day's quest points as the pages show them, and `active` as sent on the newest read: the week's
+  // running total (#739), which is the day's own figure only on a Monday.
+  const sent = questTotalOf(side, uidOf(side, 0), lastRosterDay()) ?? s.active;
   return [
     ["x", figure(s.x)],
     ["y", figure(s.y)],
     ["last_online_at", alone(s.lastOnline.slice(0, 4))],
     ["joined_at", alone(s.joined.slice(0, 4))],
     ["active", figure(s.active)],
+    ...(sent === s.active ? [] : [["active", figure(sent)] as [string, RegExp]]),
     ["daily_tech", figure(s.tech)],
   ];
 }
