@@ -124,8 +124,6 @@ export const ptBR = {
     carriedHelp:
       "A fatia de cada aliança nos kills, ao lado da fatia do Might. Kills que os membros presentes nas duas listas ganharam do Início ao Fim, Might no Início. Defensores e jogadores de suporte não ganham kills.",
     carriedTotal: "Todas as {n} alianças: {kills} kills ganhos, {might} de might no Início",
-    carriedMightMark: "Fatia do might no Início",
-    carriedKillsMark: "Fatia dos kills ganhos",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} com kills",
     carriedSpread: "{low}–{high} em {n} eventos",
@@ -247,7 +245,6 @@ export const ptBR = {
       "O Might dela mudou {growth} desde {from}. O total das alianças acompanhadas mudou {server}.",
     server: "Alianças acompanhadas",
     growthSince: "{growth} desde {from}",
-    trend: "Posição {first} em {from}, {last} em {to}",
     thisAlliance: "Esta aliança",
     detailsHelp: "Posição em cada dia, do mais antigo para o mais recente: {days}.",
     few: "Ainda não há atualização diária suficiente para comparar as alianças.",

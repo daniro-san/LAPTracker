@@ -117,8 +117,6 @@ export const zhCN = {
     carriedHelp:
       "每个联盟的 Kills 占比，与其 Might 占比并列。Kills 为两份名单中都在的成员从开始到结束获得的，Might 取开始时的数值。防守者和辅助玩家不获得 Kills。",
     carriedTotal: "全部 {n} 个联盟：共获得 {kills} Kills，开始时 Might 共 {might}。",
-    carriedMightMark: "开始时的 Might 占比",
-    carriedKillsMark: "获得的 Kills 占比",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} 的 Members 获得 Kills",
     carriedSpread: "{low}–{high}，共 {n} 次活动",
@@ -249,7 +247,6 @@ export const zhCN = {
     leadGrowth: "自 {from} 以来，它的 Might 变化了 {growth}。追踪联盟的合计变化了 {server}。",
     server: "追踪联盟",
     growthSince: "自 {from} 以来 {growth}",
-    trend: "{from} 排名 {first}，{to} 排名 {last}",
     thisAlliance: "本联盟",
     detailsHelp: "按日排名，从最早到最近：{days}。",
     few: "每日更新还不够多，暂时无法比较各联盟。",

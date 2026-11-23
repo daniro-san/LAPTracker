@@ -67,7 +67,7 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | Kill share / might share      | part des Kills / part du Might        | `ledger.carried*` — an alliance's share of the kills gained, and of the might at Start; `pts` is the percentage-point abbreviation            |
 | Server fight clock            | Horloge des combats du serveur        | `ledger.fightClock` and its keys, `ledger.comparePulseHelp` — the events side by side on the server clock                                     |
 | Bloc                          | Bloc                                  | `balance.bloc`, `balance.addTo`, `balance.removeFrom` — one side of the hypothetical split, A or B                                            |
-| Standing                      | Classement                            | `standing.*` — an alliance's rank by might on each day read, and its sparkline; not the server rank (`ledger.ranking`)                        |
+| Standing                      | Classement                            | `standing.*` — an alliance's rank by might on each day read; not the server rank (`ledger.ranking`)                                           |
 | daily update                  | mise à jour quotidienne               | `balance.*`, `flow.*`, `standing.*`, `history.daily` — the once-a-day read of the member lists; one fixed phrase in every key, never `relevé` |
 | Biggest changes in this event | Plus fortes évolutions de l’événement | `ledger.movers` — section heading: the biggest gains and losses in one event (replaces `Grandma noticed`)                                     |
 

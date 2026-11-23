@@ -127,8 +127,6 @@ export const itIT = {
     carriedHelp:
       "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine dai membri presenti in entrambe le liste, accanto alla sua quota di Might a Inizio. I difensori e i giocatori di supporto non guadagnano Kills.",
     carriedTotal: "Tutte le {n} alleanze: {kills} Kills guadagnate, {might} di Might a Inizio",
-    carriedMightMark: "Quota di Might a Inizio",
-    carriedKillsMark: "Quota di Kills guadagnate",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} su {n} eventi",
@@ -251,7 +249,6 @@ export const itIT = {
       "Il suo Might è cambiato di {growth} dal {from}. Il totale delle alleanze seguite è cambiato di {server}.",
     server: "Alleanze seguite",
     growthSince: "{growth} dal {from}",
-    trend: "Posizione {first} il {from}, {last} il {to}",
     thisAlliance: "Questa alleanza",
     detailsHelp: "Posizione di ogni giorno, dal più vecchio: {days}.",
     few: "Ancora pochi aggiornamenti giornalieri per confrontare le alleanze.",

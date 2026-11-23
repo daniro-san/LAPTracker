@@ -117,8 +117,6 @@ export const th = {
     carriedHelp:
       "สัดส่วนของ Kills ของแต่ละพันธมิตร คู่กับสัดส่วนของ Might Kills ที่สมาชิกซึ่งอยู่ในทั้งสองรายชื่อได้จากเริ่มถึงสิ้นสุด Might นับตอนเริ่ม สายตั้งรับและสายซัพพอร์ตไม่เพิ่ม Kills",
     carriedTotal: "รวม {n} พันธมิตร: Kills ที่เพิ่ม {kills}, Might ตอนเริ่ม {might}",
-    carriedMightMark: "สัดส่วน Might ตอนเริ่ม",
-    carriedKillsMark: "สัดส่วน Kills ที่เพิ่ม",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} ได้ Kills เพิ่ม",
     carriedSpread: "{low}–{high} จาก {n} กิจกรรม",
@@ -238,7 +236,6 @@ export const th = {
       "Might ของพันธมิตรนั้นเปลี่ยนไป {growth} ตั้งแต่ {from} ยอดรวมของพันธมิตรที่ติดตามเปลี่ยนไป {server}",
     server: "พันธมิตรที่ติดตาม",
     growthSince: "{growth} ตั้งแต่ {from}",
-    trend: "อันดับ {first} วันที่ {from}, {last} วันที่ {to}",
     thisAlliance: "พันธมิตรนี้",
     detailsHelp: "อันดับในแต่ละวัน เรียงจากเก่าสุดก่อน: {days}",
     few: "ยังมีการอัปเดตรายวันไม่พอสำหรับเทียบพันธมิตร",

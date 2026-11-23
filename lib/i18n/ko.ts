@@ -121,8 +121,6 @@ export const ko = {
     carriedHelp:
       "시작부터 종료까지 두 명단에 모두 있는 멤버가 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다. 수비와 지원 플레이어는 처치를 획득하지 못합니다.",
     carriedTotal: "전체 {n}개 연맹: 획득 처치 {kills}, 시작 때 전투력 {might}",
-    carriedMightMark: "시작 때 전투력 몫",
-    carriedKillsMark: "획득 처치 몫",
     carriedShares: "전투력 {might} · 처치 {kills}",
     carriedTurnout: "처치가 늘어난 인원 {share}",
     carriedSpread: "{n}개 이벤트, {low}–{high}",
@@ -241,7 +239,6 @@ export const ko = {
     leadGrowth: "{from} 이후 전투력은 {growth} 변했습니다. 추적 연맹 합계는 {server} 변했습니다.",
     server: "추적 연맹 합계",
     growthSince: "{from} 이후 {growth}",
-    trend: "{from} 순위 {first}, {to} 순위 {last}",
     thisAlliance: "이 연맹",
     detailsHelp: "날마다 순위, 오래된 날부터: {days}.",
     few: "연맹을 비교하기엔 아직 일일 업데이트가 부족해요.",

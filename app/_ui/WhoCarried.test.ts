@@ -60,6 +60,19 @@ describe("WhoCarried", () => {
     expect(html.match(/×/g)).toHaveLength(2);
   });
 
+  it("draws each gap from 0 on an axis built from every row, so opening Show all does not move the bars (D158)", () => {
+    // Only row 1 shows before "Show all"; row 2, hidden below its might share, has the widest gap.
+    const html = render([
+      row(1, { mightShare: 0.1, killShare: 0.2 }),
+      row(2, { mightShare: 0.4, killShare: 0.1 }),
+    ]);
+    expect(html).not.toContain("Alliance 2");
+    // +10 points against an axis of ±30 points: a third of the right half.
+    expect(html).toContain("width:max(2px, 33.3%)");
+    expect(html).toContain(">−30.0<");
+    expect(html).toContain(">+30.0<");
+  });
+
   it("lets a long tag and name shrink inside the row and links the row to the alliance's page", () => {
     const html = render([row(1, { tag: "ABCDEFG", name: "N".repeat(24) })]);
     expect(html).toContain("min-w-0 flex-1 truncate");

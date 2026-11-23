@@ -127,8 +127,6 @@ export const tr = {
     carriedHelp:
       "Her ittifakın Kills payı, yanında Might payı. Kills, iki listede de olan üyelerin Başlangıç’tan Bitiş’e kazandığıdır; Might Başlangıç’ta ölçülür. Savunucular ve destek oyuncuları Kills kazanmaz.",
     carriedTotal: "Tüm {n} ittifak: {kills} Kills kazanıldı, Başlangıç’ta {might} Might",
-    carriedMightMark: "Başlangıç’taki Might payı",
-    carriedKillsMark: "Kazanılan Kills payı",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "Kills kazanan {share}",
     carriedSpread: "{low}–{high}, {n} etkinlik üzerinden",
@@ -250,7 +248,6 @@ export const tr = {
       "{from} sonrası Might’ı {growth} değişti. Takip edilen ittifakların toplamı {server} değişti.",
     server: "Takipteki toplam",
     growthSince: "{from} sonrası {growth}",
-    trend: "{from} itibarıyla sıra {first}, {to} itibarıyla {last}",
     thisAlliance: "Bu ittifak",
     detailsHelp: "Her günkü sıra, en eskisi önce: {days}.",
     few: "İttifakları karşılaştırmak için henüz yeterli günlük okuma yok.",

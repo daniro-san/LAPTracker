@@ -1,6 +1,7 @@
 // "Standing over time" on the alliance page (D90, issue 274): one sentence, then the tracked alliances
 // ranked by might on the newest complete daily read, each with its rank change, might, might growth against
-// the tracked alliances' total, and a small rank line; the ranks day by day sit under Details while the
+// the tracked alliances' total, and where it stood on the first day when its rank moved (D158: no rank
+// sparkline, which drew a flat #1 and a flat #5 alike); the ranks day by day sit under Details while the
 // `chart-details` flag is on (D91). Alliance totals only, public. The page's own alliance and the viewer's ("My alliance") are marked.
 import { type Dictionary } from "@/lib/copy";
 import { isOn } from "@/lib/flags";
@@ -9,7 +10,6 @@ import { allianceStanding, type Standing as Figures } from "@/lib/queries";
 import type { StandingRow } from "@/lib/standing";
 import { fill } from "@/lib/words";
 
-import { Sparkline } from "./charts/Sparkline";
 import { allianceLabel, percentText, rowAnchor, type Clock } from "./format";
 import { requestLocale } from "./locale";
 import { MineMark } from "./MyAlliance";
@@ -18,6 +18,8 @@ import { AllianceBadge } from "./Pictures";
 import { StandingList } from "./StandingList";
 
 const MUTED = "text-ink/70";
+/** From 640 px one line: rank, name, might, growth, and where it stood on the first day. */
+const COLUMNS = "sm:grid-cols-[4.5rem_minmax(0,1fr)_6rem_9rem_8rem]";
 
 /** `[OGs] OldGrandmas` with a no-break space after the tag, so the tag stays with the name (issue 473). */
 const labelOf = (row: StandingRow) =>
@@ -72,14 +74,14 @@ function Row({
   locale: string;
   copy: Dictionary;
 }) {
-  const [first, last] = [s.days[0], s.days.at(-1)];
-  const [t0, t1] = [day(first).getTime(), day(last).getTime()];
+  const first = s.days[0];
   const label = labelOf(row);
+  const was = row.ranks[0];
   return (
     <li
       id={rowAnchor(row.unionId)}
       aria-current={own ? "true" : undefined}
-      className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 has-[[data-mine]]:bg-yarn/5 aria-[current=true]:border-plum aria-[current=true]:bg-plum/10 sm:grid-cols-[4.5rem_minmax(0,1fr)_6rem_9rem_4.5rem]"
+      className={`grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 has-[[data-mine]]:bg-yarn/5 aria-[current=true]:border-plum aria-[current=true]:bg-plum/10 ${COLUMNS}`}
     >
       <Rank n={row.rank} move={row.move} />
       <span className="flex min-w-0 items-center gap-2">
@@ -109,20 +111,14 @@ function Row({
             })}
           </span>
         )}
-      </span>
-      <span className="col-start-3 row-span-2 row-start-1 justify-self-end sm:col-start-5 sm:row-span-1 sm:row-start-1">
-        <Sparkline
-          label={`${label}: ${fill(copy.standing.trend, {
-            first: `#${row.ranks[0]}`,
-            from: clock.day(day(first)),
-            last: `#${row.rank}`,
-            to: clock.day(day(last)),
-          })}`}
-          points={s.days.map((d, i) => ({
-            at: t1 === t0 ? 0.5 : (Date.parse(`${d}T12:00:00Z`) - t0) / (t1 - t0),
-            rank: row.ranks[i] ?? row.rank,
-          }))}
-        />
+        {/* Where it stood on the first day, only when the rank moved: a held rank adds no words. */}
+        {was !== undefined && was !== row.rank ? (
+          <span className={`sm:text-right ${MUTED}`}>
+            {fill(copy.standing.was, { rank: `#${was}`, from: clock.day(day(first)) })}
+          </span>
+        ) : (
+          <span aria-hidden="true" className="hidden sm:block" />
+        )}
       </span>
     </li>
   );
@@ -206,7 +202,9 @@ function StandingBody({
           <StandingList
             own={unionId}
             head={
-              <li className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 text-sm font-medium tabular-nums sm:grid-cols-[4.5rem_minmax(0,1fr)_6rem_9rem_4.5rem]">
+              <li
+                className={`grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 text-sm font-medium tabular-nums ${COLUMNS}`}
+              >
                 <span aria-hidden="true" />
                 <span className="min-w-0 break-words text-base">{copy.standing.server}</span>
                 <span className="col-start-2 flex flex-wrap gap-x-3 sm:contents">

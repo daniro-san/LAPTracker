@@ -126,8 +126,6 @@ export const pl = {
     carriedHelp:
       "Udział każdego sojuszu w Kills zdobytych od Początku do Końca przez członków obecnych na obu listach, obok jego udziału w Might na Początku. Obrońcy i gracze wsparcia nie zdobywają Kills.",
     carriedTotal: "Razem ({n}): {kills} zdobytych Kills, {might} Might na Początku",
-    carriedMightMark: "Udział w Might na Początku",
-    carriedKillsMark: "Udział w zdobytych Kills",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} ze zdobytymi Kills",
     carriedSpread: "{low}–{high} · wydarzeń: {n}",
@@ -249,7 +247,6 @@ export const pl = {
       "Jego Might zmieniło się o {growth} od {from}. Suma śledzonych sojuszy zmieniła się o {server}.",
     server: "Śledzone sojusze",
     growthSince: "{growth} od {from}",
-    trend: "Miejsce {first} dnia {from}, {last} dnia {to}",
     thisAlliance: "Ten sojusz",
     detailsHelp: "Miejsce każdego dnia, od najstarszego: {days}.",
     few: "Za mało dziennych aktualizacji, żeby porównać sojusze.",

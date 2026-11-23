@@ -127,8 +127,6 @@ export const de = {
     carriedHelp:
       "Der Anteil jeder Allianz an den Kills, die ihre Mitglieder in beiden Listen von Beginn bis Ende gewonnen haben, neben ihrem Anteil am Might bei Beginn. Verteidiger und Support-Spieler sammeln keine Kills.",
     carriedTotal: "Alle {n} Allianzen: {kills} Kills gewonnen, {might} Might bei Beginn",
-    carriedMightMark: "Might-Anteil bei Beginn",
-    carriedKillsMark: "Kills-Anteil gewonnen",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} mit gewonnenen Kills",
     carriedSpread: "{low}–{high} über {n} Events",
@@ -251,7 +249,6 @@ export const de = {
       "Das Might der Allianz hat sich seit {from} um {growth} verändert. Die Summe der erfassten Allianzen hat sich um {server} verändert.",
     server: "Erfasste Allianzen",
     growthSince: "{growth} seit {from}",
-    trend: "Rang {first} am {from}, {last} am {to}",
     thisAlliance: "Diese Allianz",
     detailsHelp: "Rang an jedem Tag, der älteste zuerst: {days}.",
     few: "Noch nicht genug Tagesabrufe, um die Allianzen zu vergleichen.",

@@ -124,8 +124,6 @@ export const ja = {
     carriedHelp:
       "各同盟の Kills の割合を、Might の割合と並べて示します。Kills は両方の名簿にいるメンバーが開始から終了までに獲得したもの、Might は開始時のものです。守備役と支援役のプレイヤーは Kills を得ません。",
     carriedTotal: "全{n}同盟：獲得 Kills {kills}、開始時の Might {might}",
-    carriedMightMark: "開始時の Might の割合",
-    carriedKillsMark: "獲得 Kills の割合",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "Kills を得た {share}",
     carriedSpread: "{n} イベントで {low}–{high}",
@@ -244,7 +242,6 @@ export const ja = {
       "{from} から Might は{growth}変わりました。追跡中の同盟の合計は{server}変わりました。",
     server: "追跡中の同盟",
     growthSince: "{from} から {growth}",
-    trend: "{from}に順位 {first}、{to}に {last}",
     thisAlliance: "この同盟",
     detailsHelp: "各日の順位、古い順：{days}。",
     few: "同盟を比べるには、毎日の更新がまだ足りません。",

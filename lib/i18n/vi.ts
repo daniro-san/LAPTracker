@@ -123,8 +123,6 @@ export const vi = {
     carriedHelp:
       "Phần tiêu diệt của mỗi liên minh, đặt cạnh phần Lực Chiến của liên minh đó. Tiêu diệt do thành viên có trong cả hai danh sách tăng từ Bắt đầu đến Kết thúc, Lực Chiến lúc Bắt đầu. Vai phòng thủ và hỗ trợ không tăng tiêu diệt.",
     carriedTotal: "Cả {n} liên minh: {kills} tiêu diệt tăng, {might} Lực Chiến lúc Bắt đầu",
-    carriedMightMark: "Phần Lực Chiến lúc Bắt đầu",
-    carriedKillsMark: "Phần tiêu diệt tăng",
     carriedShares: "Lực Chiến {might} · Tiêu diệt {kills}",
     carriedTurnout: "{share} có tiêu diệt tăng",
     carriedSpread: "{low}–{high} qua {n} sự kiện",
@@ -245,7 +243,6 @@ export const vi = {
       "Lực Chiến của liên minh này đã đổi {growth} kể từ {from}. Tổng các liên minh theo dõi đã đổi {server}.",
     server: "Liên minh theo dõi",
     growthSince: "{growth} kể từ {from}",
-    trend: "Hạng {first} ngày {from}, {last} ngày {to}",
     thisAlliance: "Liên minh này",
     detailsHelp: "Hạng mỗi ngày, cũ nhất trước: {days}.",
     few: "Chưa đủ lần đọc hằng ngày để so sánh các liên minh.",

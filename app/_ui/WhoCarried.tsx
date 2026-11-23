@@ -1,17 +1,18 @@
 "use client";
 
-// "Kill share vs might share" (issue 280, D83): one row per alliance with two marks on one percent axis,
-// a square for its share of the might at Start and a round one for its share of the kills gained, joined
-// by a line. Rows come biggest gap first. Only the first TOP rows whose kill share is above their might
+// "Kill share vs might share" (issue 280, D83, D158): one row per alliance with one bar, the gap in points
+// (kill share minus might share) centred on 0, on one axis built from every row, so "Show all" does not move
+// the bars. Rows come biggest gap first. Only the first TOP rows whose kill share is above their might
 // share are shown, and the viewer's own wherever it is, until "Show all (n)" opens every row (owner, D83). Every
 // row's figure is the gap in points; the ratio is shown only as its range, for an alliance with enough events.
-// Marks and the line are plain HTML boxes (D68); every figure is also text. No member is named. A row opens the
+// The bar is Bar's HTML boxes (D68, D158); every figure is also text. No member is named. A row opens the
 // alliance's member list sorted by kills gained, highest first (the section exists only once the End ran).
 import { useState } from "react";
 
 import type { Carried, CarriedRow } from "@/lib/queries";
 import { fill } from "@/lib/words";
 
+import { Bar } from "./charts/Bar";
 import { DrilldownLink } from "./DrilldownLink";
 import {
   allianceLabel,
@@ -26,7 +27,6 @@ import { drillHref } from "./member-views";
 import { useMyAlliance } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { ShowAllButton } from "./ShowFirst";
-import { LABEL } from "./StatTable";
 
 /** Rows shown besides the viewer's own. */
 const TOP = 5;
@@ -39,8 +39,33 @@ export function visibleRows(rows: CarriedRow[], mine: number | null, all = false
   return own && !above.includes(own) ? [...above, own] : above;
 }
 
-/** A mark's place on the axis, as a percent of the track's width. */
-const at = (share: number, axis: number) => `${Math.round((share / axis) * 1000) / 10}%`;
+/** The axis's half-width: the largest gap among all the rows, shown or not (D158). */
+export const gapAxis = (rows: readonly CarriedRow[]) =>
+  Math.max(0.001, ...rows.map((r) => Math.abs(r.killShare - r.mightShare)));
+
+/** The gap as one bar from the centre: right when the kill share is above the might share, left when below. */
+function GapBar({ gap, axis, mine }: { gap: number; axis: number; mine: boolean }) {
+  const tone = mine ? "bg-yarn" : "bg-ink/60";
+  return (
+    <span aria-hidden="true" className="relative mx-1.5 mt-2 grid h-3 grid-cols-2">
+      <span className="absolute inset-x-0 top-1/2 h-px bg-rule" />
+      <Bar
+        axis="x"
+        reverse
+        share={gap < 0 ? -gap / axis : null}
+        tone={tone}
+        className="col-start-1 h-full"
+      />
+      <Bar
+        axis="x"
+        share={gap >= 0 ? gap / axis : null}
+        tone={tone}
+        className="col-start-2 h-full"
+      />
+      <span className="absolute -inset-y-1 left-1/2 w-0.5 -translate-x-1/2 bg-ink" />
+    </span>
+  );
+}
 
 function Row({
   r,
@@ -56,8 +81,7 @@ function Row({
   const copy = useCopy();
   const locale = useLocale();
   const l = copy.ledger;
-  const lo = Math.min(r.mightShare, r.killShare);
-  const hi = Math.max(r.mightShare, r.killShare);
+  const gap = r.killShare - r.mightShare;
   return (
     <li
       data-mine={mine ? "" : undefined}
@@ -74,25 +98,11 @@ function Row({
           <AllianceBadge badgeId={r.badgeId} />
           <span className="min-w-0 flex-1 truncate">{allianceLabel(r.tag, r.name)}</span>
           <span className="shrink-0 text-sm tabular-nums">
-            {pointsText(r.killShare - r.mightShare, locale)} {l.carriedPoints}
+            {pointsText(gap, locale)} {l.carriedPoints}
           </span>
         </span>
         {mine && <span className="mt-0.5 block text-xs font-medium text-yarn">{l.myAlliance}</span>}
-        <span aria-hidden="true" className="relative mx-1.5 mt-2 block h-3">
-          <span className="absolute inset-x-0 top-1/2 h-px bg-rule" />
-          <span
-            className="absolute top-1/2 h-0.5 -translate-y-1/2 bg-ink/40"
-            style={{ left: at(lo, axis), width: at(hi - lo, axis) }}
-          />
-          <span
-            className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 border-2 border-ink bg-paper"
-            style={{ left: at(r.mightShare, axis) }}
-          />
-          <span
-            className={`absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full ${mine ? "bg-yarn" : "bg-ink"}`}
-            style={{ left: at(r.killShare, axis) }}
-          />
-        </span>
+        <GapBar gap={gap} axis={axis} mine={mine} />
         <span className="mt-1 block text-xs tabular-nums text-ink/70">
           {fill(l.carriedShares, {
             might: sharePreciseText(r.mightShare, locale),
@@ -122,8 +132,7 @@ export function WhoCarried({ eventId, carried }: { eventId: number; carried: Car
   const l = copy.ledger;
   const [all, setAll] = useState(false);
   const shown = visibleRows(carried.rows, mine, all);
-  // One axis for every row: from 0 to the largest share among the rows shown.
-  const axis = Math.max(...shown.flatMap((r) => [r.mightShare, r.killShare]), 0.01);
+  const axis = gapAxis(carried.rows);
   const { totals } = carried;
   return (
     <section aria-labelledby="who-carried-h" className="mt-8">
@@ -140,22 +149,14 @@ export function WhoCarried({ eventId, carried }: { eventId: number; carried: Car
             might: compact(totals.might, locale),
           })}
         </p>
-        <p className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 ${LABEL}`}>
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden="true" className="size-3 border-2 border-ink bg-paper" />
-            {l.carriedMightMark}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden="true" className="size-3 rounded-full bg-ink" />
-            {l.carriedKillsMark}
-          </span>
-        </p>
+        <p className="mt-2 text-body-sm text-ink/80">{l.carriedGapKey}</p>
         <p
           aria-hidden="true"
-          className="mx-1 mt-1 flex justify-between text-xs tabular-nums text-ink/70"
+          className="mx-1 mt-1 grid grid-cols-3 text-xs tabular-nums text-ink/70"
         >
-          <span>{sharePreciseText(0, locale)}</span>
-          <span>{sharePreciseText(axis, locale)}</span>
+          <span>{pointsText(-axis, locale)}</span>
+          <span className="text-center">0</span>
+          <span className="text-right">{pointsText(axis, locale)}</span>
         </p>
         <ol className="divide-y divide-rule">
           {shown.map((r) => (

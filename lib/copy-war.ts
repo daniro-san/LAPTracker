@@ -29,9 +29,9 @@ export const warCopy = {
     "Each alliance's share of the kills, next to its share of the might. Kills its members in both lists gained from Start to End, might at Start. Defenders and support players gain no kills.",
   /** `{n}` alliances, their kills gained and their might at Start (all as compact numbers). */
   carriedTotal: "All {n} alliances: {kills} kills gained, {might} might at Start",
-  /** The legend: the square mark and the round mark on each row. */
-  carriedMightMark: "Might share at Start",
-  carriedKillsMark: "Kill share gained",
+  /** The bar's key (D158): the one place "points" is spelled out; the axis under it reads -12 · 0 · +12. */
+  carriedGapKey:
+    "Bar: kill share minus might share, in percentage points. Right of 0: the kill share is higher.",
   /** A row's figures. */
   carriedShares: "Might {might} · Kills {kills}",
   carriedTurnout: "{share} with kills",

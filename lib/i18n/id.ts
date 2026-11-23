@@ -126,8 +126,6 @@ export const idID = {
     carriedHelp:
       "Bagian tiap aliansi dari Kills, di samping bagiannya dari Might. Kills yang didapat anggota yang ada di kedua daftar dari Awal sampai Akhir, Might pada Awal. Pemain bertahan dan pemain support tidak mendapat Kills.",
     carriedTotal: "Semua {n} aliansi: {kills} Kills didapat, {might} Might di Awal",
-    carriedMightMark: "Bagian Might di Awal",
-    carriedKillsMark: "Bagian Kills didapat",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} dengan Kills",
     carriedSpread: "{low}–{high} dari {n} event",
@@ -250,7 +248,6 @@ export const idID = {
       "Might-nya berubah {growth} sejak {from}. Total aliansi yang dilacak berubah {server}.",
     server: "Aliansi dilacak",
     growthSince: "{growth} sejak {from}",
-    trend: "Peringkat {first} pada {from}, {last} pada {to}",
     thisAlliance: "Aliansi ini",
     detailsHelp: "Peringkat tiap hari, dari yang paling lama: {days}.",
     few: "Pembacaan harian belum cukup untuk membandingkan aliansi.",

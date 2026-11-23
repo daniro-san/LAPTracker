@@ -125,8 +125,6 @@ export const uk = {
     carriedHelp:
       "Частка кожного альянсу в Kills, набраних від «Початку» до «Кінця» учасниками з обох списків, поруч із його часткою в Might на «Початку». Захисники і гравці підтримки не набирають Kills.",
     carriedTotal: "Усі альянси ({n}): набрано {kills} Kills, {might} Might на «Початку»",
-    carriedMightMark: "Частка Might на «Початку»",
-    carriedKillsMark: "Частка набраних Kills",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} з Kills",
     carriedSpread: "{low}–{high} за {n} подіями",
@@ -247,7 +245,6 @@ export const uk = {
       "Might альянсу з {from} змінився на {growth}. Сума відстежуваних альянсів змінилася на {server}.",
     server: "Відстежувані альянси",
     growthSince: "{growth} з {from}",
-    trend: "Місце {first} на {from}, {last} на {to}",
     thisAlliance: "Цей альянс",
     detailsHelp: "Місце в кожен день, від найстарішого: {days}.",
     few: "Для порівняння альянсів ще замало щоденних оновлень.",

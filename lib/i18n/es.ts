@@ -127,8 +127,6 @@ export const es = {
     carriedHelp:
       "Parte de los Kills de cada alianza, junto a su parte del Might. Kills que ganaron de Inicio a Fin sus miembros presentes en las dos listas; Might al Inicio. Los defensores y los jugadores de apoyo no ganan Kills.",
     carriedTotal: "Todas las {n} alianzas: {kills} Kills ganados, {might} de Might al Inicio",
-    carriedMightMark: "Parte de Might al Inicio",
-    carriedKillsMark: "Parte de Kills ganados",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} en {n} eventos",
@@ -250,7 +248,6 @@ export const es = {
       "Su Might cambió {growth} desde {from}. El total de las alianzas seguidas cambió {server}.",
     server: "Alianzas seguidas",
     growthSince: "{growth} desde {from}",
-    trend: "Puesto {first} el {from}, {last} el {to}",
     thisAlliance: "Esta alianza",
     detailsHelp: "Puesto de cada día, del más antiguo al más reciente: {days}.",
     few: "Todavía no hay suficientes actualizaciones diarias para comparar las alianzas.",
