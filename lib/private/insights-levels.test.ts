@@ -204,6 +204,8 @@ describe("a chart's day level (D158 rule 7, issue 752)", () => {
     expect(plain(words.sum)).toBe(
       "Tue, Nov 17: 2 joined, 1 left. The places below add up to this.",
     );
+    // This week too, Back goes to the week's days: the flow's week rows draw no days.
+    expect([plain(words.week.label), words.week.monday]).toEqual(["Week of Nov 16", "2026-11-16"]);
     expect(words.came.map((r) => [r.label, r.value])).toEqual([
       ["⁨[FN] Fern Hall⁩", "1"],
       ["Not known", "1"],

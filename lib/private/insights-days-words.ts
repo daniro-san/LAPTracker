@@ -212,7 +212,7 @@ const MEASURE_NAMES = {
   donated: "drill.pulseDay.donated",
 } as const;
 
-/** The week `day` sits in, as its pulse or flow row names it; this week is the card itself. */
+/** The pulse week `day` sits in, as its row names it; this week is the card itself (its days are on it). */
 function dayWeek(day: string, thisWeek: string | undefined, f: Formats): DayWeek {
   const monday = gameWeek(day)[0] as string;
   return monday === thisWeek
@@ -259,9 +259,11 @@ export function flowDayWords(v: InsightsView, f: Formats): FlowDayWords | null {
   const { t } = f;
   const members = rosterSize(flow.tenure);
   const label = calendarDates(f.language).short(day.day);
+  const monday = gameWeek(day.day)[0] as string;
   return {
     label,
-    week: dayWeek(day.day, flow.weeks.at(-1)?.monday, f),
+    // Every flow week, this one too, opens to its days as a level of its own (its row holds no days).
+    week: { label: weekLabel(monday, f), monday },
     joined: day.joined,
     left: day.left,
     came: placeRows(day.cameFrom, members, v.labels, t),

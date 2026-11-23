@@ -10,8 +10,13 @@ import { compactLarge } from "../lib/compact";
 import {
   ALLIANCES,
   calendarOf,
+  changedAtLastEvent,
   DAY_MS,
+  eventTotals,
+  IDLE_UIDS,
+  JOINER,
   LEAVER,
+  memberChange,
   newMembers,
   lastRosterDay,
   rosterOf,
@@ -397,4 +402,162 @@ test("Insights: the week someone joined and left opens its days, which add up to
   await expect(path).toHaveCount(0);
   await expect(open).toBeVisible();
   await stays(page, y);
+});
+
+// One level further (issue 752): a day of the flow, of the pulse and of a KvK's recovery.
+
+test("Insights: a day someone joined and left opens where they came from and went, which add up to the day, and Back keeps the week (D158 rule 7 (b))", async ({
+  page,
+}) => {
+  // The joiner and the leaver changed places at the last event; nobody saw them in another alliance.
+  const day = calendarOf(seededAt()).events[1] as string;
+  const monday = mondayOf(day);
+  await page.goto(`${desk}/insights?flow=${monday}`);
+  await deskFrame(page, A);
+  const card = page.getByRole("region", { name: "Membership flow" });
+  const open = card.getByRole("link", { name: new RegExp(`^${usDay(day)}`) });
+  await hydrated(open);
+  expect((await open.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await open.scrollIntoViewIfNeeded();
+  const y = await scrollOf(page);
+  await open.click();
+  await expect(page).toHaveURL(`${desk}/insights?flow=${monday}&flowDay=${day}#insights-flow`);
+  const path = card.getByRole("navigation", { name: "Where you are in this chart" });
+  await sees(path, "Membership flow");
+  await sees(path, weekOf(monday));
+  await sees(path, usDay(day));
+  // The day's places: one newcomer and one leaver, neither seen elsewhere; counts only, no names (D75).
+  for (const head of ["Where newcomers came from", "Where leavers went"]) {
+    const rows = card
+      .getByRole("heading", { level: 3, name: head })
+      .locator("xpath=following-sibling::ul[1]");
+    await expect(rows.getByRole("listitem")).toHaveCount(1);
+    await expect(rows).toContainText(/Not known\s*1/);
+  }
+  await sees(card, `${usDay(day)}: 1 joined, 1 left. The places below add up to this.`);
+  for (const name of [...changedAtLastEvent("a", "joined"), ...changedAtLastEvent("a", "left")])
+    await expect(card.getByText(name)).toHaveCount(0);
+  // The window's own places give way to the day's: one "Where newcomers came from" on the card.
+  await expect(card.getByRole("heading", { name: "Where newcomers came from" })).toHaveCount(1);
+  await stays(page, y);
+  const back = path.getByRole("link", { name: weekOf(monday) }).first();
+  expect((await back.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await back.click();
+  await expect(page).toHaveURL(`${desk}/insights?flow=${monday}#insights-flow`);
+  await expect(open).toBeVisible();
+  await stays(page, y);
+});
+
+test("Insights: a day of the pulse opens who did each, in name order, and only them (D158 rule 7 (c))", async ({
+  page,
+  context,
+}) => {
+  // Moss Hollow: on the newest daily update its IDLE members sent no quest points and no donation.
+  await signIn(context, "b", "officer");
+  const B = ALLIANCES.b;
+  const day = lastRosterDay();
+  const did = B.names.filter((_, k) => !IDLE_UIDS.has(uidOf("b", k)));
+  const idle = B.names.filter((_, k) => IDLE_UIDS.has(uidOf("b", k)));
+  await page.goto(`/w/${B.slug}/insights`);
+  await deskFrame(page, B);
+  const card = page.getByRole("region", { name: "The week’s pulse" });
+  const pick = card.getByRole("link", { name: usDay(day) });
+  await hydrated(pick);
+  const box = await pick.boundingBox();
+  expect(Math.min(box?.width ?? 0, box?.height ?? 0)).toBeGreaterThanOrEqual(44);
+  await pick.scrollIntoViewIfNeeded();
+  const y = await scrollOf(page);
+  await pick.click();
+  await expect(page).toHaveURL(`/w/${B.slug}/insights?pulseDay=${day}#insights-pulse`);
+  const path = card.getByRole("navigation", { name: "Where you are in this chart" });
+  await sees(path, "The week’s pulse");
+  await sees(path, usDay(day));
+  await stays(page, y);
+  // Each count is the day's: who did it out of the daily update's members. A tap names exactly them.
+  const of = B.names.length;
+  for (const [label, names] of [
+    ["Earned daily quest points", did],
+    ["At the 1,000 coin cap", B.names],
+    ["Donated", did],
+  ] as const) {
+    const row = card.locator("summary").filter({ hasText: label });
+    await sees(row, `${names.length} of ${of} members`);
+    await row.click();
+    const list = card.getByRole("list", {
+      name: `${label} · ${usDay(day)}: ${names.length} members`,
+    });
+    await expect(list.getByRole("link")).toHaveText([...names].sort((a, b) => a.localeCompare(b)));
+  }
+  for (const name of idle)
+    await expect(card.getByRole("list", { name: /^Donated/ }).getByText(name)).toHaveCount(0);
+  await expect(card.getByText("Open these", { exact: false })).toHaveCount(0);
+  // Back gives this week's columns again.
+  await path.getByRole("link", { name: "This week" }).first().click();
+  await expect(page).toHaveURL(`/w/${B.slug}/insights#insights-pulse`);
+  await expect(path).toHaveCount(0);
+  await expect(pick).toBeVisible();
+});
+
+test("Insights: a KvK recovery day opens its numbers, the share its column shows, and Back gives that KvK's days (D158 rule 7 (b))", async ({
+  page,
+}) => {
+  const { events, today } = calendarOf(seededAt());
+  const kvk = events[1] as string;
+  const day = new Date(Date.parse(kvk) + DAY_MS).toISOString().slice(0, 10);
+  await page.goto(`${desk}/insights`);
+  await deskFrame(page, A);
+  const card = page.getByRole("region", { name: "KvK cost and recovery" });
+  await card.getByText("Show the details").first().click();
+  const pick = card.getByRole("link", { name: usDay(day) });
+  // On a Sunday the newest daily update is the KvK's own: no recovery day yet.
+  if (day >= new Date(today).toISOString().slice(0, 10)) {
+    await expect(pick).toHaveCount(0);
+    return;
+  }
+  // Counted: in the Start, the End and the newest daily update (not the joiner, not the leaver).
+  const counted = A.names.flatMap((_, k) => (k === JOINER || k === LEAVER ? [] : [k]));
+  const before = eventTotals("a", "before").might - memberChange("a").left;
+  const after = eventTotals("a", "after").might - memberChange("a").joined;
+  const index = 14 - (today - Date.parse(day)) / DAY_MS;
+  const then = counted.reduce((s, k) => s + rosterOf("a", k, index).might, 0);
+  const back = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 0 }).format(
+    (then - after) / (before - after),
+  );
+  // The newest KvK's column says the same share.
+  const newest = card
+    .getByRole("heading", { level: 3, name: `KvK ${usDay(kvk)}` })
+    .locator("xpath=..");
+  await expect(
+    newest.getByText(`${shown(day, "en-US", { weekday: "short" })}: ${back}`),
+  ).toHaveCount(1);
+  await hydrated(pick);
+  expect((await pick.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await pick.click();
+  await expect(page).toHaveURL(`${desk}/insights?kvk=${kvk}&kvkDay=${day}#insights-kvk`);
+  const path = card.getByRole("navigation", { name: "Where you are in this chart" });
+  await sees(path, "KvK cost and recovery");
+  await sees(path, `KvK ${usDay(kvk)}`);
+  await sees(path, usDay(day));
+  await sees(card, `Counted: the ${counted.length} members this KvK counts.`);
+  await expect(card).toContainText(
+    new RegExp(`Before \\(Start read\\)\\s*${compactLarge(before, "en")}`),
+  );
+  await expect(card).toContainText(
+    new RegExp(`After \\(End read\\)\\s*${compactLarge(after, "en")}`),
+  );
+  await expect(card).toContainText(new RegExp(`${compactLarge(then, "en")}\\s*${back} back`));
+  await sees(
+    card,
+    `${usDay(day)}: ${back} of the might they lost is back. Its column shows the same.`,
+  );
+  // Back: that KvK with its days unfolded, the day's link again.
+  await path
+    .getByRole("link", { name: `KvK ${usDay(kvk)}` })
+    .first()
+    .click();
+  await expect(page).toHaveURL(`${desk}/insights?kvk=${kvk}#insights-kvk`);
+  await expect(card.getByRole("link", { name: usDay(day) })).toBeVisible();
+  await path.getByRole("link", { name: "All KvKs" }).click();
+  await expect(page).toHaveURL(`${desk}/insights#insights-kvk`);
+  await expect(path).toHaveCount(0);
 });
