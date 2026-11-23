@@ -27,8 +27,10 @@ import {
   EFFORT_MIN_READS,
   EFFORT_READS,
   effortsOf,
+  flowDays,
   movesOf,
   newcomersOf,
+  pulseDays,
   pulseView,
   PULSE_WEEKS,
   quietOf,
@@ -37,6 +39,7 @@ import {
   type Band,
   type Effort,
   type Elsewhere,
+  type FlowDay,
   type Place,
   type PulseView,
 } from "./insights-rules";
@@ -55,6 +58,11 @@ export interface InsightsView {
   /** The newest read's day; null before the alliance's first end-of-day read. */
   newest: string | null;
   pulse: PulseView | null;
+  /**
+   * An earlier week of the pulse, day by day, when the address asks for it (`?pulse=<monday>`) and the pulse
+   * has that week with a read; null otherwise. This week's days are `pulse.days`.
+   */
+  pulseWeek: { monday: string; days: PulseView["days"] } | null;
   effort: {
     /** The reads averaged over: the first and last day, and how many. */
     from: string;
@@ -70,8 +78,8 @@ export interface InsightsView {
     /** The first day a change can be seen (the second read in the window). */
     from: string;
     reads: number;
-    /** Who joined and who left in each week (uids). */
-    weeks: { monday: string; joined: number[]; left: number[] }[];
+    /** Who joined and who left in each week (uids), and on each of its days (D158 rule 7 (b)). */
+    weeks: { monday: string; joined: number[]; left: number[]; days: FlowDay[] }[];
     cameFrom: Place[];
     wentTo: Place[];
     /** Members first seen under 14, 30, 90 days ago, more, and since our first read (its day). */
@@ -200,6 +208,7 @@ async function flowPart(
   ]);
   const inWeek = (list: { uid: number; day: string }[], monday: string) =>
     list.filter((m) => m.day >= monday && m.day < addDays(monday, 7)).map((m) => m.uid);
+  const readDays = new Set(reads.map((r) => r.day));
   const flow: InsightsView["flow"] = {
     from,
     reads: reads.filter((r) => r.day >= from).length,
@@ -207,6 +216,7 @@ async function flowPart(
       monday,
       joined: inWeek(moves.joined, monday),
       left: inWeek(moves.left, monday),
+      days: flowDays(moves, monday, readDays, from, newest.day),
     })),
     cameFrom: came,
     wentTo: went,
@@ -234,12 +244,39 @@ const peopleOf = (newest: Reads[number], moves: ReturnType<typeof movesOf>) =>
     ...newest.members.map((m) => [m.uid, { name: m.name, current: true }] as const),
   ]);
 
-/** The Insights page of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
+/** The page before the alliance's first end-of-day read. */
+const noReadYet = (): InsightsView => ({
+  newest: null,
+  pulse: null,
+  pulseWeek: null,
+  effort: null,
+  flow: null,
+  kvk: { events: [], waiting: null, readsFrom: null },
+  kvkFollowUp: false,
+  squads: null,
+  shield: null,
+  zones: { members: 0, zones: [] },
+  labels: new Map(),
+  people: new Map(),
+  roster: [],
+});
+
+/** The earlier pulse week `monday` names, day by day, when the pulse has it with a read. */
+function pulseWeekOf(reads: Reads, pulse: PulseView | null, monday: string | null) {
+  const week = pulse?.weeks.slice(0, -1).find((w) => w.monday === monday && w.reads > 0);
+  return week ? { monday: week.monday, days: pulseDays(reads, week.monday) } : null;
+}
+
+/**
+ * The Insights page of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ).
+ * `pulseWeek` is the Monday of the pulse week the address opens to its days (`?pulse=`), if any.
+ */
 export async function insightsView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
   zone: string,
+  pulseWeek: string | null = null,
 ): Promise<InsightsView> {
   const [reads, firstSeen, facts] = await Promise.all([
     endOfDayReads(db, access.unionId, READS),
@@ -247,21 +284,7 @@ export async function insightsView(
     factsOf(db, access),
   ]);
   const newest = reads.at(-1);
-  if (!newest)
-    return {
-      newest: null,
-      pulse: null,
-      effort: null,
-      flow: null,
-      kvk: { events: [], waiting: null, readsFrom: null },
-      kvkFollowUp: false,
-      squads: null,
-      shield: null,
-      zones: { members: 0, zones: [] },
-      labels: new Map(),
-      people: new Map(),
-      roster: [],
-    };
+  if (!newest) return noReadYet();
   const oldest = [...firstSeen.values()].reduce((a, b) => (b < a ? b : a), newest.day);
   const pulse = pulseView(reads);
   const weeks = (pulse?.weeks ?? []).map((w) => w.monday);
@@ -295,6 +318,7 @@ export async function insightsView(
   return {
     newest: newest.day,
     pulse,
+    pulseWeek: pulseWeekOf(reads, pulse, pulseWeek),
     effort: effortPart(reads, firstSeen, oldest, away),
     flow,
     kvk,
