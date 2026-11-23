@@ -1,5 +1,5 @@
 {
-  "id": "1bcd7e3f-003b-4faa-9d01-74f6ae6bfa97",
+  "id": "eb4c60f4-85cf-471a-a47d-22d7cfbc88cf",
   "prevId": "bee8ac19-2564-457d-8cea-2d15ae1e47f1",
   "version": "7",
   "dialect": "postgresql",
@@ -8645,7 +8645,23 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "feedback_pictures_workspace_idx": {
+          "name": "feedback_pictures_workspace_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "feedback_pictures_feedback_id_feedback_id_fk": {
           "name": "feedback_pictures_feedback_id_feedback_id_fk",

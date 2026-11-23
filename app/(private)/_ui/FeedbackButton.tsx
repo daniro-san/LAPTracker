@@ -6,7 +6,7 @@
 // honeypot: people never see or reach it. PostHog gets the area and the kind only, never the text. One
 // optional picture (D157 amended 2026-11-22) is prepared as a notice's is (D119: at most 1600 px and 400 KB,
 // re-encoded, so EXIF is dropped) and sent as base64 with the rest; it never reaches PostHog either.
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -72,17 +72,20 @@ function failure(status: number | null): keyof FeedbackWords {
 function usePicture(say: (unusable: boolean) => void) {
   const [picture, setPicture] = useState<Picture | null>(null);
   const [preparing, setPreparing] = useState(false);
-  const remove = () => {
-    if (picture) URL.revokeObjectURL(picture.url);
-    setPicture(null);
-  };
+  // The preview's address is let go when the picture changes, is removed or sent, and when the sheet closes.
+  useEffect(
+    () => () => {
+      if (picture) URL.revokeObjectURL(picture.url);
+    },
+    [picture],
+  );
+  const remove = () => setPicture(null);
   const choose = async (file: File) => {
     setPreparing(true);
     say(false);
     const blob = await preparePicture(file).catch(() => null);
     setPreparing(false);
     if (!blob) return say(true);
-    remove();
     setPicture({ blob, url: URL.createObjectURL(blob) });
   };
   return { picture, preparing, choose, remove };
@@ -117,6 +120,7 @@ function FeedbackSheet(props: Props & { entry: Entry; onClose: () => void }) {
           });
     if (status === 200) {
       track("feedback_sent", { feedback_area: props.area, kind, entry: props.entry });
+      remove();
       return setState("received");
     }
     setState("idle");

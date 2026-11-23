@@ -9,6 +9,7 @@ import { testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { FEEDBACK_BODY_MAX } from "@/lib/private/feedback";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { authAttempts, workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceFeatures } from "@/lib/schema-features";
@@ -67,8 +68,15 @@ const IDEA = {
 async function send(
   who: string | null,
   body: object,
-  { ip = "203.0.113.7", origin = ORIGIN }: { ip?: string; origin?: string } = {},
+  {
+    ip = "203.0.113.7",
+    origin = ORIGIN,
+    length,
+  }: { ip?: string; origin?: string; length?: string | null } = {},
 ) {
+  const json = JSON.stringify(body);
+  // As a browser's fetch states it; `null` leaves it out, as a chunked body would.
+  const stated = length === undefined ? String(Buffer.byteLength(json)) : length;
   const request = new Request(`${ORIGIN}/api/w/alpha/feedback`, {
     method: "POST",
     headers: {
@@ -76,9 +84,10 @@ async function send(
       "sec-fetch-site": origin === ORIGIN ? "same-origin" : "cross-site",
       "content-type": "application/json",
       "x-real-ip": ip,
+      ...(stated !== null && { "content-length": stated }),
       ...(who && { cookie: `${SESSION_COOKIE}=${tokens[who] ?? ""}` }),
     },
-    body: JSON.stringify(body),
+    body: json,
   });
   const res = await POST(request, { params: Promise.resolve({ slug: "alpha" }) });
   return { status: res.status, body: (await res.json()) as Record<string, unknown> };
@@ -242,5 +251,20 @@ describe("Send feedback: one picture (D157 amended 2026-11-22, D119's checks)", 
     expect((await send("alpha:officer", { ...IDEA, picture: "not base64!" })).status).toBe(400);
     expect(await rows()).toEqual([]);
     expect(await db.select().from(feedbackPictures)).toEqual([]);
+  });
+});
+
+describe("Send feedback: the body's size is known before it is read (D157, as D119)", () => {
+  it("refuses a body without a Content-Length (411) and one that states more than the cap (413), storing nothing", async () => {
+    expect(await send("alpha:officer", IDEA, { length: null })).toEqual({
+      status: 411,
+      body: { code: "length_required" },
+    });
+    expect(await send("alpha:officer", IDEA, { length: String(FEEDBACK_BODY_MAX + 1) })).toEqual({
+      status: 413,
+      body: { code: "too_large" },
+    });
+    expect(await rows()).toEqual([]);
+    expect(await db.select().from(authAttempts)).toEqual([]);
   });
 });

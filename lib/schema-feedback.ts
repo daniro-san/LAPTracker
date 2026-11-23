@@ -64,6 +64,8 @@ export const feedbackPictures = pgTable(
     hash: text("hash").notNull(),
   },
   (t) => [
+    // D125's purge and count find a workspace's pictures by it.
+    index("feedback_pictures_workspace_idx").on(t.workspaceId),
     check(
       "feedback_pictures_type_check",
       sql`${t.type} in ('image/webp', 'image/jpeg', 'image/png')`,

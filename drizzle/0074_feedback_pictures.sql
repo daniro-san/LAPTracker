@@ -14,4 +14,5 @@ CREATE TABLE "feedback_pictures" (
 );
 --> statement-breakpoint
 ALTER TABLE "feedback_pictures" ADD CONSTRAINT "feedback_pictures_feedback_id_feedback_id_fk" FOREIGN KEY ("feedback_id") REFERENCES "public"."feedback"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "feedback_pictures" ADD CONSTRAINT "feedback_pictures_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "feedback_pictures" ADD CONSTRAINT "feedback_pictures_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "feedback_pictures_workspace_idx" ON "feedback_pictures" USING btree ("workspace_id");

@@ -93,11 +93,16 @@ beforeEach(async () => {
   });
 });
 
-const get = async (id = "1") => {
-  const res = await GET(new Request(`https://laptracker.test/admin/feedback/picture/${id}`), {
-    params: Promise.resolve({ id }),
-  });
-  return { status: res.status, type: res.headers.get("content-type"), body: await res.bytes() };
+const get = async (id = "1", headers: Record<string, string> = {}) => {
+  const url = `https://laptracker.test/admin/feedback/picture/${id}`;
+  const res = await GET(new Request(url, { headers }), { params: Promise.resolve({ id }) });
+  return {
+    status: res.status,
+    type: res.headers.get("content-type"),
+    cache: res.headers.get("cache-control"),
+    etag: res.headers.get("etag"),
+    body: await res.bytes(),
+  };
 };
 
 describe("/admin/feedback/picture/[id] (D157)", () => {
@@ -116,5 +121,17 @@ describe("/admin/feedback/picture/[id] (D157)", () => {
     expect(owner.type).toBe("image/png");
     expect(owner.body).toEqual(BYTES);
     expect((await get("2")).status).toBe(404);
+  });
+
+  it("never lets a shared cache keep it, and answers an unchanged picture with 304 and no bytes", async () => {
+    holder.jar = { lap_admin: adminToken(TEST_ENV, new Date()) };
+    const owner = await get();
+    expect([owner.cache, owner.etag]).toEqual(["private, no-cache", '"abc123"']);
+    const again = await get("1", { "if-none-match": '"abc123"' });
+    expect([again.status, again.cache, again.body.length]).toEqual([304, "private, no-cache", 0]);
+    expect((await get("1", { "if-none-match": '"stale"' })).status).toBe(200);
+    // A refusal is never kept either.
+    holder.jar = {};
+    expect((await get()).cache).toBe("private, no-store");
   });
 });

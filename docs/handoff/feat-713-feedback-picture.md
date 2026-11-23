@@ -17,6 +17,13 @@ Part of #713 (the feedback form, D157). Owner's approval, 2026-11-22: one option
 - Docs: CLAUDE.md and `.claude/rules/private.md` (the exception sentence now covers the picture), a dated amendment to D157 (why our own storage and not PostHog, how it works), amendments to D119 and D125, and a line in the tracking plan.
 - Tests: route (picture stored with its row; 400 KB and 1600 px pass, one byte or pixel more refused with nothing stored or counted; GIF and SVG refused as `wrong_type`, bad base64 refused with 400), purge (a picture goes with its row past 180 days), the admin picture route (no session and an officer's session get 404, the owner gets the bytes), the D125 tests through the seed. E2E: `e2e/feedback.spec.ts` sends a generated 4 × 4 PNG with an invented eXIf chunk. The owner sees it on /admin/feedback, and the served file is WebP or JPEG without the chunk.
 
+## Review fixes (PR 734)
+
+- `/admin/feedback/picture/[id]` reads the type and hash first, answers 304 on a matching ETag, and reads the bytes only for a 200. A test covers the 304 and the `Cache-Control` of a 200, a 304 and a refusal.
+- The sheet lets go of the preview's blob URL when the picture changes or is removed, after a send, and when the sheet closes (a `useEffect` cleanup). The unreachable `remove()` in `choose` is gone.
+- The send route refuses a body without a `Content-Length` (411 `length_required`), as D119's upload route does, so a chunked body is never read whatever its size. A test covers 411 and 413. The session check still comes after the parse: the body's `area` picks the door (desk or board), and the body is now capped at about 560 KB before it is read.
+- Migration 0074 was regenerated with `pnpm db:generate`. It adds an index on `feedback_pictures.workspace_id`.
+
 ## Decisions
 
 - Transport: base64 inside the existing JSON, not multipart and not a second upload request. Multipart is a CORS-simple type, so it would weaken the same-origin JSON rule. A second request would need a way to tie the upload to a row that stores no sender. One request also keeps the row and its picture together.

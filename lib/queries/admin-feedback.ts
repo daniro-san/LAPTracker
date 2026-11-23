@@ -82,15 +82,20 @@ export async function listFeedback(db: Db, filter: FeedbackFilter): Promise<Feed
   }));
 }
 
-/** A send's picture for the owner's route: its bytes, type and hash; null without one. */
+/** A send's picture for the owner's route: its type and hash, without the bytes; null without one. */
 export async function feedbackPicture(db: Db, id: number) {
   const [row] = await db
-    .select({
-      data: feedbackPictures.data,
-      type: feedbackPictures.type,
-      hash: feedbackPictures.hash,
-    })
+    .select({ type: feedbackPictures.type, hash: feedbackPictures.hash })
     .from(feedbackPictures)
     .where(eq(feedbackPictures.feedbackId, id));
   return row ?? null;
+}
+
+/** The picture's bytes, read only when the route sends them (not for a 304); null once gone. */
+export async function feedbackPictureBytes(db: Db, id: number) {
+  const [row] = await db
+    .select({ data: feedbackPictures.data })
+    .from(feedbackPictures)
+    .where(eq(feedbackPictures.feedbackId, id));
+  return row?.data ?? null;
 }

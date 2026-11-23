@@ -5,7 +5,8 @@
 // stored, nothing is logged, and an error leaves as its code alone (`privately`). Excluded from the
 // officer-route walk in member-session.test.ts (members send from the board): tested in route.test.ts here.
 // An optional picture rides in the JSON as base64 (D157 amended 2026-11-22), so the same-origin JSON rule
-// still holds; a body that states more than FEEDBACK_BODY_MAX is refused unread, and a refused picture answers D119's codes.
+// still holds; a body without a Content-Length (411) or stating more than FEEDBACK_BODY_MAX (413) is refused
+// unread, and a refused picture answers D119's codes.
 import { clientIp } from "@/lib/auth";
 import { requireBoard, requireWorkspace } from "@/lib/private/access";
 import { featureOn } from "@/lib/private/features";
@@ -40,8 +41,10 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
   const { slug } = await params;
   if (!SLUG.test(slug)) return privateError(404, "not_found");
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
+  // The body is never read without a size it promises, and never past the cap (as D119's upload route).
   const stated = request.headers.get("content-length");
-  if (stated !== null && !(Number(stated) <= FEEDBACK_BODY_MAX))
+  if (stated === null) return privateError(411, "length_required");
+  if (!/^\d+$/.test(stated) || Number(stated) > FEEDBACK_BODY_MAX)
     return privateError(413, "too_large");
   const parsed = FEEDBACK_SEND.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
