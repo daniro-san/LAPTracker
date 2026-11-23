@@ -207,6 +207,15 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.70.0",
+    date: "2026-11-23",
+    title: "A Friday shield reminder for members",
+    changes: [
+      "Alliance settings → Posts: a second optional post, the Shield-up reminder. Every Friday from 20:30 ST (3 hours before the night check) it asks members, in their channel, to make sure their shield is on before the 00:00 ST reset, take squads off the wall and bring troops home. It names and counts no one and pings nobody. Off until officers turn it on; allowed by default.",
+    ],
+    prs: [763],
+  },
+  {
     version: "v5.69.1",
     date: "2026-11-23",
     title: "Optional posts, and a test read on raid night",
