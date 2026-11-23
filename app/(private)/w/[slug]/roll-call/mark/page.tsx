@@ -91,7 +91,7 @@ function Marks(props: {
   return (
     <RaidPrepMarks
       {...common}
-      prep={prepRows(view.prep, t, page.zone)}
+      prep={prepRows(view.prep, t, page.zone, language)}
       head={prepHead(view.prep, t, page.zone)}
     />
   );

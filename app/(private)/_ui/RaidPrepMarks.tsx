@@ -72,6 +72,18 @@ interface TileProps {
 const byTracker = (m: Marks, row: MarkRowView, p: TileProps) =>
   !!p.prep[row.uid]?.fromTracker && m.shown(row.uid).version === row.version;
 
+/** An officer's own Shield mark, now: set, and no longer the tick's. It is a check by hand (issue 726). */
+const officerMarked = (m: Marks, row: MarkRowView, p: TileProps) =>
+  m.shown(row.uid).mark !== null && !byTracker(m, row, p);
+
+/** An officer tapped either part on this page since it was read. */
+const tappedHere = (m: Marks, w: Marks, rows: MarkRowView[], p: TileProps) =>
+  rows.some(
+    (row) =>
+      m.shown(row.uid).version !== row.version ||
+      w.shown(row.uid).version !== (p.prep[row.uid]?.wall.version ?? 0),
+  );
+
 /**
  * The tick's ✓ marks nobody has checked yet (D137, 2026-11-21): an officer's tap on the row, either part,
  * checks it.
@@ -128,7 +140,7 @@ function TrackerCheck(props: {
 }
 
 /** One member's tile with both parts' marks (`m` the Shield's, `w` the wall's). */
-const tileOf = (m: Marks, w: Marks, p: TileProps & { showWall: boolean }) =>
+const tileOf = (m: Marks, w: Marks, p: TileProps & { showWall: boolean; hand: Set<number> }) =>
   function PrepTile(row: MarkRowView) {
     const tracker = byTracker(m, row, p);
     return (
@@ -140,6 +152,7 @@ const tileOf = (m: Marks, w: Marks, p: TileProps & { showWall: boolean }) =>
         wall={w.shown(row.uid).mark}
         showWall={p.showWall}
         fromTracker={tracker}
+        hand={p.hand.has(row.uid) ? (p.prep[row.uid]?.hand ?? null) : null}
         note={m.notes[row.uid] || w.notes[row.uid]}
         when={p.head.when}
         words={p.words}
@@ -187,15 +200,27 @@ function usePrep(props: PageProps) {
   const all = useOrder(ordered(props.rows, prep));
   const asked = all.filter((row) => row.away === null);
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
-  // "No problem seen" is never given to someone the tracker did not see with a shield (D137).
-  const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false);
+  // "To check by hand" (issue 726), live, by the server's rule: a member with a reason (the readings) and no
+  // officer's Shield mark now, so a mark cleared on this page puts them back. None before any reading.
+  const reasoned = (uid: number) => props.head.hand !== null && !!prep[uid]?.hand;
+  const hand =
+    props.head.hand && asked.filter((row) => reasoned(row.uid) && !officerMarked(m, row, props));
+  // "No problem seen" is never given to someone the tracker did not see with a shield (D137), nor to someone
+  // no map near the reset vouches for (issue 726).
+  const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false && !reasoned(row.uid));
   const seen = new Set(props.head.seen);
   // The chips count the Shield only, as "n of m marked" does: the wall part is optional (issue 585).
   const g = useGrid(asked, (uid) => m.shown(uid).mark, props.filter, props.opened);
   return {
+    hand,
+    looked: props.head.looked || tappedHere(m, w, props.rows, props),
     g,
     show: useShow(g),
-    accept: toAccept(notSet, props.head.seen),
+    accept: toAccept(
+      notSet,
+      props.head.seen,
+      asked.filter((row) => reasoned(row.uid)).map((row) => row.uid),
+    ),
     m,
     w,
     r,
@@ -219,7 +244,8 @@ export function RaidPrepMarks(props: PageProps) {
   const { words, marks } = props;
   useFreshOnReturn();
   const p = usePrep(props);
-  const { m, w, r, all, asked, notSet, awayRows, rest, offerRest, remind, accept, g, show } = p;
+  const { m, w, r, all, asked, notSet, awayRows, rest, offerRest, remind, g, show } = p;
+  const hand = new Set((p.hand ?? []).map((row) => row.uid));
   const [q, setQ] = useState("");
   const [away, setAway] = useState<AwayWho | null>(null);
   const [showWall, setShowWall] = useState(false);
@@ -229,7 +255,7 @@ export function RaidPrepMarks(props: PageProps) {
   return (
     <>
       {/* The answer first; its card holds "n of m marked" while the check is on (issue 585, first glance). */}
-      <TrackerBar page={props} accept={accept} counts={g.counts} m={m} onShow={show} />
+      <TrackerBar page={props} sets={p} counts={g.counts} m={m} onShow={show} />
       <Intro
         marked={asked.length - notSet.length}
         total={asked.length}
@@ -259,8 +285,10 @@ export function RaidPrepMarks(props: PageProps) {
         found={found}
         cols="two"
         caption={words["roll.prep.filterBy"]}
+        // Until an officer has looked, "Nobody left to mark" would claim a roll call nobody took (issue 726).
+        emptyTodo={p.looked ? undefined : words["roll.prep.none.tracker"]}
         words={words}
-        tile={tileOf(m, w, { ...props, showWall })}
+        tile={tileOf(m, w, { ...props, showWall, hand })}
       />
       {error && <RefusalLine text={error} className="mt-2 text-seal" />}
       <AwayGroup rows={awayRows} words={words} onOpen={setAway} />

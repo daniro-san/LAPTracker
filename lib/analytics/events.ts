@@ -71,8 +71,11 @@ export type DrilldownSurface = "insights" | "raid_prep" | "roll_call" | "home" |
  */
 export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone";
 
-/** Raid prep's two counts of people behind "Show the n ›" (#691): "To remind" and "Mark ✓ the n seen". */
-export type RaidPrepSet = "remind" | "accept";
+/**
+ * Raid prep's counts of people behind "Show the n ›" (#691): "To remind", "Mark ✓ the n seen" and "Check by
+ * hand" (#726).
+ */
+export type RaidPrepSet = "remind" | "accept" | "hand";
 
 /** The chip a Roll call card's count opened its marking page on (#691): "To mark", ✗ or ✓. */
 export type RollCallSet = "todo" | "no" | "yes";
@@ -164,7 +167,12 @@ export interface AnalyticsEvents {
    * D157: "Send feedback" went through, from the desk or the board, and its kind; never the text. Not `area`,
    * which before_send sets to the page's area on every event.
    */
-  feedback_sent: { feedback_area: "desk" | "board"; kind: "idea" | "problem" | "good" };
+  feedback_sent: {
+    feedback_area: "desk" | "board";
+    kind: "idea" | "problem" | "good";
+    /** Which button opened the sheet: the floating badge (from 1280) or the one at the end of the page. */
+    entry: "badge" | "end";
+  };
   /** Alliance settings' Check found the bot in the alliance's Discord server for the first time (D129). */
   ws_bot_installed: NoProperties;
   /** A channel's webhook saved in Alliance settings (D129, D147): which channel only, never the URL. */

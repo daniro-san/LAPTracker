@@ -58,8 +58,35 @@ export interface TrackerHint {
   checkpoints: Checkpoint[];
 }
 
+/**
+ * Why a member is on "To check by hand" (issue 726): a map within 3 h of the reset saw no shield, no map is
+ * that near, or there is no reading. Officers mark a shield up at 00:00 ST (owner, 2026-11-22).
+ */
+export type HandReason = "not_seen" | "old_map" | "no_reading";
+
+/** A map further than this from the reset does not speak for 00:00 ST (issue 726). */
+export const HAND_MAP_MS = 3 * 3_600_000;
+
+/**
+ * The member's reason to be checked by hand; null when every map within 3 h of the reset, and at least one,
+ * saw a shield. A map before the reset and one after it that disagree leave 00:00 ST unknown (panel review).
+ * `maps`: the hint's checkpoints that have a map time; a reading without one is no map near the reset.
+ */
+export function handReason(
+  hint: TrackerHint | null,
+  maps: Checkpoint[],
+  reset: number,
+): HandReason | null {
+  if (!hint || hint.checkpoints.length === 0) return "no_reading";
+  const near = maps.filter((c) => Math.abs(c.at - reset) <= HAND_MAP_MS);
+  if (near.length === 0) return "old_map";
+  return near.every((c) => c.on) ? null : "not_seen";
+}
+
 export interface PrepRow {
   tracker: TrackerHint | null;
+  /** Why to check this member by hand (issue 726); null when the map vouches, or the check is off. */
+  hand: HandReason | null;
   wall: { mark: string | null; version: number };
   /**
    * The Shield mark is the tick's, from the tracker's reading (D137, 2026-11-21); `unchecked` while no
@@ -90,6 +117,18 @@ export interface PrepView {
   /** KvK has not started yet: the checks still to come can be named (issue 585, first glance). */
   ahead: boolean;
   rows: Map<number, PrepRow>;
+  /** The reset that starts the raid, Saturday 00:00 ST (epoch ms): each map's age is told from it. */
+  reset: number;
+  /**
+   * "Check by hand: n" (issue 726): the members with a reason to, not away and with no officer's Shield
+   * mark, in roster order. Null while the check is off or before either check read anyone.
+   */
+  handCheck: number[] | null;
+  /**
+   * An officer has looked at this roll call: a mark written by one, or "Checked" pressed. Until then the
+   * grid never says "Nobody left to mark" (issue 726): the tracker's marks alone are not a roll call.
+   */
+  looked: boolean;
   /** The newest unchecked tracker mark's time (epoch ms): the notice's "reading at" and Checked's `seen`. */
   toCheckAt: number | null;
   /** The check's Discord summary (D137, D147, issue 585); null while the check is off. */
@@ -177,17 +216,50 @@ const fromTrackerOf = (marks: {
     ? { unchecked: unchecked(marks.main, marks.wall, marks.checkedAt) }
     : null;
 
+/** The row's tracker hint and its reason to check by hand; neither while the check is off. */
+function trackerOf(
+  read: { night: StoredReading | null; morning: StoredReading | null },
+  check: { tracker: boolean; reset: number },
+): Pick<PrepRow, "tracker" | "hand"> {
+  if (!check.tracker) return { tracker: null, hand: null };
+  const hint = read.morning || read.night ? hintOf(read.night, read.morning) : null;
+  // A checkpoint's time falls back to the read's when the map's is missing: not a map, for the list.
+  const mapped = (r: StoredReading | null) => (r?.mapAt ? r : null);
+  const maps = hintOf(mapped(read.night), mapped(read.morning)).checkpoints;
+  return { tracker: hint, hand: handReason(hint, maps, check.reset) };
+}
+
+/**
+ * "Check by hand" (issue 726): the asked members with a reason to, less those with an officer's own Shield
+ * mark (a check by hand); null before either check read anyone. And whether an officer has looked: a mark
+ * of theirs on either part, or "Checked" pressed.
+ */
+function handOf(
+  asked: [number, PrepRow][],
+  marks: { main: MarkRow[]; wall: MarkRow[]; checkedAt: Date | null },
+  read: boolean,
+) {
+  const officers = new Set(
+    marks.main.filter((m) => !m.tracker && m.mark !== null).map((m) => m.uid),
+  );
+  return {
+    handCheck: read
+      ? asked.filter(([uid, r]) => r.hand !== null && !officers.has(uid)).map(([uid]) => uid)
+      : null,
+    looked: marks.checkedAt !== null || [...marks.main, ...marks.wall].some((m) => m.officer),
+  };
+}
+
 /** One member's row: the tracker's hint (null while the check is off), the wall mark, the tick's ✓. */
 function prepRow(
   read: { night: StoredReading | null; morning: StoredReading | null },
   marks: { main: MarkRow | undefined; wall: MarkRow | undefined; checkedAt: Date | null },
   facts: MemberFacts | undefined,
-  tracker: boolean,
+  check: { tracker: boolean; reset: number },
 ): PrepRow {
-  const seen = read.morning ?? read.night;
   const { wall } = marks;
   return {
-    tracker: tracker && seen ? hintOf(read.night, read.morning) : null,
+    ...trackerOf(read, check),
     wall: { mark: wall?.mark ?? null, version: wall?.version ?? 0 },
     fromTracker: fromTrackerOf(marks),
     language: languageOf(facts, [read.morning?.language ?? null, read.night?.language ?? null]),
@@ -241,17 +313,18 @@ export async function prepView(
     roster.map((m) => {
       const read = { night: nightOf.get(m.uid) ?? null, morning: morningOf.get(m.uid) ?? null };
       const marks = { main: mainOf.get(m.uid), wall: wallOf.get(m.uid), checkedAt };
-      return [m.uid, prepRow(read, marks, facts.get(m.uid), tracker)];
+      const check = { tracker, reset: reset.getTime() };
+      return [m.uid, prepRow(read, marks, facts.get(m.uid), check)];
     }),
   );
-  const toCheck = [...rows]
-    // The page lists away members apart, so their marks are not counted here either.
-    .filter(
-      ([uid, r]) => r.fromTracker?.unchecked && !awayOn(facts.get(uid), opened.day, clock.zone),
-    )
+  // The page lists away members apart, so they are counted in neither list.
+  const asked = [...rows].filter(([uid]) => !awayOn(facts.get(uid), opened.day, clock.zone));
+  const toCheck = asked
+    .filter(([, r]) => r.fromTracker?.unchecked)
     .map(([uid]) => mainOf.get(uid)?.at.getTime() ?? 0);
   const uids = new Set(roster.map((m) => m.uid));
   const counts = { night: countOf(uids, reads.night), morning: countOf(uids, reads.morning) };
+  const hand = handOf(asked, { main, wall, checkedAt }, !!(counts.night || counts.morning));
   // Only the check still ahead of KvK has a state to infer from today's settings (review of PR 590).
   const current = clock.now.getTime() < kvkAt.getTime();
   const on = { discord: !!settings?.discord, channel: !!clock.shieldChannel, current };
@@ -264,6 +337,8 @@ export async function prepView(
     when: clock.now.getTime() < reset.getTime() ? "reset" : "kvk",
     ahead: current,
     rows,
+    reset: reset.getTime(),
+    ...hand,
     toCheckAt: toCheck.length > 0 ? Math.max(...toCheck) : null,
     summary: tracker ? summaryOf(check, on, counts, clock.now.getTime()) : null,
   };
