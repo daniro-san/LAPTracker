@@ -12,6 +12,7 @@ import type { EventClock } from "@/lib/fight-clock";
 import { fill } from "@/lib/words";
 
 import { Bar } from "./charts/Bar";
+import type { ReadoutItem } from "./charts/Readout";
 import { compact, shareText, type Clock } from "./format";
 import { MoreBar, LABEL } from "./StatTable";
 
@@ -77,16 +78,18 @@ export function PulseStrip({
   return (
     <div>
       <ul className="grid h-14 gap-0.5" style={grid(columns.length)}>
-        {columns.map((c) => {
+        {columns.map((c, at) => {
           const hit = slotOf.get(c.minute);
-          if (!hit) return <li key={c.minute} aria-hidden="true" />;
+          if (!hit) return <li key={c.minute} data-at={at} aria-hidden="true" />;
           const { s, i } = hit;
           const span = `${zone.hhmm(s.at)}–${zone.hhmm(new Date(s.at.getTime() + everyMin * 60_000))}`;
           const inBusiest = outline(i, clock.busiest) !== "border-transparent";
           return (
             <li
               key={c.minute}
-              className={`flex min-w-0 flex-col justify-end border-2 px-px pb-px ${outline(i, clock.busiest)}`}
+              // The column's place on the shared clock: a tap picks it in the readout under the strips.
+              data-at={at}
+              className={`flex min-w-0 cursor-pointer flex-col justify-end border-2 px-px pb-px aria-[current=true]:bg-plum/10 ${outline(i, clock.busiest)}`}
             >
               {s.state === "moved" ? (
                 <Bar
@@ -128,6 +131,44 @@ export function PulseStrip({
       </div>
     </div>
   );
+}
+
+/**
+ * One readout for every strip drawn together (D158 rule 7 (a)): for each column of the shared clock, its
+ * interval and each event's share of its kills there ("A 12% (3.1K kills) · B No update"). It starts on the
+ * first event's busiest slot, else the last column.
+ */
+export function stripsReadout(
+  columns: Column[],
+  events: { short: string; clock: EventClock }[],
+  everyMin: number,
+  zone: Clock,
+  copy: Dictionary,
+  locale: string,
+): { items: ReadoutItem[]; initial: number } {
+  const items = columns.map((c) => ({
+    label: `${zone.hhmm(c.at)}–${zone.hhmm(new Date(c.at.getTime() + everyMin * 60_000))}`,
+    line: events
+      .map((e) => {
+        const s = e.clock.slots.find((x) => x.minute === c.minute);
+        const figure = !s
+          ? "—"
+          : s.state === "moved"
+            ? fill(copy.ledger.readoutShare, {
+                share: shareText(s.share ?? 0, locale),
+                kills: compact(s.kills ?? 0, locale),
+              })
+            : s.state === "still"
+              ? copy.ledger.liveNoUpdate
+              : copy.ledger.liveNoReading;
+        return `${e.short} ${figure}`;
+      })
+      .join(" · "),
+  }));
+  const first = events[0]?.clock;
+  const busiest = first?.busiest ? first.slots[first.busiest.index]?.minute : undefined;
+  const at = columns.findIndex((c) => c.minute === busiest);
+  return { items, initial: at >= 0 ? at : columns.length - 1 };
 }
 
 /** The figures of one or more strips, one row per slot, under Details: the share (and the kills gained)

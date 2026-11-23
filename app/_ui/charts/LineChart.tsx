@@ -8,6 +8,8 @@
 import { type Dictionary } from "@/lib/copy";
 import { fill } from "@/lib/words";
 
+import { Readout } from "./Readout";
+
 export interface ChartPoint {
   at: Date;
   value: number;
@@ -178,9 +180,64 @@ interface LineChartProps {
   time: (d: Date) => string;
   small?: boolean;
   copy: Dictionary;
+  /**
+   * A readout under the chart (D158 rule 7 (a)): a tap near a reading, or the ‹ › steps, names its date and
+   * value. `id` is unique on the page. Left out where the drawing must stay plain HTML and SVG.
+   */
+  readout?: { id: string };
 }
 
-export function LineChart({
+/**
+ * One tap zone per reading, from halfway to the one before to halfway to the one after, full height, with a
+ * hairline at the reading that shows while it is the readout's (`aria-current`).
+ */
+function TapZones({ points, x }: { points: ChartPoint[]; x: (d: Date) => number }) {
+  const at = points.map((p) => x(p.at));
+  return at.map((mid, i) => {
+    const from = i === 0 ? 0 : (mid + (at[i - 1] as number)) / 2;
+    const to = i === at.length - 1 ? BOX : (mid + (at[i + 1] as number)) / 2;
+    return (
+      <div
+        key={i}
+        data-at={i}
+        aria-hidden="true"
+        className="group/at absolute inset-y-0 cursor-pointer"
+        style={{ left: `${from}%`, width: `${to - from}%` }}
+      >
+        <span
+          className="absolute inset-y-0 hidden w-px bg-plum group-aria-[current=true]/at:block"
+          style={{ left: `${((mid - from) / Math.max(to - from, 0.01)) * 100}%` }}
+        />
+      </div>
+    );
+  });
+}
+
+export function LineChart(props: LineChartProps) {
+  const { points, readout, value, date, time, copy } = props;
+  const chart = <Drawing {...props} />;
+  if (!readout) return chart;
+  const first = points[0];
+  const last = points.at(-1);
+  if (!first || !last) return null;
+  const sameDay = date(first.at) === date(last.at);
+  return (
+    <Readout
+      id={readout.id}
+      items={points.map((p) => ({
+        // A daily read is its day; an event's reading, or a chart of one day, also says its time.
+        label: sameDay || p.mark ? `${date(p.at)}, ${time(p.at)}` : date(p.at),
+        line: p.mark ? `${value(p.value)} · ${copy.ledger.readoutEventRead}` : value(p.value),
+      }))}
+      initial={points.length - 1}
+      words={{ earlier: copy.ledger.readoutEarlier, later: copy.ledger.readoutLater }}
+    >
+      {chart}
+    </Readout>
+  );
+}
+
+function Drawing({
   points,
   bands = [],
   label,
@@ -189,6 +246,7 @@ export function LineChart({
   time,
   small = false,
   copy,
+  readout,
 }: LineChartProps) {
   const first = points[0];
   const last = points.at(-1);
@@ -240,6 +298,7 @@ export function LineChart({
             />
             <HollowDots d={marks} small={small} />
           </svg>
+          {readout && <TapZones points={points} x={x} />}
         </div>
         <div aria-hidden="true" className={`mt-1 flex justify-between ${MUTED}`}>
           <span>{when(first.at)}</span>

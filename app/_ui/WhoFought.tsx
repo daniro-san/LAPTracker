@@ -72,7 +72,7 @@ function RowLink({
   }
   return (
     <DrilldownLink
-      href={drillHref(page, { sort: "killsDelta" })}
+      href={drillHref(page, { sort: "killsDelta" }, "war_turnout")}
       surface="war_turnout"
       kind="kills"
       count={t.gainers}

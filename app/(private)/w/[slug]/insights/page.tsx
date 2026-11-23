@@ -9,6 +9,7 @@ import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { Spread } from "@/lib/brand/components/layout/Spread";
 import { getEnv } from "@/lib/env";
+import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { thanksSwitches } from "@/lib/private/features";
 import { insightsView } from "@/lib/private/insights";
@@ -23,7 +24,24 @@ import { InsightsSetMemory } from "../../../_ui/InsightsSetMemory";
 import { ZonesCard } from "../../../_ui/InsightsZones";
 import { ViewSwitch } from "../../../_ui/MembersHead";
 import { openRollCall } from "../../../_ui/roll-call-page";
+import { PANE_ID } from "../../../_ui/SetSheet";
 import { sharePropsFor } from "../../../_ui/share-thanks-data";
+
+/** The margin: the side pane a set of 13 to 60 opens in from 1024 px (SetSheet, D158), then the rules. */
+function Margin({ t }: { t: WorkspaceDictionary }) {
+  return (
+    <>
+      <div id={PANE_ID} className="lg:sticky lg:top-2 lg:mb-6 lg:empty:hidden" />
+      <MarginNote title={t["insights.rules.head"]}>
+        {(["read", "none", "left", "private"] as const).map((k) => (
+          <p key={k} className="border-t border-rule py-2 text-body-sm first:border-t-0">
+            {t[`insights.rules.${k}`]}
+          </p>
+        ))}
+      </MarginNote>
+    </>
+  );
+}
 
 export default async function InsightsPage({ params }: { params: Promise<{ slug: string }> }) {
   const page = await openRollCall(
@@ -73,7 +91,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
       {data.view.shield && (
         <ShieldCard shield={shieldWords(data.view.shield, { t, language })} t={t} noData={noData} />
       )}
-      <ZonesCard view={data.view} now={data.now} {...{ today, slug, t, language }} />
+      <ZonesCard view={data.view} now={data.now} {...{ slug, t, language }} />
     </>
   );
   return (
@@ -89,18 +107,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ slug:
       <ViewSwitch slug={slug} open="insights" insights t={t} />
       <p className="mt-2 text-body-sm text-ink/80">{t["insights.lead"]}</p>
       <div className="mt-4">
-        <Spread
-          main={main}
-          margin={
-            <MarginNote title={t["insights.rules.head"]}>
-              {(["read", "none", "left", "private"] as const).map((k) => (
-                <p key={k} className="border-t border-rule py-2 text-body-sm first:border-t-0">
-                  {t[`insights.rules.${k}`]}
-                </p>
-              ))}
-            </MarginNote>
-          }
-        />
+        <Spread main={main} margin={<Margin t={t} />} />
       </div>
     </SignedInFrame>
   );

@@ -238,3 +238,60 @@ test("Insights: a might group opens exactly its members, each to their card, and
   await expect(list).toBeVisible();
   await expect(list.getByRole("link")).toHaveText(names);
 });
+
+test("Insights: a group's names end with “Open these n in Members ›”, which shows exactly them under one chip (D158)", async ({
+  page,
+}) => {
+  const top = effortGroups()[0] ?? [];
+  const [low, high] = [top[0], top.at(-1)];
+  if (!low || !high) throw new Error("the seed makes no effort groups");
+  const label = `Might ${compactLarge(low.might, "en")} – ${compactLarge(high.might, "en")}`;
+  const title = `${label}: ${top.length} members`;
+  const names = top.map((m) => m.name).sort((a, b) => a.localeCompare(b, "en"));
+  const others = A.names.filter((n, k) => k !== LEAVER && !names.includes(n));
+  await page.goto(`${desk}/insights`);
+  await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
+  await deskFrame(page, A);
+  const effort = page.getByRole("region", { name: "Effort at every might level" });
+  // Up to 12 names open in place, right under the tapped row, the onward link after them.
+  await effort.locator("summary").filter({ hasText: label }).click();
+  await expect(effort.getByRole("list", { name: title }).getByRole("link")).toHaveText(names);
+  const onward = effort.getByRole("link", { name: `Open these ${top.length} in Members ›` });
+  expect((await onward.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  const arrived = page.waitForResponse((r) =>
+    r.url().endsWith("/members?set=effort_range:range-0"),
+  );
+  await onward.click();
+  await expect(page).toHaveURL(`${desk}/members?set=effort_range:range-0`);
+  await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  // One chip names the set with the chart's own sentence; the list holds exactly its members.
+  const chip = page.locator("#members-set");
+  await sees(chip, "From Insights");
+  await sees(chip, title);
+  for (const name of names) await expect(memberLine(page, name)).toHaveCount(1);
+  for (const name of others) await expect(memberLine(page, name)).toHaveCount(0);
+  // A reload builds the same set again on the server; the page's own answer is read first, for the leak guard.
+  await (await arrived).finished();
+  await page.reload();
+  await sees(page.locator("#members-set"), title);
+  for (const name of others) await expect(memberLine(page, name)).toHaveCount(0);
+  // Its × gives the whole list back and takes the set off the address.
+  const clear = page.getByRole("button", { name: "Show every member" });
+  expect((await clear.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await clear.click();
+  await expect(page.locator("#members-set")).toHaveCount(0);
+  // The chip went with its ×: the focus is on the search, not lost to the page.
+  await expect(page.getByRole("searchbox", { name: "Search members" })).toBeFocused();
+  await expect(memberLine(page, others[0] as string)).toHaveCount(1);
+  await expect(page).toHaveURL(`${desk}/members`);
+});
+
+test("Members `?set=` with a key no Insights count has shows the whole list with no chip", async ({
+  page,
+}) => {
+  await page.goto(`${desk}/members?set=effort_range:range-9`);
+  await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+  await deskFrame(page, A);
+  await expect(page.locator("#members-set")).toHaveCount(0);
+  await expect(memberLine(page, A.names[0] as string)).toHaveCount(1);
+});

@@ -129,6 +129,15 @@ export const ko = {
     carriedRatioHelp:
       "+6%p: 처치 몫이 전투력 몫보다 6%p 높다는 뜻입니다. 이벤트가 3개 이상이면 그 아래 줄에 처치 몫이 전투력 몫의 몇 배인지를 낮은 값부터 높은 값까지 보여 줍니다.",
     carriedPoints: "%p",
+    arrivedTurnout: "전투 참여에서 열림: 이 이벤트에서 획득한 처치가 많은 순으로 정렬해요.",
+    arrivedKillShare:
+      "처치 몫 대 전투력 몫에서 열림: 이 이벤트에서 획득한 처치가 많은 순으로 정렬해요.",
+    arrivedClear: "평소 순서로 보기",
+    readoutEarlier: "이전",
+    readoutLater: "다음",
+    readoutPulse: "{kills} 획득 처치 · 연맹 {n}곳 읽음",
+    readoutShare: "{share} ({kills} 처치)",
+    readoutEventRead: "이벤트 읽기",
   },
   compare: {
     title: "이벤트 비교",

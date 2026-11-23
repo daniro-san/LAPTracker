@@ -24,6 +24,8 @@ import { Bar, SAFE_BOTTOM, TitleRow } from "./sheet-parts";
 const FIT =
   "max-h-[calc(100dvh-max(1rem,env(safe-area-inset-top)))] overflow-x-hidden overflow-y-auto overscroll-contain wrap-anywhere";
 const SHEET = `fixed inset-x-0 bottom-0 top-auto z-50 m-0 w-full max-w-none border-0 border-t border-rule bg-paper p-0 text-ink shadow-[0_-8px_24px_var(--sheet-shadow)] backdrop:bg-[var(--sheet-scrim)] ${FIT}`;
+// With a sticky bar, a control the browser scrolls into view (Tab, focus) stops above the bar, not under it.
+const BAR_CLEARANCE = "scroll-pb-24";
 const MODAL_CARD =
   "sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[calc(100dvh-3rem)] sm:max-w-md sm:border";
 const GATE_CARD = "sm:static sm:mt-6 sm:border sm:shadow-none";
@@ -213,7 +215,7 @@ function Pane(props: SheetProps) {
     >
       <div
         data-sheet-pane
-        className="max-h-[calc(100dvh-2.5rem)] overflow-x-hidden overflow-y-auto overscroll-contain wrap-anywhere"
+        className={`max-h-[calc(100dvh-2.5rem)] overflow-x-hidden overflow-y-auto overscroll-contain wrap-anywhere ${props.primary ? BAR_CLEARANCE : ""}`}
       >
         <Parts props={props} c={c} stack />
       </div>
@@ -256,7 +258,7 @@ function DialogSheet(props: SheetProps) {
         dialog.showModal();
         c.close();
       }}
-      className={`${SHEET} ${gate ? GATE_CARD : MODAL_CARD}`}
+      className={`${SHEET} ${gate ? GATE_CARD : MODAL_CARD} ${props.primary ? BAR_CLEARANCE : ""}`}
     >
       <Parts props={props} c={c} />
     </dialog>

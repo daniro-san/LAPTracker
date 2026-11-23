@@ -136,6 +136,16 @@ export const fr = {
     carriedRatioHelp:
       "+6 pts : la part des Kills dépasse de 6 points la part du Might. À partir de 3 événements, la ligne en dessous donne la part des Kills en multiple de la part du Might, du plus bas au plus haut.",
     carriedPoints: "pts",
+    arrivedTurnout:
+      "Depuis Participation : triés par Kills gagnés dans l’événement, les plus élevés d’abord.",
+    arrivedKillShare:
+      "Depuis Part des Kills contre part du Might : triés par Kills gagnés dans l’événement, les plus élevés d’abord.",
+    arrivedClear: "Revenir à l’ordre habituel",
+    readoutEarlier: "Plus tôt",
+    readoutLater: "Plus tard",
+    readoutPulse: "{kills} Kills gagnés · {n} alliances relevées",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "relevé d’événement",
   },
   compare: {
     title: "Événement contre événement",

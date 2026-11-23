@@ -88,7 +88,11 @@ function Row({
       className="data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)]"
     >
       <DrilldownLink
-        href={drillHref(`/events/${eventId}/alliances/${r.unionId}`, { sort: "killsDelta" })}
+        href={drillHref(
+          `/events/${eventId}/alliances/${r.unionId}`,
+          { sort: "killsDelta" },
+          "kill_share",
+        )}
         surface="kill_share"
         kind="kills"
         count={r.turnout?.gainers ?? 0}

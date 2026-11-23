@@ -10,13 +10,13 @@ import { Bar } from "@/app/_ui/charts/Bar";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { InsightsView } from "@/lib/private/insights";
-import { nextKvk, nextReset, NOT_RECORDED, usualAt } from "@/lib/private/insights-zones";
-import { zonesWords, type ZoneRow } from "@/lib/private/insights-zones-words";
+import { NOT_RECORDED, usualAt } from "@/lib/private/insights-zones";
+import { zonesWordsAt, type ZoneRow } from "@/lib/private/insights-zones-words";
 import { queryString } from "@/lib/private/members-list";
 
 import { Fold } from "./InsightsMore";
 import { Card } from "./InsightsSections";
-import { Caret, Names, SetFold, TapHint } from "./InsightsSets";
+import { Caret, SetRow, TapHint } from "./InsightsSets";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
@@ -63,24 +63,25 @@ function NotRecorded(props: {
 export function ZonesCard(props: {
   /** The counts, and everyone a row can name. */
   view: Pick<InsightsView, "zones" | "people">;
-  /** The page's instant and its server day. */
+  /** The page's instant. */
   now: Date;
-  today: string;
   slug: string;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
 }) {
   const { slug, t } = props;
-  const { now, today } = props;
   const env = getEnv();
-  const zones = zonesWords(
+  // The same function as Members' `?set=zone:…`, so a row's key names the same group there.
+  const zones = zonesWordsAt(
     props.view.zones,
+    props.view.people,
+    { t, language: props.language },
     {
-      now,
-      reset: nextReset(today, env.SERVER_TZ),
-      kvk: nextKvk(now, today, env.SERVER_TZ, env.EVENT_WEEKDAY, env.EVENT_TIME),
+      now: props.now,
+      serverZone: env.SERVER_TZ,
+      kvkWeekday: env.EVENT_WEEKDAY,
+      kvkTime: env.EVENT_TIME,
     },
-    { t, language: props.language, serverZone: env.SERVER_TZ, today, people: props.view.people },
   );
   const add = (
     <a href={`/w/${slug}/members?${queryString(NOT_RECORDED, "rank")}`} className={LINK}>
@@ -101,14 +102,13 @@ export function ZonesCard(props: {
               (r) =>
                 r.set && (
                   <li key={r.label} className="border-t border-rule">
-                    <SetFold
-                      kind="zone"
-                      setKey={r.set.key}
-                      count={r.set.people.length}
+                    <SetRow
+                      set={r.set}
+                      slug={slug}
+                      t={t}
+                      label={r.set.title}
                       summary={<RowBody r={r} />}
-                    >
-                      <Names set={r.set} slug={slug} label={`${r.label}: ${r.value}`} />
-                    </SetFold>
+                    />
                   </li>
                 ),
             )}

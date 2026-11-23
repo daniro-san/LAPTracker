@@ -4,14 +4,15 @@
 // reason and nothing is drawn. The window picker (a part of the events) is the next build; the read model
 // already gives each event's slots and `bothCover` the slots both cover.
 import { type Dictionary } from "@/lib/copy";
-import { clockColumns } from "@/lib/fight-clock";
+import { clockColumns, type EventClock } from "@/lib/fight-clock";
 import type { EventComparison, EventPulse } from "@/lib/queries";
 import { fill } from "@/lib/words";
 
+import { Readout } from "./charts/Readout";
 import { eventHead } from "./EventCompare";
 import type { Clock } from "./format";
 import { PulseLegend } from "./LivePulse";
-import { busiestText, mostShare, PulseDetails, PulseStrip } from "./PulseStrip";
+import { busiestText, mostShare, PulseDetails, PulseStrip, stripsReadout } from "./PulseStrip";
 import { LABEL } from "./StatTable";
 
 type Side = "a" | "b";
@@ -32,6 +33,55 @@ const Off = ({ title, reason }: { title: string; reason: string }) => (
     </p>
   </section>
 );
+
+/** Both events' strips on one clock, with one readout for both at the chosen slot (D158 rule 7 (a)). */
+function Strips(props: {
+  own: Record<Side, EventClock>;
+  columns: ReturnType<typeof clockColumns>;
+  most: number;
+  everyMin: number;
+  clock: Clock;
+  copy: Dictionary;
+  locale: string;
+  label: (k: Side) => string;
+}) {
+  const { own, columns, everyMin, clock, copy, locale } = props;
+  const sides: Side[] = ["a", "b"];
+  return (
+    <Readout
+      id="compare"
+      {...stripsReadout(
+        columns,
+        sides.map((k) => ({ short: LETTER[k], clock: own[k] })),
+        everyMin,
+        clock,
+        copy,
+        locale,
+      )}
+      words={{ earlier: copy.ledger.readoutEarlier, later: copy.ledger.readoutLater }}
+    >
+      <div className="mt-3 grid gap-4">
+        {sides.map((k) => (
+          <div key={k}>
+            <p className="font-medium">{props.label(k)}</p>
+            <p className="mb-2 text-body-sm tabular-nums text-ink/70">
+              {busiestText(own[k], everyMin, clock, copy, locale)}
+            </p>
+            <PulseStrip
+              columns={columns}
+              clock={own[k]}
+              most={props.most}
+              everyMin={everyMin}
+              zone={clock}
+              copy={copy}
+              locale={locale}
+            />
+          </div>
+        ))}
+      </div>
+    </Readout>
+  );
+}
 
 export function ComparePulse({
   data,
@@ -75,25 +125,7 @@ export function ComparePulse({
         {fill(l.comparePulseHelp, { min: everyMin, span })}
       </p>
       <p className={`mt-1 ${LABEL}`}>{clock.zone}</p>
-      <div className="mt-3 grid gap-4">
-        {sides.map((k) => (
-          <div key={k}>
-            <p className="font-medium">{label(k)}</p>
-            <p className="mb-2 text-body-sm tabular-nums text-ink/70">
-              {busiestText(own[k], everyMin, clock, copy, locale)}
-            </p>
-            <PulseStrip
-              columns={columns}
-              clock={own[k]}
-              most={most}
-              everyMin={everyMin}
-              zone={clock}
-              copy={copy}
-              locale={locale}
-            />
-          </div>
-        ))}
-      </div>
+      <Strips {...{ own, columns, most, everyMin, clock, copy, locale, label }} />
       <div className="mt-2 text-body-sm text-ink/70">
         <PulseLegend pulse={all.flatMap((c) => c.slots)} copy={copy} />
       </div>

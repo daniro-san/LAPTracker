@@ -5,6 +5,7 @@
 // with no bar, never in a share (D75). Each group's row carries its members, its count that list's length
 // (#678); not recorded and usual hours link to Members' own filters (`NOT_RECORDED`, `usualAt`).
 import { dateWords } from "../date-words";
+import { serverDay } from "../schedule";
 import { fill, plural } from "../words";
 import { dayIn, hhmm, offsetText } from "./calendar-time";
 import { type Formats } from "./insights-format";
@@ -14,12 +15,44 @@ import {
   busiestHours,
   cityOf,
   knownOf,
+  nextKvk,
+  nextReset,
   usualHours,
   zoneGroups,
   type Moments,
   type ZoneCounts,
   type ZoneGroup,
 } from "./insights-zones";
+
+/** The page's instant, the server's zone and the schedule's KvK start (EVENT_WEEKDAY, EVENT_TIME). */
+export interface ZoneClock {
+  now: Date;
+  serverZone: string;
+  kvkWeekday: number;
+  kvkTime: string;
+}
+
+/**
+ * The Time zones card's words at `c`: its moments (now, the next reset, the next KvK) and server day from one
+ * place, so the card and Members' `?set=zone:…` group members under the same keys.
+ */
+export function zonesWordsAt(
+  zones: ZoneCounts,
+  people: ZoneFormats["people"],
+  f: Formats,
+  c: ZoneClock,
+): ZonesWords {
+  const today = serverDay(c.now, { SERVER_TZ: c.serverZone });
+  return zonesWords(
+    zones,
+    {
+      now: c.now,
+      reset: nextReset(today, c.serverZone),
+      kvk: nextKvk(c.now, today, c.serverZone, c.kvkWeekday, c.kvkTime),
+    },
+    { ...f, serverZone: c.serverZone, today, people },
+  );
+}
 
 /** Cities named in a group's label; the rest are "and N more". */
 const CITIES = 2;
@@ -100,6 +133,10 @@ const clockInSentence = (c: ReturnType<typeof clockOf>, f: Formats) =>
   c.day
     ? fill(f.t["insights.zones.atDay"], { day: c.day, time: c.time })
     : fill(f.t["insights.zones.at"], { time: c.time });
+
+/** A group's key from its offsets now, at the reset and at KvK ("zone-m180-m180-m180"): stable across days. */
+const zoneKey = (g: ZoneGroup) =>
+  `zone-${[g.offsets.now, g.offsets.reset, g.offsets.kvk].map((o) => `${o < 0 ? "m" : "p"}${Math.abs(o)}`).join("-")}`;
 
 /** "Clocks change before KvK" or "… before the reset": the earlier moment whose offset is not now's. */
 function changeOf(g: ZoneGroup, m: Moments, f: Formats): string | null {
@@ -200,12 +237,15 @@ export function zonesWords(c: ZoneCounts, m: Moments, f: ZoneFormats): ZonesWord
         kvk: server.at(m.kvk),
         members: c.members,
       }),
-      rows: groups.map((g, i) => ({
+      rows: groups.map((g) => ({
         label: nameOf(g, f, "insights.zones.row"),
         value: String(g.uids.length),
         // Out of every member, not only those with a time zone (D158): 2 of 11 is not 2 of 3.
         share: g.uids.length / c.members,
-        set: setOf("zone", `zone-${i}`, g.uids, f.people, language),
+        set: setOf("zone", zoneKey(g), g.uids, f.people, {
+          ...f,
+          what: `${t["insights.zones.head"]} · ${nameOf(g, f, "insights.zones.row")}`,
+        }),
         times: fill(t["insights.zones.times"], {
           now: clockText(clockOf(g, m.now, f, false)),
           reset: clockText(clockOf(g, m.reset, f, false)),

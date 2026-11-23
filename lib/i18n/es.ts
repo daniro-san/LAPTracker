@@ -135,6 +135,16 @@ export const es = {
     carriedRatioHelp:
       "+6 pp: la parte de Kills queda 6 puntos por encima de la parte de Might. Con 3 eventos o más, la línea de debajo da la parte de Kills como múltiplo de la parte de Might, de la más baja a la más alta.",
     carriedPoints: "pp",
+    arrivedTurnout:
+      "Desde participación bélica: ordenados por Kills ganados en este evento, de más a menos.",
+    arrivedKillShare:
+      "Desde parte de Kills frente a parte de Might: ordenados por Kills ganados en este evento, de más a menos.",
+    arrivedClear: "Ver el orden habitual",
+    readoutEarlier: "Antes",
+    readoutLater: "Después",
+    readoutPulse: "{kills} Kills ganados · {n} alianzas leídas",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "lectura del evento",
   },
   compare: {
     title: "Evento contra evento",

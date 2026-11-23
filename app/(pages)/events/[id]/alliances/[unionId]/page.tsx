@@ -248,6 +248,7 @@ export default async function AlliancePage({ params, searchParams }: Props) {
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = comparable(detail.before, detail.after);
   const metrics = totalsMetrics(detail, canDelta, change, copy);
+  const page = `/events/${eventId}/alliances/${unionId}`;
   return (
     <>
       <SiteHeader events={events} currentId={eventId} homeId={homeId} clock={clock} copy={copy} />
@@ -295,14 +296,14 @@ export default async function AlliancePage({ params, searchParams }: Props) {
           metrics={metrics}
           ledger={ledger}
           canDelta={canDelta}
-          page={`/events/${eventId}/alliances/${unionId}`}
+          page={page}
           clock={clock}
           copy={copy}
         />
         <AllianceStatementCard statement={statement} clock={clock} locale={locale} copy={copy} />
         <Leadership members={leadership(viewsOf(detail))} />
         <Movers scopes={[memberScope(movers, null)]} />
-        <EventMembers detail={detail} canDelta={canDelta} search={searchParams} clock={clock} />
+        <EventMembers {...{ detail, canDelta, clock, page }} search={searchParams} />
         <AllianceStanding unionId={unionId} clock={clock} copy={copy} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />
       </main>

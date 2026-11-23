@@ -132,6 +132,14 @@ export const ja = {
     carriedRatioHelp:
       "+6 pt：Kills の割合が Might の割合を 6 pt 上回っています。3 イベント以上では、その下の行で、Kills の割合が Might の割合の何倍かを、最小から最大まで示します。",
     carriedPoints: "pt",
+    arrivedTurnout: "参戦状況から：このイベントで獲得した Kills の多い順。",
+    arrivedKillShare: "Kills の割合 対 Might の割合から：このイベントで獲得した Kills の多い順。",
+    arrivedClear: "元の順に戻す",
+    readoutEarlier: "前へ",
+    readoutLater: "次へ",
+    readoutPulse: "{kills} Kills 獲得 · {n} 同盟を読み取り",
+    readoutShare: "{share}（{kills} Kills）",
+    readoutEventRead: "イベントの読み取り",
   },
   compare: {
     title: "イベント比較",

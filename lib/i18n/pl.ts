@@ -134,6 +134,16 @@ export const pl = {
     carriedGapKey:
       "Słupek: udział w Kills minus udział w Might, w pkt proc. Na prawo od 0: udział w Kills jest wyższy.",
     carriedPoints: "pkt proc.",
+    arrivedTurnout:
+      "Z Frekwencji wojny: według Kills zdobytych w tym wydarzeniu, najpierw najwięcej.",
+    arrivedKillShare:
+      "Z Udziału w Kills vs udziału w Might: według Kills zdobytych w tym wydarzeniu, najpierw najwięcej.",
+    arrivedClear: "Pokaż zwykłą kolejność",
+    readoutEarlier: "Wcześniej",
+    readoutLater: "Później",
+    readoutPulse: "Zdobyte Kills: {kills} · sojusze odczytane: {n}",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "odczyt wydarzenia",
   },
   compare: {
     title: "Wydarzenie vs wydarzenie",

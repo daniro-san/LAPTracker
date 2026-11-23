@@ -27,9 +27,14 @@ function leftOutOf(e: NonNullable<InsightsView["effort"]>, { t, language }: Form
           { n: e.leftOut.fresh.length },
         ),
         e.leftOut.fresh,
+        "fresh",
       ],
-      [fill(t["insights.effort.away"], { n: e.leftOut.away.length }), e.leftOut.away],
-      [fill(t["insights.effort.noMight"], { n: e.leftOut.noMight.length }), e.leftOut.noMight],
+      [fill(t["insights.effort.away"], { n: e.leftOut.away.length }), e.leftOut.away, "away"],
+      [
+        fill(t["insights.effort.noMight"], { n: e.leftOut.noMight.length }),
+        e.leftOut.noMight,
+        "nomight",
+      ],
     ] as const
   ).filter(([, uids]) => uids.length > 0);
 }
@@ -97,15 +102,18 @@ export function effortWords(
     // newcomers are "Aggregate only" (owner, 2026-11-20) until the owner says otherwise (#678).
     leftOut: (e.bands.length > 0 ? left : [])
       .filter(([, uids]) => uids !== e.leftOut.fresh)
-      .map(([label, uids], i) => ({
+      .map(([label, uids, kind]) => ({
         label,
-        set: setOf("effort_left_out", `left-${i}`, uids, people, language) as MemberSet,
+        set: setOf("effort_left_out", `left-${kind}`, uids, people, {
+          ...f,
+          what: `${t["drill.leftOut"]} · ${label}`,
+        }) as MemberSet,
       })),
     ranges: e.bands.map((b, i) => ({
       label: rangeLabel(b),
       value: fill(t["insights.effort.members"], { n: b.uids.length }),
       share: null,
-      set: setOf("effort_range", `range-${i}`, b.uids, people, language),
+      set: setOf("effort_range", `range-${i}`, b.uids, people, { ...f, what: rangeLabel(b) }),
     })),
     groups,
     quiet: e.quiet.map((q) => ({ uid: q.uid, name: q.name })),

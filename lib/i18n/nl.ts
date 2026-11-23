@@ -135,6 +135,15 @@ export const nl = {
     carriedRatioHelp:
       "+6 %-pt: het aandeel Kills ligt 6 procentpunten boven het aandeel Might. Bij 3 events of meer geeft de regel eronder het aandeel Kills als veelvoud van het aandeel Might, van laag naar hoog.",
     carriedPoints: "%-pt",
+    arrivedTurnout: "Uit Oorlogsopkomst: gesorteerd op Kills gewonnen in dit event, meeste eerst.",
+    arrivedKillShare:
+      "Uit Aandeel Kills tegen aandeel Might: gesorteerd op Kills gewonnen in dit event, meeste eerst.",
+    arrivedClear: "Gewone volgorde tonen",
+    readoutEarlier: "Eerder",
+    readoutLater: "Later",
+    readoutPulse: "{kills} Kills gewonnen · {n} allianties gemeten",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "eventmeting",
   },
   compare: {
     title: "Event tegen event",

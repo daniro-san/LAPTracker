@@ -80,6 +80,7 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | daily update                        | щоденне оновлення           | `history.daily`, `flow.notCounted`, `balance.trendHelp`, `standing.help` — the once-a-day read of the member lists; one phrase in every key |
 | Ranks board                         | Таблиця рейтингу            | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the server's alliance ranking table, by might and by kills                    |
 | lookup (an alliance's details)      | запит                       | `alliances.get`, `alliances.getNote`, `alliances.usedUp`, `alliances.failed`, `alliances.tooMany` — one request for an alliance's details   |
+| Earlier / Later (a readout's steps) | Раніше / Пізніше            | `ledger.readoutEarlier`, `ledger.readoutLater` — the two steps under a pulse or a line chart                                                |
 | Matchup                             | двобій                      | `kvk.title`, `kvk.versus` — the two servers' KvK face-off                                                                                   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).

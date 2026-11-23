@@ -14,6 +14,7 @@ import {
   lastRosterDay,
   memberChange,
   memberUid,
+  rosterOf,
   seededAt,
   shown,
   type Side,
@@ -116,6 +117,34 @@ test("a player page shows the player's figures at the last event's End", async (
   await expect(page.getByRole("link", { name: `[${A.tag}] ${A.name}` }).first()).toBeVisible();
   await noErrorOrEmpty(page);
   expect(await sideways(page)).toBe(false);
+});
+
+test("a player's might chart names a reading under it at a step, and the address keeps it (D158)", async ({
+  page,
+}) => {
+  await page.goto(`/players/${memberUid("a", 0)}`);
+  await expect(page.getByRole("heading", { level: 1, name: A.names[0] as string })).toBeVisible();
+  const progress = page.locator("section").filter({ hasText: "Daily progress" });
+  // The first readout in the card is the might chart's; it starts on the newest reading, the last daily read.
+  const line = progress.locator("p[aria-live]").first();
+  const day = shown(lastRosterDay(), "en-GB", { day: "numeric", month: "short" });
+  await expect(line).toHaveText(`${day} · ${big(rosterOf("a", 0).might)}`);
+  const [earlier, later] = [
+    progress.getByRole("button", { name: "Earlier" }).first(),
+    progress.getByRole("button", { name: "Later" }).first(),
+  ];
+  await hydrated(earlier);
+  await expect(later).toBeDisabled();
+  expect((await earlier.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  const newest = (await line.textContent()) ?? "";
+  await earlier.click();
+  await expect(line).not.toHaveText(newest);
+  await expect(later).toBeEnabled();
+  const stepped = (await line.textContent()) ?? "";
+  await expect(page).toHaveURL(/#at-might-\d+$/);
+  // Back to the page (a reload here) shows the same reading.
+  await page.reload();
+  await expect(line).toHaveText(stepped);
 });
 
 test("an event's ledger marks the change that members who joined or left moved, and splits it", async ({

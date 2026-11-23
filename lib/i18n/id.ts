@@ -134,6 +134,16 @@ export const idID = {
     carriedRatioHelp:
       "+6 pts: bagian Kills 6 poin di atas bagian Might. Dengan 3 event atau lebih, baris di bawahnya memberi bagian Kills sebagai kelipatan bagian Might, dari terendah ke tertinggi.",
     carriedPoints: "pts",
+    arrivedTurnout:
+      "Dari Partisipasi perang: diurutkan menurut Kills didapat di event ini, terbanyak dulu.",
+    arrivedKillShare:
+      "Dari Bagian Kills vs bagian Might: diurutkan menurut Kills didapat di event ini, terbanyak dulu.",
+    arrivedClear: "Tampilkan urutan biasa",
+    readoutEarlier: "Lebih awal",
+    readoutLater: "Lebih lambat",
+    readoutPulse: "{kills} Kills didapat · {n} aliansi dibaca",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "pembacaan event",
   },
   compare: {
     title: "Event vs event",

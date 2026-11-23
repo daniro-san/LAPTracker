@@ -263,6 +263,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Member flow               | 멤버 흐름              | `flow.title` — members who moved between tracked alliances                                                                  |
 | New (no tracked alliance) | 신규                   | `flow.rowNew`, `flow.legend` — a member in no tracked alliance on the From day                                              |
 | Statement                 | 선언                   | `statement.title` — the alliance's own in-game text, never translated; the card around it                                   |
+| Earlier / Later           | 이전 / 다음            | `ledger.readoutEarlier`, `ledger.readoutLater` — the steps under a pulse or line chart's readout                            |
 | Ranks board               | 순위표                 | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the server's ranks board of a date                            |
 | Lookup                    | 조회                   | `alliances.get*`, `alliances.usedUp`, `alliances.failed`, `alliances.tooMany` — one on-demand read of an alliance's details |
 | Read every day            | 매일 읽음              | `alliances.tracked`, `alliances.notDaily`, `alliances.lead` — the alliances read by the daily update                        |

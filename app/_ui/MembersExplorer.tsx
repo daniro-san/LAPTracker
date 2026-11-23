@@ -6,7 +6,7 @@
 // it. The page's URL sets the first filter (`show=`, `sort=`), and the chips keep it in step, so the address
 // is the link to share. The first TOP members show; "Show all" opens the rest. All data is already in the
 // page; nothing is fetched.
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { ROLE_TONE, RoleMark } from "@/lib/brand/components/RoleMark";
 import { rankDelta } from "@/lib/compute";
@@ -219,6 +219,10 @@ export function MemberCount({
   );
 }
 
+/** The arrival line while the list keeps the sort a War turnout or Kill share row opened it with. */
+const whileArrived = (f: MemberFilter, arrival: ReactNode) =>
+  f.sort === "killsDelta" && f.desc ? arrival : null;
+
 export function MembersExplorer({
   members,
   canDelta,
@@ -226,7 +230,13 @@ export function MembersExplorer({
   capacity,
   initial,
   reads,
+  arrival = null,
 }: {
+  /**
+   * The line saying which chart opened the list sorted by ± Kills (D158 rule 7 (d)); shown only while the
+   * list keeps that sort, most first.
+   */
+  arrival?: ReactNode;
   members: MemberView[];
   canDelta: boolean;
   /** Both rosters exist; otherwise the list is the one roster there is, with no changes. */
@@ -260,6 +270,7 @@ export function MembersExplorer({
   const filtered = f.name.trim() !== "" || f.lo > 0 || f.hi < steps.length - 1 || f.show !== "";
   return (
     <div>
+      {whileArrived(f, arrival)}
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-end">
         <input
           className="drawn-field min-h-11 w-full px-3 text-base"

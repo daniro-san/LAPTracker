@@ -29,6 +29,9 @@ export function EffortCard(props: {
             kind="effort_left_out"
             setKey="left-out"
             count={effort.leftOut.reduce((n, k) => n + k.set.people.length, 0)}
+            title={t["drill.leftOut"]}
+            far={null}
+            t={t}
             summary={
               <span className="text-body-sm font-semibold text-plum">
                 {t["insights.effort.seeWho"]}
@@ -49,7 +52,7 @@ export function EffortCard(props: {
       {/* The groups' members once, before the measures: no name beside a group's median (issue 678). */}
       <Sub>{t["insights.effort.who"]}</Sub>
       <TapHint t={t} />
-      <Bars rows={effort.ranges} noData={noData} slug={slug} />
+      <Bars rows={effort.ranges} noData={noData} sets={{ slug, t }} />
       {effort.groups.map((g) => (
         <div key={g.label}>
           <Sub>{g.label}</Sub>

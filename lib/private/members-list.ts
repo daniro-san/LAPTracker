@@ -38,6 +38,14 @@ export interface MemberQuery {
   time: { mode: TimeMode; hour: number } | null;
   /** A code of LANGUAGES. */
   lang: string | null;
+  /** An Insights set (`?set=<kind>:<key>`, D158) and the members the server built it with. */
+  set: QuerySet | null;
+}
+
+/** A set as the list holds it: its address value and its current members, resolved on the server. */
+export interface QuerySet {
+  ref: string;
+  uids: readonly number[];
 }
 
 export const NO_QUERY: MemberQuery = {
@@ -47,6 +55,7 @@ export const NO_QUERY: MemberQuery = {
   who: null,
   time: null,
   lang: null,
+  set: null,
 };
 
 /** What the list filters and orders on; the page adds the words it shows. */
@@ -165,9 +174,13 @@ export const isDaytime = (minute: number) => minute >= DAY_FROM && minute < DAY_
 export const daytimeAt = (zone: string | null, hour: number, clock: Clock): boolean | null =>
   zone === null ? null : isDaytime(clock(zone, hour));
 
-/** A query with its search folded once, for one pass over the rows. */
-type Ready = MemberQuery & { needle: string };
-const ready = (query: MemberQuery): Ready => ({ ...query, needle: fold(query.q.trim()) });
+/** A query with its search folded once and its set's members looked up once, for one pass over the rows. */
+type Ready = MemberQuery & { needle: string; allowed: ReadonlySet<number> | null };
+const ready = (query: MemberQuery): Ready => ({
+  ...query,
+  needle: fold(query.q.trim()),
+  allowed: query.set ? new Set(query.set.uids) : null,
+});
 
 const asks = (m: ListMember, ask: AskKind) =>
   ask === "any" ? m.ask.length > 0 : m.ask.includes(ask);
@@ -184,6 +197,7 @@ function keepsFacts(m: ListMember, q: Ready, clock: Clock): boolean {
 
 function keeps(m: ListMember, q: Ready, clock: Clock): boolean {
   return (
+    (q.allowed === null || q.allowed.has(m.uid)) &&
     (q.needle === "" || namesOf(m).some((n) => n.includes(q.needle))) &&
     (!q.r4 || (m.rankCode ?? 0) >= 104) &&
     (q.ask === null || asks(m, q.ask)) &&
@@ -287,8 +301,15 @@ const hourOf = (raw: string | null) =>
 const askOf = (raw: string | null): AskKind | null =>
   raw === "1" ? "any" : (ASK_KINDS.find((k) => k !== "any" && k === raw) ?? null);
 
-/** The address as a query (a system boundary): unknown or out-of-range values are left out. */
-export function pickQuery(params: URLSearchParams, languages: readonly string[]): MemberQuery {
+/**
+ * The address as a query (a system boundary): unknown or out-of-range values are left out. `set` is the set
+ * the server built for the address's `?set=`; it is kept only while the address still names it.
+ */
+export function pickQuery(
+  params: URLSearchParams,
+  languages: readonly string[],
+  set: QuerySet | null = null,
+): MemberQuery {
   const who = params.get("who");
   const lang = params.get("lang");
   const [day, night] = [hourOf(params.get("day")), hourOf(params.get("night"))];
@@ -303,8 +324,13 @@ export function pickQuery(params: URLSearchParams, languages: readonly string[])
       ? { time: { mode: "day" as const, hour: day } }
       : night !== null && { time: { mode: "night" as const, hour: night } }),
     ...(lang !== null && languages.includes(lang) && { lang }),
+    set: setOfAddress(params, set),
   };
 }
+
+/** The set the server built, while the address's `?set=` still names it. */
+const setOfAddress = (params: URLSearchParams, set: QuerySet | null) =>
+  set !== null && params.get("set") === set.ref ? set : null;
 
 export const pickOrder = (raw: string | null | undefined): Order | null =>
   ORDERS.find((o) => o === raw) ?? null;
@@ -312,6 +338,7 @@ export const pickOrder = (raw: string | null | undefined): Order | null =>
 /** The query and order as the address writes them; the default order is left out. */
 export function queryString(query: MemberQuery, order: Order): string {
   const p = new URLSearchParams();
+  if (query.set) p.set("set", query.set.ref);
   if (query.q.trim()) p.set("q", query.q);
   if (query.r4) p.set("r4", "1");
   if (query.ask) p.set("ask", query.ask === "any" ? "1" : query.ask);

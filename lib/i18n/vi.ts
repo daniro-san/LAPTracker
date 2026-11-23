@@ -131,6 +131,15 @@ export const vi = {
     carriedRatioHelp:
       "+6 điểm %: phần tiêu diệt cao hơn phần Lực Chiến 6 điểm. Từ 3 sự kiện trở lên, dòng bên dưới cho thấy phần tiêu diệt gấp bao nhiêu lần phần Lực Chiến, thấp nhất đến cao nhất.",
     carriedPoints: "điểm %",
+    arrivedTurnout: "Từ Tham chiến: xếp theo tiêu diệt tăng trong sự kiện này, nhiều nhất trước.",
+    arrivedKillShare:
+      "Từ Phần tiêu diệt so với Lực Chiến: xếp theo tiêu diệt tăng trong sự kiện này, nhiều nhất trước.",
+    arrivedClear: "Xem thứ tự thường",
+    readoutEarlier: "Sớm hơn",
+    readoutLater: "Muộn hơn",
+    readoutPulse: "{kills} tiêu diệt tăng · {n} liên minh được đọc",
+    readoutShare: "{share} ({kills} tiêu diệt)",
+    readoutEventRead: "lần đọc sự kiện",
   },
   compare: {
     title: "Sự kiện so với sự kiện",
