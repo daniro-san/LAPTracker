@@ -70,13 +70,15 @@ export type DrilldownSurface =
  * The Insights sets an officer can open (#678; `MemberSet.kind` in lib/private/insights-sets.ts), the
  * `kind` of `ws_drilldown_opened` on Insights: never which range, week or zone, nor a name.
  */
-export type InsightsSet = "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone";
+export type InsightsSet =
+  "effort_range" | "effort_left_out" | "flow_week" | "tenure" | "zone" | "pulse_reached";
 
 /**
- * The Insights charts that open a week's days in their place (D158 rule 7 (b)): the membership flow and the
- * week's pulse. On Insights only: never which week.
+ * The Insights charts that open their next level in their place (D158 rule 7 (b)): a week of the membership
+ * flow or of the week's pulse to its days, a day of them (the flow's came-from and went-to bars, the pulse's
+ * who lists), a KvK recovery day to its numbers. On Insights only: never which week or day.
  */
-export type InsightsLevel = "flow_days" | "pulse_days";
+export type InsightsLevel = "flow_days" | "pulse_days" | "flow_day" | "pulse_day" | "kvk_day";
 
 /**
  * Raid prep's counts of people behind "Show the n ›" (#691): "To remind", "Mark ✓ the n seen" and "Check by

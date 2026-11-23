@@ -13,8 +13,20 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { thanksSwitches } from "@/lib/private/features";
 import { insightsView } from "@/lib/private/insights";
-import { flowDaysWords, levelsOf, pulseDaysWords } from "@/lib/private/insights-days-words";
-import { kvkWords, shieldWords, squadsWords } from "@/lib/private/insights-more-words";
+import {
+  flowDaysWords,
+  flowDayWords,
+  levelsOf,
+  pulseDaysWords,
+  pulseDayWords,
+  type InsightsLevels,
+} from "@/lib/private/insights-days-words";
+import {
+  kvkLevelWords,
+  kvkWords,
+  shieldWords,
+  squadsWords,
+} from "@/lib/private/insights-more-words";
 import { insightsWords } from "@/lib/private/insights-words";
 
 import { SignedInFrame } from "../../../_ui/Frame";
@@ -44,15 +56,19 @@ function Margin({ t }: { t: WorkspaceDictionary }) {
   );
 }
 
-/** The page's read, after the access check (D71): the view, with the pulse week `pulseWeek` day by day. */
-const openInsights = (params: Promise<{ slug: string }>, pulseWeek: string | null) =>
+/** The page's read, after the access check (D71): the view, with the levels the address asks for. */
+const openInsights = (params: Promise<{ slug: string }>, levels: InsightsLevels) =>
   openRollCall(
     params,
     "insights",
     async (db, access, _today, _language, zone) => {
       const now = new Date();
       const [view, channels] = await Promise.all([
-        insightsView(db, access, now, zone, pulseWeek),
+        insightsView(db, access, now, zone, {
+          pulseWeek: levels.pulse,
+          pulseDay: levels.pulseDay,
+          flowDay: levels.flowDay,
+        }),
         channelNames(db, access, getEnv()),
       ]);
       return { view, channel: channels.members, now };
@@ -65,12 +81,13 @@ export default async function InsightsPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  /** A chart's next level (D158 rule 7 (b)): the week whose days the pulse or the flow shows. */
-  searchParams: Promise<{ pulse?: string | string[]; flow?: string | string[] }>;
+  /** A chart's next level (D158 rule 7): a week or a day of the pulse or the flow, a KvK and its day. */
+  searchParams: Promise<Partial<Record<keyof InsightsLevels, string | string[]>>>;
 }) {
   const levels = levelsOf(await searchParams);
-  const page = await openInsights(params, levels.pulse);
+  const page = await openInsights(params, levels);
   const { access, slug, t, language, today, data } = page;
+  const f = { t, language };
   const words = insightsWords(data.view, t, language);
   const noData = t["nodata.mark"];
   const nav = { base: `/w/${slug}/insights`, levels };
@@ -93,8 +110,9 @@ export default async function InsightsPage({
       {words.pulse && (
         <PulseCard
           pulse={words.pulse}
-          level={pulseDaysWords(data.view, { t, language })}
-          {...{ nav, t, noData }}
+          level={pulseDaysWords(data.view, f)}
+          day={pulseDayWords(data.view, f)}
+          {...{ nav, t, noData, slug }}
         />
       )}
       <InsightsSetMemory />
@@ -102,14 +120,16 @@ export default async function InsightsPage({
       {words.flow && (
         <FlowCard
           flow={words.flow}
-          level={flowDaysWords(data.view, levels.flow, { t, language })}
+          level={flowDaysWords(data.view, levels.flow, f)}
+          day={flowDayWords(data.view, f)}
           {...{ nav, t, noData, slug }}
         />
       )}
       <KvkCard
-        kvk={kvkWords(data.view.kvk, data.view.newest, { t, language }, getEnv().DAILY_ROSTER_AT)}
+        kvk={kvkWords(data.view.kvk, data.view.newest, f, getEnv().DAILY_ROSTER_AT)}
+        level={kvkLevelWords(data.view.kvk, data.view.newest, levels, f)}
         followUp={data.view.kvkFollowUp}
-        {...{ slug, t, noData }}
+        {...{ slug, t, noData, nav }}
       />
       {data.view.squads && (
         <SquadsCard squads={squadsWords(data.view.squads, { t, language })} t={t} noData={noData} />

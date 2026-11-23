@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { levelsOf } from "@/lib/private/insights-days-words";
 import type { MemberSet } from "@/lib/private/insights-sets";
 
 import { FlowCard } from "./InsightsSections";
@@ -88,9 +89,9 @@ describe("where an Insights count opens its names", () => {
         tenure: [],
         newcomers: [],
       };
-      const nav = { base: "/w/ogs/insights", levels: { pulse: null, flow: null } };
+      const nav = { base: "/w/ogs/insights", levels: levelsOf({}) };
       return renderToStaticMarkup(
-        createElement(FlowCard, { flow, level: null, nav, t, noData: "—", slug: "ogs" }),
+        createElement(FlowCard, { flow, level: null, day: null, nav, t, noData: "—", slug: "ogs" }),
       );
     };
     // 61 joined, nobody left: the count is the joiners, and Members lists exactly them.
