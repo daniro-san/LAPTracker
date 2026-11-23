@@ -3,8 +3,9 @@
 // Features (D134): what the alliance turns on, of what the site's owner allows, with the tracker calls it
 // spends. Then the Raid Shield check's own settings while it is on (D137). Then Notifications, this officer's
 // own device, only when the site has push keys (D148). Then Discord (D129): add the bot,
-// Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the
-// alliance's own line on our posts while `post_callouts` is on (D156). Then the
+// Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the catalog
+// posts the owner allows (D159), then the alliance's own line on our posts while `post_callouts` is on
+// (D156). Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page. Issue 585: the page head says how the page saves, and an "On this page"
@@ -30,6 +31,7 @@ import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import { calloutsView } from "@/lib/private/post-callouts";
+import { postsView } from "@/lib/private/post-settings";
 import { pushView } from "@/lib/private/push-settings";
 import { serverClock } from "@/lib/private/read-status";
 import { RENEW_MS } from "@/lib/private/session";
@@ -45,6 +47,7 @@ import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { PostCallouts } from "../../../_ui/PostCallouts";
+import { PostCatalog } from "../../../_ui/PostCatalog";
 import { PushSettings } from "../../../_ui/PushSettings";
 import { RaidPrepSettings } from "../../../_ui/RaidPrepSettings";
 import { refuse } from "../../../_ui/refuse";
@@ -108,12 +111,14 @@ async function readSettings(
   const { env, now } = ctx;
   // The Raid Shield card's settings, read once: the lines' card takes the summary's language from them.
   const shieldRead = shieldSettingsView(db, access, ctx.language);
-  const [view, waiting, bot, channels, squads, features, shield, push, callouts] =
+  // The webhooks, read once: the Posts card names the channels from them.
+  const channelsRead = webhookViews(db, access, env);
+  const [view, waiting, bot, channels, squads, features, shield, push, callouts, posts] =
     await Promise.all([
       trackerKeyView(db, access, env, now),
       toReviewCount(db, access, now),
       botView(db, access, env),
-      webhookViews(db, access, env),
+      channelsRead,
       squadsReader(db, access, env, now).then((key) =>
         key ? squadsToday(db, access, env, now) : null,
       ),
@@ -121,8 +126,9 @@ async function readSettings(
       shieldRead,
       pushView(db, access, env),
       shieldRead.then((s) => calloutsView(db, access, ctx.t, s?.language ?? null)),
+      channelsRead.then((c) => postsView(db, access, c, env, ctx.language)),
     ]);
-  return { view, waiting, bot, channels, squads, features, shield, push, callouts };
+  return { view, waiting, bot, channels, squads, features, shield, push, callouts, posts };
 }
 
 /** The first card: the tracker key and today's squads read. */
@@ -155,7 +161,7 @@ function indexInput(
   page: Awaited<ReturnType<typeof readSettings>>,
   data: SettingsIndexInput["data"],
 ): SettingsIndexInput {
-  const { view, bot, channels, features, shield, push, callouts } = page;
+  const { view, bot, channels, features, shield, push, callouts, posts } = page;
   const allowed = features.groups.flatMap((g) => g.features);
   return {
     key: view.state,
@@ -165,6 +171,7 @@ function indexInput(
     shield: shield && { discord: shield.discord, channel: summaryChannel(channels) },
     push: Boolean(push),
     discord: { channels: channels.map((c) => c.state), botOff: siteBotOff(bot) },
+    posts: posts && { on: posts.filter((p) => p.on).length, n: posts.length },
     callouts: callouts && {
       set: callouts.filter((c) => c.callout !== "").length,
       n: callouts.length,
@@ -235,7 +242,7 @@ function SettingsCards(props: {
 }) {
   const { slug, t } = props;
   const { env, now, language } = props.ctx;
-  const { view, bot, channels, squads, features, shield, push, callouts } = props.page;
+  const { view, bot, channels, squads, features, shield, push, callouts, posts } = props.page;
   return (
     <>
       <TrackerKeyCard
@@ -265,6 +272,7 @@ function SettingsCards(props: {
         saving={Boolean(env.WORKSPACE_KEYS_SECRET)}
         t={t}
       />
+      {posts && <PostCatalog slug={slug} rows={posts} t={t} language={language} />}
       {callouts && <PostCallouts slug={slug} rows={callouts} t={t} language={language} />}
       <WorkspaceDataForm
         slug={slug}

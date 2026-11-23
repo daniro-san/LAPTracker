@@ -113,7 +113,8 @@ export type ReportContext =
       kind: "w.import.discord_failed" | "w.import.settle_failed";
     }
   | { route: "lib/private/discord-webhooks.ts"; kind: "w.webhook.open_failed" }
-  | { route: "lib/private/invite-steps.ts"; kind: "w.invite.commands_failed" };
+  | { route: "lib/private/invite-steps.ts"; kind: "w.invite.commands_failed" }
+  | { route: "lib/private/catalog-posts.ts"; kind: "w.posts.send_failed" };
 
 /** `AppContext.report`: how lib/private reports an error it caught and carried on from. */
 export type Report = (error: unknown, context: ReportContext) => void;

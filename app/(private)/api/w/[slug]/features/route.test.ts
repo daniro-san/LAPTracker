@@ -87,6 +87,12 @@ describe("POST /api/w/[slug]/features (D134)", () => {
     expect((await featuresBySlug(db, "nse"))?.on.has("squads")).toBe(true);
     expect((await post({ feature: "thefts", on: false })).status).toBe(200);
     expect((await featuresBySlug(db, "nse"))?.on.has("thefts")).toBe(false);
+
+    // D159: a catalog post is allowed but switched in Alliance settings → Posts, never on this card.
+    expect(await listed()).not.toContain("post_week");
+    const postSwitch = await post({ feature: "post_week", on: false });
+    expect([postSwitch.status, await postSwitch.json()]).toEqual([400, { code: "bad_request" }]);
+    expect((await featuresBySlug(db, "nse"))?.on.has("post_week")).toBe(true);
   });
 
   it("estimates the tracker calls from the newest roster's members", async () => {

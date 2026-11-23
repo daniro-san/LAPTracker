@@ -123,6 +123,7 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
       "thanks-taken-down",
       "start-here",
       "post-callouts",
+      "posts",
       "screenshot-drafts",
       "alliance-duel-points",
       "screenshot-checks",

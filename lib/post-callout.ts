@@ -31,16 +31,21 @@ const ZWSP = "\u200B";
 const HOST_DOT = /(?<=[\p{L}\p{N}-])[.\u3002\uFF0E\uFF61](?=[\p{L}\p{N}])/gu;
 
 /**
- * The line as Discord gets it: literal, linking nothing, pinging no one. A web address's `://` and every dot
- * inside a host name get a zero-width space, the same invisible break D102 uses after `@`: a host name holds
- * only letters, digits and hyphens (RFC 1123), so no link finder reads `evil\u200B.example` as one host.
+ * Officers' text that must link nothing: a web address's `://` and every dot inside a host name get a
+ * zero-width space, the same invisible break D102 uses after `@`: a host name holds only letters, digits and
+ * hyphens (RFC 1123), so no link finder reads `evil\u200B.example` as one host. Channel and command mentions
+ * (`<#`, `</`) are broken the same way. No escaping: a catalog post's title and entry names (D159) are
+ * escaped afterwards by the notices' formatter.
  */
-export const discordCallout = (text: string) =>
-  escapeDiscord(cleanCallout(text))
-    .replace(/^(-#|#)/, "\\$1")
+export const breakLinks = (text: string) =>
+  text
     .replace(/:\/\//g, `:${ZWSP}//`)
     .replace(HOST_DOT, (dot) => `${ZWSP}${dot}`)
     .replace(/<([#/])/g, `<${ZWSP}$1`);
+
+/** The line as Discord gets it: literal, linking nothing, pinging no one. */
+export const discordCallout = (text: string) =>
+  breakLinks(escapeDiscord(cleanCallout(text)).replace(/^(-#|#)/, "\\$1"));
 
 /**
  * A one-message post's text with the line above it. Left out when the two would pass Discord's 2,000

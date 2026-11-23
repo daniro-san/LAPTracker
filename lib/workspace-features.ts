@@ -19,8 +19,15 @@ export const FEATURE_GROUPS = {
     "board",
   ],
   ai: ["notice_translate", "notice_improve", "notice_fit", "thanks_draft", "ocr"],
-  // D156: the alliance's own line on our posts (#713).
-  discord: ["discord_send", "discord_translate_me", "discord_translate_everyone", "post_callouts"],
+  // D156: the alliance's own line on our posts (#713). D159: each catalog post's owner layer (`post_*`);
+  // the alliance's layer is the post's own switch in Alliance settings → Posts, not the Features card.
+  discord: [
+    "discord_send",
+    "discord_translate_me",
+    "discord_translate_everyone",
+    "post_callouts",
+    "post_week",
+  ],
   data: ["squads", "shield_check", "notice_pictures", "export"],
 } as const;
 export type FeatureGroup = keyof typeof FEATURE_GROUPS;
