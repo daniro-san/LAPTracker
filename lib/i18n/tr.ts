@@ -135,6 +135,16 @@ export const tr = {
     carriedRatioHelp:
       "+6 yp: Kills payı, Might payının 6 yüzde puan üstünde. 3 etkinlik ve üzerinde, altındaki satır Kills payının Might payının kaç katı olduğunu en düşükten en yükseğe gösterir.",
     carriedPoints: "yp",
+    arrivedTurnout:
+      "Savaşa katılımdan açıldı: bu etkinlikte kazanılan Kills’e göre, en çoktan en aza sıralı.",
+    arrivedKillShare:
+      "Kills payı ile Might payından açıldı: bu etkinlikte kazanılan Kills’e göre, en çoktan en aza sıralı.",
+    arrivedClear: "Olağan sırayı göster",
+    readoutEarlier: "Önceki",
+    readoutLater: "Sonraki",
+    readoutPulse: "{kills} Kills kazanıldı · {n} ittifak okundu",
+    readoutShare: "{share} ({kills} Kills)",
+    readoutEventRead: "etkinlik okuması",
   },
   compare: {
     title: "Etkinlik karşılaştırma",
