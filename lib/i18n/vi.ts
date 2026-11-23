@@ -60,7 +60,7 @@ export const vi = {
     progressMight: "Bạn: {change} từ {date}.",
     progressMedian: "Thành viên điển hình của {tag}: {percent}.",
     rankIn: "ở {tag}",
-    progressEvents: "Sự kiện (Bắt đầu đến Kết thúc): {dates}",
+    progressEvents: "Sự kiện (Bắt đầu đến Kết thúc), các lần đọc là chấm rỗng: {dates}",
     progressWar: "Lực Chiến thường giảm trong các sự kiện chiến tranh. Chuyện đó là bình thường.",
     progressEmpty: "Chưa đủ lần đọc để vẽ biểu đồ.",
     chart: "{label}: {first} vào {from}, {last} vào {to}",
@@ -123,6 +123,8 @@ export const vi = {
     carriedHelp:
       "Phần tiêu diệt của mỗi liên minh, đặt cạnh phần Lực Chiến của liên minh đó. Tiêu diệt do thành viên có trong cả hai danh sách tăng từ Bắt đầu đến Kết thúc, Lực Chiến lúc Bắt đầu. Vai phòng thủ và hỗ trợ không tăng tiêu diệt.",
     carriedTotal: "Cả {n} liên minh: {kills} tiêu diệt tăng, {might} Lực Chiến lúc Bắt đầu",
+    carriedGapKey:
+      "Thanh: phần tiêu diệt trừ phần Lực Chiến, tính bằng điểm %. Bên phải 0: phần tiêu diệt cao hơn.",
     carriedShares: "Lực Chiến {might} · Tiêu diệt {kills}",
     carriedTurnout: "{share} có tiêu diệt tăng",
     carriedSpread: "{low}–{high} qua {n} sự kiện",
@@ -243,6 +245,7 @@ export const vi = {
       "Lực Chiến của liên minh này đã đổi {growth} kể từ {from}. Tổng các liên minh theo dõi đã đổi {server}.",
     server: "Liên minh theo dõi",
     growthSince: "{growth} kể từ {from}",
+    was: "trước là hạng {rank} ngày {from}",
     thisAlliance: "Liên minh này",
     detailsHelp: "Hạng mỗi ngày, cũ nhất trước: {days}.",
     few: "Chưa đủ lần đọc hằng ngày để so sánh các liên minh.",

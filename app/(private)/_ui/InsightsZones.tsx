@@ -32,7 +32,7 @@ function RowBody({ r }: { r: ZoneRow }) {
           <Caret />
         </span>
       </span>
-      <Bar axis="x" share={r.share} className="mt-1 h-2 w-full bg-ink/10" />
+      <Bar axis="row" share={r.share} className="mt-1 h-2 w-full bg-ink/10" />
       <span className="mt-0.5 block text-body-sm text-ink/80 tabular-nums">{r.times}</span>
       {r.change && <span className="block text-body-sm text-ink/80">{r.change}</span>}
     </>
@@ -53,7 +53,7 @@ function NotRecorded(props: {
         <span className="min-w-0 font-semibold">{t["insights.zones.notRecorded"]}</span>
         <span className="tabular-nums">{props.count}</span>
       </p>
-      <Bar axis="x" share={props.share} tone="bg-ink/45" className="mt-1 h-2 w-full bg-ink/10" />
+      <Bar axis="row" share={props.share} tone="bg-ink/45" className="mt-1 h-2 w-full bg-ink/10" />
       <p className="mt-0.5 text-body-sm text-ink/80">{t["insights.zones.notCounted"]}</p>
       <p className="text-body-sm">{props.add}</p>
     </li>

@@ -61,7 +61,7 @@ function RowBody(props: {
         </span>
       </span>
       <Bar
-        axis="x"
+        axis="row"
         share={r.share}
         tone={tone === "plum" ? "bg-plum/60" : "bg-ink/45"}
         className="mt-1 h-2 w-full bg-ink/10"
@@ -122,7 +122,7 @@ function Days({ metric, noData }: { metric: PulseMetricWords; noData: string }) 
           </span>
           <span aria-hidden="true" className="flex h-8 items-end justify-center">
             <Bar
-              axis="y"
+              axis="column"
               share={d.share}
               tone="rounded-t-sm bg-plum/60"
               className="h-full w-full max-w-6"

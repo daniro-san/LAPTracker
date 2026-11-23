@@ -34,17 +34,17 @@ function Track({
   const share = (n: number | null) => (n === null || scale <= 0 ? null : n / scale);
   const track = "mt-1 h-2 bg-rule";
   if (within === undefined)
-    return <Bar axis="x" share={share(value)} tone={tone} reference={marker} className={track} />;
+    return <Bar axis="row" share={share(value)} tone={tone} reference={marker} className={track} />;
   return (
     <span className={`relative block ${track}`}>
       <Bar
-        axis="x"
+        axis="row"
         share={share(value)}
         tone="bg-seal"
         reference={marker}
         className="absolute inset-0"
       />
-      <Bar axis="x" share={share(within)} tone="bg-ink/60" className="absolute inset-0" />
+      <Bar axis="row" share={share(within)} tone="bg-ink/60" className="absolute inset-0" />
     </span>
   );
 }

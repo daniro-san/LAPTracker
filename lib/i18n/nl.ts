@@ -60,7 +60,7 @@ export const nl = {
     progressMight: "Jij: {change} sinds {date}.",
     progressMedian: "Typisch lid van {tag}: {percent}.",
     rankIn: "in {tag}",
-    progressEvents: "Event (Begin tot Einde): {dates}",
+    progressEvents: "Event (Begin tot Einde), de metingen als open stippen: {dates}",
     progressWar: "Might daalt vaak bij oorlogsevents. Dat is normaal.",
     progressEmpty: "Nog niet genoeg metingen voor een grafiek.",
     chart: "{label}: {first} op {from}, {last} op {to}",
@@ -127,6 +127,8 @@ export const nl = {
     carriedHelp:
       "Het aandeel van elke alliantie in de Kills, naast haar aandeel in de Might. Kills die haar leden in beide lijsten wonnen van Begin tot Einde, Might bij Begin. Verdedigers en support-spelers krijgen geen Kills.",
     carriedTotal: "Alle {n} allianties: {kills} Kills gewonnen, {might} Might bij Begin",
+    carriedGapKey:
+      "Balk: aandeel Kills min aandeel Might, in procentpunten. Rechts van 0: het aandeel Kills is hoger.",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} met Kills",
     carriedSpread: "{low}–{high} over {n} events",
@@ -248,6 +250,7 @@ export const nl = {
       "Haar might veranderde {growth} sinds {from}. Het totaal van de gevolgde allianties veranderde {server}.",
     server: "Gevolgde allianties",
     growthSince: "{growth} sinds {from}",
+    was: "was {rank} op {from}",
     thisAlliance: "Deze alliantie",
     detailsHelp: "Rang per dag, oudste eerst: {days}.",
     few: "Nog niet genoeg dagelijkse metingen om de allianties te vergelijken.",

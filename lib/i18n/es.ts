@@ -60,7 +60,7 @@ export const es = {
     progressMight: "Tú: {change} desde {date}.",
     progressMedian: "Miembro típico de {tag}: {percent}.",
     rankIn: "en {tag}",
-    progressEvents: "Evento (de Inicio a Fin): {dates}",
+    progressEvents: "Evento (de Inicio a Fin), con sus lecturas como puntos huecos: {dates}",
     progressWar: "Might suele bajar en los eventos de guerra. Es lo esperado.",
     progressEmpty: "Todavía no hay suficientes lecturas para un gráfico.",
     chart: "{label}: {first} el {from}, {last} el {to}",
@@ -127,6 +127,8 @@ export const es = {
     carriedHelp:
       "Parte de los Kills de cada alianza, junto a su parte del Might. Kills que ganaron de Inicio a Fin sus miembros presentes en las dos listas; Might al Inicio. Los defensores y los jugadores de apoyo no ganan Kills.",
     carriedTotal: "Todas las {n} alianzas: {kills} Kills ganados, {might} de Might al Inicio",
+    carriedGapKey:
+      "Barra: parte de Kills menos parte de Might, en puntos porcentuales. A la derecha de 0: la parte de Kills es mayor.",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} en {n} eventos",
@@ -248,6 +250,7 @@ export const es = {
       "Su Might cambió {growth} desde {from}. El total de las alianzas seguidas cambió {server}.",
     server: "Alianzas seguidas",
     growthSince: "{growth} desde {from}",
+    was: "era {rank} el {from}",
     thisAlliance: "Esta alianza",
     detailsHelp: "Puesto de cada día, del más antiguo al más reciente: {days}.",
     few: "Todavía no hay suficientes actualizaciones diarias para comparar las alianzas.",

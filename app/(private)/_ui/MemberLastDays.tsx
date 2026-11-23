@@ -57,7 +57,7 @@ function Row({ row, noData }: { row: DaysRow; noData: string }) {
             <span className="sr-only">{b.said}</span>
             <span aria-hidden="true" className="flex h-8 items-end justify-center">
               <Bar
-                axis="y"
+                axis="column"
                 share={b.share}
                 tone="rounded-t-sm bg-plum/60"
                 className="h-full w-full max-w-6"

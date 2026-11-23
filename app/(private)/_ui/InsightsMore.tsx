@@ -55,7 +55,7 @@ function RecoveryDays({ days, noData }: { days: BarRow[]; noData: string }) {
           </span>
           <span aria-hidden="true" className="flex h-8 items-end justify-center">
             <Bar
-              axis="y"
+              axis="column"
               share={d.share}
               reference={d.reference ?? null}
               tone="rounded-t-sm bg-plum/60"

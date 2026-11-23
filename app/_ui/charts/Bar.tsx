@@ -12,18 +12,19 @@ export const MIN_PX = 2;
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 const percent = (x: number) => `${Math.round(clamp(x) * 1000) / 10}%`;
 
-type Axis = "x" | "y";
+type Axis = "column" | "row";
 
 /** The drawn box: where it starts and how long it is, by the zero rule. */
 function box(share: number, axis: Axis, reverse: boolean): { from: string; style: CSSProperties } {
-  const from = axis === "y" ? "inset-x-0 bottom-0" : `inset-y-0 ${reverse ? "right-0" : "left-0"}`;
+  const from =
+    axis === "column" ? "inset-x-0 bottom-0" : `inset-y-0 ${reverse ? "right-0" : "left-0"}`;
   const length = share <= 0 ? "1px" : `max(${MIN_PX}px, ${percent(share)})`;
-  return { from, style: { [axis === "y" ? "height" : "width"]: length } };
+  return { from, style: { [axis === "column" ? "height" : "width"]: length } };
 }
 
 /** The reference tick across the track, from the same end as the bar. */
 function tick(reference: number, axis: Axis, reverse: boolean) {
-  return axis === "y"
+  return axis === "column"
     ? { className: "inset-x-0 h-0.5", style: { bottom: percent(reference) } }
     : {
         className: "-inset-y-1 w-0.5",
@@ -42,9 +43,9 @@ export function Bar({
 }: {
   /** The length as a share of the track; null when there is no figure. */
   share: number | null;
-  /** "y": a column growing up from the track's bottom; "x": a row growing from its start. */
+  /** "column": growing up from the track's bottom; "row": growing from its start. */
   axis: Axis;
-  /** "x" only: grow from the track's end, as the left half of a bar centred on 0. */
+  /** A row only: grow from the track's end, as the left half of a bar centred on 0. */
   reverse?: boolean;
   /** The bar's own classes: its colour and corners. */
   tone?: string;

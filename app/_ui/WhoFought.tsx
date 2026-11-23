@@ -126,7 +126,7 @@ function BarList({
               )}
               {/* A share of a few gainers is not a measure: a full bar would read as a strong result. */}
               <Bar
-                axis="x"
+                axis="row"
                 share={muted ? null : ratio}
                 tone={t.unionId === mine ? "bg-yarn" : "bg-ink/60"}
                 className="mt-1 h-2 bg-rule"

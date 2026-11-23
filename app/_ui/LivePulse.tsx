@@ -35,7 +35,7 @@ function Bars({ progress, clock, copy }: { progress: Progress; clock: Clock; cop
           >
             {s.kills !== null && s.state === "moved" ? (
               <Bar
-                axis="y"
+                axis="column"
                 share={s.kills / most}
                 tone={`rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/60"}`}
                 className="h-full w-full"

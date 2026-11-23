@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { Bar } from "./Bar";
 
 const render = (props: Partial<ComponentProps<typeof Bar>>) =>
-  renderToStaticMarkup(createElement(Bar, { share: 0.5, axis: "y", ...props }));
+  renderToStaticMarkup(createElement(Bar, { share: 0.5, axis: "column", ...props }));
 
 /** The drawn bar's style: the first aria-hidden box. */
 const length = (html: string) =>
@@ -19,7 +19,7 @@ describe("Bar: one zero rule for every column and row (D158)", () => {
 
   it("draws a zero as a 1 px hairline, never as a stub that reads like a small gain", () => {
     expect(length(render({ share: 0 }))).toBe("height:1px");
-    expect(length(render({ share: 0, axis: "x" }))).toBe("width:1px");
+    expect(length(render({ share: 0, axis: "row" }))).toBe("width:1px");
   });
 
   it("draws a loss (a negative share) as the same hairline as a zero", () => {
@@ -39,7 +39,7 @@ describe("Bar: one zero rule for every column and row (D158)", () => {
     expect(render({ share: 0.9, reference: 1 / 1.2 })).toMatch(
       /class="absolute bg-ink[^"]*" style="bottom:83.3%"/,
     );
-    expect(render({ share: 0.5, axis: "x", reverse: true, reference: 0.25 })).toMatch(
+    expect(render({ share: 0.5, axis: "row", reverse: true, reference: 0.25 })).toMatch(
       /style="right:25%"/,
     );
     expect(render({ share: 0.5 })).not.toContain("bg-ink");

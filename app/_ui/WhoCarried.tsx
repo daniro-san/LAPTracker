@@ -50,14 +50,14 @@ function GapBar({ gap, axis, mine }: { gap: number; axis: number; mine: boolean 
     <span aria-hidden="true" className="relative mx-1.5 mt-2 grid h-3 grid-cols-2">
       <span className="absolute inset-x-0 top-1/2 h-px bg-rule" />
       <Bar
-        axis="x"
+        axis="row"
         reverse
         share={gap < 0 ? -gap / axis : null}
         tone={tone}
         className="col-start-1 h-full"
       />
       <Bar
-        axis="x"
+        axis="row"
         share={gap >= 0 ? gap / axis : null}
         tone={tone}
         className="col-start-2 h-full"

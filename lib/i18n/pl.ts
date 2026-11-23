@@ -60,7 +60,7 @@ export const pl = {
     progressMight: "Ty: {change} od {date}.",
     progressMedian: "Typowy członek {tag}: {percent}.",
     rankIn: "w {tag}",
-    progressEvents: "Wydarzenie (od Początku do Końca): {dates}",
+    progressEvents: "Wydarzenie (od Początku do Końca), jego odczyty jako puste kropki: {dates}",
     progressWar: "Might często spada w wydarzeniach wojennych. Tak to bywa.",
     progressEmpty: "Na wykres jeszcze za mało odczytów.",
     chart: "{label}: {first} ({from}), {last} ({to})",
@@ -131,6 +131,8 @@ export const pl = {
     carriedSpread: "{low}–{high} · wydarzeń: {n}",
     carriedRatioHelp:
       "+6 pkt proc.: udział w Kills jest o 6 pkt proc. wyższy niż udział w Might. Przy 3 wydarzeniach lub więcej linia pod spodem podaje udział w Kills jako wielokrotność udziału w Might, od najniższej do najwyższej.",
+    carriedGapKey:
+      "Słupek: udział w Kills minus udział w Might, w pkt proc. Na prawo od 0: udział w Kills jest wyższy.",
     carriedPoints: "pkt proc.",
   },
   compare: {
@@ -247,6 +249,7 @@ export const pl = {
       "Jego Might zmieniło się o {growth} od {from}. Suma śledzonych sojuszy zmieniła się o {server}.",
     server: "Śledzone sojusze",
     growthSince: "{growth} od {from}",
+    was: "wcześniej {rank} w dniu {from}",
     thisAlliance: "Ten sojusz",
     detailsHelp: "Miejsce każdego dnia, od najstarszego: {days}.",
     few: "Za mało dziennych aktualizacji, żeby porównać sojusze.",

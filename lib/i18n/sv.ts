@@ -60,7 +60,7 @@ export const sv = {
     progressMight: "Du: {change} sedan {date}.",
     progressMedian: "Typisk medlem i {tag}: {percent}.",
     rankIn: "i {tag}",
-    progressEvents: "Event (Början till Slut): {dates}",
+    progressEvents: "Event (Början till Slut), deras avläsningar som ihåliga prickar: {dates}",
     progressWar: "Might brukar sjunka i krigsevent. Det är normalt.",
     progressEmpty: "Inte tillräckligt med avläsningar för ett diagram än.",
     chart: "{label}: {first} den {from}, {last} den {to}",
@@ -125,6 +125,8 @@ export const sv = {
     carriedHelp:
       "Varje allians andel av Kills, bredvid dess andel av Might. Kills som medlemmarna i båda listorna fick från Början till Slut, Might vid Början. Försvarare och supportspelare får inga Kills.",
     carriedTotal: "Alla {n} allianser: {kills} Kills vunna, {might} Might vid Början",
+    carriedGapKey:
+      "Stapel: Kills-andel minus Might-andel, i %-enh. Till höger om 0: Kills-andelen är högre.",
     carriedShares: "Might {might} · Kills {kills}",
     carriedTurnout: "{share} med Kills",
     carriedSpread: "{low}–{high} över {n} event",
@@ -191,6 +193,7 @@ export const sv = {
       "Dess Might har ändrats {growth} sedan {from}. De bevakade allianserna tillsammans har ändrats {server}.",
     server: "Bevakade allianser",
     growthSince: "{growth} sedan {from}",
+    was: "var {rank} den {from}",
     thisAlliance: "Den här alliansen",
     detailsHelp: "Placering varje dag, äldst först: {days}.",
     few: "Inte tillräckligt med dagliga uppdateringar för att jämföra allianserna än.",

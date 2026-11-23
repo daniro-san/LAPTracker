@@ -90,7 +90,7 @@ export function PulseStrip({
             >
               {s.state === "moved" ? (
                 <Bar
-                  axis="y"
+                  axis="column"
                   share={(s.share ?? 0) / most}
                   tone={`rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/60"}`}
                   className="h-full w-full"
