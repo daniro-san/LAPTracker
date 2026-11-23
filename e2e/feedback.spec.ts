@@ -76,6 +76,24 @@ test("an officer's feedback from the desk says “Received, thank you.” and th
   ).toBeVisible();
   const add = sheet.getByRole("button", { name: "Add a picture" });
   expect((await add.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  // Reaching the last field (as Tab does) scrolls it clear of the sticky bar, not under it (issue 713).
+  await add.focus();
+  await expect
+    .poll(async () => {
+      const a = await add.boundingBox();
+      const b = await sheet.locator("[data-sheet-bar]").boundingBox();
+      return Boolean(a && b && a.y + a.height <= b.y);
+    })
+    .toBe(true);
+  const addBox = await add.boundingBox();
+  const point = await page.evaluate(
+    ({ x, y }) => document.elementFromPoint(x, y)?.closest("button")?.textContent,
+    {
+      x: (addBox?.x ?? 0) + (addBox?.width ?? 0) / 2,
+      y: (addBox?.y ?? 0) + (addBox?.height ?? 0) / 2,
+    },
+  );
+  expect(point).toBe("Add a picture");
   const chooser = page.waitForEvent("filechooser");
   await add.click();
   await (await chooser).setFiles({ name: "screen.png", mimeType: "image/png", buffer: tinyPng() });
