@@ -4,6 +4,7 @@ import {
   asc,
   desc,
   eq,
+  exists,
   gt,
   gte,
   inArray,
@@ -17,15 +18,21 @@ import {
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
+import { allianceLookups } from "../schema-alliances";
 
 export type DailyReadStatus = "complete" | "partial" | "failed";
 export type NewDailyRoster = Omit<typeof dailyRosters.$inferInsert, "id" | "readDay">;
 
-/** True for exactly one caller per server day. */
-export async function claimDailyRead(db: Db, day: string, startedAt: Date): Promise<boolean> {
+/** True for exactly one caller per server day. Each claim stores its attempt's `targetIds` (issue 625). */
+export async function claimDailyRead(
+  db: Db,
+  day: string,
+  startedAt: Date,
+  targetIds: number[],
+): Promise<boolean> {
   const rows = await db
     .insert(dailyReads)
-    .values({ day, startedAt, status: "running" })
+    .values({ day, startedAt, status: "running", targetIds })
     .onConflictDoNothing()
     .returning({ day: dailyReads.day });
   return rows.length > 0;
@@ -39,10 +46,11 @@ export async function reclaimDailyRead(
   day: string,
   startedAt: Date,
   staleBefore: Date,
+  targetIds: number[],
 ): Promise<boolean> {
   const rows = await db
     .update(dailyReads)
-    .set({ startedAt, finishedAt: null, status: "running", error: null })
+    .set({ startedAt, finishedAt: null, status: "running", error: null, targetIds })
     .where(
       and(
         eq(dailyReads.day, day),
@@ -67,10 +75,18 @@ export async function claimAutoRetry(
   day: string,
   startedAt: Date,
   startedBefore: Date,
+  targetIds: number[],
 ): Promise<boolean> {
   const rows = await db
     .update(dailyReads)
-    .set({ startedAt, finishedAt: null, status: "running", error: null, autoRetryAt: startedAt })
+    .set({
+      startedAt,
+      finishedAt: null,
+      status: "running",
+      error: null,
+      autoRetryAt: startedAt,
+      targetIds,
+    })
     .where(
       and(
         eq(dailyReads.day, day),
@@ -119,8 +135,18 @@ export async function storeDailyRoster(db: Db, day: string, row: NewDailyRoster)
     });
 }
 
-/** Every row the day has now, for the read's outcome: after a retry that includes the rosters it kept. */
+/** Every row the day has now, for the read's outcome: after a retry that includes the rosters it kept.
+ * `lookedUp`: the day has a "Get today's details" claim for the alliance (D133). */
 export function dailyRosterStates(db: Db, day: string) {
+  const lookup = db
+    .select({ one: sql`1` })
+    .from(allianceLookups)
+    .where(
+      and(
+        eq(allianceLookups.unionId, dailyRosters.unionId),
+        eq(allianceLookups.day, dailyRosters.readDay),
+      ),
+    );
   return db
     .select({
       unionId: dailyRosters.unionId,
@@ -128,6 +154,7 @@ export function dailyRosterStates(db: Db, day: string) {
       isFresh: dailyRosters.isFresh,
       error: dailyRosters.error,
       sourceUpdatedAt: dailyRosters.sourceUpdatedAt,
+      lookedUp: sql<boolean>`${exists(lookup)}`,
     })
     .from(dailyRosters)
     .where(eq(dailyRosters.readDay, day));

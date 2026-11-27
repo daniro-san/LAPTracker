@@ -9,11 +9,12 @@ import { autoRetryDailyRead, runDailyRead } from "./daily-read";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { BLOCKED_ROSTER_KEYS, findBlockedKeys, memberHistoryCard } from "./queries";
+import { listDailyReads } from "./queries/daily-runs";
 import { allianceStatement } from "./queries/statement";
 import { dayRosterUids } from "./repo/squads";
 import { endOfDayReads } from "./repo/workspace-rosters";
 import { dailyReads, dailyRosters, playerFrames, runLogs, workspaces } from "./schema";
-import { alliances } from "./schema-alliances";
+import { allianceLookups, alliances } from "./schema-alliances";
 import { workspaceKeys } from "./schema-keys";
 import { toSnapshotInput } from "./sources/shared";
 import { QuotaExhaustedError, UpstreamError } from "./sources/types";
@@ -328,6 +329,51 @@ describe("autoRetryDailyRead (D72)", () => {
 
     expect(await autoRetryDailyRead(d, db, day, ours([kept, bad]))).toBeNull();
     expect(v1.calls).toHaveLength(calls);
+  });
+
+  describe("a looked-up alliance that became a target (issue 625)", () => {
+    const [other = 0, joined = 0] = IDS;
+    /** `joined` was looked up 3 hours before the read at T0, which the quota rule stops before any roster. */
+    async function stoppedRead() {
+      const at = ago(T0, minutes(180));
+      await db.insert(allianceLookups).values({
+        unionId: joined,
+        day,
+        claimedAt: at,
+        finishedAt: at,
+        status: "done",
+        callsUsed: 2,
+      });
+      await db.insert(dailyRosters).values({
+        readDay: day,
+        unionId: joined,
+        isFresh: true,
+        sourceUpdatedAt: at,
+        memberUids: [],
+        memberNames: [],
+        memberPower: [],
+        memberKills: [],
+      });
+      const v1 = fakeV1((id) => roster(id, ago(T0, minutes(1))), 0);
+      const summary = await runDailyRead(deps(v1), db, day, ours([other, joined]));
+      expect(summary?.error).toMatch(/^quota/);
+    }
+
+    it("is named on /admin/runs when the read stopped before reaching it", async () => {
+      await stoppedRead();
+      const run = (await listDailyReads(db)).find((r) => r.day === day);
+      expect(run?.problems.map((p) => [p.unionId, p.failed])).toEqual([[joined, false]]);
+    });
+
+    it("is read again by the tick's automatic retry, its lookup roster not counted as read", async () => {
+      await stoppedRead();
+      const later = new Date(T0.getTime() + minutes(15));
+      const v1 = fakeV1((id) => roster(id, ago(later, minutes(1))));
+
+      await autoRetryDailyRead({ v1, now: () => later }, db, day, ours([other, joined]));
+
+      expect(v1.calls.toSorted()).toEqual([other, joined]);
+    });
   });
 
   it("reads nothing less than 10 minutes after the read started", async () => {

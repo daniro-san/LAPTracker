@@ -10,6 +10,7 @@ import {
   exists,
   inArray,
   isNotNull,
+  isNull,
   lt,
   notExists,
   or,
@@ -41,8 +42,9 @@ const readFields = {
  * includes a roster a retry kept from an earlier read, once it is more than 20 minutes older than the
  * start of the day's latest read (D67), as the read's own outcome counts it. A "Get today's details" roster
  * stored under the day (D133) is not the read's: an alliance the day has a lookup claim for counts only when
- * it is in the day's tracked set (the read's targets on LAP_API_KEY, stored before it reads, so a roster the
- * read never reached still counts), or when the read wrote a line for it (a workspace's alliance it read). */
+ * it is one of the targets the latest attempt stored when it claimed the day (issue 625), so a roster the read
+ * never reached still counts. A day read before issue 625 has none: there it counts when it is in the day's
+ * tracked set, or when the read wrote a line for it (a workspace's alliance it read). */
 function problemsOf(db: Db, days: string[]) {
   const lookedUp = db
     .select({ one: sql`1` })
@@ -82,7 +84,11 @@ function problemsOf(db: Db, days: string[]) {
     .where(
       and(
         inArray(dailyRosters.readDay, days),
-        or(notExists(lookedUp), exists(tracked), exists(readByRun)),
+        or(
+          notExists(lookedUp),
+          sql`${dailyRosters.unionId} = any(${dailyReads.targetIds})`,
+          and(isNull(dailyReads.targetIds), or(exists(tracked), exists(readByRun))),
+        ),
         or(
           eq(dailyRosters.isFresh, false),
           isNotNull(dailyRosters.error),
