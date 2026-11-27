@@ -87,15 +87,15 @@ describe("the member card's last 7 days (issue 461)", () => {
     expect(coins?.average).toBe("Average 500 · 5 days, of which 2 none");
     expect(quests?.bars.map((b) => b.value)).toEqual(["240", "160", "—", "—", "—", "none", "200"]);
     expect(quests?.bars[2]?.said).toBe("Sun, Nov 15: no data");
-    // Against the daily cap, 240 (#739): a full day fills the bar.
+    // Against the daily cap, 250 (#739): each bar is the day's points over it.
     expect(quests?.bars.map((b) => b.share)).toEqual([
-      1,
-      160 / 240,
+      240 / 250,
+      160 / 250,
       null,
       null,
       null,
       null,
-      200 / 240,
+      200 / 250,
     ]);
     expect(coins?.bars.map((b) => b.share)).toEqual([1, 0.5, null, null, null, 1, null]);
     expect(donations?.average).toBe("Average 4.40K · 5 days, of which 2 none");
@@ -119,27 +119,27 @@ describe("the member card's last 7 days (issue 461)", () => {
       return daysCard({ ...d, best: allianceBest(week, d.days) }, t, f);
     };
     const [quests, coins, donations] = card(1).rows;
-    expect(quests?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.5));
+    expect(quests?.bars.map((b) => b.share)).toEqual(Array(7).fill(120 / 250));
     expect(donations?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.25));
     expect(coins?.bars.map((b) => b.share)).toEqual(Array(7).fill(1));
-    expect(card(2).rows[0]?.bars.map((b) => b.share)).toEqual(Array(7).fill(0.75));
+    expect(card(2).rows[0]?.bars.map((b) => b.share)).toEqual(Array(7).fill(180 / 250));
     expect(card(1).scale).toBe(
-      "Bars: coins out of 1,000 and quest points out of 240, the daily limit the reads show; donations against 8.00K, the alliance's best day by one member in these 7 days.",
+      "Bars: coins out of 1,000 and quest points out of 250, the daily limit the reads show; donations against 8.00K, the alliance's best day by one member in these 7 days.",
     );
   });
 
   it("draws a day above the daily cap as a full bar and still writes its own number (#739)", () => {
-    // Thursday 19's total rose by 250 (a read before the reset can carry a few points past 240).
+    // Thursday 19's total rose by 260, above the daily cap of 250: the bar is clamped (D158 rule 1).
     const week = [
       read("2026-11-18", [member(1, { active: 480 })]),
-      read("2026-11-19", [member(1, { active: 730 })]),
+      read("2026-11-19", [member(1, { active: 740 })]),
     ];
     const [quests] = daysCard(
       lastDays(week, 1) as NonNullable<ReturnType<typeof lastDays>>,
       t,
       f,
     ).rows;
-    expect(quests?.bars.at(-1)).toMatchObject({ value: "250", share: 1 });
+    expect(quests?.bars.at(-1)).toMatchObject({ value: "260", share: 1 });
   });
 
   it("says a week of only none days as none on all of them, never Average 0", () => {

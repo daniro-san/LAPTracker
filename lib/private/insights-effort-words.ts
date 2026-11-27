@@ -78,7 +78,7 @@ export function effortWords(
       : []),
   ];
   const groups = EFFORT_METRICS.map((k) => {
-    // Coins and quest points against their daily caps (D158; the quest points cap is provisional, #739).
+    // Coins and quest points against their daily caps (D158; the quest points cap is 250, #739).
     const cap = { coins: COINS_MAX, quests: QUEST_DAY_CAP, tech: null }[k];
     const top = cap ?? Math.max(0, ...e.bands.map((b) => b.medians[k]?.value ?? 0));
 

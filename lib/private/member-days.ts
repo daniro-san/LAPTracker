@@ -1,7 +1,7 @@
 // The member card's "Last 7 days" (issue 461, D127, D136): daily quest points, Alliance Help coins (out of
 // 1,000) and donations on each of the 7 server days up to the newest end-of-day read, the average, and might
 // since the first of those days. A day's quest points come from the week's running total (`questPoints`, D127
-// amended 2026-11-22, #739) and are drawn against the daily cap (`QUEST_DAY_CAP`, provisional). Donations have
+// amended 2026-11-22, #739) and are drawn against the daily cap (`QUEST_DAY_CAP`, 250). Donations have
 // no known daily cap, so their bars are drawn against the alliance's best member-day in the same 7 days
 // (D158): a steady low giver and a steady high giver no longer look alike. A day with no read of the member
 // (and, for quest points, a day whose day before has no read) is null ("—"); a read that lists them with
@@ -200,7 +200,7 @@ function rowOf(metric: DayMetric, d: LastDays, t: WorkspaceDictionary, f: DaysFo
 
 /**
  * Each day as the readout under the rows says it (D158 rule 7 (a)): its date, then each row's value against
- * what it is drawn against where that is a cap ("180 of 240"), and what "none" means when a row has it.
+ * what it is drawn against where that is a cap ("180 of 250"), and what "none" means when a row has it.
  */
 function dayReadout(d: LastDays, t: WorkspaceDictionary, f: DaysFormats) {
   const cap: Record<DayMetric, number | null> = {
