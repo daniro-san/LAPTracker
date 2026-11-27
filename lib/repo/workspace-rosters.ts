@@ -1,9 +1,10 @@
 // The roster reads behind the workspace's Members tab (D71, D72): an alliance's end-of-day rosters with the
 // member fields the workspace shows, the day each member was first seen, and its newest scheduled event's
-// kills. Each function takes the alliance; lib/private passes its WorkspaceAccess's own union id, so a
-// player who moved is seen by the old alliance only in the rosters from before the move. avatar_url and
+// kills, and the KvK recap's Start and End kills (D159). Each function takes the alliance; lib/private passes
+// its WorkspaceAccess's own union id, so a player who moved is seen by the old alliance only in the rosters
+// from before the move. avatar_url and
 // frame_url are never selected. The newest roster of any kind is in workspace-any-roster.ts.
-import { and, desc, eq, gte, inArray, isNotNull, isNull, gt, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, gt, lt, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
@@ -199,6 +200,66 @@ export async function scheduledEventKills(
   const byUid = (id: number) =>
     new Map(kills.filter((k) => k.id === id).map((k) => [k.uid, k.kills]));
   return { at: event.at, before: byUid(before.id), after: byUid(after.id) };
+}
+
+/** A member in a KvK recap's Start or End roster: the public name (D22) and lifetime kills (D15). */
+export interface RecapMember {
+  uid: number;
+  name: string;
+  kills: number | null;
+}
+
+/**
+ * The KvK recap's reads (D159, post 5): the alliance's Start and End members (uid, name, kills) in the public
+ * scheduled event between `from` and `to`. Undefined while that event's End has no finished row (none yet,
+ * or running); null when there is no such event, or the alliance's Start or End row is missing, stale or
+ * failed. Two statements, bounded by the event's time (D149); no other member field is selected.
+ */
+export async function recapKills(
+  db: Db,
+  unionId: number,
+  from: Date,
+  to: Date,
+): Promise<{ before: RecapMember[]; after: RecapMember[] } | null | undefined> {
+  const [event] = await db
+    .select({ id: events.id, end: snapshots.status })
+    .from(events)
+    .leftJoin(snapshots, and(eq(snapshots.eventId, events.id), eq(snapshots.phase, "after")))
+    .where(
+      and(
+        gte(events.eventAtUtc, from),
+        lt(events.eventAtUtc, to),
+        eq(events.manual, false),
+        eq(events.isTest, false),
+        ne(events.visibility, "admin"),
+      ),
+    )
+    .limit(1);
+  if (!event) return null;
+  if (event.end === null || event.end === "running") return undefined;
+  const rows = await db
+    .select({
+      phase: snapshots.phase,
+      uid: memberSnapshots.uid,
+      name: memberSnapshots.name,
+      kills: memberSnapshots.kills,
+    })
+    .from(memberSnapshots)
+    .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .where(
+      and(
+        eq(snapshots.eventId, event.id),
+        inArray(snapshots.phase, ["before", "after"]),
+        eq(allianceSnapshots.unionId, unionId),
+        eq(allianceSnapshots.isFresh, true),
+        isNull(allianceSnapshots.error),
+      ),
+    );
+  const side = (phase: string) =>
+    rows.filter((r) => r.phase === phase).map(({ uid, name, kills }) => ({ uid, name, kills }));
+  const [before, after] = [side("before"), side("after")];
+  return before.length > 0 && after.length > 0 ? { before, after } : null;
 }
 
 /** A scheduled event's Start and End might of one alliance's members; a null might stays null (D15). */

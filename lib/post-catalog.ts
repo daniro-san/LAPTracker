@@ -19,13 +19,15 @@ export interface CatalogEntry {
   /**
    * When it is due: on this server weekday (0 = Monday … 6 = Sunday), or every day (null), in the first tick
    * that opens the database that day, which on a Monday follows Sunday's end-of-day read (D72, D141).
+   * `event`: the scheduled event's weekday (EVENT_WEEKDAY), the KvK's day.
    */
-  weekday: number | null;
+  weekday: number | null | "event";
   /**
    * The earliest server time ("HH:MM") it goes out that day: the first tick that opens the database from then.
-   * `read`: the day's end-of-day read (DAILY_ROSTER_AT, D72), whose own ticks open the database.
+   * `read`: the day's end-of-day read (DAILY_ROSTER_AT, D72), whose own ticks open the database. `after`: the
+   * scheduled event's End read (SNAPSHOT_AFTER), whose own ticks open the database.
    */
-  from: string | "read";
+  from: string | "read" | "after";
   /** Who reads it; the channel it goes to by default. */
   audience: PostChannel;
   /** The channels officers may pick. */
@@ -78,15 +80,44 @@ export const POST_CATALOG: Record<CatalogPost, CatalogEntry> = {
     channels: ["leaders"],
     editable: { weekday: false, picture: false },
   },
+  // 5. KvK recap: on the KvK's day, once its End read has finished, a thank-you to the members with the
+  // alliance's War turnout from Start to End (kills gained, members with kills gained) and the KVK_TOP biggest
+  // kills gains by public name (D22). No list of the rest, no might lost, no other roster value.
+  kvk: {
+    feature: "post_kvk",
+    weekday: "event",
+    from: "after",
+    audience: "members",
+    channels: ["members"],
+    editable: { weekday: false, picture: false },
+  },
 };
+
+/** The KvK recap names the members with this many biggest kills gains, and no one else. */
+export const KVK_TOP = 3;
 
 /** The welcome names at most this many people; more than that in a day is likely a read glitch, so a count. */
 export const WELCOME_NAMES_MAX = 15;
 
-/** The server time a post is due from: its own, or the day's end-of-day read for `read`. */
-export const fromOf = (post: CatalogPost, cfg: Pick<ScheduleConfig, "DAILY_ROSTER_AT">) => {
+/** What the catalog's clock reads from the schedule. */
+export type PostClock = Pick<
+  ScheduleConfig,
+  "SERVER_TZ" | "DAILY_ROSTER_AT" | "EVENT_WEEKDAY" | "SNAPSHOT_AFTER"
+>;
+
+/** The server time a post is due from: its own, the day's end-of-day read for `read`, the End for `after`. */
+export const fromOf = (
+  post: CatalogPost,
+  cfg: Pick<ScheduleConfig, "DAILY_ROSTER_AT" | "SNAPSHOT_AFTER">,
+) => {
   const { from } = POST_CATALOG[post];
-  return from === "read" ? cfg.DAILY_ROSTER_AT : from;
+  return from === "read" ? cfg.DAILY_ROSTER_AT : from === "after" ? cfg.SNAPSHOT_AFTER : from;
+};
+
+/** A post's weekday, 0 = Monday … 6 = Sunday (null: every day); `event` is EVENT_WEEKDAY (0 = Sunday). */
+export const weekdayOf = (post: CatalogPost, cfg: Pick<ScheduleConfig, "EVENT_WEEKDAY">) => {
+  const { weekday } = POST_CATALOG[post];
+  return weekday === "event" ? (cfg.EVENT_WEEKDAY + 6) % 7 : weekday;
 };
 
 /** The catalog's owner switches: shown in /admin, never in Alliance settings → Features (D159). */
@@ -102,12 +133,8 @@ const weekdayAt = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
  * The period a post is due in at `now`: its server day ("2026-11-23") when `now` falls on it at or after the
  * post's `from`, else null.
  */
-export function postPeriod(
-  post: CatalogPost,
-  now: Date,
-  cfg: Pick<ScheduleConfig, "SERVER_TZ" | "DAILY_ROSTER_AT">,
-): string | null {
-  const { weekday } = POST_CATALOG[post];
+export function postPeriod(post: CatalogPost, now: Date, cfg: PostClock): string | null {
+  const weekday = weekdayOf(post, cfg);
   const due =
     (weekday === null || weekdayAt(now, cfg) === weekday) &&
     hhmm(serverMinuteOfDay(now, cfg)) >= fromOf(post, cfg);
@@ -115,7 +142,5 @@ export function postPeriod(
 }
 
 /** Whether any catalog post can be due at `now`, by the clock alone: no query before this holds. */
-export const postsMayBeDue = (
-  now: Date,
-  cfg: Pick<ScheduleConfig, "SERVER_TZ" | "DAILY_ROSTER_AT">,
-) => (Object.keys(POST_CATALOG) as CatalogPost[]).some((p) => postPeriod(p, now, cfg) !== null);
+export const postsMayBeDue = (now: Date, cfg: PostClock) =>
+  (Object.keys(POST_CATALOG) as CatalogPost[]).some((p) => postPeriod(p, now, cfg) !== null);

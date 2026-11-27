@@ -1,11 +1,11 @@
 // Alliance settings → Posts (#713 part C, D159): the catalog of posts LAPTracker makes on its own, and each
-// post's own words (its title, what it holds, its day; the text of posts 2 to 4), in English, Brazilian Portuguese and
+// post's own words (its title, what it holds, its day; the text of posts 2 to 5), in English, Brazilian Portuguese and
 // French: one module the settings dictionaries spread. The post itself takes its title and the calendar's words in the language
 // officers pick for it. French puts a no-break space before : and inside « ».
 export const postsEn = {
   "posts.head": "Posts",
   "posts.lead":
-    "Posts LAPTracker can make for you on its own, on a set day. Each one is off until you turn it on. They ping no one, and only the welcome names anyone: the members who just joined.",
+    "Posts LAPTracker can make for you on its own, on a set day. Each one is off until you turn it on. They ping no one, and only two name anyone: the welcome, the members who just joined; the KvK recap, the 3 biggest kills gains.",
   "posts.week.name": "This week in the alliance",
   "posts.week.what":
     "The week’s calendar entries marked “Members can see this”, with their times in server time (ST). No player names, notes or links. Nothing is posted in a week with none.",
@@ -39,6 +39,18 @@ export const postsEn = {
   "posts.summary.members": "Members on {day}: {n}",
   "posts.summary.reads": "From {n} of 7 daily updates this week.",
   "posts.summary.day": "Every {day}, for the week that just ended.",
+  "posts.kvk.name": "KvK recap",
+  "posts.kvk.what":
+    "After each KvK, once its End is read: thanks to everyone, the kills the alliance gained from Start to End, how many members gained kills, and the 3 biggest kills gains by name. No one else is named. Nothing is posted when the Start or the End could not be read.",
+  "posts.kvk.defaultTitle": "KvK recap",
+  "posts.kvk.thanks": "Thank you, everyone, for this KvK!",
+  "posts.kvk.kills": "Kills gained together: {kills}",
+  "posts.kvk.members": "Members with kills gained: {n} of {of}",
+  "posts.kvk.topHeading": "Biggest kills gains:",
+  "posts.kvk.top": "{place}. {name} +{kills}",
+  "posts.kvk.support":
+    "Defenders and support players gain no kills, and they count just as much. Well done, all of you!",
+  "posts.kvk.day": "On KvK day ({day}), after the End is read.",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
   "posts.channel.members": "Members’ channel",
@@ -53,6 +65,7 @@ export const postsEn = {
   "posts.preview": "Next post",
   "posts.when": "Every {day}, between {from} and {to} ST, in #{channel}.",
   "posts.whenDaily": "Every day, between {from} and {to} ST, in #{channel}.",
+  "posts.whenKvk": "After each KvK ({day}), between {from} and {to} ST, in #{channel}.",
   "posts.off": "Off: nothing is posted.",
   "posts.noChannel":
     "Nothing is posted until the {channel} is set up: paste its webhook under Discord, above.",
@@ -71,12 +84,15 @@ export const postsEn = {
   "callouts.post.summary": "Weekly members summary",
   "callouts.where.summary": "Goes above the weekly members summary, on Monday.",
   "activity.callout.summary": "{who} changed the line on the “Weekly members summary”",
+  "callouts.post.kvk": "KvK recap",
+  "callouts.where.kvk": "Goes above the KvK recap, after the End is read.",
+  "activity.callout.kvk": "{who} changed the line on the “KvK recap”",
 };
 
 export const postsPt: typeof postsEn = {
   "posts.head": "Posts",
   "posts.lead":
-    "Posts que o LAPTracker pode fazer por vocês sozinho, num dia fixo. Cada um fica desligado até vocês ligarem. Eles não marcam ninguém, e só as boas-vindas citam nomes: os membros que acabaram de entrar.",
+    "Posts que o LAPTracker pode fazer por vocês sozinho, num dia fixo. Cada um fica desligado até vocês ligarem. Eles não marcam ninguém, e só dois citam nomes: as boas-vindas, os membros que acabaram de entrar; o resumo da KvK, os 3 maiores ganhos de kills.",
   "posts.week.name": "Esta semana na aliança",
   "posts.week.what":
     "Os eventos da semana no calendário marcados “Os membros podem ver isto”, com os horários do servidor (ST). Sem nomes de jogadores, notas ou links. Nada sai numa semana sem nenhum.",
@@ -110,6 +126,18 @@ export const postsPt: typeof postsEn = {
   "posts.summary.members": "Membros em {day}: {n}",
   "posts.summary.reads": "Com base em {n} de 7 atualizações diárias da semana.",
   "posts.summary.day": "Toda {day}, sobre a semana que acabou.",
+  "posts.kvk.name": "Resumo da KvK",
+  "posts.kvk.what":
+    "Depois de cada KvK, quando a leitura de Fim termina: um obrigado a todos, os kills que a aliança ganhou do Início ao Fim, quantos membros ganharam kills e os 3 maiores ganhos de kills, com o nome. Mais ninguém é citado. Nada sai quando a leitura de Início ou de Fim não deu certo.",
+  "posts.kvk.defaultTitle": "Resumo da KvK",
+  "posts.kvk.thanks": "Obrigado a todos por esta KvK!",
+  "posts.kvk.kills": "Kills ganhos juntos: {kills}",
+  "posts.kvk.members": "Membros com kills ganhos: {n} de {of}",
+  "posts.kvk.topHeading": "Maiores ganhos de kills:",
+  "posts.kvk.top": "{place}. {name} +{kills}",
+  "posts.kvk.support":
+    "Defensores e jogadores de suporte não ganham kills, e contam do mesmo jeito. Mandaram bem, todos vocês!",
+  "posts.kvk.day": "No dia da KvK ({day}), depois da leitura de Fim.",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
   "posts.channel.members": "Canal dos membros",
@@ -124,6 +152,7 @@ export const postsPt: typeof postsEn = {
   "posts.preview": "Próximo post",
   "posts.when": "Toda {day}, entre {from} e {to} ST, em #{channel}.",
   "posts.whenDaily": "Todo dia, entre {from} e {to} ST, em #{channel}.",
+  "posts.whenKvk": "Depois de cada KvK ({day}), entre {from} e {to} ST, em #{channel}.",
   "posts.off": "Desligado: nada é postado.",
   "posts.noChannel":
     "Nada é postado até o {channel} ser configurado: cole o webhook dele em Discord, acima.",
@@ -142,12 +171,15 @@ export const postsPt: typeof postsEn = {
   "callouts.post.summary": "Resumo semanal dos membros",
   "callouts.where.summary": "Vai acima do resumo semanal dos membros, na segunda.",
   "activity.callout.summary": "{who} mudou a frase do “Resumo semanal dos membros”",
+  "callouts.post.kvk": "Resumo da KvK",
+  "callouts.where.kvk": "Vai acima do resumo da KvK, depois da leitura de Fim.",
+  "activity.callout.kvk": "{who} mudou a frase do “Resumo da KvK”",
 };
 
 export const postsFr: typeof postsEn = {
   "posts.head": "Messages",
   "posts.lead":
-    "Des messages que LAPTracker peut publier pour vous tout seul, un jour fixe. Chacun reste éteint jusqu’à ce que vous l’allumiez. Ils ne mentionnent personne, et seul l’accueil nomme quelqu’un : les membres qui viennent d’arriver.",
+    "Des messages que LAPTracker peut publier pour vous tout seul, un jour fixe. Chacun reste éteint jusqu’à ce que vous l’allumiez. Ils ne mentionnent personne, et seuls deux nomment quelqu’un : l’accueil, les membres qui viennent d’arriver ; le bilan de la KvK, les 3 plus gros gains de Kills.",
   "posts.week.name": "Cette semaine dans l’alliance",
   "posts.week.what":
     "Les entrées du calendrier de la semaine marquées « Les membres peuvent voir ceci », avec leurs heures du serveur (ST). Sans noms de joueurs, notes ni liens. Rien n’est publié une semaine sans aucune.",
@@ -181,6 +213,18 @@ export const postsFr: typeof postsEn = {
   "posts.summary.members": "Membres le {day} : {n}",
   "posts.summary.reads": "D’après {n} des 7 mises à jour quotidiennes de la semaine.",
   "posts.summary.day": "Chaque {day}, pour la semaine écoulée.",
+  "posts.kvk.name": "Bilan de la KvK",
+  "posts.kvk.what":
+    "Après chaque KvK, une fois son relevé de Fin fait : un merci à tous, les Kills gagnés par l’alliance du Début à la Fin, combien de membres en ont gagné, et les 3 plus gros gains de Kills, avec le nom. Personne d’autre n’est cité. Rien n’est publié quand le relevé de Début ou de Fin n’a pas pu être fait.",
+  "posts.kvk.defaultTitle": "Bilan de la KvK",
+  "posts.kvk.thanks": "Merci à tous pour cette KvK !",
+  "posts.kvk.kills": "Kills gagnés ensemble : {kills}",
+  "posts.kvk.members": "Membres ayant gagné des Kills : {n} sur {of}",
+  "posts.kvk.topHeading": "Plus gros gains de Kills :",
+  "posts.kvk.top": "{place}. {name} +{kills}",
+  "posts.kvk.support":
+    "Les défenseurs et les joueurs en soutien ne gagnent pas de Kills, et ils comptent tout autant. Bravo à vous tous !",
+  "posts.kvk.day": "Le jour de la KvK ({day}), après le relevé de Fin.",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",
   "posts.channel.members": "Salon des membres",
@@ -195,6 +239,7 @@ export const postsFr: typeof postsEn = {
   "posts.preview": "Prochain message",
   "posts.when": "Chaque {day}, entre {from} et {to} ST, dans #{channel}.",
   "posts.whenDaily": "Chaque jour, entre {from} et {to} ST, dans #{channel}.",
+  "posts.whenKvk": "Après chaque KvK ({day}), entre {from} et {to} ST, dans #{channel}.",
   "posts.off": "Éteint : rien n’est publié.",
   "posts.noChannel":
     "Rien n’est publié tant que le {channel} n’est pas configuré : collez son webhook sous Discord, plus haut.",
@@ -213,4 +258,7 @@ export const postsFr: typeof postsEn = {
   "callouts.post.summary": "Bilan hebdomadaire des membres",
   "callouts.where.summary": "Au-dessus du bilan hebdomadaire des membres, le lundi.",
   "activity.callout.summary": "{who} a changé la phrase du « Bilan hebdomadaire des membres »",
+  "callouts.post.kvk": "Bilan de la KvK",
+  "callouts.where.kvk": "Au-dessus du bilan de la KvK, après le relevé de Fin.",
+  "activity.callout.kvk": "{who} a changé la phrase du « Bilan de la KvK »",
 };

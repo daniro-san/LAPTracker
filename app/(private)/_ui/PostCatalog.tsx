@@ -13,7 +13,7 @@ import { useState } from "react";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { FIELD } from "@/lib/brand/components/controls";
 import { calloutLength, cleanCallout } from "@/lib/post-callout";
-import { POST_TITLE_LIMIT } from "@/lib/post-catalog";
+import { POST_CATALOG, POST_TITLE_LIMIT } from "@/lib/post-catalog";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { PostView } from "@/lib/private/post-settings";
 import type { CatalogPost, PostChannel } from "@/lib/schema-discord";
@@ -102,7 +102,14 @@ function nextPost(row: PostView, v: Values, t: WorkspaceDictionary) {
     return { text: fill(t["posts.noChannel"], { channel }), warn: true };
   }
   const when = { day: row.day ?? "", from: row.from, to: row.to, channel: target.name };
-  return { text: fill(t[row.day === null ? "posts.whenDaily" : "posts.when"], when), warn: false };
+  // The KvK recap goes only on a KvK's day: "After each KvK (Saturday), …", never "Every Saturday".
+  const key =
+    POST_CATALOG[row.post].weekday === "event"
+      ? "posts.whenKvk"
+      : row.day === null
+        ? "posts.whenDaily"
+        : "posts.when";
+  return { text: fill(t[key], when), warn: false };
 }
 
 /**

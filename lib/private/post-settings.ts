@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import type { Db } from "../db";
 import { calloutLength, cleanCallout } from "../post-callout";
-import { fromOf, POST_CATALOG, POST_TITLE_LIMIT } from "../post-catalog";
+import { fromOf, POST_CATALOG, POST_TITLE_LIMIT, weekdayOf } from "../post-catalog";
 import { recordFailure } from "../repo/auth-attempts";
 import { postsOf, savePost } from "../repo/workspace-posts";
 import { serverInstant, serverMinuteOfDay, type ScheduleConfig } from "../schedule";
@@ -111,7 +111,7 @@ export async function postsView(
   return allowed.map((post) => {
     const entry = POST_CATALOG[post];
     const row = saved.get(post);
-    const weekday = row?.weekday ?? entry.weekday;
+    const weekday = row?.weekday ?? weekdayOf(post, cfg);
     const from = fromOf(post, cfg);
     return {
       post,

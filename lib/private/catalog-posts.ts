@@ -16,17 +16,24 @@
 // Post 4, "Weekly members summary": on Monday, like post 1, to the leaders' channel only, how many joined and
 // left in the week that just ended and the member count at its last daily update and at the one before it.
 // Counts from the rosters' uids only (`member_uids`): no name, no raw_json, no coin, quest or donation value.
+// Post 5, "KvK recap": on the KvK's day, once its End read has finished, to the members' channel, thanks and
+// the alliance's War turnout from Start to End (the event page's `killsTurnout`) with the KVK_TOP biggest kills
+// gains by public name. It reads uid, name and kills of the event's member_snapshots only: no list of the
+// rest, no might lost, no raw_json. A stale or failed Start or End, or no kills gained, posts nothing.
 import type { AppContext } from "../app-context";
 import { layOut, type Placed } from "../calendar-layout";
+import { killsGain, killsTurnout } from "../compute";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { breakLinks, discordCallout } from "../post-callout";
-import { POST_CATALOG, postPeriod, WELCOME_NAMES_MAX } from "../post-catalog";
+import { KVK_TOP, POST_CATALOG, postPeriod, WELCOME_NAMES_MAX } from "../post-catalog";
 import { calendarRows } from "../repo/calendar";
 import { freshRosterOfDay, freshUidsBetween, getDailyRead } from "../repo/daily-reads";
 import { liveCallout } from "../repo/post-touches";
 import { settingsById } from "../repo/workspace-features";
 import { claimPostRun, finishPostRun, postsDue, settlePostRun } from "../repo/workspace-posts";
+import { recapKills, type RecapMember } from "../repo/workspace-rosters";
+import { serverInstant } from "../schedule";
 import { CATALOG_POSTS, type CatalogPost } from "../schema-discord";
 import { fill } from "../words";
 import { resolveFeatures } from "../workspace-features";
@@ -39,6 +46,7 @@ import {
   type WorkspaceLanguage,
 } from "./dictionary";
 import { noticeChannels } from "./discord-webhooks";
+import { compact } from "./insights-format";
 import { privateLog } from "./log";
 import { discordMessages } from "./notice-formats";
 import { postMessages } from "./notice-publish";
@@ -46,7 +54,12 @@ import { postMessages } from "./notice-publish";
 export interface PostsDeps {
   env: Pick<
     Env,
-    "SERVER_TZ" | "DAILY_ROSTER_AT" | "WORKSPACE_KEYS_SECRET" | "WORKSPACE_DISCORD_WEBHOOKS"
+    | "SERVER_TZ"
+    | "DAILY_ROSTER_AT"
+    | "EVENT_WEEKDAY"
+    | "SNAPSHOT_AFTER"
+    | "WORKSPACE_KEYS_SECRET"
+    | "WORKSPACE_DISCORD_WEBHOOKS"
   >;
   fetch: typeof fetch;
   now: () => Date;
@@ -137,6 +150,43 @@ export function summaryText(
   ].join("\n");
 }
 
+/**
+ * The KvK recap's text: thanks first, then the alliance's War turnout from Start to End (#271's
+ * `killsTurnout`: kills gained by the members in both rosters, how many of them gained kills) and the
+ * KVK_TOP biggest kills gains by public name. Nobody else is listed. Null when no member gained kills.
+ */
+export function kvkText(
+  before: readonly RecapMember[],
+  after: readonly RecapMember[],
+  language: WorkspaceLanguage,
+): string | null {
+  const turnout = killsTurnout(before, after);
+  if (turnout.gainers === 0) return null;
+  const t = WORKSPACE_DICTIONARIES[language];
+  const was = new Map(before.map((m) => [m.uid, m.kills]));
+  const now = new Map(after.map((m) => [m.uid, m]));
+  const top = turnout.gainerUids.slice(0, KVK_TOP).map((uid, i) => {
+    const m = now.get(uid) as RecapMember;
+    const gain = killsGain(was.get(uid) ?? null, m.kills);
+    return fill(t["posts.kvk.top"], {
+      place: i + 1,
+      name: breakLinks(m.name),
+      kills: compact(gain, language),
+    });
+  });
+  return [
+    t["posts.kvk.thanks"],
+    "",
+    fill(t["posts.kvk.kills"], { kills: compact(turnout.gained, language) }),
+    fill(t["posts.kvk.members"], { n: turnout.gainers, of: turnout.n }),
+    "",
+    t["posts.kvk.topHeading"],
+    ...top,
+    "",
+    t["posts.kvk.support"],
+  ].join("\n");
+}
+
 type Due = Awaited<ReturnType<typeof postsDue>>[number];
 
 /**
@@ -166,6 +216,7 @@ const BODIES: Record<
     due: Due,
     period: string,
     language: WorkspaceLanguage,
+    cfg: PostsDeps["env"],
   ) => Promise<string | null | undefined>
 > = {
   week: async (db, due, period, language) =>
@@ -182,6 +233,16 @@ const BODIES: Record<
       period,
       language,
     ),
+  kvk: async (db, due, period, language, cfg) => {
+    const from = serverInstant(period, "00:00", cfg);
+    const kills = await recapKills(
+      db,
+      due.unionId,
+      from,
+      serverInstant(addDays(period, 1), "00:00", cfg),
+    );
+    return kills && kvkText(kills.before, kills.after, language);
+  },
 };
 
 /**
@@ -199,7 +260,7 @@ async function sendPost(db: Db, deps: PostsDeps, due: Due, period: string, post:
   const channel = (await noticeChannels(db, ws, deps))[due.channel];
   if (!channel) return;
   const language = languageOf(due.language);
-  const text = await BODIES[post](db, due, period, language);
+  const text = await BODIES[post](db, due, period, language, deps.env);
   if (text === undefined) return;
   if (text === null) return settlePostRun(db, { ...run, at: deps.now() });
   const title = postTitle(post, due.title, WORKSPACE_DICTIONARIES[language]);
