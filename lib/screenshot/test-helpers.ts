@@ -1,10 +1,10 @@
-// Test-only helpers: the screenshots in fixtures/screenshots and the text the real OCR recorded from them.
+// Test-only helpers: the screenshot fixtures in fixtures/screenshots (invented names, issue 617).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const dir = join(import.meta.dirname, "../../fixtures/screenshots");
 
-/** The OCR text lines recorded from `fixtures/screenshots/<name>.png` (recorded by read-screenshot.ts). */
+/** The OCR text lines of `fixtures/screenshots/<name>.txt`, one line per row. */
 export const recorded = (name: string): string[] =>
   readFileSync(join(dir, `${name}.txt`), "utf8")
     .split("\n")
@@ -12,13 +12,8 @@ export const recorded = (name: string): string[] =>
 
 export const screenshot = (name: string): Uint8Array => readFileSync(join(dir, `${name}.png`));
 
-/** The OGs roster as name candidates: `members[].uid` and `nick_name` of the 2026-11-16 read. */
+/** OGs' invented roster as name candidates (`roster.json`), uids from 900001 in file order. */
 export function ogsCandidates(): { uid: number; names: string[] }[] {
-  const body = JSON.parse(
-    readFileSync(
-      join(import.meta.dirname, "../../fixtures/v1-20261116T105019Z/alliance-67111155.json"),
-      "utf8",
-    ),
-  ) as { members: { uid: number; nick_name: string }[] };
-  return body.members.map((m) => ({ uid: m.uid, names: [m.nick_name] }));
+  const names = JSON.parse(readFileSync(join(dir, "roster.json"), "utf8")) as string[];
+  return names.map((name, i) => ({ uid: 900_001 + i, names: [name] }));
 }

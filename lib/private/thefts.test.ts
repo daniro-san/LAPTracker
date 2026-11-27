@@ -49,7 +49,7 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
   ).split("\n");
   const entries = parseSecretOpsReport([
     ...lines,
-    "[RPD]Golgsunny 11-14 09:00",
+    "[KLV]Zarpbunny 11-14 09:00",
     "[OGs]Grimbald 11-14 08:00",
   ]);
   const draft = { victimUid: 11, readAt: NOW, entries };
@@ -67,16 +67,16 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
     expect(
       rows.map((r) => [r.attackerKey, r.attackerTag, r.at?.toISOString() ?? null, r.kind]),
     ).toEqual([
-      ["name:stene", "1b8R", "2026-11-15T13:48:00.000Z", "ops"],
+      ["name:brune", "7q2K", "2026-11-15T13:48:00.000Z", "ops"],
       // The stray `[lel`: kind null and no time, saved for the officer to remove.
       ["name:lel", "", null, "ops"],
-      ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "ops"],
-      ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "ops"],
-      ["name:cinalice", "ANM", "2026-11-14T19:34:00.000Z", "ops"],
+      ["uid:41", "KLV", "2026-11-15T13:47:00.000Z", "ops"],
+      ["uid:41", "KLV", "2026-11-15T13:47:00.000Z", "ops"],
+      ["name:rolabeth", "YRT", "2026-11-14T19:34:00.000Z", "ops"],
       // kind null: a theft whose sentence was not read; still from a Secret Ops report.
-      ["uid:41", "RPD", "2026-11-14T11:00:00.000Z", "ops"],
+      ["uid:41", "KLV", "2026-11-14T11:00:00.000Z", "ops"],
     ]);
-    expect(rows.every((r) => r.source === "photo" && r.victimName === "Seesky")).toBe(true);
+    expect(rows.every((r) => r.source === "photo" && r.victimName === "Wrenna")).toBe(true);
   });
 
   it("adds nothing when the same report is saved again", async () => {
@@ -102,10 +102,10 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
     // A name the OCR did not read ("") must be filled in or the entry dropped before saving.
     const noName = {
       kind: "theft" as const,
-      tag: "VNC",
+      tag: "FOX",
       name: "",
       at: "11-14 08:00",
-      raw: "[VNC]",
+      raw: "[FOX]",
     };
     const unnamed = { ...draft, entries: [...entries, noName] };
     expect(await saveSecretOpsDraft(db, ogs, unnamed, CLOCK)).toBe("attacker_missing");
@@ -146,7 +146,7 @@ describe("thefts between two workspaces (D71)", () => {
     // A member of another alliance is not one of ours; our own players are not attackers.
     expect(await addTheft(db, ogs, typed({ uid: 21 }, 22), CLOCK)).toBe("not_in_alliance");
     expect(await addTheft(db, ogs, typed({ uid: 13 }, 11), CLOCK)).toBe("unknown_player");
-    const later = { ...typed({ name: "Stene", tag: "1b8R" }, 11), day: "2026-11-17" };
+    const later = { ...typed({ name: "Brune", tag: "7q2K" }, 11), day: "2026-11-17" };
     expect(await addTheft(db, ogs, later, CLOCK)).toBe("bad_time");
     const [row] = await listThefts(db, ogs.workspaceId);
     expect(row?.attackerKey).toBe("uid:21");

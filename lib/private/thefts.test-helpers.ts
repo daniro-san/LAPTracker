@@ -12,8 +12,8 @@ import { createSession } from "./session";
 export const OGS = 67111155;
 export const NSE = 67109944;
 export const URSA = 67110320;
-/** A tracked alliance (TmS's id) whose newest roster reads RPD, the tag the committed report (image 54) names. */
-export const RPD = 67110584;
+/** A tracked alliance (TmS's id) whose newest roster reads KLV, the tag the committed report (image 54) names. */
+export const KLV = 67110584;
 export const NOW = new Date("2026-11-16T12:00:00Z");
 export const CLOCK = { now: NOW, zone: "Etc/GMT+2" };
 
@@ -49,14 +49,14 @@ export async function seedThefts(db: Db): Promise<void> {
   await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
   await saveWorkspace(db, { unionId: NSE, slug: "nse", discordGuildId: "3", leaderRoleIds: ["4"] });
   await roster(db, OGS, "OGs", "2026-11-15", {
-    11: "Seesky",
-    12: "DoctorHouse1387",
+    11: "Wrenna",
+    12: "HealerManor2451",
     13: "Grimbald",
   });
   await roster(db, NSE, "NSE", "2026-11-14", { 21: "Grimm", 22: "Gremlin" });
   await roster(db, NSE, "NSE", "2026-11-15", { 21: "Grimmer", 22: "Gremlin" });
   await roster(db, URSA, "URSA", "2026-11-15", { 31: "Agrim" });
-  await roster(db, RPD, "RPD", "2026-11-15", { 41: "Golgsunny" });
+  await roster(db, KLV, "KLV", "2026-11-15", { 41: "Zarpbunny" });
 }
 
 export async function signedIn(db: Db, slug: string): Promise<WorkspaceAccess> {

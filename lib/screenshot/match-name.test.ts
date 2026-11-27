@@ -6,16 +6,16 @@ import { parseAllianceDuelRanking } from "./parse-alliance-duel";
 import { ogsCandidates, recorded } from "./test-helpers";
 
 const members = [
-  { uid: 1, names: ["Kilare"] },
-  { uid: 2, names: ["Kasoar•Thorne"] },
-  { uid: 3, names: ["motolex•thorne"] },
+  { uid: 1, names: ["Morvel"] },
+  { uid: 2, names: ["Tavish•Fearne"] },
+  { uid: 3, names: ["pindrel•fearne"] },
   { uid: 4, names: ["NewName", "OldName"] },
-  { uid: 5, names: ["dannyboy90"] },
+  { uid: 5, names: ["frankfox77"] },
 ];
 
 describe("matchName", () => {
   it("matches a name by its exact key, whatever its decoration", () => {
-    expect(matchName("R4 kilare ++", members)).toEqual({
+    expect(matchName("R4 morvel ++", members)).toEqual({
       status: "matched",
       uid: 1,
       via: "current",
@@ -47,8 +47,8 @@ describe("matchName", () => {
   });
 
   it("matches one part of a joined name when only one member has it", () => {
-    expect(matchName("Kasoar", members)).toEqual({ status: "matched", uid: 2, via: "segment" });
-    expect(matchName("Kasoar•Thorne", [{ uid: 2, names: ["Kasoar"] }])).toEqual({
+    expect(matchName("Tavish", members)).toEqual({ status: "matched", uid: 2, via: "segment" });
+    expect(matchName("Tavish•Fearne", [{ uid: 2, names: ["Tavish"] }])).toEqual({
       status: "matched",
       uid: 2,
       via: "segment",
@@ -56,7 +56,7 @@ describe("matchName", () => {
   });
 
   it("leaves a part shared by two joined names unsure", () => {
-    const result = matchName("Thorne", members);
+    const result = matchName("Fearne", members);
     expect(result.status).toBe("unsure");
     expect(result.status === "unsure" && result.suggestions.map((s) => s.uid).sort()).toEqual([
       2, 3,
@@ -64,17 +64,17 @@ describe("matchName", () => {
   });
 
   it("suggests a name one edit away, as unsure", () => {
-    expect(matchName("Kilar", members)).toEqual({
+    expect(matchName("Morve", members)).toEqual({
       status: "unsure",
-      suggestions: [{ uid: 1, name: "Kilare", distance: 1 }],
+      suggestions: [{ uid: 1, name: "Morvel", distance: 1 }],
     });
-    expect(matchName("Kialre", members).status).toBe("unsure");
+    expect(matchName("Movrel", members).status).toBe("unsure");
   });
 
   it("allows two edits only for names of eight characters or more", () => {
-    expect(matchName("dannyboy", members).status).toBe("unsure");
-    expect(matchName("Kil", members).status).toBe("none");
-    expect(matchName("Kilaaa", members).status).toBe("none");
+    expect(matchName("frankfox", members).status).toBe("unsure");
+    expect(matchName("Mor", members).status).toBe("none");
+    expect(matchName("Morvaa", members).status).toBe("none");
   });
 
   it("suggests nothing for a name read as fewer than three characters", () => {
@@ -82,11 +82,11 @@ describe("matchName", () => {
   });
 
   it("offers at most three suggestions", () => {
-    const rows = ["Kilare1", "Kilare2", "Kilare3", "Kilare4"].map((name, i) => ({
+    const rows = ["Morvel1", "Morvel2", "Morvel3", "Morvel4"].map((name, i) => ({
       uid: i,
       names: [name],
     }));
-    const result = matchName("Kilare", rows);
+    const result = matchName("Morvel", rows);
     expect(result.status === "unsure" && result.suggestions).toHaveLength(3);
   });
 
@@ -103,22 +103,22 @@ describe("matchName", () => {
     ].flat();
     // What the screens show, by place: a misread name may be unsure or none, never another member.
     const shown = [
-      "xCage",
-      "ZunarJFive",
-      "LadyLi-rosan",
-      "Arephrey",
-      "DrSquiggsJones",
-      "sohannibal",
-      "MissJackson",
-      "Anna8603",
-      "sinner",
-      "Jancziii",
-      "Dr-Noname-J",
-      "beazord",
-      "CrýptKeeper",
-      "emCat",
-      "AshH786",
-      "DucktorJones",
+      "zLark",
+      "PelorKNine",
+      "LadySu-moore",
+      "Olvendry",
+      "DrWobblesBrook",
+      "jovalindor",
+      "MissPickles",
+      "Edda8412",
+      "tinker",
+      "Zbysziii",
+      "Dr-Nobody-K",
+      "quillon",
+      "TómbWardens",
+      "teDog",
+      "EliR592",
+      "OwltorBrowns",
     ];
     const results = pages.map((row) => matchName(row.name, roster));
     results.forEach((result, i) => {
@@ -130,7 +130,7 @@ describe("matchName", () => {
   });
 
   it("matches a roster name that is spelled with a Cyrillic i and e", () => {
-    expect(matchName("sinner", ogsCandidates())).toMatchObject({
+    expect(matchName("tinker", ogsCandidates())).toMatchObject({
       status: "matched",
       via: "current",
     });

@@ -121,7 +121,7 @@ export function closestNames(
 
 /**
  * Matches `raw` to one candidate: the exact key of a current name, then of a past name, then a name
- * that is one part of a joined name (`Kasoar` for `Kasoar•Thorne`, or the other way round), each
+ * that is one part of a joined name (`Tavish` for `Tavish•Fearne`, or the other way round), each
  * only when exactly one member fits. Otherwise names within a few edits are suggested as `unsure`.
  */
 export function matchName(raw: string, candidates: readonly NameCandidate[]): NameMatch {

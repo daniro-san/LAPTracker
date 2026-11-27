@@ -12,13 +12,13 @@ describe("parseAllianceDuelRanking", () => {
       174488831, 97060474, 90772562, 87244291, 84302976, 81352526, 77384266, 77185919,
     ]);
     expect(rows.slice(1).map((r) => r.name)).toEqual([
-      "Thome",
-      "Zsu78HUN",
-      "Lordanirosan",
-      "viris",
-      "SnowPug",
-      "helloallyou",
-      "Kilare",
+      "Feame",
+      "Kei43NOR",
+      "Thistlemoore",
+      "kelda",
+      "MossOwl",
+      "hithereyall",
+      "Morvel",
     ]);
   });
 
@@ -46,7 +46,7 @@ describe("parseAllianceDuelRanking", () => {
 
   it("reads each row's alliance tag, other alliances included", () => {
     const rows = parseAllianceDuelRanking(recorded("26-alliance-duel-weekly-server"), weekly);
-    expect(rows[2]).toMatchObject({ rank: 3, name: "Derek-Tom", tag: "Ratz", points: 91311092 });
+    expect(rows[2]).toMatchObject({ rank: 3, name: "Milo-Fenn", tag: "Wisp", points: 91311092 });
     expect(rows[3]?.tag).toMatch(/^[O0]Gs$/);
   });
 
@@ -109,8 +109,8 @@ describe("parseAllianceDuelRanking", () => {
     );
     const rows = parseAllianceDuelRanking(lines, weekly);
     expect(rows).toHaveLength(8);
-    expect(rows[5]).toMatchObject({ rank: 6, name: "SnowPug", points: null, flags: ["points"] });
-    expect(rows[6]).toMatchObject({ rank: 7, name: "helloallyou", flags: [] });
+    expect(rows[5]).toMatchObject({ rank: 6, name: "MossOwl", points: null, flags: ["points"] });
+    expect(rows[6]).toMatchObject({ rank: 7, name: "hithereyall", flags: [] });
   });
 
   it("flags the row after a row that is missing from the lines", () => {

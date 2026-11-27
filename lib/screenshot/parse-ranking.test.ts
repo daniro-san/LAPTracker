@@ -15,7 +15,7 @@ describe("parseRanking", () => {
       [92, 21150],
       [93, 19400],
     ]);
-    expect(rows.map((r) => r.name)).toContain("Kacper6741");
+    expect(rows.map((r) => r.name)).toContain("Tobiah5823");
   });
 
   it("reads the R-badge shown above a row", () => {
@@ -32,7 +32,7 @@ describe("parseRanking", () => {
     const rows = parseRanking(recorded("25-donation-weekly"));
     expect(rows).toHaveLength(7);
     expect(rows.some((r) => r.value === 36850)).toBe(false);
-    expect(rows.at(-1)).toMatchObject({ rank: 77, name: "oOLagerthaOo" });
+    expect(rows.at(-1)).toMatchObject({ rank: 77, name: "oOValkyriaOo" });
   });
 
   it("drops a pinned row that was read, with its own rank and value", () => {
@@ -53,7 +53,7 @@ describe("parseRanking", () => {
     expect(rows).toHaveLength(7);
     expect(rows[2]).toMatchObject({
       rank: 89,
-      name: "SnowPug",
+      name: "MossOwl",
       value: null,
       flags: ["points"],
     });
@@ -61,10 +61,10 @@ describe("parseRanking", () => {
   });
 
   it("flags the row after a row that is missing from the lines", () => {
-    const lines = recorded("23-donation-weekly").filter((l) => !l.includes("SnowPug"));
+    const lines = recorded("23-donation-weekly").filter((l) => !l.includes("MossOwl"));
     const rows = parseRanking(lines);
     expect(rows).toHaveLength(6);
-    expect(rows.find((r) => r.name === "Kacper6741")?.flags).toContain("gap");
+    expect(rows.find((r) => r.name === "Tobiah5823")?.flags).toContain("gap");
   });
 
   it("reads might and kills pages, the green own row and the medal rows included", () => {
@@ -79,7 +79,7 @@ describe("parseRanking", () => {
       [7, 67100241],
     ]);
     // Row 4 is the uploader's own row, white on green, and its pinned copy is dropped.
-    expect(might[3]).toMatchObject({ name: "Lordanirosan", flags: [] });
+    expect(might[3]).toMatchObject({ name: "Thistlemoore", flags: [] });
     const kills = parseRanking(recorded("89-kills-phone"));
     expect(kills.map((r) => r.value)).toEqual([
       5859680, 4004996, 3777358, 2666082, 2581571, 2221649, 2040923,
