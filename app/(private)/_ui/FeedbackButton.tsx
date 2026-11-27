@@ -332,15 +332,20 @@ function Fields(props: {
   );
 }
 
-// From 1280 (the width the desk's sidebar shows) a small "Feedback" badge also floats at the bottom left, so
-// the entry is in view without scrolling to the end. It sits in the sidebar's column on the desk (the sidebar
-// keeps room for it) and in the empty margin on the board and Me, so it never covers content. Below 1280
-// there is no floating element: the bottom tabs own that corner on a phone. It opens the same sheet.
+// From 1280 (the width the desk's sidebar shows) a small "Feedback" badge floats at the bottom left instead of
+// the end-of-page button, so the entry is in view without scrolling to the end and only one shows (owner,
+// 2026-11-27). It sits in the sidebar's column on the desk (the sidebar keeps room for it) and in the empty
+// margin on the board and Me, so it never covers content. Below 1280 only the end-of-page button shows: the
+// bottom tabs own that corner on a phone. Both open the same sheet.
 export function FeedbackButton(props: Props) {
   const [entry, setEntry] = useState<Entry | null>(null);
   return (
-    <div className="mt-10 border-t border-rule pt-4">
-      <button type="button" onClick={() => setEntry("end")} className={buttonClass("secondary")}>
+    <div className="mt-10 border-t border-rule pt-4 xl:mt-0 xl:border-t-0 xl:pt-0">
+      <button
+        type="button"
+        onClick={() => setEntry("end")}
+        className={buttonClass("secondary", "xl:hidden")}
+      >
         {props.words["feedback.open"]}
       </button>
       {/* Kept mounted while the sheet is open (hidden and inert), so the sheet returns focus to it on close. */}
