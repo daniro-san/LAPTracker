@@ -6,6 +6,7 @@
 - `e2e/feedback.spec.ts`: the wide-project badge test asserted "the end-of-page button stays" (`toHaveCount(1)`); it now asserts the button is hidden (`toHaveCount(0)`) and the title says so. The phone test already asserted only the end-of-page button.
 - Daily quest cap: `QUEST_DAY_CAP` in `lib/private/member-week.ts` is 250 (was a provisional 240); its comment says the owner confirmed it in the game on 2026-11-26/27. Comments in `member-days.ts` and `insights-effort-words.ts` no longer call it provisional.
 - `lib/private/member-days.test.ts`: the shares now expect `x / 250`, the scale line "out of 250", and the above-cap case uses a 260-point day (a 250-point day is now exactly the cap, so it no longer tested clamping).
+- The card's scale line (`card.days.scale` in `lib/private/dictionary.card.ts`) said 250 was "the daily limit the reads show"; it now says "the game's daily limit" (PT-BR "o limite diário do jogo", FR "la limite quotidienne du jeu"), since the value comes from the game, not the stored reads (coordinator, 2026-11-27). D136's amendment quotes the new line.
 - Dated amendments appended to D127, D136, D142 and D158 (none of the earlier text rewritten, per docs/decisions/README.md); `docs/GLOSSARY.md`'s "daily quest points" row says "Cap 250 a day, confirmed by the owner".
 
 ## Decisions
@@ -20,10 +21,9 @@
 - Not run: the e2e badge tests (`e2e/feedback.spec.ts`, wide and phone projects). They need a local Postgres server; this machine has only libpq (`initdb` finds no `postgres` binary), and installing it through the system package manager is not allowed. Run `pnpm test:e2e e2e/feedback.spec.ts` where `pnpm db:local:start` works.
 
 ## Open issues
-- The scale line still says "quest points out of 250, the daily limit the reads show" (`card.days.scale`, EN/PT/FR in `lib/private/dictionary.card.ts`). "The reads show" was right for a value read from the data; it is now the game's limit. Left as is (copy change not asked for).
+- None.
 
 ## Next
-- Follow-up: reword `card.days.scale` to "the game's daily limit" in the three workspace languages.
 - Run the e2e feedback spec in CI or on a machine with Postgres before merge.
 
 What was missing from the task prompt? That `e2e/feedback.spec.ts` pinned the end-of-page button at 1280 px; the badge has no Vitest render test, so the e2e spec was the test to adjust.

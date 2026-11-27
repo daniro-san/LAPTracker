@@ -124,7 +124,7 @@ describe("the member card's last 7 days (issue 461)", () => {
     expect(coins?.bars.map((b) => b.share)).toEqual(Array(7).fill(1));
     expect(card(2).rows[0]?.bars.map((b) => b.share)).toEqual(Array(7).fill(180 / 250));
     expect(card(1).scale).toBe(
-      "Bars: coins out of 1,000 and quest points out of 250, the daily limit the reads show; donations against 8.00K, the alliance's best day by one member in these 7 days.",
+      "Bars: coins out of 1,000 and quest points out of 250, the game's daily limit; donations against 8.00K, the alliance's best day by one member in these 7 days.",
     );
   });
 
