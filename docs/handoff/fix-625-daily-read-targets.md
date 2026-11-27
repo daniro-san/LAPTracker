@@ -24,7 +24,13 @@ Branch `fix/625-daily-read-targets` from `origin/dev` (7d43ad6f). Size M: one mi
 ## Verified
 
 - `pnpm vitest related --run lib/daily-read.ts lib/repo/daily-reads.ts lib/queries/daily-runs.ts lib/schema.ts`: 380 files passed, 2 skipped; 2041 tests passed, 4 skipped.
-- `pnpm check`: see the result at the end of this section.
+- `pnpm check` passed: prettier, eslint, tsc, vitest (380 files passed, 2 skipped; 2041 tests passed, 4 skipped), drizzle drift, i18n (17 languages up to date).
+- Each new test fails when its fix is broken on purpose (one break at a time, then restored):
+
+  | Break | Test that fails |
+  | --- | --- |
+  | `problemsOf` without the `target_ids` branch (`false`) | is named on /admin/runs when the read stopped before reaching it |
+  | `autoRetryDailyRead` ignores `lookedUp` (`false &&`) | is read again by the tick's automatic retry |
 - No upstream call, no production access, no `.env*` read.
 - Analytics plan: no change. /admin read model and the tick's retry only.
 
