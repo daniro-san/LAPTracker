@@ -1,10 +1,10 @@
 # fix-625-daily-read-targets: /admin/runs names a looked-up target the daily read never reached, and the automatic retry reads it (issue 625)
 
-Branch `fix/625-daily-read-targets` from `origin/dev` (7d43ad6f). Size M: one migration (one nullable column), no new decision, no route, no private field.
+Branch `fix/625-daily-read-targets` from `origin/dev` (bd0044d2; rebased after #769 took 0079). Size M: one migration (one nullable column), no new decision, no route, no private field.
 
 ## Built
 
-- **`daily_reads.target_ids bigint[]`** (`lib/schema.ts`, `drizzle/0079_daily_read_targets.sql`). Each claim of the day writes the targets of the attempt it starts: `claimDailyRead` (first read), `reclaimDailyRead` (/admin Retry) and `claimAutoRetry` (the tick's retry). The column holds the latest attempt's targets, the same list that attempt's outcome (`readDay`) is judged on. Null for days read before this change.
+- **`daily_reads.target_ids bigint[]`** (`lib/schema.ts`, `drizzle/0080_stale_grim_reaper.sql`). Each claim of the day writes the targets of the attempt it starts: `claimDailyRead` (first read), `reclaimDailyRead` (/admin Retry) and `claimAutoRetry` (the tick's retry). The column holds the latest attempt's targets, the same list that attempt's outcome (`readDay`) is judged on. Null for days read before this change.
 - **`problemsOf` (`lib/queries/daily-runs.ts`)**: a row of an alliance with a lookup claim that day counts when the alliance is in `target_ids`. Days with `target_ids` null keep the old rule (in the day's `tracked_sets`, or a `run_logs` line for it), so the last 60 reads on /admin/runs keep their problems.
 - **`autoRetryDailyRead` (`lib/daily-read.ts`)**: an error-free roster no longer always counts as read. When the day has a lookup claim for that alliance and the roster is stale against the start of the read the retry completes (the 20-minute rule the outcome uses), the roster is the lookup's, and the retry reads that alliance again. `dailyRosterStates` (`lib/repo/daily-reads.ts`) returns `lookedUp` for this, as an `exists` on the `alliance_lookups` primary key in the same query.
 - **Tests** (`lib/daily-read.test.ts`, describe "a looked-up alliance that became a target (issue 625)"). Setup: the alliance was looked up 3 hours before the read; the read at T0 has it as a target and stops at the quota rule before it reads any roster.
@@ -23,8 +23,8 @@ Branch `fix/625-daily-read-targets` from `origin/dev` (7d43ad6f). Size M: one mi
 
 ## Verified
 
-- `pnpm vitest related --run lib/daily-read.ts lib/repo/daily-reads.ts lib/queries/daily-runs.ts lib/schema.ts`: 380 files passed, 2 skipped; 2041 tests passed, 4 skipped.
-- `pnpm check` passed: prettier, eslint, tsc, vitest (380 files passed, 2 skipped; 2041 tests passed, 4 skipped), drizzle drift, i18n (17 languages up to date).
+- `pnpm vitest related --run lib/daily-read.ts lib/repo/daily-reads.ts lib/queries/daily-runs.ts lib/schema.ts`: 381 files passed, 2 skipped; 2051 tests passed, 4 skipped, after the rebase.
+- `pnpm check` passed: prettier, eslint, tsc, vitest (381 files passed, 2 skipped; 2051 tests passed, 4 skipped, after the rebase), drizzle drift, i18n (17 languages up to date).
 - Each new test fails when its fix is broken on purpose (one break at a time, then restored):
 
   | Break | Test that fails |
@@ -45,7 +45,7 @@ That a lookup is refused for an alliance that is already a daily target. This is
 
 ## Next
 
-- Apply migration `0079_daily_read_targets` with the release (one nullable column, no backfill).
+- Apply migration `0080_stale_grim_reaper` with the release (one nullable column, no backfill).
 - Close issue 625 with this PR.
 
 PR: (added by the orchestrator)
