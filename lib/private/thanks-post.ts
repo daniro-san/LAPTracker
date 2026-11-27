@@ -1,10 +1,10 @@
 // The weekly appreciation post's shape (issue 772, D114 amended 2026-11-27): a short opener, the officer's
 // highlights (each person with "a few words", on their own line), then one line per reason with the names,
 // then a closing line. Each person is named once. Plain text, so the game notice, Discord and the board's
-// card show it the same. No number and no ranking (D75, D109). Imports nothing, so the sheet builds it in
-// the browser for "I'll write it" and the server builds the same around the writing help's highlights.
+// card show it the same. No number and no ranking (D75, D109). Imports only a type, so the sheet builds it
+// in the browser for "I'll write it" and the server builds the same around the writing help's highlights.
+import type { Deed } from "../ai/thanks-writing";
 
-export type Deed = "squad" | "ad" | "steady";
 export type PostLanguage = "en" | "pt-BR" | "fr";
 
 /** One person the post names: what they did this week and the officer's few words ("" when none). */
@@ -13,6 +13,13 @@ export interface PostPerson {
   did: readonly Deed[];
   note: string;
 }
+
+/**
+ * The people with the officer's few words: the post's highlights, and the only people the writing help
+ * is asked about. Re-exported by thanks.ts; it lives here so the browser's sheet can use it too.
+ */
+export const withWords = <P extends { note?: string | undefined }>(people: readonly P[]): P[] =>
+  people.filter((p) => p.note?.trim());
 
 /** The deeds in the order a combined reason names them; AD Tech always first. */
 const ORDER: readonly Deed[] = ["ad", "squad", "steady"];
@@ -131,10 +138,10 @@ export function thanksPost(
   highlights?: readonly string[],
 ): string {
   const w = WORDS[language];
-  const noted = people.filter((p) => p.note);
+  const noted = withWords(people);
   const lines = highlights ?? noted.map((p) => `${p.name} - ${p.note}`);
   const rest = reasonLines(
-    people.filter((p) => !p.note),
+    people.filter((p) => !noted.includes(p)),
     language,
   );
   return [

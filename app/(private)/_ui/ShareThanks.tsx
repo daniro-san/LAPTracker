@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { thanksPost } from "@/lib/private/thanks-post";
+import { thanksPost, withWords } from "@/lib/private/thanks-post";
 import { fill } from "@/lib/words";
 
 import type { SharePerson, ShareThanksProps } from "./share-thanks-data";
@@ -53,7 +53,7 @@ function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string
     if (chosen.length === 0) return setNote(words["share.pickOne"]);
     setNote(null);
     const own = template(chosen, props.week.lastWeek);
-    if (!props.ai || chosen.every((p) => !p.note)) return setTexts(own);
+    if (!props.ai || withWords(chosen).length === 0) return setTexts(own);
     setBusy(true);
     const answer = await draft(props.slug, {
       people: chosen.map((p) => ({ name: p.name, did: p.did, ...(p.note && { note: p.note }) })),

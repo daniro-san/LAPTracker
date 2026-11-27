@@ -21,7 +21,9 @@ import { discordMessages } from "./notice-formats";
 import { postMessages, STUCK_MS, type Channels } from "./notice-publish";
 import { NOTICE_LANGUAGES, NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "./notice-rules";
 import { postCallout } from "./post-callouts";
-import { thanksPost } from "./thanks-post";
+import { thanksPost, withWords } from "./thanks-post";
+
+export { withWords } from "./thanks-post";
 
 /** The most people one post names. */
 export const THANKS_PEOPLE = 40;
@@ -92,12 +94,14 @@ export async function draftThanks(
   onFailed: (n: number) => void = () => undefined,
 ): Promise<Record<NoticeLanguage, string>> {
   const people = input.people.map((p) => ({ name: p.name, did: p.did, note: p.note ?? "" }));
-  const noted = people.filter((p) => p.note);
+  const noted = withWords(people);
+  // Names stay here for withNames and thanksPost; the writing help gets only deeds and words.
   const names = noted.map((p) => p.name);
+  const asked = noted.map(({ did, note }) => ({ did, note }));
   const texts = await settled(
     WRITING_LANGUAGES.map(async (l) => {
       if (noted.length === 0) return [l, thanksPost(people, l, input.lastWeek)] as const;
-      const draft = await writeThanks(model, l, noted, input.lastWeek);
+      const draft = await writeThanks(model, l, asked, input.lastWeek);
       const highlights = withNames(draft, names)
         .split("\n")
         .filter((line) => line.trim());

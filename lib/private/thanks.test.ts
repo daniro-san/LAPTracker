@@ -7,9 +7,10 @@
 // stand-ins. Invented names only.
 import { randomUUID } from "node:crypto";
 
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatError, type ChatModel, type ChatRequest } from "../ai/groq";
+import { writeThanks } from "../ai/thanks-writing";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
@@ -28,6 +29,13 @@ import {
   type ShareDeps,
   type ShareInput,
 } from "./thanks";
+import { thanksPost } from "./thanks-post";
+
+// The real writeThanks, watched, so a test can see exactly what reaches lib/ai.
+vi.mock("../ai/thanks-writing", async (original) => {
+  const real = await original<typeof import("../ai/thanks-writing")>();
+  return { ...real, writeThanks: vi.fn(real.writeThanks) };
+});
 
 const NOW = new Date("2026-11-22T12:00:00Z");
 
@@ -97,6 +105,16 @@ describe("the weekly appreciation post's writing help (D114)", () => {
     expect(texts.fr).toContain("AD Tech terminé : Thistle");
   });
 
+  it("hands the writing help each person's deeds and words only, never a name", async () => {
+    vi.mocked(writeThanks).mockClear();
+    const { model } = stub(() => "{1} helped.");
+    const people = [{ name: "Thistle", did: ["ad" as const], note: "kind words" }];
+    await draftThanks(model, { people, lastWeek: false });
+    expect(vi.mocked(writeThanks).mock.calls.map((c) => c[2])).toEqual(
+      Array.from({ length: 3 }, () => [{ did: ["ad"], note: "kind words" }]),
+    );
+  });
+
   it("refuses a draft that dropped or invented a placeholder", async () => {
     const people = [
       { name: "Bramble", did: ["squad" as const], note: "led the rally" },
@@ -138,6 +156,24 @@ describe("the weekly appreciation post's writing help (D114)", () => {
     expect(copy.cut).toBe(true);
     expect(noticeLength(copy.text)).toBeLessThanOrEqual(NOTICE_LIMIT);
     expect(en.startsWith(copy.text) && en[copy.text.length]).toBe("\n");
+  });
+});
+
+describe("the post's template (issue 772)", () => {
+  it("puts the officer's words as typed on their own line, keeps that person out of the reasons, and says last week on a Monday", () => {
+    const people = [
+      { name: "Thistle", did: ["squad" as const], note: "welcomed the new ones" },
+      { name: "Bramble", did: ["squad" as const], note: "" },
+    ];
+    expect(thanksPost(people, "en", true).split("\n")).toEqual([
+      "Thank you for last week, everyone.",
+      "",
+      "Thistle - welcomed the new ones",
+      "",
+      "Grew their main squad: Bramble",
+      "",
+      "Thank you for playing with us.",
+    ]);
   });
 });
 
