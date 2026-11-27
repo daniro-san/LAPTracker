@@ -16,7 +16,7 @@ Part of #713 (part E), the last of the five catalog posts. Size S–M: a catalog
 - Analytics: `DESK_POSTS` gains `kvk`. Tracking plan row and a dated Changed line.
 - Comments and checklists that list the catalog posts: `lib/posts-tick.ts`, `app/api/tick/route.ts`, `eslint.config.mjs`, `.claude/rules/private.md`, `REVIEW.md`.
 - `e2e/desk-posts.spec.ts`: the index reads "Posts 1 of 5 on".
-- Tests: new `lib/private/catalog-posts-kvk.test.ts` (6) and one case in `app/(private)/_ui/PostCatalog.test.ts`.
+- Tests: new `lib/private/catalog-posts-kvk.test.ts` (9) and one case in `app/(private)/_ui/PostCatalog.test.ts`.
 
 ## Decisions
 
@@ -43,7 +43,7 @@ Part of #713 (part E), the last of the five catalog posts. Size S–M: a catalog
 - `pnpm vitest run lib/private/catalog-posts-kvk.test.ts "app/(private)/_ui/PostCatalog.test.ts"`: 12 tests passed.
 - `pnpm vitest related --run <changed files>`: 239 files, 1,336 tests passed.
 - `pnpm check`: passed. 381 test files passed and 2 skipped; 2,046 tests passed and 4 skipped; no migration drift; i18n up to date.
-- Mutation proofs, each reverted: `KVK_TOP = 4` (2 tests fail, the sentinel scan among them); treating a `running` End as finished (1 fails); dropping the fresh check on the alliance's rows (1 fails).
+- Mutation proofs, each reverted: `KVK_TOP = 4` (2 tests fail, the sentinel scan among them); treating a `running` End as finished (1 fails); dropping the fresh check on the alliance's rows (1 fails). After the PR 769 review, three skip cases were added (no event that day, no Start row, no member with kills gained). Each fails when its branch is broken: no event returning undefined, a missing row returning undefined, and dropping the no-gainers check.
 - E2E not run. It needs a local Postgres instance and a built server. The only e2e change is the index count string.
 - No persona check was run on the wording.
 

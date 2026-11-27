@@ -4,6 +4,7 @@
 // ticks overlap, waits while the End is running, only while the owner allows it and the alliance has it on,
 // and posts nothing when the Start or the End could not be read. No one but the top 3 is named; no private
 // field, might or ping reaches Discord. Invented names only.
+import { eq, inArray } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { testContext, TEST_ENV } from "../app-context.test-helpers";
@@ -181,6 +182,47 @@ describe("KvK recap (D159, post 5)", () => {
   it("posts nothing and settles the KvK when the alliance's End row is stale", async () => {
     await turnKvkOn();
     await kvk("complete", { isFresh: false });
+    const { send, posts } = sender(SAT_1400);
+    await send();
+    expect(posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toMatchObject([
+      { postKey: "kvk", period: SATURDAY, status: "skipped" },
+    ]);
+  });
+
+  it("posts nothing and settles the KvK when there is no scheduled event that day", async () => {
+    await turnKvkOn();
+    const { send, posts } = sender(SAT_1400);
+    await send();
+    expect(posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toMatchObject([
+      { postKey: "kvk", period: SATURDAY, status: "skipped" },
+    ]);
+  });
+
+  it("posts nothing and settles the KvK when the alliance has no Start row", async () => {
+    await turnKvkOn();
+    await kvk();
+    const start = db
+      .select({ id: snapshots.id })
+      .from(snapshots)
+      .where(eq(snapshots.phase, "before"));
+    await db
+      .update(allianceSnapshots)
+      .set({ unionId: 1 })
+      .where(inArray(allianceSnapshots.snapshotId, start));
+    const { send, posts } = sender(SAT_1400);
+    await send();
+    expect(posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toMatchObject([
+      { postKey: "kvk", period: SATURDAY, status: "skipped" },
+    ]);
+  });
+
+  it("posts nothing and settles the KvK when no member gained kills", async () => {
+    await turnKvkOn();
+    await kvk();
+    await db.update(memberSnapshots).set({ kills: 100 });
     const { send, posts } = sender(SAT_1400);
     await send();
     expect(posts).toEqual([]);
