@@ -58,7 +58,11 @@ const draft = () =>
         "content-type": "application/json",
         cookie: `${SESSION_COOKIE}=${token}`,
       },
-      body: JSON.stringify({ people: [{ name: "Bramble", did: ["squad"] }], lastWeek: false }),
+      // A few words, so the model is asked (issue 772: without them the post is the template alone).
+      body: JSON.stringify({
+        people: [{ name: "Bramble", did: ["squad"], note: "led the rally" }],
+        lastWeek: false,
+      }),
     }),
     { params: Promise.resolve({ slug: "ogs" }) },
   );

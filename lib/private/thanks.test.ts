@@ -1,5 +1,6 @@
-// "Share the thanks" (issue 404, D114): the writing help's request carries no number and no name, and a
-// draft that drops or invents a placeholder is refused; names come back as written, even "{1}" or "@here";
+// "Share the thanks" (issue 404, D114): the writing help's request carries no number and no name and only
+// the people with the officer's words; without words the post is the template, one line per reason (issue
+// 772); a draft that drops or invents a placeholder is refused; names come back as written, even "{1}" or "@here";
 // the copy for the game stays within its 1,000 characters; Discord gets the post once per request id, pings
 // no one, refuses the same week within 30 s, and a failed or stuck post can be tried again; Take down
 // refuses another workspace's share and a Discord share; the Sunday and Monday nudge. Groq and Discord are
@@ -43,8 +44,8 @@ function stub(answer: (people: number) => string) {
 }
 
 describe("the weekly appreciation post's writing help (D114)", () => {
-  it("sends placeholders, plain deeds and the officer's words: no name, no number", async () => {
-    const { model, asked } = stub(() => "Hi all.\n{1} grew.\n{2} finished.\n{3}, thank you.\nBye.");
+  it("sends only the people with the officer's words, as placeholders: no name, no number", async () => {
+    const { model, asked } = stub(() => "{1} helped everyone settle.");
     const people = [
       { name: "Bramble 77", did: ["squad" as const] },
       { name: "Thistle", did: ["ad" as const], note: "helped the new ones {settle} in" },
@@ -58,18 +59,48 @@ describe("the weekly appreciation post's writing help (D114)", () => {
       for (const { name } of people) expect(sent).not.toContain(name.split(" ")[0]);
       expect(request.user).toContain("last week");
       expect(request.user).toContain("in the officer's words: helped the new ones settle in");
-      expect(request.user).toContain("{3}: no reason given");
+      // Issue 772: the people without words are the template's, never the model's.
+      expect(request.user).not.toContain("{2}");
     }
-    expect(asked[1]?.user).toContain("aumentou o esquadrão principal");
+    expect(asked[1]?.user).toContain("terminou o AD Tech");
     expect(texts.en).toBe(
-      "Hi all.\nBramble 77 grew.\nThistle finished.\nWobbleton, thank you.\nBye.",
+      [
+        "Thank you for last week, everyone.",
+        "",
+        "Thistle helped everyone settle.",
+        "",
+        "Grew their main squad: Bramble 77",
+        "Thank you as well: Wobbleton",
+        "",
+        "Thank you for playing with us.",
+      ].join("\n"),
     );
+  });
+
+  it("without the officer's words, lists each person once under their reason and asks no model", async () => {
+    const { model, asked } = stub(() => "");
+    const people = [
+      { name: "Bramble", did: ["squad" as const] },
+      { name: "Thistle", did: ["ad" as const] },
+      { name: "Moss", did: ["squad" as const] },
+      { name: "Fern", did: ["squad" as const, "ad" as const] },
+    ];
+    const texts = await draftThanks(model, { people, lastWeek: false });
+    expect(asked).toHaveLength(0);
+    // The people who did more first, then AD Tech, then the main squad; names in the order ticked.
+    expect(texts.en.split("\n").slice(2, 5)).toEqual([
+      "Finished AD Tech and grew their main squad: Fern",
+      "Finished AD Tech: Thistle",
+      "Grew their main squad: Bramble, Moss",
+    ]);
+    expect(texts["pt-BR"]).toContain("Esquadrão principal maior: Bramble, Moss");
+    expect(texts.fr).toContain("AD Tech terminé : Thistle");
   });
 
   it("refuses a draft that dropped or invented a placeholder", async () => {
     const people = [
-      { name: "Bramble", did: ["squad" as const] },
-      { name: "Thistle", did: [] },
+      { name: "Bramble", did: ["squad" as const], note: "led the rally" },
+      { name: "Thistle", did: [], note: "welcomed the new ones" },
     ];
     for (const answer of ["Thank you {1}.", "Thank you {1}, {2} and {3}."]) {
       const { model } = stub(() => answer);
@@ -82,11 +113,11 @@ describe("the weekly appreciation post's writing help (D114)", () => {
   it("puts names back as written, even one that looks like a placeholder or a mention", async () => {
     const { model } = stub(() => "Thank you {1} and {2}.");
     const people = [
-      { name: "{1}Rook", did: [] },
-      { name: "@here", did: [] },
+      { name: "{1}Rook", did: [], note: "kind words" },
+      { name: "@here", did: [], note: "kind words" },
     ];
     const { en } = await draftThanks(model, { people, lastWeek: false });
-    expect(en).toBe("Thank you {1}Rook and @here.");
+    expect(en).toContain("\nThank you {1}Rook and @here.\n");
   });
 
   it("keeps the copy for the game within its 1,000 characters, cut after a whole line", async () => {
@@ -99,6 +130,7 @@ describe("the weekly appreciation post's writing help (D114)", () => {
     const people = Array.from({ length: 5 }, (_, i) => ({
       name: `Friend${"x".repeat(i)}`,
       did: [],
+      note: "always there",
     }));
     const { en } = await draftThanks(model, { people, lastWeek: false });
     expect(noticeLength(en)).toBeGreaterThan(NOTICE_LIMIT);

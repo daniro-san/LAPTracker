@@ -1,14 +1,15 @@
 "use client";
 
 // "Share the thanks" (issue 404, D114) from the thanks box on Members and Home. Step one: who to thank
-// (ShareThanksPick.tsx). Step two: the weekly appreciation post in EN, PT and FR, drafted by the writing
-// help (or written by hand), edited freely, then copied for the game, posted to the members' Discord channel
+// (ShareThanksPick.tsx). Step two: the weekly appreciation post in EN, PT and FR, the template of
+// thanks-post.ts with the writing help's highlight lines (or the officer's words as typed), edited freely, then copied for the game, posted to the members' Discord channel
 // or put on the members' board, each once per request id (ShareThanksEdit.tsx, D100). Nothing is posted on
 // its own; nobody is listed as missing (D75).
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { thanksPost } from "@/lib/private/thanks-post";
 import { fill } from "@/lib/words";
 
 import type { SharePerson, ShareThanksProps } from "./share-thanks-data";
@@ -32,9 +33,17 @@ async function draft(slug: string, body: object): Promise<Texts | string> {
   }
 }
 
-const EMPTY: Texts = { en: "", "pt-BR": "", fr: "" };
+/** The post's template in the three languages, each person's few words as typed (issue 772). */
+const template = (chosen: (SharePerson & { note: string })[], lastWeek: boolean): Texts => ({
+  en: thanksPost(chosen, "en", lastWeek),
+  "pt-BR": thanksPost(chosen, "pt-BR", lastWeek),
+  fr: thanksPost(chosen, "fr", lastWeek),
+});
 
-/** "Write the thank-you": the draft route's three texts, or blank fields to write by hand. */
+/**
+ * "Write the thank-you": the draft route's three texts; or the template to edit by hand, without the
+ * writing help or when nobody has a few words (then the route is not asked).
+ */
 function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string })[]) {
   const { words } = props;
   const [texts, setTexts] = useState<Texts | null>(null);
@@ -43,7 +52,8 @@ function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string
   const write = async () => {
     if (chosen.length === 0) return setNote(words["share.pickOne"]);
     setNote(null);
-    if (!props.ai) return setTexts(EMPTY);
+    const own = template(chosen, props.week.lastWeek);
+    if (!props.ai || chosen.every((p) => !p.note)) return setTexts(own);
     setBusy(true);
     const answer = await draft(props.slug, {
       people: chosen.map((p) => ({ name: p.name, did: p.did, ...(p.note && { note: p.note }) })),
@@ -55,7 +65,7 @@ function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string
     // D126: turned off for the alliance reads like no writing help; a used-up daily limit says so.
     if (answer === "not_set_up" || answer === "turned_off" || answer === "cap_reached") {
       setNote(words[answer === "cap_reached" ? "features.cap.ai" : "share.ai.off"]);
-      return setTexts(EMPTY);
+      return setTexts(own);
     }
     setNote(words[answer === "busy" ? "share.ai.busy" : "share.ai.failed"]);
   };
@@ -63,7 +73,8 @@ function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string
     setTexts(null);
     setNote(null);
   };
-  return { texts, setTexts, busy, note, write, back };
+  const own = () => setTexts(template(chosen, props.week.lastWeek));
+  return { texts, setTexts, own, busy, note, write, back };
 }
 
 /** Step one's bar: Write the thank-you (or Write it yourself without the writing help), then the other. */
@@ -76,7 +87,7 @@ function pickActions(props: ShareThanksProps, w: ReturnType<typeof useWrite>) {
   };
   const own = {
     label: words["share.writeOwn"],
-    onClick: () => w.setTexts(EMPTY),
+    onClick: w.own,
     disabled: w.busy,
   };
   return { primary, ...(props.ai && { secondary: own }) };

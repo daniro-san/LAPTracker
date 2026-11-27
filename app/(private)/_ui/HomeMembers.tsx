@@ -9,8 +9,9 @@ import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { WeekCounts } from "@/lib/private/follow-up";
-import { cardFormats, progressText } from "@/lib/private/member-card";
+import { cardFormats } from "@/lib/private/member-card";
 import type { MembersView } from "@/lib/private/members";
+import { reasonColon, reasonGroups } from "@/lib/private/thanks-post";
 import { serverDay } from "@/lib/schedule";
 import { fill, plural } from "@/lib/words";
 
@@ -21,29 +22,40 @@ import { HomeNotedLink } from "./HomeNotedLink";
 import { shareThanksProps, type ShareThanksProps, type ThanksSwitches } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
 
-/** D109's progress in name order, its own block under the top lists, with "Share the thanks" (D114). */
+/**
+ * D109's progress, its own block under the top lists, with "Share the thanks" (D114): one line per reason
+ * with the names after it, as the shared post lists them (issue 772), never one run-on sentence.
+ */
 function SayThanks(props: {
   t: WorkspaceDictionary;
-  view: MembersView;
+  language: WorkspaceLanguage;
   nudge: boolean;
   share: ShareThanksProps;
 }) {
-  const { t, view } = props;
+  const { t, language } = props;
+  const groups = reasonGroups(props.share.people, language);
   return (
     <div className="py-2">
-      {view.thanks.progress.length > 0 && (
-        <p className="max-w-sm text-body-sm">
-          <span className="font-semibold text-ink/75">{t["thanks.progress"]} </span>
-          {view.thanks.progress.map((p, i) => (
-            <span key={p.uid}>
-              {i > 0 && "; "}
-              <bdi translate="no" className="font-semibold">
-                {p.name}
-              </bdi>{" "}
-              {progressText(p, t)}
-            </span>
-          ))}
-        </p>
+      {groups.length > 0 && (
+        <>
+          <h3 className="text-body-sm font-semibold text-ink/75">{t["thanks.progress"]}</h3>
+          <ul className="max-w-sm space-y-1 text-body-sm">
+            {groups.map((g) => (
+              <li key={g.label}>
+                {g.label}
+                {reasonColon(language)}
+                {g.names.map((name, i) => (
+                  <span key={i}>
+                    {i > 0 && ", "}
+                    <bdi translate="no" className="font-semibold">
+                      {name}
+                    </bdi>
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       <ShareThanks nudge={props.nudge} {...props.share} />
     </div>

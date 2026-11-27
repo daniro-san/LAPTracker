@@ -3,7 +3,9 @@
 // whole on its top edge, the ball of yarn beside the signature, the letter in Alegreya with each person on
 // their own line and their name in bold, and the officer's name as the signature. The text shows in the
 // viewer's language, the others one tap away (D105). Only this card's words: no value, no ranking. With no
-// card (none shared, or taken down) nothing renders at all. An officer's Take down sits under the card.
+// card (none shared, or taken down) nothing renders at all. An officer's Take down sits under the card. A
+// viewer the card names (an approved link, D142) reads "Ana, you're in this thank-you." first and finds
+// their name marked in the letter (issue 772).
 import type { ReactNode } from "react";
 
 import { AllianceBadge } from "@/app/_ui/Pictures";
@@ -21,41 +23,67 @@ import { ThanksTakeDown } from "./ThanksTakeDown";
 /** The officer's name as a signature: without a rank tag such as "(R4)" or "[R5]" at its end. */
 export const signedName = (name: string) => name.replace(/\s*[([]\s*R\d\s*[)\]]\s*$/i, "").trim();
 
-/** One line of the letter, each named person in bold; the longest name is matched first. */
-function withBoldNames(line: string, names: readonly string[]): ReactNode[] {
+/** The viewer's own name in the letter (issue 772): marked, not only by colour, as it is also bold. */
+const MARK = "rounded-sm bg-[color-mix(in_srgb,var(--yarn)_22%,transparent)] px-0.5 text-ink";
+
+/**
+ * One line of the letter, each named person in bold and the viewer's own name marked; the longest name is
+ * matched first.
+ */
+function withBoldNames(line: string, names: readonly string[], own: string | null): ReactNode[] {
   const known = [...names].filter((n) => n.trim()).sort((a, b) => b.length - a.length);
   if (known.length === 0) return [line];
   const pattern = new RegExp(
     `(${known.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
   );
-  return line.split(pattern).map((part, i) =>
-    known.includes(part) ? (
-      // Alegreya is loaded at 400 only: the name takes the loaded bold of Alegreya Sans.
+  return line.split(pattern).map((part, i) => {
+    if (!known.includes(part)) return part;
+    // Alegreya is loaded at 400 only: the name takes the loaded bold of Alegreya Sans.
+    const name = (
       <strong key={i} className="font-subhead font-bold">
         <bdi>{part}</bdi>
       </strong>
+    );
+    return part === own ? (
+      <mark key={i} className={MARK}>
+        {name}
+      </mark>
     ) : (
-      part
-    ),
-  );
+      name
+    );
+  });
 }
 
 /** The letter: one paragraph per line, with a small gap between them (blank lines add nothing more). */
-function Letter({ text, names }: { text: string; names: readonly string[] }) {
-  const lines = text.split("\n").filter((l) => l.trim() !== "");
+function Letter(props: { text: string; names: readonly string[]; own: string | null }) {
+  const lines = props.text.split("\n").filter((l) => l.trim() !== "");
   return (
     <div translate="no" className="mt-2 font-display text-[1.125rem] leading-relaxed break-words">
       {lines.map((line, i) => (
         <p key={i} className="mt-2 first:mt-0">
-          {withBoldNames(line, names)}
+          {withBoldNames(line, props.names, props.own)}
         </p>
       ))}
     </div>
   );
 }
 
+/** "Ana, you're in this thank-you.": the name in its own isolate, wherever the language puts it. */
+function YouLine({ t, name }: { t: WorkspaceDictionary; name: string }) {
+  const [before, after] = t["board.thanks.you"].split("{name}");
+  return (
+    <p className="mt-2 border-l-4 border-yarn pl-3 font-semibold">
+      {before}
+      <bdi translate="no">{name}</bdi>
+      {after}
+    </p>
+  );
+}
+
 export function BoardThanks(props: {
   thanks: BoardView["thanks"];
+  /** The viewer's own name when the card names them (an approved link, D142); else null. */
+  thanked: BoardView["thanked"];
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   slug: string;
@@ -72,7 +100,7 @@ export function BoardThanks(props: {
     <>
       <article
         aria-labelledby="board-thanks"
-        className="drawn-frame relative mt-8 bg-[color-mix(in_srgb,var(--yarn)_9%,var(--paper))] px-5 pt-5 pb-4 text-yarn"
+        className="drawn-frame relative mt-8 mb-3 bg-[color-mix(in_srgb,var(--yarn)_9%,var(--paper))] px-5 pt-5 pb-4 text-yarn"
       >
         <Wax tone="seal" className="absolute -top-6 right-4 size-14 rotate-12" />
         <div className="text-ink">
@@ -82,13 +110,17 @@ export function BoardThanks(props: {
           <p className="text-body-sm text-ink/75">
             {fill(t["board.thanks.week"], { range: weekRange(thanks.week, t, language) })}
           </p>
+          {/* Issue 772: a member named on the card reads that first, then the letter. */}
+          {props.thanked !== null && <YouLine t={t} name={props.thanked} />}
           <LanguageTag t={t} language={language} written={written} />
           <Translated
             id="thanks"
             t={t}
             language={language}
             written={written}
-            body={(l) => <Letter text={thanks.texts[l] ?? ""} names={thanks.names} />}
+            body={(l) => (
+              <Letter text={thanks.texts[l] ?? ""} names={thanks.names} own={props.thanked} />
+            )}
           />
           {/* The ball of yarn rests in the corner, its thread running towards the signature. */}
           <div className="mt-3 flex items-end justify-between gap-3">

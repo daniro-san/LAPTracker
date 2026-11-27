@@ -1,13 +1,15 @@
 // "Share the thanks" (issue 404, D114): the weekly appreciation post an officer writes from the thanks box.
-// The officer ticks who is named (this week's list starts ticked); the model drafts it in EN, PT and FR
-// from placeholders and plain deeds, never names or numbers; the officer edits it, then copies it for the
+// The officer ticks who is named (this week's list starts ticked); the post is thanks-post.ts's template in
+// EN, PT and FR, and the model writes only the highlight lines of the people the officer wrote a few words
+// about, from placeholders, plain deeds and those words, never names or numbers (issue 772); the officer
+// edits it, then copies it for the
 // game, posts it to the members' Discord channel (D102's webhook, once per request id, no pings) or puts it
 // on the members' board. Nothing is posted on its own, and nobody is ever listed as missing (D75).
 import { z } from "zod";
 
 import type { ChatModel } from "../ai/groq";
 import { WRITING_LANGUAGES } from "../ai/notice-writing";
-import { withNames, writeThanks, type Person } from "../ai/thanks-writing";
+import { withNames, writeThanks } from "../ai/thanks-writing";
 import type { Db } from "../db";
 import { claimShare, finishShare, takeDown, weekShared, type ShareRow } from "../repo/thanks";
 import type { WorkspaceAccess } from "./access";
@@ -19,6 +21,7 @@ import { discordMessages } from "./notice-formats";
 import { postMessages, STUCK_MS, type Channels } from "./notice-publish";
 import { NOTICE_LANGUAGES, NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "./notice-rules";
 import { postCallout } from "./post-callouts";
+import { thanksPost } from "./thanks-post";
 
 /** The most people one post names. */
 export const THANKS_PEOPLE = 40;
@@ -78,8 +81,9 @@ export const thanksInput = z.discriminatedUnion("action", [
 export type ShareInput = Extract<z.infer<typeof thanksInput>, { action: "share" }>;
 
 /**
- * The post in the three languages, each drafted on its own (one call per language, at once) and the names
- * put back in after the answer. Throws ChatError when the model fails.
+ * The post in the three languages: the template, with each language's highlight lines drafted on its own
+ * (one call per language, at once) and the names put back in after the answer. With nobody's few words,
+ * the template alone: the model is not asked. Throws ChatError when the model fails.
  */
 export async function draftThanks(
   model: ChatModel,
@@ -87,12 +91,17 @@ export async function draftThanks(
   /** How many languages the model did not answer (D126: only those units are given back). */
   onFailed: (n: number) => void = () => undefined,
 ): Promise<Record<NoticeLanguage, string>> {
-  const people: Person[] = input.people.map((p) => ({ did: p.did, note: p.note ?? "" }));
-  const names = input.people.map((p) => p.name);
+  const people = input.people.map((p) => ({ name: p.name, did: p.did, note: p.note ?? "" }));
+  const noted = people.filter((p) => p.note);
+  const names = noted.map((p) => p.name);
   const texts = await settled(
     WRITING_LANGUAGES.map(async (l) => {
-      const draft = await writeThanks(model, l, people, input.lastWeek);
-      return [l, withNames(draft, names)] as const;
+      if (noted.length === 0) return [l, thanksPost(people, l, input.lastWeek)] as const;
+      const draft = await writeThanks(model, l, noted, input.lastWeek);
+      const highlights = withNames(draft, names)
+        .split("\n")
+        .filter((line) => line.trim());
+      return [l, thanksPost(people, l, input.lastWeek, highlights)] as const;
     }),
     onFailed,
   );

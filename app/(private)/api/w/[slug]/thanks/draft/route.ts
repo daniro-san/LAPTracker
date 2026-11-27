@@ -38,13 +38,16 @@ export async function POST(
     if (!ai) return privateError(503, "not_set_up");
     if (!featureOn(access, "thanks_draft")) return privateError(403, "turned_off");
     // One unit per language, counted before Groq is asked, with D101's per-person and per-day limits and
-    // the workspace's own AI allowance (D126).
+    // the workspace's own AI allowance (D126). Nobody with a few words: Groq is not asked (issue 772).
     const countedAt = ctx.now();
-    const units = WRITING_LANGUAGES.length;
-    const refused = await quota(db, `desk:${access.user.id}`, units, countedAt, {
-      ws: access,
-      allowance: "ai",
-    });
+    const units = parsed.data.people.some((p) => p.note) ? WRITING_LANGUAGES.length : 0;
+    const refused =
+      units === 0
+        ? "ok"
+        : await quota(db, `desk:${access.user.id}`, units, countedAt, {
+            ws: access,
+            allowance: "ai",
+          });
     if (refused === "cap") return privateError(429, "cap_reached");
     if (refused !== "ok") return privateError(429, "busy");
     const started = ctx.now().getTime();

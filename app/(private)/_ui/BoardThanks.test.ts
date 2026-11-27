@@ -3,6 +3,7 @@
 // renders as if no thanks had been shared, for a member and in an officer's preview alike. Invented names.
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,7 +15,7 @@ import { boardView } from "@/lib/private/board";
 import { WORKSPACE_DICTIONARIES, type WorkspaceLanguage } from "@/lib/private/dictionary";
 import { createSession } from "@/lib/private/session";
 import { shareThanks, takeDownThanks } from "@/lib/private/thanks";
-import { workspaces, workspaceUsers } from "@/lib/schema";
+import { dailyRosters, workspaces, workspaceUsers } from "@/lib/schema";
 
 import { BoardThanks } from "./BoardThanks";
 
@@ -67,6 +68,7 @@ async function seen(who: Awaited<ReturnType<typeof jar>>, language: WorkspaceLan
   const html = renderToStaticMarkup(
     createElement(BoardThanks, {
       thanks: view.thanks,
+      thanked: view.thanked,
       t: WORKSPACE_DICTIONARIES[language],
       language,
       slug: "ogs",
@@ -134,6 +136,50 @@ describe("the thank-you card on the members' board (D114)", () => {
     }
   });
 
+  it("opens with the member's own line when their approved link is named, and with nothing personal otherwise", async () => {
+    const officer = await requireWorkspace(db, "ogs", await jar("Rook (R4)", "officer"), NOW);
+    if (!officer.ok) throw new Error("no access");
+    await board(officer, "Thank you, Bramble, from all of us.");
+    await db.insert(dailyRosters).values({
+      readDay: "2026-11-21",
+      unionId: 67111155,
+      memberCount: 2,
+      isFresh: true,
+      memberUids: [501, 502],
+      memberNames: ["Bramble", "Fern"],
+      memberPower: [1, 1],
+      memberKills: [0, 0],
+    });
+    const link = async (name: string, uid: number, state: "approved" | "pending") => {
+      const who = await jar(name, "member");
+      await db
+        .update(workspaceUsers)
+        .set({ playerUid: uid, playerLink: state })
+        .where(eq(workspaceUsers.id, users.get(name) ?? 0));
+      return who;
+    };
+
+    const named = await seen(await link("bramble-discord", 501, "approved"), "en");
+    expect(named.view.thanked).toBe("Bramble");
+    // The line before the letter, and the name marked in it.
+    expect(named.html.indexOf("you’re in this thank-you")).toBeLessThan(
+      named.html.indexOf("from all of us"),
+    );
+    expect(named.html).toContain('<bdi translate="no">Bramble</bdi>, you’re in this thank-you.');
+    expect(named.html).toContain("<mark");
+    // A pending claim on the same player, a member the card does not name, and no link: nothing personal.
+    for (const who of [
+      await link("claimant", 501, "pending"),
+      await link("fern-discord", 502, "approved"),
+      await jar("Moss", "member"),
+    ]) {
+      const other = await seen(who, "en");
+      expect(other.view.thanked).toBeNull();
+      expect(other.html).not.toContain("you’re in this thank-you");
+      expect(other.html).not.toContain("<mark");
+    }
+  });
+
   it("shows the alliance's emblem through /img/badge/[id] (D22), and none when it has none", () => {
     const thanks = {
       id: 1,
@@ -146,6 +192,7 @@ describe("the thank-you card on the members' board (D114)", () => {
       renderToStaticMarkup(
         createElement(BoardThanks, {
           thanks,
+          thanked: null,
           t: WORKSPACE_DICTIONARIES.en,
           language: "en",
           slug: "ogs",

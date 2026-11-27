@@ -69,6 +69,24 @@ export async function ownDays(
 }
 
 /**
+ * The member's name in the alliance's newest usable roster, for the board's "you're in this thank-you"
+ * (issue 772); null when it does not list them. Only the public name array, no raw_json.
+ */
+export async function ownName(db: Db, unionId: number, uid: number): Promise<string | null> {
+  const [row] = await db
+    .select({
+      name: sql<
+        string | null
+      >`(${dailyRosters.memberNames})[array_position(${dailyRosters.memberUids}, ${uid}::bigint)]`,
+    })
+    .from(dailyRosters)
+    .where(usable(unionId))
+    .orderBy(desc(dailyRosters.readDay))
+    .limit(1);
+  return row?.name ?? null;
+}
+
+/**
  * The member's might at the Start of the alliance's newest public scheduled event (the Saturday KvK)
  * between `since` and `now`; null when none read them.
  */
