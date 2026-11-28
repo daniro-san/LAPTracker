@@ -248,8 +248,11 @@ export const patchNotes: PatchNote[] = [
       "A member's own page on the board opens with a thank-you for the kills they gained in the last KvK, summed over its windows. The line is absent when there was no KvK in 30 days or no gain.",
       '/alliances: an "Alliances recruiting" list of alliances with spots free, from the last 2 days\' reads, with what each asks to join. Hidden until the alliances-recruiting flag is on.',
       "Origin of Chaos weeks are never called KvK: the KvK recap is not sent that Saturday, the member page's recovery and thank-you lines and the Insights and Follow-up KvK lines count from the newest KvK, and the /admin KvK opponent form lists KvKs only.",
+      "Notices: beside Translate, a line counts the members' game languages (for example English 18 · Português 9, from 31 of 40 members). It is a suggestion only and never picks a language.",
     ],
-    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808],
+    prs: [
+      766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
+    ],
     officer: [
       {
         title: {
