@@ -33,6 +33,8 @@ export const cardEn = {
   "card.history.versions": "Earlier values",
   "card.history.version": "{field}: {value} · {date}",
   "card.history.none": "Nothing recorded yet.",
+  // Issue 814: the language the game reported on the alliance's own player read (D132), desk only.
+  "card.gameLanguage": "Game language: {name} (read {date})",
   // Issue 516: the Follow-up block on the Overview. "This week" only for a member on the list or followed up.
   "card.followup.week": "This week: {line}",
   "card.followup.none": "This week: no follow-up note yet.",
@@ -93,6 +95,7 @@ export const cardPt: CardWords = {
   "card.history.versions": "Valores anteriores",
   "card.history.version": "{field}: {value} · {date}",
   "card.history.none": "Nada anotado ainda.",
+  "card.gameLanguage": "Idioma no jogo: {name} (lido em {date})",
   "card.followup.week": "Esta semana: {line}",
   "card.followup.none": "Esta semana: nenhuma nota de acompanhamento ainda.",
   "card.followup.open": "Mensagem para enviar",
@@ -148,6 +151,7 @@ export const cardFr: CardWords = {
   "card.history.versions": "Valeurs précédentes",
   "card.history.version": "{field} : {value} · {date}",
   "card.history.none": "Rien de noté pour l’instant.",
+  "card.gameLanguage": "Langue de jeu : {name} (lue le {date})",
   "card.followup.week": "Cette semaine : {line}",
   "card.followup.none": "Cette semaine : pas encore de note de suivi.",
   "card.followup.open": "Message à envoyer",

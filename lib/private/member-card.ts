@@ -9,6 +9,7 @@ import { compactLarge } from "../compact";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { factHistory, type FactRow } from "../repo/member-facts";
+import { gameLanguageReads } from "../repo/player-reads";
 import { endOfDayReads } from "../repo/workspace-rosters";
 import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
@@ -40,6 +41,7 @@ import {
 } from "./member-days";
 import { memberOrigin } from "./member-origin";
 import { squadsCard, type SquadsCard } from "./member-squads";
+import { DAY_MS } from "./member-week";
 import { membersView, type MemberRow } from "./members";
 import {
   breakText,
@@ -49,6 +51,8 @@ import {
   type Formats,
   type Status,
 } from "./members-sheet";
+import { NOTICE_LANGUAGE_DAYS } from "./notice-languages";
+import { messageLanguage } from "./ready-message";
 import { cardSelfReport, type CardSelfReport } from "./self-report";
 import { trendOf, type Previous, type WeekBase } from "./trend-words";
 
@@ -75,6 +79,16 @@ export interface FactLine {
   change?: string;
   /** Main squad and AD Tech: "Updated Tue, Nov 17", plain information, never a warning (D109). */
   updated?: string;
+}
+
+/** The line "Game language: {name} (read {date})": the browser fills `{name}` from the language's own name. */
+export interface CardGameLanguage {
+  /** The line's words with `{name}` and `{date}` still to fill. */
+  line: string;
+  /** The language the notices are written in, or null: shown as `other`. */
+  language: WorkspaceLanguage | null;
+  other: string;
+  date: string;
 }
 
 export interface CardData {
@@ -131,6 +145,8 @@ export interface CardData {
   followUp?: CardFollowUp | null;
   /** Issue 634: the Raid Shield block, from Friday's night check until KvK starts; null otherwise. */
   shield?: CardShield | null;
+  /** Issue 814: the game's language from the newest own-alliance read; null with no read (D75). */
+  gameLanguage?: CardGameLanguage | null;
   /** D154: what the member sent about themselves from their own link; null when nothing to show. */
   selfReport?: CardSelfReport | null;
 }
@@ -379,7 +395,7 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const [squads, origin, link, followUp, marks, shield, selfReport] = await Promise.all([
+  const [squads, origin, link, followUp, marks, shield, selfReport, game] = await Promise.all([
     squadsCard(db, access, uid, at.t, f),
     memberOrigin(db, access, uid, at.zone, at.t, f.date),
     cardLink(db, access, uid, at.t),
@@ -393,7 +409,22 @@ export async function memberCard(
     ),
     cardShield(db, access, member, at),
     cardSelfReport(db, access, uid, member.facts, at.t, f),
+    gameLanguageReads(
+      db,
+      access.unionId,
+      [uid],
+      new Date(at.now.getTime() - NOTICE_LANGUAGE_DAYS * DAY_MS),
+    ),
   ]);
+  const read = game.get(uid);
+  const gameLanguage: CardGameLanguage | null = read
+    ? {
+        line: at.t["card.gameLanguage"],
+        language: messageLanguage([read.language]),
+        other: at.t["notices.langs.other"],
+        date: f.date(read.readAt),
+      }
+    : null;
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => ({
       id: row.id,
@@ -407,5 +438,5 @@ export async function memberCard(
   });
   const mark = marks.get(uid);
   const statusMark = mark ? markLines(mark, at.t, f.date) : [];
-  return { ...card, statusMark, squads, link, followUp, shield, selfReport };
+  return { ...card, statusMark, squads, link, followUp, shield, selfReport, gameLanguage };
 }
