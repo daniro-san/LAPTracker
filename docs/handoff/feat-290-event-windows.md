@@ -66,7 +66,7 @@
 - The full suite's first run had one failure (`lib/notify-event-message.test.ts`, database down during notify). Fixed: notify falls back to one window when the window read fails.
 - Mutation check: with `windowedStart` returning the Start unchanged, `lib/windows.test.ts` fails with `[2240, 2240, 2240]` instead of `[240, 240, 240]`. Restored.
 - `pnpm check` after the rebase on bd0044d2: prettier, eslint and tsc green. vitest: `Test Files 6 failed | 376 passed | 2 skipped`, `Tests 6 failed | 2050 passed | 4 skipped`. All 6 failures are `Test timed out in 10000ms` (13–43 s each) at load average 41–47 from other sessions on this machine. Re-run on their own: 5 of the 6 files and `lib/windows.test.ts` passed together; `lib/squads-read.test.ts` timed out again in that group (16 s) and passed alone (11/11) at load 46. The drift and i18n steps, run on their own: "Everything's fine" (migration 0080 matches the schema) and "17 languages up to date with English". `pnpm db:generate` regenerated 0080 from the schema with the same statements as the hand-edited file, except the backfill insert.
-- **`pnpm check` is not green on this machine** (see above). Run it again on a quieter machine or in CI before merging.
+- After the review fixes, `pnpm check` at load average 3–5: green. prettier, eslint, tsc; vitest `Test Files 382 passed | 2 skipped (384)`, `Tests 2058 passed | 4 skipped (2062)`; drift "Everything's fine"; "i18n: 17 languages up to date with English". The earlier timeouts were load only.
 - Not run: `next build`, a browser view of a two-window event page, the migration on Neon (no production or preview access in this session). 0 upstream calls.
 
 ## Open issues
@@ -93,7 +93,19 @@
 5. **Admin buttons** (`/api/snapshot`, "Run something now", re-runs) act on window 1. A forced re-run of window 2's Before or After from /admin is not possible yet.
 6. **D63 for a later window:** a stale window-2 Before cannot be read again with `stale: true` (see Decisions).
 7. **The event pause** (`inEventWindow` in `lib/schedule.ts`: squads reads, lookups, the workspace's site reads) spans the scheduled event's first Before to its last After. It is unchanged here because the env gives one window. Build 2 decides whether a two-window event pauses those reads for the 12 h between windows or only inside each window.
-8. **Kill share vs might share** pairs each window's Before and After in SQL. An alliance whose row failed in one window counts only its other windows there, while its Start and End rows decide whether it is shown.
+8. **The alliance-in-event page's member list** (`viewsOf` in `app/_ui/member-views.ts`) shows each member's change from Start to End. Its totals and member movers sum the windows (review fixes below); the per-member list does not yet.
+9. **Window-row repair** in `findOrCreateEvent` still runs its `insert … on conflict do nothing` on every tick in the creation span. Skipping it when the rows exist needs a select of the same cost, so it was left.
+
+## Review fixes (PR #784, 2026-11-27)
+
+1. `GET /api/events/[id]` no longer serves `between`: its alliance rows carried `powerBoard`, `killsBoard`, `source` and `cached` (D5). Test: a two-window event serves its Start and End only, with no board numbers.
+2. `getEventDetail` reads the Befores and Afters in one statement and splits the rows between windows in memory: no extra round trip.
+3. Live strip: a later window's Before counts as the newest reading when it finished after the latest sample (`lastReadAt`), so window 2's 14:15 UTC slot is not late before its 14:30 sample. Test at 14:25 UTC (12:25 server); it fails without the fix.
+4. `memberMovers` takes `between` as a required argument. The alliance-in-event page passes `eventBetweenIds(db, eventId)`, and its totals use `getAllianceDetail`'s new `changeFrom` (the windowed Start, multi-window events only).
+5. `memberTurnout` takes `between` as a required argument. The merge simulator's `latestTurnouts` passes `eventBetweenIds` per event. Test: with an alliance's window-1 After stale, that alliance has no turnout figure, and the other 19 have 240 each.
+6. Kill share vs might share: an alliance has a gained figure only when every window up to the End has a usable (fresh, no error) Before and After pair, as in `windowedKills`. Same test: the stale alliance is not in the rows, and the totals count 19 alliances.
+7. Player page: Might and Kills in an event are the sum of the windows' changes (`betweenSightings`, `windowedStart`), as in the player compare. With no rows between windows the old Start-to-End path stays, so a null kills (D15) is shown as before. Level stays Start to End. Test: the member's kills change is 120.
+8. `allianceHistory` runs one chain query over the non-sample rows and splits it by `between_windows` in memory.
 
 ## Next
 
