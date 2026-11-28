@@ -495,8 +495,5 @@ export async function lastOnlineTimes(
     .where(
       and(usable(unionId), isNotNull(dailyRosters.rawJson), gte(dailyRosters.readDay, sinceDay)),
     );
-  return rows.flatMap((r) => {
-    const at = time(r.at);
-    return at ? [at] : [];
-  });
+  return rows.map((r) => time(r.at)).filter((at) => at !== null);
 }
