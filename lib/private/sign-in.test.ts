@@ -22,7 +22,7 @@ import {
   SESSION_COOKIE,
   SESSION_MS,
 } from "./session";
-import { countSignIn, finishSignIn, startSignIn, STATE_COOKIE } from "./sign-in";
+import { countSignIn, finishSignIn, startSignIn, STATE_COOKIE, type SignInDeps } from "./sign-in";
 import {
   cookieValue,
   deps,
@@ -82,22 +82,19 @@ describe("workspace sign-in (D71)", () => {
     expect(location((await signIn("ogs", "officer", T0, preview)).step)).toBe("/w/ogs");
   });
 
-  it("counts a start and a failure's reason code in PostHog, with nothing else (issue 781)", async () => {
+  it("counts a start only on the way to Discord, and a failure's reason code, with nothing else (issue 781)", async () => {
     const on = { VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" };
-    const refused = (await signIn("ogs", "outsider", T0, on)).step;
     const sent = vi.fn<typeof fetch>(async () => new Response("{}"));
     const ctx = { ...deps(T0, on), fetch: sent };
-    countSignIn(
-      ctx,
-      "workspace",
-      { kind: "redirect", location: "https://discord.com/x", cookies: [] },
-      {
-        silent: true,
-      },
-    );
-    countSignIn(ctx, "workspace", refused);
-    countSignIn(ctx, "chooser", { kind: "redirect", location: "/w/ogs#signed-in", cookies: [] });
-    await vi.waitFor(() => expect(sent).toHaveBeenCalledTimes(2));
+    const off = { ...ctx, env: { ...ctx.env, DISCORD_CLIENT_ID: undefined } };
+    const begin = async (c: SignInDeps, slug: string, silent: boolean) =>
+      countSignIn(c, "workspace", await startSignIn(db, c, slug, ORIGIN, silent), { silent });
+    await begin(ctx, "ogs", true);
+    // A slug with no workspace and a sign-in not set up never reach Discord: no start.
+    await begin(ctx, "zzz", false);
+    await begin(off, "ogs", false);
+    countSignIn(ctx, "workspace", (await signIn("ogs", "outsider", T0, on)).step);
+    await vi.waitFor(() => expect(sent).toHaveBeenCalledTimes(3));
     const events = sent.mock.calls.flatMap(([, init]) => {
       const body = JSON.parse(String(init?.body)) as {
         batch: { event: string; properties: Record<string, unknown> }[];
@@ -109,8 +106,19 @@ describe("workspace sign-in (D71)", () => {
     });
     expect(events).toEqual([
       { event: "ws_sign_in_started", via: "workspace", silent: true },
+      { event: "ws_sign_in_failed", via: "workspace", reason: "not_configured" },
       { event: "ws_sign_in_failed", via: "workspace", reason: "not_member" },
     ]);
+  });
+
+  it("counts no failure for a sign-in whose return path holds ?e=denied (issue 781)", async () => {
+    const on = { VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" };
+    const { step } = await signIn("ogs", "officer", T0, on, { next: "/w/ogs/members?e=denied" });
+    expect(location(step)).toBe("/w/ogs/members?e=denied#signed-in");
+    const sent = vi.fn<typeof fetch>(async () => new Response("{}"));
+    countSignIn({ ...deps(T0, on), fetch: sent }, "workspace", step);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(sent).not.toHaveBeenCalled();
   });
 
   it("lets in an account through an allowlist entry that has not expired", async () => {

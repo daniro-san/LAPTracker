@@ -9,8 +9,8 @@ Branch `feat/781-observability` from `origin/dev` (959b8851). Code parts of issu
 - **Sign-in (server events, `lib/analytics/server.ts`, `lib/private/sign-in.ts`)**:
   - `ws_sign_in_started { via: workspace | chooser, silent }` from `/api/w/[slug]/login` and `/api/w/login`.
   - `ws_sign_in_failed { via, reason }` from those routes and from `/api/w/auth/callback`. `reason` comes from the closed list `SIGN_IN_FAILURES`: `rate_limited`, `bad_state`, `not_configured`, `denied`, `discord`, `none`, `not_member`, `no_role`, `board_closed`, `allowlist_expired`, `blocked`.
-  - `signInFailure(step)` reads the reason from the step: a refusal's code, or the `e` / `why` parameter of a same-origin redirect. A value outside the list counts as no failure.
-  - `countSignIn` sends after the response (`sendLater`), with the fixed server id, no person, no slug and no workspace.
+  - The `Step` a redirect returns carries `failure` (the reason, set where `lib/private/sign-in.ts` and `lib/private/chooser.ts` build a failure redirect) and `authorize` (set on the redirect to Discord's authorize page). `signInFailure(step)` reads a refusal's code or `failure`, never the URL: a successful landing's return path may hold `?e=denied` (PR 798 review). `refusal.why satisfies SignInFailure` makes tsc fail if `NoAccess` and `SIGN_IN_FAILURES` drift.
+  - `countSignIn` sends `ws_sign_in_started` only for a step marked `authorize`: an unknown slug and `not_configured` are no start. It sends after the response (`sendLater`), with the fixed server id, no person, no slug and no workspace.
   - The invite's sign-in is left out because it has `ws_invite_opened` and `ws_invite_completed`.
 - **Share thanks (browser, `lib/analytics/events.ts`, `ShareThanks.tsx`, `ShareThanksEdit.tsx`)**:
   - `ws_thanks_started` when "Share the thanks" opens.
@@ -29,7 +29,7 @@ Branch `feat/781-observability` from `origin/dev` (959b8851). Code parts of issu
   - A dated "Changed" line.
 - **Tests (one per behaviour)**:
   - `lib/app-errors.test.ts` "sends the route pattern, the error's class and frames, the release and the commit, and no private value (issue 781)".
-  - `lib/private/sign-in.test.ts` "counts a start and a failure's reason code in PostHog, with nothing else (issue 781)": the payload is exactly `{event, via, silent|reason}` plus `$lib` and `$process_person_profile`, and a landing sends nothing.
+  - `lib/private/sign-in.test.ts` "counts a start only on the way to Discord, and a failure's reason code, with nothing else (issue 781)" (real steps: the authorize redirect, an unknown slug, `not_configured`, a refusal; the payload is exactly `{event, via, silent|reason}` plus `$lib` and `$process_person_profile`) and "counts no failure for a sign-in whose return path holds ?e=denied (issue 781)".
   - `lib/analytics/posthog.test.ts` "put the release on an exception, and on no other event (issue 781)".
   - The new browser events' "only closed-list properties" guarantee is the existing type-level test in `lib/analytics/events.test.ts`, which now covers them. `SERVER_EVENTS` there lists the two new server events.
 
@@ -47,11 +47,12 @@ Branch `feat/781-observability` from `origin/dev` (959b8851). Code parts of issu
 
 - `pnpm vitest related --run` on the changed files: 210 files passed, 1 skipped; 1205 tests passed, 1 skipped. After the lint fix, related to `lib/analytics/server.ts` and `ShareThanks.tsx`: 1029 tests passed.
 - `pnpm check` passed: prettier, eslint, tsc, vitest, drizzle drift ("nothing to migrate"), i18n (17 languages up to date). The first run failed on two eslint complexity errors (`ShareThanks.tsx` `write`, `server.ts` `ownProperties`). Both were fixed in one round.
+- PR 798 review fixes: breaking each on purpose fails its test. Reading the reason from the URL again fails "counts no failure … ?e=denied". Sending the start for every step fails "counts a start only on the way to Discord …". Both were restored.
 - No upstream API call was made. Nothing was sent to PostHog: the tests use a stand-in fetch.
 
 ## Open issues
 
-- `silent` renewals that fail at Discord come back as `denied` in `ws_sign_in_failed`, the same as a person who pressed Cancel. The callback cannot tell them apart, because the state does not carry `silent`. To separate them, the state would need a flag.
+- `silent` renewals that fail at Discord come back as `denied` in `ws_sign_in_failed`, the same as a person who pressed Cancel. The callback cannot tell them apart, because the state does not carry `silent`. To separate them, the state would need a flag. The tracking plan says so on the `reason` list.
 - `$feature_flag_called` exposure data (raised in the issue) is not part of this change.
 
 ## Next
