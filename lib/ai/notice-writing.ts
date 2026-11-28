@@ -238,7 +238,8 @@ export async function translateText(
   limit?: number,
   glossary: readonly string[] = [],
 ): Promise<Translation> {
-  const { text: protectedText, kept } = protectWords(text, glossary);
+  const guard = protectWords(text, glossary);
+  const protectedText = guard.text;
   const sent = withOwnNames(protectedText, to);
   const request = {
     system: withGlossary(
@@ -249,23 +250,23 @@ export async function translateText(
   };
   const first = plainText(await model.complete(request), to);
   // A placeholder the model dropped: the same failure as no answer, so the officer's text stays as it is.
-  if (!placeholdersIntact(first, kept)) throw new ChatError("failed");
+  if (!placeholdersIntact(first, guard)) throw new ChatError("failed");
   const firstShare = untranslatedShare(sent, first);
   if (firstShare < UNTRANSLATED_SHARE) {
-    return { text: restoreWords(first, kept), retried: false, partly: false, same: false };
+    return { text: restoreWords(first, guard), retried: false, partly: false, same: false };
   }
   if (from === null) {
-    return { text: restoreWords(first, kept), retried: false, partly: false, same: true };
+    return { text: restoreWords(first, guard), retried: false, partly: false, same: true };
   }
   const second = await model.complete(request, RETRY).then(
     (answer) => plainText(answer, to),
     () => null,
   );
-  const intact = second !== null && placeholdersIntact(second, kept);
+  const intact = second !== null && placeholdersIntact(second, guard);
   const secondShare = intact ? untranslatedShare(sent, second) : 1;
   const better = intact && secondShare <= firstShare ? second : first;
   return {
-    text: restoreWords(better, kept),
+    text: restoreWords(better, guard),
     retried: true,
     partly: Math.min(firstShare, secondShare) >= UNTRANSLATED_SHARE,
     same: false,
@@ -280,7 +281,8 @@ export async function improveText(
   limit: number,
   glossary: readonly string[] = [],
 ): Promise<string> {
-  const { text: sent, kept } = protectWords(text, glossary);
+  const guard = protectWords(text, glossary);
+  const sent = guard.text;
   const answer = plainText(
     await model.complete({
       system: withGlossary(improveSystem(limit), glossary),
@@ -288,8 +290,8 @@ export async function improveText(
     }),
     language,
   );
-  if (!placeholdersIntact(answer, kept)) throw new ChatError("failed");
-  return restoreWords(answer, kept);
+  if (!placeholdersIntact(answer, guard)) throw new ChatError("failed");
+  return restoreWords(answer, guard);
 }
 
 /** Fit's two budgets as shares of the limit: the first ask, then the one stricter retry (D113). */
@@ -308,7 +310,8 @@ export async function fitText(
   length: (text: string) => number,
   glossary: readonly string[] = [],
 ): Promise<{ text: string; retried: boolean } | null> {
-  const { text: sent, kept } = protectWords(text, glossary);
+  const guard = protectWords(text, glossary);
+  const sent = guard.text;
   for (const [i, share] of FIT_BUDGETS.entries()) {
     const budget = Math.floor(limit * share);
     const answer = await model.complete({
@@ -317,8 +320,8 @@ export async function fitText(
     });
     const shortened = plainText(answer, language);
     // A dropped placeholder counts as a try that did not fit, so the text stays as it is when both fail.
-    if (!placeholdersIntact(shortened, kept)) continue;
-    const fitted = restoreWords(shortened, kept);
+    if (!placeholdersIntact(shortened, guard)) continue;
+    const fitted = restoreWords(shortened, guard);
     if (length(fitted) <= limit) return { text: fitted, retried: i > 0 };
   }
   return null;

@@ -39,9 +39,9 @@ describe("the alliance glossary in a request", () => {
   });
 
   it("keeps a word in the case it was written, and whole words only", () => {
-    const { text, kept } = protectWords("elixir scramble and Elixir Scrambles", WORDS);
-    expect(text).toBe("{G1} and Elixir Scrambles");
-    expect(restoreWords("{G1} e outros", kept)).toBe("elixir scramble e outros");
+    const guard = protectWords("elixir scramble and Elixir Scrambles", WORDS);
+    expect(guard.text).toBe("{G1} and Elixir Scrambles");
+    expect(restoreWords("{G1} e outros", guard)).toBe("elixir scramble e outros");
   });
 
   it("treats an answer that dropped a placeholder as a failure, so the text stays as it is", async () => {
@@ -56,7 +56,21 @@ describe("the alliance glossary in a request", () => {
     const fit = model(dropped);
     expect(await fitText(fit.chat, "en", TEXT, 1000, (t) => t.length, WORDS)).toBeNull();
     expect(fit.requests).toHaveLength(2);
-    expect(placeholdersIntact("{G1} and {G2}", ["a", "b"])).toBe(true);
-    expect(placeholdersIntact("{G1}", ["a", "b"])).toBe(false);
+    const two = protectWords("[ZZZ] and Elixir Scramble", WORDS);
+    expect(placeholdersIntact("{G1} and {G2}", two)).toBe(true);
+    expect(placeholdersIntact("{G1}", two)).toBe(false);
+  });
+
+  it("still translates text that already holds a {G1}, with or without a glossary", async () => {
+    const text = "Use {G1} here, thank you!";
+    const empty = model(() => "Use {G1} aqui, obrigado!");
+    expect((await translateText(empty.chat, "en", "pt-BR", text, 1000, [])).text).toBe(
+      "Use {G1} aqui, obrigado!",
+    );
+    // With a glossary, a {G1} the text already has is not taken for the glossary's placeholder.
+    const full = model(() => "{G1} {L1} aqui");
+    const done = await translateText(full.chat, "en", "pt-BR", "[ZZZ] {G1} here", 1000, WORDS);
+    expect(full.requests[0]?.user).toContain("{G1} {L1} here");
+    expect(done.text).toBe("[ZZZ] {G1} aqui");
   });
 });

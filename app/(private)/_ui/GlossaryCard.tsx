@@ -8,7 +8,7 @@ import { useState, type FormEvent } from "react";
 
 import { Button } from "@/lib/brand/components/Button";
 import { chip, FIELD } from "@/lib/brand/components/controls";
-import { cleanWord, GLOSSARY_MAX_WORDS } from "@/lib/glossary";
+import { cleanWord, GLOSSARY_MAX_WORDS, undoList } from "@/lib/glossary";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { fill } from "@/lib/words";
 
@@ -119,10 +119,8 @@ export function GlossaryCard(props: {
   const { words, busy, save } = useGlossary(props.slug, props.words, t);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  /** The last word removed and the list before it, while Undo is offered. */
-  const [removed, setRemoved] = useState<{ word: string; before: string[]; n: number } | null>(
-    null,
-  );
+  /** The last word removed, while Undo is offered. */
+  const [removed, setRemoved] = useState<{ word: string; n: number } | null>(null);
   const full = words.length >= GLOSSARY_MAX_WORDS;
   const word = cleanWord(draft);
 
@@ -137,10 +135,9 @@ export function GlossaryCard(props: {
   };
   const remove = async (gone: string) => {
     setError(null);
-    const before = words;
     const failed = await save(words.filter((w) => w !== gone));
     if (failed) return setError(failed);
-    setRemoved({ word: gone, before, n: (removed?.n ?? 0) + 1 });
+    setRemoved({ word: gone, n: (removed?.n ?? 0) + 1 });
   };
   return (
     <section aria-labelledby="glossary" className="drawn-card mt-6 max-w-2xl px-4 py-3">
@@ -161,7 +158,7 @@ export function GlossaryCard(props: {
           undo={t["glossary.undo"]}
           failed={t["glossary.undoFailed"]}
           onUndo={async () => {
-            const failed = await save(removed.before);
+            const failed = await save(undoList(words, removed.word));
             if (!failed) setRemoved(null);
             return failed === null;
           }}

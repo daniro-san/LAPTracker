@@ -26,3 +26,13 @@ export function cleanWords(raw: readonly string[]): string[] | null {
   }
   return words;
 }
+
+/**
+ * The list after Undo of a removal: the words now saved plus the removed one, which goes to the end; the
+ * list is not put back as it was, so a word added since stays. Unchanged when the word is back already
+ * (any case) or the list is full.
+ */
+export function undoList(current: readonly string[], removed: string): string[] {
+  const back = current.some((w) => w.toLocaleLowerCase() === removed.toLocaleLowerCase());
+  return back || current.length >= GLOSSARY_MAX_WORDS ? [...current] : [...current, removed];
+}
