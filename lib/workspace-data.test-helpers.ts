@@ -11,6 +11,7 @@ import {
   dailyReads,
   dailyRosters,
   garrisonPlans,
+  kvkPlans,
   memberFacts,
   memberSelfReports,
   nameAliases,
@@ -96,6 +97,18 @@ export async function seedWorkspace(db: Db, slug: string, unionId: number) {
   return { workspaceId, unionId, officer };
 }
 
+/** A KvK entry and its plan (D161). */
+async function seedKvkPlan(db: Db, ws: number, by: { createdBy: number; createdAt: Date }) {
+  const kvk = id(
+    await db
+      .insert(calendarEntries)
+      .values({ workspaceId: ws, kind: "kvk", day: DAY, minute: 720, ...by })
+      .returning({ id: calendarEntries.id }),
+  );
+  const roles = [{ name: "Scout", uids: [101] }];
+  await db.insert(kvkPlans).values({ workspaceId: ws, entryId: kvk, roles, rev: 1 });
+}
+
 /** A row in every table the workspace owns (the squads rows need `seedRoster`'s daily read first). */
 export async function seedEverything(
   db: Db,
@@ -146,6 +159,7 @@ export async function seedEverything(
   await db
     .insert(garrisonPlans)
     .values({ workspaceId: ws, entryId: entry, week: WEEK, enemyMight: 1000 });
+  await seedKvkPlan(db, ws, by);
   await seedNotices(db, ws, officer);
   await seedCallsAndThefts(db, ws, officer);
   const share = id(

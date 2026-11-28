@@ -12,6 +12,7 @@ import { followUpHelpFr } from "./dictionary.followup-help";
 import { garrisonFr } from "./dictionary.garrison";
 import { importFr } from "./dictionary.import";
 import { insightsFr } from "./dictionary.insights";
+import { kvkPlanFr } from "./dictionary.kvk-plan";
 import { lifecycleFr } from "./dictionary.lifecycle";
 import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
@@ -298,6 +299,7 @@ export const fr: WorkspaceDictionary = {
   ...shareFr,
   ...squadsFr,
   ...garrisonFr,
+  ...kvkPlanFr,
   ...settingsFr,
   ...dataFr,
   ...featuresFr,

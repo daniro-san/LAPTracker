@@ -60,6 +60,9 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     POST: { body: { action: "save", entry: 1, week: "2026-11-16", rev: 0, pairs: [] } },
   },
   "import/route.ts": { POST: { body: { csv: "name", apply: false, decisions: [] } } },
+  "kvk-plan/route.ts": {
+    POST: { body: { action: "save", entry: 1, rev: 0, roles: [], note: "" } },
+  },
   "members/[uid]/facts/route.ts": {
     POST: { body: { changes: [{ field: "notes", version: 0, value: "x", source: "officer" }] } },
   },

@@ -38,6 +38,8 @@ export const DESK_FEATURES = [
   "profile",
   "thanks",
   "garrison",
+  // D161: a KvK entry's plan saved ("save") and its message made into a notice draft ("draft").
+  "kvk_plan",
   "tracker_key",
   "workspace_data",
   // D129: Alliance settings → Discord (the bot and commands check, the two webhooks and their test).

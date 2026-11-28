@@ -12,6 +12,7 @@ import { followUpHelpPt } from "./dictionary.followup-help";
 import { garrisonPt } from "./dictionary.garrison";
 import { importPt } from "./dictionary.import";
 import { insightsPt } from "./dictionary.insights";
+import { kvkPlanPt } from "./dictionary.kvk-plan";
 import { lifecyclePt } from "./dictionary.lifecycle";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
@@ -297,6 +298,7 @@ export const pt: WorkspaceDictionary = {
   ...sharePt,
   ...squadsPt,
   ...garrisonPt,
+  ...kvkPlanPt,
   ...settingsPt,
   ...dataPt,
   ...featuresPt,

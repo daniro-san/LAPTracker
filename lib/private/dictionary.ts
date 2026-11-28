@@ -13,6 +13,7 @@ import { fr } from "./dictionary.fr";
 import { garrisonEn } from "./dictionary.garrison";
 import { importEn } from "./dictionary.import";
 import { insightsEn } from "./dictionary.insights";
+import { kvkPlanEn } from "./dictionary.kvk-plan";
 import { lifecycleEn } from "./dictionary.lifecycle";
 import { membersEn } from "./dictionary.members";
 import { noticesEn } from "./dictionary.notices";
@@ -276,6 +277,7 @@ const en = {
   ...shareEn,
   ...squadsEn,
   ...garrisonEn,
+  ...kvkPlanEn,
   ...settingsEn,
   ...dataEn,
   ...featuresEn,
