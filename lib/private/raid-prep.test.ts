@@ -136,6 +136,34 @@ describe("Raid prep (D137)", () => {
     expect([...night.rows.values()].every((r) => r.hand === null)).toBe(true);
   });
 
+  it("takes a member off To check by hand when the after-reset check's map saw a shield (issue 827)", async () => {
+    const access = await signedIn();
+    const occasion = await raidPrep(access);
+    const opened = await openOccasion(db, access, occasion);
+    const clock = { zone: ZONE, now: NOW };
+    const before = await prepView(db, access, opened as NonNullable<typeof opened>, clock);
+    expect(before.handCheck).toContain(104);
+    // Saturday 02:31 ST: 104 read once, a shield on the map of 01:35 ST (after the reset).
+    const map = at("2026-11-21T03:35:00Z");
+    await db.insert(playerReads).values({
+      unionId: OGS,
+      uid: 104,
+      readAt: at("2026-11-21T04:31:00Z"),
+      shielding: 1,
+      shieldType: 0,
+      mapUpdatedAt: map,
+    });
+    const view = await prepView(db, access, opened as NonNullable<typeof opened>, clock);
+    expect(view.rows.get(104)?.tracker?.checkpoints).toEqual([
+      { pass: "reset", at: map.getTime(), on: true },
+    ]);
+    expect(view.rows.get(104)?.hand).toBeNull();
+    expect(view.handCheck).not.toContain(104);
+    // The night and morning counts never count it.
+    expect(view.night).toMatchObject({ read: 3, on: 2 });
+    expect(view.morning).toMatchObject({ read: 2, on: 1 });
+  });
+
   it("Accept the tracker's marks ✓ only those seen with a shield and not marked yet", async () => {
     const access = await signedIn();
     const occasion = await raidPrep(access);

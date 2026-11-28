@@ -1,12 +1,12 @@
 // Raid prep (issue 474, D137): the Raid Shield roll call's second mark and the tracker's shield readings,
 // inside one workspace (D71). Each member gets two marks: Shield (the roll call's own, the tracker's
 // suggestion confirmed by an officer) and Squads off the wall (`part` `wall`, marked after scouting: the
-// API cannot say where squads are). The readings are the Raid Shield check's two reads of the alliance's
+// API cannot say where squads are). The readings are the Raid Shield check's three reads of the alliance's
 // own members (`player_reads`, D132), only while `shield_check` is on (D134). They are attack-relevant:
 // nothing here is logged, cached or sent anywhere but this workspace's pages. People first (D75): "not
 // seen yet" is a hint; the tracker's marks (lib/raid-prep-fill.ts) are ✓, and ✗ only from the morning
 // check, a dated reading the owner approved (D137, 2026-11-21), and never over an officer's mark. Each row
-// shows the night and morning checkpoints that happened. A seen shield's length is never shown:
+// shows the night, after-reset (issue 827) and morning checkpoints that happened. A seen shield's length is never shown:
 // `shield_type` 0 was seen for an 8 h and a 24 h shield (D137, 2026-11-21).
 import type { Db } from "../db";
 import { fridayOf, trackerMarks } from "../raid-prep-fill";
@@ -22,6 +22,7 @@ import {
   morningMinuteOf,
   passWindows,
   raidOf,
+  resetWindow,
   suggestionOf,
   type ShieldSuggestion,
 } from "../shield-check";
@@ -45,16 +46,22 @@ export { fridayOf };
 /** The languages Raid prep's message is written in; any other is English. */
 export type MessageLanguage = "en" | "pt-BR" | "fr";
 
-/** One of the tracker's two checkpoints of a member (D137, 2026-11-21): its map scan's time (epoch ms). */
+/**
+ * One of the tracker's checkpoints of a member (D137, 2026-11-21; the after-reset check, issue 827): its map
+ * scan's time (epoch ms).
+ */
 export interface Checkpoint {
-  pass: "night" | "morning";
+  pass: "night" | "reset" | "morning";
   at: number;
   on: boolean;
 }
 
 export interface TrackerHint {
   suggestion: ShieldSuggestion;
-  /** The night check, then the morning check: only those that happened, each with its map scan's time. */
+  /**
+   * The night check, the after-reset check, then the morning check: only those that happened, each with
+   * its map scan's time.
+   */
   checkpoints: Checkpoint[];
 }
 
@@ -180,11 +187,22 @@ const checkpointOf = (pass: Checkpoint["pass"], r: StoredReading | null): Checkp
     ? [{ pass, at: (r.mapAt ?? r.readAt).getTime(), on: suggestionOf(r) === "on" }]
     : [];
 
-/** A row's hint from its two readings; the member card reads it too (issue 634). */
-export function hintOf(night: StoredReading | null, morning: StoredReading | null): TrackerHint {
+/**
+ * A row's hint from its readings; the member card reads it too (issue 634), without the after-reset check.
+ * The suggestion stays the night's or the morning's, as "Accept the tracker's" marks (lib/raid-prep-fill.ts).
+ */
+export function hintOf(
+  night: StoredReading | null,
+  morning: StoredReading | null,
+  reset: StoredReading | null = null,
+): TrackerHint {
   return {
     suggestion: suggestionOf(morning ?? night),
-    checkpoints: [...checkpointOf("night", night), ...checkpointOf("morning", morning)],
+    checkpoints: [
+      ...checkpointOf("night", night),
+      ...checkpointOf("reset", reset),
+      ...checkpointOf("morning", morning),
+    ],
   };
 }
 
@@ -216,16 +234,24 @@ const fromTrackerOf = (marks: {
     ? { unchecked: unchecked(marks.main, marks.wall, marks.checkedAt) }
     : null;
 
+/** A member's readings: the night check's, the after-reset check's (issue 827) and the morning check's. */
+type Read = {
+  night: StoredReading | null;
+  reset: StoredReading | null;
+  morning: StoredReading | null;
+};
+
 /** The row's tracker hint and its reason to check by hand; neither while the check is off. */
 function trackerOf(
-  read: { night: StoredReading | null; morning: StoredReading | null },
+  read: Read,
   check: { tracker: boolean; reset: number; named: boolean },
 ): Pick<PrepRow, "tracker" | "hand"> {
   if (!check.tracker) return { tracker: null, hand: null };
-  const hint = read.morning || read.night ? hintOf(read.night, read.morning) : null;
+  const hint =
+    read.morning || read.reset || read.night ? hintOf(read.night, read.morning, read.reset) : null;
   // A checkpoint's time falls back to the read's when the map's is missing: not a map, for the list.
   const mapped = (r: StoredReading | null) => (r?.mapAt ? r : null);
-  const maps = hintOf(mapped(read.night), mapped(read.morning)).checkpoints;
+  const maps = hintOf(mapped(read.night), mapped(read.morning), mapped(read.reset)).checkpoints;
   // Names to check by hand only once the morning check has read (issue 826): the night check's maps are
   // mostly from before the reset, so "not seen" there says little.
   return { tracker: hint, hand: check.named ? handReason(hint, maps, check.reset) : null };
@@ -254,7 +280,7 @@ function handOf(
 
 /** One member's row: the tracker's hint (null while the check is off), the wall mark, the tick's ✓. */
 function prepRow(
-  read: { night: StoredReading | null; morning: StoredReading | null },
+  read: Read,
   marks: { main: MarkRow | undefined; wall: MarkRow | undefined; checkedAt: Date | null },
   facts: MemberFacts | undefined,
   check: { tracker: boolean; reset: number; named: boolean },
@@ -268,14 +294,16 @@ function prepRow(
   };
 }
 
-/** Both reads of the check of Friday `friday`, each member's newest in its window. */
+/** The three reads of the check of Friday `friday`, each member's newest in its window. */
 async function readingsOf(db: Db, access: WorkspaceAccess, friday: string, zone: string) {
   const w = passWindows(friday, { SERVER_TZ: zone });
-  const [night, morning] = await Promise.all([
+  const reset = resetWindow(friday, { SERVER_TZ: zone });
+  const [night, after, morning] = await Promise.all([
     shieldReadings(db, access.unionId, w.night.from, w.night.to),
+    shieldReadings(db, access.unionId, reset.from, reset.to),
     shieldReadings(db, access.unionId, w.morning.from, w.morning.to),
   ]);
-  return { night, morning };
+  return { night, reset: after, morning };
 }
 
 /**
@@ -303,17 +331,22 @@ export async function prepView(
     shieldSettingsOf(db, access.workspaceId),
     tracker
       ? readingsOf(db, access, friday, clock.zone)
-      : Promise.resolve({ night: [], morning: [] }),
+      : Promise.resolve({ night: [], reset: [], morning: [] }),
     getShieldCheck(db, { day: friday, unionId: access.unionId }),
   ]);
   const nightOf = new Map(reads.night.map((r) => [r.uid, r]));
+  const resetOf = new Map(reads.reset.map((r) => [r.uid, r]));
   const morningOf = new Map(reads.morning.map((r) => [r.uid, r]));
   const mainOf = new Map(main.map((m) => [m.uid, m]));
   const wallOf = new Map(wall.map((m) => [m.uid, m]));
   const checkedAt = opened.call?.trackerCheckedAt ?? null;
   const rows = new Map(
     roster.map((m) => {
-      const read = { night: nightOf.get(m.uid) ?? null, morning: morningOf.get(m.uid) ?? null };
+      const read = {
+        night: nightOf.get(m.uid) ?? null,
+        reset: resetOf.get(m.uid) ?? null,
+        morning: morningOf.get(m.uid) ?? null,
+      };
       const marks = { main: mainOf.get(m.uid), wall: wallOf.get(m.uid), checkedAt };
       const check = { tracker, reset: reset.getTime(), named: reads.morning.length > 0 };
       return [m.uid, prepRow(read, marks, facts.get(m.uid), check)];
