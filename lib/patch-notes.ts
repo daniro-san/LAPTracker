@@ -264,10 +264,11 @@ export const patchNotes: PatchNote[] = [
       "Player page: the same head and growth card as the alliance page, with the alliance linked, might and kills over 7, 30 or 90 days, and the comparison with a typical alliance member.",
       'Raid Shield: a weekly read on Saturday at 02:30 ST, right after the reset, adds an "After-reset check" line in Raid prep and helps clear "To check by hand". Officers still confirm.',
       'KvK plan: members can say "I\'m in" for a role from their own page, and officers confirm or decline. An optional KvK reminder posts 60 and 15 minutes before the start, only for plans members can see.',
+      "Recruit check (Members → Recruit check, off until turned on): officers look up a player by name or ID and see public facts: alliance moves, renames, might and kills over 30 days, and events seen. No score. A player nobody has stored costs one read on the alliance's own tracker key, at most 20 a day.",
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
-      815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847, 849, 850,
+      815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847, 849, 850, 852,
     ],
     officer: [
       {
