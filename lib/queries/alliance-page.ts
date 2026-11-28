@@ -4,11 +4,12 @@
 // (`daily_tech`), public since the owner's decision of 2026-11-28 (D76 amendment). Only those keys leave
 // raw_json, picked out in SQL; never a key of BLOCKED_ROSTER_KEYS. `playerInAlliance` gives the player page
 // (issue 824) one member's rank and weekly activity from the same rosters.
-import { and, arrayContains, desc, eq, gt, gte, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, arrayContains, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 
 import { addDays } from "../calendar-time";
 import type { Db } from "../db";
 import { dailyRosters } from "../schema";
+import { dailyFit } from "./history-readings";
 import { roleOf, type Role } from "./leadership";
 
 /** The growth card reads this many days back from the newest roster: its longest range. */
@@ -82,13 +83,7 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : n
 const capped = (members: number | null, capacity: number | null) =>
   members !== null && capacity !== null ? Math.min(members, capacity) : members;
 
-/** A fresh roster with no error and at least one member (D60). */
-const fit = and(
-  eq(dailyRosters.isFresh, true),
-  isNull(dailyRosters.error),
-  gt(dailyRosters.memberCount, 0),
-);
-const usable = (unionId: number) => and(eq(dailyRosters.unionId, unionId), fit);
+const usable = (unionId: number) => and(eq(dailyRosters.unionId, unionId), dailyFit);
 
 function memberOf(m: RawMember): AlliancePageMember | null {
   const uid = num(m.uid);
@@ -210,7 +205,9 @@ export async function playerInAlliance(db: Db, uid: number): Promise<PlayerInAll
       member: sql<RawMember | null>`(select jsonb_build_object('rank_code', m->'rank_code', 'rank_label', m->'rank_label', 'active', m->'active') from jsonb_array_elements(${dailyRosters.rawJson}->'members') m where m->'uid' = to_jsonb(${uid}::bigint) limit 1)`,
     })
     .from(dailyRosters)
-    .where(and(fit, isNotNull(dailyRosters.rawJson), arrayContains(dailyRosters.memberUids, [uid])))
+    .where(
+      and(dailyFit, isNotNull(dailyRosters.rawJson), arrayContains(dailyRosters.memberUids, [uid])),
+    )
     .orderBy(desc(dailyRosters.readDay), desc(dailyRosters.sourceUpdatedAt))
     .limit(1);
   if (!row) return null;

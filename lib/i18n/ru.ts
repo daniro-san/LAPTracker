@@ -56,7 +56,6 @@ export const ru = {
     names: "Имена",
     alliances: "Альянсы",
     movers: "Крупнейшие изменения в событии",
-    progress: "Ежедневный прогресс",
     progressMight: "Вы: {change} с {date}.",
     progressMedian: "Типичный участник {tag}: {percent}.",
     rankIn: "в {tag}",

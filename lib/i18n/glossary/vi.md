@@ -26,7 +26,6 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | grandma                   | bà                              | the voice in empty states and errors                                                                               |
 | Grandma noticed           | Bà để ý                         | `ledger.movers` — the biggest gains and losses per event                                                           |
 | Start / End               | Bắt đầu / Kết thúc              | `status.start` / `status.end`, `compare.lead`                                                                      |
-| Daily progress            | Tiến độ hằng ngày               | `ledger.progress` — the player page's section heading                                                              |
 | Median                    | Trung vị                        | `ledger.progressMedian` — an alliance's median member                                                              |
 | Chart                     | biểu đồ                         | `ledger.progressEmpty`, `ledger.chart` — the Might chart                                                           |
 | Live                      | Trực tiếp                       | `ledger.live` — the live strip and section                                                                         |

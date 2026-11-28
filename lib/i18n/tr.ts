@@ -57,7 +57,6 @@ export const tr = {
     names: "İsimler",
     alliances: "İttifaklar",
     movers: "Bu etkinlikteki en büyük değişimler",
-    progress: "Günlük ilerleme",
     progressMight: "Sen: {date} sonrası {change}.",
     progressMedian: "{tag} tipik üyesi: {percent}.",
     rankIn: "{tag} içinde",

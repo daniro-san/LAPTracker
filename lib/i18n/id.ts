@@ -57,7 +57,6 @@ export const idID = {
     names: "Nama",
     alliances: "Aliansi",
     movers: "Perubahan terbesar di event ini",
-    progress: "Progres harian",
     progressMight: "Kamu: {change} sejak {date}.",
     progressMedian: "Anggota khas {tag}: {percent}.",
     rankIn: "di {tag}",
