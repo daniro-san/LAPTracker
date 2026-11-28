@@ -17,11 +17,21 @@ import { StartHereEditor } from "./StartHereEditor";
 
 const t = WORKSPACE_DICTIONARIES.en;
 
-function noticeActions(aiOff: EditorProps["aiOff"]) {
+function noticeActions(
+  aiOff: EditorProps["aiOff"],
+  memberLanguages?: EditorProps["memberLanguages"],
+) {
   const fields = Object.fromEntries(
     NOTICE_FIELDS.map((f) => [f, { value: f === "en" ? "Rally at 20:00." : "", version: 0 }]),
   ) as NoticeFields;
-  const p = { t, viewer: "en", ai: true, aiOff, languages: [...NOTICE_LANGUAGES] } as EditorProps;
+  const p = {
+    t,
+    viewer: "en",
+    ai: true,
+    aiOff,
+    memberLanguages,
+    languages: [...NOTICE_LANGUAGES],
+  } as EditorProps;
   const e = { active: "en", draft: startDraft(fields), wroteIn: null, busy: null } as Editor;
   return renderToStaticMarkup(createElement(NoticeActions, { p, e }));
 }
@@ -70,6 +80,24 @@ describe("helps turned off for the alliance are left out, with no line (D126, is
     expect(paste(true)).toContain(t["shot.read"]);
     const off = paste(false);
     expect(off).not.toContain(t["shot.read"]);
+    expect(off).not.toMatch(/turned off/i);
+  });
+});
+
+describe("the members' game languages beside Translate (issue 794)", () => {
+  const counted = { read: 31, total: 40, counts: [{ language: "en", n: 18 }], other: 2 } as const;
+  const members = { ...counted, counts: [...counted.counts] };
+
+  it("shows the counts with how many members were read, and nothing without them", () => {
+    const shown = noticeActions([], members);
+    expect(shown).toContain("Members’ game languages: English 18 · Other 2");
+    expect(shown).toContain("from 31 of 40 members");
+    expect(noticeActions([], null)).not.toContain("Members’ game languages");
+  });
+
+  it("is left out with Translate, with no line about it", () => {
+    const off = noticeActions(["translate"], members);
+    expect(off).not.toContain("Members’ game languages");
     expect(off).not.toMatch(/turned off/i);
   });
 });
