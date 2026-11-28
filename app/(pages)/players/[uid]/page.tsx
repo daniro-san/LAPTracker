@@ -7,14 +7,15 @@ import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { PlayerCompareLink } from "@/app/_ui/ComparePicker";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
-import { notFoundTitle, requestClock, requestCopy } from "@/app/_ui/locale";
+import { cardText, playerCard } from "@/app/_ui/link-card-facts";
+import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
 import { PlayerDays } from "@/app/_ui/PlayerDays";
 import { PlayerProgress } from "@/app/_ui/PlayerProgress";
-import { previewImage } from "@/app/_ui/preview";
-import { sharedEvents, sharedRead } from "@/app/_ui/public-reads";
+import { cardPreview } from "@/app/_ui/preview";
+import { sharedEvents, sharedPlayer } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
@@ -23,13 +24,7 @@ import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import {
-  homeEvent,
-  playerHistory,
-  playerProgress,
-  progressSteps,
-  type PlayerHistory,
-} from "@/lib/queries";
+import { homeEvent, progressSteps, type PlayerHistory } from "@/lib/queries";
 import { fill } from "@/lib/words";
 
 function Timelines({
@@ -124,13 +119,7 @@ function Summary({
 /** Shared by the page and its <title> within one request, and with every viewer until the next write (D143).
  * An unknown uid is not kept (lib/public-cache.ts). */
 const loadPlayer = cache(async (uid: number) => {
-  const [player, events] = await Promise.all([
-    sharedRead("player", [uid], async (db) => {
-      const history = await playerHistory(db, uid);
-      return history && { history, progress: await playerProgress(db, uid) };
-    }),
-    sharedEvents(),
-  ]);
+  const [player, events] = await Promise.all([sharedPlayer(uid), sharedEvents()]);
   return player && { ...player, events };
 });
 
@@ -149,17 +138,15 @@ const uidOf = async (params: Params) => {
   return /^\d{1,15}$/.test(uid) ? Number(uid) : null;
 };
 
-/** `Name · Event Ledger`. */
+/** `Name · Event Ledger`, with the player's card as the link preview (issue 830). */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const uid = await uidOf(params);
   const data = uid === null ? null : await loadPlayer(uid);
   if (!data) return notFoundTitle();
-  const copy = await requestCopy();
-  const { name, hasAvatar } = data.history.current;
-  return {
-    title: `${name} · ${copy.site.name}`,
-    ...(hasAvatar && previewImage(`/img/preview/player/${data.history.uid}`, name)),
-  };
+  const [copy, locale] = await Promise.all([requestCopy(), requestLocale()]);
+  const title = `${data.history.current.name} · ${copy.site.name}`;
+  const facts = cardText(playerCard(data.history, copy, locale));
+  return { title, ...cardPreview(`/img/card/player/${data.history.uid}`, title, facts) };
 }
 
 /** The title row: photo, name, alliance link and role, with Compare and the exact-numbers switch. */

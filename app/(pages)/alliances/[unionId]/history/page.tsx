@@ -15,10 +15,11 @@ import { AllianceHead } from "@/app/_ui/AllianceHead";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { EmptyState } from "@/app/_ui/EmptyState";
 import { allianceLabel } from "@/app/_ui/format";
+import { boardCard, cardText } from "@/app/_ui/link-card-facts";
 import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { HISTORY_FILTERS, matchesFilter, type HistoryFilter } from "@/app/_ui/member-history";
 import { HistoryCardView } from "@/app/_ui/MemberHistory";
-import { previewImage } from "@/app/_ui/preview";
+import { cardPreview } from "@/app/_ui/preview";
 import { sharedEventAllianceIds, sharedEvents, sharedRead } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -161,13 +162,12 @@ export async function generateMetadata({
   const inputs = await inputsOf(params, searchParams);
   const data = inputs && (await load(inputs.unionId, inputs.before, inputs.show));
   if (!data?.history) return notFoundTitle();
-  const copy = await requestCopy();
-  const { tag, name, unionId, badgeId } = data.history;
+  const [copy, locale] = await Promise.all([requestCopy(), requestLocale()]);
+  const { tag, name, unionId } = data.history;
   const label = allianceLabel(tag ?? String(unionId), name);
-  return {
-    title: `${label} · ${copy.history.title} · ${copy.site.name}`,
-    ...(badgeId != null && previewImage(`/img/badge/${badgeId}`, label)),
-  };
+  const title = `${label} · ${copy.history.title} · ${copy.site.name}`;
+  const facts = cardText(boardCard(label, data.board, copy, locale));
+  return { title, ...cardPreview(`/img/card/alliance/${unionId}`, title, facts) };
 }
 
 function Filters({

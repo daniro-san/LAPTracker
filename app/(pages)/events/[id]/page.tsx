@@ -3,8 +3,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { eventTitle, loadEventPage } from "@/app/_ui/event-page";
+import { comparisonRows } from "@/app/_ui/event-rows";
 import { EventView } from "@/app/_ui/EventView";
-import { notFoundTitle } from "@/app/_ui/locale";
+import { cardText, eventCard } from "@/app/_ui/link-card-facts";
+import { notFoundTitle, requestCopy, requestLocale } from "@/app/_ui/locale";
+import { cardPreview } from "@/app/_ui/preview";
 
 const idOf = (raw: string) => (/^\d{1,9}$/.test(raw) ? Number(raw) : null);
 
@@ -15,7 +18,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const id = idOf((await params).id);
   const loaded = id === null ? null : await loadEventPage(id);
-  return loaded?.page ? eventTitle(loaded) : notFoundTitle();
+  if (!loaded?.page) return notFoundTitle();
+  const [meta, copy, locale] = await Promise.all([
+    eventTitle(loaded),
+    requestCopy(),
+    requestLocale(),
+  ]);
+  // The ledger's first rows, as the page orders them, are the link preview's facts (issue 830).
+  const { detail, changes, names, ranks } = loaded.page;
+  const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy, detail.between);
+  const title = String(meta.title);
+  const facts = cardText(eventCard(title, null, rows, locale));
+  return { ...meta, ...cardPreview(`/img/card/event/${detail.id}`, title, facts) };
 }
 
 export default async function EventPage({

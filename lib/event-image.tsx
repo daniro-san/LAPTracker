@@ -3,9 +3,6 @@
 // with the brand's three fonts, committed as TTF in lib/brand/fonts/ because next/font ships WOFF2,
 // which Satori cannot read. Laid out at 360 px and drawn at 2×, so it reads at a phone's width.
 // Alliance tags and names and numbers only: no member names, no URL (plan §12.3).
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { ImageResponse } from "next/og";
 
 import { SERVER } from "../config/alliances";
@@ -16,7 +13,16 @@ import { delta } from "./compute";
 import { copy } from "./copy";
 import { compact, signedCompact, type DiscordClock } from "./discord-format";
 import { kvkBlock, type KvkLine } from "./event-image-kvk";
-import { drawable, label, ROW, Section, SECTION, u, type Colors } from "./event-image-parts";
+import {
+  drawable,
+  label,
+  loadFonts,
+  ROW,
+  Section,
+  SECTION,
+  u,
+  type Colors,
+} from "./event-image-parts";
 import { turnoutBlock } from "./event-image-turnout";
 import { topGains, usable, type PublicAlliance } from "./notify";
 import type { TurnoutLists } from "./queries";
@@ -62,21 +68,6 @@ const RENDER_LIMIT_MS = 3_000;
 
 const column = { display: "flex", flexDirection: "column" } as const;
 const colors = () => Object.fromEntries(TOKENS.map((t) => [t, tokenColor(t)])) as Colors;
-
-const FONT_FILES = [
-  ["Alegreya", "Alegreya-Regular.ttf", 400],
-  ["Alegreya Sans", "AlegreyaSans-Bold.ttf", 700],
-  ["Source Sans 3", "SourceSans3-Regular.ttf", 400],
-  ["Source Sans 3", "SourceSans3-Semibold.ttf", 600],
-] as const;
-let fonts: { name: string; data: Buffer; weight: 400 | 600 | 700; style: "normal" }[] | undefined;
-const loadFonts = () =>
-  (fonts ??= FONT_FILES.map(([name, file, weight]) => ({
-    name,
-    weight,
-    style: "normal" as const,
-    data: readFileSync(join(process.cwd(), "lib/brand/fonts", file)),
-  })));
 
 /** A scheduled event's generated name without its date (the date is under it); any other as typed. */
 function title(e: Pick<EventImageInput, "name" | "manual">) {
