@@ -319,6 +319,20 @@ export const vi = {
     minMight: "Lực Chiến tối thiểu {might}",
     minHq: "HQ tối thiểu {level}",
   },
+  race: {
+    title: "Đua lên #1",
+    lead: "Mỗi liên minh đứng thứ mấy theo Lực Chiến hôm nay, và sau {weeks} tuần với nhịp này sẽ đứng thứ mấy. Nhịp là mức ở giữa của {n} lần thay đổi hằng tuần gần nhất, từ thứ Bảy đến thứ Bảy, từ {from} đến {to}.",
+    today: "Hôm nay",
+    ahead: "Sau {weeks} tuần",
+    line: "{places} sau {weeks} tuần với nhịp này · {pace} mỗi tuần (tuần chậm nhất {low}, nhanh nhất {high})",
+    among:
+      "Thứ hạng trong số {n} liên minh có nhịp. Liên minh tuyển người, sáp nhập và giao tranh, nên nhịp có thể đổi.",
+    moved: "{label}: số thành viên đã đổi nhiều",
+    few: "{label}: chưa đủ tuần",
+    none: "Chưa đủ tuần. Nhịp cần {n} lần thay đổi hằng tuần, từ thứ Bảy đến thứ Bảy.",
+    previous: "Liên minh trước",
+    next: "Liên minh sau",
+  },
   alliancePage: {
     server: "Máy chủ",
     serverRank: "Hạng máy chủ",

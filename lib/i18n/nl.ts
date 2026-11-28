@@ -324,6 +324,20 @@ export const nl = {
     minMight: "Minimaal might {might}",
     minHq: "Minimaal HQ {level}",
   },
+  race: {
+    title: "Race naar #1",
+    lead: "De rang van elke alliantie op Might vandaag, en haar rang over {weeks} weken in dit tempo. Het tempo is het midden van haar laatste {n} wekelijkse veranderingen, van zaterdag tot zaterdag, {from} tot {to}.",
+    today: "Vandaag",
+    ahead: "Over {weeks} weken",
+    line: "{places} in {weeks} weken in dit tempo · {pace} per week (langzaamste week {low}, snelste week {high})",
+    among:
+      "Rangen onder de {n} allianties met een tempo. Allianties werven, fuseren en vechten, dus een tempo kan veranderen.",
+    moved: "{label}: de ledenlijst veranderde veel",
+    few: "{label}: nog niet genoeg weken",
+    none: "Nog niet genoeg weken. Een tempo heeft {n} wekelijkse veranderingen nodig, van zaterdag tot zaterdag.",
+    previous: "Vorige alliantie",
+    next: "Volgende alliantie",
+  },
   alliancePage: {
     server: "Server",
     serverRank: "Serverrang",

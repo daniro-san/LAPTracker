@@ -17,6 +17,7 @@ export const FLAGS = [
   "server-balance",
   "kvk-matchup",
   "alliances-recruiting",
+  "race-pace",
 ] as const;
 export type Flag = (typeof FLAGS)[number];
 

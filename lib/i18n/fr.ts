@@ -174,6 +174,20 @@ export const fr = {
     same: "Choisissez deux événements différents.",
     onlyOne: "Il n’y a pour l’instant qu’un seul événement à comparer.",
   },
+  race: {
+    title: "La course au #1",
+    lead: "Le rang de chaque alliance par Might aujourd’hui, et son rang dans {weeks} semaines à ce rythme. Le rythme est le milieu de ses {n} dernières évolutions hebdomadaires, du samedi au samedi, de {from} à {to}.",
+    today: "Aujourd’hui",
+    ahead: "Dans {weeks} semaines",
+    line: "{places} dans {weeks} semaines à ce rythme · {pace} par semaine (semaine la plus lente {low}, la plus rapide {high})",
+    among:
+      "Rangs parmi les {n} alliances ayant un rythme. Les alliances recrutent, fusionnent et se battent : un rythme peut donc changer.",
+    moved: "{label} : l’appartenance a beaucoup changé",
+    few: "{label} : pas encore assez de semaines",
+    none: "Pas encore assez de semaines. Un rythme demande {n} évolutions hebdomadaires, du samedi au samedi.",
+    previous: "Alliance précédente",
+    next: "Alliance suivante",
+  },
   merge: {
     title: "Simulateur de fusion",
     tag: "Simulation, pas un plan",

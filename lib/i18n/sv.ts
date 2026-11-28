@@ -266,6 +266,20 @@ export const sv = {
     tooMany: "För många uppslag härifrån just nu. Försök igen om några minuter.",
     error: "Något gick fel. Försök igen om en stund.",
   },
+  race: {
+    title: "Kapplöpningen till #1",
+    lead: "Varje allians placering efter Might idag, och dess placering om {weeks} veckor i den här takten. Takten är mitten av dess senaste {n} veckoförändringar, lördag till lördag, {from} till {to}.",
+    today: "Idag",
+    ahead: "Om {weeks} veckor",
+    line: "{places} om {weeks} veckor i den här takten · {pace} i veckan (lägsta vecka {low}, högsta vecka {high})",
+    among:
+      "Placeringar bland de {n} allianserna med en takt. Allianser rekryterar, slås ihop och strider, så en takt kan ändras.",
+    moved: "{label}: medlemskapet har ändrats mycket",
+    few: "{label}: inte tillräckligt med veckor än",
+    none: "Inte tillräckligt med veckor än. En takt behöver {n} veckoförändringar, lördag till lördag.",
+    previous: "Föregående allians",
+    next: "Nästa allians",
+  },
   alliancePage: {
     server: "Server",
     serverRank: "Serverrankning",

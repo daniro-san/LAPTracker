@@ -325,6 +325,20 @@ export const itIT = {
     tooMany: "Troppe ricerche da qui in questo momento. Riprova tra qualche minuto.",
     error: "Qualcosa è andato storto. Riprova tra un momento.",
   },
+  race: {
+    title: "Corsa al #1",
+    lead: "Ogni alleanza per Might oggi, e la sua posizione tra {weeks} settimane a questo ritmo. Il ritmo è il valore centrale delle ultime {n} variazioni settimanali, da sabato a sabato, dal {from} al {to}.",
+    today: "Oggi",
+    ahead: "Tra {weeks} settimane",
+    line: "{places} tra {weeks} settimane a questo ritmo · {pace} a settimana (settimana più lenta {low}, più veloce {high})",
+    among:
+      "Posizioni tra le {n} alleanze con un ritmo. Le alleanze reclutano, si fondono e combattono, quindi un ritmo può cambiare.",
+    moved: "{label}: composizione cambiata molto",
+    few: "{label}: ancora poche settimane",
+    none: "Ancora poche settimane. Un ritmo richiede {n} variazioni settimanali, da sabato a sabato.",
+    previous: "Alleanza precedente",
+    next: "Alleanza successiva",
+  },
   alliancePage: {
     server: "Server",
     serverRank: "Posizione server",

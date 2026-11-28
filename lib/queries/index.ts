@@ -25,6 +25,7 @@ export { BALANCE_DAYS, powerBalance, type PowerBalance } from "./balance";
 export { allianceStanding, type Standing } from "./standing";
 export { allianceStatement, type AllianceStatement, type Joining } from "./statement";
 export { RECRUITING_DAYS, recruitingAlliances, type RecruitingRow } from "./recruiting";
+export { RACE_AHEAD, RACE_WEEKS, racePace, type Race, type RaceLeft, type RaceRow } from "./race";
 export {
   alliancePage,
   GROWTH_DAYS,

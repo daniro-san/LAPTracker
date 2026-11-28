@@ -325,6 +325,20 @@ export const pl = {
     tooMany: "Za dużo sprawdzeń z tego miejsca. Spróbuj ponownie za kilka minut.",
     error: "Coś poszło nie tak. Spróbuj ponownie za chwilę.",
   },
+  race: {
+    title: "Wyścig do #1",
+    lead: "Miejsce każdego sojuszu według Might dziś i jego miejsce za {weeks} tyg. przy tym tempie. Tempo to środek jego ostatnich {n} tygodniowych zmian, od soboty do soboty, {from} do {to}.",
+    today: "Dziś",
+    ahead: "Za {weeks} tyg.",
+    line: "{places} za {weeks} tyg. przy tym tempie · {pace} tygodniowo (najwolniejszy tydzień {low}, najszybszy {high}).",
+    among:
+      "Miejsca wśród {n} sojuszy z tempem. Sojusze przyjmują nowych, scalają się i walczą, więc tempo może się zmienić.",
+    moved: "{label}: skład zmienił się znacznie",
+    few: "{label}: jeszcze za mało tygodni",
+    none: "Jeszcze za mało tygodni. Tempo wymaga {n} tygodniowych zmian, od soboty do soboty.",
+    previous: "Poprzedni sojusz",
+    next: "Następny sojusz",
+  },
   alliancePage: {
     server: "Serwer",
     serverRank: "Ranking serwera",

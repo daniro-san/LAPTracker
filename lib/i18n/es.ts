@@ -325,6 +325,20 @@ export const es = {
     minMight: "Mín. Might {might}",
     minHq: "Mín. HQ {level}",
   },
+  race: {
+    title: "Carrera al #1",
+    lead: "Cada alianza, por Might hoy, y su puesto en {weeks} semanas a este ritmo. El ritmo es el término medio de sus últimos {n} cambios semanales, de sábado a sábado, del {from} al {to}.",
+    today: "Hoy",
+    ahead: "En {weeks} semanas",
+    line: "{places} en {weeks} semanas a este ritmo · {pace} por semana (semana más lenta {low}, más rápida {high})",
+    among:
+      "Puestos entre las {n} alianzas con ritmo. Las alianzas reclutan, se fusionan y combaten, así que un ritmo puede cambiar.",
+    moved: "{label}: los Members cambiaron mucho",
+    few: "{label}: aún no hay semanas suficientes",
+    none: "Aún no hay semanas suficientes. Un ritmo necesita {n} cambios semanales, de sábado a sábado.",
+    previous: "Alianza anterior",
+    next: "Alianza siguiente",
+  },
   alliancePage: {
     server: "Servidor",
     serverRank: "Ranking servidor",

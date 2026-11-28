@@ -172,6 +172,20 @@ export const tr = {
     same: "İki farklı etkinlik seç.",
     onlyOne: "Şimdilik karşılaştırılacak tek etkinlik var.",
   },
+  race: {
+    title: "#1 yarışı",
+    lead: "Her ittifakın bugünkü Might’a göre sırası ve bu tempoyla {weeks} hafta sonraki sırası. Tempo, son {n} haftalık değişimin ortancasıdır; Cumartesiden Cumartesiye, {from} ile {to} arası.",
+    today: "Bugün",
+    ahead: "{weeks} hafta sonra",
+    line: "Bu tempoyla {weeks} haftada {places} · haftalık {pace}, en yavaş hafta {low}, en hızlı hafta {high}",
+    among:
+      "Tempo bilinen {n} ittifak arasındaki sıralar. İttifaklar üye alır, birleşir ve savaşır; bu yüzden tempo değişebilir.",
+    moved: "{label}: üye değişimi çok fazla",
+    few: "{label}: henüz yeterli hafta yok",
+    none: "Henüz yeterli hafta yok. Tempo için Cumartesiden Cumartesiye {n} haftalık değişim gerekir.",
+    previous: "Önceki ittifak",
+    next: "Sonraki ittifak",
+  },
   merge: {
     title: "Birleştirme simülatörü",
     tag: "Simülasyon, plan değil",

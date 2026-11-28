@@ -16,6 +16,7 @@ import { flowCopy } from "./copy-flow";
 import { kvkCopy } from "./copy-kvk";
 import { liveCopy } from "./copy-live";
 import { mergeCopy } from "./copy-merge";
+import { raceCopy } from "./copy-race";
 import { splitCopy } from "./copy-split";
 import { standingCopy } from "./copy-standing";
 import { alliancesCopy, statementCopy } from "./copy-statement";
@@ -143,6 +144,8 @@ export const en = {
   statement: statementCopy,
   /** Every alliance on the server (D133, #459): the list, the ledger's link, "Get today's details". */
   alliances: alliancesCopy,
+  /** /alliances' "Race to #1" (#285): each top alliance's place today and in 4 weeks at this pace. */
+  race: raceCopy,
   /** The public alliance page (#822): its head, growth card and member list. */
   alliancePage: alliancePageCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */

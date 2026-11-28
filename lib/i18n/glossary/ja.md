@@ -142,6 +142,8 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Tech donated              | 寄付した科学              | `alliancePage.tech`, `alliancePage.read` — the tech a member donated that day (科学 is also the word in `balance.includes`)                                                            |
 | Alliances recruiting      | 募集中の同盟              | `alliances.recruiting`, `alliances.recruitingLead`, `alliances.recruitingNone`, `alliances.spot*`, `alliances.min*` — alliances with a free seat; the heading must read at first sight |
 | Joins & leaves            | 加入・脱退                | `alliancePage.movesTab`, `alliancePage.joinedFilter`, `alliancePage.leftFilter` — the alliance page's moves tab; 加入 and 脱退 as in `ledger.joined` and `ledger.left`                 |
+| Race to #1                | 1位争い                   | `race.title` — the section on /alliances: each alliance's place by might now and at the pace                                                                                           |
+| Pace                      | ペース                    | `race.*` — a week's change, the middle of the last weekly changes; `race.line`, `race.none`                                                                                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
