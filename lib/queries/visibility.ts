@@ -12,8 +12,9 @@ import { events, snapshots } from "../schema";
 // `eventSamples` (lib/queries/samples.ts), `eventProgress` (lib/queries/live.ts: alliance totals),
 // `memberTurnoutSoFar` (lib/queries/turnout.ts: each alliance's newest sample's member arrays) and the
 // admin run lists read samples. The predicate is defined
-// once, in lib/repo/snapshots.ts, because lib/repo readers need it too.
-export { phaseSnapshot } from "../repo/snapshots";
+// once, in lib/repo/snapshots.ts, because lib/repo readers need it too. Since D160 it is the event's Start
+// and End only; `betweenWindows` is the Befores and Afters between windows, read to sum the windows' changes.
+export { betweenWindows, phaseSnapshot } from "../repo/snapshots";
 
 /** `snapshots.phase` typed as the two phases, for a select filtered with `phaseSnapshot`. */
 export const phaseColumn = sql<Phase>`${snapshots.phase}`;

@@ -17,6 +17,7 @@ import {
   sumPower,
   topMovers,
   topRankMovers,
+  windowedStart,
 } from "./compute";
 
 const count = fc.option(fc.nat({ max: 2_000_000_000 }), { nil: null });
@@ -86,6 +87,25 @@ describe("delta", () => {
       fc.property(measured, measured, (before, after) => {
         fc.pre(!before.isFresh || !after.isFresh);
         expect(delta(before, after)).toBeNull();
+      }),
+    );
+  });
+});
+
+describe("windowedStart (D160)", () => {
+  it("makes an event's change the sum of its windows' changes, and null when any window's is null", () => {
+    fc.assert(
+      fc.property(fc.array(fc.tuple(measured, measured), { minLength: 1, maxLength: 4 }), (ws) => {
+        const sides = ws.flat();
+        const [start, end] = [sides[0] as Measured, sides.at(-1) as Measured];
+        const sum = ws.reduce<{ power: number; kills: number } | null>(
+          (t, [b, a]) => {
+            const c = delta(b, a);
+            return t && c && { power: t.power + c.power, kills: t.kills + c.kills };
+          },
+          { power: 0, kills: 0 },
+        );
+        expect(delta(windowedStart(start, sides.slice(1, -1)), end)).toEqual(sum);
       }),
     );
   });

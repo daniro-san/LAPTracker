@@ -8,6 +8,7 @@ import { and, desc, eq, gte, inArray, isNotNull, isNull, gt, lt, ne, sql } from 
 
 import type { Db } from "../db";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
+import { phaseSnapshot } from "./snapshots";
 
 /** One member of an end-of-day roster, as the upstream sent it; anything not sent is null. */
 export interface RosterMember {
@@ -178,7 +179,8 @@ export async function scheduledEventKills(
         eq(events.isTest, false),
         ne(events.visibility, "admin"),
         gte(events.eventAtUtc, since),
-        inArray(snapshots.phase, ["before", "after"]),
+        // The event's Start and End: not a sample, not a row between windows (D160).
+        phaseSnapshot,
       ),
     )
     .orderBy(desc(events.eventAtUtc));
@@ -224,7 +226,11 @@ export async function recapKills(
   const [event] = await db
     .select({ id: events.id, end: snapshots.status })
     .from(events)
-    .leftJoin(snapshots, and(eq(snapshots.eventId, events.id), eq(snapshots.phase, "after")))
+    // The event's End: not a window's After between windows (D160).
+    .leftJoin(
+      snapshots,
+      and(eq(snapshots.eventId, events.id), eq(snapshots.phase, "after"), phaseSnapshot),
+    )
     .where(
       and(
         gte(events.eventAtUtc, from),
@@ -250,7 +256,8 @@ export async function recapKills(
     .where(
       and(
         eq(snapshots.eventId, event.id),
-        inArray(snapshots.phase, ["before", "after"]),
+        // The event's Start and End (D160).
+        phaseSnapshot,
         eq(allianceSnapshots.unionId, unionId),
         eq(allianceSnapshots.isFresh, true),
         isNull(allianceSnapshots.error),
@@ -304,7 +311,8 @@ export async function scheduledEventMight(
         eq(events.isTest, false),
         ne(events.visibility, "admin"),
         gte(events.eventAtUtc, since),
-        inArray(snapshots.phase, ["before", "after"]),
+        // The event's Start and End: not a sample, not a row between windows (D160).
+        phaseSnapshot,
       ),
     );
   const byEvent = new Map<number, EventMight>();

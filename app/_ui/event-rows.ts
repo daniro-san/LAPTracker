@@ -1,7 +1,7 @@
 // The main page's rows from the event read model (plan Phase 5, 5e): ordered strictly by ledger rank by
 // might, each metric as value · delta · percent, kills with the member-loss note when negative, and the
 // three ranks (might, kills, server) before → after.
-import { delta as computeDelta, rankDelta } from "@/lib/compute";
+import { delta as computeDelta, rankDelta, windowedStart } from "@/lib/compute";
 import type { NameHistoryEntry } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import type { getEventDetail, Ranks, RosterChange } from "@/lib/queries";
@@ -119,13 +119,16 @@ function figures(cell: AllianceCell | undefined) {
   };
 }
 
+/** `between`: this alliance's rows between the event's windows (D160); the change is the sum of its
+ * windows' changes. Empty for a one-window event. */
 function metricsFor(
   before: AllianceCell | undefined,
   after: AllianceCell | undefined,
   change: RosterChange | undefined,
   copy: Dictionary,
+  between: readonly (AllianceCell | undefined)[] = [],
 ): StatMetric[] {
-  const d = computeDelta(pairOf(before), pairOf(after));
+  const d = computeDelta(windowedStart(pairOf(before), between.map(pairOf)), pairOf(after));
   const [b, a] = [figures(before), figures(after)];
   return [
     {
@@ -190,13 +193,15 @@ export function nextUpdateAt(
   return [scheduled.beforeAt, scheduled.afterAt].find((at) => at > now) ?? null;
 }
 
-/** One row per alliance seen in either snapshot, by ledger rank by might (#1 first, unranked last). */
+/** One row per alliance seen in either snapshot, by ledger rank by might (#1 first, unranked last).
+ * `between`: the event detail's rows between windows (D160); none for a one-window event. */
 export function comparisonRows(
   snapshots: Snap[],
   changes: Map<number, RosterChange>,
   names: Map<number, NameHistoryEntry[]>,
   ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>,
   copy: Dictionary,
+  between: readonly { alliances: readonly AllianceCell[] }[] = [],
 ): ComparisonRow[] {
   const before = snapshots.find((s) => s.phase === "before");
   const after = snapshots.find((s) => s.phase === "after");
@@ -215,7 +220,13 @@ export function comparisonRows(
       name,
       before: b,
       after: a,
-      metrics: metricsFor(b, a, changes.get(unionId), copy),
+      metrics: metricsFor(
+        b,
+        a,
+        changes.get(unionId),
+        copy,
+        between.map((s) => s.alliances.find((x) => x.unionId === unionId)),
+      ),
       formerly: formerlyOf(names.get(unionId), tag, name),
       ranks: rowRanks,
       rank: currentRank(rowRanks.might, after !== undefined),

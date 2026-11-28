@@ -8,6 +8,27 @@ import { killsTurnout, TURNOUT_MIN_GAINERS, type KillsTurnout } from "../compute
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots, snapshots } from "../schema";
 import { numbers } from "./history-readings";
+import { betweenMembers, type BetweenMembers } from "./windows";
+
+/**
+ * A member's Start kills plus what they gained between the event's windows (D160), so End − Start is the sum
+ * of the windows' gains; a member not read fresh in every row between windows is left out. A null counts
+ * as 0 (D15).
+ */
+function windowedKills<R extends { uid: number; kills: number | null }>(
+  rows: readonly R[],
+  between: readonly BetweenMembers[],
+): R[] {
+  if (between.length === 0) return [...rows];
+  return rows.flatMap((r) => {
+    const sides = between.map((m) => m.get(r.uid));
+    if (sides.some((s) => !s?.isFresh)) return [];
+    let kills = r.kills ?? 0;
+    for (let i = 0; i + 1 < sides.length; i += 2)
+      kills += (sides[i + 1]?.totalKills ?? 0) - (sides[i]?.totalKills ?? 0);
+    return [{ ...r, kills }];
+  });
+}
 
 /** The counts only: the gainers' uids stay here, out of the shared entry and the page (D143). */
 export interface AllianceTurnout extends Omit<KillsTurnout, "gainerUids"> {
@@ -52,14 +73,20 @@ function turnoutLists(all: AllianceTurnout[], soFar: boolean): TurnoutLists | nu
 /**
  * The two lists for an event's Start and End snapshots; null until both have run, and when no alliance
  * gained kills. An alliance whose Start or End row is stale or failed has no figure (INVARIANT
- * freshness.no-stale-delta), nor has one with no member in both rosters.
+ * freshness.no-stale-delta), nor has one with no member in both rosters. `between`: the event detail's rows
+ * between windows (D160); the kills gained are then the sum of the windows' gains.
  */
 export async function memberTurnout(
   db: Db,
   snapshots: readonly { id: number; phase: "before" | "after" }[],
+  between: readonly { id: number | null }[] = [],
 ): Promise<TurnoutLists | null> {
   const [b, a] = (["before", "after"] as const).map((ph) => snapshots.find((s) => s.phase === ph));
   if (!b || !a) return null;
+  const slots = await betweenMembers(
+    db,
+    between.map((s) => s.id),
+  );
   const rows = await db
     .select({
       snapshotId: allianceSnapshots.snapshotId,
@@ -81,7 +108,8 @@ export async function memberTurnout(
   const ends = usable.filter((r) => r.snapshotId === a.id);
   const alliances = [...new Map(ends.map((r) => [r.unionId, r])).values()];
   const all = alliances.flatMap((end) => {
-    const figures = countsOf(killsTurnout(side(b.id, end.unionId), side(a.id, end.unionId)));
+    const start = windowedKills(side(b.id, end.unionId), slots);
+    const figures = countsOf(killsTurnout(start, side(a.id, end.unionId)));
     const { unionId, tag, name, badgeId } = end;
     return figures.n === 0 ? [] : [{ ...figures, unionId, tag, name, badgeId }];
   });

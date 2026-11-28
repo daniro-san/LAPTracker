@@ -85,6 +85,49 @@ export function delta(before: Measured, after: Measured): { power: number; kills
   };
 }
 
+/** A row a change is measured on: `failed` (an error row) counts as stale. */
+type Side = Measured & { failed?: boolean };
+
+/**
+ * The Start an event's change is measured from (D160): `delta(windowedStart(start, between), end)` is the sum
+ * of the event's windows' changes, each window's After − Before. `between`: the Befores and Afters between
+ * windows in order (window 1's After, window 2's Before, window 2's After, …). With none (a one-window event)
+ * it is `start` itself. Otherwise the Start shifted by what changed between the windows, which is not the
+ * event's; a missing, stale or failed side makes it stale, so the change is null
+ * (INVARIANT freshness.no-stale-delta). Used for changes only, never shown.
+ */
+export function windowedStart<M extends Side>(start: M, between: readonly (Side | undefined)[]): M {
+  if (between.length === 0) return start;
+  let gap: { power: number; kills: number } | null = { power: 0, kills: 0 };
+  for (let i = 0; i + 1 < between.length; i += 2) {
+    const [after, next] = [between[i], between[i + 1]];
+    const d = after && next && !after.failed && !next.failed ? delta(after, next) : null;
+    gap = gap && d && { power: gap.power + d.power, kills: gap.kills + d.kills };
+  }
+  if (!gap || start.totalPower === null || start.totalKills === null)
+    return { ...start, isFresh: false };
+  return {
+    ...start,
+    totalPower: start.totalPower + gap.power,
+    totalKills: start.totalKills + gap.kills,
+  };
+}
+
+/** `windowedStart` for each alliance of an event's Start rows, matched by `unionId` with the rows between
+ * windows (D160). */
+export function windowedStartRows<A extends Side & { unionId: number }>(
+  start: readonly A[],
+  between: readonly { alliances: readonly (Side & { unionId: number })[] }[],
+): A[] {
+  if (between.length === 0) return [...start];
+  return start.map((a) =>
+    windowedStart(
+      a,
+      between.map((s) => s.alliances.find((x) => x.unionId === a.unionId)),
+    ),
+  );
+}
+
 interface Member {
   uid: number;
   name: string;

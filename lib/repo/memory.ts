@@ -16,6 +16,8 @@ import type {
 interface StoredSnapshot extends SnapshotRow {
   eventId: number;
   phase: SnapshotPhase;
+  /** The event window (D160); absent is window 1. */
+  window?: number;
   /** A sample's slot (D69). */
   slotAt?: Date;
   result: SnapshotResult | null;
@@ -33,11 +35,11 @@ export interface MemoryTables {
 
 function claim(
   tables: MemoryTables,
-  next: { eventId: number; phase: Phase; startedAt: Date },
+  next: { eventId: number; phase: Phase; startedAt: Date; window: number },
   expected: SnapshotRow | null,
 ): number | null {
   const current = tables.snapshots.find(
-    (x) => x.eventId === next.eventId && x.phase === next.phase,
+    (x) => x.eventId === next.eventId && x.phase === next.phase && (x.window ?? 1) === next.window,
   );
   if (expected === null) {
     if (current) return null;
@@ -104,12 +106,16 @@ export function createMemoryRepo(
       const event = tables.events.get(id);
       if (event) event.allianceIds = [...ids];
     },
-    findSnapshot: async (eventId, phase) => {
-      const s = tables.snapshots.find((x) => x.eventId === eventId && x.phase === phase);
+    // The memory repo keeps no window rows: every event is one window (D160).
+    eventWindows: async () => [],
+    findSnapshot: async (eventId, phase, window = 1) => {
+      const s = tables.snapshots.find(
+        (x) => x.eventId === eventId && x.phase === phase && (x.window ?? 1) === window,
+      );
       return s ? { id: s.id, status: s.status, startedAt: s.startedAt } : null;
     },
-    startSnapshot: async (eventId, phase, startedAt, expected) =>
-      claim(tables, { eventId, phase, startedAt }, expected),
+    startSnapshot: async (eventId, phase, startedAt, expected, window = 1) =>
+      claim(tables, { eventId, phase, startedAt, window }, expected),
     failedSampleUnionIds: async (eventId) => [
       ...new Set(
         tables.snapshots

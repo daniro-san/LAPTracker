@@ -19,8 +19,12 @@ export type ScheduleConfig = Pick<
 export interface ScheduledEvent {
   name: string;
   eventAtUtc: Date;
+  /** Window 1's Before. */
   beforeAt: Date;
+  /** The last window's After. */
   afterAt: Date;
+  /** The event's windows in time order (D160): from the env, one window from beforeAt to afterAt. */
+  windows: { beforeAt: Date; afterAt: Date }[];
 }
 
 const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -98,11 +102,14 @@ const isoDate = (day: Day) =>
   `${day.y}-${String(day.m).padStart(2, "0")}-${String(day.d).padStart(2, "0")}`;
 
 function eventOn(day: Day, cfg: ScheduleConfig): ScheduledEvent {
+  const beforeAt = zonedToUtc(day, cfg.SNAPSHOT_BEFORE, cfg.SERVER_TZ);
+  const afterAt = zonedToUtc(day, cfg.SNAPSHOT_AFTER, cfg.SERVER_TZ);
   return {
     name: `${WEEKDAY_NAMES[cfg.EVENT_WEEKDAY]} Event ${isoDate(day)}`,
     eventAtUtc: zonedToUtc(day, cfg.EVENT_TIME, cfg.SERVER_TZ),
-    beforeAt: zonedToUtc(day, cfg.SNAPSHOT_BEFORE, cfg.SERVER_TZ),
-    afterAt: zonedToUtc(day, cfg.SNAPSHOT_AFTER, cfg.SERVER_TZ),
+    beforeAt,
+    afterAt,
+    windows: [{ beforeAt, afterAt }],
   };
 }
 

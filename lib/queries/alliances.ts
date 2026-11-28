@@ -1,14 +1,22 @@
 // Read models for the alliance page (plan Phase 5c, 5e). Served member fields: uid, name, power,
 // kills, lv only (§12.1), plus whether a photo exists (never its URL, D22); raw_json is never selected.
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, type SQL } from "drizzle-orm";
 
-import { comparable, delta, rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
+import {
+  comparable,
+  delta,
+  rosterDiff,
+  seriesDeltas,
+  windowedStart,
+  type SeriesStep,
+} from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { rolesOf, type Role } from "./leadership";
 import { type Photo, photoColumns } from "./photo";
 import { historyRanks, type Ranks } from "./ranks";
-import { chainEvent, phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
+import { betweenWindows, chainEvent, phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
+import { betweenSlots } from "./windows";
 
 export interface AllianceRow {
   id: number;
@@ -154,17 +162,19 @@ const fresh = (row: AllianceRow | undefined) => ({
 
 type Pair = { b: AllianceRow; a: AllianceRow; change: { power: number; kills: number } };
 
-/** Each event's before and after rows with their change, when both are usable. */
+/** Each event's before and after rows with their change, when both are usable. `between`: an event's rows
+ * between its windows (D160), whose change is then the sum of its windows' changes. */
 function inEventPairs(
   rows: { eventId: number; phase: "before" | "after"; row: AllianceRow }[],
   eventIds: number[],
+  between: (eventId: number) => (AllianceRow | undefined)[],
 ): Map<number, Pair> {
   const sideOf = (eventId: number, phase: "before" | "after") =>
     rows.find((r) => r.eventId === eventId && r.phase === phase)?.row;
   return new Map(
     eventIds.flatMap((eventId) => {
       const [b, a] = [sideOf(eventId, "before"), sideOf(eventId, "after")];
-      const change = delta(fresh(b), fresh(a));
+      const change = delta(windowedStart(fresh(b), between(eventId).map(fresh)), fresh(a));
       return b && a && change ? [[eventId, { b, a, change }] as const] : [];
     }),
   );
@@ -199,12 +209,13 @@ function pickReferences(
   return picked;
 }
 
-/** The alliance's reference row per event, oldest first, with deltas vs the previous event. */
-export async function allianceHistory(db: Db, unionId: number): Promise<HistoryRow[]> {
-  const found = await db
+/** The alliance's rows of chain events: the Start and End (`phaseSnapshot`), or the rows between windows. */
+const chainRows = (db: Db, unionId: number, which: SQL) =>
+  db
     .select({
       ...allianceColumns,
       phase: phaseColumn,
+      window: snapshots.windowN,
       eventId: events.id,
       eventName: events.name,
       eventAtUtc: events.eventAtUtc,
@@ -212,12 +223,27 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(eq(allianceSnapshots.unionId, unionId), chainEvent, phaseSnapshot))
+    .where(and(eq(allianceSnapshots.unionId, unionId), chainEvent, which))
     .orderBy(asc(events.eventAtUtc));
+
+/** The alliance's reference row per event, oldest first, with deltas vs the previous event. */
+export async function allianceHistory(db: Db, unionId: number): Promise<HistoryRow[]> {
+  const [found, inner] = await Promise.all([
+    chainRows(db, unionId, phaseSnapshot),
+    chainRows(db, unionId, betweenWindows),
+  ]);
   const meta = new Map(found.map((r) => [r.eventId, r]));
   const rows = found.map((r) => ({ eventId: r.eventId, phase: r.phase, row: toRow(r) }));
   const picked = pickReferences(rows);
-  const pairs = inEventPairs(rows, [...picked.keys()]);
+  // D160: an event's rows between windows, up to the window of its End.
+  const endWindow = (eventId: number) =>
+    found.find((r) => r.eventId === eventId && r.phase === "after")?.window ?? 1;
+  const between = (eventId: number) =>
+    betweenSlots(
+      inner.filter((r) => r.eventId === eventId).map((r) => ({ ...r, value: toRow(r) })),
+      endWindow(eventId),
+    );
+  const pairs = inEventPairs(rows, [...picked.keys()], between);
   const ordered = [...picked].sort(
     ([a], [b]) =>
       (meta.get(a)?.eventAtUtc.getTime() ?? 0) - (meta.get(b)?.eventAtUtc.getTime() ?? 0),

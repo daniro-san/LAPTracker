@@ -10,6 +10,7 @@ import { authorize } from "@/lib/auth";
 import { retryDailyRead } from "@/lib/daily-read";
 import { databaseDown } from "@/lib/data-unavailable";
 import { opponentReserve } from "@/lib/kvk-reserve";
+import { eventReadsDueToday } from "@/lib/repo/events";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { serverDay } from "@/lib/schedule";
 import { dayTargets } from "@/lib/tracked";
@@ -25,7 +26,10 @@ export function POST(request: Request): Promise<Response> {
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
     // D152: the KvK opponent's calls still due, on its quota day only.
     const opponentCalls = await opponentReserve(db, ctx.now(), ctx.env);
-    const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env), opponentCalls };
+    // D160: the event windows' Befores and Afters still due on the quota day.
+    const eventReads = await eventReadsDueToday(db, ctx.now());
+    const secrets = secretsOf(ctx.env);
+    const deps = { v1: ctx.v1, now: ctx.now, secrets, opponentCalls, eventReads };
     // D133: today's tracked set (read from the board if the tick has not yet) and the workspaces' alliances.
     const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };
     // INVARIANT cache.write-invalidates-reads (D143): the board, the set and the rosters it wrote, even

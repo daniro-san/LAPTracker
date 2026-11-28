@@ -15,7 +15,9 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
+  smallint,
   text,
   timestamp,
   unique,
@@ -58,6 +60,30 @@ export const events = pgTable(
   (t) => [unique("events_event_at_utc_unique").on(t.eventAtUtc)],
 );
 
+/**
+ * An event's windows (D160): 1 to 4 stretches of game time, each with its own Before (`before_at`), After
+ * (`after_at`) and the samples between them. Origin of Chaos has two. `events.before_at` is window 1's
+ * Before and `events.after_at` the last window's After. Windows never overlap and keep their times once
+ * created (D21). Only the tick and the collector read this table; readers use `snapshots.window_n` and
+ * `snapshots.between_windows`.
+ */
+export const eventWindows = pgTable(
+  "event_windows",
+  {
+    // Cascade: a pruned rehearsal (pruneRehearsals) takes its windows with it.
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    n: smallint("n").notNull(),
+    beforeAt: tstz("before_at").notNull(),
+    afterAt: tstz("after_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ name: "event_windows_pk", columns: [t.eventId, t.n] }),
+    check("event_windows_n_check", sql`${t.n} between 1 and 4`),
+  ],
+);
+
 export const snapshots = pgTable(
   "snapshots",
   {
@@ -69,6 +95,14 @@ export const snapshots = pgTable(
     phase: text("phase", { enum: ["before", "after", "sample"] }).notNull(),
     /** A sample's slot (D69): the grid instant it was due at, UTC. Null on a Before or an After. */
     slotAt: tstz("slot_at"),
+    /** The event window this row belongs to (D160): 1 on every one-window event. */
+    windowN: smallint("window_n").notNull().default(1),
+    /**
+     * A Before or After between two windows of one event (D160): window 1's After, window 2's Before, and so
+     * on. False on the event's Start (window 1's Before), its End (the last window's After) and on samples,
+     * so `phaseSnapshot` keeps meaning "the event's Start or End".
+     */
+    betweenWindows: boolean("between_windows").notNull().default(false),
     startedAt: tstz("started_at").notNull(),
     finishedAt: tstz("finished_at"),
     status: text("status", { enum: ["running", "complete", "partial", "failed"] }).notNull(),
@@ -85,15 +119,21 @@ export const snapshots = pgTable(
     durationMs: integer("duration_ms"),
   },
   (t) => [
-    // D1's guarantee, kept for samples (D69): one Before and one After per event, one sample per slot.
-    uniqueIndex("snapshots_event_phase_unique")
-      .on(t.eventId, t.phase)
+    // D1's guarantee per window (D160): one Before and one After per event window, one sample per slot
+    // (windows never overlap, so a slot belongs to one window).
+    uniqueIndex("snapshots_event_window_phase_unique")
+      .on(t.eventId, t.windowN, t.phase)
       .where(sql`${t.phase} <> 'sample'`),
     uniqueIndex("snapshots_event_slot_unique")
       .on(t.eventId, t.slotAt)
       .where(sql`${t.phase} = 'sample'`),
     check("snapshots_phase_check", sql`${t.phase} in ('before', 'after', 'sample')`),
     check("snapshots_slot_check", sql`(${t.phase} = 'sample') = (${t.slotAt} is not null)`),
+    check("snapshots_window_check", sql`${t.windowN} between 1 and 4`),
+    check(
+      "snapshots_between_check",
+      sql`not ${t.betweenWindows} or (${t.phase} = 'after' or (${t.phase} = 'before' and ${t.windowN} > 1))`,
+    ),
     check(
       "snapshots_status_check",
       sql`${t.status} in ('running', 'complete', 'partial', 'failed')`,

@@ -16,7 +16,7 @@ import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema
 import { rolesOf, type Role } from "./leadership";
 import { type Photo, photoColumns } from "./photo";
 import type { Ranks } from "./ranks";
-import { chainEvent, phaseColumn } from "./visibility";
+import { chainEvent, phaseColumn, phaseSnapshot } from "./visibility";
 
 type Phase = "before" | "after";
 
@@ -149,7 +149,8 @@ export async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & {
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(inArray(memberSnapshots.uid, uids), chainEvent))
+    // The event's Start and End only: the rows between windows (D160) hold members too.
+    .where(and(inArray(memberSnapshots.uid, uids), chainEvent, phaseSnapshot))
     .orderBy(asc(events.eventAtUtc), sql`${snapshots.phase} desc`, desc(allianceSnapshots.id));
   // A snapshot is one event and phase (snapshots_event_phase_unique). A failed alliance row is stored
   // stale with no roster (collector-rows errorRow), so a roster row's read is usable when fresh.

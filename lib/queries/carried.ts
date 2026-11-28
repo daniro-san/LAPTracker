@@ -44,7 +44,8 @@ const usable = (a: Totals) => a.isFresh && !a.failed;
 
 /**
  * Per event and alliance (`eventId:unionId`), the kills its members in both the Start and the End roster
- * gained, a fall counting as none and a null kills as 0, as #271's `gained` (`killsTurnout`).
+ * gained, a fall counting as none and a null kills as 0, as #271's `gained` (`killsTurnout`). Each window's
+ * Before is paired with its own After (D160), so an event of several windows sums its windows' gains.
  */
 async function stayedGains(db: Db, eventIds: readonly number[]): Promise<Map<string, number>> {
   if (eventIds.length === 0) return new Map();
@@ -52,7 +53,7 @@ async function stayedGains(db: Db, eventIds: readonly number[]): Promise<Map<str
     select e.event_id, ea.union_id,
       sum(greatest(coalesce(em.kills, 0) - coalesce(bm.kills, 0), 0))::float8 as gained
     from snapshots e
-    join snapshots b on b.event_id = e.event_id and b.phase = 'before'
+    join snapshots b on b.event_id = e.event_id and b.window_n = e.window_n and b.phase = 'before'
     join alliance_snapshots ea on ea.snapshot_id = e.id and ea.error is null
     join alliance_snapshots ba on ba.snapshot_id = b.id and ba.union_id = ea.union_id and ba.error is null
     join member_snapshots em on em.alliance_snapshot_id = ea.id

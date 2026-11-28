@@ -114,7 +114,14 @@ export async function eventSamples(
   const snaps = await db
     .select({ id: snapshots.id, phase: snapshots.phase, slotAt: snapshots.slotAt })
     .from(snapshots)
-    .where(and(eq(snapshots.eventId, eventId), ne(snapshots.status, "running")));
+    .where(
+      and(
+        eq(snapshots.eventId, eventId),
+        ne(snapshots.status, "running"),
+        // Start, samples and End; the Befores and Afters between windows (D160) are not in this model.
+        eq(snapshots.betweenWindows, false),
+      ),
+    );
   if (snaps.length === 0) return [];
   const rows = await usableRows(
     db,

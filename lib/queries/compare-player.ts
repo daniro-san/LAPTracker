@@ -3,7 +3,7 @@
 // photo exists (never its URL, D22); raw_json and avatar_url are never selected.
 import { and, desc, eq, inArray } from "drizzle-orm";
 
-import { delta, pickRosterRow, type Measured } from "../compute";
+import { delta, pickRosterRow, windowedStart, type Measured } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { comparePicks, eventOf, sidesOf, usable, type Detail } from "./compare";
@@ -82,6 +82,15 @@ function phasesOf(detail: Detail, rows: PlayerRow[]) {
   return { before, after, row, mb, ma, ref: ma ?? mb };
 }
 
+/** D160: the player's rows between the event's windows, each as fresh as its alliance's row there. */
+const playerBetween = (detail: Detail, rows: PlayerRow[]): (Measured | undefined)[] =>
+  (detail.between ?? []).map((s) => {
+    const m = rows.find((r) => r.snapshotId === s.id);
+    if (!m) return undefined;
+    const isFresh = usable(s.alliances.find((x) => x.unionId === m.unionId));
+    return { isFresh, totalPower: m.power, totalKills: m.kills };
+  });
+
 /** The player in one event; null when no roster of that event holds them. A mid-event switch is read
  * across the two alliances, each side's freshness from its own alliance row. */
 function playerSide(detail: Detail, rows: PlayerRow[]): PlayerEventFigures | null {
@@ -93,6 +102,8 @@ function playerSide(detail: Detail, rows: PlayerRow[]): PlayerEventFigures | nul
     totalPower: m.power,
     totalKills: m.kills,
   });
+  // D160: the change is the sum of the windows' changes.
+  const between = playerBetween(detail, rows);
   return {
     unionId: ref.unionId,
     tag: alliance?.tag ?? null,
@@ -100,7 +111,7 @@ function playerSide(detail: Detail, rows: PlayerRow[]): PlayerEventFigures | nul
     badgeId: alliance?.badgeId ?? null,
     rank: ref.rank,
     power: ref.power,
-    change: mb && ma ? delta(side(mb, before), side(ma, after)) : null,
+    change: mb && ma ? delta(windowedStart(side(mb, before), between), side(ma, after)) : null,
     opening: mb ? { power: mb.power, kills: mb.kills } : null,
   };
 }
@@ -109,7 +120,10 @@ function playerSide(detail: Detail, rows: PlayerRow[]): PlayerEventFigures | nul
 export async function comparePlayer(db: Db, aId: number, bId: number, uid: number) {
   const [a, b] = await Promise.all([getEventDetail(db, aId), getEventDetail(db, bId)]);
   if (!a || !b) return null;
-  const ids = [...a.snapshots, ...b.snapshots].map((s) => s.id);
+  const ids = [
+    ...[...a.snapshots, ...b.snapshots].map((s) => s.id),
+    ...[...(a.between ?? []), ...(b.between ?? [])].flatMap((s) => (s.id === null ? [] : [s.id])),
+  ];
   const [rows, hasPage] = await Promise.all([rowsOf(db, uid, ids), hasPlayerPage(db, uid)]);
   // Name and photo as the second event has them, else the first.
   const named = phasesOf(b, rows).ref ?? phasesOf(a, rows).ref;
