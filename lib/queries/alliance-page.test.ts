@@ -84,18 +84,18 @@ describe("alliancePage", () => {
 
   it("serves no blocked roster key or value", async () => {
     const page = await alliancePage(db, 7);
-    expect(findBlockedKeys(page)).toEqual([]);
+    expect(findBlockedKeys(page, { allowActivity: true })).toEqual([]);
     const text = JSON.stringify(page);
     for (const key of BLOCKED_ROSTER_KEYS) expect(text).not.toContain(`"${key}"`);
     expect(text).not.toContain("phs-image");
     expect(text).not.toContain("1793807944");
   });
 
-  it("reads the growth of the last 90 days, oldest first", async () => {
+  it("reads the growth of the last 90 days, oldest first, members capped at the capacity", async () => {
     const page = await alliancePage(db, 7);
     expect(page?.growth).toEqual([
-      { day: "2026-11-20", might: 200, members: 5 },
-      { day: "2026-11-27", might: 220, members: 5 },
+      { day: "2026-11-20", might: 200, members: 4 },
+      { day: "2026-11-27", might: 220, members: 4 },
     ]);
   });
 

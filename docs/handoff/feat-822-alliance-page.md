@@ -48,7 +48,15 @@
 
 - `pnpm vitest related --run` on the changed files: 252 files, 1458 tests passed (before the translations).
 - `pnpm typecheck`: clean.
-- `pnpm check`: green. 401 test files passed and 2 were skipped (2174 tests). Prettier, eslint, tsc, drift and i18n (17 languages up to date) all passed. The first two runs failed on import order, function complexity and length, and the D71 fence test (`lib/private/roster-fields.test.ts`). That test now allows `lib/queries/alliance-page.ts`.
+- Review fixes (PR 837):
+  - `findBlockedKeys` flags the activity keys too, unless `{ allowActivity: true }`. Only `alliance-page.test.ts` passes that option, so every other public-response guard still fails on `active`, `daily_honor` and `daily_tech`.
+  - The read-model scan in `blocked-keys.test.ts` checks `ACTIVITY_KEYS` in every file except `alliance-page.ts`.
+  - The e2e public sweep includes `/alliances/900101`, with a test of the seeded values the page renders. `allowedAt` lets only `active`, `daily_tech` and `daily_honor` through, and only on `/alliances/<id>`, so `/history` still fails on them.
+  - Growth members are capped at each read's capacity.
+  - `CLAUDE.md` and `docs/GLOSSARY.md` point to the amendment.
+  - `pnpm exec playwright test e2e/isolation.spec.ts --project=phone`: 21 passed, on a fresh build.
+- `pnpm check` after the review fixes: green, 402 test files passed (2193 tests).
+- `pnpm check` before them: green. 401 test files passed and 2 were skipped (2174 tests). Prettier, eslint, tsc, drift and i18n (17 languages up to date) all passed. The first two runs failed on import order, function complexity and length, and the D71 fence test (`lib/private/roster-fields.test.ts`). That test now allows `lib/queries/alliance-page.ts`.
 - Rendered on a production build (`next build`, then `next start`) against a local Postgres seeded by the e2e setup (D150, invented names), through a temporary Playwright spec that was not committed. Screenshots of `/alliances/900101` at 360, 640 and 1280 px, light and dark, plus 360 light with `?range=7d`, are outside the repo. The head, statement card, growth card (might `−5.35M over 13 days`, members `No change over 13 days`), tabs, chips and member links render with no overflow. The Server fact is left out because the seed's roster has no `sid`.
 
 ## Open issues

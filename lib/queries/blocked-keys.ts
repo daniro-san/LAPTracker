@@ -24,14 +24,22 @@ export const UNLOGGED_ROSTER_KEYS = [...BLOCKED_ROSTER_KEYS, ...ACTIVITY_KEYS] a
 export const PHOTO_HOST = "phs-image.globallap.com";
 
 const blocked = new Set<string>(BLOCKED_ROSTER_KEYS);
+const unlogged = new Set<string>(UNLOGGED_ROSTER_KEYS);
 
-/** Every path at which a blocked key appears in `value`, e.g. `members.0.last_online_at`. Empty = clean. */
-export function findBlockedKeys(value: unknown, path = ""): string[] {
-  if (Array.isArray(value))
-    return value.flatMap((item, i) => findBlockedKeys(item, `${path}${i}.`));
+function walk(value: unknown, keys: ReadonlySet<string>, path: string): string[] {
+  if (Array.isArray(value)) return value.flatMap((item, i) => walk(item, keys, `${path}${i}.`));
   if (value === null || typeof value !== "object") return [];
   return Object.entries(value).flatMap(([key, child]) => [
-    ...(blocked.has(key) ? [`${path}${key}`] : []),
-    ...findBlockedKeys(child, `${path}${key}.`),
+    ...(keys.has(key) ? [`${path}${key}`] : []),
+    ...walk(child, keys, `${path}${key}.`),
   ]);
+}
+
+/**
+ * Every path at which a private roster key appears in `value`, e.g. `members.0.last_online_at`. Empty =
+ * clean. The activity keys count too, unless `allowActivity`: only the public alliance page's read model
+ * (lib/queries/alliance-page.ts) may carry them (D76 amendment 2026-11-28).
+ */
+export function findBlockedKeys(value: unknown, { allowActivity = false } = {}): string[] {
+  return walk(value, allowActivity ? blocked : unlogged, "");
 }

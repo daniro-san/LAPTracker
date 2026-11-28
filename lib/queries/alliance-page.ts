@@ -77,6 +77,10 @@ const raw = (key: string) => sql<unknown>`${dailyRosters.rawJson}->${key}`;
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
+/** Issue 481: the game once sent 101 of 100; the page never shows more members than the capacity. */
+const capped = (members: number | null, capacity: number | null) =>
+  members !== null && capacity !== null ? Math.min(members, capacity) : members;
+
 /** A fresh roster with no error and at least one member (D60). */
 const usable = (unionId: number) =>
   and(
@@ -135,6 +139,7 @@ export async function alliancePage(db: Db, unionId: number): Promise<AlliancePag
       day: dailyRosters.readDay,
       might: dailyRosters.totalPower,
       members: dailyRosters.memberCount,
+      capacity: raw("capacity"),
     })
     .from(dailyRosters)
     .where(and(usable(unionId), gte(dailyRosters.readDay, addDays(row.day, -GROWTH_DAYS))))
@@ -156,16 +161,20 @@ export async function alliancePage(db: Db, unionId: number): Promise<AlliancePag
     at: row.at,
     server: num(row.server),
     might: row.might,
-    // Issue 481: the game once sent 101 of 100; the head never shows more than the capacity.
-    members:
-      row.members !== null && capacity !== null ? Math.min(row.members, capacity) : row.members,
+    members: capped(row.members, capacity),
     capacity,
     leader: leader ? { uid: leader.uid, name: leader.name, power: leader.power } : null,
     roster,
     growth: growth.flatMap((g) =>
       g.might === null || g.members === null
         ? []
-        : [{ day: g.day, might: g.might, members: g.members }],
+        : [
+            {
+              day: g.day,
+              might: g.might,
+              members: Math.min(g.members, num(g.capacity) ?? Infinity),
+            },
+          ],
     ),
   };
 }

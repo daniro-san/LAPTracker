@@ -69,8 +69,14 @@ const DAILY_FIELDS = ["active", "daily_tech", "daily_honor"];
 
 const slugOf = (side: Side) => ALLIANCES[side].slug;
 
-/** The own alliance's fields an answer from `path` may carry, and whose they are; none for any other path. */
-function allowedAt(path: string): { side: Side; fields: string[] } | null {
+/**
+ * The fields an answer from `path` may carry, and whose they are (null: any alliance's); none for any other
+ * path.
+ */
+function allowedAt(path: string): { side: Side | null; fields: string[] } | null {
+  // The public alliance page shows every member's daily fields, nothing else private (D76 amendment
+  // 2026-11-28); its /history page is not this page.
+  if (/^\/alliances\/\d+$/.test(path)) return { side: null, fields: DAILY_FIELDS };
   for (const side of SIDES) {
     const slug = slugOf(side);
     if (new RegExp(`^/api/w/${slug}/members/\\d+$`).test(path)) {
@@ -103,7 +109,8 @@ export function leaksIn(url: string, body: string): string[] {
   const path = new URL(url).pathname;
   const allowed = allowedAt(path);
   const mayCarry = (field: string, side?: Side) =>
-    !!allowed?.fields.includes(field) && (side === undefined || side === allowed.side);
+    !!allowed?.fields.includes(field) &&
+    (side === undefined || allowed.side === null || side === allowed.side);
   const found = CHECKS.filter((c) => !mayCarry(c.field, c.side) && c.re.test(body)).map((c) => c.label);
   if (body.includes(AVATAR_SENTINEL)) found.unshift("avatar_url");
   return [...found, ...otherMembersIn(path, body)];
