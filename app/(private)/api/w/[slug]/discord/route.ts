@@ -132,7 +132,7 @@ export async function POST(
       const tested = await testWebhook(
         db,
         access,
-        { ...deps, ...words, report: ctx.report },
+        { ...deps, ...words, report: ctx.report, origin: new URL(request.url).origin },
         input.channel,
       );
       if (!tested.ok) return privateError(STATUS[tested.code], tested.code);

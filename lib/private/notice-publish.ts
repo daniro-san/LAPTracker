@@ -10,6 +10,7 @@ import { z } from "zod";
 import type { Db } from "../db";
 import { pictureBytes } from "../repo/notice-pictures";
 import { claimPublish, finishPublish, lastPosted, type PublishRow } from "../repo/notice-publishes";
+import type { WebhookLook } from "../workspace-branding";
 import type { WorkspaceAccess } from "./access";
 import { featureOn } from "./features";
 import { privateLog } from "./log";
@@ -29,6 +30,8 @@ export interface Channel {
   url: string;
   name: string;
   forum: boolean;
+  /** Who the message posts as (issue 462): the workspace's tab title and icon, Discord's per-message override. */
+  look?: WebhookLook;
 }
 /** The workspace's two notice channels (discord-webhooks.ts `noticeChannels`); null where none is set up. */
 export type Channels = Record<Audience, Channel | null>;
@@ -74,6 +77,7 @@ function send(
   const url = `${channel.url}?wait=true${thread ? `&thread_id=${thread}` : ""}`;
   const opens = channel.forum && thread === null;
   const payload = {
+    ...channel.look,
     content: message.content,
     allowed_mentions: { parse: [] },
     ...(opens && { thread_name: threadName(title) }),

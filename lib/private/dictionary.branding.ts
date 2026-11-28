@@ -1,0 +1,103 @@
+// Alliance settings → Branding (issue 462, D167), in English, Brazilian Portuguese and French: one module the
+// settings dictionaries spread. French puts a no-break space before : ! ? and inside « ».
+export const brandingEn = {
+  "branding.head": "Branding",
+  "branding.lead":
+    "How your desk looks: the browser tab’s title, its icon and one colour. Officers see it on the desk and in the installed app, and our posts in your Discord channels carry the same name and icon. “LAP Tracker” stays in the footer.",
+  "branding.title.label": "Tab title",
+  "branding.title.hint": "Left empty, it is {name}.",
+  "branding.title.count": "{n} of 40 characters",
+  "branding.title.tooLong": "Too long: keep it to 40 characters.",
+  "branding.icon.legend": "Icon",
+  "branding.icon.badge": "Alliance badge",
+  "branding.icon.badge.note": "From the tracker, no setup.",
+  "branding.icon.badge.none": "No badge known yet: the desk mark shows until there is one.",
+  "branding.icon.discord": "Discord server icon",
+  "branding.icon.discord.note": "Read through the bot when you save.",
+  "branding.icon.mark": "Desk mark",
+  "branding.icon.mark.note": "The drawn mark of LAP Tracker.",
+  "branding.accent.legend": "Colour",
+  "branding.accent.burgundy": "Burgundy",
+  "branding.accent.indigo": "Indigo",
+  "branding.accent.teal": "Teal",
+  "branding.accent.forest": "Forest",
+  "branding.accent.umber": "Umber",
+  "branding.accent.slate": "Slate",
+  "branding.preview": "Preview. Nothing changes until you tap Save.",
+  "branding.preview.tab": "Browser tab",
+  "branding.preview.discord": "Your server’s icon appears after you save.",
+  "branding.saved": "Saved. The header and the tab now use it.",
+  "branding.noDiscordIcon":
+    "The bot could not read a server icon. Add the bot in the Discord card, give your server an icon, then save again.",
+  "branding.failed": "That didn’t save. Try again.",
+  "branding.rateLimited": "Too many saves just now. Wait 15 minutes, then try again.",
+};
+
+export const brandingPt: typeof brandingEn = {
+  "branding.head": "Identidade visual",
+  "branding.lead":
+    "Como a mesa de vocês aparece: o título da aba do navegador, o ícone e uma cor. Os oficiais veem isso na mesa e no app instalado, e os nossos posts nos canais do Discord levam o mesmo nome e ícone. “LAP Tracker” continua no rodapé.",
+  "branding.title.label": "Título da aba",
+  "branding.title.hint": "Deixando vazio, fica {name}.",
+  "branding.title.count": "{n} de 40 caracteres",
+  "branding.title.tooLong": "Longo demais: use no máximo 40 caracteres.",
+  "branding.icon.legend": "Ícone",
+  "branding.icon.badge": "Brasão da aliança",
+  "branding.icon.badge.note": "Vem do tracker, sem configurar nada.",
+  "branding.icon.badge.none":
+    "Nenhum brasão conhecido ainda: a marca da mesa aparece até haver um.",
+  "branding.icon.discord": "Ícone do servidor do Discord",
+  "branding.icon.discord.note": "Lido pelo bot quando você salva.",
+  "branding.icon.mark": "Marca da mesa",
+  "branding.icon.mark.note": "A marca desenhada do LAP Tracker.",
+  "branding.accent.legend": "Cor",
+  "branding.accent.burgundy": "Bordô",
+  "branding.accent.indigo": "Índigo",
+  "branding.accent.teal": "Verde-azulado",
+  "branding.accent.forest": "Verde-floresta",
+  "branding.accent.umber": "Terra",
+  "branding.accent.slate": "Ardósia",
+  "branding.preview": "Prévia. Nada muda até você tocar em Salvar.",
+  "branding.preview.tab": "Aba do navegador",
+  "branding.preview.discord": "O ícone do seu servidor aparece depois de salvar.",
+  "branding.saved": "Salvo. O cabeçalho e a aba já usam isso.",
+  "branding.noDiscordIcon":
+    "O bot não conseguiu ler o ícone do servidor. Adicione o bot no cartão do Discord, coloque um ícone no servidor e salve de novo.",
+  "branding.failed": "Não salvou. Tente de novo.",
+  "branding.rateLimited": "Muitos salvamentos agora. Espere 15 minutos e tente de novo.",
+};
+
+export const brandingFr: typeof brandingEn = {
+  "branding.head": "Identité visuelle",
+  "branding.lead":
+    "L’apparence de votre bureau : le titre de l’onglet du navigateur, son icône et une couleur. Les officiers la voient sur le bureau et dans l’app installée, et nos messages dans vos salons Discord portent le même nom et la même icône. « LAP Tracker » reste en pied de page.",
+  "branding.title.label": "Titre de l’onglet",
+  "branding.title.hint": "Laissé vide, ce sera {name}.",
+  "branding.title.count": "{n} sur 40 caractères",
+  "branding.title.tooLong": "Trop long : 40 caractères au maximum.",
+  "branding.icon.legend": "Icône",
+  "branding.icon.badge": "Blason de l’alliance",
+  "branding.icon.badge.note": "Il vient du tracker, sans rien configurer.",
+  "branding.icon.badge.none":
+    "Aucun blason connu pour l’instant : la marque du bureau s’affiche en attendant.",
+  "branding.icon.discord": "Icône du serveur Discord",
+  "branding.icon.discord.note": "Lue par le bot quand vous enregistrez.",
+  "branding.icon.mark": "Marque du bureau",
+  "branding.icon.mark.note": "La marque dessinée de LAP Tracker.",
+  "branding.accent.legend": "Couleur",
+  "branding.accent.burgundy": "Bordeaux",
+  "branding.accent.indigo": "Indigo",
+  "branding.accent.teal": "Sarcelle",
+  "branding.accent.forest": "Vert forêt",
+  "branding.accent.umber": "Terre d’ombre",
+  "branding.accent.slate": "Ardoise",
+  "branding.preview": "Aperçu. Rien ne change tant que vous n’appuyez pas sur Enregistrer.",
+  "branding.preview.tab": "Onglet du navigateur",
+  "branding.preview.discord": "L’icône de votre serveur apparaît après l’enregistrement.",
+  "branding.saved": "Enregistré. L’en-tête et l’onglet l’utilisent maintenant.",
+  "branding.noDiscordIcon":
+    "Le bot n’a pas pu lire l’icône du serveur. Ajoutez le bot dans la carte Discord, donnez une icône à votre serveur, puis enregistrez de nouveau.",
+  "branding.failed": "L’enregistrement a échoué. Réessayez.",
+  "branding.rateLimited":
+    "Trop d’enregistrements à l’instant. Attendez 15 minutes, puis réessayez.",
+};

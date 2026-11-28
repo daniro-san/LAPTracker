@@ -666,6 +666,13 @@
       "when": 1795876666731,
       "tag": "0094_elixir_detail",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1795878742258,
+      "tag": "0095_branding",
+      "breakpoints": true
     }
   ]
 }

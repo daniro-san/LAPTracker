@@ -12,7 +12,7 @@ import { CALLOUT_LIMIT, calloutLength } from "./post-callout";
 import { calloutOf, saveCallout } from "./repo/post-touches";
 import { setSwitch } from "./repo/workspace-features";
 import { recordSignIn, saveWorkspace } from "./repo/workspaces";
-import { dailyReads, dailyRosters, memberFacts } from "./schema";
+import { dailyReads, dailyRosters, memberFacts, workspaces } from "./schema";
 import { shieldChecks } from "./schema-shield";
 import { playerReads } from "./schema-squads";
 import { postShieldSummary, type PostDeps } from "./shield-post";
@@ -86,8 +86,18 @@ const morningReads = () =>
 function discord(forum = false) {
   const posts: { method: string; url: string; threadName?: string }[] = [];
   const texts: string[] = [];
+  const looks: { username?: string; avatar_url?: string }[] = [];
   const fetch: typeof globalThis.fetch = async (url, init) => {
-    const body = JSON.parse(String(init?.body)) as { content: string; thread_name?: string };
+    const body = JSON.parse(String(init?.body)) as {
+      content: string;
+      thread_name?: string;
+      username?: string;
+      avatar_url?: string;
+    };
+    looks.push({
+      ...(body.username && { username: body.username }),
+      ...(body.avatar_url && { avatar_url: body.avatar_url }),
+    });
     const method = String(init?.method);
     texts.push(body.content);
     posts.push({
@@ -127,10 +137,28 @@ function discord(forum = false) {
   return {
     posts,
     texts,
+    looks,
     post,
     rename: (names: string[]) => db.update(dailyRosters).set({ memberNames: names }),
   };
 }
+
+describe("who the Raid Shield summary posts as (issue 462, D167)", () => {
+  it("posts under the webhook's own name until Branding is saved, then as the title and icon", async () => {
+    await save("shield");
+    const d = discord();
+    expect(await d.post(FRI, "night")).toBe(true);
+    expect(d.looks).toEqual([{}]);
+    await db.update(workspaces).set({ brandTitle: "Night Watch", brandIcon: "mark" });
+    await db.delete(shieldChecks);
+    await db.insert(shieldChecks).values({ day: DAY, unionId: OWN_ALLIANCE_ID });
+    expect(await d.post(FRI, "night")).toBe(true);
+    expect(d.looks[1]).toEqual({
+      username: "Night Watch",
+      avatar_url: "https://laptracker.test/icon/512",
+    });
+  });
+});
 
 describe("the Raid Shield summary's channel (D147)", () => {
   it("goes to the Raid Shield channel, as a forum post there, never to the leaders'", async () => {

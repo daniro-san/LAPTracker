@@ -61,3 +61,5 @@ Why: the owner (2026-11-17) wants screenshots easy to send from anywhere in the 
 **iPhone.** iOS does not support share targets for web apps. The how-to page (step 3) now says: "On iPhone, sharing to the desk is not possible: use Send screenshots in the desk or the Discord command “Send to LAPTracker”."
 
 **Amendment 2026-11-22 (issue 585 batch 3, slice S4, finding F21; officer persona panel and designer, standing approval).** Home's "Send screenshots" leaves "To review" for a card of its own right after it, titled "Screenshots" ("Prints", "Captures d’écran"), with the same button and help line. It stays the main one. "To review" now holds only what waits for a person, so its number, its items and "Nothing to review." are no longer next to the upload. The drafts a send makes still join "To review".
+
+**Amendment 2026-11-28 (owner, issue 462, D167).** The manifest's `name` and `short_name` are the workspace's tab title (default `[TAG] Desk`), its `icons` the chosen icon, and `theme_color` its accent. Everything else here is unchanged.

@@ -119,6 +119,67 @@
   color-scheme: light;
 }
 
+/* A workspace's accent (issue 462, D167): the header band's colour, picked from this set in Alliance settings.
+   `burgundy`, the default, is the --burgundy above, restated here so a swatch or a preview inside another accent's
+   wrapper still shows it. Each one keeps wax-paper text at 4.5:1 or more, light and
+   dark (lib/workspace-branding.test.ts). The desk's layout sets data-accent on its wrapper. */
+[data-accent="burgundy"] {
+  --burgundy: #6e2142;
+}
+[data-accent="indigo"] {
+  --burgundy: #33408a;
+}
+[data-accent="teal"] {
+  --burgundy: #1b5d60;
+}
+[data-accent="forest"] {
+  --burgundy: #2c5a35;
+}
+[data-accent="umber"] {
+  --burgundy: #6b4416;
+}
+[data-accent="slate"] {
+  --burgundy: #3d4a58;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-accent="burgundy"] {
+    --burgundy: #7d2c4f;
+  }
+  :root:not([data-theme="light"]) [data-accent="indigo"] {
+    --burgundy: #44519c;
+  }
+  :root:not([data-theme="light"]) [data-accent="teal"] {
+    --burgundy: #236569;
+  }
+  :root:not([data-theme="light"]) [data-accent="forest"] {
+    --burgundy: #38693f;
+  }
+  :root:not([data-theme="light"]) [data-accent="umber"] {
+    --burgundy: #7a5222;
+  }
+  :root:not([data-theme="light"]) [data-accent="slate"] {
+    --burgundy: #4c5a69;
+  }
+}
+:root[data-theme="dark"] [data-accent="burgundy"] {
+  --burgundy: #7d2c4f;
+}
+:root[data-theme="dark"] [data-accent="indigo"] {
+  --burgundy: #44519c;
+}
+:root[data-theme="dark"] [data-accent="teal"] {
+  --burgundy: #236569;
+}
+:root[data-theme="dark"] [data-accent="forest"] {
+  --burgundy: #38693f;
+}
+:root[data-theme="dark"] [data-accent="umber"] {
+  --burgundy: #7a5222;
+}
+:root[data-theme="dark"] [data-accent="slate"] {
+  --burgundy: #4c5a69;
+}
+
 @theme inline {
   --color-paper: var(--paper);
   --color-ink: var(--ink);

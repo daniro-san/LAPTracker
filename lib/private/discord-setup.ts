@@ -6,8 +6,10 @@ import { commandsFor } from "../app-commands";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { recordFailure } from "../repo/auth-attempts";
+import { setDiscordIconHash } from "../repo/workspace-branding";
 import { discordState, markBotSeen } from "../repo/workspace-discord";
 import { findWorkspaceBySlug } from "../repo/workspaces";
+import { ICON_HASH } from "../workspace-branding";
 import { syncCommands } from "../workspace-commands";
 import type { WorkspaceAccess } from "./access";
 
@@ -94,19 +96,26 @@ export type CheckResult =
   | { ok: false; code: "bot_off" | "rate_limited" | "bot_missing" | "unreachable" }
   | { ok: false; code: "commands_failed"; firstSeen: boolean };
 
-/** Whether the bot is in the server: Discord answers a guild read only for a member bot. */
-async function botIn(
-  env: DiscordEnv,
+/**
+ * Whether the bot is in the server: Discord answers a guild read only for a member bot. When it is, the
+ * server's icon hash comes with it (issue 462: the Branding card's Discord icon); null when it has none.
+ */
+export async function botIn(
+  env: Pick<DiscordEnv, "DISCORD_API_BASE_URL" | "DISCORD_BOT_TOKEN">,
   doFetch: typeof fetch,
   guildId: string,
-): Promise<"in" | "missing" | "unreachable"> {
+): Promise<{ state: "in"; icon: string | null } | { state: "missing" | "unreachable" }> {
   const res = await doFetch(`${base(env)}/guilds/${guildId}`, {
     headers: { authorization: `Bot ${env.DISCORD_BOT_TOKEN}` },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   }).catch(() => null);
-  if (res?.ok) return "in";
+  if (res?.ok) {
+    const body = (await res.json().catch(() => null)) as { icon?: unknown } | null;
+    const icon = typeof body?.icon === "string" && ICON_HASH.test(body.icon) ? body.icon : null;
+    return { state: "in", icon };
+  }
   // 403 Missing Access or 404 Unknown Guild: the bot is not in that server.
-  return res?.status === 403 || res?.status === 404 ? "missing" : "unreachable";
+  return { state: res?.status === 403 || res?.status === 404 ? "missing" : "unreachable" };
 }
 
 /** "Check": the bot in the workspace's server, then its commands registered (only those turned on). */
@@ -122,8 +131,9 @@ export async function checkBot(
   const workspace = await findWorkspaceBySlug(db, access.slug);
   if (!workspace) return { ok: false, code: "unreachable" };
   const found = await botIn(env, deps.fetch, workspace.discordGuildId);
-  if (found !== "in")
-    return { ok: false, code: found === "missing" ? "bot_missing" : "unreachable" };
+  if (found.state !== "in")
+    return { ok: false, code: found.state === "missing" ? "bot_missing" : "unreachable" };
+  await setDiscordIconHash(db, access.workspaceId, found.icon);
   const firstSeen = await markBotSeen(db, access.workspaceId, now);
   const registered = await syncCommands(db, deps, { only: [access.workspaceId] });
   const status = registered.ok ? (registered.guilds[0]?.status ?? 0) : 0;

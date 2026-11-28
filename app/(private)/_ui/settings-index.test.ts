@@ -18,6 +18,7 @@ const ready: SettingsIndexInput = {
   posts: { on: 1, n: 1 },
   callouts: { set: 1, n: 3 },
   glossary: 2,
+  branding: "[ZZZ] Desk",
   data: { download: true, deletionDate: null },
 };
 
@@ -40,6 +41,7 @@ describe("Alliance settings' index", () => {
       { id: "posts", label: "Posts", state: "1 of 1 on", attention: false },
       { id: "callouts", label: "Your line on our posts", state: "1 of 3 set", attention: false },
       { id: "glossary", label: "Glossary", state: "2 words", attention: false },
+      { id: "branding", label: "Branding", state: "[ZZZ] Desk", attention: false },
       { id: "workspace-data", label: "Your alliance’s data", state: null, attention: false },
     ]);
 
@@ -63,6 +65,7 @@ describe("Alliance settings' index", () => {
       ["tracker-key", "Site’s key"],
       ["features", "19 of 20 on"],
       ["discord", "1 of 3 channels set · commands off on this site"],
+      ["branding", "[ZZZ] Desk"],
       ["workspace-delete-head", null],
     ]);
   });

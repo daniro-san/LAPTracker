@@ -11,6 +11,7 @@ import type { AppContext } from "../app-context";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { recordFailure } from "../repo/auth-attempts";
+import { webhookLook } from "../repo/workspace-branding";
 import {
   deleteWebhook,
   sealedWebhooks,
@@ -125,7 +126,7 @@ export async function channelNames(db: Db, ws: Workspace, env: Secret) {
 type Sealed = Awaited<ReturnType<typeof sealedWebhooks>>;
 
 /** What opening a webhook needs from AppContext: the secrets, and `report` for one that does not open. */
-type Opener = { env: Secret; report: AppContext["report"] };
+type Opener = { env: Secret; report: AppContext["report"]; origin?: string };
 
 /** One channel's webhook, opened for this call only; null where none is usable. */
 function opened(deps: Opener, ws: Workspace, rows: Sealed, c: WebhookChannel): Channel | null {
@@ -146,8 +147,15 @@ function opened(deps: Opener, ws: Workspace, rows: Sealed, c: WebhookChannel): C
 
 /** The notice channels to post to, their webhooks opened for this call only; null where none is usable. */
 export async function noticeChannels(db: Db, ws: Workspace, deps: Opener): Promise<Channels> {
-  const rows = await sealedWebhooks(db, ws.workspaceId);
-  return { members: opened(deps, ws, rows, "members"), leaders: opened(deps, ws, rows, "leaders") };
+  const [rows, look] = await Promise.all([
+    sealedWebhooks(db, ws.workspaceId),
+    webhookLook(db, ws.slug, deps.origin),
+  ]);
+  const posting = (c: Channel | null) => c && { ...c, look };
+  return {
+    members: posting(opened(deps, ws, rows, "members")),
+    leaders: posting(opened(deps, ws, rows, "leaders")),
+  };
 }
 
 export type WebhookResult =
@@ -228,7 +236,7 @@ export type TestResult =
 export async function testWebhook(
   db: Db,
   access: WorkspaceAccess,
-  deps: Deps & { title: string; text: string; report: AppContext["report"] },
+  deps: Deps & { title: string; text: string; report: AppContext["report"]; origin?: string },
   c: WebhookChannel,
 ): Promise<TestResult> {
   const tries = await recordFailure(
@@ -238,9 +246,12 @@ export async function testWebhook(
     deps.now,
   );
   if (tries > TESTS) return { ok: false, code: "rate_limited" };
-  const target = opened(deps, access, await sealedWebhooks(db, access.workspaceId), c);
-  if (!target) return { ok: false, code: "not_set_up" };
-  const { sent, status } = await postMessages(deps.fetch, target, deps.title, [deps.text]);
+  const channel = opened(deps, access, await sealedWebhooks(db, access.workspaceId), c);
+  if (!channel) return { ok: false, code: "not_set_up" };
+  const look = await webhookLook(db, access.slug, deps.origin);
+  const { sent, status } = await postMessages(deps.fetch, { ...channel, look }, deps.title, [
+    deps.text,
+  ]);
   privateLog("discord.webhook.test", { sent, http: status ?? 0 });
   return sent === 1 ? { ok: true } : { ok: false, code: "failed" };
 }

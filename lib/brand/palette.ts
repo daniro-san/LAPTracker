@@ -19,3 +19,22 @@ export function tokenColor(name: Token, mode: Mode = "light"): string {
   if (start < 0 || !value) throw new Error(`token --${name} (${mode}) not found in tokens.css`);
   return value;
 }
+
+/**
+ * A workspace accent's header colour (issue 462, D167), for the manifest's theme colour and the contrast test.
+ * `burgundy` is the default, the `--burgundy` token; the others are the `[data-accent]` rules in tokens.css.
+ */
+export function accentColor(id: string, mode: Mode = "light"): string {
+  const css = readFileSync(join(process.cwd(), "lib/brand/tokens.css"), "utf8");
+  const selector =
+    id === "burgundy"
+      ? BLOCK[mode]
+      : mode === "dark"
+        ? `:root[data-theme="dark"] [data-accent="${id}"] {`
+        : `\n[data-accent="${id}"] {`;
+  const start = css.indexOf(selector);
+  const block = css.slice(start, css.indexOf("}", start));
+  const value = /--burgundy:\s*(#[0-9a-f]{6});/.exec(block)?.[1];
+  if (start < 0 || !value) throw new Error(`accent ${id} (${mode}) not found in tokens.css`);
+  return value;
+}
