@@ -108,7 +108,7 @@ async function httpDetail(path: string, response: Response): Promise<UpstreamDet
 }
 
 /** The path as an error's message names it: a player's uid never is (D115, 2026-11-21). */
-const shownPath = (path: string) => path.replace(/^\/players\/\d+/, "/players/[uid]");
+export const shownPath = (path: string) => path.replace(/^\/players\/\d+/, "/players/[uid]");
 
 /** A request with no HTTP answer, as /admin shows it: the path, the timeout or the network cause. */
 function noAnswerDetail(path: string, e: unknown, timeoutMs: number): UpstreamDetail {

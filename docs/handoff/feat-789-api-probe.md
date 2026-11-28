@@ -11,14 +11,19 @@ Part of #789 (item 6, upstream API discovery). Owner's authorization in chat, 20
   - Cap: every attempt is counted in `onAttempt` before it is sent, and the 13th throws, so at most 12 attempts go out. `probePath` sends no retry.
   - A 401, 403 or 429 stops the run (`status_401`/`status_403`/`status_429`).
   - Guards: `squads_busy` when the own alliance's `squad_reads` row for the day is `running`; `quota_low` when `remaining − 12 < squadsReserve(…)`, where `remaining` is what the squads read (or the daily read) left, as in the shield probe on our key; `no_daily` and `quota_unknown` when the start is not known.
-  - `shape`/`render` ported from the local probe-789.mjs script: key paths, types, array lengths (a single length, or min/max/count). Numeric keys become `<numeric-key>`, other non-identifier keys become `<other-key>`. No value is kept.
+  - `shape`/`render` ported from the local probe-789.mjs script: key paths, types, array lengths. Lengths are kept as a running min/max/count per path (a single length when seen once). Numeric keys become `<numeric-key>`, other non-identifier keys become `<other-key>`. An object with more than `MANY_KEYS` (40) keys is keyed by data: its keys are never stored, its line says `<many-keys n=N>`, and its values' structure is merged under `<path>.<many-keys>`. No value is kept.
+  - Paths are shown with `shownPath`, now exported from `lib/sources/v1.ts` (the same masking error messages use).
 - `probePath` in `lib/sources/v1.ts` (and on `V1Source`): GET one path once through the adapter's `request`, so the headers are the usual three (Bearer key, User-Agent, Accept). Returns `{ status, body, chars }`. A 404, 429 or other error status comes back as its status, with the error detail's redacted body start (D61). A request that gets no answer throws. `fakeV1` in `lib/collector.test-helpers.ts` gets a rejecting stub.
+- `lib/sources/v1.test.ts`: five `probePath` tests with a stubbed fetch: a 503 is one fetch and status 503; a 404, 401 and 429 return their status and JSON body start; a non-JSON 2xx returns no body and its length; no answer rethrows `RequestError`; the request carries exactly `authorization`, `user-agent` and `accept`, and its init only `headers` and `signal` (no Origin, Referer, cookie or credentials).
 - Storage: `run_logs`, no migration. One `api.probe.path` line per path with `data = { path, status, chars, json, shape }` (`shape` is text, cut at 16,000 characters with a `…[cut: N more characters]` marker), and one `api.probe` line with `{ calls, paths_stored, quota_remaining_before, reason? }`. The lines' `read_day` is the quota day's daily read (`2026-11-28`). The console gets one line: `api.probe { calls, stored }`.
-- `lib/api-probe.test.ts`: seven PGlite tests:
+- `lib/api-probe.test.ts`: ten PGlite tests:
   - the window: only inside it; the window plus the whole `after` budget is outside every event window and every Raid Shield pass window;
   - at most once: two overlapping ticks plus a later tick, with ids 3 and 4 already stored;
-  - structure without values: a seeded string sentinel, a number, the uid in the path and the quota number never appear in `run_logs`; the expected key paths do; a 404 that is not JSON stores `shape: null`; a 3,000-key answer is cut;
+  - structure without values: a seeded string sentinel, a number, the uid in the path and the quota number never appear in `run_logs`; the expected key paths do; a 41-key object keyed by sentinel names stores `<many-keys n=41>` and no name; a 404 that is not JSON stores `shape: null`; a 40 × 40-field answer is cut;
   - the cap of 12 attempts (each call reporting a retry stops after 6 paths), and a stop after a 429;
+  - no answer: only the error's name is stored (a sentinel in its message is not), and the next path is still read;
+  - the deadline stop;
+  - `quota_unknown`, and no call without a daily read;
   - `quota_low`;
   - `squads_busy`;
   - the gate opens at 04:31Z with the queue settled, and `squadsBatch` runs the probe.
@@ -42,7 +47,8 @@ Part of #789 (item 6, upstream API discovery). Owner's authorization in chat, 20
 
 ## Verified
 
-- `pnpm vitest run lib/api-probe.test.ts`: 7 passed.
+- Review round (PR #820): `pnpm vitest related --run` on the four changed code files: 112 files, 667 tests passed, 1 skipped. `pnpm check`: exit 0 (2173 tests passed, 4 skipped).
+- First round: `pnpm vitest run lib/api-probe.test.ts`: 7 passed.
 - `pnpm vitest related --run` on the seven changed code files: 192 files, 1172 tests passed, 1 skipped.
 - `pnpm check`: exit 0 (399 files passed, 2 skipped; 2165 tests passed, 4 skipped). The first runs failed on Prettier for the test file and ESLint's complexity limit on `shape`; both are fixed.
 - I made no upstream call. The tests stub `probePath`.
@@ -50,7 +56,8 @@ Part of #789 (item 6, upstream API discovery). Owner's authorization in chat, 20
 ## Open issues
 
 - The logger's `redact` replaces the type after a private key name (for example `$.members[].x: …`). The key path still shows that the field exists, but its type is hidden. This is the intended behaviour for private fields.
-- A key that looks like an identifier is kept as it is. If an answer is keyed by a player's name (an object keyed by nickname), those names would be stored as key paths. The known endpoints use arrays.
+- A key that looks like an identifier is kept as it is in an object of 40 keys or fewer. A small object keyed by names (40 or fewer) would still store those names as paths.
+- With no daily read (`no_daily`), the probe makes no call, but its `api.probe` line cannot be stored: `run_logs.read_day` references `daily_reads`. The logger then prints `log.write_failed` once. Query 2 below is empty in that case.
 - One tick only: if cron-job.org skips the 04:30 UTC tick, or the squads read is still running then, nothing runs and there is no retry at 04:45.
 - On LAP_API_KEY, the probe's 12 calls are not subtracted from `squad_reads.quota_remaining`. The next read corrects it from its first answer's quota.
 

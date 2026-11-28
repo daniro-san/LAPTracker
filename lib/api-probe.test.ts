@@ -10,6 +10,7 @@ import {
   API_PROBE_WINDOW,
   apiProbe,
   type ApiProbeDeps,
+  MANY_KEYS,
   PROBE_PATHS,
   SHAPE_MAX_CHARS,
 } from "./api-probe";
@@ -59,6 +60,10 @@ const body = () => ({
   power: SENTINEL_NUMBER,
   members: [{ nick_name: SENTINEL, uid: SENTINEL_NUMBER }, { nick_name: "Wren" }],
   by_server: { "325": { abbr: SENTINEL } },
+  // Keyed by data: more than MANY_KEYS keys, each a name that must never become a path.
+  by_name: Object.fromEntries(
+    Array.from({ length: MANY_KEYS + 1 }, (_, i) => [`${SENTINEL}_${i}`, { abbr: "X" }]),
+  ),
   quota: { limit: 1000, used: 1, remaining: 999 },
 });
 
@@ -137,7 +142,9 @@ describe("the /v1 discovery of 2026-11-29 (issue 789)", () => {
   });
 
   it("stores each answer's structure and no value, cut per path", async () => {
-    const wide = Object.fromEntries(Array.from({ length: 3000 }, (_, i) => [`field_${i}`, i]));
+    // 40 × 40 field names (none past MANY_KEYS): about 40,000 characters of structure.
+    const row = Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`sub_${i}`, i]));
+    const wide = Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`field_${i}`, row]));
     const d = deps(AT, (path) =>
       path === "/map"
         ? { status: 200, body: wide, chars: 50_000 }
@@ -162,6 +169,8 @@ describe("the /v1 discovery of 2026-11-29 (issue 789)", () => {
         "$.members[].nick_name: string",
         "$.members[].uid: number",
         "$.by_server.<numeric-key>.abbr: string",
+        `$.by_name: object <many-keys n=${MANY_KEYS + 1}>`,
+        "$.by_name.<many-keys>.abbr: string",
         "$.quota.remaining: number",
       ]),
     );
@@ -199,6 +208,49 @@ describe("the /v1 discovery of 2026-11-29 (issue 789)", () => {
     await probe(limited);
     expect(limited.paths).toEqual(PROBE_PATHS.slice(0, 3));
     expect(await summary()).toEqual([expect.objectContaining({ calls: 3, reason: "status_429" })]);
+  });
+
+  it("stores only the error's name when a call gets no answer, and reads the next path", async () => {
+    const d = deps(AT);
+    const inner = d.v1.probePath;
+    d.v1.probePath = async (path, onAttempt, signal) => {
+      if (path !== "/servers") return inner(path, onAttempt, signal);
+      onAttempt?.(0);
+      throw new TypeError(`fetch failed ${SENTINEL}`);
+    };
+    await probe(d);
+    const servers = (await lines()).find((l) => (l.data as { path: string }).path === "/servers");
+    expect(servers?.data).toEqual({ path: "/servers", status: null, error: "TypeError" });
+    expect(d.paths).toEqual(PROBE_PATHS.filter((p) => p !== "/servers"));
+    expect(JSON.stringify(await lines())).not.toContain(SENTINEL);
+    expect(await summary()).toEqual([expect.objectContaining({ calls: 12, paths_stored: 11 })]);
+  });
+
+  it("stops at the deadline", async () => {
+    // Each call takes a minute of the probe's clock; the deadline is 3 minutes after the start.
+    const d = deps(AT, () => {
+      d.at = new Date(d.at.getTime() + 60_000);
+      return null;
+    });
+    await probe(d);
+    expect(d.paths).toEqual(PROBE_PATHS.slice(0, 3));
+    expect(await summary()).toEqual([expect.objectContaining({ calls: 3, reason: "deadline" })]);
+  });
+
+  it("makes no call with no daily read, or with its quota unknown", async () => {
+    await db.update(dailyReads).set({ quotaRemainingBefore: null });
+    const unknown = deps(AT);
+    await probe(unknown);
+    expect(unknown.paths).toEqual([]);
+    expect(await summary()).toEqual([
+      expect.objectContaining({ calls: 0, reason: "quota_unknown" }),
+    ]);
+
+    // No daily read: no call. Its summary line cannot be stored (run_logs.read_day needs the read).
+    await truncateAll(db);
+    const none = deps(AT);
+    await probe(none);
+    expect(none.paths).toEqual([]);
   });
 
   it("makes no call when the 12 calls would cut into the squads read's reserve", async () => {

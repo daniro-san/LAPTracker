@@ -18,6 +18,8 @@ import { insertRunLog } from "./repo/run-logs";
 import { getSquadRead } from "./repo/squads";
 import { quotaDayRead, serverInstant } from "./schedule";
 import type { V1Source } from "./sources/types";
+// The path as the run log names it: a player's uid never is (D115, 2026-11-21).
+import { shownPath } from "./sources/v1";
 import { squadsReserve } from "./squads";
 import { PACE_MS, type SquadsDeps } from "./squads-read";
 
@@ -71,7 +73,19 @@ export function apiProbeDue(now: Date, cfg: Parameters<typeof serverInstant>[2])
   return now >= from && now < to;
 }
 
-type Shape = Map<string, { types: Set<string>; lens?: number[] }>;
+/** A count seen at one path, kept as it runs: the smallest, the largest, how many times. */
+type Stat = { min: number; max: number; n: number };
+type Entry = { types: Set<string>; lens?: Stat; keys?: Stat };
+type Shape = Map<string, Entry>;
+
+/**
+ * An object with more keys than this is keyed by data (uids, tags, names), not by field names: its keys are
+ * never stored, only their count, and its values' structure is merged under `<many-keys>`.
+ */
+export const MANY_KEYS = 40;
+
+const count = (s: Stat | undefined, x: number): Stat =>
+  s ? { min: Math.min(s.min, x), max: Math.max(s.max, x), n: s.n + 1 } : { min: x, max: x, n: 1 };
 
 /** The key as a path keeps it: a number becomes `<numeric-key>`, anything not a plain name `<other-key>`. */
 const keyName = (k: string) =>
@@ -81,6 +95,14 @@ const keyName = (k: string) =>
       ? k
       : "<other-key>";
 
+/** An object's members: by key name, or all under `<many-keys>` past MANY_KEYS (its key count kept). */
+function shapeObject(v: object, path: string, entry: Entry, acc: Shape) {
+  const members = Object.entries(v);
+  const many = members.length > MANY_KEYS;
+  if (many) entry.keys = count(entry.keys, members.length);
+  for (const [k, x] of members) shape(x, `${path}.${many ? "<many-keys>" : keyName(k)}`, acc);
+}
+
 /** Every key path of `v` with the types seen there and, for an array, its lengths. No value is kept. */
 export function shape(v: unknown, path = "$", acc: Shape = new Map()): Shape {
   const type = v === null ? "null" : Array.isArray(v) ? "array" : typeof v;
@@ -88,24 +110,23 @@ export function shape(v: unknown, path = "$", acc: Shape = new Map()): Shape {
   entry.types.add(type);
   acc.set(path, entry);
   if (Array.isArray(v)) {
-    entry.lens = [...(entry.lens ?? []), v.length];
+    entry.lens = count(entry.lens, v.length);
     for (const el of v) shape(el, `${path}[]`, acc);
   } else if (type === "object") {
-    for (const [k, x] of Object.entries(v as object)) shape(x, `${path}.${keyName(k)}`, acc);
+    shapeObject(v as object, path, entry, acc);
   }
   return acc;
 }
 
-/** One line per key path: `$.a[].b: number|null len=min 0 max 3 (n=12)`. */
+const range = (s: Stat) => (s.n === 1 ? `${s.min}` : `min ${s.min} max ${s.max} (n=${s.n})`);
+
+/** One line per key path: `$.a[].b: array|null len=min 0 max 3 (n=12)`; `<many-keys n=…>` for a keyed map. */
 export function render(acc: Shape): string {
   return [...acc.entries()]
-    .map(([p, { types, lens }]) => {
-      const len = !lens
-        ? ""
-        : lens.length === 1
-          ? ` len=${lens[0]}`
-          : ` len=min ${Math.min(...lens)} max ${Math.max(...lens)} (n=${lens.length})`;
-      return `${p}: ${[...types].sort().join("|")}${len}`;
+    .map(([p, { types, lens, keys }]) => {
+      const len = lens ? ` len=${range(lens)}` : "";
+      const many = keys ? ` <many-keys n=${range(keys)}>` : "";
+      return `${p}: ${[...types].sort().join("|")}${len}${many}`;
     })
     .join("\n");
 }
@@ -114,9 +135,6 @@ const cut = (s: string) =>
   s.length <= SHAPE_MAX_CHARS
     ? s
     : `${s.slice(0, SHAPE_MAX_CHARS)}\n…[cut: ${s.length - SHAPE_MAX_CHARS} more characters]`;
-
-/** The path as the run log names it: a player's uid never is (D115, 2026-11-21). */
-const shownPath = (path: string) => path.replace(/^\/players\/\d+/, "/players/[uid]");
 
 /**
  * The probe: claimed once, then the 12 paths until a stop or `deadline` (epoch ms). Run-log lines only; the
