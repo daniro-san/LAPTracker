@@ -15,7 +15,7 @@ import {
   SchemaError,
   UpstreamError,
 } from "./types";
-import { fetchAlliance, fetchQuota } from "./v1";
+import { fetchAlliance, fetchQuota, probePath } from "./v1";
 
 const OGS = "v1-20261104T155902Z/alliance-67111155.json";
 const AFR = "v1-ids/67111040.json";
@@ -326,5 +326,46 @@ describe("v1 requests", () => {
     }
     expect((await all).length).toBe(10);
     expect(peak).toBe(4);
+  });
+});
+
+// Issue 789's one-off discovery call; removed with lib/api-probe.ts.
+describe("v1.probePath", () => {
+  it("sends a 503 once and returns its status", async () => {
+    const mock = mockFetch(gateway(503));
+    expect(await probePath("/servers")).toMatchObject({ status: 503, chars: null });
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the status of a 404, a 401 and a 429 with the body's start as JSON", async () => {
+    for (const status of [404, 401, 429]) {
+      mockFetch(respond(JSON.stringify({ error: "nope" }), status));
+      expect(await probePath("/kvk")).toEqual({ status, body: { error: "nope" }, chars: null });
+    }
+  });
+
+  it("returns no body for a 2xx that is not JSON, with its length", async () => {
+    mockFetch(respond("<html>hi</html>"));
+    expect(await probePath("/map")).toEqual({ status: 200, body: undefined, chars: 15 });
+  });
+
+  it("rethrows a call with no answer", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new TypeError("fetch failed"))),
+    );
+    await expect(probePath("/events")).rejects.toBeInstanceOf(RequestError);
+  });
+
+  it("sends only the key, User-Agent and Accept: no Origin, Referer, cookie or credentials", async () => {
+    const mock = mockFetch(respond("{}"));
+    await probePath("/openapi.json");
+    expect(String(mock.mock.calls[0]?.[0])).toBe("https://v1.test/v1/openapi.json");
+    expect([...headersOf(mock, 0).keys()].toSorted()).toEqual([
+      "accept",
+      "authorization",
+      "user-agent",
+    ]);
+    expect(Object.keys(mock.mock.calls[0]?.[1] ?? {}).toSorted()).toEqual(["headers", "signal"]);
   });
 });

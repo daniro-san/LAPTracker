@@ -92,6 +92,8 @@ export function fakeV1(alliance: (id: number, call: number) => Outcome, remainin
       onAttempt?.(0);
       return playerAnswer(uid);
     },
+    // Issue 789's probe (lib/api-probe.ts) replaces this where it is tested; nothing else calls it.
+    probePath: async () => Promise.reject(new Error("no probe in this test")),
   };
   return v1;
 }

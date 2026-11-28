@@ -195,6 +195,16 @@ export interface V1Source {
     signal?: AbortSignal,
     options?: CallOptions,
   ): Promise<PlayerSquadsInput>;
+  /** Issue 789's one-off discovery only (lib/api-probe.ts): GET one path once, with no retry. */
+  probePath(path: string, onAttempt?: OnAttempt, signal?: AbortSignal): Promise<ProbeAnswer>;
+}
+
+/** What one probe call answered: the status, the body as JSON (undefined when not JSON), its length. */
+export interface ProbeAnswer {
+  status: number;
+  body: unknown;
+  /** The whole body's length on a 2xx; null on an error answer, whose body is cut (D61). */
+  chars: number | null;
 }
 
 export interface InternalSource {

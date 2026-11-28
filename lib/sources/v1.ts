@@ -12,6 +12,7 @@ import {
   NotFoundError,
   type OnAttempt,
   type PlayerSquadsInput,
+  type ProbeAnswer,
   type Quota,
   QuotaExhaustedError,
   RequestError,
@@ -107,7 +108,7 @@ async function httpDetail(path: string, response: Response): Promise<UpstreamDet
 }
 
 /** The path as an error's message names it: a player's uid never is (D115, 2026-11-21). */
-const shownPath = (path: string) => path.replace(/^\/players\/\d+/, "/players/[uid]");
+export const shownPath = (path: string) => path.replace(/^\/players\/\d+/, "/players/[uid]");
 
 /** A request with no HTTP answer, as /admin shows it: the path, the timeout or the network cause. */
 function noAnswerDetail(path: string, e: unknown, timeoutMs: number): UpstreamDetail {
@@ -247,4 +248,35 @@ export async function fetchPlayer(
   const response = await request(`/players/${uid}`, onAttempt, signal, options);
   const { data, raw } = await readBody(response, playerSchema, "v1.schema");
   return toPlayerSquads(data, raw);
+}
+
+const asJson = (text: string): unknown => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Issue 789's one-off discovery (D5, amendment 2026-11-28): GET one path once, with no retry, on LAP_API_KEY.
+ * Its status and its body as JSON; an error answer's body is the start its detail keeps (D61). No answer, or
+ * the caller's signal, throws. Removed with lib/api-probe.ts.
+ */
+export async function probePath(
+  path: string,
+  onAttempt?: OnAttempt,
+  signal?: AbortSignal,
+): Promise<ProbeAnswer> {
+  try {
+    const response = await request(path, onAttempt, signal, { maxRetries: 0 });
+    const text = await response.text();
+    return { status: response.status, body: asJson(text), chars: text.length };
+  } catch (e) {
+    const answered =
+      e instanceof QuotaExhaustedError || e instanceof NotFoundError || e instanceof UpstreamError;
+    const detail = answered ? e.detail : undefined;
+    if (detail?.status === undefined) throw e;
+    return { status: detail.status, body: asJson(detail.body ?? ""), chars: null };
+  }
 }
