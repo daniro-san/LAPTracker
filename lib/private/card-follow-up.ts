@@ -118,16 +118,15 @@ export async function cardFollowUp(
   if (!featureOn(access, "follow_up")) return null;
   // The work item with this week's records not counted: the message stays the same after a Talked. The KvK
   // group is Follow-up's own (`kvkOpen`, on the member's records), so the card agrees with the list.
-  const [item] = worklist(
-    [member],
-    new Set(),
-    tipsOf([member], reads),
-    await kvkOf(db, access, member, records, reads, at),
-  );
+  const [kvk, language] = await Promise.all([
+    kvkOf(db, access, member, records, reads, at),
+    languageOf(db, access, member, at),
+  ]);
+  const [item] = worklist([member], new Set(), tipsOf([member], reads), kvk);
   return {
     ...weekOf(records, item, at, date),
     message: {
-      language: await languageOf(db, access, member, at),
+      language,
       texts: readyTexts(
         inputOf(item ?? { member, checkIn: false, tip: false, toAsk: [], kvk: false }),
       ),

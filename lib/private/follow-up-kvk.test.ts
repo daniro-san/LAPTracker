@@ -32,6 +32,7 @@ import { helloOnly } from "./follow-up-rules";
 import { insightsView } from "./insights";
 import { memberCard } from "./member-card";
 import { membersView } from "./members";
+import { readyWords } from "./ready-message";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -289,8 +290,11 @@ describe("Follow-up's After KvK, offer help (#585 slice 5)", () => {
       week: "This week: no follow-up note yet.",
       onList: true,
     });
-    // 105 lost nothing: off the list, so no week line.
+    const opener = readyWords("en").kvk;
+    expect((await card(101))?.message.texts.en).toContain(opener);
+    // 105 lost nothing: off the list, so no week line and no KvK opener.
     expect(await card(105)).toMatchObject({ week: null, onList: false });
+    expect((await card(105))?.message.texts.en).not.toContain(opener);
     // Written about after the KvK: the card says so, as the list leaves them out.
     await recordFollowUp(db, ana, input(101), at(st("2026-11-22T11:00")));
     expect(await card(101)).toMatchObject({ onList: false });

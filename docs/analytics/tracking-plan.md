@@ -228,6 +228,7 @@ One dated line for each change in what a number means, newest last. The first th
 - 2026-11-27 (issue 469, D107 amended): `ws_action` gains feature `left_reason` with action `save`, one per reason saved on a former member's sheet. It carries no reason, note or member.
 - 2026-11-28 (issue 831, D161 and D159 amended): `ws_action` `kvk_plan` gains `approve` (an officer confirms a member's "I'm in" into a role) and `decline` (an officer declines it); no name, role or uid. The member's own ask and withdraw send no event. `posts` gains `post` value `kvk_soon` (the KvK reminder, catalog post 6) in its closed list, same actions and rules; the reminders sent are counted from `post_runs`. Change, remove: nothing.
 - 2026-11-28 (issue 861, D165): `ws_action` gains feature `raid_opponent` with actions `save` (an opponent set after its one tracker check), `edit` (the Start and End reads' times), `delete` (cleared) and `undo`; never the tag, server, alliance or any number. Change, remove: nothing.
+- 2026-11-28 (#656, D104 amended): `ws_action` `follow_up` `on_list` from a member card is now true for a member who is only in "After KvK, offer help" (the card reads the KvK like the list). Before this date it was false there, so read the share of `from: card` records with `on_list` true across it as a step, not a trend. No event or property changes.
 
 ## Not tracked, on purpose
 
