@@ -13,12 +13,13 @@ export async function allianceIds(
   deps: Deps,
   eventId: number,
   phase: SnapshotPhase,
+  window = 1,
 ): Promise<number[]> {
   const event = await deps.repo.getEvent(eventId);
   if (!event) throw new RunRefusedError("no-event");
-  // INVARIANT event.after-uses-event-copy: BEFORE copies the newest tracked set (D133); AFTER and a sample
-  // never read it.
-  if (phase !== "before") return event.allianceIds;
+  // INVARIANT event.after-uses-event-copy: BEFORE copies the newest tracked set (D133); AFTER, a sample and
+  // a later window's Before (D160: every window reads the same alliances) never read it.
+  if (phase !== "before" || window > 1) return event.allianceIds;
   // With no set and no earlier event yet (a new database), the board's top TRACKED_COUNT now.
   let ids = await deps.repo.trackedAllianceIds();
   if (ids.length === 0) {

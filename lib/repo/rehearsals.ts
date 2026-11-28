@@ -11,7 +11,7 @@ import {
   runLogs,
   snapshots,
 } from "../schema";
-import type { NewEvent } from "./events";
+import { insertEventWindows, type NewEvent } from "./events";
 import type { Phase, SnapshotStatus } from "./index";
 import { isSample } from "./snapshots";
 
@@ -102,6 +102,8 @@ export async function insertRehearsal(db: Db, event: NewEvent): Promise<number> 
     .values({ ...event, allianceIds: [], isTest: true })
     .returning({ id: events.id });
   if (!row) throw new Error("rehearsal insert returned no row");
+  // A rehearsal is one window (D160), which the tick reads to run it.
+  await insertEventWindows(db, row.id, event);
   return row.id;
 }
 

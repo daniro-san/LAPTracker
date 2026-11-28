@@ -1,12 +1,45 @@
 // Read models for GET /api/events and /api/events/[id]. Columns are listed one by one: raw_json and
 // member rows are never selected, so no blocked roster key (plan §12.1) can reach a response.
 // Test events (rehearsals) are not public (plan Phase 6): /admin reads them elsewhere.
-import { and, asc, desc, eq, inArray, isNull, lt } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, ne } from "drizzle-orm";
 
 import { runAbandoned } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
 import { chainEvent, phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
+
+/**
+ * The ids of an event's Befores and Afters between its windows (D160), from its non-sample rows, in the order
+ * `windowedStart` takes them: window 1's After, window 2's Before, … up to the window of the event's End;
+ * null where a row is missing. Empty while the event has no End or has one window.
+ */
+function betweenWindowIds(
+  rows: readonly { id: number; phase: string; window: number; between: boolean }[],
+): (number | null)[] {
+  const end = rows.find((r) => r.phase === "after" && !r.between);
+  if (!end || end.window === 1) return [];
+  const id = (window: number, phase: string) =>
+    rows.find((r) => r.between && r.window === window && r.phase === phase)?.id ?? null;
+  return Array.from({ length: end.window - 1 }, (_, i) => [
+    id(i + 1, "after"),
+    id(i + 2, "before"),
+  ]).flat();
+}
+
+/** The event's rows between windows as `getEventDetail`'s `between` gives their ids (D160), for a reader
+ * that has no event detail; none for a one-window event. */
+export async function eventBetweenIds(db: Db, eventId: number): Promise<{ id: number | null }[]> {
+  const rows = await db
+    .select({
+      id: snapshots.id,
+      phase: snapshots.phase,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
+    })
+    .from(snapshots)
+    .where(and(eq(snapshots.eventId, eventId), ne(snapshots.phase, "sample")));
+  return betweenWindowIds(rows).map((id) => ({ id }));
+}
 
 const snapshotColumns = {
   id: snapshots.id,
@@ -131,7 +164,8 @@ export async function getEventDetail(db: Db, eventId: number) {
     .from(events)
     .where(and(eq(events.id, eventId), publicEvent));
   if (!event) return null;
-  const phases = await db
+  // One read of the Befores and Afters: the Start and End (`phaseSnapshot`) and the rows between windows.
+  const read = await db
     .select({
       ...snapshotColumns,
       callsUsed: snapshots.callsUsed,
@@ -140,19 +174,27 @@ export async function getEventDetail(db: Db, eventId: number) {
       durationMs: snapshots.durationMs,
       // One line: codes and counts only (plan §6); the chips show it.
       error: snapshots.error,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
     })
     .from(snapshots)
-    .where(and(eq(snapshots.eventId, eventId), phaseSnapshot));
-  const rows = await allianceRows(
-    db,
-    phases.map((s) => s.id),
-  );
+    .where(and(eq(snapshots.eventId, eventId), ne(snapshots.phase, "sample")));
+  const phases = read.filter((r) => !r.between).map(({ window: _, between: __, ...s }) => s);
+  const betweenIds = betweenWindowIds(read);
+  const rows = await allianceRows(db, [
+    ...phases.map((s) => s.id),
+    ...betweenIds.filter((id) => id !== null),
+  ]);
+  const alliancesOf = (id: number | null) =>
+    rows.filter((r) => r.snapshotId === id).map(({ snapshotId: _, ...r }) => r);
   return {
     ...event,
-    snapshots: phases.map(({ eventId: _, ...s }) => ({
-      ...s,
-      alliances: rows.filter((r) => r.snapshotId === s.id).map(({ snapshotId: _, ...r }) => r),
-    })),
+    snapshots: phases.map(({ eventId: _, ...s }) => ({ ...s, alliances: alliancesOf(s.id) })),
+    // D160: the rows between windows, for the sum of the windows' changes (`windowedStartRows`); left out
+    // for a one-window event, whose detail is as before.
+    ...(betweenIds.length > 0 && {
+      between: betweenIds.map((id) => ({ id, alliances: alliancesOf(id) })),
+    }),
   };
 }
 

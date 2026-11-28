@@ -1,14 +1,22 @@
 // Read models for the alliance page (plan Phase 5c, 5e). Served member fields: uid, name, power,
 // kills, lv only (§12.1), plus whether a photo exists (never its URL, D22); raw_json is never selected.
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 
-import { comparable, delta, rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
+import {
+  comparable,
+  delta,
+  rosterDiff,
+  seriesDeltas,
+  windowedStart,
+  type SeriesStep,
+} from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { rolesOf, type Role } from "./leadership";
 import { type Photo, photoColumns } from "./photo";
 import { historyRanks, type Ranks } from "./ranks";
-import { chainEvent, phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
+import { chainEvent, phaseColumn, publicEvent } from "./visibility";
+import { betweenSlots } from "./windows";
 
 export interface AllianceRow {
   id: number;
@@ -71,10 +79,16 @@ async function membersOf(db: Db, allianceSnapshotIds: number[]) {
     .where(inArray(memberSnapshots.allianceSnapshotId, allianceSnapshotIds));
 }
 
-/** One alliance in one event: its before and after rows and both rosters. Null for a test event. */
+/** One alliance in one event: its before and after rows and both rosters. Null for a test event. With
+ * several windows (D160), `changeFrom` is the Start its change is measured from (`windowedStart`). */
 export async function getAllianceDetail(db: Db, eventId: number, unionId: number) {
-  const rows = await db
-    .select({ ...allianceColumns, phase: phaseColumn })
+  const read = await db
+    .select({
+      ...allianceColumns,
+      phase: phaseColumn,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
+    })
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
@@ -82,12 +96,14 @@ export async function getAllianceDetail(db: Db, eventId: number, unionId: number
       and(
         eq(events.id, eventId),
         publicEvent,
-        phaseSnapshot,
+        ne(snapshots.phase, "sample"),
         eq(allianceSnapshots.unionId, unionId),
       ),
     );
+  const rows = read.filter((r) => !r.between);
   if (rows.length === 0) return null;
-  const alliances = rows.map(toRow);
+  const alliances = rows.map(({ window: _, between: __, ...r }) => toRow(r));
+  const changeFrom = windowedFrom(read, alliances);
   const ids = alliances.map((a) => a.id);
   const [members, roles] = await Promise.all([membersOf(db, ids), rolesOf(db, ids)]);
   const roleMapOf = (phase: "before" | "after") => {
@@ -108,7 +124,23 @@ export async function getAllianceDetail(db: Db, eventId: number, unionId: number
     /** R5 and titled R4 members by uid, as each snapshot's alliance read lists them. */
     rolesBefore: roleMapOf("before"),
     rolesAfter: roleMapOf("after"),
+    ...(changeFrom && { changeFrom }),
   };
+}
+
+/** The Start shifted by what changed between the windows (D160), or undefined for a one-window event or
+ * one with no End yet. */
+function windowedFrom<A extends AllianceRow & { phase: string }>(
+  read: (Parameters<typeof toRow>[0] & { phase: string; window: number; between: boolean })[],
+  alliances: A[],
+): A | undefined {
+  const start = alliances.find((a) => a.phase === "before");
+  const end = read.find((r) => r.phase === "after" && !r.between);
+  if (!start || !end || end.window === 1) return undefined;
+  const between = read
+    .filter((r) => r.between)
+    .map((r) => ({ window: r.window, phase: r.phase, value: toRow(r) }));
+  return windowedStart(start, betweenSlots(between, end.window));
 }
 
 export interface HistoryRow {
@@ -154,17 +186,19 @@ const fresh = (row: AllianceRow | undefined) => ({
 
 type Pair = { b: AllianceRow; a: AllianceRow; change: { power: number; kills: number } };
 
-/** Each event's before and after rows with their change, when both are usable. */
+/** Each event's before and after rows with their change, when both are usable. `between`: an event's rows
+ * between its windows (D160), whose change is then the sum of its windows' changes. */
 function inEventPairs(
   rows: { eventId: number; phase: "before" | "after"; row: AllianceRow }[],
   eventIds: number[],
+  between: (eventId: number) => (AllianceRow | undefined)[],
 ): Map<number, Pair> {
   const sideOf = (eventId: number, phase: "before" | "after") =>
     rows.find((r) => r.eventId === eventId && r.phase === phase)?.row;
   return new Map(
     eventIds.flatMap((eventId) => {
       const [b, a] = [sideOf(eventId, "before"), sideOf(eventId, "after")];
-      const change = delta(fresh(b), fresh(a));
+      const change = delta(windowedStart(fresh(b), between(eventId).map(fresh)), fresh(a));
       return b && a && change ? [[eventId, { b, a, change }] as const] : [];
     }),
   );
@@ -199,12 +233,15 @@ function pickReferences(
   return picked;
 }
 
-/** The alliance's reference row per event, oldest first, with deltas vs the previous event. */
-export async function allianceHistory(db: Db, unionId: number): Promise<HistoryRow[]> {
-  const found = await db
+/** The alliance's Befores and Afters in chain events: the Start and End, and the rows between windows
+ * (`between`, D160), in one read. */
+const chainRows = (db: Db, unionId: number) =>
+  db
     .select({
       ...allianceColumns,
       phase: phaseColumn,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
       eventId: events.id,
       eventName: events.name,
       eventAtUtc: events.eventAtUtc,
@@ -212,12 +249,26 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(eq(allianceSnapshots.unionId, unionId), chainEvent, phaseSnapshot))
+    .where(and(eq(allianceSnapshots.unionId, unionId), chainEvent, ne(snapshots.phase, "sample")))
     .orderBy(asc(events.eventAtUtc));
+
+/** The alliance's reference row per event, oldest first, with deltas vs the previous event. */
+export async function allianceHistory(db: Db, unionId: number): Promise<HistoryRow[]> {
+  const read = await chainRows(db, unionId);
+  const found = read.filter((r) => !r.between);
+  const inner = read.filter((r) => r.between);
   const meta = new Map(found.map((r) => [r.eventId, r]));
   const rows = found.map((r) => ({ eventId: r.eventId, phase: r.phase, row: toRow(r) }));
   const picked = pickReferences(rows);
-  const pairs = inEventPairs(rows, [...picked.keys()]);
+  // D160: an event's rows between windows, up to the window of its End.
+  const endWindow = (eventId: number) =>
+    found.find((r) => r.eventId === eventId && r.phase === "after")?.window ?? 1;
+  const between = (eventId: number) =>
+    betweenSlots(
+      inner.filter((r) => r.eventId === eventId).map((r) => ({ ...r, value: toRow(r) })),
+      endWindow(eventId),
+    );
+  const pairs = inEventPairs(rows, [...picked.keys()], between);
   const ordered = [...picked].sort(
     ([a], [b]) =>
       (meta.get(a)?.eventAtUtc.getTime() ?? 0) - (meta.get(b)?.eventAtUtc.getTime() ?? 0),

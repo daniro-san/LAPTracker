@@ -1,6 +1,7 @@
 // Everything the comparison page reads, in one call per page (plan Phase 5): the event, the
 // selector's events, joined/left counts per alliance, ledger ranks, who gained kills, kill share vs might share, every alliance's
 // name history and the previous event's totals (issue 473).
+import { windowedStartRows } from "../compute";
 import type { Db } from "../db";
 import { whoCarried } from "./carried";
 import {
@@ -29,9 +30,9 @@ type Phases = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 
 /** Who gained kills: Start against End, or while there is no End, against each alliance's latest sample
  * (#307). */
-function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"]) {
+function turnoutOf(db: Db, id: number, { snapshots, between }: Phases) {
   const before = snapshots.find((s) => s.phase === "before");
-  if (snapshots.some((s) => s.phase === "after")) return memberTurnout(db, snapshots);
+  if (snapshots.some((s) => s.phase === "after")) return memberTurnout(db, snapshots, between);
   return before ? memberTurnoutSoFar(db, id, before.id) : null;
 }
 
@@ -54,16 +55,14 @@ async function eventReads(db: Db, id: number, sections: Sections) {
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
   const unionIds = [...new Set(detail.snapshots.flatMap((s) => s.alliances.map((a) => a.unionId)))];
-  const turnoutRead = Promise.resolve(
-    sections.turnout ? turnoutOf(db, id, detail.snapshots) : null,
-  );
+  const turnoutRead = Promise.resolve(sections.turnout ? turnoutOf(db, id, detail) : null);
   const [names, ranks, changes, members, turnout, carried, previous, matchup] = await Promise.all([
     allianceNames(db, unionIds),
     eventRanks(db, id),
     before && after
       ? rosterChanges(db, id, { before: before.id, after: after.id })
       : Promise.resolve(new Map<number, RosterChange>()),
-    memberMovers(db, detail.snapshots),
+    memberMovers(db, detail.snapshots, detail.between),
     turnoutRead,
     sections.carried ? whoCarried(db, detail, turnoutRead) : null,
     previousEventTotals(db, detail),
@@ -121,8 +120,10 @@ export async function getEventPage(
   const ranks = new Map(read.ranks);
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
+  // D160: an alliance's change is the sum of its windows' changes.
+  const changeFrom = before && windowedStartRows(before.alliances, detail.between ?? []);
   const movers = {
-    alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,
+    alliances: changeFrom && after ? allianceMovers(changeFrom, after.alliances, ranks) : null,
     members,
   };
   const names = new Map(read.names);

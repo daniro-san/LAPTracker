@@ -60,8 +60,11 @@ export const heartbeatBoundary = (now: Date) =>
 export function tickClockDue(now: Date, cfg: ScheduleConfig): boolean {
   const t = now.getTime();
   const w = windowMs(cfg);
+  // D160: each window from its Before to its After's due window; nothing between two windows.
   const scheduled = eventsToCreate(now, cfg).some(
-    (e) => t >= e.beforeAt.getTime() || t < e.beforeAt.getTime() - DAY_MS + CREATE_SPAN_MS,
+    (e) =>
+      e.windows.some((x) => t >= x.beforeAt.getTime() && t < x.afterAt.getTime() + w) ||
+      t < e.beforeAt.getTime() - DAY_MS + CREATE_SPAN_MS,
   );
   const rehearsal = cfg.REHEARSAL_AT.split(",")
     .filter((slot) => slot.trim() !== "")

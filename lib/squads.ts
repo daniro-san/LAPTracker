@@ -51,9 +51,13 @@ export function eventReserve(
   const event = eventOnQuotaDay(now, cfg);
   if (!event) return 0;
   const every = cfg.SAMPLE_EVERY_MIN * 60_000;
-  const span = event.afterAt.getTime() - event.beforeAt.getTime();
-  const samples = every > 0 ? Math.max(0, Math.ceil(span / every) - 1) : 0;
-  return requiredQuota(alliances) + opponentCalls + samples * (alliances + 1);
+  // D160: every window has its own Before, After and samples; one window is the event's own span.
+  const samples = event.windows.reduce((n, w) => {
+    const span = w.afterAt.getTime() - w.beforeAt.getTime();
+    return n + (every > 0 ? Math.max(0, Math.ceil(span / every) - 1) : 0);
+  }, 0);
+  const reads = requiredQuota(alliances, 2 * (event.windows.length - 1));
+  return reads + opponentCalls + samples * (alliances + 1);
 }
 
 /**

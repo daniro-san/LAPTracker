@@ -156,7 +156,7 @@ describe("War turnout and Kill share open the list by kills gained", () => {
         { uid: 4206, name: "Mara Voss", kills: 9_000_000 },
       ],
     );
-    const lists = await memberTurnout(db, ids);
+    const lists = await memberTurnout(db, ids, undefined);
     const turnout = lists?.withKills.find((t) => t.unionId === UNION);
 
     const { detail, uids } = await listed(eventId, { sort: "killsDelta" });

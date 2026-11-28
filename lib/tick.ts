@@ -1,6 +1,7 @@
 // The scheduler's decision (plan §3.1), event-driven: scheduled events' rows are created from the env a
-// day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
-// Between an event's Before and After, a sample every SAMPLE_EVERY_MIN (D69), only when no phase is due.
+// day ahead; every event (scheduled or rehearsal) carries its own windows (D160), each with its own
+// before_at/after_at; one action per tick. Between a window's Before and After, a sample every
+// SAMPLE_EVERY_MIN (D69), only when no phase is due.
 // The daily roster read (D60) comes last, when nothing else is due; after the day's first one, the workspaces
 // whose deletion grace ended are deleted (D125), and app_errors older than 30 days go (D115).
 import { secretsOf, type AppContext } from "./app-context";
@@ -23,6 +24,7 @@ import {
   claimQuotaCheck,
   duePhases,
   dueSample,
+  eventReadsDueToday,
   findOrCreateEvent,
   type NewEvent,
 } from "./repo/events";
@@ -89,7 +91,9 @@ async function dailyRead(
   if (!due || !endsInServerDay(now, RUN_DEADLINE_MS, ctx.env)) return null;
   // D152: the KvK opponent's calls still due, on its quota day only.
   const opponentCalls = await opponentReserve(db, now, ctx.env);
-  const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env), opponentCalls };
+  // D160: the event windows' Befores and Afters still due on the quota day.
+  const eventReads = await eventReadsDueToday(db, now);
+  const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env), opponentCalls, eventReads };
   // D133: the day's ranks board and tracked set first (no quota), then the set and the
   // workspaces' alliances.
   const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };
@@ -198,7 +202,7 @@ async function sample(
   const slotAt = slotOf(now, ctx.env.SAMPLE_EVERY_MIN);
   const event = await dueSample(db, slotAt);
   if (!event) return null;
-  const outcome = await executeSample(ctx, db, { event, slotAt, origin });
+  const outcome = await executeSample(ctx, db, { event, window: event.window, slotAt, origin });
   // INVARIANT sample.once-per-slot: another caller took this slot first, which is what the tick wanted.
   if (!outcome.ok && outcome.code === "sample_taken") return { kind: "idle" };
   return { kind: "sample", slotAt, outcome };
@@ -216,12 +220,14 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
   // (1) The coming scheduled event gets its row a day ahead, with its times fixed from the env then.
   for (const event of eventsToCreate(now, ctx.env)) await eventRow(ctx, db, event);
 
-  // (2) At most one phase per tick: the earliest open window without a snapshot row.
+  // (2) At most one phase per tick: the earliest open window without a snapshot row (D160: a phase of one
+  // event window).
   const [due] = await duePhases(db, now, ctx.env.SNAPSHOT_WINDOW_MIN * 60_000);
   if (due) {
     const outcome = await executeSnapshot(ctx, db, {
       event: due.event,
       phase: due.phase,
+      window: due.window,
       force: false,
       origin,
     });

@@ -1,6 +1,6 @@
 // Domain: runSnapshot, freshness check, per-alliance fallback, resume logic (plan Phase 3).
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
-import { requiredQuota, sampleQuota } from "./budget";
+import { laterWindowReads, requiredQuota, sampleQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
 import { checkIdentity } from "./collector-identity";
 import { allianceIds, fetchBoard } from "./collector-ids";
@@ -65,6 +65,8 @@ interface Run {
   eventId: number;
   /** A sample's count of the KvK opponent's End reads still due (D152), kept in its quota rule. */
   opponentDue?: number;
+  /** The later windows' Befores and Afters still due this UTC day (D160), kept in the quota rule. */
+  laterReads: number;
   startedAt: Date;
   calls: number;
   /** The lowest quota remaining seen, and run.calls then: the calls after it returned no quota. */
@@ -129,8 +131,11 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
     await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
     run.quotaBefore = quota.remaining;
     noteQuota(run, quota.remaining);
-    // INVARIANT budget.reserve-for-after; for a sample, INVARIANT budget.samples-yield-to-after (D69)
-    const needed = run.sample ? sampleQuota(idCount, run.opponentDue) : requiredQuota(idCount);
+    // INVARIANT budget.reserve-for-after; for a sample, INVARIANT budget.samples-yield-to-after (D69);
+    // both with INVARIANT budget.reserve-for-later-windows (D160).
+    const needed = run.sample
+      ? sampleQuota(idCount, run.opponentDue, run.laterReads)
+      : requiredQuota(idCount, run.laterReads);
     if (quota.remaining >= needed) return null;
     await run.deps.logger.error("quota", { remaining: quota.remaining, required: needed });
     return `quota: remaining ${quota.remaining} < required ${needed}`;
@@ -277,20 +282,33 @@ export async function runSnapshot(
   eventId: number,
   phase: Phase,
   deps: Deps,
-  options: { force?: boolean; stale?: boolean | undefined } = {},
+  options: { force?: boolean; stale?: boolean | undefined; window?: number } = {},
 ): Promise<RunSummary> {
-  const { force = false, stale } = options;
-  const snapshotId = await claim(deps, eventId, phase, { force, stale });
+  const { force = false, stale, window = 1 } = options;
+  const snapshotId = await claim(deps, eventId, phase, { force, stale, window });
   const run = newRun(deps, eventId, snapshotId, false);
-  return collectRun(run, await allianceIds(deps, eventId, phase), phase);
+  run.laterReads = await laterReadsOf(deps, eventId, window);
+  return collectRun(run, await allianceIds(deps, eventId, phase, window), phase);
+}
+
+/** The event's later windows' reads still due this UTC day (D160); 0 for a one-window event. */
+async function laterReadsOf(deps: Deps, eventId: number, window: number): Promise<number> {
+  return laterWindowReads(await deps.repo.eventWindows(eventId), window, deps.now());
 }
 
 /** Collect the event's sample at `slotAt` (D69): a phase's /v1 path, the sample's budget rule, no ranks
- * board, no internal fallback. Refused ("taken") when the slot already has a row. */
-export async function runSample(eventId: number, slotAt: Date, deps: Deps): Promise<RunSummary> {
-  const snapshotId = await deps.repo.startSample(eventId, slotAt, deps.now());
+ * board, no internal fallback. Refused ("taken") when the slot already has a row. `window`: the event
+ * window the slot is in (D160). */
+export async function runSample(
+  eventId: number,
+  slotAt: Date,
+  deps: Deps,
+  window = 1,
+): Promise<RunSummary> {
+  const snapshotId = await deps.repo.startSample(eventId, slotAt, deps.now(), window);
   if (snapshotId === null) throw new RunRefusedError("taken");
   const run = newRun(deps, eventId, snapshotId, true);
+  run.laterReads = await laterReadsOf(deps, eventId, window);
   run.noRetry = new Set(await deps.repo.failedSampleUnionIds(eventId));
   // INVARIANT budget.samples-yield-to-after, with the opponent's End reads in the After's reserve (D152).
   run.opponentDue = await opponentEndsDue(deps, eventId);
@@ -305,6 +323,7 @@ function newRun(deps: Deps, eventId: number, snapshotId: number, sample: boolean
     sample,
     deadlineMs: sample ? SAMPLE_DEADLINE_MS : RUN_DEADLINE_MS,
     noRetry: new Set(),
+    laterReads: 0,
     startedAt: deps.now(),
     calls: 0,
     lowest: { remaining: null, calls: 0 },

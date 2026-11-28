@@ -118,6 +118,60 @@ describe("GET /api/events/[id]", () => {
     expect(body.event.snapshots[0]?.alliances).toHaveLength(1);
   });
 
+  it("serves a two-window event's Start and End only, never its rows between windows (D160)", async () => {
+    holder.ctx = testContext(db).ctx;
+    const repo = createRepo(db);
+    const at = (h: string) => new Date(`2026-12-05T${h}:00Z`);
+    const w1 = { beforeAt: at("02:00"), afterAt: at("02:45") };
+    const w2 = { beforeAt: at("14:15"), afterAt: at("15:15") };
+    const { id } = await findOrCreateEvent(db, {
+      name: "Origin of Chaos 2026-12-05",
+      eventAtUtc: at("02:10"),
+      beforeAt: w1.beforeAt,
+      afterAt: w2.afterAt,
+      windows: [w1, w2],
+    });
+    for (const [phase, window] of [
+      ["before", 1],
+      ["after", 1],
+      ["before", 2],
+      ["after", 2],
+    ] as const) {
+      const snapshotId = (await repo.startSnapshot(id, phase, T0, null, window)) ?? 0;
+      await repo.insertAllianceRow(
+        snapshotId,
+        {
+          unionId: roster.union_id,
+          tag: "OGs",
+          name: "OldGrandmas",
+          memberCount: 0,
+          totalPower: 1,
+          totalKills: 1,
+          serverRank: 2,
+          level: 10,
+          badgeId: null,
+          powerBoard: 7,
+          killsBoard: 7,
+          source: "v1",
+          sourceUpdatedAt: T0,
+          cached: false,
+          isFresh: true,
+          error: null,
+          raw: null,
+        },
+        [],
+      );
+    }
+
+    const body = (await (await get(id)).json()) as { event: Record<string, unknown> };
+
+    expect(body.event).not.toHaveProperty("between");
+    expect((body.event.snapshots as unknown[]).length).toBe(2);
+    const served = JSON.stringify(body);
+    for (const key of ["powerBoard", "killsBoard", "source", "cached"])
+      expect(served).not.toContain(`"${key}":`);
+  });
+
   it("sends a 5-minute shared cache header on 200 only", async () => {
     const ok = await get(await seedEvent());
     const missing = await get(999_999);

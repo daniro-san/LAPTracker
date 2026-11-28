@@ -11,7 +11,7 @@ import {
 } from "./alliance-snapshots";
 import { allianceLabels, trackedAllianceIds } from "./alliances";
 import { lastMemberUids } from "./daily-reads";
-import { getEvent, setEventAllianceIds } from "./events";
+import { getEvent, listEventWindows, setEventAllianceIds, type EventWindow } from "./events";
 import {
   insertOpponentRead,
   opponentFor,
@@ -95,7 +95,10 @@ export interface SnapshotResult {
 export interface Repo {
   getEvent(eventId: number): Promise<EventRow | null>;
   setEventAllianceIds(eventId: number, ids: number[]): Promise<void>;
-  findSnapshot(eventId: number, phase: Phase): Promise<SnapshotRow | null>;
+  /** The event's windows in order (D160); empty when it has no window rows (one window). */
+  eventWindows(eventId: number): Promise<EventWindow[]>;
+  /** The Before or After of the event's window `window` (D160; 1 when left out). */
+  findSnapshot(eventId: number, phase: Phase, window?: number): Promise<SnapshotRow | null>;
   /**
    * Compare-and-set claim: inserts a running snapshot when `expected` is null, else restarts the
    * row only if it still equals `expected`. Returns the id, or null when another run got there first.
@@ -105,9 +108,15 @@ export interface Repo {
     phase: Phase,
     startedAt: Date,
     expected: SnapshotRow | null,
+    window?: number,
   ): Promise<number | null>;
   /** A sample's claim (D69): inserts a running row for (event, slot), or null when the slot is taken. */
-  startSample(eventId: number, slotAt: Date, startedAt: Date): Promise<number | null>;
+  startSample(
+    eventId: number,
+    slotAt: Date,
+    startedAt: Date,
+    window?: number,
+  ): Promise<number | null>;
   /** The alliances whose read failed in any sample of the event (D69). */
   failedSampleUnionIds(eventId: number): Promise<number[]>;
   clearAllianceRows(snapshotId: number): Promise<void>;
@@ -141,10 +150,12 @@ export function createRepo(db: Db): Repo {
   return {
     getEvent: (id) => getEvent(db, id),
     setEventAllianceIds: (id, ids) => setEventAllianceIds(db, id, ids),
-    findSnapshot: (eventId, phase) => findSnapshot(db, eventId, phase),
-    startSnapshot: (eventId, phase, startedAt, expected) =>
-      startSnapshot(db, eventId, phase, startedAt, expected),
-    startSample: (eventId, slotAt, startedAt) => startSample(db, eventId, slotAt, startedAt),
+    eventWindows: (eventId) => listEventWindows(db, eventId),
+    findSnapshot: (eventId, phase, window) => findSnapshot(db, eventId, phase, window),
+    startSnapshot: (eventId, phase, startedAt, expected, window) =>
+      startSnapshot(db, eventId, phase, startedAt, expected, window),
+    startSample: (eventId, slotAt, startedAt, window) =>
+      startSample(db, eventId, slotAt, startedAt, window),
     failedSampleUnionIds: (eventId) => failedSampleUnionIds(db, eventId),
     clearAllianceRows: (id) => clearAllianceRows(db, id),
     clearFailedAllianceRows: (id, stale) => clearFailedAllianceRows(db, id, stale),

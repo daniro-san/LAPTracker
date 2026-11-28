@@ -4,7 +4,7 @@
 // fields served: uid, name, power, kills (§12.1); raw_json and avatar_url are never selected.
 import { and, eq, inArray } from "drizzle-orm";
 
-import { delta, rankDelta, rosterDiff, type Measured } from "../compute";
+import { delta, rankDelta, rosterDiff, windowedStart, type Measured } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots } from "../schema";
 import { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
@@ -99,12 +99,24 @@ const stateOf = (s: Side | undefined): SideState | null =>
 
 const minus = (a: number | null, b: number | null) => (a === null || b === null ? null : a - b);
 
-/** The usable before and after rows, or null: the pair a change is measured on. */
-function changedPair(b: Side | undefined, a: Side | undefined) {
+/** The usable before and after rows, or null: the pair a change is measured on. `between`: the alliance's
+ * rows between the event's windows (D160); the change is then the sum of the windows' changes. */
+function changedPair(
+  b: Side | undefined,
+  a: Side | undefined,
+  between: readonly (Side | undefined)[] = [],
+) {
   if (!a || !b) return null;
-  const change = delta(measured(b), measured(a));
+  const from = windowedStart(
+    measured(b),
+    between.map((s) => s && measured(s)),
+  );
+  const change = delta(from, measured(a));
   return change ? { b, a, change } : null;
 }
+
+/** The ids of the event's rows between windows (D160); none for a one-window event. */
+const betweenIdsOf = (detail: Detail) => (detail.between ?? []).map((s) => s.id);
 
 function allianceFigures(
   detail: Detail,
@@ -116,7 +128,11 @@ function allianceFigures(
   const b = row(before, unionId);
   const a = row(after, unionId);
   if (!a && !b) return null;
-  const pair = changedPair(b, a);
+  const pair = changedPair(
+    b,
+    a,
+    (detail.between ?? []).map((s) => s.alliances.find((x) => x.unionId === unionId)),
+  );
   const refRow = row(referenceSnapshot(detail, unionId), unionId);
   const roster = (s: Snapshot | undefined) => uidsOf(rosters, s?.id, unionId);
   return {
@@ -162,6 +178,26 @@ function betweenOf(a: Detail, b: Detail, rosters: RosterRow[], unionId: number) 
   return { joined: diff.joined.length, left: diff.left.length };
 }
 
+/** A member's figures in a roster, as fresh as the alliance's row of that roster. */
+const memberMeasured = (m: RosterRow, s: Side | undefined): Measured => ({
+  isFresh: usable(s),
+  totalPower: m.power,
+  totalKills: m.kills,
+});
+
+/** D160: a member's rows between the event's windows, each as fresh as the alliance's row in it. */
+const memberBetween = (detail: Detail, rosters: RosterRow[], unionId: number, uid: number) =>
+  (detail.between ?? []).map((s) => {
+    const m = rosters.find((r) => r.snapshotId === s.id && r.unionId === unionId && r.uid === uid);
+    return (
+      m &&
+      memberMeasured(
+        m,
+        s.alliances.find((x) => x.unionId === unionId),
+      )
+    );
+  });
+
 /** One member's side in one event, read in this alliance's rosters only. */
 function memberSide(detail: Detail, rosters: RosterRow[], unionId: number, uid: number) {
   const { before, after, row } = sidesOf(detail);
@@ -169,17 +205,15 @@ function memberSide(detail: Detail, rosters: RosterRow[], unionId: number, uid: 
     rosters.find((r) => r.snapshotId === s?.id && r.unionId === unionId && r.uid === uid);
   const [mb, ma] = [find(before), find(after)];
   if (!mb && !ma) return null;
-  const side = (m: RosterRow, s: Side | undefined): Measured => ({
-    isFresh: usable(s),
-    totalPower: m.power,
-    totalKills: m.kills,
-  });
   const both = mb && ma ? { b: mb, a: ma } : null;
+  const start = (b: RosterRow) =>
+    windowedStart(
+      memberMeasured(b, row(before, unionId)),
+      memberBetween(detail, rosters, unionId, uid),
+    );
   return {
     power: (ma ?? mb)?.power ?? null,
-    change: both
-      ? delta(side(both.b, row(before, unionId)), side(both.a, row(after, unionId)))
-      : null,
+    change: both ? delta(start(both.b), memberMeasured(both.a, row(after, unionId))) : null,
     opening: both ? { power: both.b.power ?? 0, kills: both.b.kills ?? 0 } : null,
   };
 }
@@ -238,7 +272,7 @@ async function rostersOf(db: Db, snapshotIds: number[], unionId?: number): Promi
 }
 
 /** An event as the page shows it: its snapshots without their alliance rows. */
-export const eventOf = ({ snapshots, ...e }: Detail) => ({
+export const eventOf = ({ snapshots, between: _, ...e }: Detail) => ({
   ...e,
   snapshots: snapshots.map(({ alliances: _, ...s }) => s),
 });
@@ -250,7 +284,10 @@ const rankOrder = (r: AllianceComparison) => r.b?.rank.n ?? r.a?.rank.n ?? Infin
 export async function compareEvents(db: Db, aId: number, bId: number, unionId?: number) {
   const [a, b] = await Promise.all([getEventDetail(db, aId), getEventDetail(db, bId)]);
   if (!a || !b) return null;
-  const snapshotIds = [...a.snapshots, ...b.snapshots].map((s) => s.id);
+  const snapshotIds = [
+    ...[...a.snapshots, ...b.snapshots].map((s) => s.id),
+    ...[...betweenIdsOf(a), ...betweenIdsOf(b)].filter((id) => id !== null),
+  ];
   const [ranksA, ranksB, rosters] = await Promise.all([
     eventRanks(db, aId),
     eventRanks(db, bId),

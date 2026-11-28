@@ -35,22 +35,23 @@ async function refuseWhileStale(
   if (count > 0) throw new RunRefusedError("stale", count);
 }
 
-/** `stale`: true reads the stale rows again, false keeps them, undefined refuses while any exist. */
+/** `stale`: true reads the stale rows again, false keeps them, undefined refuses while any exist.
+ * `window`: the event window whose phase this is (D160). */
 export async function claim(
   deps: ClaimDeps,
   eventId: number,
   phase: Phase,
-  options: { force: boolean; stale: boolean | undefined },
+  options: { force: boolean; stale: boolean | undefined; window: number },
 ): Promise<number> {
-  const { force, stale } = options;
-  const existing: SnapshotRow | null = await deps.repo.findSnapshot(eventId, phase);
+  const { force, stale, window } = options;
+  const existing: SnapshotRow | null = await deps.repo.findSnapshot(eventId, phase, window);
   const now = deps.now();
   if (existing?.status === "complete" && !force) throw new RunRefusedError("complete");
   // INVARIANT run.stale-after-150s: a run left at running this long may be taken over.
   const live = now.getTime() - (existing?.startedAt.getTime() ?? 0) < RUN_STALE_AFTER_MS;
   if (existing?.status === "running" && live) throw new RunRefusedError("running");
   await refuseWhileStale(deps, existing, options);
-  const id = await deps.repo.startSnapshot(eventId, phase, now, existing);
+  const id = await deps.repo.startSnapshot(eventId, phase, now, existing, window);
   if (id === null) throw new RunRefusedError("running");
   // A forced run reads the whole snapshot again. Any other re-run (partial, failed, or left running)
   // drops the failed rows (D62), and the stale ones when asked (D63), and reads those alliances again.

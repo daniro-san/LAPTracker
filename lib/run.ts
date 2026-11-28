@@ -30,6 +30,8 @@ export type RunOutcome =
 export interface RunRequest {
   event: EventInfo;
   phase: Phase;
+  /** The event window whose phase this is (D160); 1 when left out. */
+  window?: number;
   force: boolean;
   /** D63: read the stale rows again (true), keep them (false), or refuse while any exist (undefined). */
   stale?: boolean | undefined;
@@ -164,13 +166,13 @@ async function collect(
   let claimedAt = ctx.now();
   const claiming: Repo = {
     ...repo,
-    startSnapshot: async (eventId, p, startedAt, expected) => {
+    startSnapshot: async (eventId, p, startedAt, expected, window) => {
       claimedAt = startedAt;
-      return (claimedId = await repo.startSnapshot(eventId, p, startedAt, expected));
+      return (claimedId = await repo.startSnapshot(eventId, p, startedAt, expected, window));
     },
-    startSample: async (eventId, slotAt, startedAt) => {
+    startSample: async (eventId, slotAt, startedAt, window) => {
       claimedAt = startedAt;
-      return (claimedId = await repo.startSample(eventId, slotAt, startedAt));
+      return (claimedId = await repo.startSample(eventId, slotAt, startedAt, window));
     },
   };
   const logger = createRunLogger(
@@ -228,7 +230,11 @@ export async function executeSnapshot(
   if ("refused" in gated) return { ok: false, ...REFUSALS[gated.refused], snapshotId: null };
   const { stale } = gated;
   const c = await collect(ctx, db, { eventId: req.event.id, phase: req.phase }, (deps) =>
-    runSnapshot(req.event.id, req.phase, deps, { force: req.force, stale }),
+    runSnapshot(req.event.id, req.phase, deps, {
+      force: req.force,
+      stale,
+      window: req.window ?? 1,
+    }),
   );
   const { summary } = c;
   if (summary === null) return unclaimed(c.refused);
@@ -249,6 +255,8 @@ export interface SampleRequest {
   event: EventInfo;
   /** The slot the sample is taken for (D69). */
   slotAt: Date;
+  /** The event window the slot is in (D160); 1 when left out. */
+  window?: number;
   origin: string;
 }
 
@@ -259,7 +267,7 @@ export async function executeSample(
   req: SampleRequest,
 ): Promise<RunOutcome> {
   const c = await collect(ctx, db, { eventId: req.event.id, phase: "sample" }, (deps) =>
-    runSample(req.event.id, req.slotAt, deps),
+    runSample(req.event.id, req.slotAt, deps, req.window),
   );
   const { summary } = c;
   if (summary === null) return unclaimed(c.refused);

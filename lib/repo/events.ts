@@ -1,9 +1,11 @@
 // events table. An event carries its own phase times (before_at, after_at): scheduled events get them from
-// the env when the tick creates the row, rehearsals from the moment they are created (plan §3.1).
-import { and, asc, eq, gt, isNull, lt, lte, or } from "drizzle-orm";
+// the env when the tick creates the row, rehearsals from the moment they are created (plan §3.1). Since D160
+// an event has 1 to 4 windows (event_windows), each with its own Before, After and samples; before_at is
+// window 1's Before and after_at the last window's After.
+import { and, asc, eq, gt, isNull, lt, lte, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { events, snapshots } from "../schema";
+import { events, eventWindows, snapshots } from "../schema";
 import type { EventRow, Phase } from "./index";
 import { findSnapshot, phaseSnapshot } from "./snapshots";
 
@@ -58,28 +60,83 @@ export interface NewEvent {
   eventAtUtc: Date;
   beforeAt: Date;
   afterAt: Date;
+  /** 1 to 4 windows in time order (D160); absent: one window from beforeAt to afterAt. */
+  windows?: { beforeAt: Date; afterAt: Date }[];
+}
+
+/** One window of an event (D160): `n` from 1, its Before and After times. */
+export interface EventWindow {
+  n: number;
+  beforeAt: Date;
+  afterAt: Date;
+}
+
+/** Stores an event's windows: NewEvent's windows, else one from its own times. A window that exists keeps
+ * its times (D21). */
+export async function insertEventWindows(
+  db: Pick<Db, "insert">,
+  eventId: number,
+  event: Pick<NewEvent, "beforeAt" | "afterAt" | "windows">,
+): Promise<void> {
+  const rows = (event.windows ?? [event]).map((w, i) => ({
+    eventId,
+    n: i + 1,
+    beforeAt: w.beforeAt,
+    afterAt: w.afterAt,
+  }));
+  await db.insert(eventWindows).values(rows).onConflictDoNothing();
+}
+
+/**
+ * An event's windows in order (D160). An event with no window rows (a row inserted by hand, as tests and the
+ * seed do) is one window from its own before_at to after_at.
+ */
+export async function getEventWindows(
+  db: Db,
+  event: { id: number; beforeAt: Date; afterAt: Date },
+): Promise<EventWindow[]> {
+  const rows = await listEventWindows(db, event.id);
+  return rows.length > 0 ? rows : [{ n: 1, beforeAt: event.beforeAt, afterAt: event.afterAt }];
+}
+
+/** The event's stored window rows in order; none for an event inserted by hand. */
+export async function listEventWindows(db: Db, eventId: number): Promise<EventWindow[]> {
+  return db
+    .select({ n: eventWindows.n, beforeAt: eventWindows.beforeAt, afterAt: eventWindows.afterAt })
+    .from(eventWindows)
+    .where(eq(eventWindows.eventId, eventId))
+    .orderBy(asc(eventWindows.n));
 }
 
 /**
  * The scheduled event at `eventAtUtc`, created on first use with no alliances (the BEFORE run copies
- * them). Insert-or-nothing then select, so two concurrent ticks end up with the same row. `created`: this
- * call's insert made it (the public pages' shared reads then need dropping, D143).
+ * them) and with its windows (D160). Insert-or-nothing then select, so two concurrent ticks end up with the
+ * same row. A row that exists keeps its times and windows (D21); one with no window rows (created by the
+ * build before D160, between a release's migration and its deployment) gets window 1 from its own times.
+ * `created`: this call's insert made it (the public pages' shared reads then need dropping, D143).
  */
 export async function findOrCreateEvent(
   db: Db,
   event: NewEvent,
 ): Promise<EventInfo & { created: boolean }> {
-  const inserted = await db
-    .insert(events)
-    .values({ ...event, allianceIds: [] })
-    .onConflictDoNothing({ target: events.eventAtUtc })
-    .returning({ id: events.id });
+  const { name, eventAtUtc, beforeAt, afterAt } = event;
+  // One transaction: a second tick's insert waits on this one, so it never sees the row without its windows.
+  const created = await db.transaction(async (tx) => {
+    const [made] = await tx
+      .insert(events)
+      .values({ name, eventAtUtc, beforeAt, afterAt, allianceIds: [] })
+      .onConflictDoNothing({ target: events.eventAtUtc })
+      .returning({ id: events.id });
+    if (made) await insertEventWindows(tx, made.id, event);
+    return made !== undefined;
+  });
   const [row] = await db
     .select(infoColumns)
     .from(events)
     .where(eq(events.eventAtUtc, event.eventAtUtc));
   if (!row) throw new Error("event row missing after insert");
-  return { ...row, created: inserted.length > 0 };
+  if (!created) await insertEventWindows(db, row.id, row);
+  return { ...row, created };
 }
 
 export async function getEventInfo(db: Db, eventId: number): Promise<EventInfo | null> {
@@ -107,6 +164,7 @@ export async function createManualEvent(
     })
     .returning(infoColumns);
   if (!row) throw new Error("manual event row missing after insert");
+  await insertEventWindows(db, row.id, row);
   return row;
 }
 
@@ -171,52 +229,75 @@ export async function setDiscordMessageId(
 export interface DuePhase {
   event: EventInfo;
   phase: Phase;
+  /** The event window the phase belongs to (D160). */
+  window: number;
   at: Date;
 }
 
 /**
- * Phases of any event (scheduled or rehearsal) whose window [x_at, x_at + window) holds `now` and
- * that have no snapshot row yet, earliest first. The tick runs only the first.
+ * Phases of any event window (scheduled or rehearsal) whose due window [x_at, x_at + window) holds `now`
+ * and that have no snapshot row yet, earliest first (D160: each event window has its own Before and After).
+ * The tick runs only the first.
  */
 export async function duePhases(db: Db, now: Date, windowMs: number): Promise<DuePhase[]> {
   const opened = new Date(now.getTime() - windowMs);
-  const open = (col: typeof events.beforeAt) => and(lte(col, now), gt(col, opened));
+  const open = (col: typeof eventWindows.beforeAt) => and(lte(col, now), gt(col, opened));
   const rows = await db
-    .select(infoColumns)
+    .select({
+      ...infoColumns,
+      window: eventWindows.n,
+      wBefore: eventWindows.beforeAt,
+      wAfter: eventWindows.afterAt,
+    })
     .from(events)
+    .innerJoin(eventWindows, eq(eventWindows.eventId, events.id))
     // INVARIANT tick.skips-manual: a manual event is never run by the tick (D28).
-    .where(and(eq(events.manual, false), or(open(events.beforeAt), open(events.afterAt))));
-  const candidates = rows.flatMap((event) =>
+    .where(
+      and(eq(events.manual, false), or(open(eventWindows.beforeAt), open(eventWindows.afterAt))),
+    );
+  const candidates = rows.flatMap(({ window, wBefore, wAfter, ...event }) =>
     (["before", "after"] as const)
-      .map((phase) => ({ event, phase, at: phase === "before" ? event.beforeAt : event.afterAt }))
+      .map((phase) => ({ event, phase, window, at: phase === "before" ? wBefore : wAfter }))
       .filter(({ at }) => at <= now && at > opened),
   );
   const due: DuePhase[] = [];
   for (const c of candidates) {
     // INVARIANT tick.once-per-phase: the tick never re-runs a phase that has a snapshot row.
-    if (!(await findSnapshot(db, c.event.id, c.phase))) due.push(c);
+    if (!(await findSnapshot(db, c.event.id, c.phase, c.window))) due.push(c);
   }
   return due.sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
 /**
- * The event to sample at `slotAt` (D69), or null. A scheduled event or a rehearsal (never a manual round)
- * whose slot lies strictly after its Before's slot and strictly before its after_at, whose Before has
- * finished, which has no After row yet, and which has no sample at this slot. The caller passes the slot
- * that holds now, so a missed slot is never caught up. Earliest Before first; the tick runs one.
+ * The event window to sample at `slotAt` (D69, D160), or null. A window of a scheduled event or a rehearsal
+ * (never a manual round) whose slot lies strictly after the window's Before slot and strictly before its
+ * after_at, whose Before has finished, which has no After row yet, and whose event has no sample at this
+ * slot. The caller passes the slot that holds now, so a missed slot is never caught up. Earliest Before
+ * first; the tick runs one.
  */
-export async function dueSample(db: Db, slotAt: Date): Promise<EventInfo | null> {
+export async function dueSample(
+  db: Db,
+  slotAt: Date,
+): Promise<(EventInfo & { window: number }) | null> {
   // slotAt is on the grid, so "before_at < slotAt" is "the Before's slot is earlier than this one".
   const rows = await db
-    .select(infoColumns)
+    .select({ ...infoColumns, window: eventWindows.n })
     .from(events)
+    .innerJoin(eventWindows, eq(eventWindows.eventId, events.id))
     // INVARIANT tick.skips-manual: a manual round gets no samples (D28).
-    .where(and(eq(events.manual, false), lt(events.beforeAt, slotAt), gt(events.afterAt, slotAt)))
-    .orderBy(asc(events.beforeAt));
+    .where(
+      and(
+        eq(events.manual, false),
+        lt(eventWindows.beforeAt, slotAt),
+        gt(eventWindows.afterAt, slotAt),
+      ),
+    )
+    .orderBy(asc(eventWindows.beforeAt));
   for (const event of rows) {
-    const start = await findSnapshot(db, event.id, "before");
+    const { window } = event;
+    const start = await findSnapshot(db, event.id, "before", window);
     if (!start || start.status === "running") continue;
-    if (await findSnapshot(db, event.id, "after")) continue;
+    if (await findSnapshot(db, event.id, "after", window)) continue;
     const [taken] = await db
       .select({ id: snapshots.id })
       .from(snapshots)
@@ -230,6 +311,23 @@ export async function dueSample(db: Db, slotAt: Date): Promise<EventInfo | null>
     if (!taken) return event;
   }
   return null;
+}
+
+/**
+ * The Befores and Afters of real scheduled events' windows still due after `now` on its UTC day, the quota
+ * day (D160): what a daily read leaves quota for beyond a one-window event's two.
+ */
+export async function eventReadsDueToday(db: Db, now: Date): Promise<number> {
+  const end = new Date(now);
+  end.setUTCHours(24, 0, 0, 0);
+  const due = (col: typeof eventWindows.beforeAt) =>
+    sql<number>`count(*) filter (where ${col} > ${now} and ${col} < ${end})`.mapWith(Number);
+  const [row] = await db
+    .select({ before: due(eventWindows.beforeAt), after: due(eventWindows.afterAt) })
+    .from(eventWindows)
+    .innerJoin(events, eq(events.id, eventWindows.eventId))
+    .where(and(eq(events.manual, false), eq(events.isTest, false)));
+  return (row?.before ?? 0) + (row?.after ?? 0);
 }
 
 /** Claims the event's Friday check; true for exactly one caller. */

@@ -14,6 +14,7 @@ import {
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots } from "../schema";
 import type { Ranks } from "./ranks";
+import { betweenMembers, memberStart } from "./windows";
 
 /** Alliances per list, as in the Discord message; members per list (owner, 2026-11-05). */
 export const ALLIANCE_MOVERS = 3;
@@ -110,15 +111,22 @@ export interface MemberMover extends MoverInput {
 /**
  * Member movers between an event's two snapshots, keyed by uid across every tracked alliance; null
  * until both have run. A member read on one side only is not ranked. `unionId` narrows the lists to
- * one alliance's after roster.
+ * one alliance's after roster. `between`: the event's rows between windows (D160; the event detail's
+ * `between`, or `eventBetweenIds`), required so no caller forgets it; a member's change is then the sum of
+ * its windows' changes, and a member missing from one of them is not ranked.
  */
 export async function memberMovers(
   db: Db,
   snapshots: readonly { id: number; phase: "before" | "after" }[],
+  between: readonly { id: number | null }[] | undefined,
   unionId?: number,
 ): Promise<MoverLists<MemberMover> | null> {
   const [b, a] = (["before", "after"] as const).map((ph) => snapshots.find((s) => s.phase === ph));
   if (!b || !a) return null;
+  const slots = await betweenMembers(
+    db,
+    (between ?? []).map((s) => s.id),
+  );
   const snapshotIds = { before: b.id, after: a.id };
   const rows = await db
     .select({
@@ -154,7 +162,7 @@ export async function memberMovers(
         name: a.name,
         unionId: a.unionId,
         tag: a.tag,
-        before: b ? side(b) : null,
+        before: b ? memberStart(side(b), a.uid, slots) : null,
         after: side(a),
       };
     });

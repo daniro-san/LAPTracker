@@ -52,12 +52,15 @@ class CallCapError extends Error {
 }
 
 /** `secrets` (secretsOf(env)) are masked in the run_logs lines; tests may leave them out. `opponentCalls`: the
- * KvK opponent's calls still due on the read's quota day (D152, `opponentReserve`); none when left out. */
+ * KvK opponent's calls still due on the read's quota day (D152, `opponentReserve`); none when left out.
+ * `eventReads`: the event windows' Befores and Afters still due that day (D160, `eventReadsDueToday`); a
+ * one-window event's two when left out. */
 type Deps = {
   v1: V1Source;
   now: () => Date;
   secrets?: readonly string[];
   opponentCalls?: number;
+  eventReads?: number;
 };
 
 interface Read {
@@ -165,7 +168,12 @@ async function checkQuota(read: Read, n: number): Promise<string | null> {
   }
   // INVARIANT budget.daily-keeps-event-reserve
   // The KvK opponent's calls still due that day count too (D152); the caller passes 0 on other days.
-  const needed = dailyReadQuota(n, TRACKED_COUNT, read.deps.opponentCalls ?? 0);
+  const needed = dailyReadQuota(
+    n,
+    TRACKED_COUNT,
+    read.deps.opponentCalls ?? 0,
+    read.deps.eventReads,
+  );
   if (read.remaining >= needed) return null;
   await read.log.error("quota", { remaining: read.remaining, required: needed });
   return `quota: remaining ${read.remaining} < required ${needed}`;

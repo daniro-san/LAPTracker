@@ -237,8 +237,8 @@ export async function EventView({ events, homeId, drill, ...page }: ViewProps) {
     requestLocale(),
     loadProgress(detail, now),
   ]);
-  const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy).map((r) =>
-    sinceLast(r, previous, clock, copy),
+  const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy, detail.between).map(
+    (r) => sinceLast(r, previous, clock, copy),
   );
   const moverScopes = moverScopesOf(movers, detail.id, changes, copy);
   const liveProps = {

@@ -68,13 +68,21 @@ export type ProgressRow = {
    * with no members. */
   gained?: number;
   step?: number;
+  /** The row's event window, and whether it is a Before or After between windows (D160); absent: window 1,
+   * not between. */
+  window?: number;
+  between?: boolean;
 };
+
+/** A Before or After between two windows (D160): not a reading of the progress, and not its End. */
+const isBetween = (r: Pick<ProgressRow, "between">) => r.between === true;
 
 /** The readings of Start and samples by snapshot: their time and every alliance read. */
 function readSlices(rows: readonly ProgressRow[]) {
   const slices = new Map<number, { at: Date; alliances: Map<number, Reading> }>();
   for (const r of rows) {
-    if (r.phase === "after" || r.status === "running" || r.unionId === null) continue;
+    if (r.phase === "after" || isBetween(r) || r.status === "running" || r.unionId === null)
+      continue;
     const at = new Date(
       r.phase === "before" ? (r.finishedAt ?? r.startedAt) : (r.slotAt as number),
     );
@@ -98,7 +106,7 @@ export function readingsOf(rows: readonly ProgressRow[]): {
   samples: Slice[];
 } {
   const slices = readSlices(rows);
-  const phaseOf = new Map(rows.map((r) => [r.snapshotId, r.phase]));
+  const phaseOf = new Map(rows.filter((r) => !isBetween(r)).map((r) => [r.snapshotId, r.phase]));
   const start = [...slices].find(([id]) => phaseOf.get(id) === "before")?.[1];
   const samples = [...slices]
     .filter(([id]) => phaseOf.get(id) === "sample")
@@ -124,6 +132,7 @@ async function memberGains(db: Db, eventId: number): Promise<Map<string, [number
       select id, phase, row_number() over (order by phase <> 'before', slot_at) as k
       from snapshots
       where event_id = ${eventId} and phase in ('before', 'sample') and status <> 'running'
+        and not between_windows
     ),
     m as (
       select r.id, r.k, a.union_id, ms.uid, coalesce(ms.kills, 0) as kills
@@ -165,6 +174,8 @@ export async function progressRows(db: Db, eventId: number): Promise<ProgressRow
       startedAt: snapshots.startedAt,
       finishedAt: snapshots.finishedAt,
       afterAt: events.afterAt,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
       unionId: allianceSnapshots.unionId,
       isFresh: allianceSnapshots.isFresh,
       totalPower: allianceSnapshots.totalPower,
@@ -211,15 +222,39 @@ export function eventProgressOf(
   const { start, samples } = readingsOf(rows);
   const latest = samples.at(-1);
   if (!start) return null;
-  const startDone = rows.some((r) => r.phase === "before" && r.status !== "running");
-  const ended = rows.some((r) => r.phase === "after");
+  const startDone = rows.some(
+    (r) => r.phase === "before" && !isBetween(r) && r.status !== "running",
+  );
+  const ended = rows.some((r) => r.phase === "after" && !isBetween(r));
   const afterAt = new Date(first.afterAt);
+  const sinceAt = lastReadAt(rows, latest?.at ?? start.at);
+  // D160: between two windows no reading is due, so nothing is waited for or late.
   const next =
-    startDone && !ended ? nextReading(now, everyMin, afterAt, latest?.at ?? start.at) : null;
+    startDone && !ended && !betweenWindowsNow(rows)
+      ? nextReading(now, everyMin, afterAt, sinceAt)
+      : null;
   // Nothing to show before the first reading unless the event is live (the strip says when it comes).
   if (!latest && !next) return null;
-  return progressOf(start, samples, next, { now, everyMin, afterAt });
+  return progressOf(start, samples, next, { now, everyMin, afterAt, sinceAt });
 }
+
+/** The newest reading: `readingAt` (the latest sample, else the Start), or a later window's Before when it
+ * finished after that (D160), so window 2's first slot is not shown as late before its first sample. */
+function lastReadAt(rows: readonly ProgressRow[], readingAt: Date): Date {
+  const befores = rows
+    .filter((r) => isBetween(r) && r.phase === "before" && r.status !== "running")
+    .map((r) => r.finishedAt ?? r.startedAt);
+  return new Date(Math.max(readingAt.getTime(), ...befores));
+}
+
+/** A window's After has a row and the next window's Before has none yet (D160). */
+const betweenWindowsNow = (rows: readonly ProgressRow[]) =>
+  rows.some(
+    (r) =>
+      isBetween(r) &&
+      r.phase === "after" &&
+      !rows.some((x) => isBetween(x) && x.phase === "before" && x.window === (r.window ?? 1) + 1),
+  );
 
 /** `eventProgressOf` over a fresh read of the rows. */
 export async function eventProgress(
@@ -235,7 +270,12 @@ function progressOf(
   start: Slice,
   samples: Slice[],
   next: EventProgress["next"],
-  { now, everyMin, afterAt }: { now: Date; everyMin: number; afterAt: Date },
+  {
+    now,
+    everyMin,
+    afterAt,
+    sinceAt,
+  }: { now: Date; everyMin: number; afterAt: Date; sinceAt: Date },
 ): EventProgress {
   const latest = samples.at(-1);
   const pulse = serverPulse([start, ...samples], everyMin * 60_000);
@@ -249,7 +289,7 @@ function progressOf(
     startAt: start.at,
     latestAt: latest?.at ?? null,
     next,
-    overdue: next ? overdueSlot(now, everyMin, latest?.at ?? start.at, afterAt) : null,
+    overdue: next ? overdueSlot(now, everyMin, sinceAt, afterAt) : null,
     standings: rank,
     killsTotal,
     pulse,

@@ -110,6 +110,8 @@ export async function mightBeforeEvent(
         eq(allianceSnapshots.isFresh, true),
         isNull(allianceSnapshots.error),
         eq(snapshots.phase, "before"),
+        // The event's Start, not a later window's Before (D160).
+        eq(snapshots.betweenWindows, false),
         eq(events.manual, false),
         eq(events.isTest, false),
         ne(events.visibility, "admin"),
