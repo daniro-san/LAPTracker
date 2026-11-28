@@ -56,6 +56,10 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 792,
   },
   {
+    text: "OGs /join after v5.71.0: add the bot again from Alliance settings → Discord (it now asks for Manage Roles), place the LAPTracker role above the member role in Discord, choose the member role, tap Check, then turn on the /join switch.",
+    issue: 868,
+  },
+  {
     text: "Choose how alliances will pay for the paid plan (the comparison is in the private plan Claude prepared). Nothing is charged until you decide.",
     issue: 788,
   },
@@ -283,11 +287,15 @@ export const patchNotes: PatchNote[] = [
       "Raid prep: officers set this week's raid opponent (a server and a tag). The opponent and our alliance are read at Saturday 00:00 and Sunday 00:00 ST, and a card shows kills gained, might and members for both sides, with past raids by opponent.",
       "Event samples: one 6-second try per alliance, so a tracker call that hangs no longer costs the rest of the sample.",
       "Alliance settings → Tracker key: a card shows today's calls on the key by feature, the calls still planned, and the quota left, with a line when the plan does not fit.",
+      "Member card: a usual-hours line, the server-time hours a member is most often seen in the game, from repeated presence readings. Only officers see it.",
+      "Insights: a KvK debrief on one screen (our result, the opponent or this week's raid opponent, and the thanks), saved as a picture to share.",
+      "Officers' KvK map: an Origin of Chaos week no longer replaces the KvK map; it shows the newest KvK.",
+      "Discord: /join lets a player ask to join with their game name or ID. Officers approve it under Members → Requests, which links the player, gives the chosen member role and can post a welcome. Off until turned on. Roles with admin powers or the leaders' roles can never be chosen.",
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
       815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847, 849, 850, 852, 856, 863,
-      865, 870, 871,
+      865, 870, 871, 875, 876, 879, 880, 881, 882,
     ],
     officer: [
       {
