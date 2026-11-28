@@ -2,8 +2,11 @@
 // and kills over 30 days, their recovery since KvK, and the lines of where they are needed. People first
 // (D75): only their own numbers, never another member's, a rank, an average of others or a "below" word;
 // a day with no read is "No reading" and never counts (D127); "none" is a read that lists them with nothing
-// that day. A day's quest points come from the week's running total (`questDay`, #739).
-import type { OwnDay } from "../repo/me";
+// that day. A day's quest points come from the week's running total (`questDay`, #739). The thanks for
+// their own kills gained in the last KvK (issue 793) sums the event's windows (D160).
+import { killsGain, windowedStart } from "../compute";
+import { betweenSlots } from "../queries/windows";
+import type { OwnDay, OwnEventRead } from "../repo/me";
 import { KVK_MINUTE, raidOf } from "../shield-check";
 import { fill } from "../words";
 import { addDays, DAY_MS, hhmm, weekDays, weekdayIndex, mondayOf } from "./calendar-time";
@@ -140,6 +143,30 @@ export function recoveryLine(
   if (!before || before.power <= 0 || !newest?.power || newest.day <= before.day) return null;
   const pct = Math.round((newest.power / before.power) * 100);
   return fill(t[pct >= 100 ? "me.kvk.full" : "me.kvk.back"], { pct, date: date(before.day) });
+}
+
+/**
+ * "Thanks for the 1.2M kills you gained in KvK (Sat, Nov 21)." from the member's own reads of the last KvK
+ * (`ownEventReads`): End − Start as the sum of the event's windows (D160, `windowedStart`), with the kills
+ * gain rule (`killsGain`, D15). Null with no KvK, when the member is not in a fresh Start, End or read
+ * between windows (INVARIANT freshness.no-stale-delta), or when they gained none: never a zero or a fall.
+ */
+export function killsThanks(
+  event: { day: string; reads: readonly OwnEventRead[] } | null,
+  t: WorkspaceDictionary,
+  f: { date: (day: string) => string; compact: (n: number) => string },
+): string | null {
+  const edge = (phase: OwnEventRead["phase"]) =>
+    event?.reads.find((r) => r.phase === phase && !r.between);
+  const [start, end] = [edge("before"), edge("after")];
+  if (!event || !start?.isFresh || !end?.isFresh) return null;
+  const between = event.reads.filter((r) => r.between).map((r) => ({ ...r, value: r }));
+  const from = windowedStart(start, betweenSlots(between, end.window));
+  if (!from.isFresh) return null;
+  const gain = killsGain(from.totalKills, end.totalKills);
+  return gain > 0
+    ? fill(t["me.kvk.thanks"], { kills: f.compact(gain), date: f.date(event.day) })
+    : null;
 }
 
 export interface Needed {

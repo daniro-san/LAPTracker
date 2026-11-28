@@ -58,12 +58,14 @@ export function MeProgress(props: {
   f: ChartFormats;
 }) {
   const { view, t } = props;
-  const { might, kills, kvk } = view.progress;
+  const { might, kills, kvk, thanks } = view.progress;
   return (
     <section aria-labelledby="me-progress" className={CARD}>
       <h2 id="me-progress" className={HEAD}>
         {t["me.progress.head"]}
       </h2>
+      {/* D75: thanks first, before the charts. */}
+      {thanks && <p className="mt-1">{thanks}</p>}
       <p className="mt-1 text-body-sm text-ink/75">{t["me.progress.lead"]}</p>
       {kvk && <p className="mt-2 font-semibold">{kvk}</p>}
       {!might && !kills && <p className="mt-2 text-body-sm">{t["me.progress.early"]}</p>}

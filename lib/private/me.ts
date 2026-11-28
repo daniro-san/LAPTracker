@@ -4,16 +4,18 @@
 // roster gets nothing past that check. Never read here: rankings, other members, officers' notes, facts,
 // statuses or follow-ups, and x, y, online, last_online_at, joined_at and avatar_url. The member's own
 // daily_tech, daily_honor and active (owner, 2026-11-21, D142) are returned to this page only: nothing
-// here is logged, cached or sent anywhere.
+// here is logged, cached or sent anywhere. The thanks for their own kills gained in the last KvK (issue
+// 793) reads only their own uid's power and kills in that event's Start, End and reads between windows.
 import type { Db } from "../db";
 import { heroNames } from "../repo/hero-catalog";
-import { mightBeforeEvent, ownDays, ownMarks, ownSeats, ownTeam } from "../repo/me";
+import { mightBeforeEvent, ownDays, ownEventReads, ownMarks, ownSeats, ownTeam } from "../repo/me";
 import { squadPairs } from "../repo/squads";
 import type { MeAccess } from "./access";
 import { addDays, dayIn, mondayOf, zonedInstant } from "./calendar-time";
 import { endOf } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import {
+  killsThanks,
   neededLines,
   recoveryLine,
   seriesOf,
@@ -34,7 +36,13 @@ export type MeView =
   | {
       left: false;
       name: string;
-      progress: { might: Series | null; kills: Series | null; kvk: string | null };
+      progress: {
+        might: Series | null;
+        kills: Series | null;
+        kvk: string | null;
+        /** Thanks for the member's own kills gained in the last KvK (issue 793); null with none. */
+        thanks: string | null;
+      };
       week: DaysCard | null;
       squads: SquadsCard;
       needed: NeededLine[];
@@ -62,8 +70,9 @@ export async function meView(
   // INVARIANT me.left-closes: a member the newest roster does not list sees nothing more.
   if (newest && !newest.listed) return { left: true, name };
   const since = new Date(now.getTime() - PROGRESS_DAYS * DAY_MS);
-  const [before, pairs, heroes, team, seats, marks] = await Promise.all([
+  const [before, event, pairs, heroes, team, seats, marks] = await Promise.all([
     mightBeforeEvent(db, me.unionId, me.uid, since, now),
+    ownEventReads(db, me.unionId, me.uid, since, now),
     squadPairs(db, me.unionId, me.uid),
     heroNames(db),
     ownTeam(db, me.workspaceId, me.uid, week),
@@ -80,6 +89,11 @@ export async function meView(
       might: seriesOf(days, "power", t, d),
       kills: seriesOf(days, "kills", t, d),
       kvk: recoveryLine(days, kvk, t, d.date),
+      thanks: killsThanks(
+        event && { day: dayIn(zone, event.at.getTime()), reads: event.reads },
+        t,
+        { date: d.date, compact: f.compact },
+      ),
     },
     week: weekCard(days, today, t, d),
     squads: { ...squadsCardOf(pairs, heroes, t, f), none: t["me.squads.none"] },
