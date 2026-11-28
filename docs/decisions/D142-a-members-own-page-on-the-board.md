@@ -89,3 +89,5 @@ Left for follow-ups:
 - **Already shown: the squads.** Item 2 above (the member card's lineup with hero names from the stored catalog, D117) is what the issue asked for; it is unchanged.
 - **Cost.** One more read in the page's parallel reads (7 instead of 6).
 - **Tests** (`me/route.test.ts`): a two-window event thanks the member for the sum of its windows, a pending link shows nothing and another member's gain is absent; no KvK in 30 days gives no line; the member's own squads show their heroes' names and never another member's. The `private, no-store` header on `/w/[slug]/board/me` stays tested in `proxy.test.ts`.
+
+**Amendment 2026-11-28 (orchestrator, issue 806): "before KvK" and "in KvK" mean a KvK.** The recovery line and the kills thanks line count from the newest KvK in the 30 days and pass over an Origin of Chaos (`isKvkDay`, D160 amendment 2026-11-28): `mightBeforeEvents` returns every Start and `meView` keeps the newest KvK; `ownEventReads` takes the KvK test and skips other events. With only an Origin of Chaos in range, neither line shows. Tests: `lib/private/me-recovery.test.ts`.

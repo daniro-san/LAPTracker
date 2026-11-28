@@ -1,4 +1,4 @@
-// /admin's KvK opponent card (D152): the next scheduled event and the 4 before it, each with its opponent,
+// /admin's KvK opponent card (D152): the next KvK and the KvKs among the 4 scheduled events before it, each with its opponent,
 // what the Start and End read of each tag, and its server's ranks board suggestion (D155). Admin only: the
 // result, the error rows and the suggestion stay here.
 import type { Db } from "../db";
@@ -10,6 +10,7 @@ import {
   SUGGEST_STALE_AFTER_MS,
   suggestionsAt,
 } from "../repo/kvk";
+import { isKvkDay, serverDay, type ScheduleConfig } from "../schedule";
 
 /** Whether "Suggest tags" may read the board: no read yet, or a failed (or stale) one with attempts left. */
 const canRetry = (
@@ -21,8 +22,20 @@ const canRetry = (
     (s.status === "failed" ||
       (s.status === "running" && now.getTime() - s.claimedAt.getTime() > SUGGEST_STALE_AFTER_MS)));
 
-export async function adminKvk(db: Db, next: Date, now: Date) {
-  const times = await kvkEventTimes(db, next);
+/**
+ * The KvKs /admin offers an opponent for: `next` (the next KvK, `nextKvk`) and the KvKs among the 4 scheduled
+ * events before it. An Origin of Chaos has no opponent (#806).
+ */
+export const kvkTimes = async (db: Db, next: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
+  (await kvkEventTimes(db, next)).filter((at) => isKvkDay(serverDay(at, cfg)));
+
+export async function adminKvk(
+  db: Db,
+  next: Date,
+  now: Date,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
+) {
+  const times = await kvkTimes(db, next, cfg);
   const [opponents, suggestions] = await Promise.all([
     opponentsAt(db, times),
     suggestionsAt(db, times),

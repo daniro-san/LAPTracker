@@ -5,7 +5,9 @@ import { RUN_DEADLINE_MS } from "./compute";
 import {
   endsInServerDay,
   inEventWindow,
+  isKvkDay,
   nextEvent,
+  nextKvk,
   serverMinuteOfDay,
   slotOf,
   targetEvent,
@@ -94,6 +96,14 @@ describe("the 4-week cycle", () => {
     );
     // After 02:45 and 15:15, each After keeps its 30 min window (03:15, 15:45).
     expect(paused).toEqual([true, false, false, true, false]);
+  });
+
+  it("tells a KvK day from an Origin of Chaos day, and the next KvK passes over Origin of Chaos (#806)", () => {
+    expect(["2026-11-28", "2026-12-05", "2026-12-12"].map(isKvkDay)).toEqual([true, false, true]);
+    // Friday before Origin of Chaos, and Sunday after the KvK before it.
+    expect(nextKvk(new Date("2026-12-04T12:00:00Z"), cfg).name).toBe("Saturday Event 2026-12-12");
+    expect(nextKvk(new Date("2026-11-29T12:00:00Z"), cfg).name).toBe("Saturday Event 2026-12-12");
+    expect(nextKvk(new Date("2026-11-27T12:00:00Z"), cfg).name).toBe("Saturday Event 2026-11-28");
   });
 });
 

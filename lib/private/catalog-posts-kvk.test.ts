@@ -200,6 +200,20 @@ describe("KvK recap (D159, post 5)", () => {
     ]);
   });
 
+  it("is not due on an Origin of Chaos Saturday: nothing posted and nothing settled (#806)", async () => {
+    await turnKvkOn();
+    await kvk();
+    // The same finished reads, moved to Origin of Chaos 2026-12-05 (00:10 ST).
+    await db.update(events).set({
+      name: "Origin of Chaos 2026-12-05",
+      eventAtUtc: new Date("2026-12-05T02:10:00Z"),
+    });
+    const { send, posts } = sender(new Date("2026-12-05T16:15:00Z"));
+    await send();
+    expect(posts).toEqual([]);
+    expect(await db.select().from(postRuns)).toEqual([]);
+  });
+
   it("posts nothing and settles the KvK when the alliance has no Start row", async () => {
     await turnKvkOn();
     await kvk();

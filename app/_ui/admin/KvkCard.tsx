@@ -1,11 +1,11 @@
-// /admin's KvK opponent card (D152, issue 306): the next scheduled event and the 4 before it, each with its
+// /admin's KvK opponent card (D152, issue 306): the next KvK and the KvKs among the 4 scheduled events before it, each with its
 // opponent's server, tags, result, what the Start and End read of each tag, and the server's ranks board
 // suggestion (D155). Read after the page's own isAdmin() check. English only (D48).
 import { copy } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { adminKvk, type AdminKvkRead } from "@/lib/queries/admin-kvk";
-import { nextEvent } from "@/lib/schedule";
+import { nextKvk } from "@/lib/schedule";
 import { fill } from "@/lib/words";
 
 import { compact, hhmmOn, type Clock } from "../format";
@@ -44,9 +44,10 @@ function suggestionOf(row: Row, now: Date, clock: Clock, locale: string): KvkSug
 }
 
 async function choices(now: Date, clock: Clock): Promise<KvkChoice[]> {
-  const next = nextEvent(now, getEnv()).eventAtUtc;
+  const env = getEnv();
+  const next = nextKvk(now, env).eventAtUtc;
   const locale = await requestLocale();
-  const rows = await withPageDb((db) => adminKvk(db, next, now));
+  const rows = await withPageDb((db) => adminKvk(db, next, now, env));
   return rows.map((row) => {
     const { at, opponent: o, reads } = row;
     const of = (tag: string, phase: "before" | "after") =>
