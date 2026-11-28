@@ -14,7 +14,8 @@ import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { recruitFacts } from "@/lib/private/recruit-check";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { findBlockedKeys } from "@/lib/queries/blocked-keys";
-import { workspaces, workspaceUsers } from "@/lib/schema";
+import { quotaDayRead } from "@/lib/schedule";
+import { dailyReads, workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceFeatures } from "@/lib/schema-features";
 import { workspaceKeys } from "@/lib/schema-keys";
 import { playerReads } from "@/lib/schema-squads";
@@ -215,6 +216,20 @@ describe("the recruit check (issue 833)", () => {
     expect(await keyOf(nse)).toEqual({ status: "out_of_quota", quotaRemaining: 0 });
     expect(await answer(await post(203))).toEqual([409, { code: "no_key" }]);
     expect(calls).toHaveLength(1);
+  });
+
+  it("on a saved key equal to LAP_API_KEY, refuses a read that would cut into the site's reserve (issue 855)", async () => {
+    vi.stubEnv("LAP_API_KEY", OWN_KEY);
+    await saveKey(nse, OWN_KEY);
+    const day = quotaDayRead(NOW, TEST_ENV);
+    const daily = { day, startedAt: NOW, status: "complete" as const, callsUsed: 21 };
+    // 120 − 21 = 99 left, under the margin of 100.
+    await db.insert(dailyReads).values({ ...daily, quotaRemainingBefore: 120 });
+    expect(await answer(await post(202))).toEqual([503, { code: "quota_low" }]);
+    expect(calls).toEqual([]);
+    await db.update(dailyReads).set({ quotaRemainingBefore: 900 });
+    expect(await answer(await post(202))).toEqual([200, { called: true }]);
+    vi.unstubAllEnvs();
   });
 
   it("never reads on another workspace's key or on LAP_API_KEY", async () => {

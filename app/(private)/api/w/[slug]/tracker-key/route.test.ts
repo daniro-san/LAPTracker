@@ -99,6 +99,7 @@ beforeEach(async () => {
 });
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 const post = (body: unknown, token: string) =>
@@ -157,6 +158,16 @@ describe("POST /api/w/[slug]/tracker-key (D124)", () => {
     const view = await trackerKeyView(db, await officerAccess(), other, T0);
     expect(view.state).toBe("reenter");
     expect(await db.select().from(workspaceKeys)).toEqual(before);
+  });
+
+  it("says the saved key is the site's own only when it equals LAP_API_KEY (issue 855)", async () => {
+    // Key-shaped (the form's rule), from a repeated phrase like THEIR_KEY.
+    const site = `lap_${"our-site-test-key-".repeat(2)}x`;
+    vi.stubEnv("LAP_API_KEY", site);
+    await setKey(tokens.officer);
+    expect((await trackerKeyView(db, await officerAccess(), ENV, T0)).siteKey).toBe(false);
+    await setKey(tokens.officer, site);
+    expect((await trackerKeyView(db, await officerAccess(), ENV, T0)).siteKey).toBe(true);
   });
 
   it("never lets the key into an answer, a page read, /admin, Home's activity, a log, the console or analytics", async () => {

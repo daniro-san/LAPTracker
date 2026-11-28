@@ -101,7 +101,7 @@ function keyForm(
     view.quotaRemaining === null
       ? null
       : fill(t["key.quota"], { n: new Intl.NumberFormat(language).format(view.quotaRemaining) });
-  return { state: view.state, last4: view.last4, quota, checked };
+  return { state: view.state, last4: view.last4, quota, checked, siteKey: view.siteKey };
 }
 
 /** Everything the page shows, read after requireWorkspace, in parallel. */

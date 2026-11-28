@@ -5,17 +5,24 @@
 // LAP_API_KEY), at most RECRUIT_READS_A_DAY a UTC quota day, counted in the database; the answer is kept as
 // every /v1/players answer is (storePlayerRead, D132), under the workspace's alliance. No score, no ranking,
 // no judging words; a value not known is left out (D75). Officers only, behind `recruit_check` (D126);
-// nothing is posted, and the log carries counts only.
+// nothing is posted, and the log carries counts only. A saved key that is LAP_API_KEY itself (issue 855) reads
+// only above the site key's reserve (`squadsReserve`), and a 429 on it marks no workspace key.
+import { TRACKED_COUNT } from "../../config/alliances";
 import type { Db } from "../db";
+import { opponentReserve } from "../kvk-reserve";
 import { playerProgress } from "../queries/player-progress";
 import { searchPlayers } from "../queries/player-search";
 import { allianceLabels } from "../repo/alliances";
+import { getDailyRead } from "../repo/daily-reads";
 import { playerTrail, storePlayerRead, trailNames, type TrailPoint } from "../repo/player-reads";
 import { countRecruitRead, recruitReadsOn } from "../repo/recruit-reads";
+import { getSquadRead } from "../repo/squads";
 import { keyFacts, markKey } from "../repo/workspace-keys";
+import { quotaDayRead } from "../schedule";
 import { NotFoundError, type V1Source } from "../sources/types";
+import { squadsReserve, type SquadsConfig } from "../squads";
 import { RECRUIT_READS_A_DAY, usageDay } from "../workspace-features";
-import { keyStatusOf, ownKeyOf, squadsKey } from "../workspace-keys";
+import { isSiteKey, keyStatusOf, ownKeyOf, squadsKey } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
 import { featureOn } from "./features";
 import { privateLog } from "./log";
@@ -186,13 +193,35 @@ export type RecruitReadResult =
   | { ok: true; called: boolean }
   | {
       ok: false;
-      code: "turned_off" | "no_key" | "cap_reached" | "not_found" | "unavailable";
+      code: "turned_off" | "no_key" | "quota_low" | "cap_reached" | "not_found" | "unavailable";
     };
 
 export interface RecruitDeps {
   v1: Pick<V1Source, "fetchPlayer">;
   secret: string | undefined;
   now: Date;
+  /** The schedule, for the site key's reserve (issue 855). */
+  env: SquadsConfig;
+}
+
+/**
+ * Issue 855: on LAP_API_KEY, whether one read leaves the site key's reserve (the squads read's margin and the
+ * event's reads, D117). The quota left is what the alliance's squads read or the day's read last saw; none
+ * known refuses.
+ */
+async function siteReserveKept(db: Db, deps: RecruitDeps, unionId: number): Promise<boolean> {
+  const { now, env } = deps;
+  const day = quotaDayRead(now, env);
+  const [daily, squads] = await Promise.all([
+    getDailyRead(db, day),
+    getSquadRead(db, day, unionId),
+  ]);
+  const before = daily?.quotaRemainingBefore ?? null;
+  const remaining =
+    squads?.quotaRemaining ?? (before === null ? null : before - (daily?.callsUsed ?? 0));
+  if (remaining === null) return false;
+  const reserve = squadsReserve(now, env, TRACKED_COUNT, await opponentReserve(db, now, env));
+  return remaining - 1 >= reserve;
 }
 
 /**
@@ -212,6 +241,10 @@ export async function readRecruit(
   if (await recruitFacts(db, access, uid, now)) return { ok: true, called: false };
   const key = await ownKeyOf(db, deps.secret, access.workspaceId, now);
   if (!key) return { ok: false, code: "no_key" };
+  const site = isSiteKey(key.apiKey);
+  if (site && !(await siteReserveKept(db, deps, access.unionId))) {
+    return { ok: false, code: "quota_low" };
+  }
   const used = await countRecruitRead(db, access.workspaceId, usageDay(now), RECRUIT_READS_A_DAY);
   if (used === null) {
     privateLog("recruit.cap_reached", { workspace: access.workspaceId, cap: RECRUIT_READS_A_DAY });
@@ -225,7 +258,8 @@ export async function readRecruit(
     });
     await storePlayerRead(db, access.unionId, player, now);
   } catch (e) {
-    const status = keyStatusOf(e);
+    // Issue 855: a 401 or 429 on LAP_API_KEY is the site key's, not the workspace key's.
+    const status = site ? null : keyStatusOf(e);
     if (status) {
       const patch = { status, ...(status === "out_of_quota" && { quotaRemaining: 0 }) };
       await markKey(db, key.workspaceId, key.nonce, patch, now);

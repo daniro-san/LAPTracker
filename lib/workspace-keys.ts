@@ -3,8 +3,16 @@
 // workspace does not open), opened only here and only at call time. The key is never logged, returned or
 // stored in the clear; what leaves this module is a status, a quota count and the last 4 characters.
 // Which reads use which key: `squadTargets`. The own alliance (OWN_ALLIANCE_ID) reads on LAP_API_KEY until
-// its officers save a key of their own; any other workspace reads only on its own key, never on ours.
-import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
+// its officers save a key of their own; any other workspace reads only on its own key, never on ours. A saved
+// key that is LAP_API_KEY itself (issue 855, `isSiteKey`) reads as the site's key: `key: null` in a target.
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
 import type { Db } from "./db";
@@ -139,6 +147,38 @@ export async function checkKey(
   }
 }
 
+/**
+ * Issue 855: whether an opened key is LAP_API_KEY itself. Compared in constant time on SHA-256 digests (two
+ * equal-length buffers, so neither the length nor the content leaks timing); neither key is logged, returned
+ * or stored. A target on such a key gets `key: null`: the site key's reserve, event pause and one quota.
+ */
+export function isSiteKey(apiKey: string): boolean {
+  const site = process.env.LAP_API_KEY;
+  if (!site) return false;
+  const digest = (s: string) => createHash("sha256").update(s, "utf8").digest();
+  return timingSafeEqual(digest(apiKey), digest(site));
+}
+
+/**
+ * Whether the workspace's saved key is LAP_API_KEY (issue 855), for Alliance settings' line: opened under the
+ * current master key whatever its status, and only a boolean leaves. False with none saved, the keys off, or
+ * a key that does not open here.
+ */
+export async function savedIsSiteKey(
+  db: Db,
+  secret: string | undefined,
+  workspaceId: number,
+): Promise<boolean> {
+  const r = (await sealedKeys(db)).find((k) => k.workspaceId === workspaceId);
+  if (!secret || !r?.ciphertext || !r.nonce || r.masterFp !== masterFingerprint(secret))
+    return false;
+  try {
+    return isSiteKey(openKey(secret, workspaceId, { ciphertext: r.ciphertext, nonce: r.nonce }));
+  } catch {
+    return false;
+  }
+}
+
 /** A workspace key opened for one run: the key itself, and its nonce to mark the same stored key after. */
 export interface OpenKey {
   workspaceId: number;
@@ -147,8 +187,8 @@ export interface OpenKey {
 }
 
 /**
- * One alliance's squads read and the key it spends: `key` null is LAP_API_KEY, for OWN_ALLIANCE_ID only
- * (D117, until its officers save their own key). `workspaceId` null: the own alliance has no workspace.
+ * One alliance's squads read and the key it spends: `key` null is LAP_API_KEY, for OWN_ALLIANCE_ID (D117,
+ * until its officers save their own key) and for a saved key that is LAP_API_KEY itself (issue 855). `workspaceId` null: the own alliance has no workspace.
  */
 export interface SquadTarget {
   unionId: number;
@@ -177,8 +217,9 @@ async function opened(db: Db, secret: string, r: SealedKey, now: Date): Promise<
 
 /**
  * One workspace's own saved key opened for one call (the recruit check, issue 833), or null: none saved, the
- * keys off (no WORKSPACE_KEYS_SECRET), or the key cannot read now. Never LAP_API_KEY, not even for the own
- * alliance, and never another workspace's key (INVARIANT keys.own-quota-only).
+ * keys off (no WORKSPACE_KEYS_SECRET), or the key cannot read now. Never LAP_API_KEY for a workspace without
+ * a saved key, and never another workspace's key (INVARIANT keys.own-quota-only). A saved key may be
+ * LAP_API_KEY itself (`isSiteKey`, issue 855): the caller keeps the site's reserve then.
  */
 export async function ownKeyOf(
   db: Db,
@@ -241,7 +282,8 @@ export async function dailyTargets(
       targets.push({ unionId: r.unionId, key: null });
     if (rule !== "own" || !secret) continue;
     const key = await opened(db, secret, r, now);
-    if (key) targets.push({ unionId: r.unionId, key });
+    // Issue 855: a saved key that is LAP_API_KEY counts in the site key's quota check, once.
+    if (key) targets.push({ unionId: r.unionId, key: isSiteKey(key.apiKey) ? null : key });
   }
   return targets;
 }
@@ -334,8 +376,11 @@ async function keyTargets(db: Db, secret: string | undefined, now: Date): Promis
   if (!secret) return targets;
   for (const r of rows) {
     if (squadsKey(stored(r), secret, now) !== "own") continue;
-    const key = await opened(db, secret, r, now);
-    if (!key) continue;
+    const opens = await opened(db, secret, r, now);
+    if (!opens) continue;
+    // Issue 855: a saved key that is LAP_API_KEY reads as the site's key: its reserve, its event pause, its
+    // one quota count, and a 429 on it marks no workspace key.
+    const key = isSiteKey(opens.apiKey) ? null : opens;
     const target = { unionId: r.unionId, workspaceId: r.workspaceId, slug: r.slug, key };
     if (r.unionId === OWN_ALLIANCE_ID) targets.unshift(target);
     else targets.push(target);

@@ -17,7 +17,14 @@ import {
   storeKey,
 } from "../repo/workspace-keys";
 import type { V1Source } from "../sources/types";
-import { checkKey, keyUsable, masterFingerprint, sealKey, TRACKER_KEY } from "../workspace-keys";
+import {
+  checkKey,
+  keyUsable,
+  masterFingerprint,
+  savedIsSiteKey,
+  sealKey,
+  TRACKER_KEY,
+} from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
 
 /** The route's body: a key to set (or replace), or Remove. The key is checked here, at the boundary. */
@@ -50,13 +57,19 @@ export interface TrackerKeyView {
   checkedAt: Date | null;
 }
 
+/** The key's view, and `siteKey`: the saved key is LAP_API_KEY itself (issue 855), a boolean only. */
 export async function trackerKeyView(
   db: Db,
   access: WorkspaceAccess,
   env: Pick<Env, "WORKSPACE_KEYS_SECRET">,
   now: Date,
-): Promise<TrackerKeyView> {
-  return keyViewOf(access, await keyFacts(db, access.workspaceId), env.WORKSPACE_KEYS_SECRET, now);
+): Promise<TrackerKeyView & { siteKey: boolean }> {
+  const secret = env.WORKSPACE_KEYS_SECRET;
+  const [facts, siteKey] = await Promise.all([
+    keyFacts(db, access.workspaceId),
+    savedIsSiteKey(db, secret, access.workspaceId),
+  ]);
+  return { ...keyViewOf(access, facts, secret, now), siteKey };
 }
 
 /** The same, from the key's facts already read (the read status bar reads them once, D135). */
