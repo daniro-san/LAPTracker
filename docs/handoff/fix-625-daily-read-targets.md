@@ -1,10 +1,10 @@
 # fix-625-daily-read-targets: /admin/runs names a looked-up target the daily read never reached, and the automatic retry reads it (issue 625)
 
-Branch `fix/625-daily-read-targets` from `origin/dev` (bd0044d2; rebased after #769 took 0079). Size M: one migration (two nullable columns), no new decision, no route, no private field. D72 is respected and not amended.
+Branch `fix/625-daily-read-targets` from `origin/dev` (5b6fe6c9; rebased after #769 took 0079 and #784 took 0080). Size M: one migration (two nullable columns), no new decision, no route, no private field. D72 is respected and not amended.
 
 ## Built
 
-- **Migration `drizzle/0080_big_mister_sinister.sql`** (drizzle's generated tag), two nullable columns, no backfill:
+- **Migration `drizzle/0081_closed_king_cobra.sql`** (drizzle's generated tag), two nullable columns, no backfill:
   - `daily_reads.target_ids bigint[]`. Each claim of the day writes the targets of the attempt it starts: `claimDailyRead` (first read), `reclaimDailyRead` (/admin Retry) and `claimAutoRetry` (the tick's retry). It holds the latest attempt's targets, the list that attempt's outcome (`readDay`) is judged on. Null for days read before this change.
   - `daily_rosters.stored_at timestamptz`. `storeDailyRoster` takes the write time and sets it on insert and on the upsert; the read passes `deps.now()`, the lookup (`lib/lookup.ts`) its own `deps.now()`. Null for rows written before this change.
 - **One shared rule, `lookedUpThatDay(db)`** (`lib/repo/alliance-lookups.ts`): an `exists` on the `alliance_lookups` primary key, correlated with the `daily_rosters` row (same alliance, same day). `problemsOf` and the retry both use it. `lib/queries` importing `lib/repo` follows `docs/ARCHITECTURE.md` (`problemsOf` already imports `lib/repo/alliances`). `dailyRosterStates` is unchanged from dev, so `readDay` is untouched.
@@ -31,8 +31,8 @@ Branch `fix/625-daily-read-targets` from `origin/dev` (bd0044d2; rebased after #
 
 ## Verified
 
-- `pnpm vitest related --run` on the changed files: 382 files passed, 2 skipped; 2055 tests passed, 4 skipped.
-- `pnpm check` passed: prettier, eslint, tsc, vitest (382 files passed, 2 skipped; 2055 tests passed, 4 skipped), drizzle drift ("nothing to migrate"), i18n (17 languages up to date). One earlier run had four 10 s timeouts in unrelated files (`lib/squads-read.test.ts`, `lib/queries/carried.test.ts`, `app/(pages)/admin/gate.test.ts`, `app/(private)/api/w/[slug]/cross-workspace.test.ts`); they passed alone and in the next full run.
+- `pnpm vitest related --run` on the changed files: 383 files passed, 2 skipped; 2075 tests passed, 4 skipped.
+- `pnpm check` passed: prettier, eslint, tsc, vitest (383 files passed, 2 skipped; 2075 tests passed, 4 skipped), drizzle drift ("nothing to migrate"), i18n (17 languages up to date). One earlier run had four 10 s timeouts in unrelated files (`lib/squads-read.test.ts`, `lib/queries/carried.test.ts`, `app/(pages)/admin/gate.test.ts`, `app/(private)/api/w/[slug]/cross-workspace.test.ts`); they passed alone and in the next full run.
 - Each fix's test fails when the fix is broken on purpose (one break at a time, then restored):
 
   | Break | Test that fails |
@@ -57,7 +57,7 @@ That a lookup is refused for an alliance that is already a daily target, and tha
 
 ## Next
 
-- Apply migration `0080_big_mister_sinister` with the release (two nullable columns, no backfill).
+- Apply migration `0081_closed_king_cobra` with the release (two nullable columns, no backfill).
 - Close issue 625 with this PR.
 
 PR: (added by the orchestrator)
