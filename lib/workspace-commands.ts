@@ -29,7 +29,7 @@ export type SettingsChange =
 
 /**
  * Whether the change can add or remove a Discord command, so the servers that had commands are registered
- * again: a command's switch, a copy of every switch, a plan (D160), or a pause of an allowance a command
+ * again: a command's switch, a copy of every switch, a plan (D162), or a pause of an allowance a command
  * spends. A cap changes no command.
  */
 export const changesCommands = (c: SettingsChange): boolean =>

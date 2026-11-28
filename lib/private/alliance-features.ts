@@ -1,7 +1,7 @@
 // Alliance settings → Features (D134, issue 476): the officers turn on or off, themselves, each feature the
 // site's owner allows for their alliance. A feature the owner did not allow is not listed at all. Each one
 // that spends tracker calls on the alliance's own key says about how many, from the newest roster's member
-// count. D160: a feature the alliance's plan leaves out is not switchable either; it is listed with a calm
+// count. D162: a feature the alliance's plan leaves out is not switchable either; it is listed with a calm
 // "Premium" note instead, and the Plans page says what each plan covers. Every function takes a
 // WorkspaceAccess, so the workspace comes from the session, never a request.
 import { z } from "zod";
@@ -49,7 +49,7 @@ export interface AllianceFeature {
 }
 
 export interface AllianceFeaturesView {
-  /** `premium`: the group's features the alliance's plan leaves out (D160), shown with a "Premium" note. */
+  /** `premium`: the group's features the alliance's plan leaves out (D162), shown with a "Premium" note. */
   groups: { group: FeatureGroup; features: AllianceFeature[]; premium: Feature[] }[];
   /** The tracker calls the features on now spend: every quota day, and on Saturdays (UTC). */
   estimate: { daily: number; peak: number };
@@ -96,7 +96,7 @@ export async function allianceFeaturesView(
 
 /**
  * The officers' switch. rate_limited: past SWITCHES in the window. not_allowed: the owner did not allow the
- * feature, or the plan leaves it out (D160; a stale page). Through: the alliance's switch as stored after the save. A Discord command's switch registers the alliance's commands again when its server
+ * feature, or the plan leaves it out (D162; a stale page). Through: the alliance's switch as stored after the save. A Discord command's switch registers the alliance's commands again when its server
  * had them (D129), so a command turned off leaves the Apps menu.
  */
 export async function setAllianceFeature(
@@ -125,7 +125,7 @@ export async function setAllianceFeature(
   return { ok: true, on: !saved?.settings.allianceOff.includes(input.feature) };
 }
 
-/** D160: the alliance's plan, for its Plans page. `own`: the own alliance (OGs), which has everything. */
+/** D162: the alliance's plan, for its Plans page. `own`: the own alliance (OGs), which has everything. */
 export async function alliancePlanView(
   db: Db,
   access: WorkspaceAccess,

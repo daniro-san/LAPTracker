@@ -4,7 +4,7 @@
 // saying "Default (on)" or "Changed: off" with "Reset to default" when changed, and whether the alliance
 // turned an allowed one off; the two daily caps with today's use; the tracker calls the alliance's choices
 // spend; "Copy settings from" another workspace (asked first). Above the list, the global pause of each paid
-// allowance (the "Defaults for new alliances" are FeatureDefaults.tsx). D160: the plan and its grandfather
+// allowance (the "Defaults for new alliances" are FeatureDefaults.tsx). D162: the plan and its grandfather
 // flag. Every press sends the PIN as x-edit-pin through `run`.
 // A switch or cap saved counts as `admin_feature_changed` (issue 486).
 import { useState } from "react";
@@ -41,7 +41,7 @@ export interface FeaturesView {
   changed: readonly string[];
   /** Allowed, but turned off by the alliance's officers (D134). */
   allianceOff: readonly string[];
-  /** Left out by its plan (D160): counted as not allowed. */
+  /** Left out by its plan (D162): counted as not allowed. */
   locked: readonly string[];
   plan: PlanState;
   /** "Plan: Free · grandfathered (keeps what it had)". */
@@ -114,7 +114,7 @@ function Switch(props: {
   );
 }
 
-/** D160: the workspace's plan and its grandfather flag, one tap each; nothing is deleted either way. */
+/** D162: the workspace's plan and its grandfather flag, one tap each; nothing is deleted either way. */
 function PlanSwitch(props: { id: number; view: FeaturesView; run: Run; busy: boolean }) {
   const { plan, grandfathered } = props.view.plan;
   const send = (next: { plan: Plan; grandfathered: boolean }) =>

@@ -1,6 +1,6 @@
 // /admin's feature switches of one workspace, as its card shows them (D126, D134): its settings (its defaults
 // until the owner changes one), which owner values differ from the defaults, what the alliance turned off,
-// the tracker calls its choices spend now, and its plan (D160) with the features it leaves out. English
+// the tracker calls its choices spend now, and its plan (D162) with the features it leaves out. English
 // only (D48).
 import { OWN_ALLIANCE_ID } from "@/config/alliances";
 import { copy } from "@/lib/copy";
@@ -25,7 +25,7 @@ import type { FeaturesView } from "./WorkspaceFeatures";
 export const settingsFor = (all: AdminFeatures, w: AdminWorkspace): FeatureSettings =>
   all.settings.get(w.id)?.settings ?? defaultSettings(w.unionId, all.defaults, NEW_PLAN);
 
-/** "Plan: Free · grandfathered (keeps what it had)" (D160); OGs has everything whatever its plan. */
+/** "Plan: Free · grandfathered (keeps what it had)" (D162); OGs has everything whatever its plan. */
 function planLine(unionId: number, state: PlanState): string {
   const t = copy.admin.features.plan;
   if (unionId === OWN_ALLIANCE_ID) return t.own;

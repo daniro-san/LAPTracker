@@ -1,4 +1,4 @@
-// D160: where a premium feature would be in Alliance settings → Features, on a plan that leaves it out: its
+// D162: where a premium feature would be in Alliance settings → Features, on a plan that leaves it out: its
 // name, a "Premium" tag and one calm line, with a link to the Plans page (44 px). Officers only; nothing on
 // hover. People first (D75): it says what the plan covers, never what the alliance lacks.
 import { Tag } from "@/lib/brand/components/Tag";

@@ -1,4 +1,4 @@
-// D160: the place on the Plans page where a payment link goes once one exists. With no link it renders
+// D162: the place on the Plans page where a payment link goes once one exists. With no link it renders
 // nothing: there is no payment method yet, so no button, price or empty box is shown.
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";

@@ -155,7 +155,7 @@ describe("POST /api/w/[slug]/features (D134)", () => {
   });
 });
 
-describe("a premium feature on the free plan (D160)", () => {
+describe("a premium feature on the free plan (D162)", () => {
   it("is shown only as a Premium note, and its switch is refused like one the owner did not allow", async () => {
     await db.update(workspaces).set({ plan: "free" });
     expect(await listed()).not.toContain("insights");

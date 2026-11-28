@@ -83,7 +83,7 @@ export async function seedRoster(db: Db, unionId: number) {
 export async function seedWorkspace(db: Db, slug: string, unionId: number) {
   const [w] = await db
     .insert(workspaces)
-    // D160: premium, so every feature can be switched on as before plans.
+    // D162: premium, so every feature can be switched on as before plans.
     .values({
       unionId,
       slug,

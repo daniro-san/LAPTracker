@@ -401,13 +401,13 @@ export const workspaces = pgTable(
     castleX: integer("castle_x"),
     castleY: integer("castle_y"),
     /**
-     * The alliance's plan (D160): `free` (the core) or `premium` (the core and the complementary features,
+     * The alliance's plan (D162): `free` (the core) or `premium` (the core and the complementary features,
      * lib/workspace-features.ts `PLAN_FEATURES`). Set by the owner on /admin; no payment is attached yet.
      */
     plan: text("plan", { enum: ["free", "premium"] })
       .notNull()
       .default("free"),
-    /** D160: a workspace made before plans keeps what it had, whatever its plan, until the owner clears it. */
+    /** D162: a workspace made before plans keeps what it had, whatever its plan, until the owner clears it. */
     planGrandfathered: boolean("plan_grandfathered").notNull().default(false),
   },
   (t) => [check("workspaces_plan_check", sql`${t.plan} in ('free', 'premium')`)],

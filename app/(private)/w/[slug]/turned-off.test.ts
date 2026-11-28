@@ -122,7 +122,7 @@ describe("a page turned off for the alliance (D126, issue 483)", () => {
   });
 });
 
-describe("plans (D160)", () => {
+describe("plans (D162)", () => {
   it("send a member away from the Plans page to the board, so members never see plan words", async () => {
     await signIn("member");
     expect(await outcome(() => PlansPage({ params }))).toBe("→ /w/ogs/board");

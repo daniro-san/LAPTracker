@@ -47,7 +47,7 @@ beforeEach(async () => {
     discordGuildId: "3",
     leaderRoleIds: ["9"],
   });
-  // D160: premium, so the switches below are the owner's alone; the plan's own tests set it.
+  // D162: premium, so the switches below are the owner's alone; the plan's own tests set it.
   await db.update(workspaces).set({ plan: "premium" });
 });
 
@@ -92,7 +92,7 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     expect((await settingsOf(2))?.off).not.toContain("notice_translate");
   });
 
-  it("sets a workspace's plan and grandfather flag (D160)", async () => {
+  it("sets a workspace's plan and grandfather flag (D162)", async () => {
     const plan = (p: string, grandfathered: boolean, id = 2) =>
       post(TEST_PIN, { action: "plan", workspace_id: id, plan: p, grandfathered });
     expect((await plan("free", false)).status).toBe(200);

@@ -1,7 +1,7 @@
 // D126, D134: each workspace's features as served and its daily allowances. OGs keeps everything on with no cap
 // (today's behaviour, from code, with no data row); a new workspace starts with the paid features off; a
 // cap stops at N, starts again the next UTC day, and holds when requests arrive together at the boundary.
-// D160: the plan joins the owner's layer; nothing is deleted when it leaves a feature out.
+// D162: the plan joins the owner's layer; nothing is deleted when it leaves a feature out.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../../config/alliances";
@@ -66,7 +66,7 @@ describe("defaults (D126)", () => {
     expect([...ogs.on].sort()).toEqual([...FEATURES].sort());
     expect(ogs.caps).toEqual({ ai: null, translate: null });
     const nse = await served("nse");
-    // D160: a new workspace is on the free plan, so its premium features are off too.
+    // D162: a new workspace is on the free plan, so its premium features are off too.
     const paid = FEATURES.filter((f) => SPENDS[f] || TRACKER_CALLS[f] || isPremium(f));
     expect(paid.filter((f) => nse.on.has(f))).toEqual([]);
     expect(FEATURES.filter((f) => !paid.includes(f) && !nse.on.has(f))).toEqual([]);
@@ -197,7 +197,7 @@ describe("two layers over the defaults (D134)", () => {
   });
 });
 
-describe("plans (D160)", () => {
+describe("plans (D162)", () => {
   const PREMIUM_PLAN = { plan: "premium", grandfathered: false } as const;
   const FREE_PLAN = { plan: "free", grandfathered: false } as const;
 

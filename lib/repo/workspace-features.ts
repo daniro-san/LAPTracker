@@ -41,7 +41,7 @@ export interface WorkspaceSettings {
   settings: FeatureSettings;
   defaults: OwnerSettings;
   stored: StoredOverrides;
-  /** D160: its plan, set by the owner on /admin. */
+  /** D162: its plan, set by the owner on /admin. */
   plan: PlanState;
 }
 
@@ -217,7 +217,7 @@ export async function setAllianceSwitch(
 }
 
 /**
- * D160: the owner sets a workspace's plan and whether it is grandfathered, in one statement. Nothing else
+ * D162: the owner sets a workspace's plan and whether it is grandfathered, in one statement. Nothing else
  * changes: every switch stays stored, so a feature the plan leaves out comes back as it was. False: no such
  * workspace.
  */

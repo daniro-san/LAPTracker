@@ -3,7 +3,7 @@
 // and French: one module the three workspace dictionaries spread. A feature turned off is otherwise simply
 // not there, with no line about it (D126 amendment, issue 483).
 // French puts a no-break space before : and inside « ». Alliance settings' own switches (D134) come with it.
-// D160: the plans' words (officers only) come with it too.
+// D162: the plans' words (officers only) come with it too.
 import { plansEn, plansFr, plansPt } from "./dictionary.plans";
 import { switchesEn, switchesFr, switchesPt } from "./dictionary.switches";
 

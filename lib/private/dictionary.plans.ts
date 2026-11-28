@@ -1,4 +1,4 @@
-// D160: the alliance's plan, for officers only: the calm "Premium" note where a premium feature would be in
+// D162: the alliance's plan, for officers only: the calm "Premium" note where a premium feature would be in
 // Alliance settings → Features, and the Plans page that says what each plan covers and why. No price and no
 // payment yet: `plans.payment` is the label of the slot a payment link takes later. Members never see these
 // words. English, Brazilian Portuguese and French: one module that dictionary.features.ts spreads.

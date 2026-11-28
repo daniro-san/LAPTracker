@@ -3,7 +3,7 @@
 // lib/private's `featureOn` and `useAllowance` resolve a workspace's settings with it, and the squads read
 // (lib/workspace-keys.ts) skips a workspace whose squads read is off. Turning a feature off hides it and
 // refuses its routes; nothing is deleted, so turning it on again shows everything as it was. D134: two
-// layers, the owner allows and the alliance turns on, over /admin's "Defaults for new alliances". D160: the
+// layers, the owner allows and the alliance turns on, over /admin's "Defaults for new alliances". D162: the
 // workspace's plan joins the owner's layer; a feature its plan leaves out counts as not allowed.
 import { OWN_ALLIANCE_ID } from "../config/alliances";
 
@@ -40,11 +40,11 @@ export type FeatureGroup = keyof typeof FEATURE_GROUPS;
 export type Feature = (typeof FEATURE_GROUPS)[FeatureGroup][number];
 export const FEATURES: readonly Feature[] = Object.values(FEATURE_GROUPS).flat();
 
-/** D160: an alliance's plan. The owner sets it on /admin; no payment is attached yet. */
+/** D162: an alliance's plan. The owner sets it on /admin; no payment is attached yet. */
 export const PLANS = ["free", "premium"] as const;
 export type Plan = (typeof PLANS)[number];
 
-/** A workspace's plan, and whether it keeps what it had before plans (D160, grandfathered). */
+/** A workspace's plan, and whether it keeps what it had before plans (D162, grandfathered). */
 export interface PlanState {
   plan: Plan;
   grandfathered: boolean;
@@ -54,7 +54,7 @@ export interface PlanState {
 export const NEW_PLAN: PlanState = { plan: "free", grandfathered: false };
 
 /**
- * D160: the complementary features that cost processing (tracker calls, the model, our server's reader).
+ * D162: the complementary features that cost processing (tracker calls, the model, our server's reader).
  * Everything else is the core and stays on the free plan: privacy, safety, export and delete, the members'
  * board, and Discord sending of what officers write are never here.
  */
@@ -72,7 +72,7 @@ const PREMIUM: ReadonlySet<Feature> = new Set<Feature>([
   "shield_check",
 ]);
 
-/** D160: the features each plan covers. */
+/** D162: the features each plan covers. */
 export const PLAN_FEATURES: Record<Plan, readonly Feature[]> = {
   free: FEATURES.filter((f) => !PREMIUM.has(f)),
   premium: FEATURES,
@@ -82,7 +82,7 @@ export const PLAN_FEATURES: Record<Plan, readonly Feature[]> = {
 export const isPremium = (f: Feature): boolean => PREMIUM.has(f);
 
 /**
- * The features a workspace's plan leaves out (D160): none for the own alliance (OGs) or a grandfathered
+ * The features a workspace's plan leaves out (D162): none for the own alliance (OGs) or a grandfathered
  * workspace, else what its plan does not cover.
  */
 export function planLocked(unionId: number, state: PlanState): Feature[] {
@@ -160,7 +160,7 @@ export function trackerEstimate(
 /**
  * What a workspace has: the features the owner did not allow (`off`), each allowance's daily cap (null: no
  * cap), the allowed features its officers turned off in Alliance settings (`allianceOff`, D134), and the
- * features its plan leaves out (`locked`, D160), which count as not allowed wherever `off` is read.
+ * features its plan leaves out (`locked`, D162), which count as not allowed wherever `off` is read.
  */
 export interface FeatureSettings {
   off: readonly Feature[];
@@ -172,7 +172,7 @@ export interface FeatureSettings {
 /** The owner's values for a workspace: what is allowed, and the caps. */
 export type OwnerSettings = Omit<FeatureSettings, "allianceOff" | "locked">;
 
-/** D134, D160: the owner allows the feature and the workspace's plan covers it. */
+/** D134, D162: the owner allows the feature and the workspace's plan covers it. */
 export const allowed = (settings: FeatureSettings, f: Feature): boolean =>
   !settings.off.includes(f) && !settings.locked.includes(f);
 
@@ -249,7 +249,7 @@ export interface WorkspaceFeatures {
 }
 
 /**
- * On: allowed by the owner and covered by the plan (D160), turned on by the alliance (D134), and its
+ * On: allowed by the owner and covered by the plan (D162), turned on by the alliance (D134), and its
  * allowance not paused for everyone.
  */
 export function resolveFeatures(
@@ -274,7 +274,7 @@ export const picturesShown = (on: ReadonlySet<Feature>) =>
 /**
  * A workspace's settings from its stored overrides (null: no row yet). A key the owner did not set follows
  * the defaults, so changing a default moves every workspace still on it, and a feature added to the catalog
- * later starts with its default; a stored key no longer in the catalog is ignored. The plan (D160) only adds
+ * later starts with its default; a stored key no longer in the catalog is ignored. The plan (D162) only adds
  * `locked`: the owner's and the alliance's values stay stored as they are, so a plan change loses nothing.
  */
 export function storedSettings(

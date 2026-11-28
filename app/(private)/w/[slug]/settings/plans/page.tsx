@@ -1,4 +1,4 @@
-// /w/[slug]/settings/plans: Alliance settings → Plans (D160). What the alliance's plan is, what each plan
+// /w/[slug]/settings/plans: Alliance settings → Plans (D162). What the alliance's plan is, what each plan
 // covers (from PLAN_FEATURES, the one mapping) and why, and that changing plans deletes nothing. No price and
 // no payment yet: PlanPaymentSlot renders nothing until a payment link exists. Officers only: a member's
 // session goes to the board (refuse.ts), so members never see plan words.
@@ -20,7 +20,7 @@ import { SignedInFrame, workspaceWords } from "../../../../_ui/Frame";
 import { PlanPaymentSlot } from "../../../../_ui/PlanPaymentSlot";
 import { refuse } from "../../../../_ui/refuse";
 
-/** No payment method yet (D160): the slot stays empty until this is a link. */
+/** No payment method yet (D162): the slot stays empty until this is a link. */
 const PAYMENT_HREF: string | null = null;
 
 function currentLine(
