@@ -15,6 +15,20 @@ import { DrilldownLink } from "../DrilldownLink";
 
 /** The column the readout around a part has chosen. */
 const Chosen = createContext<number | null>(null);
+/** Chooses a column of the readout around a part, as its steps do (a search inside the chart). */
+const Choose = createContext<(i: number) => void>(() => undefined);
+
+/** The readout's own step: a part inside it (the KvK map's Find) moves the line to a column. */
+export const useReadoutGo = () => useContext(Choose);
+
+/** The chart's parts get the chosen column and the readout's step. */
+function Provide({ at, go, part }: { at: number; go: (i: number) => void; part: ReactNode }) {
+  return (
+    <Choose.Provider value={go}>
+      <Chosen.Provider value={at}>{part}</Chosen.Provider>
+    </Choose.Provider>
+  );
+}
 
 export interface ReadoutItem {
   /** "11:00–11:15", the column's name. */
@@ -80,7 +94,7 @@ export function Readout(props: {
           if (col) go(Number(col.dataset.at));
         }}
       >
-        <Chosen.Provider value={at}>{props.children}</Chosen.Provider>
+        <Provide at={at} go={go} part={props.children} />
       </div>
       {item && (
         <div

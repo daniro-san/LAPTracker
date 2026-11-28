@@ -15,6 +15,7 @@ Part 2 of issue #817: zoom levels, other alliances' clusters, Find, layer chips,
   - Fit level: own members are small dots. The near/mid/far counts are stacked in one block beside the far ring, which is drawn dashed round the castle. Without a castle point there is one "n members" label instead. Other alliances are muted discs labelled "TAG · n" at their centre. No member names and no tap targets at this level.
   - City level: part 1's houses with names, shield rings and the "Kills bands" layer, which draws part 1's old band dot at the house's corner (plum and larger for more, grey for fewer, hollow for none, faint for unknown). Clusters show here too when they are in the box.
   - A tap on a house or name opens the sheet and still moves the readout. A drag over 6 px is not a tap.
+  - Drag rules (coordinator's review): the map surface is `touch-action: pan-y` at both levels, so a vertical one-finger swipe scrolls the page. A one-finger drag pans only when it starts mostly sideways, and then only sideways. A mouse or pen drag pans any way; two fingers pan any way by their mean move. A pointer the browser takes for scrolling is cancelled (`axisOf`, `alongAxis` in `kvk-map-view.ts`).
 - `app/(private)/_ui/KvkMapControls.tsx` holds:
   - Fit, +, − and Find, each 44 px. Find opens a field; each match is a 44 px chip.
   - Layer chips (Shields, Kills bands, Names, `aria-pressed`) and Filters inside a `<details>`. The ring group shows only when the rings exist.
@@ -36,7 +37,7 @@ Part 2 of issue #817: zoom levels, other alliances' clusters, Find, layer chips,
 - "n" in "TAG · n" is the roster's `member_count`, matching the reference "TAG 94". The centre uses only the placed members.
 - A member's ring is the distance band that counts them, so the fit-level counts equal the table. A member with unknown kills has no ring and is hidden while a ring filter is on.
 - The fit level is the default view. City level opens with + or Find.
-- Find selects a member by opening their sheet and framing them at 40 squares (or the city start if that is smaller). It does not move the readout, which keeps its own state.
+- Find selects a member by opening their sheet and framing them at 40 squares (or the city start if that is smaller). It also moves the readout to that member, through `useReadoutGo`, a small hook `app/_ui/charts/Readout.tsx` now exports. It gives a part inside the readout the same step the ‹ › buttons use.
 - The selected house's seal ring follows the sheet. The readout's `aria-current` marking stays as before.
 - Pinch zoom was not built; the spec made it optional.
 
@@ -46,11 +47,12 @@ Part 2 of issue #817: zoom levels, other alliances' clusters, Find, layer chips,
 ## Verified
 - `pnpm vitest related --run` on the changed files: 109 files, 639 tests passed.
 - `pnpm check`: exit 0, 400 files, 2197 tests passed. Drift and i18n are clean.
+- After the drag and readout fix: `pnpm vitest related --run` on the changed files passed. The first `pnpm check` caught the roster-field guard (`roster-fields.test.ts`) flagging the axis literal `"x"`, so the axis was renamed to `"sideways"`. The rerun passed: exit 0, 2198 tests. One new test covers the drag rules, including `touch-pan-y` on the plot at both levels. Find's readout step has no unit test: the suite has no DOM. Not checked on a real phone.
 - 360 px screenshots, light and dark. They use 12 invented members, a castle point and 3 invented clusters, rendered with `renderToStaticMarkup`, the app's compiled Tailwind CSS and system Chrome through playwright-core. No horizontal scroll (scrollWidth 360). They were not committed. They show the fit level, the city level with kill bands on, and the sheet open.
 - The first render showed the ring counts overlapping when the clusters were far apart, so they became one stacked block. A sheet label wrapped mid-word, so the label column became `shrink-0`.
 
 ## Open issues
-- The scene uses `touch-none` at city level, so a vertical swipe on the plot pans the map instead of scrolling the page. Fit level scrolls normally.
+- With `pan-y`, the browser may take a two-finger vertical move for scrolling, so two-finger panning is best-effort.
 - After a pan, houses re-mount and lose the readout's `aria-current` bold name until the next ‹ › step.
 - At fit level the castle drawing covers the own dots when the alliance is small relative to the frame.
 - Chip frames (`drawn-frame-soft` masks) did not load in the static screenshots. In the app they load as usual.

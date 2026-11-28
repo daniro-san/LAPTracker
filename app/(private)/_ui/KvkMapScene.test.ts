@@ -1,6 +1,7 @@
 // The KvK map's scene (issue 817 part 2): the fit level shows ring counts and the other alliances' "TAG · n"
 // without a member name; the city level draws only the houses in the visible box; Find picks a member and
-// opens their sheet; the sheet's facts; the layer chips turn shields, kills bands and names on and off.
+// opens their sheet; the sheet's facts; the layer chips turn shields, kills bands and names on and off; a
+// vertical one-finger swipe scrolls the page, a sideways one or a mouse or two-finger drag pans.
 // Invented names, places and kills.
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -10,7 +11,15 @@ import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { kvkMapOf } from "@/lib/private/kvk-map";
 
 import { sceneOf, sceneWordsOf } from "./kvk-map-scene-data";
-import { findOf, START, sceneStep, visibleOf, type SceneState } from "./kvk-map-view";
+import {
+  alongAxis,
+  axisOf,
+  findOf,
+  START,
+  sceneStep,
+  visibleOf,
+  type SceneState,
+} from "./kvk-map-view";
 import { SceneView } from "./KvkMapScene";
 
 const t = WORKSPACE_DICTIONARIES.en;
@@ -112,5 +121,19 @@ describe("the KvK map scene (issue 817)", () => {
     // Kills bands: Cedar gained more than the median, a plum mark at the house's corner.
     expect(plotOf(before)).not.toContain("fill-plum");
     expect(plotOf(render(step(city, { type: "layer", key: "bands" })))).toContain("fill-plum");
+  });
+
+  it("leaves a vertical one-finger swipe to the page and pans a sideways one, a mouse or two fingers", () => {
+    // The plot lets the browser scroll vertically on a phone at both levels.
+    expect(render(START).match(/<div[^>]*data-level="fit"[^>]*>/)?.[0]).toContain("touch-pan-y");
+    expect(
+      render(step(START, { type: "in" })).match(/<div[^>]*data-level="city"[^>]*>/)?.[0],
+    ).toContain("touch-pan-y");
+    expect(axisOf("touch", 1, 3, 20)).toBeNull();
+    expect(axisOf("touch", 1, 20, 3)).toBe("sideways");
+    expect(alongAxis("sideways", 20, 3)).toEqual({ dx: 20, dy: 0 });
+    expect(axisOf("touch", 2, 3, 20)).toBe("any");
+    expect(axisOf("mouse", 1, 3, 20)).toBe("any");
+    expect(alongAxis("any", 3, 20)).toEqual({ dx: 3, dy: 20 });
   });
 });

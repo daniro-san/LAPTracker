@@ -24,6 +24,8 @@ import {
   HOUSE,
   RING,
   START,
+  alongAxis,
+  axisOf,
   edgesOf,
   frameIn,
   labelsOf,
@@ -31,6 +33,7 @@ import {
   project,
   sceneStep,
   visibleOf,
+  type Axis,
   type Box,
   type Mark,
   type Point,
@@ -247,33 +250,59 @@ function CityLevel({ data, state }: Pick<Props, "data" | "state">) {
   );
 }
 
-/** The plot: a drag pans the city level (and is not a tap); a tap on a house or a name opens its sheet. */
-function Plot({ data, state, dispatch }: Omit<Props, "words">) {
-  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
-  const city = state.view.level === "city";
+/** A drag over the plot: the pointers down, the axis once past the slop (undefined before), and whether
+ * it panned (then its click is not a tap). */
+type Drag = { at: Map<number, { x: number; y: number }>; axis: Axis | undefined; moved: boolean };
+
+/** The city level's drag (axisOf's rules); a pointer the browser takes for scrolling is cancelled. */
+function useDrag(city: boolean, dispatch: Props["dispatch"]) {
+  const drag = useRef<Drag | null>(null);
   const move = (e: PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
-    if (!d) return;
-    const [dx, dy] = [e.clientX - d.x, e.clientY - d.y];
-    if (!d.moved && Math.hypot(dx, dy) < SLOP) return;
-    if (!d.moved) e.currentTarget.setPointerCapture(e.pointerId);
+    const last = d?.at.get(e.pointerId);
+    if (!d || !last || d.axis === null) return;
+    const [dx, dy] = [e.clientX - last.x, e.clientY - last.y];
+    if (d.axis === undefined) {
+      if (Math.hypot(dx, dy) < SLOP) return;
+      d.axis = axisOf(e.pointerType, d.at.size, dx, dy);
+      if (d.axis === null) return;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
     d.moved = true;
-    const w = e.currentTarget.clientWidth || 1;
-    dispatch({ type: "pan", dx: (dx * 100) / w, dy: (dy * 100) / w });
-    [d.x, d.y] = [e.clientX, e.clientY];
+    d.at.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // Two fingers move the box by their mean: each finger's move counts for half.
+    const k = 100 / ((e.currentTarget.clientWidth || 1) * d.at.size);
+    dispatch({ type: "pan", ...alongAxis(d.axis, dx * k, dy * k) });
   };
+  const down = (e: PointerEvent<HTMLDivElement>) => {
+    if (!city) return;
+    // A new gesture, or a second finger joining one before it panned: the axis is decided again.
+    if (!drag.current || drag.current.at.size === 0)
+      drag.current = { at: new Map(), axis: undefined, moved: false };
+    else if (!drag.current.moved) drag.current.axis = undefined;
+    drag.current.at.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  };
+  const up = (e: PointerEvent<HTMLDivElement>) => {
+    drag.current?.at.delete(e.pointerId);
+    if (drag.current && !drag.current.moved && drag.current.at.size === 0) drag.current = null;
+  };
+  return { drag, move, down, up };
+}
+
+/** The plot: a drag pans the city level (and is not a tap); a tap on a house or a name opens its sheet.
+ * touch-action: pan-y leaves a vertical swipe to the page, so a phone never gets stuck on the map. */
+function Plot({ data, state, dispatch }: Omit<Props, "words">) {
+  const city = state.view.level === "city";
+  const { drag, move, down, up } = useDrag(city, dispatch);
   return (
     <div
       aria-hidden="true"
       data-level={state.view.level}
-      className={`relative mt-2 aspect-square w-full max-w-md overflow-hidden border border-rule select-none ${city ? "cursor-grab touch-none" : ""}`}
-      onPointerDown={(e) => {
-        drag.current = city ? { x: e.clientX, y: e.clientY, moved: false } : null;
-      }}
+      className={`relative mt-2 aspect-square w-full max-w-md touch-pan-y overflow-hidden border border-rule select-none ${city ? "cursor-grab" : ""}`}
+      onPointerDown={down}
       onPointerMove={move}
-      onPointerUp={() => {
-        if (drag.current && !drag.current.moved) drag.current = null;
-      }}
+      onPointerUp={up}
+      onPointerCancel={up}
       onClickCapture={(e) => {
         // The click that ends a drag is not a tap: neither the sheet nor the readout picks it up.
         if (drag.current?.moved) e.stopPropagation();

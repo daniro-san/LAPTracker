@@ -153,6 +153,21 @@ export function panned(view: View, dx: number, dy: number): View {
   return { ...view, cx: view.cx - (dx * view.span) / 100, cy: view.cy + (dy * view.span) / 100 };
 }
 
+/** How a drag pans the city level, decided once it passes the slop: "any" way, sideways only ("sideways"), or not
+ * at all (null, the page scrolls). A mouse or a pen pans any way; two fingers too; one finger pans only a
+ * mostly sideways drag, so a vertical swipe over the map scrolls the page (the map is touch-action: pan-y). */
+export type Axis = "any" | "sideways" | null;
+export function axisOf(kind: string, fingers: number, dx: number, dy: number): Axis {
+  if (kind !== "touch" || fingers >= 2) return "any";
+  return Math.abs(dx) > Math.abs(dy) ? "sideways" : null;
+}
+
+/** A move of (dx, dy) along the drag's axis. */
+export const alongAxis = (axis: "any" | "sideways", dx: number, dy: number) => ({
+  dx,
+  dy: axis === "sideways" ? 0 : dy,
+});
+
 /** Find: the members whose name holds `query`, any case, in name order; none for an empty query. */
 export function findOf(dots: { name: string }[], query: string, limit = 8): number[] {
   const q = query.trim().toLocaleLowerCase();

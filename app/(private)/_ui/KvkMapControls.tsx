@@ -1,10 +1,12 @@
 "use client";
 
 // The KvK map scene's controls (issue 817 part 2): Fit, +, −, Find (each 44 px), the layer chips and the
-// filters behind Filters, and the tapped member's sheet with its facts and the member card's link. Nothing
-// is hover-only; every word comes from the server.
+// filters behind Filters, and the tapped member's sheet with its facts and the member card's link. Find
+// also moves the readout around the scene to its member. Nothing is hover-only; every word comes from the
+// server.
 import { useState, type Dispatch } from "react";
 
+import { useReadoutGo } from "@/app/_ui/charts/Readout";
 import { chip } from "@/lib/brand/components/controls";
 import { Sheet, type SheetWords } from "@/lib/brand/components/Sheet";
 import type { Ring } from "@/lib/private/kvk-map";
@@ -56,6 +58,8 @@ export type Props = {
 function Find({ data, words, dispatch }: Pick<Props, "data" | "words" | "dispatch">) {
   const [query, setQuery] = useState("");
   const found = findOf(data.dots, query);
+  // The readout around the scene names the member Find picked, as a tap on its house does.
+  const go = useReadoutGo();
   return (
     <div className="mt-2">
       <label className="block text-body-sm font-medium" htmlFor="kvk-map-find">
@@ -78,7 +82,10 @@ function Find({ data, words, dispatch }: Pick<Props, "data" | "words" | "dispatc
             key={i}
             type="button"
             className={chip()}
-            onClick={() => dispatch({ type: "find", i })}
+            onClick={() => {
+              dispatch({ type: "find", i });
+              go(i);
+            }}
           >
             <bdi translate="no">{(data.dots[i] as SceneDot).name}</bdi>
           </button>
