@@ -93,7 +93,8 @@ function rankFacts(own: PlayerInAlliance | null, copy: Dictionary): DossierFact[
 }
 
 /** Might and kills, one point per daily read's day (the newest reading of a day when the player was in two
- * rosters that day), oldest first; a series with no known value is left out. */
+ * rosters that day), oldest first, with the events' Start and End readings as marks; a series with no known
+ * daily value is left out. */
 export function playerGrowth(
   readings: ProgressReading[],
   locale: string,
@@ -108,6 +109,10 @@ export function playerGrowth(
     points: days.flatMap(([day, r]) => {
       const value = r[key];
       return value === null ? [] : [{ day, value }];
+    }),
+    marks: readings.flatMap((r) => {
+      const value = r[key];
+      return r.event === null || value === null ? [] : [{ at: r.at, value }];
     }),
     format: (n) => compact(n, locale),
   });

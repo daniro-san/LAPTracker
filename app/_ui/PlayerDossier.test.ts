@@ -86,7 +86,7 @@ describe("the player page's head", () => {
 });
 
 describe("playerGrowth", () => {
-  it("takes one point per daily read's day, so each range keeps only its own days", () => {
+  it("takes one point per daily read's day and marks event readings; each range keeps its own days", () => {
     const readings = [
       reading("2026-08-01", { power: 1 }),
       reading("2026-11-20", { power: 200 }),
@@ -96,6 +96,8 @@ describe("playerGrowth", () => {
     ];
     const [might, kills] = playerGrowth(readings, "en", en);
     expect(might?.points.map((p) => p.value)).toEqual([1, 200, 220]);
+    // The event reading is a mark (a hollow dot), not a day of the line.
+    expect(might?.marks?.map((m) => m.value)).toEqual([999]);
     expect(kills?.points.map((p) => p.day)).toEqual(["2026-08-01", "2026-11-20"]);
     expect(inRange(might?.points ?? [], 7).map((p) => p.day)).toEqual(["2026-11-20", "2026-11-27"]);
     expect(inRange(might?.points ?? [], 90)).toHaveLength(2);

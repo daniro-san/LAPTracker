@@ -1,7 +1,7 @@
 // `/players/[uid][?range=7d|30d|90d]`: one player, on the alliance page's head and growth card (issue 824): the
-// photo, the name and the head's facts, might and kills over 7, 30 or 90 days of daily reads, then History: the
-// timelines and name history, daily progress, day by day (issue 773) and the across-events view (plan Phase 5d,
-// 5e).
+// photo, the name and the head's facts; might and kills over 7, 30 or 90 days of daily reads, with the 7-day
+// comparison line and the events' readings as hollow dots (what was "Daily progress", issue 270); then History:
+// the timelines and name history, day by day (issue 773) and the across-events view (plan Phase 5d, 5e).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -19,7 +19,7 @@ import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
 import { PlayerDays } from "@/app/_ui/PlayerDays";
 import { HistoryHeading, playerAlliance, playerFacts, playerGrowth } from "@/app/_ui/PlayerDossier";
-import { PlayerProgress } from "@/app/_ui/PlayerProgress";
+import { bandsOf, EventNote, summaryText } from "@/app/_ui/PlayerProgress";
 import { cardPreview } from "@/app/_ui/preview";
 import { sharedEvents, sharedPlayer } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
@@ -119,7 +119,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 type Loaded = NonNullable<Awaited<ReturnType<typeof loadPlayer>>>;
 
-/** The History tab: the timelines and name history, daily progress, day by day and the across-events view. */
+/** The History tab: the timelines and name history, day by day and the across-events view. */
 function History({
   data: { history, progress },
   before,
@@ -138,7 +138,6 @@ function History({
         <Legend copy={copy} />
       </div>
       <Timelines history={history} clock={clock} copy={copy} />
-      <PlayerProgress progress={progress} clock={clock} />
       <PlayerDays
         uid={history.uid}
         steps={progressSteps(progress.readings)}
@@ -209,6 +208,7 @@ export default async function PlayerPage({
   const { history, events, progress, read } = data;
   const alliance = playerAlliance(read, progress.readings.at(-1), history);
   const growth = playerGrowth(progress.readings, locale, copy);
+  const bands = bandsOf(progress.readings);
   return (
     <>
       <SiteHeader
@@ -243,6 +243,9 @@ export default async function PlayerPage({
             hrefOf={(r) => `/players/${uid}?range=${r}d`}
             clock={clock}
             copy={copy}
+            lead={summaryText(progress, clock, locale, copy)}
+            bands={bands}
+            note={<EventNote bands={bands} clock={clock} copy={copy} />}
           />
         )}
         <History data={data} before={before} clock={clock} copy={copy} />

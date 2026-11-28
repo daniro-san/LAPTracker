@@ -136,7 +136,12 @@ test("a player's might chart names a reading under it at a step, and the address
 }) => {
   await page.goto(`/players/${memberUid("a", 0)}`);
   await expect(page.getByRole("heading", { level: 1, name: A.names[0] as string })).toBeVisible();
-  const progress = page.locator("section").filter({ hasText: "Daily progress" });
+  const progress = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { level: 2, name: "Growth" }) });
+  // What was Daily progress is in the growth card: the 7-day comparison and the events' note.
+  await sees(progress, `Typical [${A.tag}] member`);
+  await sees(progress, "Might often drops in war events.");
   // The first readout in the card is the might chart's; it starts on the newest reading, the last daily read.
   const line = progress.locator("p[aria-live]").first();
   const day = shown(lastRosterDay(), "en-GB", { day: "numeric", month: "short" });
@@ -153,10 +158,13 @@ test("a player's might chart names a reading under it at a step, and the address
   await expect(line).not.toHaveText(newest);
   await expect(later).toBeEnabled();
   const stepped = (await line.textContent()) ?? "";
-  await expect(page).toHaveURL(/#at-might-\d+$/);
-  // Back to the page (a reload here) shows the same reading.
+  await expect(page).toHaveURL(/#at-growth-power-\d+$/);
+  // Back to the page (a reload here) shows the same reading. The range links' prefetches finish first, so the
+  // guard reads every answer (a reload would cut them off unread); the public player page does not poll.
+  await page.waitForLoadState("networkidle");
   await page.reload();
   await expect(line).toHaveText(stepped);
+  await page.waitForLoadState("networkidle");
 });
 
 test("an event's ledger marks the change that members who joined or left moved, and splits it", async ({

@@ -1,7 +1,7 @@
 // "Day by day" on the player page (issue 773): each reading of the player (the daily update, an event's
 // Start or End) against the one before it, newest first, 14 a page: when and what was read, the alliance,
 // Might and Kills with their change, a rename, a move to another alliance, and the days with no reading
-// the change spans. Built from the same readings as "Daily progress", so the page has one history. The same
+// the change spans. Built from the same readings as the growth card, so the page has one history. The same
 // list at every width; the two figures sit side by side from 360 px.
 import { TextLink } from "@/lib/brand/components/TextLink";
 import type { Dictionary } from "@/lib/copy";
