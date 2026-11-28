@@ -13,6 +13,7 @@ import { chip } from "@/lib/brand/components/controls";
 import type { DraftSummary, Outcome } from "@/lib/private/import";
 import type { ImportKind, Scope, Screen } from "@/lib/private/import-kinds";
 import { fill, plural } from "@/lib/words";
+import { FREE_SHOTS_A_WEEK } from "@/lib/workspace-features";
 
 import { isSignedOut, post, readAll } from "./screenshot-upload";
 import { FilePicker, type Preset } from "./ScreenshotPicker";
@@ -125,17 +126,21 @@ function useSend(props: SendProps) {
       track("ws_screenshot_failed", { stage: "too_many" });
       return setError(fill(w["shots.tooMany"] ?? "", { n: maxPictures }));
     }
-    const { pages, signedOut } = await readAll(files, slug, props.statusBar, setProgress);
+    const { pages, signedOut, capped } = await readAll(files, slug, props.statusBar, setProgress);
     setProgress(null);
     if (signedOut) {
       track("ws_screenshot_failed", { stage: "signed_out" });
       return setError(SIGNED_OUT);
     }
+    // D162: the pictures read before the week's cap still become drafts; the line says why the rest did not.
+    const cap = capped ? fill(w["shots.cap"] ?? "", { n: FREE_SHOTS_A_WEEK }) : null;
     if (pages.length === 0) {
+      if (cap) return setError(cap);
       track("ws_screenshot_failed", { stage: "read" });
       return setError(w["shots.readFailed"] ?? "");
     }
     await makeDrafts(pages, files.length - pages.length, undefined, preset);
+    if (cap) setError(cap);
   }
   return { progress, busy, result, setResult, error, unsent, makeDrafts, run, send };
 }

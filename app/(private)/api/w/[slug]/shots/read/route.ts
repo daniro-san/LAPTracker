@@ -2,10 +2,11 @@
 // sends it as PNG, without the phone's status bar and scaled down; the OCR reads it and its text lines come
 // back. The picture is read in memory and not kept. Officers of the workspace only (D71). Also "Read from a
 // screenshot" beside the facts' paste boxes (D109): one read at a time per officer, else 429 `busy`.
-// `?text=plain` reads the picture in plain grey only, for the garrison plan's enemy might (D121).
+// `?text=plain` reads the picture in plain grey only, for the garrison plan's enemy might (D121). D162: on
+// the free plan each picture counts against the week's screenshots, else 429 `cap_reached`.
 import { requireWorkspace } from "@/lib/private/access";
 import { withActionEvent } from "@/lib/private/desk-action";
-import { featureOn } from "@/lib/private/features";
+import { featureOn, useShotReads } from "@/lib/private/features";
 import {
   isSameOriginPicture,
   NO_STORE,
@@ -50,6 +51,9 @@ export async function POST(
     if (!startReading(officer)) return privateError(429, "busy");
     let lines: string[] | null;
     try {
+      // D162: the free plan's weekly screenshots; a refused picture is not read.
+      if ((await useShotReads(db, access, 1, ctx.now())) === "cap_reached")
+        return privateError(429, "cap_reached");
       const bytes = new Uint8Array(await request.arrayBuffer());
       if (bytes.length === 0 || bytes.length > MAX_UPLOAD) return privateError(413, "too_large");
       // A worker that dies or stalls fails the request with a code (500 "internal"), never a timeout;

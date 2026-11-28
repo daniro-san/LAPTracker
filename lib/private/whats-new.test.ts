@@ -17,6 +17,8 @@ const withOff = (...off: Feature[]) => ({
   features: {
     on: new Set(FEATURES.filter((f) => !off.includes(f))),
     caps: { ai: 0, translate: 0 },
+    shotsAWeek: null,
+    grandfatheredUntil: null,
   },
 });
 

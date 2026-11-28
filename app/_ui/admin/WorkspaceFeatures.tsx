@@ -4,7 +4,8 @@
 // saying "Default (on)" or "Changed: off" with "Reset to default" when changed, and whether the alliance
 // turned an allowed one off; the two daily caps with today's use; the tracker calls the alliance's choices
 // spend; "Copy settings from" another workspace (asked first). Above the list, the global pause of each paid
-// allowance (the "Defaults for new alliances" are FeatureDefaults.tsx). Every press sends the PIN as x-edit-pin through `run`.
+// allowance (the "Defaults for new alliances" are FeatureDefaults.tsx). D162: the plan and its grandfather
+// flag. Every press sends the PIN as x-edit-pin through `run`.
 // A switch or cap saved counts as `admin_feature_changed` (issue 486).
 import { useState } from "react";
 
@@ -20,6 +21,8 @@ import {
   type Allowance,
   type Feature,
   type FeatureGroup,
+  type Plan,
+  type PlanState,
 } from "@/lib/workspace-features";
 
 import { ConfirmSheet } from "./ConfirmSheet";
@@ -38,6 +41,11 @@ export interface FeaturesView {
   changed: readonly string[];
   /** Allowed, but turned off by the alliance's officers (D134). */
   allianceOff: readonly string[];
+  /** Left out by its plan (D162): counted as not allowed. */
+  locked: readonly string[];
+  plan: PlanState;
+  /** "Plan: Free · grandfathered (keeps what it had)". */
+  planLine: string;
   /** On now: allowed, turned on by the alliance, not paused. */
   on: number;
   caps: Record<Allowance, number | null>;
@@ -93,6 +101,9 @@ function Switch(props: {
           {t.reset}
         </button>
       )}
+      {on && view.locked.includes(feature) && (
+        <span className="text-body-sm text-ink/80">{t.plan.locked}</span>
+      )}
       {on && view.allianceOff.includes(feature) && (
         <span className="text-body-sm text-ink/80">{t.allianceOff}</span>
       )}
@@ -100,6 +111,46 @@ function Switch(props: {
         <span className="text-body-sm text-seal">{t.pausedAll}</span>
       )}
     </li>
+  );
+}
+
+/**
+ * D162: the workspace's plan and its grandfathering, one tap each (On: everything for 3 months from now);
+ * nothing is deleted either way.
+ */
+function PlanSwitch(props: { id: number; view: FeaturesView; run: Run; busy: boolean }) {
+  const { plan, grandfathered } = props.view.plan;
+  const send = (next: { plan: Plan; grandfathered?: boolean }) =>
+    props.run({
+      url: URL,
+      body: { action: "plan", workspace_id: props.id, ...next },
+      ok: saved,
+    });
+  const other: Plan = plan === "free" ? "premium" : "free";
+  return (
+    <fieldset className="mt-3">
+      <legend className="text-body-sm font-semibold">{t.plan.head}</legend>
+      <p className="text-body-sm text-ink/80">{t.plan.help}</p>
+      <p className="mt-1 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={props.busy}
+          className={chip()}
+          onClick={() => send({ plan: other })}
+        >
+          {other === "premium" ? t.plan.setPremium : t.plan.setFree}
+        </button>
+        <button
+          type="button"
+          aria-pressed={grandfathered}
+          disabled={props.busy}
+          className={chip(grandfathered)}
+          onClick={() => send({ plan, grandfathered: !grandfathered })}
+        >
+          {fill(t.plan.grandfather, { value: grandfathered ? t.on : t.off })}
+        </button>
+      </p>
+    </fieldset>
   );
 }
 
@@ -232,6 +283,7 @@ export function WorkspaceFeatures(props: {
         <span className="basis-full text-body-sm font-normal">{view.estimate}</span>
       </summary>
       <p className="text-body-sm text-ink/80">{t.help}</p>
+      <PlanSwitch id={id} view={view} run={props.run} busy={props.busy} />
       {GROUPS.map((group) => (
         <fieldset key={group} className="mt-3">
           <legend className="text-body-sm font-semibold">{t.groups[group]}</legend>

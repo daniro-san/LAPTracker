@@ -63,6 +63,8 @@ export const shotsPt: ShotsWords = {
     "Estes prints já foram enviados à Mesa dos oficiais. Nenhum rascunho novo foi criado.",
   "shots.discord.failed":
     "Não foi possível ler os prints desta vez. Nada foi salvo. Tente de novo ou envie pela mesa.",
+  "shots.cap":
+    "A sua aliança já usou as {n} leituras de prints desta semana no plano Gratuito, então estes não foram lidos. Digitar continua funcionando. A contagem recomeça na segunda-feira às 00:00 UTC.",
   "shots.draft.back": "Voltar ao Início",
   "shots.draft.type": "Tipo",
   "shots.draft.tab": "Aba",

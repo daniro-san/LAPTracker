@@ -1,6 +1,12 @@
 // /admin's feature switches per workspace (D126), re-exported as `copy.admin.features`. English only (D48).
 import { DAILY_QUOTA_TEXT } from "./budget";
-import { RECRUIT_READS_A_DAY, TRACKER_CALLS, type Feature } from "./workspace-features";
+import {
+  FREE_SHOTS_A_WEEK,
+  GRANDFATHER_MONTHS,
+  RECRUIT_READS_A_DAY,
+  TRACKER_CALLS,
+  type Feature,
+} from "./workspace-features";
 
 /** A feature's tracker calls per 100 members, from its measured rate (D134). */
 const per100 = (f: Feature) => Math.ceil(100 * (TRACKER_CALLS[f]?.perMember ?? 0));
@@ -86,6 +92,18 @@ export const featuresAdminCopy = {
     paused: "Paused",
     pause: "Pause",
     resume: "Resume",
+  },
+  plan: {
+    head: "Plan",
+    help: `Free: the core, and ${FREE_SHOTS_A_WEEK} screenshot reads a week. Premium: the core, the features that cost processing (tracker calls, the model) and no weekly screenshot cap. A feature the plan leaves out counts as not allowed; nothing is deleted, so a later Premium or Grandfathered shows everything as it was. Grandfathered On keeps everything for ${GRANDFATHER_MONTHS} months from the tap. OGs ignores the plan. No payment is attached yet.`,
+    line: "Plan: {plan}",
+    names: { free: "Free", premium: "Premium" },
+    grandfathered: "grandfathered until {date} (keeps what it had)",
+    setFree: "Set Free",
+    setPremium: "Set Premium",
+    grandfather: "Grandfathered: {value}",
+    locked: "not in its plan",
+    own: "Plan: everything (OGs)",
   },
   saved: "Saved.",
   copied: "Settings copied.",

@@ -12,6 +12,7 @@ import {
 } from "../repo/workspace-features";
 import {
   resolveFeatures,
+  shotsWeek,
   usageDay,
   type Allowance,
   type Feature,
@@ -37,7 +38,7 @@ export async function featuresById(db: Db, workspaceId: number): Promise<Workspa
   // The id comes from a row just read; a workspace deleted in between serves nothing.
   return found
     ? resolveFeatures(found.settings, paused)
-    : { on: new Set(), caps: { ai: 0, translate: 0 } };
+    : { on: new Set(), caps: { ai: 0, translate: 0 }, shotsAWeek: 0, grandfatheredUntil: null };
 }
 
 export const featureOn = (ws: Pick<WithFeatures, "features">, feature: Feature): boolean =>
@@ -69,6 +70,25 @@ export async function useAllowance(
   const used = await spend(db, ws.workspaceId, allowance, usageDay(now), units, cap);
   if (used !== null) return "ok";
   privateLog(`features.cap_reached.${allowance}`, { workspace: ws.workspaceId, cap: cap ?? 0 });
+  return "cap_reached";
+}
+
+/**
+ * D162: counts `pictures` screenshots our server is about to read against the plan's weekly cap (UTC week,
+ * from Monday), or says the week's cap is reached: then nothing is counted and nothing is read. No cap
+ * (premium, grandfathered, OGs): nothing is counted.
+ */
+export async function useShotReads(
+  db: Db,
+  ws: WithFeatures,
+  pictures: number,
+  now: Date,
+): Promise<"ok" | "cap_reached"> {
+  const cap = ws.features.shotsAWeek;
+  if (cap === null) return "ok";
+  const used = await spend(db, ws.workspaceId, "ocr", shotsWeek(now), pictures, cap);
+  if (used !== null) return "ok";
+  privateLog("features.cap_reached.ocr", { workspace: ws.workspaceId, cap });
   return "cap_reached";
 }
 

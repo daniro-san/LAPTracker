@@ -2,7 +2,8 @@
 // hint, a shield seen shows no length, a shield lost overnight), "Accept
 // the tracker's" writing only ✓ for those seen with a shield, and the squads-off-the-wall mark kept apart
 // from the Shield mark, the tick's marks still to check until "Checked" or a tap on the row, and the
-// Discord summary's state (a past week's check shows only what it recorded).
+// Discord summary's state (a past week's check shows only what it recorded). D162: on the free plan the
+// officers' own marks stay and the automated reads go.
 import { randomUUID } from "node:crypto";
 
 import { eq, gte } from "drizzle-orm";
@@ -15,7 +16,9 @@ import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/worksp
 import { dailyReads, dailyRosters } from "../schema";
 import { rollCallMarks } from "../schema-rollcall";
 import { playerReads } from "../schema-squads";
+import { NO_DEFAULTS, resolveFeatures, storedSettings, type Plan } from "../workspace-features";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
+import { featureOn } from "./features";
 import { acceptTracker, checkTracker, prepView, summaryOf } from "./raid-prep";
 import { addCall, markOne, openOccasion } from "./roll-call";
 import { callRead, callView } from "./roll-call-view";
@@ -289,6 +292,51 @@ describe("Raid prep (D137)", () => {
     // ✓ on the tracker's ✓ makes it the officer's own.
     await markOne(db, access, { occasion, uid: 101, mark: "yes", version: 1 }, NOW);
     expect((await view()).rows.get(101)?.fromTracker).toBeNull();
+  });
+});
+
+describe("Raid prep on the free plan (D162, owner 2026-11-28)", () => {
+  /** Another alliance's features with the check allowed and turned on: only the plan decides. */
+  const onPlan = (access: WorkspaceAccess, plan: Plan): WorkspaceAccess => {
+    const stored = { switches: { shield_check: true }, caps: {}, alliance: { shield_check: true } };
+    const state = { plan, grandfathered: false, grandfatheredUntil: null };
+    const settings = storedSettings(67109944, stored, NO_DEFAULTS, state);
+    return { ...access, features: resolveFeatures(settings, []) };
+  };
+  const view = async (access: WorkspaceAccess, occasion: Awaited<ReturnType<typeof raidPrep>>) => {
+    const opened = await openOccasion(db, access, occasion);
+    return prepView(db, access, opened as NonNullable<typeof opened>, { zone: ZONE, now: NOW });
+  };
+
+  it("keeps Raid prep with the officers' own marks and the Shield-up reminder", async () => {
+    const access = onPlan(await signedIn(), "free");
+    expect(featureOn(access, "roll_call")).toBe(true);
+    expect(featureOn(access, "post_shield_up")).toBe(true);
+    const occasion = await raidPrep(access);
+    const shield = { occasion, uid: 101, mark: "yes", version: 0 } as const;
+    expect(await markOne(db, access, shield, NOW)).toEqual({ ok: true, version: 1 });
+    const wall = { ...shield, uid: 102, part: "wall" } as const;
+    expect(await markOne(db, access, wall, NOW)).toEqual({ ok: true, version: 1 });
+    const prep = await view(access, occasion);
+    expect(prep.rows.size).toBe(UIDS.length);
+    expect(prep.rows.get(102)?.wall).toEqual({ mark: "yes", version: 1 });
+  });
+
+  it("turns the automated reads off: no hints, no counts, no To check by hand, no Accept", async () => {
+    const free = onPlan(await signedIn(), "free");
+    const occasion = await raidPrep(free);
+    const prep = await view(free, occasion);
+    expect(prep).toMatchObject({ tracker: false, night: null, morning: null, handCheck: null });
+    expect(prep.summary).toBeNull();
+    expect([...prep.rows.values()].every((r) => r.tracker === null)).toBe(true);
+    const accept = { occasion, uids: UIDS };
+    expect(await acceptTracker(db, free, accept, { now: NOW, zone: ZONE })).toEqual({
+      ok: false,
+      code: "invalid",
+    });
+    // The same alliance on the premium plan reads them.
+    const premium = onPlan(await signedIn(), "premium");
+    expect((await view(premium, occasion)).tracker).toBe(true);
   });
 });
 

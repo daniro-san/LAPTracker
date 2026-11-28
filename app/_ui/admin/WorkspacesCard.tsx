@@ -143,6 +143,7 @@ function WorkspaceList({
           <p className="text-body-sm break-words text-ink/80">
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
+          <p className="text-body-sm font-semibold">{w.features.planLine}</p>
           <p className="text-body-sm break-words text-ink/80">{w.trackerKey}</p>
           <p className="text-body-sm break-words text-ink/80">{w.discord}</p>
           {w.deletion && <p className="text-body-sm font-semibold text-seal">{w.deletion}</p>}

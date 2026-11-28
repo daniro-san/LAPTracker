@@ -4,14 +4,18 @@
 // each; a feature that spends tracker calls says about how many, and the card's first line adds up what the
 // alliance's choices spend on its key. A feature the owner did not allow is not listed. Since issue 585 a tick
 // changes only the draft: Save sends one switch at a time (`sendChanges`), and "Not saved yet" shows until then.
+// D162: a feature the alliance's plan leaves out shows a "Premium" note in its group instead of a checkbox,
+// and a link opens the Plans page.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { CheckField } from "@/lib/brand/components/CheckField";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import type { AllianceFeaturesView } from "@/lib/private/alliance-features";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { fill } from "@/lib/words";
 
+import { PremiumNote } from "./PremiumNote";
 import { SaveRow } from "./SaveRow";
 import {
   afterSave,
@@ -110,7 +114,7 @@ export function AllianceFeatures({
           members: n(view.members),
         })}
       </p>
-      {view.groups.map(({ group, features }) => (
+      {view.groups.map(({ group, features, premium }) => (
         <fieldset key={group} className="mt-4">
           <legend className="font-subhead text-body-lg font-semibold">
             {t[`switches.group.${group}`]}
@@ -132,9 +136,18 @@ export function AllianceFeatures({
                 onChange={(e) => tick(f.feature, e.currentTarget.checked)}
               />
             ))}
+            {premium.map((f) => (
+              <PremiumNote key={f} slug={slug} name={t[`switches.name.${f}`]} t={t} />
+            ))}
           </div>
         </fieldset>
       ))}
+      <p className="mt-4">
+        {t["plans.cardLead"]}{" "}
+        <TextLink href={`/w/${slug}/settings/plans`} className="inline-flex min-h-11 items-center">
+          {t["plans.see"]}
+        </TextLink>
+      </p>
       <SaveRow
         changes={changes}
         busy={busy}

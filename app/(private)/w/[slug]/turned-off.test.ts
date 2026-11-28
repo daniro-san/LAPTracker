@@ -1,6 +1,7 @@
 // D126 amended (issue 483): a page turned off for the alliance is simply not there. An officer opening its
 // address goes to the desk's Home with no message; a member opening the turned-off board gets the standard
 // not-found page.
+import { prerender } from "react-dom/static";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -8,6 +9,7 @@ import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { plansEn, plansFr, plansPt } from "@/lib/private/dictionary.plans";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceFeatures } from "@/lib/schema-features";
@@ -26,6 +28,13 @@ vi.mock("next/server", async (original) => ({
   ...(await original<typeof import("next/server")>()),
   after: () => undefined,
 }));
+// The board's client parts are rendered too (D162's plan-words check), outside an app router.
+vi.mock("next/navigation", async (original) => ({
+  ...(await original<typeof import("next/navigation")>()),
+  useRouter: () => ({ refresh: () => undefined, push: () => undefined, replace: () => undefined }),
+  usePathname: () => "/w/ogs/board",
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("next/headers", () => ({
   cookies: async () => ({
     get: (name: string) => (name === SESSION_COOKIE ? { value: holder.token } : undefined),
@@ -41,6 +50,7 @@ const { default: StartHerePage } = await import("./start-here/page");
 const { default: BoardPage } = await import("./board/page");
 const { default: InsightsPage } = await import("./insights/page");
 const { default: RecruitPage } = await import("./recruit/page");
+const { default: PlansPage } = await import("./settings/plans/page");
 
 const params = Promise.resolve({ slug: "ogs" });
 const searchParams = Promise.resolve({});
@@ -118,5 +128,34 @@ describe("a page turned off for the alliance (D126, issue 483)", () => {
     await signIn("member");
     await turnOff({ board: false });
     expect(await outcome(() => BoardPage({ params }))).toBe("404");
+  });
+});
+
+describe("plans (D162)", () => {
+  it("send a member away from the Plans page to the board, so members never see plan words", async () => {
+    await signIn("member");
+    expect(await outcome(() => PlansPage({ params }))).toBe("→ /w/ogs/board");
+    await signIn("officer");
+    expect(await outcome(() => PlansPage({ params }))).toBe("rendered");
+  });
+
+  it("show a member's board no plan words, on a free alliance that is still grandfathered", async () => {
+    await db
+      .update(workspaces)
+      .set({ unionId: 67109944, planGrandfatheredUntil: new Date(Date.now() + 86_400_000) });
+    await signIn("member");
+    const { prelude } = await prerender(await BoardPage({ params }));
+    const html = await new Response(prelude).text();
+    expect(html).toContain("Next 7 days in the alliance");
+    for (const words of [plansEn, plansPt, plansFr])
+      for (const line of Object.values(words)) expect(html).not.toContain(line.split("{")[0]);
+    expect(html).not.toMatch(/premium/i);
+  });
+
+  it("send an officer of a free alliance from a premium page to Home, as a page the owner turned off", async () => {
+    await db.update(workspaces).set({ unionId: 67109944 });
+    await signIn("officer");
+    expect(await outcome(() => InsightsPage({ params, searchParams }))).toBe("→ /w/ogs");
+    expect(await outcome(() => TheftsPage({ params }))).toBe("rendered");
   });
 });

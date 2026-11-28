@@ -11,7 +11,7 @@ import { openTestDb, truncateAll } from "./db.test-helpers";
 import { raidSide } from "./raid-opponent";
 import { raidRead, type RaidDeps } from "./raid-read";
 import { readsOf, setOpponent } from "./repo/raid-opponents";
-import { setAllianceSwitch, setSwitch } from "./repo/workspace-features";
+import { setAllianceSwitch, setPlan, setSwitch } from "./repo/workspace-features";
 import { storeKey } from "./repo/workspace-keys";
 import { findWorkspaceBySlug, saveWorkspace } from "./repo/workspaces";
 import { dailyReads } from "./schema";
@@ -48,6 +48,8 @@ beforeEach(async () => {
   await truncateAll(db);
   ogs = await workspace(OWN_ALLIANCE_ID, "ogs");
   other = await workspace(OTHER, "other");
+  // D162: premium, the plan the Raid Shield check's reads are in.
+  await setPlan(db, other, { plan: "premium" });
   await setSwitch(db, other, "shield_check", true, new Date(0));
   await setAllianceSwitch(db, other, "shield_check", true, new Date(0));
   for (const day of [FRIDAY, SATURDAY]) {

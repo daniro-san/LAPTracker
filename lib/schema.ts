@@ -371,34 +371,50 @@ export const dailyRosters = pgTable(
  * A workspace (D71): the private area of one alliance. The Discord server and the leadership role ids
  * live here, so a new alliance needs no deploy; the owner registers one on /admin.
  */
-export const workspaces = pgTable("workspaces", {
-  id: serial("id").primaryKey(),
-  slug: text("slug").notNull().unique(),
-  unionId: big("union_id").notNull().unique(),
-  /** One workspace per Discord server (D126): the Discord commands find the workspace by it. */
-  discordGuildId: text("discord_guild_id").notNull().unique(),
-  leaderRoleIds: text("leader_role_ids").array().notNull(),
-  /** Members' board roles (D105, amended 2026-11-17): empty means no member session, the board is closed. */
-  memberRoleIds: text("member_role_ids")
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
-  createdAt: tstz("created_at").notNull().defaultNow(),
-  /**
-   * "Delete this workspace" (D125): when it was asked, by which workspace user (null: the site's owner on
-   * /admin; no foreign key, the row goes with the workspace), and the instant after which the daily job
-   * deletes it, 14 days later. All three null: no deletion asked. Cancel clears them.
-   */
-  deletionRequestedAt: tstz("deletion_requested_at"),
-  deletionRequestedBy: integer("deletion_requested_by"),
-  purgeAfter: tstz("purge_after"),
-  /**
-   * Insights → KvK's map (issue 791, D71 amendment 2026-11-27): the castle point the officers typed in, on
-   * the game map's grid; both null when none is set. Never in copies, exports, Discord, logs or analytics.
-   */
-  castleX: integer("castle_x"),
-  castleY: integer("castle_y"),
-});
+export const workspaces = pgTable(
+  "workspaces",
+  {
+    id: serial("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    unionId: big("union_id").notNull().unique(),
+    /** One workspace per Discord server (D126): the Discord commands find the workspace by it. */
+    discordGuildId: text("discord_guild_id").notNull().unique(),
+    leaderRoleIds: text("leader_role_ids").array().notNull(),
+    /** Members' board roles (D105, amended 2026-11-17): empty means no member session, the board is closed. */
+    memberRoleIds: text("member_role_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+    /**
+     * "Delete this workspace" (D125): when it was asked, by which workspace user (null: the site's owner on
+     * /admin; no foreign key, the row goes with the workspace), and the instant after which the daily job
+     * deletes it, 14 days later. All three null: no deletion asked. Cancel clears them.
+     */
+    deletionRequestedAt: tstz("deletion_requested_at"),
+    deletionRequestedBy: integer("deletion_requested_by"),
+    purgeAfter: tstz("purge_after"),
+    /**
+     * Insights → KvK's map (issue 791, D71 amendment 2026-11-27): the castle point the officers typed in, on
+     * the game map's grid; both null when none is set. Never in copies, exports, Discord, logs or analytics.
+     */
+    castleX: integer("castle_x"),
+    castleY: integer("castle_y"),
+    /**
+     * The alliance's plan (D162): `free` (the core) or `premium` (the core and the complementary features,
+     * lib/workspace-features.ts `PLAN_FEATURES`). Set by the owner on /admin; no payment is attached yet.
+     */
+    plan: text("plan", { enum: ["free", "premium"] })
+      .notNull()
+      .default("free"),
+    /**
+     * D162: until when the workspace keeps everything, whatever its plan (null: not grandfathered). The
+     * migration set it 3 months ahead for every workspace made before plans (owner, 2026-11-28).
+     */
+    planGrandfatheredUntil: tstz("plan_grandfathered_until"),
+  },
+  (t) => [check("workspaces_plan_check", sql`${t.plan} in ('free', 'premium')`)],
+);
 
 /**
  * The people of one workspace (D71): a row is written when someone signs in, or when the owner puts a

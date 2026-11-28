@@ -12,7 +12,7 @@ import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { createRunLogger } from "./logger";
 import { insertRunLog } from "./repo/run-logs";
-import { setAllianceSwitch, setSwitch } from "./repo/workspace-features";
+import { setAllianceSwitch, setPlan, setSwitch } from "./repo/workspace-features";
 import { keyFacts, storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
 import { appErrors, dailyReads, dailyRosters, runLogs, workspaces } from "./schema";
@@ -56,7 +56,9 @@ beforeEach(async () => {
     const [row] = await db.select().from(workspaces).where(eq(workspaces.unionId, unionId));
     ws[name] = row?.id ?? 0;
   }
-  // D134: the other alliance's squads read is allowed by the owner and turned on by its officers.
+  // D134: the other alliance's squads read is allowed by the owner and turned on by its officers; D162: its
+  // plan covers it.
+  await setPlan(db, ws.other, { plan: "premium", grandfathered: false });
   await setSwitch(db, ws.other, "squads", true, new Date(0));
   await setAllianceSwitch(db, ws.other, "squads", true, new Date(0));
 });

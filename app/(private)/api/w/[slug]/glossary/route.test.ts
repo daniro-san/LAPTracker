@@ -47,7 +47,14 @@ beforeEach(async () => {
   holder.ctx = ctx;
   const [ws] = await db
     .insert(workspaces)
-    .values({ unionId: 67109944, slug: "nse", discordGuildId: "1", leaderRoleIds: ["2"] })
+    // D162: premium, the plan the translating features are in.
+    .values({
+      unionId: 67109944,
+      slug: "nse",
+      discordGuildId: "1",
+      leaderRoleIds: ["2"],
+      plan: "premium",
+    })
     .returning({ id: workspaces.id });
   workspaceId = ws?.id ?? 0;
   // The owner allows Translate; a new alliance starts with every translating feature off (D126).

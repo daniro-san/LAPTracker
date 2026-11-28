@@ -36,7 +36,13 @@ beforeEach(async () => {
   holder.ctx = testContext(db).ctx;
   const [ws] = await db
     .insert(workspaces)
-    .values({ unionId: 67109944, slug: "nse", discordGuildId: "1", leaderRoleIds: ["2"] })
+    .values({
+      unionId: 67109944,
+      slug: "nse",
+      discordGuildId: "1",
+      leaderRoleIds: ["2"],
+      plan: "premium",
+    })
     .returning({ id: workspaces.id });
   workspaceId = ws?.id ?? 0;
   // The owner allows the Raid Shield check and the officers turned it on: its settings save only then (D134).

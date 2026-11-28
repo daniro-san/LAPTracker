@@ -125,6 +125,8 @@ export const DESK_ACTIONS = [
   "create",
   // Issue 831: an officer declines a member's "I'm in" for a KvK role (Confirm is `approve`).
   "decline",
+  // D162: the owner set a workspace's plan or grandfather flag.
+  "plan",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 

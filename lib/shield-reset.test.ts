@@ -11,7 +11,7 @@ import { TEST_ENV, testContext } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { shieldReadings } from "./repo/shield-checks";
-import { setAllianceSwitch, setSwitch } from "./repo/workspace-features";
+import { setAllianceSwitch, setPlan, setSwitch } from "./repo/workspace-features";
 import { storeKey } from "./repo/workspace-keys";
 import { findWorkspaceBySlug, saveWorkspace } from "./repo/workspaces";
 import { inEventWindow, serverInstant } from "./schedule";
@@ -205,6 +205,7 @@ describe("the after-reset check (issue 827)", () => {
       leaderRoleIds: ["4"],
     });
     const other = (await findWorkspaceBySlug(db, "other"))?.id ?? 0;
+    await setPlan(db, other, { plan: "premium" });
     await setSwitch(db, other, "shield_check", true, new Date(0));
     await setAllianceSwitch(db, other, "shield_check", true, new Date(0));
     const sealed = sealKey(SECRET, other, THEIR_KEY);

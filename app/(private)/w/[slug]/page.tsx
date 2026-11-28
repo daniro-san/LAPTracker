@@ -35,6 +35,7 @@ import { fill } from "@/lib/words";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
+import { GrandfatherNotice } from "../../_ui/GrandfatherNotice";
 import { cards } from "../../_ui/home-cards";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeMargin, type HomeDesk } from "../../_ui/HomeMargin";
@@ -193,6 +194,12 @@ function Home(props: {
           ))}
         </div>
       )}
+      <GrandfatherNotice
+        slug={slug}
+        t={t}
+        language={language}
+        until={props.access.features.grandfatheredUntil}
+      />
       <WhatsNewLine slug={slug} t={t} title={props.desk.whatsNew?.[language] ?? null} />
       {/* No sticky margin (issue 720): at 1024 it scrolled inside itself, beside the page's own scrollbar. */}
       <Spread

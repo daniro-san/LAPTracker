@@ -67,6 +67,8 @@ export const shotsEn = {
     "These screenshots were already sent to the Officers’ Desk. No new draft was made.",
   "shots.discord.failed":
     "The screenshots could not be read this time. Nothing was saved. Try again, or send them from the desk.",
+  "shots.cap":
+    "Your alliance has used this week’s {n} screenshot reads on the Free plan, so these were not read. Typing still works. The count starts again on Monday at 00:00 UTC.",
   "shots.draft.back": "Back to Home",
   "shots.draft.type": "Type",
   "shots.draft.tab": "Tab",

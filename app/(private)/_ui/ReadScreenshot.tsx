@@ -12,8 +12,10 @@ import { useRef, useState } from "react";
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { STATUS_BAR_ASPECT, STATUS_BAR_SHARE } from "@/lib/screenshot/status-bar";
+import { fill } from "@/lib/words";
+import { FREE_SHOTS_A_WEEK } from "@/lib/workspace-features";
 
-import { isSignedOut, pictureText, post, toPng } from "./screenshot-upload";
+import { isCapReached, isSignedOut, pictureText, post, toPng } from "./screenshot-upload";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 const STATUS_BAR = { share: STATUS_BAR_SHARE, aspect: STATUS_BAR_ASPECT };
@@ -26,9 +28,12 @@ export interface ShotWords {
   failed: string;
   busy: string;
   notKept: string;
+  /** D162: the free plan's screenshots for the week are used. */
+  cap: string;
 }
 
-type ShotKey = "shot.read" | "shot.reading" | "shot.failed" | "shot.busy" | "shot.notKept";
+type ShotKey =
+  "shot.read" | "shot.reading" | "shot.failed" | "shot.busy" | "shot.notKept" | "shots.cap";
 
 /** The control's words, from the editor's or Paste updates' words. */
 export const shotWords = (w: Record<ShotKey, string>): ShotWords => ({
@@ -37,6 +42,7 @@ export const shotWords = (w: Record<ShotKey, string>): ShotWords => ({
   failed: w["shot.failed"],
   busy: w["shot.busy"],
   notKept: w["shot.notKept"],
+  cap: fill(w["shots.cap"], { n: FREE_SHOTS_A_WEEK }),
 });
 
 /** Each picture's lines in turn; on a failure, the pages read before it and why it stopped. */
@@ -54,7 +60,13 @@ async function readPictures(slug: string, files: File[], query: string) {
       pages.push(read.lines);
     } catch (e) {
       const status = e instanceof Error ? e.message : "";
-      const why = isSignedOut(e) ? SIGNED_OUT : status === "429" ? "busy" : "failed";
+      const why = isSignedOut(e)
+        ? SIGNED_OUT
+        : isCapReached(e)
+          ? "cap"
+          : status === "429"
+            ? "busy"
+            : "failed";
       return { pages, why } as const;
     }
   }
@@ -84,10 +96,10 @@ export function ReadScreenshot(props: {
     const { pages, why } = await readPictures(props.slug, files, props.query ?? "");
     const text = pictureText(pages);
     if (text !== "") props.onText(text);
-    if (why === SIGNED_OUT) setError(SIGNED_OUT);
-    else if (why === "busy") setError(words.busy);
-    else if (why === "failed" || text === "") setError(words.failed);
-    if (why !== SIGNED_OUT) {
+    // "busy", "cap" (D162) and "failed" each have their line; nothing read says it failed.
+    const line = why === SIGNED_OUT ? SIGNED_OUT : why ? words[why] : text === "" && words.failed;
+    if (line) setError(line);
+    if (why !== SIGNED_OUT && why !== "cap") {
       const outcome = why === "busy" ? "busy" : text === "" ? "failed" : "read";
       track("ws_text_read", { place: props.place, outcome });
     }

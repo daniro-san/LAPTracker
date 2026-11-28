@@ -13,6 +13,7 @@ import { channelNames } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { garrisonView } from "@/lib/private/garrison";
 import { fill } from "@/lib/words";
+import { FREE_SHOTS_A_WEEK } from "@/lib/workspace-features";
 
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { boardData, garrisonWords } from "../../../../_ui/garrison-data";
@@ -87,6 +88,7 @@ export default async function GarrisonPage({
                 failed: t["shot.failed"],
                 busy: t["shot.busy"],
                 notKept: t["shot.notKept"],
+                cap: fill(t["shots.cap"], { n: FREE_SHOTS_A_WEEK }),
               }
             : null
         }

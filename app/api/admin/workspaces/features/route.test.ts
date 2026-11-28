@@ -8,6 +8,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { settingsById } from "@/lib/repo/workspace-features";
 import { saveWorkspace } from "@/lib/repo/workspaces";
+import { workspaces } from "@/lib/schema";
 import { workspaceDiscord } from "@/lib/schema-discord";
 import { workspaceFeatures } from "@/lib/schema-features";
 import { CODE_DEFAULTS } from "@/lib/workspace-features";
@@ -46,6 +47,8 @@ beforeEach(async () => {
     discordGuildId: "3",
     leaderRoleIds: ["9"],
   });
+  // D162: premium, so the switches below are the owner's alone; the plan's own tests set it.
+  await db.update(workspaces).set({ plan: "premium" });
 });
 
 const post = (pin: string, body: unknown) =>
@@ -89,6 +92,22 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     expect((await settingsOf(2))?.off).not.toContain("notice_translate");
   });
 
+  it("sets a workspace's plan and grandfather flag (D162)", async () => {
+    const plan = (p: string, grandfathered: boolean, id = 2) =>
+      post(TEST_PIN, { action: "plan", workspace_id: id, plan: p, grandfathered });
+    expect((await plan("free", false)).status).toBe(200);
+    expect((await settingsById(db, 2))?.plan).toEqual({
+      plan: "free",
+      grandfathered: false,
+      grandfatheredUntil: null,
+    });
+    expect((await settingsOf(2))?.locked).toContain("insights");
+    expect((await plan("free", true)).status).toBe(200);
+    expect((await settingsOf(2))?.locked).toEqual([]);
+    expect((await plan("gold", false)).status).toBe(400);
+    expect((await plan("premium", false, 99)).status).toBe(404);
+  });
+
   it("copies another workspace's switches and caps, its defaults included", async () => {
     await post(TEST_PIN, { action: "switch", workspace_id: 2, feature: "thefts", on: false });
     await post(TEST_PIN, { action: "cap", workspace_id: 2, allowance: "ai", cap: 40 });
@@ -104,6 +123,9 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
       off: [],
       caps: { ai: null, translate: null },
       allianceOff: ["squads", "shield_check", "recruit_check"],
+      locked: [],
+      shotsAWeek: null,
+      grandfatheredUntil: null,
     });
     expect((await post(TEST_PIN, { action: "copy", workspace_id: 3, from_id: 3 })).status).toBe(
       400,
