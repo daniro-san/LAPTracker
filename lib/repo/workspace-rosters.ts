@@ -151,20 +151,28 @@ export interface EventKills {
   after: Map<number, number | null>;
 }
 
+/** A scheduled event and the ids of one alliance's Start and End rows in it. */
+interface StartEndRows {
+  at: Date;
+  startId: number;
+  endId: number;
+  /** When the End read started. */
+  endAt: Date;
+}
+
 /**
  * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
- * not failed, with each member's kills on both sides; null when there is none.
+ * not failed, with those two rows' ids; null when there is none. The one place the event rules live: not
+ * manual, not a test, not `admin` (D28), and only the event's Start and End, never a sample or a row
+ * between windows (D160).
  */
-export async function scheduledEventKills(
-  db: Db,
-  unionId: number,
-  since: Date,
-): Promise<EventKills | null> {
+async function newestStartEnd(db: Db, unionId: number, since: Date): Promise<StartEndRows | null> {
   const rows = await db
     .select({
       eventId: events.id,
       at: events.eventAtUtc,
       phase: snapshots.phase,
+      startedAt: snapshots.startedAt,
       id: allianceSnapshots.id,
     })
     .from(allianceSnapshots)
@@ -191,6 +199,21 @@ export async function scheduledEventKills(
     ? [side(event.eventId, "before"), side(event.eventId, "after")]
     : [];
   if (!event || !before || !after) return null;
+  return { at: event.at, startId: before.id, endId: after.id, endAt: after.startedAt };
+}
+
+/**
+ * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
+ * not failed, with each member's kills on both sides; null when there is none.
+ */
+export async function scheduledEventKills(
+  db: Db,
+  unionId: number,
+  since: Date,
+): Promise<EventKills | null> {
+  const event = await newestStartEnd(db, unionId, since);
+  if (!event) return null;
+  const { startId, endId } = event;
   const kills = await db
     .select({
       id: memberSnapshots.allianceSnapshotId,
@@ -198,10 +221,10 @@ export async function scheduledEventKills(
       kills: memberSnapshots.kills,
     })
     .from(memberSnapshots)
-    .where(inArray(memberSnapshots.allianceSnapshotId, [before.id, after.id]));
+    .where(inArray(memberSnapshots.allianceSnapshotId, [startId, endId]));
   const byUid = (id: number) =>
     new Map(kills.filter((k) => k.id === id).map((k) => [k.uid, k.kills]));
-  return { at: event.at, before: byUid(before.id), after: byUid(after.id) };
+  return { at: event.at, before: byUid(startId), after: byUid(endId) };
 }
 
 /** A member placed by a scheduled event's End read (issue 791): where it saw them, their kills on both sides. */
@@ -238,38 +261,9 @@ export async function eventEndPlaces(
   unionId: number,
   since: Date,
 ): Promise<EventEndPlaces | null> {
-  const rows = await db
-    .select({
-      eventId: events.id,
-      at: events.eventAtUtc,
-      phase: snapshots.phase,
-      startedAt: snapshots.startedAt,
-      id: allianceSnapshots.id,
-    })
-    .from(allianceSnapshots)
-    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
-    .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(
-      and(
-        eq(allianceSnapshots.unionId, unionId),
-        eq(allianceSnapshots.isFresh, true),
-        isNull(allianceSnapshots.error),
-        eq(events.manual, false),
-        eq(events.isTest, false),
-        ne(events.visibility, "admin"),
-        gte(events.eventAtUtc, since),
-        // The event's Start and End: not a sample, not a row between windows (D160).
-        phaseSnapshot,
-      ),
-    )
-    .orderBy(desc(events.eventAtUtc));
-  const side = (eventId: number, phase: string) =>
-    rows.find((r) => r.eventId === eventId && r.phase === phase);
-  const event = rows.find((r) => side(r.eventId, "before") && side(r.eventId, "after"));
-  const [before, after] = event
-    ? [side(event.eventId, "before"), side(event.eventId, "after")]
-    : [];
-  if (!event || !before || !after) return null;
+  const event = await newestStartEnd(db, unionId, since);
+  if (!event) return null;
+  const { startId, endId } = event;
   const [kills, [raw]] = await Promise.all([
     db
       .select({
@@ -278,11 +272,8 @@ export async function eventEndPlaces(
         kills: memberSnapshots.kills,
       })
       .from(memberSnapshots)
-      .where(inArray(memberSnapshots.allianceSnapshotId, [before.id, after.id])),
-    db
-      .select({ members: placesOf })
-      .from(allianceSnapshots)
-      .where(eq(allianceSnapshots.id, after.id)),
+      .where(inArray(memberSnapshots.allianceSnapshotId, [startId, endId])),
+    db.select({ members: placesOf }).from(allianceSnapshots).where(eq(allianceSnapshots.id, endId)),
   ]);
   const at = new Map(
     (raw?.members ?? []).flatMap((m) => {
@@ -290,13 +281,13 @@ export async function eventEndPlaces(
       return uid === null || x === null || y === null ? [] : [[uid, { x, y }] as const];
     }),
   );
-  const start = new Map(kills.filter((k) => k.id === before.id).map((k) => [k.uid, k.kills]));
-  const end = kills.filter((k) => k.id === after.id);
+  const start = new Map(kills.filter((k) => k.id === startId).map((k) => [k.uid, k.kills]));
+  const end = kills.filter((k) => k.id === endId);
   const places = end.flatMap((k) => {
     const place = at.get(k.uid);
     return place ? [{ ...place, before: start.get(k.uid) ?? null, after: k.kills }] : [];
   });
-  return { at: event.at, endAt: after.startedAt, places, unplaced: end.length - places.length };
+  return { at: event.at, endAt: event.endAt, places, unplaced: end.length - places.length };
 }
 
 /** A member in a KvK recap's Start or End roster: the public name (D22) and lifetime kills (D15). */

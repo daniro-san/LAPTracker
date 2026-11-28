@@ -1,10 +1,12 @@
 // Insights → KvK's map (issue 791): dots in 3 bands of kills gained, near/mid/far only with a castle point,
-// and a read that sees only the workspace's own alliance and its own castle point, with no uid or name.
+// and a read that sees only the workspace's own alliance and its own castle point, with no uid or name, from
+// the newest public event since the date with a fresh Start and End.
 // Against a real Postgres (PGlite). Invented names and places only.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { eventEndPlaces } from "../repo/workspace-rosters";
 import { saveCastle } from "../repo/workspaces";
 import { allianceSnapshots, events, memberSnapshots, snapshots, workspaces } from "../schema";
 import type { WorkspaceAccess } from "./access";
@@ -65,7 +67,7 @@ describe("kvkMapOf", () => {
   });
 });
 
-describe("kvkMapView", () => {
+describe("kvkMapView and eventEndPlaces", () => {
   const OURS = 900_001;
   const THEIRS = 900_002;
   let db: Db;
@@ -84,20 +86,33 @@ describe("kvkMapView", () => {
       .returning({ id: workspaces.id });
     ids.ours = rows[0]?.id ?? 0;
     ids.theirs = rows[1]?.id ?? 0;
+    await kvk(AT);
+  });
+
+  /** A scheduled event at `at` with Start and End rows for both alliances; `phases` and `row` vary them. */
+  async function kvk(
+    at: Date,
+    o: {
+      phases?: readonly ("before" | "after")[];
+      event?: Partial<typeof events.$inferInsert>;
+      row?: Partial<typeof allianceSnapshots.$inferInsert>;
+    } = {},
+  ) {
     const [event] = await db
       .insert(events)
       .values({
-        name: "Saturday Event 2026-11-21",
-        eventAtUtc: AT,
+        name: "Saturday Event",
+        eventAtUtc: at,
         allianceIds: [OURS, THEIRS],
-        beforeAt: new Date("2026-11-21T12:00:00Z"),
-        afterAt: END_AT,
+        beforeAt: new Date(at.getTime() - 2 * 3_600_000),
+        afterAt: new Date(at.getTime() + 2 * 3_600_000),
+        ...o.event,
       })
       .returning({ id: events.id });
-    for (const phase of ["before", "after"] as const) {
+    for (const phase of o.phases ?? (["before", "after"] as const)) {
       const [snap] = await db
         .insert(snapshots)
-        .values({ eventId: event?.id ?? 0, phase, startedAt: END_AT, status: "complete" })
+        .values({ eventId: event?.id ?? 0, phase, startedAt: at, status: "complete" })
         .returning({ id: snapshots.id });
       for (const [unionId, uids] of [
         [OURS, [1, 2]],
@@ -113,6 +128,7 @@ describe("kvkMapView", () => {
             rawJson: {
               members: uids.map((uid) => ({ uid, x: 400 + uid, y: 600 + uid, online: 1 })),
             },
+            ...(phase === "after" ? o.row : {}),
           })
           .returning({ id: allianceSnapshots.id });
         await db.insert(memberSnapshots).values(
@@ -125,7 +141,7 @@ describe("kvkMapView", () => {
         );
       }
     }
-  });
+  }
 
   it("shows the own alliance's End places and the own castle point only, with no uid or name", async () => {
     await saveCastle(db, ids.theirs, { x: 9, y: 9 });
@@ -137,5 +153,27 @@ describe("kvkMapView", () => {
     ]);
     expect(map?.castle).toBeNull();
     expect(JSON.stringify(map)).not.toMatch(/"uid"|"name"|Invented|online/);
+  });
+
+  const NOW = new Date("2026-11-22T00:00:00Z");
+  const SINCE = new Date("2026-11-01T00:00:00Z");
+  const LATER = new Date("2026-11-21T20:00:00Z");
+
+  it("skips a stale or failed End row, an admin event and one older than `since`", async () => {
+    await kvk(LATER, { row: { isFresh: false } });
+    await kvk(new Date("2026-11-21T21:00:00Z"), { row: { error: "upstream 500" } });
+    await kvk(new Date("2026-11-21T22:00:00Z"), { event: { visibility: "admin" } });
+    expect((await eventEndPlaces(db, OURS, SINCE))?.at).toEqual(AT);
+    expect(await eventEndPlaces(db, OURS, new Date("2026-11-21T15:00:00Z"))).toBeNull();
+  });
+
+  it("falls back to an older event when the newest has no Start or no End", async () => {
+    await kvk(LATER, { phases: ["before"] });
+    await kvk(new Date("2026-11-21T21:00:00Z"), { phases: ["after"] });
+    expect((await eventEndPlaces(db, OURS, SINCE))?.at).toEqual(AT);
+    expect(await eventEndPlaces(db, OURS, new Date("2026-11-21T15:00:00Z"))).toBeNull();
+    expect(
+      (await kvkMapView(db, { workspaceId: ids.ours, unionId: OURS } as WorkspaceAccess, NOW))?.at,
+    ).toEqual(AT);
   });
 });

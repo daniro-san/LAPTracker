@@ -3,7 +3,7 @@
 ## Built
 
 - Data check (read-only SELECTs on production, aggregates only; results under Verified).
-- `lib/repo/workspace-rosters.ts` `eventEndPlaces`: the newest public scheduled event since a date whose Start and End rows of the alliance are fresh and not failed. It returns each End member's `x`/`y` (only `uid`, `x`, `y` read from the End row's `raw_json`) and their Start and End kills (`member_snapshots`), and the count of End members with no place. It returns no uid and no name.
+- `lib/repo/workspace-rosters.ts` `eventEndPlaces`: the newest public scheduled event since a date whose Start and End rows of the alliance are fresh and not failed. It returns each End member's `x`/`y` (only `uid`, `x`, `y` read from the End row's `raw_json`) and their Start and End kills (`member_snapshots`), and the count of End members with no place. It returns no uid and no name. It and `scheduledEventKills` pick the event through one private helper, `newestStartEnd` (review of PR #800). The helper holds the public-event rule (not manual, not a test, not `admin`) and D160's phase rule.
 - `lib/private/kvk-map.ts`: `kvkMapOf` (pure) puts each dot in a band of kills gained: `none` (0), `fewer` (1 to the gainers' median), `more` (above it), null when kills are not known on one side. Near/mid/far rows exist only with a castle point and at least 3 members with known kills. `kvkMapView` reads the own alliance (`access.unionId`) and the own workspace's castle point. `castleInput` and `saveCastlePoint` (zod, 0–999 whole squares or both null; 30 saves per 15 min per workspace).
 - `workspaces.castle_x`, `workspaces.castle_y` (nullable integers), migration `drizzle/0084_cooing_shadow_king.sql` (regenerated after rebasing onto dev, where PR #797 took 0083); `castleOf` and `saveCastle` in `lib/repo/workspaces.ts`.
 - `POST /api/w/[slug]/kvk-castle`: officers only (`requireWorkspace`), same-origin JSON, 400/401/429. No analytics event, no log of the point.
@@ -12,7 +12,7 @@
 - The card sits under the KvK card on `/w/[slug]/insights`, read in parallel with the page's other reads.
 - Words: `lib/private/dictionary.insights-map.ts` (EN, PT-BR, FR), spread in `dictionary.insights.ts`.
 - D71 amendment dated 2026-11-27 naming the view.
-- Tests: `lib/private/kvk-map.test.ts` (kill bands; bands only with a castle point; own alliance and own castle only, no uid/name/other roster field in the view), `app/(private)/api/w/[slug]/kvk-castle/route.test.ts` (save and clear; out-of-range refused; member 401 keeps the point), and a `kvk-castle` fixture in `member-session.test.ts` (no session, member, and another workspace's officer all get 401).
+- Tests: `lib/private/kvk-map.test.ts` (kill bands; bands only with a castle point; own alliance and own castle only, no uid/name/other roster field in the view), `app/(private)/api/w/[slug]/kvk-castle/route.test.ts` (save and clear; out-of-range refused; member 401 keeps the point), and a `kvk-castle` fixture in `member-session.test.ts` (no session, member, and another workspace's officer all get 401). Added after the review of PR #800: `eventEndPlaces` cases in `kvk-map.test.ts` (a stale or failed End row, an `admin` event and an event older than `since` are skipped; a newest event with no Start or no End falls back to the older one), and `app/(private)/_ui/InsightsKvkMap.test.ts` (the plot svg and the table carry `ph-no-capture`; the markup holds no uid or name).
 
 ## Decisions
 
@@ -37,7 +37,7 @@
   - Nov 21 (the only one with positions): 99 at the End, 96 with a position at the Start, all 99 at the End. Position changed between Start and End: 44.4 %. Off-server at the Start or near the End (`kid` ≠ alliance `sid`): 0 %. Median distance moved: 0 overall, 18 squares among those who moved. `kid` has one value in every stored reading, so it may not show where a member is during KvK.
   - Baseline from the daily reads (Nov 18–27, day to day): 0–3 % move on most days, 63 % on Nov 21 (KvK day), 20 % on Nov 22, 14 % on Nov 24.
   - Result: not "most moved or off the map", so the view was built. It rests on 1 event; Saturday's read (Nov 28) will be the second.
-- `pnpm vitest related --run` on the changed files: 386 files passed, 1 failed (the copy guard flagged the castle path string), fixed by drawing two `<line>`s. `pnpm check`: exit 0 (prettier, eslint, tsc, vitest 389 files / 2111 tests passed after the rebase onto dev, 2 skipped files, drift and i18n checks).
+- `pnpm vitest related --run` on the changed files: 386 files passed, 1 failed (the copy guard flagged the castle path string), fixed by drawing two `<line>`s. `pnpm check`: exit 0 (prettier, eslint, tsc, vitest 389 files / 2111 tests passed after the rebase onto dev, 2 skipped files, drift and i18n checks). Breaking the code once each proved the new tests fail. Removing the `admin` rule from `newestStartEnd` failed the skip case. Removing `ph-no-capture` from the plot failed the render test. Both were restored.
 - Not done: no browser render at 360/640/1280 px (no local DB with an End read with places here). The persona check below is a review of the code and markup.
 
 Persona check (code and markup review):
