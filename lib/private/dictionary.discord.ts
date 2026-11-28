@@ -7,7 +7,7 @@ export const discordEn = {
     "Connect your alliance’s Discord server: the bot, the message commands and the channels for notices. Do the steps in order.",
   "discord.bot.head": "1. Add LAPTracker to your server",
   "discord.bot.lead":
-    "The bot can see channels, send messages, open public threads and post in them. It needs no admin rights.",
+    "The bot can see channels, send messages, open public threads and post in them, and give the member role you choose below. It needs no admin rights.",
   "discord.bot.tip":
     "You need the Manage Server permission in Discord. The link opens on your alliance’s server only.",
   "discord.bot.add": "Add LAPTracker to Discord",
@@ -109,7 +109,7 @@ export const discordPt: typeof discordEn = {
     "Conecte o servidor do Discord da sua aliança: o bot, os comandos de mensagem e os canais dos avisos. Siga os passos na ordem.",
   "discord.bot.head": "1. Adicione o LAPTracker ao seu servidor",
   "discord.bot.lead":
-    "O bot pode ver canais, enviar mensagens, abrir tópicos públicos e postar neles. Ele não precisa de permissão de administrador.",
+    "O bot pode ver canais, enviar mensagens, abrir tópicos públicos e postar neles, e dar o cargo de membro que você escolher abaixo. Ele não precisa de permissão de administrador.",
   "discord.bot.tip":
     "Você precisa da permissão Gerenciar servidor no Discord. O link abre só no servidor da sua aliança.",
   "discord.bot.add": "Adicionar o LAPTracker ao Discord",

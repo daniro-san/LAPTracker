@@ -1,7 +1,8 @@
 // The app's Discord message commands, as registered in each workspace's server and as the interactions
 // route checks them: one definition for both. "Send to LAPTracker" is the screenshot import (D96); the two
 // Translate commands are D101's. Type 3 is a message command ("Apps" on a message); its name may have
-// capitals and spaces.
+// capitals and spaces. `/join` (issue 868) is a slash command (type 1) with one text option: the game name or
+// ID the person types, at most JOIN_TYPED_MAX characters.
 import { z } from "zod";
 
 import type { Env } from "./env";
@@ -11,8 +12,40 @@ export const IMPORT_COMMAND = { name: "Send to LAPTracker", type: 3 } as const;
 export const TRANSLATE_FOR_ME = { name: "Translate for me", type: 3 } as const;
 export const TRANSLATE_FOR_EVERYONE = { name: "Translate for everyone", type: 3 } as const;
 
+/** The longest game name or ID `/join` takes: longer than any player name. */
+export const JOIN_TYPED_MAX = 40;
+export const JOIN_OPTION = "player";
+export const JOIN_COMMAND = {
+  name: "join",
+  type: 1,
+  description: "Ask your alliance’s officers to let you in: type your name or ID in the game",
+  description_localizations: {
+    "pt-BR": "Peça aos oficiais da sua aliança para entrar: digite seu nome ou ID no jogo",
+    fr: "Demandez aux officiers de votre alliance de vous accepter : tapez votre nom ou ID en jeu",
+  },
+  options: [
+    {
+      type: 3,
+      name: JOIN_OPTION,
+      description: "Your name or ID in the game",
+      description_localizations: {
+        "pt-BR": "Seu nome ou ID no jogo",
+        fr: "Votre nom ou ID en jeu",
+      },
+      required: true,
+      min_length: 1,
+      max_length: JOIN_TYPED_MAX,
+    },
+  ],
+} as const;
+
 /** Every command of the app. Discord's PUT replaces a guild's whole set, so they are registered together. */
-export const APP_COMMANDS = [IMPORT_COMMAND, TRANSLATE_FOR_ME, TRANSLATE_FOR_EVERYONE] as const;
+export const APP_COMMANDS = [
+  IMPORT_COMMAND,
+  TRANSLATE_FOR_ME,
+  TRANSLATE_FOR_EVERYONE,
+  JOIN_COMMAND,
+] as const;
 export type AppCommand = (typeof APP_COMMANDS)[number];
 
 /** The D126 switch behind each command. */
@@ -20,6 +53,7 @@ export const COMMAND_FEATURE: Record<AppCommand["name"], Feature> = {
   [IMPORT_COMMAND.name]: "discord_send",
   [TRANSLATE_FOR_ME.name]: "discord_translate_me",
   [TRANSLATE_FOR_EVERYONE.name]: "discord_translate_everyone",
+  [JOIN_COMMAND.name]: "discord_join",
 };
 
 /**

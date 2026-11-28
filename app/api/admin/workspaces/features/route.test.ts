@@ -2,6 +2,7 @@
 // target the source's switches and caps as served (its defaults when it never had a row).
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { JOIN_COMMAND } from "@/lib/app-commands";
 import type { AppContext } from "@/lib/app-context";
 import { TEST_ENV, TEST_PIN, testContext } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
@@ -152,6 +153,7 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     expect(puts[0]?.body).toEqual([
       { name: "Send to LAPTracker", type: 3 },
       { name: "Translate for me", type: 3 },
+      JOIN_COMMAND,
     ]);
   });
 
@@ -173,6 +175,7 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     expect(puts[0]?.body).toEqual([
       { name: "Send to LAPTracker", type: 3 },
       { name: "Translate for everyone", type: 3 },
+      JOIN_COMMAND,
     ]);
   });
 });

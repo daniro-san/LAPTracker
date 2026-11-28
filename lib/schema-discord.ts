@@ -8,13 +8,16 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  index,
   integer,
   jsonb,
   pgTable,
   primaryKey,
+  serial,
   smallint,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 
 import { workspaces, workspaceUsers } from "./schema";
@@ -34,7 +37,38 @@ export const workspaceDiscord = pgTable("workspace_discord", {
   /** The command names last registered in the server (Discord took them); null: never registered. */
   commands: jsonb("commands").$type<string[]>(),
   commandsAt: tstz("commands_at"),
+  /**
+   * Issue 868: the role the bot gives a member whose join request an officer approves, chosen in Alliance
+   * settings → Discord below the bot's own highest role; its name as Discord gave it at save time. Both null:
+   * none chosen.
+   */
+  memberRoleId: text("member_role_id"),
+  memberRoleName: text("member_role_name"),
 });
+
+/**
+ * Issue 868: a join request someone sent with `/join` in the workspace's Discord server: who (their Discord
+ * id and the name Discord shows), and the game name or ID they typed. One open request per person and
+ * workspace; an officer's Approve or Decline deletes it, and one older than JOIN_REQUEST_DAYS is no longer
+ * shown and is purged by the daily tick. Deleted with the workspace, never downloaded (D125).
+ */
+export const joinRequests = pgTable(
+  "join_requests",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    discordUserId: text("discord_user_id").notNull(),
+    discordName: text("discord_name").notNull(),
+    typed: text("typed").notNull(),
+    createdAt: tstz("created_at").notNull(),
+  },
+  (t) => [
+    unique("join_requests_workspace_user_unique").on(t.workspaceId, t.discordUserId),
+    index("join_requests_created_at_idx").on(t.createdAt),
+  ],
+);
 
 /** One row per workspace and channel once a webhook was saved; Remove deletes the row. */
 export const workspaceWebhooks = pgTable(

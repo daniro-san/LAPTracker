@@ -1,15 +1,20 @@
 // POST /api/discord/interactions — the Discord app's Interactions Endpoint URL (D96): the "Apps → Send to
-// LAPTracker" message command, the two Translate commands and their picker (D101), and Discord's PING. Public, outside /w: Discord signs each request with
+// LAPTracker" message command, the two Translate commands and their picker (D101), `/join` (issue 868), and
+// Discord's PING. Public, outside /w: Discord signs each request with
 // Ed25519 and the handler refuses any other. It answers within Discord's 3 s with a reply only the sender
 // sees, then reads the pictures after the response (`after`) and edits that reply.
 import { after } from "next/server";
 
 import { captureServer, eventWorkspace, type ServerEvent } from "@/lib/analytics/server";
 import { handleInteraction, type Handled } from "@/lib/private/discord-interaction";
+import { joinNoteMessage } from "@/lib/private/discord-join";
 import { runTranslation } from "@/lib/private/discord-translate-run";
+import { noticeChannels } from "@/lib/private/discord-webhooks";
 import { NO_STORE, privateError } from "@/lib/private/http";
 import { runJob } from "@/lib/private/import-discord";
 import { openOcr } from "@/lib/private/import-read";
+import { privateLog } from "@/lib/private/log";
+import { postMessages } from "@/lib/private/notice-publish";
 import { withContext } from "@/lib/route";
 
 /**
@@ -88,6 +93,20 @@ export async function POST(request: Request): Promise<Response> {
         now: ctx.now,
       };
       after(() => runTranslation(deps, job));
+    }
+    if (handled.status === 200 && handled.joinNote) {
+      // Issue 868: the leaders' channel hears of a new request, the typed name only. The webhook is opened
+      // here, before the answer, and used once after it; a channel without one gets nothing.
+      const note = handled.joinNote;
+      const ws = { workspaceId: note.workspaceId, slug: note.slug };
+      const channel = (await noticeChannels(db, ws, ctx)).leaders;
+      if (channel) {
+        const { title, text } = joinNoteMessage(note, origin);
+        after(async () => {
+          const { sent, status } = await postMessages(ctx.fetch, channel, title, [text]);
+          privateLog("discord.join.note", { sent, http: status ?? 0 });
+        });
+      }
     }
     return Response.json(handled.body, { status: handled.status, headers: NO_STORE });
   });

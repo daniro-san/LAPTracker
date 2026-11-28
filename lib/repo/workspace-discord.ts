@@ -11,9 +11,18 @@ export type DiscordState = {
   botSeenAt: Date | null;
   commands: string[] | null;
   commandsAt: Date | null;
+  /** Issue 868: the member role an approved join request gets; both null when none is chosen. */
+  memberRoleId: string | null;
+  memberRoleName: string | null;
 };
 
-const NONE: DiscordState = { botSeenAt: null, commands: null, commandsAt: null };
+const NONE: DiscordState = {
+  botSeenAt: null,
+  commands: null,
+  commandsAt: null,
+  memberRoleId: null,
+  memberRoleName: null,
+};
 
 export async function discordState(db: Db, workspaceId: number): Promise<DiscordState> {
   const [row] = await db
@@ -59,6 +68,19 @@ export async function recordCommands(db: Db, workspaceId: number, names: string[
       target: workspaceDiscord.workspaceId,
       set: { commands: names, commandsAt: now },
     });
+}
+
+/** Issue 868: the member role officers chose (null: none), as Discord named it when it was saved. */
+export async function saveMemberRole(
+  db: Db,
+  workspaceId: number,
+  role: { id: string; name: string } | null,
+) {
+  const set = { memberRoleId: role?.id ?? null, memberRoleName: role?.name ?? null };
+  await db
+    .insert(workspaceDiscord)
+    .values({ workspaceId, ...set })
+    .onConflictDoUpdate({ target: workspaceDiscord.workspaceId, set });
 }
 
 /** A saved webhook's facts without its URL: for pages, /admin and the settings screen. */

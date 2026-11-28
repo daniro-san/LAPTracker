@@ -13,9 +13,10 @@ import type { WorkspaceAccess } from "./access";
 
 /**
  * What the bot may do (D101): View Channels (1024), Send Messages (2048), Create Public Threads
- * (34359738368) and Send Messages in Threads (274877906944). No admin right.
+ * (34359738368) and Send Messages in Threads (274877906944); issue 868: Manage Roles (268435456), to give
+ * the member role below its own when an officer approves a `/join`. No admin right.
  */
-export const BOT_PERMISSIONS = "309237648384";
+export const BOT_PERMISSIONS = "309506083840";
 
 /** At most 5 checks every 15 minutes per workspace: each makes up to three Discord calls (owner's call, 2026-11-20). */
 export const CHECKS = 5;
@@ -62,6 +63,9 @@ export interface BotView {
   /** The commands last registered in the server (null: never); `wanted`: those on now. */
   commands: string[] | null;
   wanted: string[];
+  /** Issue 868: `/join` is on for the alliance, and the member role an approved request gets (null: none). */
+  join: boolean;
+  memberRole: string | null;
 }
 
 export async function botView(db: Db, access: WorkspaceAccess, env: DiscordEnv): Promise<BotView> {
@@ -75,6 +79,8 @@ export async function botView(db: Db, access: WorkspaceAccess, env: DiscordEnv):
     botSeenAt: state.botSeenAt,
     commands: state.commands,
     wanted: commandsFor(access.features.on).map((c) => c.name),
+    join: access.features.on.has("discord_join"),
+    memberRole: state.memberRoleId ? (state.memberRoleName ?? "") : null,
   };
 }
 

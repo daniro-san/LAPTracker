@@ -74,6 +74,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "members/[uid]/left-reason/route.ts": {
     POST: { body: { version: 0, reason: "left", note: "" } },
   },
+  "join-requests/route.ts": { POST: { body: { action: "decline", id: 999 } } },
   "member-links/route.ts": { POST: { body: { action: "unlink", user: 999, uid: 1 } } },
   "members/[uid]/route.ts": { GET: {} },
   "members/[uid]/self-report/route.ts": {

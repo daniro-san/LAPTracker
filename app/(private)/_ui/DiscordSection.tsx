@@ -1,4 +1,5 @@
-// Alliance settings → Discord (D129, issue 451): the three steps in one card. Server-rendered from what the
+// Alliance settings → Discord (D129, issue 451): the three steps in one card, and the member role `/join`
+// gives (issue 868). Server-rendered from what the
 // server knows; only states, channel names and command names reach the browser, never a webhook URL.
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { BotView } from "@/lib/private/discord-setup";
@@ -7,6 +8,7 @@ import type { WebhookView } from "@/lib/private/discord-webhooks";
 import { botLines } from "./discord-step";
 import { DiscordBot } from "./DiscordBot";
 import { DiscordChannels } from "./DiscordChannels";
+import { DiscordMemberRole } from "./DiscordMemberRole";
 
 export function DiscordSection(props: {
   slug: string;
@@ -33,6 +35,8 @@ export function DiscordSection(props: {
       {/* "Do the steps in order" only while there are steps (issue 585). */}
       {lines.step !== "off" && <p className="mt-1">{t["discord.lead"]}</p>}
       <DiscordBot slug={slug} bot={facts} t={t} />
+      {/* Issue 868: the role an approved `/join` gets, while the bot is set up and `/join` is on. */}
+      {bot.ready && bot.join && <DiscordMemberRole slug={slug} role={bot.memberRole} t={t} />}
       <DiscordChannels
         slug={slug}
         channels={props.channels.map((c) => ({ channel: c.channel, state: c.state, name: c.name }))}

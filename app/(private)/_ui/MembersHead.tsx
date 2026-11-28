@@ -1,5 +1,5 @@
-// The top of Members: "Send a screenshot" (D110) and the Members · Former members · Insights · Recruit check
-// switch (D107, issues 489 and 833), moved out of the page for its size.
+// The top of Members: "Send a screenshot" (D110) and the Members · Former members · Insights · Recruit check ·
+// Requests switch (D107, issues 489, 833 and 868), moved out of the page for its size.
 import { chip } from "@/lib/brand/components/controls";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -16,7 +16,7 @@ export function ViewSwitch({
   t,
 }: {
   slug: string;
-  open: "current" | "former" | "insights" | "recruit";
+  open: "current" | "former" | "insights" | "recruit" | "requests";
   on: ReadonlySet<Feature>;
   t: WorkspaceDictionary;
 }) {
@@ -39,6 +39,7 @@ export function ViewSwitch({
         link(open === "insights", `/w/${slug}/insights`, t["members.view.insights"])}
       {on.has("recruit_check") &&
         link(open === "recruit", `/w/${slug}/recruit`, t["members.view.recruit"])}
+      {on.has("discord_join") && link(open === "requests", `/w/${slug}/requests`, t["join.view"])}
     </nav>
   );
 }

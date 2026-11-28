@@ -30,7 +30,8 @@ export function nameMatches(discordName: string | null, uid: number, roster: Pla
   return match.status === "matched" && match.via === "current" && match.uid === uid;
 }
 
-const playersOf = async (db: Db, unionId: number): Promise<Player[]> =>
+/** The newest roster of the alliance as the link pickers show it (also `/join`'s candidates, issue 868). */
+export const playersOf = async (db: Db, unionId: number): Promise<Player[]> =>
   (await latestRoster(db, unionId)).map((e) => ({
     uid: e.uid,
     name: e.name,

@@ -7,7 +7,7 @@ export const discordFr: typeof discordEn = {
     "Reliez le serveur Discord de votre alliance : le bot, les commandes de message et les salons des annonces. Suivez les étapes dans l’ordre.",
   "discord.bot.head": "1. Ajoutez LAPTracker à votre serveur",
   "discord.bot.lead":
-    "Le bot peut voir les salons, envoyer des messages, ouvrir des fils publics et y écrire. Il n’a besoin d’aucun droit d’administrateur.",
+    "Le bot peut voir les salons, envoyer des messages, ouvrir des fils publics et y écrire, et donner le rôle de membre que vous choisissez plus bas. Il n’a besoin d’aucun droit d’administrateur.",
   "discord.bot.tip":
     "Il vous faut la permission Gérer le serveur sur Discord. Le lien s’ouvre seulement sur le serveur de votre alliance.",
   "discord.bot.add": "Ajouter LAPTracker à Discord",

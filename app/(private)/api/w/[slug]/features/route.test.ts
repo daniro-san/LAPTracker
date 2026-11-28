@@ -3,6 +3,7 @@
 // feature that spends tracker calls says about how many. Invented names only.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { JOIN_COMMAND } from "@/lib/app-commands";
 import type { AppContext } from "@/lib/app-context";
 import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
@@ -137,7 +138,7 @@ describe("POST /api/w/[slug]/features (D134)", () => {
     await db.insert(workspaceDiscord).values({ workspaceId, commands: both });
     expect((await post({ feature: "discord_translate_me", on: false })).status).toBe(200);
     expect(puts.map((p) => p.url.split("/guilds/")[1])).toEqual(["1/commands"]);
-    expect(puts[0]?.body).toEqual([{ name: "Send to LAPTracker", type: 3 }]);
+    expect(puts[0]?.body).toEqual([{ name: "Send to LAPTracker", type: 3 }, JOIN_COMMAND]);
   });
 
   it("refuses past the window's switches, and a request without a session", async () => {
