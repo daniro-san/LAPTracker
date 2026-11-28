@@ -31,6 +31,7 @@ export const meEn = {
   "me.progress.early": "Your chart starts after two daily updates.",
   "me.kvk.back": "Back to {pct}% of your might before KvK ({date}).",
   "me.kvk.full": "Fully back: {pct}% of your might before KvK ({date}).",
+  "me.kvk.thanks": "Thanks for the {kills} kills you gained in KvK ({date}).",
   "me.week.head": "This week",
   "me.week.lead": "Monday to Sunday, server days, with your own last week under each row.",
   "me.week.thanks": "Thanks for every day you play with the alliance.",
@@ -133,6 +134,7 @@ export const mePt: MeWords = {
   "me.progress.early": "Seu gráfico começa depois de duas atualizações diárias.",
   "me.kvk.back": "De volta a {pct}% do seu might de antes do KvK ({date}).",
   "me.kvk.full": "Totalmente recuperado: {pct}% do seu might de antes do KvK ({date}).",
+  "me.kvk.thanks": "Obrigado pelas {kills} kills que você ganhou no KvK ({date}).",
   "me.week.head": "Esta semana",
   "me.week.lead":
     "De segunda a domingo, em dias do servidor, com a sua semana passada embaixo de cada linha.",
@@ -215,6 +217,7 @@ export const meFr: MeWords = {
   "me.progress.early": "Votre graphique commence après deux mises à jour quotidiennes.",
   "me.kvk.back": "Votre might est revenu à {pct} % de celui d’avant le KvK ({date}).",
   "me.kvk.full": "Votre might a tout récupéré : {pct} % de celui d’avant le KvK ({date}).",
+  "me.kvk.thanks": "Merci pour les {kills} kills que vous avez gagnés au KvK ({date}).",
   "me.week.head": "Cette semaine",
   "me.week.lead":
     "Du lundi au dimanche, en jours du serveur, avec votre propre semaine dernière sous chaque ligne.",

@@ -125,6 +125,84 @@ export async function mightBeforeEvent(
   return row && row.power !== null ? { at: row.at, power: row.power } : null;
 }
 
+/** The member's figures in one Before or After of an event (D160: `window` from 1). */
+export interface OwnEventRead {
+  window: number;
+  phase: "before" | "after";
+  /** A Before or After between the event's windows, read only to sum the windows' changes. */
+  between: boolean;
+  /** The alliance's row is fresh and not failed, and lists the member. */
+  isFresh: boolean;
+  totalPower: number | null;
+  totalKills: number | null;
+}
+
+/**
+ * The member's reads in the alliance's newest public scheduled event (the KvK) between `since` and `now`
+ * whose Start and End rows of the alliance are both fresh and not failed (D159's rule), with the reads
+ * between its windows (D160); null when there is none. Only the member's own uid, power and kills.
+ */
+export async function ownEventReads(
+  db: Db,
+  unionId: number,
+  uid: number,
+  since: Date,
+  now: Date,
+): Promise<{ at: Date; reads: OwnEventRead[] } | null> {
+  const rows = await db
+    .select({
+      eventId: events.id,
+      at: events.eventAtUtc,
+      phase: snapshots.phase,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
+      usable: sql<boolean>`${allianceSnapshots.isFresh} and ${allianceSnapshots.error} is null`,
+      listed: sql<boolean>`${memberSnapshots.uid} is not null`,
+      power: memberSnapshots.power,
+      kills: memberSnapshots.kills,
+    })
+    .from(allianceSnapshots)
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .innerJoin(events, eq(events.id, snapshots.eventId))
+    .leftJoin(
+      memberSnapshots,
+      and(
+        eq(memberSnapshots.allianceSnapshotId, allianceSnapshots.id),
+        eq(memberSnapshots.uid, uid),
+      ),
+    )
+    .where(
+      and(
+        eq(allianceSnapshots.unionId, unionId),
+        ne(snapshots.phase, "sample"),
+        eq(events.manual, false),
+        eq(events.isTest, false),
+        ne(events.visibility, "admin"),
+        gte(events.eventAtUtc, since),
+        lte(events.eventAtUtc, now),
+      ),
+    )
+    .orderBy(desc(events.eventAtUtc));
+  const ids = [...new Set(rows.map((r) => r.eventId))];
+  for (const id of ids) {
+    const own = rows.filter((r) => r.eventId === id);
+    const edge = (phase: string) => own.find((r) => r.phase === phase && !r.between);
+    if (!edge("before")?.usable || !edge("after")?.usable) continue;
+    return {
+      at: own[0]?.at ?? now,
+      reads: own.map((r) => ({
+        window: r.window,
+        phase: r.phase === "after" ? "after" : "before",
+        between: r.between,
+        isFresh: r.usable && r.listed,
+        totalPower: r.power,
+        totalKills: r.kills,
+      })),
+    };
+  }
+  return null;
+}
+
 /** The member's Elixir Scramble team (A or B) in the week starting `week`, or null. */
 export async function ownTeam(
   db: Db,

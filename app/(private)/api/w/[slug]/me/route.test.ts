@@ -15,15 +15,19 @@ import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { meView } from "@/lib/private/me";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import {
+  allianceSnapshots,
   dailyReads,
   dailyRosters,
+  events,
+  memberSnapshots,
   rollCallMarks,
   rollCalls,
   rollCallTeam,
+  snapshots,
   workspaces,
   workspaceUsers,
 } from "@/lib/schema";
-import { memberSquads } from "@/lib/schema-squads";
+import { heroCatalog, memberSquads } from "@/lib/schema-squads";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -175,6 +179,48 @@ async function linked(who: string, uid: number) {
   await post("member-links", "alpha:Rook", { action: "approve", user: users[who], uid });
 }
 
+/** A public scheduled event on Sat, Oct 31 with the alliance's reads: window, phase, between windows, kills. */
+async function kvk(reads: [number, "before" | "after", boolean, Record<number, number>][]) {
+  const at = new Date("2026-10-31T14:00:00Z");
+  const [event] = await db
+    .insert(events)
+    .values({
+      name: "Saturday Event 2026-10-31",
+      eventAtUtc: at,
+      allianceIds: [ALPHA],
+      beforeAt: at,
+      afterAt: at,
+    })
+    .returning({ id: events.id });
+  for (const [windowN, phase, betweenWindows, kills] of reads) {
+    const [snap] = await db
+      .insert(snapshots)
+      .values({
+        eventId: event?.id ?? 0,
+        phase,
+        windowN,
+        betweenWindows,
+        startedAt: at,
+        status: "complete",
+      })
+      .returning({ id: snapshots.id });
+    const [row] = await db
+      .insert(allianceSnapshots)
+      .values({ snapshotId: snap?.id ?? 0, unionId: ALPHA, source: "v1", isFresh: true })
+      .returning({ id: allianceSnapshots.id });
+    await db.insert(memberSnapshots).values(
+      Object.entries(kills).map(([uid, k]) => ({
+        allianceSnapshotId: row?.id ?? 0,
+        uid: Number(uid),
+        name: "Invented",
+        lv: 20,
+        power: 1000,
+        kills: k,
+      })),
+    );
+  }
+}
+
 describe("a member's own page (D142, issue 471)", () => {
   it("waits for an officer even on a name match, then shows only that member's data", async () => {
     // "Ana Invented" is the game name, and still the link waits: a nickname proves nothing.
@@ -322,6 +368,60 @@ describe("a member's own page (D142, issue 471)", () => {
       404,
     );
     expect(await shown("alpha:Bobby")).toBeNull();
+  });
+
+  it("thanks a member for their own kills gained in the last KvK, as the sum of its windows (issue 793)", async () => {
+    // A two-window event on Sat, Oct 31: Ana gains 200K in window 1 and 500K in window 2; the 300K between
+    // the windows is not the event's (D160). Bo gains 3M.
+    await kvk([
+      [1, "before", false, { 101: 1_000_000, 102: 9_000_000 }],
+      [1, "after", true, { 101: 1_200_000, 102: 10_000_000 }],
+      [2, "before", true, { 101: 1_500_000, 102: 10_000_000 }],
+      [2, "after", false, { 101: 2_000_000, 102: 12_000_000 }],
+    ]);
+    // A pending link shows nothing personal, the thanks included.
+    await post("me", "alpha:Ana Invented", { action: "claim", uid: 101 });
+    expect(await shown("alpha:Ana Invented")).toBeNull();
+    await post("member-links", "alpha:Rook", {
+      action: "approve",
+      user: users["alpha:Ana Invented"],
+      uid: 101,
+    });
+    const view = await shown("alpha:Ana Invented");
+    expect(view).toMatchObject({
+      progress: { thanks: "Thanks for the 700K kills you gained in KvK (Sat, Oct 31)." },
+    });
+    // Never another member's: Bo's 3M gain is nowhere on Ana's page.
+    expect(JSON.stringify(view)).not.toMatch(/3M|3\.00M|12M/);
+  });
+
+  it("shows no thanks line when no KvK was read in the last 30 days", async () => {
+    await linked("alpha:Ana Invented", 101);
+    expect(await shown("alpha:Ana Invented")).toMatchObject({ progress: { thanks: null } });
+  });
+
+  it("shows the member's own squads with the heroes' names from the catalog, never another's", async () => {
+    await db.insert(heroCatalog).values([
+      { id: 10005, name: "Kesso Invented", updatedAt: T0 },
+      { id: 10006, name: "Bo’s Hero Invented", updatedAt: T0 },
+    ]);
+    await db.insert(memberSquads).values(
+      [
+        [101, 10005],
+        [102, 10006],
+      ].map(([uid, id]) => ({
+        unionId: ALPHA,
+        uid: uid ?? 0,
+        squad: 2,
+        power: 5555,
+        heroes: [{ id: id ?? 0, lv: 80, star: 22, q: 5, awaken: 0 }],
+        readAt: T0,
+      })),
+    );
+    await linked("alpha:Ana Invented", 101);
+    const text = JSON.stringify(await shown("alpha:Ana Invented"));
+    expect(text).toContain("Kesso Invented");
+    expect(text).not.toContain("Bo’s Hero Invented");
   });
 
   it("lets no officer of another workspace approve or remove a user here by id", async () => {
