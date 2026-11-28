@@ -5,12 +5,14 @@ import { boardCard, CARD_LOCALE } from "@/app/_ui/link-card-facts";
 import { sharedAllianceCard } from "@/app/_ui/public-reads";
 import { copy } from "@/lib/copy";
 import { notFoundImage } from "@/lib/images";
-import { linkCardResponse } from "@/lib/link-card";
+import { canonicalRedirect, linkCardResponse } from "@/lib/link-card";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ unionId: string }> },
 ): Promise<Response> {
+  const canonical = canonicalRedirect(request);
+  if (canonical) return canonical;
   const { unionId } = await params;
   if (!/^\d{1,15}$/.test(unionId)) return notFoundImage();
   const read = await sharedAllianceCard(Number(unionId));

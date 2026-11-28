@@ -6,12 +6,14 @@ import { CARD_LOCALE, eventCard } from "@/app/_ui/link-card-facts";
 import { getAppContext } from "@/lib/app-context";
 import { discordClock } from "@/lib/discord-format";
 import { notFoundImage } from "@/lib/images";
-import { linkCardResponse } from "@/lib/link-card";
+import { canonicalRedirect, linkCardResponse } from "@/lib/link-card";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
+  const canonical = canonicalRedirect(request);
+  if (canonical) return canonical;
   const { id } = await params;
   if (!/^\d{1,9}$/.test(id)) return notFoundImage();
   const read = await eventCardRows(Number(id));

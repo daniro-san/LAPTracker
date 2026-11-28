@@ -3,12 +3,14 @@ import { CARD_LOCALE, playerCard } from "@/app/_ui/link-card-facts";
 import { sharedPlayer } from "@/app/_ui/public-reads";
 import { copy } from "@/lib/copy";
 import { notFoundImage } from "@/lib/images";
-import { linkCardResponse } from "@/lib/link-card";
+import { canonicalRedirect, linkCardResponse } from "@/lib/link-card";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ uid: string }> },
 ): Promise<Response> {
+  const canonical = canonicalRedirect(request);
+  if (canonical) return canonical;
   const { uid } = await params;
   if (!/^\d{1,15}$/.test(uid)) return notFoundImage();
   const player = await sharedPlayer(Number(uid));

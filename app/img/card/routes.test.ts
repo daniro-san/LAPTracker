@@ -2,7 +2,6 @@
 // drawn from the pages' shared reads (the in-memory cache of lib/app-context.test-helpers.ts).
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cardPreview } from "@/app/_ui/preview";
 import type { AppContext } from "@/lib/app-context";
 import { request, testContext } from "@/lib/app-context.test-helpers";
 import { ago, fakeV1, IDS, minutes, roster } from "@/lib/collector.test-helpers";
@@ -24,6 +23,11 @@ vi.mock("@/lib/event-image", () => ({ eventImage: async () => new Uint8Array([1]
 vi.mock("next/server", async (original) => ({
   ...(await original<typeof import("next/server")>()),
   after: () => undefined,
+}));
+// The player page's metadata runs on an English request: only Next's request APIs are replaced.
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
+  headers: async () => new Headers({ "accept-language": "en" }),
 }));
 vi.mock("@/lib/flags", async (original) => ({
   ...(await original<typeof import("@/lib/flags")>()),
@@ -47,6 +51,7 @@ const routes = {
   player: (await import("./player/[uid]/route")).GET,
   board: (await import("./alliance/[unionId]/route")).GET,
 };
+const { generateMetadata: playerMetadata } = await import("@/app/(pages)/players/[uid]/page");
 vi.setConfig({ testTimeout: 30_000 });
 
 const ONLINE_AT = 1_764_000_000;
@@ -137,20 +142,57 @@ describe("GET /img/card/*", () => {
     ]);
   });
 
-  it("never puts a blocked roster key or its value in a card", () => {
+  it("never puts a blocked roster key or its value in a card", async () => {
+    holder.cards = [];
+    const id = String(eventId);
+    const unionId = String(UNION);
+    const uid = String(UNION * 10 + 1);
+    await Promise.all([
+      routes.event(req(`/img/card/event/${id}`), with_({ id })),
+      routes.alliance(req(`/img/card/event/${id}/alliance/${unionId}`), with_({ id, unionId })),
+      routes.player(req(`/img/card/player/${uid}`), with_({ uid })),
+      routes.board(req(`/img/card/alliance/${unionId}`), with_({ unionId })),
+    ]);
     expect(holder.cards).toHaveLength(4);
     expect(findBlockedKeys(holder.cards)).toEqual([]);
     expect(JSON.stringify(holder.cards)).not.toContain(String(ONLINE_AT));
   });
+
+  it("answers a malformed id, an unknown player or event, and an alliance not in the event with a bodyless 404", async () => {
+    holder.cards = [];
+    const id = String(eventId);
+    for (const res of await Promise.all([
+      routes.player(req("/img/card/player/abc"), with_({ uid: "abc" })),
+      routes.player(req("/img/card/player/999"), with_({ uid: "999" })),
+      routes.event(req("/img/card/event/99999"), with_({ id: "99999" })),
+      routes.alliance(req(`/img/card/event/${id}/alliance/1`), with_({ id, unionId: "1" })),
+      routes.board(req("/img/card/alliance/1"), with_({ unionId: "1" })),
+    ])) {
+      expect(res.status).toBe(404);
+      expect(await res.text()).toBe("");
+    }
+    expect(holder.cards).toEqual([]);
+  });
+
+  it("sends a URL with a query string to the URL without it (308), before drawing anything", async () => {
+    holder.cards = [];
+    const uid = String(UNION * 10 + 3);
+    for (const query of ["?v=123", "?"]) {
+      const res = await routes.player(req(`/img/card/player/${uid}${query}`), with_({ uid }));
+      expect(res.status).toBe(308);
+      expect(res.headers.get("location")).toBe(`https://laptracker.test/img/card/player/${uid}`);
+    }
+    expect(holder.cards).toEqual([]);
+  });
 });
 
-describe("cardPreview", () => {
-  it("sets og:image to the card with its size, and the large-picture Twitter card", () => {
-    const meta = cardPreview("/img/card/player/1", "m3 · Event Ledger", "Might 3M");
+describe("player page metadata", () => {
+  it("points og:image at the player's card and asks for the large-picture Twitter card", async () => {
+    const uid = String(UNION * 10 + 3);
+    const meta = await playerMetadata({ params: Promise.resolve({ uid }) });
     expect(meta.openGraph).toMatchObject({
-      title: "m3 · Event Ledger",
-      description: "Might 3M",
-      images: [{ url: "/img/card/player/1", width: 1200, height: 630 }],
+      images: [{ url: `/img/card/player/${uid}`, width: 1200, height: 630 }],
+      description: "Might 3.00M · Kills — · Level 33",
     });
     expect(meta.twitter).toMatchObject({ card: "summary_large_image" });
   });

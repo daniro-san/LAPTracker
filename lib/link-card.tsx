@@ -15,6 +15,16 @@ export const CARD_SIZE = { width: 1200, height: 630 };
 /** As long as the public JSON routes: the shared reads behind it change with every run (D143). */
 export const CARD_CACHE = "public, max-age=300, s-maxage=300, stale-while-revalidate=3600";
 
+/** A card URL with any query string (even a bare `?`), sent with a 308 to the same URL without it, before
+ * anything is read or drawn: a made-up `?v=` cannot force a fresh render past the CDN copy. Null when the URL
+ * has no query string. */
+export function canonicalRedirect(request: Request): Response | null {
+  if (!request.url.includes("?")) return null;
+  const url = new URL(request.url);
+  url.search = "";
+  return Response.redirect(url.href.replace(/\?$/, ""), 308);
+}
+
 /** A change or a rank beside a figure: up in yarn, down in seal, a rank or no change in ink. */
 export interface CardNote {
   text: string;

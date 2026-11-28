@@ -4,7 +4,8 @@
 
 - `lib/link-card.tsx`: a 1200 × 630 link preview card drawn by `next/og`. It has a plum band with `MarkLine` and the site name, then the page's name, one line under it, and either up to 4 figures (label, value, change or rank) or an event's first 5 ledger rows. The yarn corner sits bottom right. Fonts and colours come from `lib/brand`, and text goes through `drawable`. The card carries no badge, photo or URL. `Cache-Control: public, max-age=300, s-maxage=300, stale-while-revalidate=3600`.
 - `app/_ui/link-card-facts.ts` builds the cards from the facts each page shows (`playerCard`, `allianceCard`, `eventCard`, `boardCard`) and turns them into the og:description line (`cardText`).
-- Four routes read the public shared cache (D143) only and make no upstream call. A malformed or unknown id gets the bodyless `/img` 404.
+- Four routes read the public shared cache (D143) only and make no upstream call. A malformed or unknown id gets the bodyless `/img` 404. A URL with any query string gets a 308 to the same URL without it (`canonicalRedirect`), before anything is read or drawn, so a made-up `?v=` cannot force a render.
+- The alliance-in-an-event card's rank is the page's: the End's rank by might, else the Start's (the summary band and og:description use the same rule).
   - `/img/card/player/[uid]`: the player page's `player` entry. That read moved from the page into `sharedPlayer` in `app/_ui/public-reads.ts`, so the page and the card share it.
   - `/img/card/event/[id]`: the event page's entry (`loadEventPage`), through the new `eventCardRows` in `app/_ui/event-page.ts`.
   - `/img/card/event/[id]/alliance/[unionId]`: the same event entry, the alliance's row.
@@ -28,12 +29,14 @@
 
 ## Verified
 
-- `pnpm vitest related --run` on the changed files: 17 files, 103 tests passed.
-- `pnpm check`: exit 0 (402 files passed, 2 skipped; 2202 tests).
+- `pnpm vitest related --run` on the changed files: 17 files, 103 tests passed. After the review fixes: 1 file, 5 tests passed.
+- `pnpm check`: exit 0. After the review fixes: 403 files passed, 2 skipped; 2212 tests.
 - New tests in `app/img/card/routes.test.ts`, with a tick-seeded event on PGlite:
   - Each of the four routes returns a 1200 × 630 PNG with the Cache-Control above, and its card data holds the page's facts. For the event: rows, rank, Might and change. For the alliance: Might, Kills and Members with change, and Rank. For the player: name, alliance, Might, Kills and Level. For the board: Might #4, Kills #7.
-  - No card holds a blocked roster key or the seeded `last_online_at` value. The seeded raw member rows carry `online`, `last_online_at`, `x` and `y`.
-  - `cardPreview` sets og:image with the card's URL and size, and `summary_large_image`.
+  - No card holds a blocked roster key or the seeded `last_online_at` value. This test draws its own four cards. The seeded raw member rows carry `online`, `last_online_at`, `x` and `y`.
+  - A malformed uid, an unknown uid, an unknown event id, an alliance that is not in the event, and an unknown alliance each get a 404 with an empty body, and nothing is drawn.
+  - `?v=123` and a bare `?` get a 308 to the URL without a query string, and nothing is drawn.
+  - The player page's `generateMetadata` sets og:image to `/img/card/player/[uid]` (1200 × 630), the facts as og:description, and `twitter:card summary_large_image`.
 - Rendered locally with invented data (not committed), in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/830/`: `event.png`, `alliance.png`, `player.png`, `board.png` (53–75 KB each). The script is `render.mts` in the same folder.
 - Not checked: a real paste into Discord. That needs a deployed URL.
 
