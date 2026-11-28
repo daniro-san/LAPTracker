@@ -31,9 +31,15 @@ export interface CatalogEntry {
   /**
    * The earliest server time ("HH:MM") it goes out that day: the first tick that opens the database from then.
    * `read`: the day's end-of-day read (DAILY_ROSTER_AT, D72), whose own ticks open the database. `after`: the
-   * scheduled event's End read (SNAPSHOT_AFTER), whose own ticks open the database.
+   * scheduled event's End read (SNAPSHOT_AFTER), whose own ticks open the database. `before`: the scheduled
+   * event's Before read (SNAPSHOT_BEFORE), from which the event window's ticks open the database (D160).
    */
-  from: string | "read" | "after";
+  from: string | "read" | "after" | "before";
+  /**
+   * A post sent before a KvK plan's start (issue 831): the minutes before it, one period each that day
+   * ("2026-11-28 T-60"), largest first. Without marks, one period per day.
+   */
+  marks?: readonly number[];
   /** Who reads it; the channel it goes to by default. */
   audience: PostChannel;
   /** The channels officers may pick. */
@@ -97,6 +103,18 @@ export const POST_CATALOG: Record<CatalogPost, CatalogEntry> = {
     channels: ["members"],
     editable: { weekday: false, picture: false },
   },
+  // 6. KvK reminder (issue 831): on the KvK's day, 60 and 15 minutes before the start of the KvK in the
+  // calendar, its time and the roles of its plan with the people officers confirmed, by public name (D22).
+  // From the Before read: the event window's ticks (D160) open the database anyway, so it adds no wake.
+  kvk_soon: {
+    feature: "post_kvk_soon",
+    weekday: "event",
+    from: "before",
+    marks: [60, 15],
+    audience: "members",
+    channels: ["members"],
+    editable: { weekday: false, picture: false },
+  },
 };
 
 /** The KvK recap names the members with this many biggest kills gains, and no one else. */
@@ -108,17 +126,32 @@ export const WELCOME_NAMES_MAX = 15;
 /** What the catalog's clock reads from the schedule. */
 export type PostClock = Pick<
   ScheduleConfig,
-  "SERVER_TZ" | "DAILY_ROSTER_AT" | "EVENT_WEEKDAY" | "SNAPSHOT_AFTER"
+  "SERVER_TZ" | "DAILY_ROSTER_AT" | "EVENT_WEEKDAY" | "SNAPSHOT_AFTER" | "SNAPSHOT_BEFORE"
 >;
 
-/** The server time a post is due from: its own, the day's end-of-day read for `read`, the End for `after`. */
+/**
+ * The server time a post is due from: its own, the day's end-of-day read for `read`, the End for `after`,
+ * the Before for `before`.
+ */
 export const fromOf = (
   post: CatalogPost,
-  cfg: Pick<ScheduleConfig, "DAILY_ROSTER_AT" | "SNAPSHOT_AFTER">,
+  cfg: Pick<ScheduleConfig, "DAILY_ROSTER_AT" | "SNAPSHOT_AFTER" | "SNAPSHOT_BEFORE">,
 ) => {
   const { from } = POST_CATALOG[post];
-  return from === "read" ? cfg.DAILY_ROSTER_AT : from === "after" ? cfg.SNAPSHOT_AFTER : from;
+  if (from === "read") return cfg.DAILY_ROSTER_AT;
+  if (from === "after") return cfg.SNAPSHOT_AFTER;
+  return from === "before" ? cfg.SNAPSHOT_BEFORE : from;
 };
+
+/** The periods a post's day holds: the day itself, or one per mark ("2026-11-28 T-60"). */
+export const periodsOf = (post: CatalogPost, day: string): string[] =>
+  POST_CATALOG[post].marks?.map((m) => `${day} T-${m}`) ?? [day];
+
+/** A marked period's server day and minutes before the start ("2026-11-28 T-15": 15). */
+export function markOf(period: string): { day: string; mark: number } {
+  const [day = "", mark = ""] = period.split(" T-");
+  return { day, mark: Number(mark) };
+}
 
 /** A post's weekday, 0 = Monday … 6 = Sunday (null: every day); `event` is EVENT_WEEKDAY (0 = Sunday). */
 export const weekdayOf = (post: CatalogPost, cfg: Pick<ScheduleConfig, "EVENT_WEEKDAY">) => {

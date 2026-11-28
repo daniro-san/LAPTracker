@@ -624,6 +624,13 @@
       "when": 1795848866447,
       "tag": "0088_kind_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1795851571945,
+      "tag": "0089_kvk_claims",
+      "breakpoints": true
     }
   ]
 }

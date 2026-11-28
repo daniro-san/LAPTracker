@@ -5,7 +5,7 @@
 export const postsEn = {
   "posts.head": "Posts",
   "posts.lead":
-    "Posts LAPTracker can make for you on its own, on a set day. Each one is off until you turn it on. They ping no one, and only two name anyone: the welcome, the members who just joined; the KvK recap, the 3 biggest kills gains.",
+    "Posts LAPTracker can make for you on its own, on a set day. Each one is off until you turn it on. They ping no one, and only three name anyone: the welcome, the members who just joined; the KvK recap, the 3 biggest kills gains; the KvK reminder, the people officers confirmed in the KvK plan’s roles.",
   "posts.week.name": "This week in the alliance",
   "posts.week.what":
     "The week’s calendar entries marked “Members can see this”, with their times in server time (ST). No player names, notes or links. Nothing is posted in a week with none.",
@@ -51,6 +51,14 @@ export const postsEn = {
   "posts.kvk.support":
     "Defenders and support players gain no kills, and they count just as much. Well done, all of you!",
   "posts.kvk.day": "On KvK day ({day}), after the End is read.",
+  "posts.kvk_soon.name": "KvK reminder",
+  "posts.kvk_soon.what":
+    "60 and 15 minutes before the KvK in your calendar starts: its time in server time (ST) and the roles of its KvK plan with the people you confirmed. Members who asked but are not confirmed are not named. Nothing is posted on an Origin of Chaos day, or on a day with no KvK in the calendar.",
+  "posts.kvk_soon.defaultTitle": "KvK soon",
+  "posts.kvk_soon.starts": "KvK starts in {n} minutes, at {time}.",
+  "posts.kvk_soon.roles": "Roles:",
+  "posts.kvk_soon.close": "Good luck, everyone, and thank you!",
+  "posts.kvk_soon.day": "On KvK day ({day}), before the KvK starts.",
   "posts.turnOn": "Post it",
   "posts.channel": "Channel",
   "posts.channel.members": "Members’ channel",
@@ -66,6 +74,8 @@ export const postsEn = {
   "posts.when": "Every {day}, between {from} and {to} ST, in #{channel}.",
   "posts.whenDaily": "Every day, between {from} and {to} ST, in #{channel}.",
   "posts.whenKvk": "After each KvK ({day}), between {from} and {to} ST, in #{channel}.",
+  "posts.whenKvkSoon":
+    "On each KvK day ({day}), 60 and 15 minutes before the KvK starts, in #{channel}. The KvK must start between {from} and {to} ST.",
   "posts.off": "Off: nothing is posted.",
   "posts.noChannel":
     "Nothing is posted until the {channel} is set up: paste its webhook under Discord, above.",
@@ -87,12 +97,15 @@ export const postsEn = {
   "callouts.post.kvk": "KvK recap",
   "callouts.where.kvk": "Goes above the KvK recap, after the End is read.",
   "activity.callout.kvk": "{who} changed the line on the “KvK recap”",
+  "callouts.post.kvk_soon": "KvK reminder",
+  "callouts.where.kvk_soon": "Goes above the KvK reminder, 60 and 15 minutes before the KvK.",
+  "activity.callout.kvk_soon": "{who} changed the line on the “KvK reminder”",
 };
 
 export const postsPt: typeof postsEn = {
   "posts.head": "Posts",
   "posts.lead":
-    "Posts que o LAPTracker pode fazer por vocês sozinho, num dia fixo. Cada um fica desligado até vocês ligarem. Eles não marcam ninguém, e só dois citam nomes: as boas-vindas, os membros que acabaram de entrar; o resumo da KvK, os 3 maiores ganhos de kills.",
+    "Posts que o LAPTracker pode fazer por vocês sozinho, num dia fixo. Cada um fica desligado até vocês ligarem. Eles não marcam ninguém, e só três citam nomes: as boas-vindas, os membros que acabaram de entrar; o resumo da KvK, os 3 maiores ganhos de kills; o lembrete da KvK, quem os oficiais confirmaram nas funções do plano da KvK.",
   "posts.week.name": "Esta semana na aliança",
   "posts.week.what":
     "Os eventos da semana no calendário marcados “Os membros podem ver isto”, com os horários do servidor (ST). Sem nomes de jogadores, notas ou links. Nada sai numa semana sem nenhum.",
@@ -138,6 +151,14 @@ export const postsPt: typeof postsEn = {
   "posts.kvk.support":
     "Defensores e jogadores de suporte não ganham kills, e contam do mesmo jeito. Mandaram bem, todos vocês!",
   "posts.kvk.day": "No dia da KvK ({day}), depois da leitura de Fim.",
+  "posts.kvk_soon.name": "Lembrete da KvK",
+  "posts.kvk_soon.what":
+    "60 e 15 minutos antes de a KvK da agenda começar: o horário no servidor (ST) e as funções do plano da KvK com quem vocês confirmaram. Quem pediu e ainda não foi confirmado não é citado. Nada sai num dia de Origin of Chaos, nem num dia sem KvK na agenda.",
+  "posts.kvk_soon.defaultTitle": "KvK daqui a pouco",
+  "posts.kvk_soon.starts": "A KvK começa em {n} minutos, às {time}.",
+  "posts.kvk_soon.roles": "Funções:",
+  "posts.kvk_soon.close": "Boa sorte a todos, e obrigado!",
+  "posts.kvk_soon.day": "No dia da KvK ({day}), antes de a KvK começar.",
   "posts.turnOn": "Postar",
   "posts.channel": "Canal",
   "posts.channel.members": "Canal dos membros",
@@ -153,6 +174,8 @@ export const postsPt: typeof postsEn = {
   "posts.when": "Toda {day}, entre {from} e {to} ST, em #{channel}.",
   "posts.whenDaily": "Todo dia, entre {from} e {to} ST, em #{channel}.",
   "posts.whenKvk": "Depois de cada KvK ({day}), entre {from} e {to} ST, em #{channel}.",
+  "posts.whenKvkSoon":
+    "Em cada dia de KvK ({day}), 60 e 15 minutos antes de a KvK começar, em #{channel}. A KvK precisa começar entre {from} e {to} ST.",
   "posts.off": "Desligado: nada é postado.",
   "posts.noChannel":
     "Nada é postado até o {channel} ser configurado: cole o webhook dele em Discord, acima.",
@@ -174,12 +197,15 @@ export const postsPt: typeof postsEn = {
   "callouts.post.kvk": "Resumo da KvK",
   "callouts.where.kvk": "Vai acima do resumo da KvK, depois da leitura de Fim.",
   "activity.callout.kvk": "{who} mudou a frase do “Resumo da KvK”",
+  "callouts.post.kvk_soon": "Lembrete da KvK",
+  "callouts.where.kvk_soon": "Vai acima do lembrete da KvK, 60 e 15 minutos antes da KvK.",
+  "activity.callout.kvk_soon": "{who} mudou a frase do “Lembrete da KvK”",
 };
 
 export const postsFr: typeof postsEn = {
   "posts.head": "Messages",
   "posts.lead":
-    "Des messages que LAPTracker peut publier pour vous tout seul, un jour fixe. Chacun reste éteint jusqu’à ce que vous l’allumiez. Ils ne mentionnent personne, et seuls deux nomment quelqu’un : l’accueil, les membres qui viennent d’arriver ; le bilan de la KvK, les 3 plus gros gains de Kills.",
+    "Des messages que LAPTracker peut publier pour vous tout seul, un jour fixe. Chacun reste éteint jusqu’à ce que vous l’allumiez. Ils ne mentionnent personne, et seuls trois nomment quelqu’un : l’accueil, les membres qui viennent d’arriver ; le bilan de la KvK, les 3 plus gros gains de Kills ; le rappel de la KvK, les personnes que les officiers ont confirmées dans les rôles du plan de KvK.",
   "posts.week.name": "Cette semaine dans l’alliance",
   "posts.week.what":
     "Les entrées du calendrier de la semaine marquées « Les membres peuvent voir ceci », avec leurs heures du serveur (ST). Sans noms de joueurs, notes ni liens. Rien n’est publié une semaine sans aucune.",
@@ -225,6 +251,14 @@ export const postsFr: typeof postsEn = {
   "posts.kvk.support":
     "Les défenseurs et les joueurs en soutien ne gagnent pas de Kills, et ils comptent tout autant. Bravo à vous tous !",
   "posts.kvk.day": "Le jour de la KvK ({day}), après le relevé de Fin.",
+  "posts.kvk_soon.name": "Rappel de la KvK",
+  "posts.kvk_soon.what":
+    "60 et 15 minutes avant le début de la KvK du calendrier : son heure du serveur (ST) et les rôles de son plan de KvK avec les personnes que vous avez confirmées. Les membres qui ont demandé sans être confirmés ne sont pas cités. Rien n’est publié un jour d’Origin of Chaos, ni un jour sans KvK au calendrier.",
+  "posts.kvk_soon.defaultTitle": "La KvK approche",
+  "posts.kvk_soon.starts": "La KvK commence dans {n} minutes, à {time}.",
+  "posts.kvk_soon.roles": "Rôles :",
+  "posts.kvk_soon.close": "Bonne chance à tous, et merci !",
+  "posts.kvk_soon.day": "Le jour de la KvK ({day}), avant son début.",
   "posts.turnOn": "Le publier",
   "posts.channel": "Salon",
   "posts.channel.members": "Salon des membres",
@@ -240,6 +274,8 @@ export const postsFr: typeof postsEn = {
   "posts.when": "Chaque {day}, entre {from} et {to} ST, dans #{channel}.",
   "posts.whenDaily": "Chaque jour, entre {from} et {to} ST, dans #{channel}.",
   "posts.whenKvk": "Après chaque KvK ({day}), entre {from} et {to} ST, dans #{channel}.",
+  "posts.whenKvkSoon":
+    "Chaque jour de KvK ({day}), 60 et 15 minutes avant son début, dans #{channel}. La KvK doit commencer entre {from} et {to} ST.",
   "posts.off": "Éteint : rien n’est publié.",
   "posts.noChannel":
     "Rien n’est publié tant que le {channel} n’est pas configuré : collez son webhook sous Discord, plus haut.",
@@ -259,6 +295,9 @@ export const postsFr: typeof postsEn = {
   "callouts.where.summary": "Au-dessus du bilan hebdomadaire des membres, le lundi.",
   "activity.callout.summary": "{who} a changé la phrase du « Bilan hebdomadaire des membres »",
   "callouts.post.kvk": "Bilan de la KvK",
+  "callouts.post.kvk_soon": "Rappel de la KvK",
+  "callouts.where.kvk_soon": "Au-dessus du rappel de la KvK, 60 et 15 minutes avant la KvK.",
+  "activity.callout.kvk_soon": "{who} a changé la phrase du « Rappel de la KvK »",
   "callouts.where.kvk": "Au-dessus du bilan de la KvK, après le relevé de Fin.",
   "activity.callout.kvk": "{who} a changé la phrase du « Bilan de la KvK »",
 };

@@ -55,7 +55,9 @@ export default async function KvkPlanPage({
         ].join(" · ")}
       </p>
       <p className="mt-2 text-body-sm">{t["kvkPlan.intro"]}</p>
+      {/* A Confirm (issue 831) saves a new rev: the editor starts again from the saved plan. */}
       <KvkPlanEditor
+        key={view.rev}
         slug={slug}
         entry={placed.entry.id}
         week={placed.week}
@@ -65,6 +67,7 @@ export default async function KvkPlanPage({
         rev={view.rev}
         members={view.members}
         noticeId={view.noticeId}
+        asks={view.asks}
         words={words}
         sheet={sheetWords(t)}
       />

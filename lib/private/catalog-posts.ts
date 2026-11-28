@@ -20,16 +20,29 @@
 // the alliance's War turnout from Start to End (the event page's `killsTurnout`) with the KVK_TOP biggest kills
 // gains by public name. It reads uid, name and kills of the event's member_snapshots only: no list of the
 // rest, no might lost, no raw_json. A stale or failed Start or End, or no kills gained, posts nothing.
+// Post 6, "KvK reminder" (issue 831): on the KvK's day, 60 and 15 minutes before the start of the KvK in the
+// calendar (one period per mark), its time and its plan's roles with the people officers confirmed, by
+// public name from the newest roster; never an ask that is not confirmed, the note or any other roster
+// value. A day with no KvK entry posts nothing; a mark whose time passed before a tick came is settled.
 import type { AppContext } from "../app-context";
 import { layOut, type Placed } from "../calendar-layout";
 import { killsGain, killsTurnout } from "../compute";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { breakLinks, discordCallout } from "../post-callout";
-import { KVK_TOP, POST_CATALOG, postPeriod, WELCOME_NAMES_MAX } from "../post-catalog";
+import {
+  KVK_TOP,
+  markOf,
+  periodsOf,
+  POST_CATALOG,
+  postPeriod,
+  WELCOME_NAMES_MAX,
+} from "../post-catalog";
 import { calendarRows } from "../repo/calendar";
 import { freshRosterOfDay, freshUidsBetween, getDailyRead } from "../repo/daily-reads";
+import { findKvkPlan } from "../repo/kvk-plans";
 import { liveCallout } from "../repo/post-touches";
+import { anyRoster } from "../repo/workspace-any-roster";
 import { settingsById } from "../repo/workspace-features";
 import { claimPostRun, finishPostRun, postsDue, settlePostRun } from "../repo/workspace-posts";
 import { recapKills, type RecapMember } from "../repo/workspace-rosters";
@@ -37,7 +50,7 @@ import { serverInstant } from "../schedule";
 import { CATALOG_POSTS, type CatalogPost } from "../schema-discord";
 import { fill } from "../words";
 import { resolveFeatures } from "../workspace-features";
-import { addDays } from "./calendar-time";
+import { addDays, hhmm, mondayOf } from "./calendar-time";
 import { calendarDates, stOf, titleOf } from "./calendar-words";
 import {
   WORKSPACE_DICTIONARIES,
@@ -58,6 +71,7 @@ export interface PostsDeps {
     | "DAILY_ROSTER_AT"
     | "EVENT_WEEKDAY"
     | "SNAPSHOT_AFTER"
+    | "SNAPSHOT_BEFORE"
     | "WORKSPACE_KEYS_SECRET"
     | "WORKSPACE_DISCORD_WEBHOOKS"
   >;
@@ -187,6 +201,75 @@ export function kvkText(
   ].join("\n");
 }
 
+/**
+ * The KvK reminder's text: when it starts, in minutes and in server time, then each role of its plan that
+ * has confirmed people, in name order (D75: roles are jobs, never a ranking). Names and role names link
+ * nothing.
+ */
+export function soonText(
+  minutes: number,
+  time: string,
+  roles: readonly { name: string; names: readonly string[] }[],
+  language: WorkspaceLanguage,
+): string {
+  const t = WORKSPACE_DICTIONARIES[language];
+  const lines = roles
+    .filter((r) => r.names.length > 0)
+    .map((r) =>
+      fill(t["kvkPlan.message.role"], {
+        role: breakLinks(r.name),
+        names: [...r.names]
+          .sort((a, b) => a.localeCompare(b, "en"))
+          .map(breakLinks)
+          .join(", "),
+      }),
+    );
+  return [
+    fill(t["posts.kvk_soon.starts"], { n: minutes, time }),
+    ...(lines.length > 0 ? ["", t["posts.kvk_soon.roles"], ...lines] : []),
+    "",
+    t["posts.kvk_soon.close"],
+  ].join("\n");
+}
+
+const MINUTE_MS = 60_000;
+
+/**
+ * The KvK reminder for one mark ("2026-11-28 T-60"): undefined before the mark, null (settled) once the next
+ * mark or the start has come, or when the day has no KvK entry; else its text. The first KvK of the day by
+ * time is the one reminded.
+ */
+async function soonOf(
+  db: Db,
+  due: Due,
+  period: string,
+  language: WorkspaceLanguage,
+  cfg: PostsDeps["env"],
+  now: Date,
+): Promise<string | null | undefined> {
+  const { day, mark } = markOf(period);
+  const kvk = (await weekOf(db, due.workspaceId, mondayOf(day))).find(
+    (p) => p.day === day && p.entry.kind === "kvk" && p.minute !== null,
+  );
+  if (!kvk) return null;
+  const minute = kvk.minute as number;
+  const left = serverInstant(day, hhmm(minute), cfg).getTime() - now.getTime();
+  const next = (POST_CATALOG.kvk_soon.marks ?? []).find((m) => m < mark) ?? 0;
+  if (left > mark * MINUTE_MS) return undefined;
+  if (left <= next * MINUTE_MS) return null;
+  const [plan, roster] = await Promise.all([
+    findKvkPlan(db, due.workspaceId, kvk.entry.id),
+    anyRoster(db, due.unionId),
+  ]);
+  const names = new Map((roster?.members ?? []).map((m) => [m.uid, m.name]));
+  const roles = (plan?.roles ?? []).map((r) => ({
+    name: r.name,
+    names: r.uids.flatMap((u) => names.get(u) ?? []),
+  }));
+  const time = stOf("kvk", minute, WORKSPACE_DICTIONARIES[language]);
+  return soonText(Math.round(left / MINUTE_MS), time, roles, language);
+}
+
 type Due = Awaited<ReturnType<typeof postsDue>>[number];
 
 /**
@@ -217,6 +300,7 @@ const BODIES: Record<
     period: string,
     language: WorkspaceLanguage,
     cfg: PostsDeps["env"],
+    now: Date,
   ) => Promise<string | null | undefined>
 > = {
   week: async (db, due, period, language) =>
@@ -243,6 +327,7 @@ const BODIES: Record<
     );
     return kills && kvkText(kills.before, kills.after, language);
   },
+  kvk_soon: soonOf,
 };
 
 /**
@@ -260,7 +345,7 @@ async function sendPost(db: Db, deps: PostsDeps, due: Due, period: string, post:
   const channel = (await noticeChannels(db, ws, deps))[due.channel];
   if (!channel) return;
   const language = languageOf(due.language);
-  const text = await BODIES[post](db, due, period, language, deps.env);
+  const text = await BODIES[post](db, due, period, language, deps.env, deps.now());
   if (text === undefined) return;
   if (text === null) return settlePostRun(db, { ...run, at: deps.now() });
   const title = postTitle(post, due.title, WORKSPACE_DICTIONARIES[language]);
@@ -295,9 +380,12 @@ export const POST_START_MS = 45_000;
  */
 export async function sendDuePosts(db: Db, deps: PostsDeps, deadline: number): Promise<void> {
   const now = deps.now();
-  for (const post of CATALOG_POSTS) {
-    const period = postPeriod(post, now, deps.env);
-    if (period === null) continue;
+  // Each post's periods due now: its server day, or one per mark (the KvK reminder's T-60 and T-15).
+  const periods = CATALOG_POSTS.flatMap((post) => {
+    const day = postPeriod(post, now, deps.env);
+    return day === null ? [] : periodsOf(post, day).map((period) => ({ post, period }));
+  });
+  for (const { post, period } of periods) {
     for (const due of await postsDue(db, post, period)) {
       if (Date.now() + POST_START_MS > deadline) {
         privateLog(`posts.${post}.deadline`);

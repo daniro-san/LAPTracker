@@ -12,6 +12,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
   smallint,
   text,
@@ -229,5 +230,30 @@ export const kvkPlans = pgTable(
   (t) => [
     unique("kvk_plans_entry_unique").on(t.entryId),
     index("kvk_plans_workspace_idx").on(t.workspaceId),
+  ],
+);
+
+/**
+ * A member's "I'm in" for one role of a KvK plan (issue 831, D161 amended): asked, not yet answered. The
+ * role is named as the plan names it; the uid is the member's approved link's (D142), never the request's.
+ * An officer's Confirm puts the uid into the plan's role and deletes the row; Decline and the member's
+ * Withdraw delete it. One row per entry, role and uid.
+ */
+export const kvkClaims = pgTable(
+  "kvk_claims",
+  {
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    entryId: integer("entry_id")
+      .notNull()
+      .references(() => calendarEntries.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    uid: big("uid").notNull(),
+    askedAt: tstz("asked_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.entryId, t.role, t.uid] }),
+    index("kvk_claims_workspace_idx").on(t.workspaceId),
   ],
 );

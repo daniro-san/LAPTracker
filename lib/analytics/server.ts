@@ -40,7 +40,8 @@ export const DESK_FEATURES = [
   "profile",
   "thanks",
   "garrison",
-  // D161: a KvK entry's plan saved ("save") and its message made into a notice draft ("draft").
+  // D161: a KvK entry's plan saved ("save") and its message made into a notice draft ("draft"); a
+  // member's "I'm in" confirmed ("approve") or declined ("decline", issue 831).
   "kvk_plan",
   "tracker_key",
   "workspace_data",
@@ -120,6 +121,8 @@ export const DESK_ACTIONS = [
   "accept",
   // Issue 486: a workspace made from an invite.
   "create",
+  // Issue 831: an officer declines a member's "I'm in" for a KvK role (Confirm is `approve`).
+  "decline",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
@@ -134,7 +137,7 @@ export interface DeskPlace {
 }
 
 /** The catalog's posts (D159, `CATALOG_POSTS` in lib/schema-discord.ts): `posts` events say which one. */
-export const DESK_POSTS = ["week", "shield_up", "welcome", "summary", "kvk"] as const;
+export const DESK_POSTS = ["week", "shield_up", "welcome", "summary", "kvk", "kvk_soon"] as const;
 export type DeskPost = (typeof DESK_POSTS)[number];
 
 /** Where a Discord sign-in started (issue 781): a workspace's own button, or the chooser at /w (D131). */

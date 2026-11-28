@@ -1,7 +1,8 @@
 // The world of the self-report route tests (D154): two workspaces, Alpha's newest roster (Ana, Bo, Cass)
 // and Bravo's (Cy); Ana with an approved link to her player, Bobby with a pending one, Nobody with none,
 // Rook an Alpha officer, Vale an officer of Bravo. A member's send, an officer's answer, the officer's
-// card and an officer's own fact. Each test file mocks getAppContext itself. Invented names only.
+// card and an officer's own fact. `kvk`: a member's "I'm in" for a KvK role (`me/kvk`), or with the path
+// `kvk-plan` an officer's answer (issue 831). Each test file mocks getAppContext itself. Invented names only.
 import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { truncateAll } from "@/lib/db.test-helpers";
@@ -11,9 +12,11 @@ import { memberCard } from "@/lib/private/member-card";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { dailyReads, dailyRosters, memberFacts, workspaces, workspaceUsers } from "@/lib/schema";
 
+import * as planRoute from "../../kvk-plan/route";
 import * as linksRoute from "../../member-links/route";
 import * as officerRoute from "../../members/[uid]/self-report/route";
 import * as awayRoute from "../away/route";
+import * as kvkRoute from "../kvk/route";
 import * as memberRoute from "./route";
 
 const ORIGIN = "https://laptracker.test";
@@ -96,18 +99,21 @@ async function setUp(w: State, db: Db) {
   await person(w, "bravo", bravo?.id ?? 0, "Vale Officer", "officer");
 }
 
+/** The route each test URL reaches, first match wins; anything else is the officer's self-report answer. */
+const ROUTES = [
+  ["/me/away", awayRoute],
+  ["/me/kvk", kvkRoute],
+  ["/me/", memberRoute],
+  ["/member-links", linksRoute],
+  ["/kvk-plan", planRoute],
+] as const;
+
 export function selfReportWorld() {
   const w: State = { db: null as unknown as Db, alphaId: 0, tokens: {}, users: {} };
   const { tokens, users } = w;
 
   async function call(url: string, who: string, body: object, params: Record<string, string>) {
-    const mod = url.includes("/me/away")
-      ? awayRoute
-      : url.includes("/me/")
-        ? memberRoute
-        : url.includes("/member-links")
-          ? linksRoute
-          : officerRoute;
+    const mod = ROUTES.find(([path]) => url.includes(path))?.[1] ?? officerRoute;
     const request = new Request(`${ORIGIN}${url}`, {
       method: "POST",
       headers: {
@@ -130,6 +136,8 @@ export function selfReportWorld() {
   /** A member's own days away (issue 829). */
   const away = (who: string, body: object) =>
     call("/api/w/alpha/me/away", who, body, { slug: "alpha" });
+  const kvk = (who: string, body: object, path = "me/kvk") =>
+    call(`/api/w/alpha/${path}`, who, body, { slug: "alpha" });
   /** An officer's answer on a member's card. */
   const answer = (who: string, uid: number, body: object, slug = "alpha") =>
     call(`/api/w/${slug}/members/${uid}/self-report`, who, body, { slug, uid: String(uid) });
@@ -173,6 +181,7 @@ export function selfReportWorld() {
     users,
     send,
     away,
+    kvk,
     answer,
     removeLink,
     rook,

@@ -17,6 +17,7 @@ import { isDay, mondayOf } from "./calendar-time";
 import { calendarDates, stOf } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import { awayOn } from "./fact-fields";
+import { asksOf, kvkAnswerInput } from "./kvk-claims";
 import { NOTE_MAX, PEOPLE_MAX, planMessage, ROLE_MAX, ROLE_NAME_MAX } from "./kvk-plan-message";
 import { factsOf } from "./member-facts";
 import { saveNotice } from "./notices";
@@ -49,6 +50,8 @@ export const kvkPlanInput = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("message"), entry: id, week: MONDAY, requestId: z.uuid() }).strict(),
+  // Issue 831: Confirm or Decline a member's "I'm in".
+  kvkAnswerInput,
 ]);
 export type KvkPlanInput = z.infer<typeof kvkPlanInput>;
 
@@ -62,6 +65,8 @@ export interface KvkPlanView {
   members: { uid: number; name: string; away: boolean }[];
   /** The last notice made from the plan, while it is not deleted. */
   noticeId: number | null;
+  /** Members' "I'm in" not answered yet (issue 831), by public name: roles still in the plan only. */
+  asks: { role: string; uid: number; name: string }[];
 }
 
 /** The KvK of this entry in this week, or null. */
@@ -93,9 +98,12 @@ export async function kvkPlanView(
     row?.noticeId != null && (await noticeInWorkspace(db, access.workspaceId, row.noticeId))
       ? row.noticeId
       : null;
+  const roles =
+    row && row.roles.map((r) => ({ ...r, uids: r.uids.filter((u) => onRoster.has(u)) }));
+  const byUid = new Map(roster.map((m) => [m.uid, m.name]));
   return {
     placed,
-    roles: row && row.roles.map((r) => ({ ...r, uids: r.uids.filter((u) => onRoster.has(u)) })),
+    roles,
     note: row?.note ?? "",
     rev: row?.rev ?? 0,
     members: roster
@@ -106,6 +114,7 @@ export async function kvkPlanView(
       }))
       .sort((a, b) => a.name.localeCompare(b.name, "en") || a.uid - b.uid),
     noticeId,
+    asks: await asksOf(db, access, entry, roles, byUid),
   };
 }
 
