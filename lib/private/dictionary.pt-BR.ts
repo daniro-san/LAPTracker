@@ -149,6 +149,9 @@ export const pt: WorkspaceDictionary = {
   "howto.lead": "Para os R4 e R5 da aliança. Fixe esta página no seu Discord.",
   "howto.after":
     "A partir daí, abra pelo ícone, como qualquer app. Você fica conectado por um dia. Depois, o Discord confere seu cargo de novo.",
+  "howto.tools": "Outras ferramentas da comunidade",
+  "howto.tools.body":
+    "Vários sites da comunidade cobrem dados do jogo que o tracker escolheu não construir: bancos de dados de heróis, construções e pesquisas, calculadoras, montadores de equipe e códigos de presente. Eles não são afiliados ao LAPTracker, e esta lista não é um ranking nem uma recomendação. Adicionado em 2026-11-28.",
   "howto.open": "Abrir a Mesa dos oficiais",
   "time.server": "{time} ST",
   "tab.review": "Acompanhar",
