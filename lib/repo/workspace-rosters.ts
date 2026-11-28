@@ -230,6 +230,7 @@ export async function scheduledEventKills(
 /** A member placed by a scheduled event's End read (issue 791, D163): their name, where it saw them, their
  * kills on both sides. */
 export interface EndPlace {
+  uid: number;
   name: string;
   x: number;
   y: number;
@@ -289,7 +290,7 @@ export async function eventEndPlaces(
   const places = end.flatMap((k) => {
     const place = at.get(k.uid);
     return place
-      ? [{ name: k.name, ...place, before: start.get(k.uid) ?? null, after: k.kills }]
+      ? [{ uid: k.uid, name: k.name, ...place, before: start.get(k.uid) ?? null, after: k.kills }]
       : [];
   });
   return { at: event.at, endAt: event.endAt, places, unplaced: end.length - places.length };

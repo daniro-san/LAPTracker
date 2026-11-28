@@ -326,3 +326,44 @@ def no_badge():
         blob(h, [(x - 3, 20.6), (x + 3, 20.6), (x + 3.1, 22.9), (x + 1.9, 25.2), (x, 25.9), (x - 1.9, 25.2), (x - 3.1, 22.9)], k=.9)
         blob(h, arc(x, 23, .95, .95, 0, 300, 5))
     return svg("0 0 32 32", el(p) + el(c, ' fill-rule="evenodd"') + el(h, ' fill-rule="evenodd"'))
+
+# The officers' KvK map (issue 817): a member's house, the castle, and the shield rings, same 16 px cut.
+def icon_house():
+    """A member's city on the map: a pitched roof with a chimney over a squat body, a door cut out."""
+    p = Path()
+    blob(p, [(0.9, 8.1), (4.6, 4.6), (8, 1.3), (11.5, 4.4), (11.4, 2.5), (13.1, 2.4), (13.2, 6.0),
+             (15.1, 8.0), (13.1, 8.4), (8, 8.0), (2.9, 8.4)], k=.35)
+    blob(p, [(2.9, 8.9), (8, 8.6), (13.1, 8.9), (13.3, 12.2), (13.0, 15.1), (8, 15.4), (3.0, 15.0), (2.7, 12.0)], k=.6)
+    hole(p, [(6.6, 15.3), (6.7, 11.9), (8, 10.9), (9.4, 11.9), (9.4, 15.3)], k=.5)
+    hole(p, [(10.4, 10.2), (11.8, 10.1), (11.8, 11.5), (10.4, 11.6)], k=.4)
+    return svg("0 0 16 16", el(p))
+
+def icon_castle():
+    """The castle point: two crenellated towers either side of a taller keep, a pennant, an arched gate."""
+    p = Path()
+    blob(p, [(0.9, 15.3), (0.8, 7.0), (1.0, 4.6), (2.2, 4.6), (2.3, 5.8), (3.2, 5.8), (3.3, 4.5), (4.5, 4.6),
+             (4.6, 7.4), (5.4, 7.3), (5.3, 3.6), (6.6, 3.5), (6.7, 4.8), (7.6, 4.8), (7.5, 2.8), (8.5, 2.8),
+             (8.4, 4.8), (9.3, 4.8), (9.4, 3.5), (10.7, 3.6), (10.6, 7.3), (11.4, 7.4), (11.5, 4.6),
+             (12.7, 4.5), (12.8, 5.8), (13.7, 5.8), (13.8, 4.6), (15.0, 4.6), (15.2, 7.0), (15.1, 15.3), (8, 15.6)], k=.15)
+    stroke(p, [(8, 3.0), (8.05, 1.6), (8, 0.3)], .35, a=.1, b=.1, e=.3)
+    blob(p, [(8.2, 0.3), (10.8, 0.8), (8.2, 1.7)], k=.4)
+    hole(p, [(6.3, 15.5), (6.4, 11.4), (8, 9.8), (9.6, 11.4), (9.7, 15.5)], k=.55)
+    hole(p, [(2.4, 8.6), (3.3, 8.5), (3.3, 10.4), (2.4, 10.5)], k=.3)
+    hole(p, [(12.7, 8.5), (13.6, 8.6), (13.6, 10.5), (12.7, 10.4)], k=.3)
+    return svg("0 0 16 16", el(p))
+
+def bubble():
+    """The shield seen: a wobbly ring drawn round the house (the light fill under it is the page's)."""
+    p = Path()
+    stroke(p, arc(8, 8, 6.9, 6.7, 200, 520, 12, wob=[0, .02, -.015, .025, 0, -.02, .015, -.02, .02, 0, -.015, 0]),
+           .42, a=.12, b=.18, e=.15)
+    return svg("0 0 16 16", el(p))
+
+def no_reading():
+    """No shield reading: the same ring as short pen dashes, a gap between each."""
+    p = Path()
+    n = 10
+    for i in range(n):
+        a0 = i * 360 / n + 6
+        stroke(p, arc(8, 8, 6.9, 6.7, a0, a0 + 20, 4), .4, a=.4, b=.4, e=.15)
+    return svg("0 0 16 16", el(p))

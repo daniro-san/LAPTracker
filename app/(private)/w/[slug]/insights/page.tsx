@@ -72,7 +72,7 @@ const openInsights = (params: Promise<{ slug: string }>, levels: InsightsLevels)
           flowDay: levels.flowDay,
         }),
         channelNames(db, access, getEnv()),
-        kvkMapView(db, access, now),
+        kvkMapView(db, access, now, zone),
       ]);
       return { view, channel: channels.members, now, map };
     },
