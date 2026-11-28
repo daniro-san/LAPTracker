@@ -9,6 +9,7 @@
 import { WRITING_LANGUAGES, type WritingLanguage } from "../ai/notice-writing";
 import { eventWorkspace, type EventWorkspace } from "../analytics/server";
 import type { Db } from "../db";
+import { glossaryOf } from "../repo/glossary";
 import { findWorkspaceByGuild } from "../repo/workspaces";
 import {
   pickWorkspaceLanguage,
@@ -44,6 +45,8 @@ export interface TranslationJob {
   /** The text as sent to the model: mentions, links and custom emoji replaced by {n}. */
   text: string;
   kept: string[];
+  /** The alliance's glossary (#832): words kept as written in every translation. */
+  glossary: string[];
   webhook: Webhook;
   /** The asker: only they may press the "for me" language buttons. */
   userId: string;
@@ -84,11 +87,14 @@ const privateReply = (content: string): TranslateAnswer => ({
 async function guildWorkspace(
   db: Db,
   input: TranslateInput,
-): Promise<(WithFeatures & { event: EventWorkspace }) | null> {
+): Promise<(WithFeatures & { event: EventWorkspace; glossary: string[] }) | null> {
   const workspace = input.guildId ? await findWorkspaceByGuild(db, input.guildId) : null;
   if (!workspace) return null;
-  const features = await featuresById(db, workspace.id);
-  return { workspaceId: workspace.id, features, event: eventWorkspace(workspace) };
+  const [features, glossary] = await Promise.all([
+    featuresById(db, workspace.id),
+    glossaryOf(db, workspace.id),
+  ]);
+  return { workspaceId: workspace.id, features, glossary, event: eventWorkspace(workspace) };
 }
 
 const COMMAND = { me: "discord_translate_me", everyone: "discord_translate_everyone" } as const;
@@ -182,6 +188,7 @@ export async function translateCommand(
       ...checked,
       webhook: input.webhook,
       userId: input.userId,
+      glossary: ws.glossary,
       workspace: ws.event,
     },
   };
@@ -220,6 +227,7 @@ async function switchLanguage(
       webhook: input.webhook,
       userId: pressed.userId,
       pressed: true,
+      glossary: ws.glossary,
       workspace: ws.event,
     },
   };
@@ -334,6 +342,7 @@ async function post(
         picker,
         places,
       },
+      glossary: ws.glossary,
       workspace: ws.event,
     },
   };

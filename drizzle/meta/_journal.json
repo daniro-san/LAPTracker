@@ -617,6 +617,13 @@
       "when": 1795845321613,
       "tag": "0087_huge_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1795848866447,
+      "tag": "0088_kind_junta",
+      "breakpoints": true
     }
   ]
 }

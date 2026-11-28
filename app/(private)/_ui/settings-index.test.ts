@@ -17,6 +17,7 @@ const ready: SettingsIndexInput = {
   discord: { channels: ["set", "set", "set"], botOff: false },
   posts: { on: 1, n: 1 },
   callouts: { set: 1, n: 3 },
+  glossary: 2,
   data: { download: true, deletionDate: null },
 };
 
@@ -38,6 +39,7 @@ describe("Alliance settings' index", () => {
       { id: "discord", label: "Discord", state: "3 of 3 channels set", attention: false },
       { id: "posts", label: "Posts", state: "1 of 1 on", attention: false },
       { id: "callouts", label: "Your line on our posts", state: "1 of 3 set", attention: false },
+      { id: "glossary", label: "Glossary", state: "2 words", attention: false },
       { id: "workspace-data", label: "Your alliance’s data", state: null, attention: false },
     ]);
 
@@ -52,6 +54,7 @@ describe("Alliance settings' index", () => {
         discord: { channels: ["set", "none", "none"], botOff: true },
         posts: null,
         callouts: null,
+        glossary: null,
         data: { download: false, deletionDate: null },
       },
       t,

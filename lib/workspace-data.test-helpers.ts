@@ -21,6 +21,7 @@ import {
   workspaceUsers,
 } from "./schema";
 import { startHere, thanksShares, thanksTakedowns } from "./schema-board";
+import { workspaceGlossary } from "./schema-features";
 import {
   DAY,
   id,
@@ -115,6 +116,10 @@ export async function seedEverything(
   { workspaceId: ws, unionId, officer }: { workspaceId: number; unionId: number; officer: number },
 ) {
   const by = { createdBy: officer, createdAt: SEED_AT };
+  // #832: the alliance's glossary.
+  await db
+    .insert(workspaceGlossary)
+    .values({ workspaceId: ws, words: ["[ZZZ]"], updatedAt: SEED_AT });
   const gone = { deletedAt: SEED_AT, deletedBy: officer, deleteRequestId: `gone-${ws}` };
   await db.insert(memberFacts).values({
     workspaceId: ws,

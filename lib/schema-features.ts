@@ -14,7 +14,21 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-import { workspaces } from "./schema";
+import { workspaces, workspaceUsers } from "./schema";
+
+/**
+ * An alliance's glossary (#832, D81 amendment): words its translate, improve and fit requests keep as written
+ * (tags, nicknames, game words). One row per workspace, the whole list, officers' own text only; never
+ * logged, never sent to analytics.
+ */
+export const workspaceGlossary = pgTable("workspace_glossary", {
+  workspaceId: integer("workspace_id")
+    .primaryKey()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  words: jsonb("words").$type<string[]>().notNull().default([]),
+  updatedBy: integer("updated_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
 
 /** One row per workspace once the owner changed something on /admin. */
 export const workspaceFeatures = pgTable("workspace_features", {

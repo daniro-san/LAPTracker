@@ -88,7 +88,7 @@ async function editOwn(deps: TranslationDeps, webhook: Webhook, message: object)
 /** Every language translated, in parallel; a language already the message's own is left out. */
 async function translateAll(ai: ChatModel, job: TranslationJob) {
   const settled = await Promise.allSettled(
-    job.to.map((to) => translateText(ai, job.from, to, job.text)),
+    job.to.map((to) => translateText(ai, job.from, to, job.text, undefined, job.glossary)),
   );
   const done: Done[] = [];
   const failed: WritingLanguage[] = [];

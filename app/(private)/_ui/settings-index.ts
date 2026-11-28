@@ -28,11 +28,33 @@ export interface SettingsIndexInput {
   posts: { on: number; n: number } | null;
   /** "Your line on our posts" (D156), shown while `post_callouts` is on: how many posts have a line. */
   callouts: { set: number; n: number } | null;
+  /** "Glossary" (#832), shown while a translating feature is on: how many words. */
+  glossary: number | null;
   /** `download`: the data card is shown (D126); `deletionDate`: a deletion is asked, its date. */
   data: { download: boolean; deletionDate: string | null };
 }
 
 const KEY_TROUBLE: ReadonlySet<KeyState> = new Set(["invalid", "out_of_quota", "reenter"]);
+
+/** The cards for the alliance's own words: its line on our posts (D156) and its glossary (#832). */
+function ownWordsRows(input: SettingsIndexInput, t: WorkspaceDictionary): IndexRow[] {
+  const rows: IndexRow[] = [];
+  if (input.callouts)
+    rows.push({
+      id: "callouts",
+      label: t["callouts.head"],
+      state: fill(t["settings.state.callouts"], input.callouts),
+      attention: false,
+    });
+  if (input.glossary !== null)
+    rows.push({
+      id: "glossary",
+      label: t["glossary.head"],
+      state: fill(t["settings.state.glossary"], { n: input.glossary }),
+      attention: false,
+    });
+  return rows;
+}
 
 export function settingsIndex(input: SettingsIndexInput, t: WorkspaceDictionary): IndexRow[] {
   const rows: IndexRow[] = [
@@ -75,13 +97,7 @@ export function settingsIndex(input: SettingsIndexInput, t: WorkspaceDictionary)
       state: fill(t["settings.state.posts"], input.posts),
       attention: false,
     });
-  if (input.callouts)
-    rows.push({
-      id: "callouts",
-      label: t["callouts.head"],
-      state: fill(t["settings.state.callouts"], input.callouts),
-      attention: false,
-    });
+  rows.push(...ownWordsRows(input, t));
   const deletion = input.data.deletionDate;
   rows.push({
     id: input.data.download ? "workspace-data" : "workspace-delete-head",
