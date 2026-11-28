@@ -30,14 +30,74 @@ import { Caret } from "./InsightsSets";
 import { KvkCastleForm } from "./KvkCastleForm";
 
 const MAP_CARD = "insights-kvk-map";
-/** The plot's inner margin, in viewBox units of 100: room for a name under a house at the edge. */
-const PAD = 12;
+/** The plot's inner margin, in viewBox units of 100: room for a two-line name beside a house at the edge. */
+const PAD = 16;
 /** The smallest span drawn, in map squares, so a tight cluster is not blown up past what it is. */
 const MIN_SPAN = 20;
 /** Glyph sizes in plot units (of 100): a house, its shield ring, the castle. */
-const HOUSE = 4;
-const RING = 8;
-const CASTLE = 7;
+const HOUSE = 5.6;
+const RING = 11.2;
+const CASTLE = 17.5;
+/** A name label's room in plot units at 360 px (12 px text): one line's height, one letter's width, the cap. */
+const LINE = 5.2;
+const LETTER = 2.6;
+const NAME_MAX = 30;
+
+type Point = { cx: number; cy: number };
+type Box = { x: number; y: number; w: number; h: number };
+
+const dist = (a: Point, b: Point) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
+
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+/**
+ * Where each member's name goes, in plot units, nearest the castle first: of under, above, right, left and the four
+ * corners of its house,
+ * the first spot inside the plot that covers neither the castle nor another name nor another house's ring.
+ * When none is free, the spot that covers the fewest names, then rings; never the castle when any spot
+ * avoids it.
+ */
+function labelsOf(dots: KvkMapDot[], points: Point[], castle: Point | null): Box[] {
+  const clear = CASTLE / 2 + 1;
+  const r = RING / 2;
+  const keep = castle
+    ? [{ x: castle.cx - clear, y: castle.cy - clear, w: 2 * clear, h: 2 * clear }]
+    : [];
+  const rings = points.map((p) => ({ x: p.cx - r, y: p.cy - r, w: RING, h: RING }));
+  const names: Box[] = [];
+  const count = (b: Box, of: Box[]) => of.filter((o) => overlaps(b, o)).length;
+  // Nearest the castle first: those names have the fewest free spots.
+  const from = castle ?? { cx: 50, cy: 50 };
+  const order = dots
+    .map((_, i) => i)
+    .sort((a, b) => dist(points[a] as Point, from) - dist(points[b] as Point, from));
+  const placed: Box[] = [];
+  for (const i of order) {
+    const d = dots[i] as KvkMapDot;
+    const { cx, cy } = points[i] as Point;
+    const h = (d.shield === "unknown" ? 2 : 1) * LINE;
+    const letters = Math.max(d.name.length, d.shield === "unknown" ? 10 : 0);
+    const w = Math.min(NAME_MAX, letters * LETTER + 2);
+    const tries: Box[] = [
+      { x: cx - w / 2, y: cy + r, w, h },
+      { x: cx - w / 2, y: cy - r - h, w, h },
+      { x: cx + r, y: cy - h / 2, w, h },
+      { x: cx - r - w, y: cy - h / 2, w, h },
+      { x: cx + r * 0.7, y: cy + r * 0.7, w, h },
+      { x: cx - r * 0.7 - w, y: cy + r * 0.7, w, h },
+      { x: cx + r * 0.7, y: cy - r * 0.7 - h, w, h },
+      { x: cx - r * 0.7 - w, y: cy - r * 0.7 - h, w, h },
+    ];
+    const outside = (b: Box) => b.x < 0 || b.y < 0 || b.x + b.w > 100 || b.y + b.h > 100;
+    const cost = (b: Box) =>
+      (outside(b) ? 1000 : 0) + 100 * count(b, keep) + 10 * count(b, names) + count(b, rings);
+    const box = tries.reduce((best, b) => (cost(b) < cost(best) ? b : best));
+    names.push(box);
+    placed[i] = box;
+  }
+  return placed;
+}
 
 type Mark = KillBand | "unknown";
 type Shield = KvkMapDot["shield"];
@@ -58,7 +118,7 @@ function Member({ shield, cx, cy }: { shield: Shield; cx: number; cy: number }) 
 /** A legend swatch: the mark drawn on its own, 16 px. */
 function Swatch({ children }: { children: ReactNode }) {
   return (
-    <svg viewBox="-4.5 -4.5 9 9" aria-hidden="true" className="size-4 shrink-0">
+    <svg viewBox="-6 -6 12 12" aria-hidden="true" className="size-4 shrink-0">
       {children}
     </svg>
   );
@@ -99,14 +159,15 @@ function markWords(map: KvkMap, t: WorkspaceDictionary, language: string): Recor
  */
 function Plot({ map, noReading }: { map: KvkMap; noReading: string }) {
   const { at } = frameOf(map);
-  const castle = map.castle && at(map.castle.x, map.castle.y);
+  const castle = map.castle ? at(map.castle.x, map.castle.y) : null;
+  const points = map.dots.map((d) => at(d.x, d.y));
+  const labels = labelsOf(map.dots, points, castle);
   return (
     <div
       aria-hidden="true"
       className="relative mt-2 aspect-square w-full max-w-md overflow-hidden border border-rule"
     >
       <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
-        {castle && <CastleGlyph {...castle} size={CASTLE} className="text-seal" />}
         {map.dots.map((d, i) => {
           const p = at(d.x, d.y);
           return (
@@ -123,15 +184,17 @@ function Plot({ map, noReading }: { map: KvkMap; noReading: string }) {
             </g>
           );
         })}
+        {/* The castle above the rings, so a member's ring never hides it. */}
+        {castle && <CastleGlyph {...castle} size={CASTLE} className="text-ink" />}
       </svg>
       {map.dots.map((d, i) => {
-        const p = at(d.x, d.y);
+        const box = labels[i] as Box;
         return (
           <span
             key={i}
             data-at={i}
-            className="absolute max-w-[24%] -translate-x-1/2 cursor-pointer truncate rounded-sm bg-paper/75 px-0.5 text-center text-xs leading-tight aria-[current=true]:font-semibold"
-            style={{ left: `${p.cx}%`, top: `${p.cy + RING / 2}%` }}
+            className="absolute cursor-pointer truncate rounded-sm bg-paper/75 px-0.5 text-center text-xs leading-tight aria-[current=true]:font-semibold"
+            style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%` }}
           >
             <bdi translate="no">{d.name}</bdi>
             {d.shield === "unknown" && <span className="block text-ink/80">{noReading}</span>}
@@ -180,7 +243,7 @@ function Legend({ map, t, language }: { map: KvkMap; t: WorkspaceDictionary; lan
       {map.castle && (
         <li className={row}>
           <Swatch>
-            <CastleGlyph cx={0} cy={0} size={CASTLE} className="text-seal" />
+            <CastleGlyph cx={0} cy={0} size={11} className="text-ink" />
           </Swatch>
           <span>{fill(t["insights.map.legend.castle"], { ...map.castle })}</span>
         </li>
