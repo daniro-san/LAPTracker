@@ -7,7 +7,7 @@ import { clientIp } from "@/lib/auth";
 import { CHOOSER_STATE_PREFIX, finishChooserSignIn } from "@/lib/private/chooser";
 import { privateError, redirectWith, requestCookies } from "@/lib/private/http";
 import { finishInviteSignIn, INVITE_STATE_PREFIX } from "@/lib/private/invite-sign-in";
-import { finishSignIn, STATE_COOKIE } from "@/lib/private/sign-in";
+import { countSignIn, finishSignIn, STATE_COOKIE } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
 export function GET(request: Request): Promise<Response> {
@@ -22,11 +22,15 @@ export function GET(request: Request): Promise<Response> {
       origin: url.origin,
     };
     const state = url.searchParams.get("state") ?? "";
-    const step = state.startsWith(INVITE_STATE_PREFIX)
+    const invite = state.startsWith(INVITE_STATE_PREFIX);
+    const chooser = state.startsWith(CHOOSER_STATE_PREFIX);
+    const step = invite
       ? await finishInviteSignIn(db, deps, { ...common, jar })
-      : state.startsWith(CHOOSER_STATE_PREFIX)
+      : chooser
         ? await finishChooserSignIn(db, deps, { ...common, cookies: jar })
         : await finishSignIn(db, deps, { ...common, cookies: jar });
+    // Issue 781: the invite's sign-in has its own events (ws_invite_opened, ws_invite_completed).
+    if (!invite) countSignIn(ctx, chooser ? "chooser" : "workspace", step);
     if (step.kind === "refused") return privateError(step.status, step.code);
     return redirectWith(step.location, step.cookies);
   });

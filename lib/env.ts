@@ -111,6 +111,8 @@ export const envSchema = z.object({
   // PostHog (D77): on only on the production deployment (Vercel sets VERCEL_ENV) with the project key set.
   // The feature flags (D91) are read wherever the key is set.
   VERCEL_ENV: optional(z.string()),
+  // The deployment's commit (Vercel sets it at run time; not a secret): `commit` on server errors (issue 781).
+  VERCEL_GIT_COMMIT_SHA: optional(z.string().regex(/^[0-9a-f]{7,40}$/, "expected a commit SHA")),
   POSTHOG_KEY: optional(z.string()),
   // Feature flags turned on without PostHog (D91): comma-separated flag keys, read only when POSTHOG_KEY is
   // not set (local `next dev`, reviews). Never set it on Vercel.

@@ -8,6 +8,13 @@
 import { randomBytes } from "node:crypto";
 
 import { analyticsKey, SIGNED_IN_HASH } from "../analytics/events";
+import {
+  captureServer,
+  sendLater,
+  type ServerEvent,
+  type SignInFailure,
+  type SignInVia,
+} from "../analytics/server";
 import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -42,17 +49,34 @@ export interface SignInDeps {
   now: Date;
 }
 
-/** Where the browser goes next and the cookies set on the way; or a refusal with no redirect. */
+/**
+ * Where the browser goes next and the cookies set on the way; or a refusal with no redirect. For PostHog
+ * (issue 781), a redirect says when it ends the sign-in without a session (`failure`) and when it goes to
+ * Discord's authorize page (`authorize`), never read back from the URL, which may hold a user's return path.
+ */
 export type Step =
-  | { kind: "redirect"; location: string; cookies: string[] }
+  | {
+      kind: "redirect";
+      location: string;
+      cookies: string[];
+      failure?: SignInFailure;
+      authorize?: true;
+    }
   | { kind: "refused"; status: 400 | 429; code: "bad_state" | "rate_limited" };
 
+/** A redirect's PostHog marks (issue 781). */
+export type StepMarks = { failure?: SignInFailure; authorize?: true };
+
 const clearState = `${STATE_COOKIE}=; ${cookieAttributes(0)}`;
-const go = (location: string, cookies: string[] = [clearState]): Step => ({
+const go = (location: string, cookies: string[] = [clearState], marks: StepMarks = {}): Step => ({
   kind: "redirect",
   location,
   cookies,
+  ...marks,
 });
+/** A redirect that ends the sign-in without a session, for `reason` (issue 781). */
+const fail = (location: string, failure: SignInFailure): Step =>
+  go(location, undefined, { failure });
 
 /**
  * The page to return to after sign-in (ADV-7), or null: only a path of this same workspace, `/w/<slug>`
@@ -82,13 +106,15 @@ export async function startSignIn(
   next?: string | null,
 ): Promise<Step> {
   const config = discordConfig(deps.env);
-  if (!config) return go(`/w/${slug}?e=not_configured`);
+  if (!config) return fail(`/w/${slug}?e=not_configured`, "not_configured");
   if (!(await findWorkspaceBySlug(db, slug))) return go(`/w/${slug}`);
   const back = returnPath(slug, next);
   const random = randomBytes(32).toString("base64url");
   const state = `${slug}.${random}${back ? `.${Buffer.from(back).toString("base64url")}` : ""}`;
   const location = authorizeUrl(config, `${origin}${CALLBACK_PATH}`, state, silent);
-  return go(location, [`${STATE_COOKIE}=${state}; ${cookieAttributes(STATE_MS)}`]);
+  return go(location, [`${STATE_COOKIE}=${state}; ${cookieAttributes(STATE_MS)}`], {
+    authorize: true,
+  });
 }
 
 export interface CallbackInput {
@@ -126,18 +152,18 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
   }
   const { slug } = state;
   const config = discordConfig(deps.env);
-  if (!config) return go(`/w/${slug}?e=not_configured`);
+  if (!config) return fail(`/w/${slug}?e=not_configured`, "not_configured");
   const workspace = await findWorkspaceBySlug(db, slug);
   if (!workspace) return go(`/w/${slug}`);
   const token = sessionToken(input.cookies, slug)?.value;
   // INVARIANT workspace.renewal-or-out: a trip through Discord that does not end in admit() ends the
   // browser's session here, so a page whose session waits for its check shows the sign-in, not a loop.
-  const out = async (location: string) => {
+  const out = async (location: string, failure: SignInFailure) => {
     if (token) await revokeSession(db, workspace.id, token);
-    return go(location);
+    return fail(location, failure);
   };
   const code = input.query.get("code");
-  if (input.query.has("error") || !code) return out(`/w/${slug}?e=denied`);
+  if (input.query.has("error") || !code) return out(`/w/${slug}?e=denied`, "denied");
 
   const member = await readMember(
     deps.fetch,
@@ -148,14 +174,18 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
   );
   if (!member.ok) {
     privateLog(`w.${member.code}`, { workspace: workspace.id });
-    return out(`/w/${slug}?e=discord`);
+    return out(`/w/${slug}?e=discord`, "discord");
   }
   const refusal = await refusalFor(db, workspace, member, deps.now);
   if (refusal.why) {
     // D148: whoever left the server, lost the role or was blocked gets no more notifications from here.
     await deletePersonDevices(db, workspace.id, member.userId);
     privateLog("w.no_access", { workspace: workspace.id });
-    return out(`/w/${workspace.slug}/no-access?why=${refusal.why}`);
+    // Issue 781: every no-access reason is a sign-in failure code; tsc fails if the lists drift.
+    return out(
+      `/w/${workspace.slug}/no-access?why=${refusal.why}`,
+      refusal.why satisfies SignInFailure,
+    );
   }
   const made = await admit(db, workspace, member, refusal, {
     now: deps.now,
@@ -174,6 +204,33 @@ export function landing(env: Env, to: string, cookies: (string | null)[]): Step 
   const made = cookies.filter((c): c is string => c !== null);
   const hash = made.length > 0 && analyticsKey(env) !== undefined ? SIGNED_IN_HASH : "";
   return go(`${to}${hash}`, [clearState, ...made]);
+}
+
+/** Why a step ends the sign-in without a session (issue 781): a refusal's code or the redirect's mark. */
+export function signInFailure(step: Step): SignInFailure | null {
+  return step.kind === "refused" ? step.code : (step.failure ?? null);
+}
+
+/**
+ * The sign-in's PostHog events (issue 781), after the response: `ws_sign_in_started` when `start` is given
+ * (the login routes) and the step goes to Discord, `ws_sign_in_failed` when the step ends without a session.
+ * Codes only: no slug, no id.
+ */
+export function countSignIn(
+  ctx: Pick<SignInDeps, "env" | "fetch">,
+  via: SignInVia,
+  step: Step,
+  start?: { silent: boolean },
+): void {
+  if (!analyticsKey(ctx.env)) return;
+  const reason = signInFailure(step);
+  const events: ServerEvent[] = [
+    ...(start && step.kind === "redirect" && step.authorize
+      ? [{ event: "ws_sign_in_started" as const, properties: { via, ...start } }]
+      : []),
+    ...(reason ? [{ event: "ws_sign_in_failed" as const, properties: { via, reason } }] : []),
+  ];
+  if (events.length > 0) sendLater(() => captureServer(ctx.env, ctx.fetch, events));
 }
 
 /**

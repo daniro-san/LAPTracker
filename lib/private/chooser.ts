@@ -37,6 +37,7 @@ import {
   type CallbackInput,
   type SignInDeps,
   type Step,
+  type StepMarks,
 } from "./sign-in";
 
 /** The workspace sign-in's scopes plus `guilds`, the list of the account's servers. */
@@ -48,19 +49,25 @@ const PAGE = "/w";
 export const MAX_SERVERS = 10;
 
 const clearState = `${STATE_COOKIE}=; ${cookieAttributes(0)}`;
-const go = (location: string, cookies: string[] = [clearState]): Step => ({
+const go = (location: string, cookies: string[] = [clearState], marks: StepMarks = {}): Step => ({
   kind: "redirect",
   location,
   cookies,
+  ...marks,
 });
+/** A redirect that ends the sign-in without a session, for PostHog's `reason` (issue 781). */
+const fail = (location: string, failure: NonNullable<StepMarks["failure"]>): Step =>
+  go(location, undefined, { failure });
 
 /** GET /api/w/login: the state cookie, then Discord. */
 export function startChooserSignIn(deps: SignInDeps, origin: string): Step {
   const config = discordConfig(deps.env);
-  if (!config) return go(`${PAGE}?e=not_configured`);
+  if (!config) return fail(`${PAGE}?e=not_configured`, "not_configured");
   const state = `${CHOOSER_STATE_PREFIX}${randomBytes(32).toString("base64url")}`;
   const location = authorizeUrl(config, `${origin}${CALLBACK_PATH}`, state, false, CHOOSER_SCOPES);
-  return go(location, [`${STATE_COOKIE}=${state}; ${cookieAttributes(STATE_MS)}`]);
+  return go(location, [`${STATE_COOKIE}=${state}; ${cookieAttributes(STATE_MS)}`], {
+    authorize: true,
+  });
 }
 
 const guildsSchema = z.array(z.object({ id: z.string().regex(/^\d{1,20}$/) }).passthrough());
@@ -77,13 +84,13 @@ export async function finishChooserSignIn(
   const refused = await stateRefusal(db, input, deps.now);
   if (refused) return refused;
   const config = discordConfig(deps.env);
-  if (!config) return go(`${PAGE}?e=not_configured`);
+  if (!config) return fail(`${PAGE}?e=not_configured`, "not_configured");
   const code = input.query.get("code");
-  if (input.query.has("error") || !code) return go(`${PAGE}?e=denied`);
+  if (input.query.has("error") || !code) return fail(`${PAGE}?e=denied`, "denied");
   const account = await readAccount(deps.fetch, config, code, `${input.origin}${CALLBACK_PATH}`);
   if (!account) {
     privateLog("w.chooser.discord", {});
-    return go(`${PAGE}?e=discord`);
+    return fail(`${PAGE}?e=discord`, "discord");
   }
   // INVARIANT chooser.servers-dropped: the server list is matched here and goes nowhere else.
   const found = await workspacesOnServers(db, account.servers);
@@ -96,7 +103,7 @@ export async function finishChooserSignIn(
     homes.push(made.home);
   }
   privateLog("w.chooser", { matched: found.length, admitted: homes.length });
-  if (homes.length === 0) return go(`${PAGE}?e=none`);
+  if (homes.length === 0) return fail(`${PAGE}?e=none`, "none");
   return landing(deps.env, homes.length === 1 ? homes.join("") : PAGE, cookies);
 }
 

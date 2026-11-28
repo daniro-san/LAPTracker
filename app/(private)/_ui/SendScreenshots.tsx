@@ -101,7 +101,7 @@ function useSend(props: SendProps) {
       router.refresh();
     } catch (e) {
       setUnsent({ pages, lost, ...(pick && { pick }), ...(preset && { preset }) });
-      if (!isSignedOut(e)) track("ws_screenshot_failed", { stage: "drafts" });
+      track("ws_screenshot_failed", { stage: isSignedOut(e) ? "signed_out" : "drafts" });
       setError(isSignedOut(e) ? SIGNED_OUT : (w["shots.e.failed"] ?? ""));
     }
   }
@@ -120,11 +120,17 @@ function useSend(props: SendProps) {
   async function send(files: File[], preset?: ImportKind) {
     setResult(null);
     setUnsent(null);
-    if (files.length > maxPictures)
+    track("ws_screenshot_started");
+    if (files.length > maxPictures) {
+      track("ws_screenshot_failed", { stage: "too_many" });
       return setError(fill(w["shots.tooMany"] ?? "", { n: maxPictures }));
+    }
     const { pages, signedOut } = await readAll(files, slug, props.statusBar, setProgress);
     setProgress(null);
-    if (signedOut) return setError(SIGNED_OUT);
+    if (signedOut) {
+      track("ws_screenshot_failed", { stage: "signed_out" });
+      return setError(SIGNED_OUT);
+    }
     if (pages.length === 0) {
       track("ws_screenshot_failed", { stage: "read" });
       return setError(w["shots.readFailed"] ?? "");

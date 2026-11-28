@@ -1,5 +1,5 @@
 // Events the server sends to PostHog (D115): server errors, Groq calls as `$ai_generation` metadata, Discord
-// command counts, and the desk's writes (`ws_action`). A closed list, each with properties that are codes,
+// command counts, the desk's writes (`ws_action`), and the sign-in's start and failures (issue 781). A closed list, each with properties that are codes,
 // enums or numbers: no name, no text, no roster field, no member value, no secret. The one text is
 // `$exception`'s message and frames, which pass redact(), redactPrivate and scrubMessage first. Production with
 // POSTHOG_KEY only, as D77; anywhere else nothing is sent. Events have the fixed distinct id
@@ -135,6 +135,28 @@ export interface DeskPlace {
 export const DESK_POSTS = ["week", "shield_up", "welcome", "summary", "kvk"] as const;
 export type DeskPost = (typeof DESK_POSTS)[number];
 
+/** Where a Discord sign-in started (issue 781): a workspace's own button, or the chooser at /w (D131). */
+export type SignInVia = "workspace" | "chooser";
+
+/**
+ * Why a sign-in ended without a session (issue 781): the callback's refusals, the sign-in page's `e` codes
+ * and the no-access page's reasons (`NoAccess` in lib/private/sign-in.ts, which this module may not import).
+ */
+export const SIGN_IN_FAILURES = [
+  "rate_limited",
+  "bad_state",
+  "not_configured",
+  "denied",
+  "discord",
+  "none",
+  "not_member",
+  "no_role",
+  "board_closed",
+  "allowlist_expired",
+  "blocked",
+] as const;
+export type SignInFailure = (typeof SIGN_IN_FAILURES)[number];
+
 /**
  * Which alliance an event came from (issue 452): the workspace's slug and its alliance's public tag (null
  * when the caller has no label for it, D133). Neither is personal data. No PostHog groups (a paid add-on).
@@ -166,6 +188,10 @@ export interface ServerEvents {
     stack?: string;
     handled: boolean;
     section?: string;
+    /** The footer's version (D59): `v5.70.0` on production, the branch elsewhere (issue 781). */
+    release?: string;
+    /** The deployment's commit SHA (issue 781). */
+    commit?: string;
   };
   /** One Groq request (D81), privacy mode: no prompt and no output, only what it cost and how it went. */
   $ai_generation: {
@@ -181,6 +207,10 @@ export interface ServerEvents {
   discord_command_used: {
     command: "send_to_laptracker" | "translate_for_me" | "translate_for_everyone";
   };
+  /** The sign-in button sent the browser to Discord (issue 781); `silent`: the renewal that asks nothing (D99). */
+  ws_sign_in_started: { via: SignInVia; silent: boolean };
+  /** A sign-in that came back without a session (issue 781): a reason code only, never who. */
+  ws_sign_in_failed: { via: SignInVia; reason: SignInFailure };
   /** A desk write that went through (lib/private/desk-action.ts): which feature, which action. */
   ws_action: { feature: DeskFeature; action: DeskAction } & Partial<DeskPlace> & {
       post?: DeskPost;
@@ -208,29 +238,32 @@ export function wireProperties(e: ServerEvent): Wire {
   return { ...ownProperties(e), ...e.where };
 }
 
+/** `$exception`'s own properties, in PostHog's error tracking format as posthog-js and posthog-node build it. */
+function exceptionProperties(p: ServerEvents["$exception"]): Wire {
+  const frames = p.stack ? stackFrames(p.stack) : [];
+  return {
+    $exception_list: [
+      {
+        type: p.name,
+        value: p.message,
+        mechanism: { handled: p.handled, synthetic: false, type: "generic" },
+        ...(frames.length > 0 && { stacktrace: { type: "raw", frames } }),
+      },
+    ],
+    $exception_level: "error",
+    kind: p.kind,
+    route: p.route,
+    ...(p.section && { section: p.section }),
+    ...(p.release && { release: p.release }),
+    ...(p.commit && { commit: p.commit }),
+  };
+}
+
 function ownProperties(e: ServerEvent): Wire {
   const base: Wire = { $process_person_profile: false, $lib: "laptracker-server" };
   switch (e.event) {
-    case "$exception": {
-      const p = e.properties;
-      const frames = p.stack ? stackFrames(p.stack) : [];
-      return {
-        ...base,
-        // PostHog's error tracking format, as posthog-js and posthog-node build it.
-        $exception_list: [
-          {
-            type: p.name,
-            value: p.message,
-            mechanism: { handled: p.handled, synthetic: false, type: "generic" },
-            ...(frames.length > 0 && { stacktrace: { type: "raw", frames } }),
-          },
-        ],
-        $exception_level: "error",
-        kind: p.kind,
-        route: p.route,
-        ...(p.section && { section: p.section }),
-      };
-    }
+    case "$exception":
+      return { ...base, ...exceptionProperties(e.properties) };
     case "$ai_generation": {
       const p = e.properties;
       return {
@@ -248,6 +281,10 @@ function ownProperties(e: ServerEvent): Wire {
     }
     case "discord_command_used":
       return { ...base, command: e.properties.command };
+    case "ws_sign_in_started":
+      return { ...base, via: e.properties.via, silent: e.properties.silent };
+    case "ws_sign_in_failed":
+      return { ...base, via: e.properties.via, reason: e.properties.reason };
     case "ws_action":
       // The owner's /admin changes (D126) carry no person: the server's fixed id, `area` admin.
       if (!e.person) {

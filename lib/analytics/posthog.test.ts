@@ -135,6 +135,18 @@ describe("desk and /admin page loads (D115)", () => {
     await recorded();
   });
 
+  it("put the release on an exception, and on no other event (issue 781)", async () => {
+    vi.stubEnv("BUILD_VERSION", "v5.70.0");
+    await start("/w/ogs/members", null);
+    const send = sdk.init.mock.calls[0]?.[1].before_send as (e: object) => {
+      properties: Record<string, unknown>;
+    };
+    const event = (name: string) => ({ event: name, properties: { $pathname: "/w/ogs/members" } });
+    expect(send(event("$exception")).properties.release).toBe("v5.70.0");
+    expect(send(event("$pageview")).properties).not.toHaveProperty("release");
+    vi.unstubAllEnvs();
+  });
+
   it("drop the workspace and alliance on a page outside the workspace; a public load is never touched (issue 452)", async () => {
     const desk = await start("/w/ogs/members", null);
     desk.m.followPath(desk.ph, "/w/ogs/members");

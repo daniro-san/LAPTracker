@@ -6,7 +6,7 @@
 // tap takes a new id. A share that went through says where, and its button rests.
 import { useState } from "react";
 
-import { track } from "@/lib/analytics/events";
+import { track, type ThanksFailure } from "@/lib/analytics/events";
 import { gameNotice } from "@/lib/private/notice-formats";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
 import { fill } from "@/lib/words";
@@ -49,6 +49,11 @@ function refusal(code: string, target: Target, words: Words): string {
   return words[target === "discord" ? "share.failed" : "share.boardFailed"];
 }
 
+/** The share's answer as a closed code (issue 781): the route's own when known, else `failed`. */
+const KNOWN: ThanksFailure[] = ["posting", "recent", "not_set_up", "signed_out", "lost"];
+const failure = (answer: string): ThanksFailure =>
+  KNOWN.find((code) => code === answer) ?? "failed";
+
 /** Each way's state, last refusal and request id (D100): one id per way until Discord refuses it. */
 function useShare(
   props: ShareThanksProps & { names: string[]; texts: Texts; onShared: () => void },
@@ -63,6 +68,7 @@ function useShare(
   const share = async (target: Target) => {
     const texts = Object.fromEntries(Object.entries(props.texts).map(([l, t]) => [l, t.trim()]));
     if (Object.values(texts).every((t) => t === "")) {
+      track("ws_thanks_failed", { stage: "share", to: target, reason: "empty" });
       return setError((e) => ({ ...e, [target]: words["share.empty"] }));
     }
     setState((s) => ({ ...s, [target]: "busy" }));
@@ -81,6 +87,7 @@ function useShare(
       track("ws_thanks_shared", { to: target });
       return props.onShared();
     }
+    track("ws_thanks_failed", { stage: "share", to: target, reason: failure(answer) });
     if (answer === "failed") setIds((i) => ({ ...i, [target]: newRequestId() }));
     setError((e) => ({ ...e, [target]: refusal(answer, target, words) }));
   };
