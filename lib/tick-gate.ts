@@ -17,8 +17,7 @@ import {
   serverInstant,
   type ScheduleConfig,
 } from "./schedule";
-import { shieldWindowOpen } from "./shield-check";
-import { probeDue } from "./shield-probe";
+import { resetReadDue, shieldWindowOpen } from "./shield-check";
 import { squadsQueueDay } from "./squads";
 import { squadTargets } from "./workspace-keys";
 
@@ -135,8 +134,8 @@ export async function squadsMayRun(ctx: AppContext, db: Db): Promise<boolean> {
 export async function tickMayBeDue(ctx: AppContext, db: Db): Promise<boolean> {
   const now = ctx.now();
   if (tickClockDue(now, ctx.env) || shieldWindowOpen(now, ctx.env)) return true;
-  // Issue 726: the one-off probe read's window (2026-11-28 02:30 ST); removed by a follow-up PR.
-  if (probeDue(now, ctx.env)) return true;
+  // Issue 827: the after-reset check's tick, Saturdays 02:30–02:45 ST.
+  if (resetReadDue(now, ctx.env)) return true;
   // Issue 789: the one-off /v1 discovery's window (2026-11-29 02:30 ST); removed by a follow-up PR.
   if (apiProbeDue(now, ctx.env)) return true;
   if (await squadsMayRun(ctx, db)) return true;

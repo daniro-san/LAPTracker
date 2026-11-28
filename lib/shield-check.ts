@@ -4,8 +4,9 @@
 //
 // The raid starts at the server reset (00:00 ST) on the night before KvK, and KvK starts at 12:00 ST on
 // Saturday; nobody keeps a shield after that (owner, 2026-11-20). So: one read of the whole alliance from
-// Friday 23:30 ST that must end before 00:00 ST, and one on Saturday morning (10:00 ST by default, a setting
-// between 10:00 and 11:00) that must end before 12:00 ST. Nothing runs after 12:00 ST.
+// Friday 23:30 ST that must end before 00:00 ST, one at Saturday 02:30 ST after the reset (issue 827), and
+// one on Saturday morning (10:00 ST by default, a setting between 10:00 and 11:00) that must end before
+// 12:00 ST. Nothing runs after 12:00 ST.
 //
 // The shield comes from the tracker's map scan (`map_updated_at`), not from the read itself: `fresh` does
 // not refresh it (owner's test, 2026-11-20). A shield turned on after the last scan is "not seen yet", a
@@ -88,6 +89,32 @@ export function raidOf(day: string, cfg: Pick<ScheduleConfig, "SERVER_TZ">) {
     night: serverInstant(friday, hhmm(NIGHT_MINUTE), cfg),
     reset: serverInstant(saturday, "00:00", cfg),
     kvk: kvkStart(friday, cfg),
+  };
+}
+
+/**
+ * The after-reset check (issue 827, D137 2026-11-28b): one read of every member on the tick that falls in
+ * Saturday 02:30–02:45 ST, when most maps are from after the reset (the probes of issue 726).
+ */
+export const RESET_FROM = 2 * 60 + 30;
+export const RESET_TO = 2 * 60 + 45;
+
+/** Whether the after-reset check's tick is now: Saturday 02:30–02:45 ST. */
+export function resetReadDue(now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): boolean {
+  const minute = serverMinuteOfDay(now, cfg);
+  return serverWeekday(now, cfg) === SATURDAY && minute >= RESET_FROM && minute < RESET_TO;
+}
+
+/**
+ * Where the after-reset check's answers fall, for the check of Friday `day`: Saturday 02:30–03:00 ST (its
+ * window's last tick plus the tick's 180 s budget ends by 02:48). Apart from `passWindows`, so the night
+ * and morning counts, the summary, the pushes and the fill never count it; Raid prep reads it.
+ */
+export function resetWindow(day: string, cfg: Pick<ScheduleConfig, "SERVER_TZ">) {
+  const saturday = addDay(day);
+  return {
+    from: serverInstant(saturday, hhmm(RESET_FROM), cfg),
+    to: serverInstant(saturday, "03:00", cfg),
   };
 }
 

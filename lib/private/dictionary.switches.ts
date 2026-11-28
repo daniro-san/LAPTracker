@@ -10,7 +10,8 @@ export const switchesEn = {
   "switches.estimatePeak":
     "Tracker calls with your choices: about {daily} a day, and {peak} on the day of the Raid Shield check (Friday night, ST), of the 1,000 calls a key has each day. Counted for {members} members.",
   "switches.calls": "About {n} tracker calls a day, on your key.",
-  "switches.callsWeekly": "About {n} tracker calls on Friday night (ST), on your key.",
+  "switches.callsWeekly":
+    "About {n} tracker calls from Friday night to Saturday morning (ST), on your key.",
   "switches.group.tabs": "Tabs",
   "switches.group.ai": "Writing help",
   "switches.group.discord": "Discord",
@@ -58,7 +59,8 @@ export const switchesPt: typeof switchesEn = {
   "switches.estimatePeak":
     "Chamadas ao tracker com as suas escolhas: cerca de {daily} por dia, e {peak} no dia da Conferência do Escudo de raid (sexta à noite, ST), das 1.000 chamadas que uma chave tem por dia. Contado para {members} membros.",
   "switches.calls": "Cerca de {n} chamadas ao tracker por dia, na sua chave.",
-  "switches.callsWeekly": "Cerca de {n} chamadas ao tracker na sexta à noite (ST), na sua chave.",
+  "switches.callsWeekly":
+    "Cerca de {n} chamadas ao tracker de sexta à noite a sábado de manhã (ST), na sua chave.",
   "switches.group.tabs": "Abas",
   "switches.group.ai": "Ajuda para escrever",
   "switches.group.discord": "Discord",
@@ -104,7 +106,8 @@ export const switchesFr: typeof switchesEn = {
   "switches.estimatePeak":
     "Appels au tracker avec vos choix : environ {daily} par jour, et {peak} le jour de la Vérification du Bouclier de raid (vendredi soir, ST), sur les 1 000 appels qu’une clé a chaque jour. Compté pour {members} membres.",
   "switches.calls": "Environ {n} appels au tracker par jour, sur votre clé.",
-  "switches.callsWeekly": "Environ {n} appels au tracker le vendredi soir (ST), sur votre clé.",
+  "switches.callsWeekly":
+    "Environ {n} appels au tracker du vendredi soir au samedi matin (ST), sur votre clé.",
   "switches.group.tabs": "Onglets",
   "switches.group.ai": "Aide à la rédaction",
   "switches.group.discord": "Discord",

@@ -13,7 +13,7 @@ export const featuresAdminCopy = {
   changed: "Changed: {value}",
   reset: "Reset to default",
   allianceOff: "the alliance turned it off",
-  callsHelp: `Own key: the alliance's tracker key. Squads read: about ${per100("squads")} calls a day per 100 members. Raid Shield check: about ${per100("shield_check")} calls on Friday night per 100 members.`,
+  callsHelp: `Own key: the alliance's tracker key. Squads read: about ${per100("squads")} calls a day per 100 members. Raid Shield check: about ${per100("shield_check")} calls per 100 members from Friday night to Saturday morning.`,
   estimate: `Tracker calls: about {daily} a day of ${DAILY_QUOTA_TEXT} ({members} members)`,
   estimatePeak: `Tracker calls: about {daily} a day, {peak} on Saturdays (UTC), of ${DAILY_QUOTA_TEXT} ({members} members)`,
   defaults: {
