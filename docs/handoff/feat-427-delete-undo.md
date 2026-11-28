@@ -9,7 +9,7 @@
   - Home lines `followUpDeleted` and `reviewWithdrawn` (`lib/repo/desk-activity-trash.ts`); a withdrawn request's "asked" line leaves the feed.
   - `ws_action` `delete` / `undo_delete` for `follow_up` and `notice_review` (tracking plan updated).
   - Copy in EN, PT-BR, FR.
-- Migration `drizzle/0080_follow_up_review_delete.sql` (from `pnpm db:generate`): `deleted_at`, `deleted_by` (FK, set null), `delete_request_id` on both tables. Columns only.
+- Migration `drizzle/0082_blushing_lorna_dane.sql` (from `pnpm db:generate`, regenerated after PRs 784 and 777 took 0080 and 0081): `deleted_at`, `deleted_by` (FK, set null), `delete_request_id` on both tables. Columns only.
 
 ### Audit summary (full tables in D123 and its 2026-11-27 amendment)
 
@@ -70,7 +70,6 @@ Persona check (scratchpad `427-personas.md`): an officer on a phone (20s, 360 px
 - "Restore from trash?" for Calendar entries, thefts and new members when an officer saves over a deleted one.
 - A "Recently deleted" list for any type.
 - Follow-up's Undo (`undoFollowUp`, pre-existing): make its read and its "withdrawn" insert one step (a per-member lock in a transaction), so a concurrent delete cannot shift which record it cancels.
-- Regenerate migration 0080 after PR 784 merges (coordinator).
 
 What was missing from the task prompt? That phase 1 and batch 1 (D123, PR 439) were already merged, so the work was phase 2.
 
