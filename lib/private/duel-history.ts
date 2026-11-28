@@ -27,7 +27,7 @@ export const duelTotals = (db: Db, access: WorkspaceAccess, week: string): Promi
   duelWeekTotals(db, access.workspaceId, duelSince(week));
 
 export interface DuelHistory {
-  /** The weeks, oldest first; `points` is null when nothing was saved for the member that week. */
+  /** The weeks, oldest first; `points` is null when nothing was saved for the member that week. The last one is the week still running: shown, but in no average. */
   weeks: { week: string; points: number | null }[];
   /** The member's mean over the weeks that have points; null with none. */
   average: { value: number; weeks: number } | null;
@@ -57,26 +57,32 @@ export function duelHistory(
   );
   const inWeeks = weeks.map((w) => ours.filter((r) => r.week === w));
   const own = inWeeks.map((rs) => rs.find((r) => r.uid === uid)?.points ?? null);
+  // The week still running is partial: it counts in no average (owner, orchestrator decision on #467).
+  const done = DUEL_WEEKS - 1;
   return {
     weeks: weeks.map((w, i) => ({ week: w, points: own[i] ?? null })),
-    average: mean(own.flatMap((p) => p ?? [])),
+    average: mean(own.slice(0, done).flatMap((p) => p ?? [])),
     alliance: mean(
-      inWeeks.filter((rs) => rs.length > 0).map((rs) => rs.reduce((a, r) => a + r.points, 0)),
+      inWeeks
+        .slice(0, done)
+        .filter((rs) => rs.length > 0)
+        .map((rs) => rs.reduce((a, r) => a + r.points, 0)),
     ),
   };
 }
 
 /**
- * The members to thank for improving: points in the newest saved week at least IMPROVED_BY above their own
- * previous saved week. Someone missing from either week is left out, not counted (D75). In name order:
+ * The members to thank for improving: points in the newest finished week (before the Monday `current`, so a
+ * week still running counts for nothing) at least IMPROVED_BY above their own previous finished week. Someone missing from either week is left out, not counted (D75). In name order:
  * this is not a ranking.
  */
 export function mostImproved(
   rows: readonly DuelTotal[],
   members: readonly { uid: number; name: string }[],
+  current: string,
 ): string[] {
   const mine = new Set(members.map((m) => m.uid));
-  const ours = rows.filter((r) => mine.has(r.uid));
+  const ours = rows.filter((r) => mine.has(r.uid) && r.week < current);
   const newest = ours.reduce<string | null>(
     (a, r) => (a === null || r.week > a ? r.week : a),
     null,

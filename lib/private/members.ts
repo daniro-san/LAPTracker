@@ -23,6 +23,7 @@ import {
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
 import { buddyOf } from "./buddy";
+import { mondayOf } from "./calendar-time";
 import { duelTotals, mostImproved } from "./duel-history";
 import { awayNoteUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
 import { progressOf, thanksWeek, TREND_FIELDS, type Progress } from "./fact-trend";
@@ -408,7 +409,7 @@ export async function membersView(
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
       // Issue 467: read only where the week's progress is shown, so the card and the list do not pay for it.
       improved: history
-        ? mostImproved(await duelTotals(db, access, week[0] as string), counted)
+        ? mostImproved(await duelTotals(db, access, mondayOf(today)), counted, mondayOf(today))
         : [],
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),

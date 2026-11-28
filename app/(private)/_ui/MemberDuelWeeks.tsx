@@ -15,9 +15,9 @@ export function MemberDuelWeeks({ duel }: { duel: DuelCard }) {
         {duel.rows.map((r) => (
           <li
             key={r.label}
-            className="grid min-h-6 grid-cols-[6.5rem_1fr_4.5rem] items-center gap-x-2 text-body-sm"
+            className="grid min-h-6 grid-cols-[8rem_1fr_4.5rem] items-center gap-x-2 text-body-sm"
           >
-            <span className="min-w-0 truncate text-ink/75">{r.label}</span>
+            <span className="min-w-0 text-ink/75">{r.label}</span>
             <span aria-hidden="true" className="flex h-3 items-center">
               <Bar
                 axis="row"

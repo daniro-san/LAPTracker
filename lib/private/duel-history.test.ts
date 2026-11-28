@@ -17,9 +17,9 @@ const row = (uid: number, week: string, points: number): DuelTotal => ({ uid, we
 describe("a member's Alliance Duel weeks", () => {
   it("shows a week with nothing saved as no data, not 0, and averages only the weeks with points", () => {
     const rows = [row(1, "2026-11-02", 4_000_000), row(1, "2026-11-16", 6_000_000)];
-    const h = duelHistory(rows, new Set([1]), 1, "2026-11-16");
+    const h = duelHistory(rows, new Set([1]), 1, "2026-11-23");
     expect(h?.weeks).toHaveLength(8);
-    expect(h?.weeks.at(-1)).toEqual({ week: "2026-11-16", points: 6_000_000 });
+    expect(h?.weeks.at(-2)).toEqual({ week: "2026-11-16", points: 6_000_000 });
     // 2026-11-09 has no saved picture: null, and it does not lower the average.
     expect(h?.weeks.find((w) => w.week === "2026-11-09")?.points).toBeNull();
     expect(h?.average).toEqual({ value: 5_000_000, weeks: 2 });
@@ -34,7 +34,7 @@ describe("a member's Alliance Duel weeks", () => {
       // Not in the alliance's roster: left out of its totals.
       row(9, "2026-11-16", 90_000_000),
     ];
-    const h = duelHistory(rows, new Set([1, 2]), 1, "2026-11-16");
+    const h = duelHistory(rows, new Set([1, 2]), 1, "2026-11-23");
     expect(h?.alliance).toEqual({ value: 11_000_000, weeks: 2 });
   });
 
@@ -66,7 +66,25 @@ describe("most improved in Alliance Duel (D75)", () => {
       row(5, "2026-11-02", 1_000_000),
       row(5, "2026-11-09", 1_000_000),
     ];
-    expect(mostImproved(rows, members)).toEqual(["Bramble", "Ilsa", "Wren"]);
+    expect(mostImproved(rows, members, "2026-11-23")).toEqual(["Bramble", "Ilsa", "Wren"]);
+  });
+});
+
+describe("the week still running (orchestrator decision on #467)", () => {
+  it("is shown, but a partial current week leaves the averages and most improved unchanged", () => {
+    const members = [{ uid: 1, name: "Wren" }];
+    const done = [
+      row(1, "2026-11-02", 1_000_000),
+      row(1, "2026-11-09", 1_500_000),
+      row(2, "2026-11-09", 500_000),
+    ];
+    const running = [...done, row(1, "2026-11-16", 100_000), row(2, "2026-11-16", 100_000)];
+    const before = duelHistory(done, new Set([1, 2]), 1, "2026-11-16");
+    const during = duelHistory(running, new Set([1, 2]), 1, "2026-11-16");
+    expect(during?.weeks.at(-1)).toEqual({ week: "2026-11-16", points: 100_000 });
+    expect(during?.average).toEqual(before?.average);
+    expect(during?.alliance).toEqual(before?.alliance);
+    expect(mostImproved(running, members, "2026-11-16")).toEqual(["Wren"]);
   });
 });
 

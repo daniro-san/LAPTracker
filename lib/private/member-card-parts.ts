@@ -122,8 +122,11 @@ export function duelCard(h: DuelHistory, t: WorkspaceDictionary, f: CardFormats)
     );
   return {
     head: t["card.duel.head"],
-    rows: h.weeks.map((w) => ({
-      label: fill(t["card.duel.week"], { date: f.date(w.week) }),
+    rows: h.weeks.map((w, i) => ({
+      // The last week is the one still running: "so far", and in no average.
+      label: fill(t[i === h.weeks.length - 1 ? "card.duel.weekSoFar" : "card.duel.week"], {
+        date: f.date(w.week),
+      }),
       value: w.points === null ? null : f.compact(w.points),
       share: w.points === null || best === 0 ? null : w.points / best,
     })),
