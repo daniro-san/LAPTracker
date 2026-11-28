@@ -46,7 +46,8 @@ export interface RaceLeft extends Label {
 }
 
 export interface Race {
-  /** The newest usable daily read's day. */
+  /** The newest complete or partial daily read's day. A "Get today's details" lookup (D133) stores its roster
+   * under a day the daily read has not claimed yet, so a day counts only once `daily_reads` has it. */
   today: string;
   /** The first and the last Saturday of the weeks. */
   from: string;
@@ -77,7 +78,11 @@ interface Raw {
 /** One row per alliance of the top RACE_TOP of the newest day (its tracked set, D133), with its weeks. */
 const raceSql = sql`
   with today as (
-    select max(read_day) as day from daily_rosters where ${dailyFit} and total_power is not null
+    select max(daily_reads.day) as day from daily_reads
+    where daily_reads.status in ('complete', 'partial') and exists (
+      select 1 from daily_rosters where daily_rosters.read_day = daily_reads.day
+        and ${dailyFit} and daily_rosters.total_power is not null
+    )
   ),
   tracked as (
     select alliance_ids from tracked_sets, today where tracked_sets.day <= today.day

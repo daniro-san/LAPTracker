@@ -10,11 +10,20 @@ const SATURDAYS = ["2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"];
 const TODAY = "2026-11-29";
 const members = (from: number, n: number) => Array.from({ length: n }, (_, i) => from + i);
 
-async function daily(db: Db, day: string, unionId: number, might: number, uids: number[]) {
-  await db
-    .insert(dailyReads)
-    .values({ day, startedAt: new Date(`${day}T08:00:00Z`), status: "complete" })
-    .onConflictDoNothing();
+/** One stored roster; `lookup`: from "Get today's details" (D133), on a day no daily read has claimed. */
+async function daily(
+  db: Db,
+  day: string,
+  unionId: number,
+  might: number,
+  uids: number[],
+  lookup = false,
+) {
+  if (!lookup)
+    await db
+      .insert(dailyReads)
+      .values({ day, startedAt: new Date(`${day}T08:00:00Z`), status: "complete" })
+      .onConflictDoNothing();
   await db.insert(dailyRosters).values({
     readDay: day,
     unionId,
@@ -58,6 +67,8 @@ beforeAll(async () => {
   await alliance(db, 3, [50, 60, 70, 80], 90, [...members(302, 8), 901, 902]);
   await alliance(db, 4, [40, 41, 42, 43], 44, [...members(400, 10), 903]);
   await alliance(db, 5, [30, null, 32, 33], 34);
+  // A lookup of alliance 9 on Nov 30, before that day's daily read: not the newest day.
+  await daily(db, "2026-11-30", 9, 500, members(900, 10), true);
   race = await racePace(db);
 });
 
@@ -91,6 +102,24 @@ describe("racePace", () => {
       [1, 2, 1],
       [4, 3, 3],
     ]);
+  });
+});
+
+describe("racePace's days", () => {
+  it("ignores a lookup's roster stored under a day the daily read has not claimed", () => {
+    expect(race?.today).toBe(TODAY);
+    expect(race?.rows.map((r) => r.unionId)).not.toContain(9);
+    expect(race?.left.map((r) => r.unionId)).not.toContain(9);
+  });
+
+  it.each([
+    ["a Saturday", "2026-11-28", "2026-11-07"],
+    ["a Friday", "2026-11-27", "2026-10-31"],
+  ])("counts back from the Saturday on or before %s", async (_, today, from) => {
+    const db = await openTestDb();
+    await daily(db, today, 1, 100, members(100, 10));
+    const to = today === "2026-11-28" ? "2026-11-28" : "2026-11-21";
+    expect(await racePace(db)).toMatchObject({ today, from, to });
   });
 });
 

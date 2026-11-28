@@ -11,9 +11,10 @@ import { fill } from "@/lib/words";
 import { Readout, type ReadoutItem } from "./charts/Readout";
 import { allianceLabel, compact, dayDate, signOf, type Clock } from "./format";
 import { sharedRace } from "./public-reads";
+import { RaceLines, type RaceLine } from "./RaceLines";
 
 const ROW =
-  "flex h-11 cursor-pointer items-center gap-1 tabular-nums aria-[current=true]:font-semibold aria-[current=true]:text-plum";
+  "flex h-11 cursor-pointer items-center gap-1 tabular-nums aria-[current=true]:bg-plum/10 aria-[current=true]:font-semibold aria-[current=true]:text-plum";
 
 const tagOf = (r: RaceRow) => allianceLabel(r.tag ?? String(r.unionId), null);
 const signed = (n: number, locale: string) => `${signOf(n)}${compact(Math.abs(n), locale)}`;
@@ -31,66 +32,60 @@ function readout(rows: RaceRow[], locale: string, copy: Dictionary): ReadoutItem
   }));
 }
 
-/** The two columns of places and the lines between them; `rows` by today's place. */
+/** The two columns of places and the lines between them; `rows` by today's place. Capped in width, so the
+ * lines stay next to their labels on a wide screen; the middle is narrow on a phone, so tags fit. */
 function Slope({ rows, copy }: { rows: RaceRow[]; copy: Dictionary }) {
   const ahead = rows
     .map((r, i) => ({ r, i }))
     .sort((a, b) => a.r.projectedRank - b.r.projectedRank || a.i - b.i);
   const at = new Map(ahead.map(({ i }, place) => [i, place]));
+  const lines: RaceLine[] = rows.map((r, i) => ({
+    at: i,
+    from: i + 0.5,
+    to: (at.get(i) ?? i) + 0.5,
+    heavy: (r.projectedRank === 1 && r.rank !== 1) || Math.abs(r.rank - r.projectedRank) >= 2,
+  }));
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(3rem,10rem)_minmax(0,1fr)] gap-x-2 text-body-sm">
-      <p className="text-ink/70">{copy.race.today}</p>
+    <div className="mx-auto grid max-w-xl grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)] gap-x-2 text-body-sm sm:grid-cols-[minmax(0,1fr)_minmax(6rem,1.5fr)_minmax(0,1fr)]">
+      <p id="race-today" className="text-ink/70">
+        {copy.race.today}
+      </p>
       <span />
-      <p className="text-right text-ink/70">{fill(copy.race.ahead, { weeks: RACE_AHEAD })}</p>
-      <ol>
+      <p id="race-ahead" className="text-right text-ink/70">
+        {fill(copy.race.ahead, { weeks: RACE_AHEAD })}
+      </p>
+      <ol aria-labelledby="race-today">
         {rows.map((r, i) => (
-          <li key={r.unionId} data-at={i} className={ROW}>
+          <li key={r.unionId} data-at={i} className={`${ROW} pl-1`}>
             <span className="w-8 shrink-0">#{r.rank}</span>
             <bdi className="min-w-0 truncate">{tagOf(r)}</bdi>
           </li>
         ))}
       </ol>
-      <svg
-        aria-hidden="true"
-        viewBox={`0 0 100 ${rows.length}`}
-        preserveAspectRatio="none"
-        className="h-full w-full overflow-visible"
-      >
-        {rows.map((r, i) => {
-          const [y1, y2] = [i + 0.5, (at.get(i) ?? i) + 0.5];
-          const line = { vectorEffect: "non-scaling-stroke", stroke: "currentColor" } as const;
-          return (
-            <g key={r.unionId} data-at={i} className="text-ink/40 aria-[current=true]:text-plum">
-              <line x1={0} y1={y1} x2={100} y2={y2} strokeWidth={2} {...line} />
-              {[
-                [0, y1],
-                [100, y2],
-              ].map(([x, y]) => (
-                <line
-                  key={x}
-                  x1={x}
-                  y1={y}
-                  x2={x}
-                  y2={y}
-                  strokeWidth={8}
-                  strokeLinecap="round"
-                  {...line}
-                />
-              ))}
-            </g>
-          );
-        })}
-      </svg>
-      <ol>
+      <RaceLines lines={lines} />
+      <ol aria-labelledby="race-ahead">
         {ahead.map(({ r, i }) => (
-          <li key={r.unionId} data-at={i} className={`${ROW} justify-end`}>
+          <li key={r.unionId} data-at={i} className={`${ROW} justify-end pr-1`}>
+            {/* Spoken place first ("#1, [IRT]"); seen tag first, beside its line. */}
+            <span className="sr-only">#{r.projectedRank}, </span>
             <bdi className="min-w-0 truncate">{tagOf(r)}</bdi>
-            <span className="w-8 shrink-0 text-right">#{r.projectedRank}</span>
+            <span aria-hidden="true" className="w-8 shrink-0 text-right">
+              #{r.projectedRank}
+            </span>
           </li>
         ))}
       </ol>
     </div>
   );
+}
+
+/** "[IRT] passes [LNK] for #1 at this pace.", or "[LNK] keeps #1 at this pace." */
+function summary(rows: RaceRow[], copy: Dictionary): string | null {
+  const leader = rows.find((r) => r.rank === 1);
+  const first = rows.find((r) => r.projectedRank === 1);
+  if (!leader || !first) return null;
+  if (leader.projectedRank === 1) return fill(copy.race.keeps, { leader: tagOf(leader) });
+  return fill(copy.race.passes, { first: tagOf(first), leader: tagOf(leader) });
 }
 
 export async function RacePace({
@@ -125,6 +120,7 @@ export async function RacePace({
               to: clock.day(dayDate(race.to)),
             })}
           </p>
+          <p className="mb-2 font-semibold">{summary(rows, copy)}</p>
           <Readout
             id="race"
             items={readout(rows, locale, copy)}
@@ -133,7 +129,7 @@ export async function RacePace({
           >
             <Slope rows={rows} copy={copy} />
           </Readout>
-          <p className="mt-1 text-body-sm text-ink/70">{fill(c.among, { n: rows.length })}</p>
+          {notes.length > 0 && <p className="mt-1 text-body-sm text-ink/70">{c.among}</p>}
         </>
       )}
       {notes.length > 0 && (
