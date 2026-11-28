@@ -31,7 +31,7 @@ import {
   workspacePostTouches,
   workspaceWebhooks,
 } from "../schema-discord";
-import { workspaceFeatures, workspaceUsage } from "../schema-features";
+import { workspaceFeatures, workspaceGlossary, workspaceUsage } from "../schema-features";
 import { feedback, feedbackPictures } from "../schema-feedback";
 import {
   allianceDuelPoints,
@@ -141,6 +141,8 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   // D137: the Raid Shield check's settings, its reads' state and the morning queue: counts and codes, as
   // the squads read's rows; the shield facts themselves are in player-reads.csv.
   { file: null, table: shieldSettings, scope: "workspace" },
+  // #832: the alliance's glossary; deleted with the workspace, not in the download (D81 amendment).
+  { file: null, table: workspaceGlossary, scope: "workspace" },
   { file: null, table: shieldChecks, scope: "union" },
   { file: null, table: shieldQueue, scope: "union" },
   // D148: officers' devices for notifications, sealed like the webhooks, and what each trigger last sent.

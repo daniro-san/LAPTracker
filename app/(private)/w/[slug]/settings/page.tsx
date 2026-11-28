@@ -5,7 +5,7 @@
 // own device, only when the site has push keys (D148). Then Discord (D129): add the bot,
 // Check, and the webhooks of the two notice channels and the Raid Shield channel (D147). Then the catalog
 // posts the owner allows (D159), then the alliance's own line on our posts while `post_callouts` is on
-// (D156). Then the
+// (D156), then the Glossary while a translating feature is on (#832). Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page. Issue 585: the page head says how the page saves, and an "On this page"
@@ -29,6 +29,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
+import { glossaryView } from "@/lib/private/glossary";
 import { toReviewCount } from "@/lib/private/import-view";
 import { calloutsView } from "@/lib/private/post-callouts";
 import { postsView } from "@/lib/private/post-settings";
@@ -46,6 +47,7 @@ import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
+import { GlossaryCard } from "../../../_ui/GlossaryCard";
 import { PostCallouts } from "../../../_ui/PostCallouts";
 import { PostCatalog } from "../../../_ui/PostCatalog";
 import { PushSettings } from "../../../_ui/PushSettings";
@@ -113,7 +115,7 @@ async function readSettings(
   const shieldRead = shieldSettingsView(db, access, ctx.language);
   // The webhooks, read once: the Posts card names the channels from them.
   const channelsRead = webhookViews(db, access, env);
-  const [view, waiting, bot, channels, squads, features, shield, push, callouts, posts] =
+  const [view, waiting, bot, channels, squads, features, shield, push, callouts, posts, glossary] =
     await Promise.all([
       trackerKeyView(db, access, env, now),
       toReviewCount(db, access, now),
@@ -127,8 +129,21 @@ async function readSettings(
       pushView(db, access, env),
       shieldRead.then((s) => calloutsView(db, access, ctx.t, s?.language ?? null)),
       channelsRead.then((c) => postsView(db, access, c, env, ctx.language)),
+      glossaryView(db, access),
     ]);
-  return { view, waiting, bot, channels, squads, features, shield, push, callouts, posts };
+  return {
+    view,
+    waiting,
+    bot,
+    channels,
+    squads,
+    features,
+    shield,
+    push,
+    callouts,
+    posts,
+    glossary,
+  };
 }
 
 /** The first card: the tracker key and today's squads read. */
@@ -161,7 +176,7 @@ function indexInput(
   page: Awaited<ReturnType<typeof readSettings>>,
   data: SettingsIndexInput["data"],
 ): SettingsIndexInput {
-  const { view, bot, channels, features, shield, push, callouts, posts } = page;
+  const { view, bot, channels, features, shield, push, callouts, posts, glossary } = page;
   const allowed = features.groups.flatMap((g) => g.features);
   return {
     key: view.state,
@@ -176,6 +191,7 @@ function indexInput(
       set: callouts.filter((c) => c.callout !== "").length,
       n: callouts.length,
     },
+    glossary: glossary && glossary.length,
     data,
   };
 }
@@ -242,7 +258,8 @@ function SettingsCards(props: {
 }) {
   const { slug, t } = props;
   const { env, now, language } = props.ctx;
-  const { view, bot, channels, squads, features, shield, push, callouts, posts } = props.page;
+  const { view, bot, channels, squads, features, shield, push, callouts, posts, glossary } =
+    props.page;
   return (
     <>
       <TrackerKeyCard
@@ -274,6 +291,7 @@ function SettingsCards(props: {
       />
       {posts && <PostCatalog slug={slug} rows={posts} t={t} language={language} />}
       {callouts && <PostCallouts slug={slug} rows={callouts} t={t} language={language} />}
+      {glossary && <GlossaryCard slug={slug} words={glossary} t={t} language={language} />}
       <WorkspaceDataForm
         slug={slug}
         t={t}

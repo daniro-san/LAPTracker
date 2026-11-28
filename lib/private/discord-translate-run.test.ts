@@ -58,6 +58,7 @@ const job = (
   ...mask("The rally <#1600000000000000009> is at 18:00."),
   webhook: { applicationId: "900", token: "itok" },
   userId: ASKER,
+  glossary: [],
   workspace: { workspace: "ogs", alliance: "OGs" },
   ...(mode === "everyone" && {
     post: {

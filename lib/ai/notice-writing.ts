@@ -3,7 +3,8 @@
 // nothing from the project, so no roster field or name list can reach a request (D71). The result is a
 // draft the officer reviews before saving.
 import { DO_NOT_TRANSLATE, GLOSSARY, ITEM_EXAMPLES, TRANSLATED_TERMS } from "./glossary";
-import type { ChatModel, Retune } from "./groq";
+import { ChatError, type ChatModel, type Retune } from "./groq";
+import { placeholdersIntact, protectWords, restoreWords } from "./protect";
 import { untranslatedShare, UNTRANSLATED_SHARE } from "./untranslated";
 
 export const WRITING_LANGUAGES = ["en", "pt-BR", "fr"] as const;
@@ -194,6 +195,21 @@ export function plainText(text: string, language: WritingLanguage): string {
   return spaced.replace(/\u2011/g, "-").replace(/[ \t]+$/gm, "");
 }
 
+/**
+ * The alliance's glossary (#832): a rule listing its words, put before the system prompt's last line (the
+ * output rule). The words travel as JSON strings, so a word cannot read as an instruction.
+ */
+export function withGlossary(system: string, glossary: readonly string[]): string {
+  if (glossary.length === 0) return system;
+  const lines = system.split("\n");
+  const last = lines.pop();
+  lines.push(
+    `- The alliance's own words never change: keep each of these exactly as written, in every language, never translated, respelled or reworded: ${glossary.map((w) => JSON.stringify(w)).join(", ")}. In the text they stand as placeholders {G1}, {G2} and so on: keep every one exactly as written, once, where it belongs in the sentence.`,
+    last ?? "",
+  );
+  return lines.join("\n");
+}
+
 /** The one harder look a mostly untranslated answer gets: medium reasoning, room for it (D81). */
 export const RETRY: Retune = { effort: "medium", maxTokens: 4000 };
 
@@ -220,26 +236,36 @@ export async function translateText(
   to: WritingLanguage,
   text: string,
   limit?: number,
+  glossary: readonly string[] = [],
 ): Promise<Translation> {
-  const sent = withOwnNames(text, to);
+  const { text: protectedText, kept } = protectWords(text, glossary);
+  const sent = withOwnNames(protectedText, to);
   const request = {
-    system: limit === undefined ? TRANSLATE_SYSTEM : localizeSystem(to, limit),
+    system: withGlossary(
+      limit === undefined ? TRANSLATE_SYSTEM : localizeSystem(to, limit),
+      glossary,
+    ),
     user: `Translate ${from ? `from ${NAME[from]} ` : ""}to ${NAME[to]}:\n\n${wrap(sent)}`,
   };
   const first = plainText(await model.complete(request), to);
+  // A placeholder the model dropped: the same failure as no answer, so the officer's text stays as it is.
+  if (!placeholdersIntact(first, kept)) throw new ChatError("failed");
   const firstShare = untranslatedShare(sent, first);
   if (firstShare < UNTRANSLATED_SHARE) {
-    return { text: first, retried: false, partly: false, same: false };
+    return { text: restoreWords(first, kept), retried: false, partly: false, same: false };
   }
-  if (from === null) return { text: first, retried: false, partly: false, same: true };
+  if (from === null) {
+    return { text: restoreWords(first, kept), retried: false, partly: false, same: true };
+  }
   const second = await model.complete(request, RETRY).then(
     (answer) => plainText(answer, to),
     () => null,
   );
-  const secondShare = second === null ? 1 : untranslatedShare(sent, second);
-  const better = second !== null && secondShare <= firstShare ? second : first;
+  const intact = second !== null && placeholdersIntact(second, kept);
+  const secondShare = intact ? untranslatedShare(sent, second) : 1;
+  const better = intact && secondShare <= firstShare ? second : first;
   return {
-    text: better,
+    text: restoreWords(better, kept),
     retried: true,
     partly: Math.min(firstShare, secondShare) >= UNTRANSLATED_SHARE,
     same: false,
@@ -252,12 +278,18 @@ export async function improveText(
   tone: Tone,
   text: string,
   limit: number,
+  glossary: readonly string[] = [],
 ): Promise<string> {
-  const answer = await model.complete({
-    system: improveSystem(limit),
-    user: `Rewrite this ${NAME[language]} text. ${TONE[tone]}\n\n${wrap(text)}`,
-  });
-  return plainText(answer, language);
+  const { text: sent, kept } = protectWords(text, glossary);
+  const answer = plainText(
+    await model.complete({
+      system: withGlossary(improveSystem(limit), glossary),
+      user: `Rewrite this ${NAME[language]} text. ${TONE[tone]}\n\n${wrap(sent)}`,
+    }),
+    language,
+  );
+  if (!placeholdersIntact(answer, kept)) throw new ChatError("failed");
+  return restoreWords(answer, kept);
 }
 
 /** Fit's two budgets as shares of the limit: the first ask, then the one stricter retry (D113). */
@@ -274,14 +306,19 @@ export async function fitText(
   text: string,
   limit: number,
   length: (text: string) => number,
+  glossary: readonly string[] = [],
 ): Promise<{ text: string; retried: boolean } | null> {
+  const { text: sent, kept } = protectWords(text, glossary);
   for (const [i, share] of FIT_BUDGETS.entries()) {
     const budget = Math.floor(limit * share);
     const answer = await model.complete({
-      system: fitSystem(language, budget),
-      user: `Shorten this ${NAME[language]} text to at most ${budget} characters.\n\n${wrap(text)}`,
+      system: withGlossary(fitSystem(language, budget), glossary),
+      user: `Shorten this ${NAME[language]} text to at most ${budget} characters.\n\n${wrap(sent)}`,
     });
-    const fitted = plainText(answer, language);
+    const shortened = plainText(answer, language);
+    // A dropped placeholder counts as a try that did not fit, so the text stays as it is when both fail.
+    if (!placeholdersIntact(shortened, kept)) continue;
+    const fitted = restoreWords(shortened, kept);
     if (length(fitted) <= limit) return { text: fitted, retried: i > 0 };
   }
   return null;

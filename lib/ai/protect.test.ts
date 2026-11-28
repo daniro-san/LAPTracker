@@ -1,0 +1,62 @@
+// The alliance glossary in a request (#832, D81 amendment), with a stand-in model: no request leaves the
+// machine. Invented words and text.
+import { describe, expect, it } from "vitest";
+
+import { ChatError, type ChatModel, type ChatRequest } from "./groq";
+import { fitText, improveText, translateText } from "./notice-writing";
+import { placeholdersIntact, protectWords, restoreWords } from "./protect";
+
+const WORDS = ["[ZZZ]", "Elixir Scramble"];
+const TEXT = "[ZZZ] gather before the Elixir Scramble starts, thank you all!";
+
+/** A model that answers with `reply(request)` and keeps every request. */
+function model(reply: (request: ChatRequest) => string) {
+  const requests: ChatRequest[] = [];
+  const chat: ChatModel = {
+    complete: async (request) => {
+      requests.push(request);
+      return reply(request);
+    },
+  };
+  return { chat, requests };
+}
+
+describe("the alliance glossary in a request", () => {
+  it("lists the words in the system prompt and puts them back as written after the answer", async () => {
+    const { chat, requests } = model((request) => {
+      expect(request.user).not.toContain("[ZZZ]");
+      expect(request.user).not.toContain("Elixir Scramble");
+      return "{G1} reunam-se antes de {G2} começar, obrigado a todos!";
+    });
+    const done = await translateText(chat, "en", "pt-BR", TEXT, 1000, WORDS);
+    expect(done.text).toBe("[ZZZ] reunam-se antes de Elixir Scramble começar, obrigado a todos!");
+    const system = requests[0]?.system ?? "";
+    expect(system).toContain('"[ZZZ]", "Elixir Scramble"');
+    // Without a glossary nothing about it is asked.
+    const plain = model(() => "Reunam-se antes do início, obrigado a todos!");
+    await translateText(plain.chat, "en", "pt-BR", "Gather before the start, thank you all!");
+    expect(plain.requests[0]?.system).not.toContain("alliance's own words");
+  });
+
+  it("keeps a word in the case it was written, and whole words only", () => {
+    const { text, kept } = protectWords("elixir scramble and Elixir Scrambles", WORDS);
+    expect(text).toBe("{G1} and Elixir Scrambles");
+    expect(restoreWords("{G1} e outros", kept)).toBe("elixir scramble e outros");
+  });
+
+  it("treats an answer that dropped a placeholder as a failure, so the text stays as it is", async () => {
+    const dropped = () => "[ZZZ] reunam-se antes de Elixir Scramble começar!";
+    await expect(
+      translateText(model(dropped).chat, "en", "pt-BR", TEXT, 1000, WORDS),
+    ).rejects.toEqual(new ChatError("failed"));
+    await expect(
+      improveText(model(dropped).chat, "en", "warmer", TEXT, 1000, WORDS),
+    ).rejects.toEqual(new ChatError("failed"));
+    // Shorten counts it as a try that did not fit: both tries lost it, so no draft.
+    const fit = model(dropped);
+    expect(await fitText(fit.chat, "en", TEXT, 1000, (t) => t.length, WORDS)).toBeNull();
+    expect(fit.requests).toHaveLength(2);
+    expect(placeholdersIntact("{G1} and {G2}", ["a", "b"])).toBe(true);
+    expect(placeholdersIntact("{G1}", ["a", "b"])).toBe(false);
+  });
+});

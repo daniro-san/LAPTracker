@@ -5,6 +5,7 @@ import { calloutsEn, calloutsFr, calloutsPt } from "./dictionary.callouts";
 import { chooserEn, chooserFr, chooserPt } from "./dictionary.chooser";
 import { discordEn, discordPt } from "./dictionary.discord";
 import { discordFr } from "./dictionary.discord-fr";
+import { glossaryEn, glossaryFr, glossaryPt } from "./dictionary.glossary";
 import { inviteEn, invitePt } from "./dictionary.invite";
 import { inviteFr } from "./dictionary.invite-fr";
 import { postsEn, postsFr, postsPt } from "./dictionary.posts";
@@ -99,6 +100,7 @@ export const settingsEn = {
   ...inviteEn,
   ...chooserEn,
   ...calloutsEn,
+  ...glossaryEn,
   ...postsEn,
   ...pushEn,
 };
@@ -197,6 +199,7 @@ export const settingsPt: typeof settingsEn = {
   ...invitePt,
   ...chooserPt,
   ...calloutsPt,
+  ...glossaryPt,
   ...postsPt,
   ...pushPt,
 };
@@ -296,6 +299,7 @@ export const settingsFr: typeof settingsEn = {
   ...inviteFr,
   ...chooserFr,
   ...calloutsFr,
+  ...glossaryFr,
   ...postsFr,
   ...pushFr,
 };

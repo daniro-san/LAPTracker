@@ -21,6 +21,7 @@ import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn, giveBackAllowance, settled, useAllowance } from "@/lib/private/features";
+import { glossaryWords } from "@/lib/private/glossary";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { DRAFT_LIMIT, NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
@@ -74,6 +75,7 @@ const SWITCH = {
 async function draftsFor(
   ai: ChatModel,
   ask: z.infer<typeof body>,
+  glossary: string[],
   onFailed: (n: number) => void,
 ): Promise<Answer[] | null> {
   if (ask.kind === "translate") {
@@ -81,17 +83,17 @@ async function draftsFor(
     return settled(
       ask.to.map(async (to) => ({
         to,
-        ...(await translateText(ai, ask.from, to, ask.text, ask.limit ?? NOTICE_LIMIT)),
+        ...(await translateText(ai, ask.from, to, ask.text, ask.limit ?? NOTICE_LIMIT, glossary)),
       })),
       onFailed,
     );
   }
   if (ask.kind === "improve") {
     const limit = ask.limit ?? NOTICE_LIMIT;
-    const improved = await improveText(ai, ask.language, ask.tone, ask.text, limit);
+    const improved = await improveText(ai, ask.language, ask.tone, ask.text, limit, glossary);
     return [{ to: ask.language, text: improved, retried: false, partly: false }];
   }
-  const fitted = await fitText(ai, ask.language, ask.text, NOTICE_LIMIT, noticeLength);
+  const fitted = await fitText(ai, ask.language, ask.text, NOTICE_LIMIT, noticeLength, glossary);
   return (
     fitted && [{ to: ask.language, text: fitted.text, retried: fitted.retried, partly: false }]
   );
@@ -121,7 +123,9 @@ export async function POST(
     const started = countedAt.getTime();
     let failed = units;
     try {
-      const answers = await draftsFor(ai, ask, (n) => (failed = n));
+      // The alliance's glossary (#832): its words stay as written in every request.
+      const glossary = await glossaryWords(db, access.workspaceId);
+      const answers = await draftsFor(ai, ask, glossary, (n) => (failed = n));
       if (!answers) {
         privateLog("notices.fit.still_over", { ms: ctx.now().getTime() - started });
         return privateError(422, "still_over");
