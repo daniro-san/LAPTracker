@@ -1,7 +1,8 @@
-// Insights → KvK's map (issues 791, 817, D163): one drawn house a member with its name under it, a shield ring
-// or a dashed ring with "no reading" in the readout (not on the map's name labels), the two "as of" lines, the readout naming the first member with ‹ › steps by
-// name, and each near/mid/far row naming its members; the plot, the readout and the table sit inside
-// ph-no-capture, posthog-js's block class (.claude/rules/private.md). Invented names, places and kills.
+// Insights → KvK's map (issues 791, 817, D163): the card opens at the fit level, "no reading" in the readout
+// (never "unshielded"), the two "as of" lines, the readout naming the first member with ‹ › steps by name,
+// and each near/mid/far row naming its members; the plot, the readout and the table sit inside
+// ph-no-capture, posthog-js's block class (.claude/rules/private.md). The scene's zoom levels, Find, sheet
+// and chips are in KvkMapScene.test.ts. Invented names, places and kills.
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -9,7 +10,8 @@ import { describe, expect, it, vi } from "vitest";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { kvkMapOf } from "@/lib/private/kvk-map";
 
-import { KvkMapCard, keepOutOf, labelsOf, type Box } from "./InsightsKvkMap";
+import { KvkMapCard } from "./InsightsKvkMap";
+import { keepOutOf, labelsOf, type Box } from "./kvk-map-view";
 
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ SERVER_TZ: "Etc/GMT+2" }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => undefined }) }));
@@ -35,7 +37,7 @@ const map = kvkMapOf(
 );
 
 describe("the KvK map card (issue 791, D163)", () => {
-  it("names the dots in a readout and each band's members, inside ph-no-capture", () => {
+  it("opens at the fit level, names the members in a readout and each band's members, inside ph-no-capture", () => {
     const html = renderToStaticMarkup(
       createElement(KvkMapCard, {
         map,
@@ -46,20 +48,9 @@ describe("the KvK map card (issue 791, D163)", () => {
     );
     const figure = html.slice(html.indexOf("<figure"), html.indexOf("</figure>"));
     expect(html.match(/<figure[^>]*>/)?.[0]).toMatch(/class="ph-no-capture /);
-    // One house a member in name order, each with its name; the readout opens on the first.
-    expect([...figure.matchAll(/data-glyph="(\w+)"/g)].map((m) => m[1])).toEqual([
-      "unknown",
-      "on",
-      "not_seen",
-      "unknown",
-    ]);
-    expect(
-      [...figure.matchAll(/<span data-at="\d+"[^>]*><bdi[^>]*>([^<]+)/g)].map((m) => m[1]),
-    ).toEqual(["Alder", "Birch", "Cedar", "Dawn"]);
-    // Shield seen: the light ring; no reading: the dashed ring, its words only in the readout and the legend,
-    // never "unshielded" (D75). Each map label is the name only.
-    expect(figure.match(/fill-opacity="0.14"/g)).toHaveLength(1);
-    expect(figure).not.toMatch(/>no reading</);
+    // The fit level first: dots, no house and no name on the plot.
+    expect(figure).toContain('data-level="fit"');
+    expect(figure).not.toMatch(/data-glyph=/);
     expect(html).not.toMatch(/unshielded/i);
     expect(figure).toMatch(
       /Alder<\/span> · X 470, Y 655 · Kills not known \(not in the Start reading\) · no reading/,
