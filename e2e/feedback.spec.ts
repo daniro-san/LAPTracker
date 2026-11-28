@@ -145,8 +145,8 @@ test("an officer's feedback from the desk says “Received, thank you.” and th
 });
 
 // The floating badge (issue 713): from 1280, where the desk's sidebar shows, a "Feedback" badge opens the same
-// sheet; below it, only the end-of-page button.
-test("from 1280 a “Feedback” badge opens the same sheet and gives way to it, and the end-of-page button stays", async ({
+// sheet and is the only entry (owner, 2026-11-27); below it, only the end-of-page button.
+test("from 1280 a “Feedback” badge opens the same sheet and gives way to it, and the end-of-page button is hidden", async ({
   context,
   page,
 }, info) => {
@@ -158,7 +158,7 @@ test("from 1280 a “Feedback” badge opens the same sheet and gives way to it,
   const badge = page.getByRole("button", { name: "Feedback", exact: true });
   const end = page.getByRole("button", { name: "Send feedback" });
   await expect(badge).toBeVisible();
-  await expect(end).toHaveCount(1);
+  await expect(end).toHaveCount(0);
   expect((await badge.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await hydrated(badge);
   await badge.click();

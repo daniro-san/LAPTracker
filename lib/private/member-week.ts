@@ -62,12 +62,12 @@ export function weekTotal(days: DayValue[]): number | null {
 }
 
 /**
- * The most daily quest points a member can earn in one server day: 240, so 1,680 a week (7 × 240).
- * PROVISIONAL, not confirmed by the owner, who thinks it may be 230 (#739): every end-of-day read fits 240
- * (Tuesday reads at 480, Sunday reads above 7 × 230 = 1,610), and those do not fit 230. The quest points
- * bars are drawn against it (D158, amended 2026-11-22).
+ * The most daily quest points a member can earn in one server day: 250, so 1,750 a week (7 × 250).
+ * Confirmed by the owner in the game on 2026-11-26/27: with every daily quest done, the day's total is 250.
+ * It replaces the provisional 240 read from the end-of-day reads (#739). The quest points bars are drawn
+ * against it (D158, amended 2026-11-22).
  */
-export const QUEST_DAY_CAP = 240;
+export const QUEST_DAY_CAP = 250;
 
 /** A day's daily quest points: a number, "none" (none earned that day), or null (no data). */
 export type QuestDay = number | "none" | null;
