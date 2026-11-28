@@ -60,6 +60,10 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 868,
   },
   {
+    text: 'Race to #1 on /alliances: have a native speaker read the Russian, Ukrainian and Thai "passes" line (it uses a future verb), look at it on a phone with real data, then create and turn on the race-pace flag in PostHog.',
+    issue: 285,
+  },
+  {
     text: "Choose how alliances will pay for the paid plan (the comparison is in the private plan Claude prepared). Nothing is charged until you decide.",
     issue: 788,
   },
@@ -294,11 +298,15 @@ export const patchNotes: PatchNote[] = [
       "Member card: Alliance Duel points by week for the last 8 weeks, a week with no picture shown as no data, and the member's and the alliance's weekly averages over finished weeks.",
       'Members thanks: "Most improved in Alliance Duel" (10% more points last week than the week before), "Helped the alliance every day this week" (1,000 Alliance Help coins on every day read) and "Quests every day this week" replace the one-day Most active list, also in Home and the share. Names only, alphabetical.',
       "Elixir Scramble roll call: Registered, Registered for 09:00 only, Sub and Excused marks, a score for Joined, the team's result per week, and the last 4 Elixir on the member card. A follow-up line only comes from officers' own Did not join marks.",
+      "/alliances: Race to #1, each top alliance's place today and in 4 weeks at this pace, with its slowest and fastest week. Hidden until the race-pace flag is on.",
+      "Alliance settings → Branding: officers choose the desk's tab title, its icon (the alliance badge, the Discord server icon or the desk mark) and an accent colour for the header. Posts take the name and icon only once Branding is saved.",
+      "Alliance settings → Language: officers set the desk's default language. Each person's own EN · PT · FR choice still wins.",
+      'Member card: a member only in Follow-up\'s "After KvK, offer help" group now shows it on their card too, and the line about last week reads "Recorded last week:".',
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
       815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847, 849, 850, 852, 856, 863,
-      865, 870, 871, 875, 876, 879, 880, 881, 882, 883, 884, 885, 886,
+      865, 870, 871, 875, 876, 879, 880, 881, 882, 883, 884, 885, 886, 887, 888, 889, 890, 891,
     ],
     officer: [
       {
