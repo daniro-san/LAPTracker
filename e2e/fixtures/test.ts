@@ -83,6 +83,8 @@ function allowedAt(
   if (/^\/alliances\/\d+$/.test(path)) {
     return search.get("tab") === "moves" ? null : { side: null, fields: DAILY_FIELDS };
   }
+  // The public player page shows the player's own quest points (issue 824), not their coins or tech.
+  if (/^\/players\/\d+$/.test(path)) return { side: null, fields: ["active"] };
   for (const side of SIDES) {
     const slug = slugOf(side);
     if (new RegExp(`^/api/w/${slug}/members/\\d+$`).test(path)) {

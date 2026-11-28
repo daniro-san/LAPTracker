@@ -4,7 +4,7 @@ import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { trimRaw } from "../raw-json";
 import { dailyRosters } from "../schema";
-import { alliancePage } from "./alliance-page";
+import { alliancePage, playerInAlliance } from "./alliance-page";
 import { BLOCKED_ROSTER_KEYS, findBlockedKeys } from "./blocked-keys";
 
 /** A roster member as /v1 sends it, private fields included. */
@@ -101,5 +101,25 @@ describe("alliancePage", () => {
 
   it("is null for an alliance with no roster", async () => {
     expect(await alliancePage(db, 8)).toBeNull();
+  });
+});
+
+describe("playerInAlliance", () => {
+  it("gives the newest roster's alliance, server, rank and quest points, and no other roster key", async () => {
+    const read = await playerInAlliance(db, 4);
+    expect(read).toMatchObject({ unionId: 7, tag: "OGs", day: "2026-11-27", server: 325 });
+    expect(read).toMatchObject({ rank: 4, active: 580 });
+    expect(findBlockedKeys(read, { allowActivity: true })).toEqual([]);
+    const text = JSON.stringify(read);
+    for (const key of [
+      ...BLOCKED_ROSTER_KEYS,
+      "daily_honor",
+      "daily_tech",
+      "dailyHonor",
+      "dailyTech",
+    ])
+      expect(text).not.toContain(`"${key}"`);
+    expect(text).not.toContain("1793807944");
+    expect(await playerInAlliance(db, 99)).toBeNull();
   });
 });

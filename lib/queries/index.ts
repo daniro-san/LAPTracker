@@ -31,6 +31,8 @@ export {
   type AlliancePage,
   type AlliancePageMember,
   type GrowthPoint,
+  playerInAlliance,
+  type PlayerInAlliance,
 } from "./alliance-page";
 export {
   allianceMoves,
