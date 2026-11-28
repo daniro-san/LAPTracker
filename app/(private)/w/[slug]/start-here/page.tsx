@@ -42,7 +42,7 @@ export default async function StartHerePage({ params }: { params: Promise<{ slug
   }
   // D126: with the board off, Start here is not there either: its address goes to Home.
   if (!edit) redirect(`/w/${slug}`);
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const link =
     "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
   return (

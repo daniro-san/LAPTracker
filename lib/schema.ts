@@ -407,6 +407,11 @@ export const workspaces = pgTable("workspaces", {
   brandIcon: text("brand_icon"),
   brandAccent: text("brand_accent"),
   discordIconHash: text("discord_icon_hash"),
+  /**
+   * Alliance settings → Language (issue 438): the desk's language when a viewer has not switched it
+   * ("en" | "pt-BR" | "fr"); null follows the browser's Accept-Language.
+   */
+  defaultLanguage: text("default_language"),
 });
 
 /**

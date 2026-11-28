@@ -74,7 +74,7 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   // D126: turned off for the alliance, the page is not there: its address goes to Home.
   if (!featureOn(access, "thefts")) redirect(`/w/${slug}`);
   if (!view) notFound();
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const words = theftWords(t);
   const f = formats(language, zone);
   return (

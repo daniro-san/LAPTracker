@@ -20,7 +20,7 @@ export default async function NewNoticePage({ params }: { params: Promise<{ slug
     (db, a) => memberLanguages(db, a, new Date()),
     "/new",
   );
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <p>

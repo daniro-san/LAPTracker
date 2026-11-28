@@ -29,7 +29,7 @@ export default async function ImportPage({ params }: { params: Promise<{ slug: s
     refuse(slug, access.reason, `/w/${slug}/import`);
     redirect(`/w/${slug}`);
   }
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   return (
     <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["members.import"]}</h1>

@@ -56,7 +56,7 @@ export async function openCalendar<T>(
   }
   // D126: a view turned off for the alliance is not there: its address goes to Home.
   if (turnedOff(access, view)) redirect(`/w/${slug}`);
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const ctx: CalendarCtx = { t, language, zone: env.SERVER_TZ, endRead: env.SNAPSHOT_AFTER };
   return {
     access,

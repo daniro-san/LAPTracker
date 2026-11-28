@@ -309,12 +309,21 @@ const BASE = new Map<string, WorkspaceLanguage>([
   ["fr", "fr"],
 ]);
 
-/** The switch's cookie, else the first Accept-Language tag in one of the three, else English. */
+/** Whether a cookie value is one of the desk's three languages. */
+export const isWorkspaceLanguage = (value: string | undefined): value is WorkspaceLanguage =>
+  WORKSPACE_LANGUAGES.includes(value as WorkspaceLanguage);
+
+/**
+ * The switch's cookie, else the workspace's default (issue 438), else the first Accept-Language tag in one of
+ * the three, else English.
+ */
 export function pickWorkspaceLanguage(
   cookie: string | undefined,
   acceptLanguage: string | null,
+  workspaceDefault: WorkspaceLanguage | null = null,
 ): WorkspaceLanguage {
-  if (WORKSPACE_LANGUAGES.includes(cookie as WorkspaceLanguage)) return cookie as WorkspaceLanguage;
+  if (isWorkspaceLanguage(cookie)) return cookie;
+  if (workspaceDefault) return workspaceDefault;
   const tags = (acceptLanguage ?? "").split(",").map((t) => t.split(";")[0]?.trim().toLowerCase());
   for (const tag of tags) {
     const language = BASE.get(tag?.split("-")[0] ?? "");

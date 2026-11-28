@@ -59,7 +59,7 @@ export async function openRollCall<T>(
   const now = new Date();
   const env = getEnv();
   const today = serverDay(now, env);
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, data, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);

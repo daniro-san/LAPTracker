@@ -265,7 +265,7 @@ export default async function MembersPage({
   const search = plainSearch(await searchParams);
   const at = search.get("view") === "former" ? "former" : "members";
   const showFormer = at === "former";
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, view, rows, waiting, lifecycle, switches, followUp, set } = await withPageDb(
     (db) =>

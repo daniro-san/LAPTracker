@@ -36,7 +36,7 @@ export default async function NoticePage({
   const { slug, id: raw } = await params;
   const id = /^[1-9]\d{0,8}$/.test(raw) ? Number(raw) : null;
   if (id === null) notFound();
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const { access, data, waiting } = await noticePage(
     slug,
     async (db, a) => {

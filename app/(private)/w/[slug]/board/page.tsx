@@ -101,7 +101,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
     if (access.officer) redirect(`/w/${slug}`);
     notFound();
   }
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const { alliance } = access;
   const account = (
     <BoardAccount officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />

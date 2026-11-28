@@ -28,7 +28,7 @@ export default async function NoAccessPage({
   if (!SLUG.test(slug)) notFound();
   const why = (await searchParams).why;
   const reason = REASONS.find((r) => r === why) ?? "no_role";
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   return (
     <Frame language={language} t={t}>
       <section aria-labelledby="no-access" className="mx-auto max-w-md">

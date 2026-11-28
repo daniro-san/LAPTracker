@@ -279,7 +279,7 @@ export default async function WorkspacePage({
   // Only a renewal goes on to `back`: signed out, Home shows the sign-in itself.
   if (!access.ok)
     refuse(slug, access.reason, access.reason === "expired" ? (back ?? undefined) : undefined);
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const shared = sharedLines(t, language, query);
   if (!access.ok || !view || !desk) {
     const error = ERRORS.find((code) => code === query.e);

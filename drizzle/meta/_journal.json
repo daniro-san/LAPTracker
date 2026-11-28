@@ -673,6 +673,13 @@
       "when": 1795878742258,
       "tag": "0095_branding",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1795882284790,
+      "tag": "0096_desk_language",
+      "breakpoints": true
     }
   ]
 }

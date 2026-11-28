@@ -10,7 +10,12 @@ import { getAppContext } from "@/lib/app-context";
 import { accentColor, tokenColor } from "@/lib/brand/palette";
 import { workspaceBranding } from "@/lib/private/branding";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
-import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { workspaceDefaultLanguage } from "@/lib/private/desk-language";
+import {
+  isWorkspaceLanguage,
+  pickWorkspaceLanguage,
+  WORKSPACE_DICTIONARIES,
+} from "@/lib/private/dictionary";
 import { requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { DEFAULT_ACCENT, iconPath } from "@/lib/workspace-branding";
@@ -21,14 +26,15 @@ export async function GET(
 ): Promise<Response> {
   const { slug } = await params;
   if (!SLUG.test(slug)) return new Response(null, { status: 404 });
-  // The language switch's cookie, else the phone's language, as on every desk page.
-  const language = pickWorkspaceLanguage(
-    requestCookies(request).get(WORKSPACE_LANG_COOKIE)?.value,
-    request.headers.get("accept-language"),
-  );
+  const { db, close } = getAppContext().openDb();
+  // The language switch's cookie, else the workspace's saved language, else the phone's, as on every desk page.
+  const cookie = requestCookies(request).get(WORKSPACE_LANG_COOKIE)?.value;
+  const preset = isWorkspaceLanguage(cookie)
+    ? null
+    : await workspaceDefaultLanguage(db, slug).catch(() => null);
+  const language = pickWorkspaceLanguage(cookie, request.headers.get("accept-language"), preset);
   const t = WORKSPACE_DICTIONARIES[language];
   const desk = `/w/${slug}`;
-  const { db, close } = getAppContext().openDb();
   const branding = await workspaceBranding(db, slug, t["app.name"])
     .catch(() => null)
     .finally(close);
