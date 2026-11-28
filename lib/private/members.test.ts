@@ -426,6 +426,14 @@ describe("the not-seen reason (issue 821)", () => {
     ).toBe("not seen in game since Sat, Nov 7");
   });
 
+  it("does not list a new member, who stays New (D127 grace)", async () => {
+    await endOfDay(OGS, dayOf(0), { 1: {} });
+    await endOfDay(OGS, dayOf(1), { 1: {}, 2: { lastOnline: "2026-11-01T01:00:00Z" } });
+    expect(await seenOf("ogs", 2)).toEqual([]);
+    const view = await membersView(db, await signedIn("ogs"), NOW, ZONE);
+    expect(statusOf(view.members.find((m) => m.uid === 2) as MemberRow)).toBe("new");
+  });
+
   it("never lists a member with no reading", async () => {
     for (const n of [0, 1]) await endOfDay(OGS, dayOf(n), { 1: {} });
     expect(await seenOf("ogs", 1)).toEqual([]);

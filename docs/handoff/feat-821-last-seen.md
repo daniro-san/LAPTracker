@@ -13,6 +13,7 @@
 ## Decisions
 
 - Source is the newest daily roster's `last_online_at` only, not `player_reads.last_seen_at` (that column is not in dev; it arrives with PR 819). One source is simpler to document.
+- A member still in the D127 grace for new members (settling) never gets the reason, so a new member stays New.
 - "3 days" is measured from the newest end-of-day read's time to `last_online_at` (72 hours or more), so it does not depend on the time zone.
 - The reason lives in the shared `reasons` list, so the Members tab's "Check in" status and the card's status lines also show it, not only Follow-up.
 - The reason text does not end with the date, so the PT/FR sentence-date guard in `dictionary.test.ts` does not apply.
@@ -24,7 +25,7 @@
 
 ## Verified
 
-- `pnpm vitest related --run` on the changed files: passed (106 files, 622 tests after the rebase).
+- `pnpm vitest related --run` on the changed files: passed (59 files, 346 tests after the second rebase and review fixes).
 - `pnpm check`: passed (prettier, eslint, tsc, vitest, drift, i18n).
 
 ## Open issues

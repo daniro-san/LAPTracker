@@ -192,7 +192,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     : [
         ...(idle ? [{ kind: "idle" as const, ...idle }] : []),
         ...(flat !== undefined ? [{ kind: "might" as const, days: flat }] : []),
-        ...seenReason(m, newest.at),
+        ...(settling ? [] : seenReason(m, newest.at)),
         ...(s.event && killsGained(s.event, m.uid) === 0
           ? [{ kind: "kvk" as const, at: s.event.at }]
           : []),

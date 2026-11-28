@@ -2,7 +2,8 @@
 // named, and the language is the member's (recorded first, then the game's), else nobody's.
 import { describe, expect, it } from "vitest";
 
-import { messageLanguage, readyMessage, readyWords } from "./ready-message";
+import type { MemberRow } from "./members";
+import { inputOf, messageLanguage, readyMessage, readyWords } from "./ready-message";
 
 const base = { name: "Wren", isNew: false, reasons: [], tip: false, toAsk: [] } as const;
 
@@ -19,6 +20,18 @@ describe("the ready message (D140)", () => {
     expect(readyMessage(en, { ...base, tip: true })).toBe(
       "Hey Wren! Small tip: helping alliance mates gives you Alliance Help coins, up to 1,000 a day. Have fun! 🙂",
     );
+  });
+
+  it("sends the not-seen reason (issue 821) as the quiet line", () => {
+    const member = { name: "Wren", isNew: false, reasons: [{ kind: "seen", at: new Date() }] };
+    const input = inputOf({
+      member: member as unknown as MemberRow,
+      checkIn: true,
+      tip: false,
+      toAsk: [],
+      kvk: false,
+    });
+    expect(input.reasons).toEqual(["idle"]);
   });
 
   it("welcomes a new member and names every fact still to ask, in their language", () => {
