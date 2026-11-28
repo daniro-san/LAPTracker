@@ -73,6 +73,15 @@ const save = (
   path: string = channel,
 ) => saveHook(db, ws, { channel, url: hook(path), forum, secret });
 
+/** Saturday morning's readings: nobody seen with a shield, so the morning message names both. */
+const morningReads = () =>
+  db.insert(playerReads).values(
+    [1, 2].map((uid) => ({
+      ...{ unionId: OWN_ALLIANCE_ID, readAt: SAT, shielding: 0, shieldType: 0 },
+      uid,
+    })),
+  );
+
 /** Discord as a stub: every post and edit, answered with message 900; a forum post needs a title. */
 function discord(forum = false) {
   const posts: { method: string; url: string; threadName?: string }[] = [];
@@ -121,6 +130,7 @@ describe("the Raid Shield summary's channel (D147)", () => {
     await save("shield", true);
     const d = discord(true);
     expect(await d.post(FRI, "night")).toBe(true);
+    await morningReads();
     await d.rename(["Ash1", "Ash2"]);
     expect(await d.post(SAT, "morning")).toBe(true);
     expect(d.posts).toEqual([
@@ -150,6 +160,7 @@ describe("the Raid Shield summary's channel (D147)", () => {
     await save("shield");
     const d = discord();
     await d.post(FRI, "night");
+    await morningReads();
     await save("shield", false, SECRET, "shield-moved");
     await d.rename(["Ash1", "Ash2"]);
     await d.post(SAT, "morning");
@@ -171,15 +182,32 @@ describe("the Raid Shield summary's names (D137, 2026-11-22)", () => {
       ...{ source: "officer", writtenAt: FRI },
     });
 
-  it("leaves a member away from the raid's Saturday out of “Not seen yet” and counts them instead", async () => {
+  it("shows counts only at the night check: no name, no “unshielded”, in all three languages", async () => {
     await save("shield");
-    // Away from Saturday only: on Friday, the night check's own day, Wren2 is not away yet.
     await fact(2, "away", { text: "Trip", from: "2026-11-21", until: "2026-11-23" });
     const d = discord();
-    expect(await d.post(FRI, "night")).toBe(true);
-    const [text] = d.texts;
-    expect(text).toContain("Night check 23:45 ST: 0 of 2 with a shield seen");
-    expect(text).toContain("\nNot seen yet: Wren1 · 1 away, left out\n");
+    for (const language of ["en", "pt-BR", "fr"]) {
+      expect(await d.post(FRI, "night", language)).toBe(true);
+    }
+    const [en = "", pt = "", fr = ""] = d.texts;
+    expect(en).toContain(
+      "Night check 23:45 ST: shield seen on 0 of 2 maps so far; maps refresh after the reset",
+    );
+    expect(pt).toContain("escudo visto em 0 de 2 mapas até agora");
+    expect(fr).toContain("bouclier vu sur 0 cartes sur 2 pour l’instant");
+    for (const text of d.texts) {
+      expect(text).not.toMatch(/Wren|away|ausente|absent|unshielded|sem escudo|sans bouclier/i);
+    }
+  });
+
+  it("names those not seen, away members left out, only after the morning check", async () => {
+    await save("shield");
+    await fact(2, "away", { text: "Trip", from: "2026-11-21", until: "2026-11-23" });
+    await morningReads();
+    const d = discord();
+    expect(await d.post(SAT, "morning")).toBe(true);
+    const [text = ""] = d.texts;
+    expect(text).toContain("\nNot seen this morning: Wren1 · 1 away, left out\n");
     expect(text).not.toContain("Wren2");
   });
 

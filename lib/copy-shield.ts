@@ -9,9 +9,10 @@ export interface ShieldPostWords {
   title: string;
   /** "{time}: {n} of {total} with a shield seen" for one read. */
   read: string;
+  /** The night check's line: counts only, the maps refresh after the reset (issue 826). */
+  night: string;
   /** "· {n} not read" after a read, when some members have no reading. */
   unread: string;
-  notSeen: string;
   notSeenMorning: string;
   /** How many away members were left out of the names: a count, never a name (D137, 2026-11-22). */
   away: string;
@@ -29,8 +30,9 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
   en: {
     title: "**Raid Shield check**",
     read: "{day} {time} ST: {n} of {total} with a shield seen",
+    night:
+      "{day} {time} ST: shield seen on {n} of {total} maps so far; maps refresh after the reset",
     unread: "{n} not read",
-    notSeen: "Not seen yet: {names}",
     notSeenMorning: "Not seen this morning: {names}",
     away: "{n} away, left out",
     awayOne: "{n} away, left out",
@@ -43,8 +45,9 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
   "pt-BR": {
     title: "**Conferência do Escudo de raid**",
     read: "{day} {time} ST: {n} de {total} com escudo visto",
+    night:
+      "{day} {time} ST: escudo visto em {n} de {total} mapas até agora; os mapas atualizam depois do reset",
     unread: "{n} sem leitura",
-    notSeen: "Ainda sem escudo visto: {names}",
     notSeenMorning: "Sem escudo visto hoje de manhã: {names}",
     away: "{n} ausentes, fora da lista",
     awayOne: "{n} ausente, fora da lista",
@@ -57,8 +60,9 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
   fr: {
     title: "**Vérification du Bouclier de raid**",
     read: "{day} {time} ST : {n} sur {total} avec un bouclier vu",
+    night:
+      "{day} {time} ST : bouclier vu sur {n} cartes sur {total} pour l’instant ; les cartes se mettent à jour après le reset",
     unread: "{n} sans lecture",
-    notSeen: "Pas encore vu : {names}",
     notSeenMorning: "Pas vu ce matin : {names}",
     away: "{n} absents, hors de la liste",
     awayOne: "{n} absent, hors de la liste",

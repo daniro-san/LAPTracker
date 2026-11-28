@@ -7,7 +7,7 @@ export const glanceEn = {
   "roll.prep.raid": "KvK {date} · raid at the reset",
   "roll.prep.raid.past": "Past raid · KvK {date}",
   "roll.prep.status.night":
-    "Shields for this raid: {on} of {read} seen at the night check ({time} ST)",
+    "Shield seen on {on} of {read} maps so far; maps refresh after the reset (night check, {time} ST)",
   "roll.prep.status.morning":
     "Shields for this raid: {on} of {read} seen at the morning check ({time} ST)",
   "roll.prep.status.none": "Shields for this raid: not read yet",
@@ -38,7 +38,7 @@ export const glancePt: GlanceWords = {
   "roll.prep.raid": "KvK {date} · raid no reset",
   "roll.prep.raid.past": "Raid passado · KvK {date}",
   "roll.prep.status.night":
-    "Escudos para este raid: {on} de {read} vistos na conferência da noite ({time} ST)",
+    "Escudo visto em {on} de {read} mapas até agora; os mapas atualizam depois do reset (conferência da noite, {time} ST)",
   "roll.prep.status.morning":
     "Escudos para este raid: {on} de {read} vistos na conferência da manhã ({time} ST)",
   "roll.prep.status.none": "Escudos para este raid: ainda sem leitura",
@@ -66,7 +66,7 @@ export const glanceFr: GlanceWords = {
   "roll.prep.raid": "KvK {date} · raid au reset",
   "roll.prep.raid.past": "Raid passé · KvK {date}",
   "roll.prep.status.night":
-    "Boucliers pour ce raid : {on} sur {read} vus à la vérification du soir ({time} ST)",
+    "Bouclier vu sur {on} cartes sur {read} pour l’instant ; les cartes se mettent à jour après le reset (vérification du soir, {time} ST)",
   "roll.prep.status.morning":
     "Boucliers pour ce raid : {on} sur {read} vus à la vérification du matin ({time} ST)",
   "roll.prep.status.none": "Boucliers pour ce raid : pas encore lus",
