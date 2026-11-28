@@ -100,15 +100,15 @@ describe("Follow-up's Needs help in words (#585 slice 2)", () => {
     expect(markLines({ at, by: null, note: null }, en, date)).toEqual(["Since 2026-11-13"]);
     const talked = { action: "talked" as const, note: "on holiday", until: null, at, by: "Tomas" };
     expect(lastWeekLines(talked, en, date, day)).toEqual([
-      "Last week: ⁨Tomas⁩ · 2026-11-13: Talked to them",
+      "Recorded last week: ⁨Tomas⁩ · 2026-11-13: Talked to them",
       "“on holiday”",
     ]);
     expect(lastWeekLines({ ...talked, note: null, by: null }, en, date, day)).toEqual([
-      "Last week: 2026-11-13: Talked to them",
+      "Recorded last week: 2026-11-13: Talked to them",
     ]);
     // French: guillemets with no-break spaces inside, and one before each colon.
     expect(lastWeekLines(talked, WORKSPACE_DICTIONARIES.fr, date, day)).toEqual([
-      "Semaine dernière : ⁨Tomas⁩ · 2026-11-13 : On a parlé",
+      "Enregistré la semaine dernière : ⁨Tomas⁩ · 2026-11-13 : On a parlé",
       "« on holiday »",
     ]);
   });

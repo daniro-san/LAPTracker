@@ -4,13 +4,12 @@
 // Every read is bounded by the date (D149). Might is public; no private roster field is read here.
 import type { Db } from "../db";
 import { followedUpSince } from "../repo/member-follow-ups";
-import { scheduledEventMight, type EventMight } from "../repo/workspace-rosters";
+import { scheduledEventMight, type EventMight, type RosterRead } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn, zonedInstant } from "./calendar-time";
 import { featureOn } from "./features";
 import { inKvkGroup, kvkOpen, sinceMonday } from "./follow-up-rules";
 import { afterKvk, KVK_HELP_DAYS, kvkOf, type KvkView } from "./insights-kvk";
-import type { MembersView } from "./members";
 
 /** 00:00 server time of the oldest day a KvK Follow-up still offers help after can fall on. */
 const kvkSince = (now: Date, zone: string) =>
@@ -29,8 +28,12 @@ export const kvkEvents = (db: Db, access: WorkspaceAccess, now: Date, zone: stri
  * reads, its newest event shown, inside its week (`afterKvk`). `worklist` leaves out members on a break, by
  * the same test as Insights' `awayOf`.
  */
-export const kvkHelp = (events: EventMight[], view: MembersView, now: Date, zone: string) =>
-  afterKvk(kvkOf(events, view.reads, zone, new Set(), now), dayIn(zone, now.getTime()));
+export const kvkHelp = (
+  events: EventMight[],
+  view: { reads: readonly RosterRead[] },
+  now: Date,
+  zone: string,
+) => afterKvk(kvkOf(events, view.reads, zone, new Set(), now), dayIn(zone, now.getTime()));
 
 /**
  * Whether Follow-up's "After KvK, offer help" has someone in it, for Insights' link to it: the same KvK and

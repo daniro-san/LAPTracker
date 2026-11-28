@@ -20,6 +20,7 @@ import {
 } from "../schema";
 import { workspaceFeatures } from "../schema-features";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import {
   followUpCounts,
   followUpView,
@@ -29,6 +30,7 @@ import {
 } from "./follow-up";
 import { helloOnly } from "./follow-up-rules";
 import { insightsView } from "./insights";
+import { memberCard } from "./member-card";
 import { membersView } from "./members";
 import { createSession } from "./session";
 
@@ -266,5 +268,31 @@ describe("Follow-up's After KvK, offer help (#585 slice 5)", () => {
       allianceSwitches: { follow_up: false },
     });
     expect(await link(await signedIn("Bo", now))).toBe(false);
+  });
+
+  it("shows the member card the week line and the KvK opener of a member who is only in the group, as Follow-up does", async () => {
+    const now = st("2026-11-22T10:00");
+    const ana = await signedIn("Ana", now);
+    await reads("2026-11-18", "2026-11-21");
+    const card = async (uid: number) =>
+      (
+        await memberCard(db, ana, uid, {
+          now,
+          zone: ZONE,
+          language: "en",
+          t: WORKSPACE_DICTIONARIES.en,
+        })
+      )?.followUp;
+    const listed = (await followUpView(db, ana, now, ZONE)).items.find((i) => i.member.uid === 101);
+    expect(listed).toMatchObject({ kvk: true, help: false });
+    expect(await card(101)).toMatchObject({
+      week: "This week: no follow-up note yet.",
+      onList: true,
+    });
+    // 105 lost nothing: off the list, so no week line.
+    expect(await card(105)).toMatchObject({ week: null, onList: false });
+    // Written about after the KvK: the card says so, as the list leaves them out.
+    await recordFollowUp(db, ana, input(101), at(st("2026-11-22T11:00")));
+    expect(await card(101)).toMatchObject({ onList: false });
   });
 });
