@@ -171,3 +171,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D161 — A KvK plan: roles officers name and fill, a note, and "Make the message" into a notice draft (2026-11-27, orchestrator from spike #789, issue 790 stage 1)](D161-kvk-plan-roles-and-message.md)
 - [D163 — Map positions, presence and names are product data on the desk for the own alliance; public pages never show whether a player is online (2026-11-28, owner; amends D22, D71, D76, D142)](D163-map-positions-presence-and-names-are-product-data.md)
 - [D164 — Link preview cards on public pages: a 1200 × 630 card with the page's own facts, from the shared reads (2026-11-28, orchestrator, issue 830; amends D22, D65)](D164-link-preview-cards-on-public-pages.md)
+- [D166 — A hotfix branches from `main`, ships as a patch release, and comes back to `dev` (2026-11-28, owner; amends D29)](D166-hotfix-branches-from-main.md)
