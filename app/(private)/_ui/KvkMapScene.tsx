@@ -11,6 +11,7 @@
 // lists and the sheet say the same) and, with the sheet, inside ph-no-capture.
 import { useReducer, useRef, type PointerEvent } from "react";
 
+import { useReadoutAt } from "@/app/_ui/charts/Readout";
 import {
   CastleGlyph,
   HouseGlyph,
@@ -91,6 +92,22 @@ function Tag({ at, className, children }: { at: Point; className: string; childr
   );
 }
 
+/** The other alliances' muted discs at their members' centre, at either level. */
+function ClusterDiscs(props: {
+  clusters: SceneData["clusters"];
+  at: (x: number, y: number) => Point;
+}) {
+  return props.clusters.map((c, i) => (
+    <circle
+      key={i}
+      {...props.at(c.x, c.y)}
+      r={3.2}
+      className="fill-ink/15 stroke-ink/40"
+      strokeWidth={0.4}
+    />
+  ));
+}
+
 /** Near, mid and far counts stacked in one block beside the far ring (left of it when the castle sits right
  * of centre), so they never sit on one another however small the rings are drawn. */
 function RingCounts(props: { rings: SceneData["rings"]; castle: Point; reach: number }) {
@@ -128,15 +145,7 @@ function FitLevel({ data, state }: Pick<Props, "data" | "state">) {
   return (
     <>
       <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
-        {data.clusters.map((c, i) => (
-          <circle
-            key={i}
-            {...at(c.x, c.y)}
-            r={3.2}
-            className="fill-ink/15 stroke-ink/40"
-            strokeWidth={0.4}
-          />
-        ))}
+        <ClusterDiscs clusters={data.clusters} at={at} />
         {castle &&
           data.rings.map((r) => (
             <circle
@@ -193,18 +202,12 @@ function CityLevel({ data, state }: Pick<Props, "data" | "state">) {
     castle,
   );
   const { layers } = state;
+  // The readout's member (a tap, Find or ‹ ›), read on every render so it survives pan, zoom and filters.
+  const chosen = useReadoutAt();
   return (
     <>
       <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
-        {data.clusters.map((c, i) => (
-          <circle
-            key={i}
-            {...at(c.x, c.y)}
-            r={3.2}
-            className="fill-ink/15 stroke-ink/40"
-            strokeWidth={0.4}
-          />
-        ))}
+        <ClusterDiscs clusters={data.clusters} at={at} />
         {shown.map((i, n) => {
           const d = data.dots[i] as SceneDot;
           const p = points[n] as Point;
@@ -212,7 +215,7 @@ function CityLevel({ data, state }: Pick<Props, "data" | "state">) {
             <g key={i} data-at={i} data-glyph={d.shield} className="group/dot cursor-pointer">
               <Member shield={layers.shields ? d.shield : "not_seen"} {...p} />
               {layers.bands && <BandMark band={d.band} {...p} />}
-              {state.selected === i && (
+              {chosen === i && (
                 <circle
                   {...p}
                   r={RING / 2 + 0.6}
@@ -237,7 +240,7 @@ function CityLevel({ data, state }: Pick<Props, "data" | "state">) {
             <span
               key={i}
               data-at={i}
-              className={`absolute cursor-pointer px-0.5 text-center ${HALO} text-xs leading-tight before:absolute before:top-1/2 before:left-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-1/2 before:content-[''] aria-[current=true]:font-semibold`}
+              className={`absolute cursor-pointer px-0.5 text-center ${HALO} text-xs leading-tight before:absolute before:top-1/2 before:left-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-1/2 before:content-[''] ${chosen === i ? "font-semibold" : ""}`}
               style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%` }}
             >
               <bdi translate="no" className="block truncate">

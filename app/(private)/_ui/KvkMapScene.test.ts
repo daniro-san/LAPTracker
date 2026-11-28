@@ -1,12 +1,14 @@
 // The KvK map's scene (issue 817 part 2): the fit level shows ring counts and the other alliances' "TAG · n"
 // without a member name; the city level draws only the houses in the visible box; Find picks a member and
 // opens their sheet; the sheet's facts; the layer chips turn shields, kills bands and names on and off; a
-// vertical one-finger swipe scrolls the page, a sideways one or a mouse or two-finger drag pans.
+// vertical one-finger swipe scrolls the page, a sideways one or a mouse or two-finger drag pans; the
+// readout's member is marked on the map.
 // Invented names, places and kills.
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { Readout } from "@/app/_ui/charts/Readout";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { kvkMapOf } from "@/lib/private/kvk-map";
 
@@ -135,5 +137,27 @@ describe("the KvK map scene (issue 817)", () => {
     expect(axisOf("touch", 2, 3, 20)).toBe("any");
     expect(axisOf("mouse", 1, 3, 20)).toBe("any");
     expect(alongAxis("any", 3, 20)).toEqual({ dx: 3, dy: 20 });
+  });
+
+  it("marks the readout's member on the map, and keeps the mark after a pan", () => {
+    const inReadout = (state: SceneState) =>
+      plotOf(
+        renderToStaticMarkup(
+          createElement(Readout, {
+            id: "kvk-map",
+            items: data.dots.map((d) => ({ label: d.name, line: "" })),
+            initial: 2,
+            words: { earlier: "‹", later: "›" },
+            children: createElement(SceneView, { data, words, state, dispatch: () => undefined }),
+          }),
+        ),
+      );
+    const city = step(START, { type: "in" });
+    for (const plot of [inReadout(city), inReadout(step(city, { type: "pan", dx: 5, dy: 5 }))]) {
+      // One seal ring, on Cedar's house (index 2), and only Cedar's name is bold.
+      expect(plot.match(/stroke-seal/g)).toHaveLength(1);
+      expect(plot).toMatch(/<g data-at="2"[^]*?stroke-seal[^]*?<\/g>/);
+      expect(plot.match(/font-semibold[^>]*><bdi[^>]*>(\w+)/)?.[1]).toBe("Cedar");
+    }
   });
 });

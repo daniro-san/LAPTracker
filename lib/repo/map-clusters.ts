@@ -6,6 +6,10 @@ import { sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 
+/** The fewest placed members a cluster is drawn for: a mean of one or two places would show (or nearly
+ * show) one member's own place. */
+export const MIN_PLACED = 3;
+
 /** Another alliance on the map: its tag, its members, and the mean of their places in map squares. */
 export interface MapCluster {
   tag: string;
@@ -18,7 +22,7 @@ export interface MapCluster {
  * The other alliances' clusters from the newest server day on or before `day` that has a usable roster
  * with raw_json, with that roster's newest time; none when there is no such day. One statement, bounded by
  * the day (daily_rosters_day_union_unique, D149). A member counts when the roster lists its uid and sent
- * both x and y as numbers.
+ * both x and y as numbers. An alliance with fewer than MIN_PLACED placed members has no cluster.
  */
 export async function mapClusters(
   db: Db,
@@ -52,7 +56,7 @@ export async function mapClusters(
     from placed
     where tag is not null
     group by union_id, tag, member_count
-    having count(ok) > 0
+    having count(ok) >= ${MIN_PLACED}
     order by tag`);
   const times = result.rows.flatMap((r) => (r.at ? [new Date(r.at).getTime()] : []));
   return {

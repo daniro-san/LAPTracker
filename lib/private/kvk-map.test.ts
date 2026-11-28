@@ -9,6 +9,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { mapClusters } from "../repo/map-clusters";
 import { eventEndPlaces } from "../repo/workspace-rosters";
 import { saveCastle } from "../repo/workspaces";
 import {
@@ -207,6 +208,21 @@ describe("kvkMapView and eventEndPlaces", () => {
     }
   }
 
+  /** A fresh daily roster of `unionId` on the KvK's day; uid 99 sent a place but is not listed. */
+  const roster = (unionId: number, tag: string, members: Record<string, unknown>[]) => ({
+    readDay: "2026-11-21",
+    unionId,
+    tag,
+    memberCount: members.length,
+    isFresh: true,
+    sourceUpdatedAt: new Date("2026-11-21T23:00:00Z"),
+    memberUids: members.map((m) => m.uid as number).filter((uid) => uid !== 99),
+    memberNames: members.map((m) => `Invented ${String(m.uid)}`),
+    memberPower: members.map(() => 1),
+    memberKills: members.map(() => 0),
+    rawJson: { members },
+  });
+
   it("shows the own alliance's End places with names, its castle point and its shields only", async () => {
     await saveCastle(db, ids.theirs, { x: 9, y: 9 });
     const reading = (unionId: number, uid: number, readAt: string) => ({
@@ -225,28 +241,16 @@ describe("kvkMapView and eventEndPlaces", () => {
       // Another alliance's reading of the same uid.
       reading(THEIRS, 2, "2026-11-21T10:30:00Z"),
     ]);
-    const roster = (unionId: number, tag: string, members: Record<string, unknown>[]) => ({
-      readDay: "2026-11-21",
-      unionId,
-      tag,
-      memberCount: members.length,
-      isFresh: true,
-      sourceUpdatedAt: new Date("2026-11-21T23:00:00Z"),
-      memberUids: members.map((m) => m.uid as number).filter((uid) => uid !== 99),
-      memberNames: members.map((m) => `Invented ${String(m.uid)}`),
-      memberPower: members.map(() => 1),
-      memberKills: members.map(() => 0),
-      rawJson: { members },
-    });
     await db.insert(dailyRosters).values([
       roster(OURS, "OUR", [
         { uid: 1, power: 5_000_000, last_online_at: "2026-11-21T20:00:00Z", x: 1, y: 1 },
         { uid: 2, x: 2, y: 2 },
       ]),
-      // Their centre counts 7 and 8 (both placed and listed); 9 sent no place, 99 is not listed.
+      // Their centre counts 7, 8 and 10 (placed and listed); 9 sent no place, 99 is not listed.
       roster(THEIRS, "RIV", [
         { uid: 7, x: 100, y: 200 },
         { uid: 8, x: 300, y: 400 },
+        { uid: 10, x: 200, y: 300 },
         { uid: 9 },
         { uid: 99, x: 900, y: 900 },
       ]),
@@ -284,9 +288,27 @@ describe("kvkMapView and eventEndPlaces", () => {
     ]);
     expect(map?.shieldAt).toEqual(shieldAt);
     expect(map?.castle).toBeNull();
-    expect(map?.clusters).toEqual([{ tag: "RIV", members: 4, x: 200, y: 300 }]);
+    expect(map?.clusters).toEqual([{ tag: "RIV", members: 5, x: 200, y: 300 }]);
     expect(map?.clustersAt).toEqual(new Date("2026-11-21T23:00:00Z"));
-    expect(JSON.stringify(map)).not.toMatch(/Invented [789]/);
+    expect(JSON.stringify(map)).not.toMatch(/Invented (?:[789]|10)/);
+  });
+
+  it("draws no cluster for an alliance with 1 or 2 placed members, so no mean is one member's place", async () => {
+    await db.insert(dailyRosters).values([
+      roster(THEIRS, "ONE", [{ uid: 7, x: 100, y: 200 }, { uid: 9 }]),
+      roster(900_003, "TWO", [
+        { uid: 11, x: 100, y: 200 },
+        { uid: 12, x: 300, y: 400 },
+      ]),
+      roster(900_004, "TRI", [
+        { uid: 13, x: 100, y: 200 },
+        { uid: 14, x: 300, y: 400 },
+        { uid: 15, x: 500, y: 600 },
+      ]),
+    ]);
+    expect((await mapClusters(db, OURS, "2026-11-21")).clusters).toEqual([
+      { tag: "TRI", members: 3, x: 300, y: 400 },
+    ]);
   });
 
   const NOW = new Date("2026-11-22T00:00:00Z");

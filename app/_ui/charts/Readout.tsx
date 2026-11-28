@@ -21,6 +21,10 @@ const Choose = createContext<(i: number) => void>(() => undefined);
 /** The readout's own step: a part inside it (the KvK map's Find) moves the line to a column. */
 export const useReadoutGo = () => useContext(Choose);
 
+/** The column the readout around a part has chosen (null outside one): a part marks it in its own render,
+ * so the mark survives the part's elements being drawn again (the KvK map's pan, zoom and filters). */
+export const useReadoutAt = () => useContext(Chosen);
+
 /** The chart's parts get the chosen column and the readout's step. */
 function Provide({ at, go, part }: { at: number; go: (i: number) => void; part: ReactNode }) {
   return (

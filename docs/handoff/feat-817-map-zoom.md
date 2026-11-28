@@ -23,28 +23,29 @@ Part 2 of issue #817: zoom levels, other alliances' clusters, Find, layer chips,
 - `app/(private)/_ui/kvk-map-scene-data.ts` puts every fact into words on the server (`sceneOf`, `sceneWordsOf`), so the client only formats the axes line.
 - `InsightsKvkMap.tsx` (server card) renders the scene inside the existing Readout. Kept: the readout, ‹ ›, legend, "Who (n)" lists, castle form and `ph-no-capture` figure. New: a third "as of" line for the other alliances. The axes line moved into the scene and follows the view.
 - `lib/private/kvk-map.ts`: each dot now carries `uid`, `shieldAt`, `gain`, `ring`, `might` and `lastSeen`. The map carries `clusters` and `clustersAt`. `kvkMapView` also reads the newest daily update (`endOfDayReads(…, 1)`, the same source #821 uses for last seen) and `mapClusters`.
-- `lib/repo/map-clusters.ts`, a new reader: per other alliance, its tag (or name), `member_count` and the mean x/y of members the roster lists with numeric x and y. It reads the newest usable day on or before that KvK's server day, in one statement, and averages in SQL.
+- `lib/repo/map-clusters.ts`, a new reader: per other alliance, its tag (or name), `member_count` and the mean x/y of members the roster lists with numeric x and y. It reads the newest usable day on or before that KvK's server day, in one statement, and averages in SQL. An alliance with fewer than 3 placed members (`MIN_PLACED`) gets no cluster, so a mean is never one member's own place (PR #840 review).
 - `docs/decisions/D163…md`: a 2026-11-28 amendment for the clusters (see Decisions).
 - Dictionary: 30 keys in EN, PT-BR and FR. `insights.map.tap` was reworded.
 - Tests:
   - `KvkMapScene.test.ts` has one test per behaviour: fit-level ring counts and clusters with no names, zoom and culling, Find, sheet facts, layer chips.
   - `InsightsKvkMap.test.ts` now checks that the card opens at the fit level.
-  - The `kvk-map.test.ts` DB test also checks might, last seen and the cluster centre (an unlisted uid and a member with no place are left out, and no other alliance's name is returned).
+  - The `kvk-map.test.ts` DB test also checks might, last seen and the cluster centre (an unlisted uid and a member with no place are left out, and no other alliance's name is returned). A second DB test checks that alliances with 1 or 2 placed members get no cluster and one with 3 does.
 
 ## Decisions
-- The other alliances' centres are a new use of their x/y. `.claude/rules/private.md` asks for a decision for a new use, so I added a D163 amendment citing the owner's #817 spec. It allows tag, count and a database-side mean only, on the desk only. **The owner should confirm this amendment.**
+- The other alliances' centres are a new use of their x/y. `.claude/rules/private.md` asks for a decision for a new use, so I added a D163 amendment. It cites the owner's authorization: "Owner, 2026-11-28 in chat: data the API serves may be used; TAG·count clusters from the owner's own reference screenshots on #817". It allows tag, count and a database-side mean of at least 3 placed members, on the desk only.
 - Clusters come from the daily rosters, as the spec says. The KvK End row of each tracked alliance also has places at the same moment as the own members; that would be more consistent in time (see Next).
 - "n" in "TAG · n" is the roster's `member_count`, matching the reference "TAG 94". The centre uses only the placed members.
 - A member's ring is the distance band that counts them, so the fit-level counts equal the table. A member with unknown kills has no ring and is hidden while a ring filter is on.
 - The fit level is the default view. City level opens with + or Find.
 - Find selects a member by opening their sheet and framing them at 40 squares (or the city start if that is smaller). It also moves the readout to that member, through `useReadoutGo`, a small hook `app/_ui/charts/Readout.tsx` now exports. It gives a part inside the readout the same step the ‹ › buttons use.
-- The selected house's seal ring follows the sheet. The readout's `aria-current` marking stays as before.
+- The seal ring and the bold name mark the readout's chosen member. `Readout.tsx` exports `useReadoutAt` next to `useReadoutGo`, and the scene reads it on every render. A tap, Find and ‹ › all move it, and the mark survives pan, zoom and filters (PR #840 review). The other alliances' discs are one `ClusterDiscs` component used at both levels.
 - Pinch zoom was not built; the spec made it optional.
 
 ## Deviations
 - The fit level shows the own members as small dots as well as the ring counts: the owner's reference says "draw dots when zoomed out".
 
 ## Verified
+- After the PR #840 review fixes (3-member minimum, readout mark, `ClusterDiscs`, D163 citation): `pnpm vitest related --run` and `pnpm check` both passed; see the report for the counts. A new scene test renders the scene inside a Readout and checks that its chosen member keeps one seal ring and the only bold name, before and after a pan.
 - `pnpm vitest related --run` on the changed files: 109 files, 639 tests passed.
 - `pnpm check`: exit 0, 400 files, 2197 tests passed. Drift and i18n are clean.
 - After the drag and readout fix: `pnpm vitest related --run` on the changed files passed. The first `pnpm check` caught the roster-field guard (`roster-fields.test.ts`) flagging the axis literal `"x"`, so the axis was renamed to `"sideways"`. The rerun passed: exit 0, 2198 tests. One new test covers the drag rules, including `touch-pan-y` on the plot at both levels. Find's readout step has no unit test: the suite has no DOM. Not checked on a real phone.
@@ -53,7 +54,6 @@ Part 2 of issue #817: zoom levels, other alliances' clusters, Find, layer chips,
 
 ## Open issues
 - With `pan-y`, the browser may take a two-finger vertical move for scrolling, so two-finger panning is best-effort.
-- After a pan, houses re-mount and lose the readout's `aria-current` bold name until the next ‹ › step.
 - At fit level the castle drawing covers the own dots when the alliance is small relative to the frame.
 - Chip frames (`drawn-frame-soft` masks) did not load in the static screenshots. In the app they load as usual.
 
