@@ -190,12 +190,14 @@ function seenReason(m: RosterMember, readAt: Date): Reason[] {
     : [];
 }
 
-/** Issue 828: a member whose `joined_at` is within JOINED_DAYS of the read is worth a hello, with the date. */
+/**
+ * Issue 828: a member whose `joined_at` is within JOINED_DAYS before the read is worth a hello, with the
+ * date. A date after the read is no join date to say (the e2e seed's sentinels lie decades ahead).
+ */
 function joinedHello(m: RosterMember, readAt: Date, away: boolean): Date | null {
   const joined = m.joinedAt;
-  return !away && joined && readAt.getTime() - joined.getTime() < JOINED_DAYS * DAY_MS
-    ? joined
-    : null;
+  const age = joined ? readAt.getTime() - joined.getTime() : -1;
+  return !away && joined && age >= 0 && age < JOINED_DAYS * DAY_MS ? joined : null;
 }
 
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {

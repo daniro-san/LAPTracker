@@ -23,6 +23,8 @@ const JOINED = new Map([
   [1, "2026-11-11T12:00:00Z"],
   [2, "2026-11-07T12:00:00Z"],
   [3, "2026-11-12T12:00:00Z"],
+  // After the read: no join date to say (the e2e seed's sentinels).
+  [4, "2086-05-21T06:07:08Z"],
 ]);
 
 let db: Db;
@@ -133,15 +135,16 @@ describe("a member who joined this week (issue 828)", () => {
       const page = await followUpView(db, access, NOW, ZONE);
       return { toLook: counts?.toLook, listed: page.items.map((i) => i.member.uid) };
     };
-    // 1, 2 and 3 are new, 1 and 3 with a hello; all three have facts to ask: all counted.
-    expect(await week()).toEqual({ toLook: 3, listed: [1, 2, 3] });
+    // 1 to 4 are new, 1 and 3 with a hello; all have facts to ask: all counted.
+    expect(await week()).toEqual({ toLook: 4, listed: [1, 2, 3, 4] });
     // With every fact recorded the hello alone is listed, and counted for no one.
-    await recordAllFacts(access, [1, 2, 3]);
+    await recordAllFacts(access, [1, 2, 3, 4]);
     expect(await week()).toEqual({ toLook: 0, listed: [1, 3] });
   });
 
-  it("is not worth a hello once 7 days have passed since joined_at", async () => {
-    expect((await read())(2).joinedHello).toBeNull();
+  it("is not worth a hello once 7 days have passed since joined_at, nor with a join date after the read", async () => {
+    const m = await read();
+    expect([m(2).joinedHello, m(4).joinedHello]).toEqual([null, null]);
   });
 
   it("is never worth a hello while the member is on a break", async () => {
