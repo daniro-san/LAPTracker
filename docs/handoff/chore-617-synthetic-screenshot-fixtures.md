@@ -6,7 +6,7 @@ Issue #617. Owner decision 2026-11-27: the real game screenshots leave the repos
 
 - Removed the 12 game screenshots in `fixtures/screenshots/` (`git rm`).
 - In the 18 OCR text fixtures in `fixtures/screenshots/`, replaced every player name and every other alliance's tag with an invented one of the same shape: same length, case, digits and joiners, and the same misreads (a short read, a lost bracket, `rn` read as `m`, a digit read as a letter). Line order, ranks, numbers, R-badges and OCR noise are unchanged.
-- Added `fixtures/screenshots/roster.json`: an invented 101-name OGs roster, the same size as the real one. `ogsCandidates()` (`lib/screenshot/test-helpers.ts`) now reads it, with uids from 900001. Before, it read the real roster in `fixtures/v1-20261116T105019Z/alliance-67111155.json`. For each name on a page, the roster spelling relates to the text the same way the real one did: exact, one edit away, a Cyrillic `і`/`е`, a trailing Hangul filler, an accent, a joined name. The other names are filler.
+- Added `fixtures/screenshots/roster.json`: an invented 101-name OGs roster, the same size as the real one. `ogsCandidates()` (`lib/screenshot/test-helpers.ts`) now reads it, with uids from 900001. Before, it read the real roster in `fixtures/v1-20261116T105019Z/alliance-67111155.json`. For each name on a page, the roster spelling relates to the text the same way the real one did: exact, one edit away, a Cyrillic `і`/`е`, a trailing Hangul filler, an accent, a joined name. The roster also holds `TómbWardens`, the accented spelling the matcher test expects for page 31's misread name (added after review; it took a filler's place). The other names are filler.
 - Added three synthetic screens with invented names: `synthetic-alliance-duel-weekly-mine.png` (358 x 768), `synthetic-donation-weekly.png` (358 x 768) and `synthetic-secret-ops-report.png` (346 x 768). I drew them as HTML in the game screens' layout and rendered them with headless Chrome. Beside each is a `.txt` with what the real OCR read from it.
 - Tests changed:
   - The opt-in OCR test (`read-screenshot.test.ts`), `prepare.test.ts` and `import-read.test.ts` now read the synthetic pictures.
@@ -23,7 +23,7 @@ Issue #617. Owner decision 2026-11-27: the real game screenshots leave the repos
 ## Decisions
 
 - **Hybrid approach.** The parser tests depend on real OCR misreads: a lost badge, rank 31 read as 3, a lost bracket, a time with no space, a name read short. A clean synthetic picture does not produce those. So the parser fixtures stay as text with the names replaced. The real-OCR test (`OCR_TEST=1`) gets three new synthetic pictures and their own recordings. Both keep the coverage they had, and no generator script is committed because no test regenerates the pictures.
-- **Our own alliance's tag and name stay.** `[OGs]OldGrandmas` is the site's own alliance: it is in `config/alliances.ts`, and the workspace's own-tag filter tests use it. The other alliances' tags are invented, here and in the thefts tests that read report 54. In `lib/private/thefts.test-helpers.ts` the constant `RPD` became `KLV`; no other file imported it.
+- **Our own alliance's tag and name stay.** `[OGs]OldGrandmas` is the site's own alliance: it is in `config/alliances.ts`, and the workspace's own-tag filter tests use it. The other alliances' tags are invented, here and in the thefts tests that read report 54. In `lib/private/thefts.test-helpers.ts` the constant `RPD` became `KLV`; no other file imported it. After review, that constant's comment no longer names a real tag, and one OCR-noise token in `98-alliance-duel-weekly-phone.txt` that spelled a real tag became `P5Y`. Real tags left in this PR's files, on purpose: `NSE` and `URSA` in `lib/private/thefts.test-helpers.ts` and `thefts.test.ts` are tracked alliances that the migrations seed into `alliances` (`drizzle/0016_young_major_mapleleaf.sql`), and `thefts-follow.test.ts` checks the contact lookup that reads their tag from that table, so inventing them means changing the seeded data (issue #779); the `fixtures/README.md` table of recorded API fixtures names real tracked alliances as the upstream contract.
 
 ## Deviations
 
@@ -55,7 +55,7 @@ None from the task.
 ## Next
 
 - Owner: decide whether to purge git history (force-push to `dev` and `main`).
-- Follow-up issue: replace the real names listed under Open issues with invented ones.
+- Issue #779 tracks replacing the real names listed under Open issues with invented ones.
 - Follow-up question for the owner: do the `/v1` API fixtures fall under the same rule?
 
 What was missing from the task prompt? Whether our own alliance's tag (`[OGs]OldGrandmas`, public in `config/alliances.ts`) counts as a name to invent. I kept it.

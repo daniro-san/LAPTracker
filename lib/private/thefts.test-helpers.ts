@@ -12,7 +12,7 @@ import { createSession } from "./session";
 export const OGS = 67111155;
 export const NSE = 67109944;
 export const URSA = 67110320;
-/** A tracked alliance (TmS's id) whose newest roster reads KLV, the tag the committed report (image 54) names. */
+/** A tracked alliance whose newest roster reads KLV, the invented tag report 54's text names. */
 export const KLV = 67110584;
 export const NOW = new Date("2026-11-16T12:00:00Z");
 export const CLOCK = { now: NOW, zone: "Etc/GMT+2" };
