@@ -128,7 +128,7 @@ export const noticePublishes = pgTable(
 
 /**
  * Review requests on a notice (D113): an officer asks the whole team (`reviewer_id` null) or one officer to
- * look at the whole notice (`language` null) or one language. Append-only, made under the ask sheet's
+ * look at the whole notice (`language` null) or one language. Append-only but for a withdraw, made under the ask sheet's
  * request id (D100). A request is open until it has a row in notice_review_outcomes.
  */
 export const noticeReviews = pgTable(
@@ -148,6 +148,13 @@ export const noticeReviews = pgTable(
     }),
     askedBy: integer("asked_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     askedAt: tstz("asked_at").notNull(),
+    /**
+     * Withdrawn (D123 phase 2): who and when, under the question's request id (D100). A withdrawn request
+     * leaves the notice's requests, "To review", the tab's number and Home. Undo clears `deleted_at`.
+     */
+    deletedAt: tstz("deleted_at"),
+    deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    deleteRequestId: text("delete_request_id"),
   },
   (t) => [
     uniqueIndex("notice_reviews_request_unique").on(t.workspaceId, t.requestId),

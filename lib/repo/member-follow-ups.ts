@@ -1,15 +1,26 @@
 // member_follow_ups (issue 340, D104): plain reads and writes of the officers' follow-ups, each inside one
 // workspace. Which members are on the week's list, and what resolves them, is decided in lib/private.
+// A record deleted from the member's history (D123 phase 2) is in no read but the request id's.
 import { and, asc, eq, gt, gte, inArray, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberFacts, workspaceUsers } from "../schema";
 import { memberFollowUps } from "../schema-followup";
+import { live } from "./trash";
 
 export type FollowUpAction = (typeof memberFollowUps.action.enumValues)[number];
 
+/**
+ * A deleted record's Undo rule (D123 phase 2): no "withdrawn" of the member was appended since the delete.
+ * That Undo cancelled the newest record counting then; with the deleted one back, it would cancel that one.
+ */
+export const noWithdrawSince = sql`not exists (select 1 from member_follow_ups w
+  where w.workspace_id = ${memberFollowUps.workspaceId} and w.uid = ${memberFollowUps.uid}
+    and w.action = 'withdrawn' and w.written_at >= ${memberFollowUps.deletedAt})`;
+
 /** One follow-up, with the name the officer who wrote it shows in the desk (D87). */
 export interface MemberFollowUp {
+  id: number;
   uid: number;
   action: FollowUpAction;
   note: string | null;
@@ -62,12 +73,18 @@ export function followedUpSince(
       at: memberFollowUps.writtenAt,
     })
     .from(memberFollowUps)
-    .where(and(eq(memberFollowUps.workspaceId, workspaceId), gte(memberFollowUps.writtenAt, since)))
+    .where(
+      and(
+        eq(memberFollowUps.workspaceId, workspaceId),
+        gte(memberFollowUps.writtenAt, since),
+        live(memberFollowUps),
+      ),
+    )
     .orderBy(asc(memberFollowUps.id));
 }
 
 /** One record of the week as Follow-up's "Noted this week" shows it. */
-export type WeekRecord = Omit<MemberFollowUp, "factVersion" | "requestId">;
+export type WeekRecord = Omit<MemberFollowUp, "id" | "factVersion" | "requestId">;
 
 /**
  * The same records with the note, the last day away and the officer's desk name, for Follow-up's "Noted
@@ -86,7 +103,13 @@ export async function notedSince(db: Db, workspaceId: number, since: Date): Prom
     })
     .from(memberFollowUps)
     .leftJoin(workspaceUsers, eq(workspaceUsers.id, memberFollowUps.writtenBy))
-    .where(and(eq(memberFollowUps.workspaceId, workspaceId), gte(memberFollowUps.writtenAt, since)))
+    .where(
+      and(
+        eq(memberFollowUps.workspaceId, workspaceId),
+        gte(memberFollowUps.writtenAt, since),
+        live(memberFollowUps),
+      ),
+    )
     .orderBy(asc(memberFollowUps.id));
   return rows.map(({ chosenName, displayName, ...r }) => ({ ...r, by: chosenName ?? displayName }));
 }
@@ -99,6 +122,7 @@ export async function listMemberFollowUps(
 ): Promise<MemberFollowUp[]> {
   const rows = await db
     .select({
+      id: memberFollowUps.id,
       uid: memberFollowUps.uid,
       action: memberFollowUps.action,
       note: memberFollowUps.note,
@@ -111,7 +135,13 @@ export async function listMemberFollowUps(
     })
     .from(memberFollowUps)
     .leftJoin(workspaceUsers, eq(workspaceUsers.id, memberFollowUps.writtenBy))
-    .where(and(eq(memberFollowUps.workspaceId, workspaceId), eq(memberFollowUps.uid, uid)))
+    .where(
+      and(
+        eq(memberFollowUps.workspaceId, workspaceId),
+        eq(memberFollowUps.uid, uid),
+        live(memberFollowUps),
+      ),
+    )
     .orderBy(asc(memberFollowUps.id));
   return rows.map(({ chosenName, displayName, ...r }) => ({ ...r, by: chosenName ?? displayName }));
 }
@@ -177,6 +207,7 @@ async function helpRecords(db: Db, workspaceId: number, starts: ReadonlyMap<numb
     .where(
       and(
         eq(memberFollowUps.workspaceId, workspaceId),
+        live(memberFollowUps),
         or(
           ...[...starts].map(([uid, version]) =>
             and(
@@ -185,7 +216,8 @@ async function helpRecords(db: Db, workspaceId: number, starts: ReadonlyMap<numb
                 memberFollowUps.id,
                 sql`(select min(r.id) from member_follow_ups r
                   where r.workspace_id = ${workspaceId} and r.uid = ${uid}
-                    and r.action = 'help' and r.fact_version >= ${version})`,
+                    and r.action = 'help' and r.fact_version >= ${version}
+                    and r.deleted_at is null)`,
               ),
             ),
           ),

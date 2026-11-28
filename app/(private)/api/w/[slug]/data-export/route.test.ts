@@ -135,7 +135,15 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
       "former-members",
       "activity",
     ];
-    const deleted = ["new-members", "calendar-entries", "notices", "roll-calls", "thefts"];
+    const deleted = [
+      "new-members",
+      "calendar-entries",
+      "notices",
+      "notice-reviews",
+      "roll-calls",
+      "follow-ups",
+      "thefts",
+    ];
     const expected = [
       "README.txt",
       ...tables.map((f) => `${f}.csv`),

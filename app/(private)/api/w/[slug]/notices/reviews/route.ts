@@ -3,12 +3,14 @@
 // request id (D100), so a repeat stores nothing new. Nothing is sent outside the app; the log carries codes.
 //   {action: "ask", notice, language | null, reviewer | null, requestId}  → 200 {id}, 404, 400 reviewer
 //   {action: "approve", review, requestId}  → 200, 404, 403 not_reviewer, 409 closed
+//   {action: "withdraw", review, requestId, undo?}  → 200, 404 (D123 phase 2: an open request, any officer;
+//     the Undo is the withdrawer's own, within 60 s)
 import { requireWorkspace } from "@/lib/private/access";
 import { withActionEvent } from "@/lib/private/desk-action";
 import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
-import { answerReview, askReview, reviewBody } from "@/lib/private/notice-reviews";
+import { answerReview, askReview, reviewBody, withdrawReview } from "@/lib/private/notice-reviews";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
@@ -35,6 +37,14 @@ export async function POST(
       privateLog("notices.review.asked", { whole: body.language === null ? 1 : 0 });
       const made = Response.json({ id: asked.id }, { headers: NO_STORE });
       return withActionEvent(ctx, access, "notice_review", "ask", made);
+    }
+    if (body.action === "withdraw") {
+      if ((await withdrawReview(db, access, body, now)) !== "ok") {
+        return privateError(404, "not_found");
+      }
+      const done = Response.json({ ok: true }, { headers: NO_STORE });
+      const action = body.undo ? "undo_delete" : "delete";
+      return withActionEvent(ctx, access, "notice_review", action, done);
     }
     const answer = { review: body.review, outcome: "approved" as const };
     const result = await answerReview(db, access, answer, body.requestId, now);

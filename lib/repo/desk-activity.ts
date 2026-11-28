@@ -201,10 +201,12 @@ async function smallSources(
     (select 'followUp', f.written_by, f.written_at, null, f.action, f.until, null, null, f.uid
       from member_follow_ups f
       where f.workspace_id = ${ws} and f.written_by is not null and f.action <> 'withdrawn'
-        and f.written_at >= ${since} and f.written_at < ${before}
-        -- Undo appends "withdrawn" right after the record it cancels (D104): neither is shown.
+        and f.written_at >= ${since} and f.written_at < ${before} and f.deleted_at is null
+        -- Undo appends "withdrawn" right after the record it cancels (D104): neither is shown. A deleted
+        -- record (D123 phase 2) is not in the stack, so it is skipped on the way.
         and coalesce((select x.action from member_follow_ups x
           where x.workspace_id = f.workspace_id and x.uid = f.uid and x.id > f.id
+            and x.deleted_at is null
           order by x.id limit 1), '') <> 'withdrawn'
       order by f.written_at desc limit ${n})
     ${reviewParts(ws, since, before, n)}

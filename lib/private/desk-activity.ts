@@ -18,7 +18,7 @@ import {
 } from "../repo/desk-activity";
 import { memberNames } from "../repo/desk-activity-names";
 import type { ReviewAnsweredDone, ReviewAskedDone } from "../repo/desk-activity-reviews";
-import type { DeleteLine } from "../repo/desk-activity-trash";
+import type { DeleteLine, FollowUpDeleted } from "../repo/desk-activity-trash";
 import { SAVED_DRAFT_KEEP_MS } from "../repo/import";
 import { noticeTitles } from "../repo/notices";
 import { serverDay } from "../schedule";
@@ -47,6 +47,7 @@ type What =
         | "noticePosted"
         | "noticeDeleted"
         | "noticeRestored"
+        | "reviewWithdrawn"
         | "noticePicture"
         | "noticePictureKept";
       noticeId: number;
@@ -63,6 +64,8 @@ type What =
   /** A step set on an attacker of the thefts log (D97), never folded into another line. */
   | Omit<ActivityRows["theftSteps"][number], "by" | "at">
   | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)
+  /** A follow-up record deleted from a member's history (D123 phase 2), never folded. */
+  | Omit<FollowUpDeleted, "by" | "at">
   | { kind: "thefts"; count: number }
   | { kind: "newMember"; names: string[] }
   | ({ kind: "reviewAsked" } & Pick<ReviewAskedDone, "noticeId" | "language" | "reviewerId">)
@@ -87,6 +90,8 @@ export type ActivityItem = { at: Date; who: string } & (
           | "noticePosted"
           | "noticeDeleted"
           | "noticeRestored"
+          | "reviewWithdrawn"
+          | "followUpDeleted"
           | "noticePicture"
           | "noticePictureKept"
           | "noticePictureReused"
@@ -96,12 +101,14 @@ export type ActivityItem = { at: Date; who: string } & (
     >
   | { kind: "facts"; member: string | null; members: number }
   | ({ kind: "followUp"; member: string | null } & Pick<FollowUpDone, "action" | "until">)
+  | { kind: "followUpDeleted"; member: string | null }
   | {
       kind:
         | "noticeSaved"
         | "noticePosted"
         | "noticeDeleted"
         | "noticeRestored"
+        | "reviewWithdrawn"
         | "noticePicture"
         | "noticePictureKept";
       title: string;
@@ -248,6 +255,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
     ...rows.noticePosts.map((r) => ({ ...r, kind: "noticePosted" as const })),
     ...rows.noticeDeletes.map((r) => ({ ...r, kind: "noticeDeleted" as const })),
     ...rows.noticeRestores.map((r) => ({ ...r, kind: "noticeRestored" as const })),
+    ...rows.reviewWithdraws.map((r) => ({ ...r, kind: "reviewWithdrawn" as const })),
     ...rows.noticePictures.map((r) => ({ ...r, kind: "noticePicture" as const })),
     ...rows.noticePicturesKept.map((r) => ({ ...r, kind: "noticePictureKept" as const })),
     ...rows.noticePicturesReused.map((r) => ({ ...r, kind: "noticePictureReused" as const })),
@@ -267,7 +275,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
       call,
     })),
     ...[rows.callDeletes, rows.callArchives, rows.garrisonSaves, rows.garrisonPosts].flat(),
-    ...[rows.entryDeletes, rows.theftDeletes, rows.newMemberDeletes].flat(),
+    ...[rows.entryDeletes, rows.theftDeletes, rows.newMemberDeletes, rows.followUpDeletes].flat(),
     ...[rows.followUps, rows.thefts, rows.theftSteps, rows.keyChanges, rows.dataEvents].flat(),
     ...rows.calloutChanges,
     ...rows.newMembers.map(({ by, at, name }) => ({
@@ -333,6 +341,8 @@ function itemOf(
       const { at, action, until } = r;
       return { kind: "followUp", at, action, until, who, member: names.members.get(r.uid) ?? null };
     }
+    case "followUpDeleted":
+      return { kind: r.kind, at: r.at, who, member: names.members.get(r.uid) ?? null };
     default:
       return { ...r, who };
   }
@@ -371,7 +381,11 @@ export async function activityPage(
   const { page, next } = cut(runs(merge(rows, after), zone), size, after);
   const lines = page.flatMap((r) => r.lines);
   const uids = lines.flatMap((r) =>
-    r.kind === "followUp" ? [r.uid] : r.kind === "facts" ? r.uids : [],
+    r.kind === "followUp" || r.kind === "followUpDeleted"
+      ? [r.uid]
+      : r.kind === "facts"
+        ? r.uids
+        : [],
   );
   const ids = lines.flatMap((r) =>
     "fromId" in r ? [r.noticeId, r.fromId] : "noticeId" in r ? [r.noticeId] : [],

@@ -1,12 +1,18 @@
 // notice_reviews and notice_review_outcomes (D113): a review request is stored once under the ask sheet's
-// request id, and closed by its first outcome. Neither table is ever updated. Also the workspace's officers,
-// the people a request can name.
+// request id, and closed by its first outcome. An open request can be withdrawn (D123 phase 2, the shared
+// soft delete); nothing else updates either table. Also the workspace's officers, the people a request can
+// name.
 import { and, count, desc, eq, isNotNull, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
 import { workspaceSessions, workspaceUsers } from "../schema";
 import { noticeReviewOutcomes, noticeReviews, notices } from "../schema-notices";
+import { live } from "./trash";
+
+/** Only an open request is withdrawn: one with an outcome is history (D123 phase 2). */
+export const stillOpen = sql`not exists (select 1 from notice_review_outcomes o
+  where o.review_id = ${noticeReviews.id})`;
 
 export interface ReviewRow {
   id: number;
@@ -58,7 +64,7 @@ function reviewRows(db: Tx, workspaceId: number, where: SQL) {
     .leftJoin(asker, eq(asker.id, noticeReviews.askedBy))
     .leftJoin(reviewer, eq(reviewer.id, noticeReviews.reviewerId))
     .leftJoin(closer, eq(closer.id, noticeReviewOutcomes.by))
-    .where(and(eq(noticeReviews.workspaceId, workspaceId), where))
+    .where(and(eq(noticeReviews.workspaceId, workspaceId), live(noticeReviews), where))
     .orderBy(desc(noticeReviews.id));
 }
 
@@ -140,7 +146,7 @@ export async function openReviewCount(db: Db, workspaceId: number, userId: numbe
     .from(noticeReviews)
     .innerJoin(notices, ofLiveNotice)
     .leftJoin(noticeReviewOutcomes, eq(noticeReviewOutcomes.reviewId, noticeReviews.id))
-    .where(and(eq(noticeReviews.workspaceId, workspaceId), openFor(userId)));
+    .where(and(eq(noticeReviews.workspaceId, workspaceId), live(noticeReviews), openFor(userId)));
   return row?.n ?? 0;
 }
 

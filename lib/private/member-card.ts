@@ -15,7 +15,7 @@ import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import { cardFollowUp, type CardFollowUp } from "./card-follow-up";
 import { cardShield, type CardShield } from "./card-shield";
-import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
+import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import type { CardTab } from "./dictionary.card";
 import {
   FACT_FIELDS,
@@ -116,7 +116,13 @@ export interface CardData {
   /** The status shown when no officer sets one ("Check in", "Fine" …), for the editor's Automatic. */
   autoStatus: string;
   /** The officers' follow-ups (issue 340), newest first: "Talked Mon 16 Nov: … · Ana". */
-  followUps: { head: string; lines: string[] };
+  followUps: {
+    head: string;
+    lines: string[];
+    /** Each line's record, for its Delete (D123 phase 2). */
+    ids: number[];
+    words: Pick<WorkspaceDictionary, (typeof DELETE_KEYS)[number]>;
+  };
   /** The squads the tracker saw (D117); set by memberCard. */
   squads?: SquadsCard;
   /** D142: who on Discord says they are this member, and whether an officer still has to approve it. */
@@ -239,12 +245,26 @@ export function progressText(p: Progress, t: WorkspaceDictionary): string {
   return p.adDone ? t["thanks.adDone"] : t["thanks.squadUp"];
 }
 
+/** The words of a follow-up note's Delete and its Undo in the History tab (D123 phase 2). */
+const DELETE_KEYS = [
+  "card.followup.delete",
+  "card.followup.deleteName",
+  "card.followup.deleteAsk",
+  "card.followup.deleteWhere",
+  "card.followup.deleting",
+  "card.followup.keep",
+  "card.followup.deleted",
+  "card.followup.deleteFailed",
+  "card.followup.deleteUndoFailed",
+  "followup.undo",
+] as const satisfies readonly WorkspaceKey[];
+
 const isTrend = (field: FactField): field is TrendField =>
   (TREND_FIELDS as readonly string[]).includes(field);
 
 /** What the card adds to the member's row: read by `memberCard`; none in a bare `cardData`. */
 export interface CardExtras {
-  followUps: string[];
+  followUps: { id: number; line: string }[];
   previous: Previous;
   thisWeek: WeekBase;
   days: LastDays | null;
@@ -302,7 +322,14 @@ export function cardData(
     factLines: factLines(m.facts, t, f, x.previous, x.thisWeek),
     stored: m.facts,
     autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
-    followUps: { head: t["followup.cardHead"], lines: x.followUps },
+    followUps: {
+      head: t["followup.cardHead"],
+      lines: x.followUps.map((r) => r.line),
+      ids: x.followUps.map((r) => r.id),
+      words: Object.fromEntries(
+        DELETE_KEYS.map((k) => [k, t[k]]),
+      ) as CardData["followUps"]["words"],
+    },
     versions: {
       head: t["card.history.versions"],
       lines: versionLines(x.history, t, f),
@@ -368,7 +395,10 @@ export async function memberCard(
     cardSelfReport(db, access, uid, member.facts, at.t, f),
   ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
-    followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
+    followUps: followUps.map((row) => ({
+      id: row.id,
+      line: historyLine(row, at.t, f.date, f.date),
+    })),
     previous,
     thisWeek,
     days: cardDays(reads, uid),

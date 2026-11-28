@@ -38,6 +38,14 @@ export const memberFollowUps = pgTable(
     writtenBy: integer("written_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     writtenAt: timestamp("written_at", { withTimezone: true }).notNull(),
     requestId: uuid("request_id").notNull(),
+    /**
+     * Deleted from the member's history (D123 phase 2): who and when, under the question's request id
+     * (D100). A deleted record leaves the history, Follow-up's lists and counts and Home; a fact it wrote
+     * stays. Only a record still counting is deleted, never a "withdrawn". Undo clears `deleted_at`.
+     */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    deleteRequestId: text("delete_request_id"),
   },
   (t) => [
     index("member_follow_ups_workspace_uid_idx").on(t.workspaceId, t.uid, t.id),

@@ -1,14 +1,20 @@
 // Follow-up's Undo (D104 amendment): appends "withdrawn", which cancels the member's newest record still
 // counting, and puts back the fact that record wrote when nobody changed it since. Split from follow-up.ts,
-// which re-exports `undoFollowUp`. Nothing here is logged.
+// which re-exports `undoFollowUp`. Also a record deleted later from the member's history (D123 phase 2).
+// Nothing here is logged.
+import { sql } from "drizzle-orm";
+
 import type { Db } from "../db";
 import { factVersion } from "../repo/member-facts";
 import {
   followUpRequested,
   insertMemberFollowUp,
   listMemberFollowUps,
+  noWithdrawSince,
   type MemberFollowUp,
 } from "../repo/member-follow-ups";
+import { softDelete, undoDelete } from "../repo/trash";
+import { memberFollowUps } from "../schema-followup";
 import type { WorkspaceAccess } from "./access";
 import type { FollowUpResult } from "./follow-up";
 import { liveRecords } from "./follow-up-rules";
@@ -75,4 +81,31 @@ export async function undoFollowUp(
     requestId: input.requestId,
   });
   return { ok: true };
+}
+
+/**
+ * Deletes one of the member's records from their history (D123 phase 2), any officer, at any time; or with
+ * `undo` takes the officer's own delete made under the same request id back within UNDO_MS. Only a record
+ * still counting: a "withdrawn", or a record one cancelled, is not shown and so not deleted. Taking such a
+ * record out leaves every other record counting as before, since no "withdrawn" ever cancelled it. A break
+ * or Needs help it wrote stays on the card (member facts are corrected, never deleted). Undo is refused
+ * once a "withdrawn" of the member came after the delete (`noWithdrawSince`). "not_found" otherwise.
+ */
+export async function deleteFollowUp(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { uid: number; id: number; requestId: string; undo?: true | undefined },
+  now: Date,
+): Promise<FollowUpResult> {
+  const { workspaceId, user } = access;
+  const c = { workspaceId, userId: user.id, now, id: input.id, requestId: input.requestId };
+  let done: boolean;
+  if (input.undo) done = await undoDelete(db, memberFollowUps, c, noWithdrawSince);
+  else {
+    const counting = liveRecords(await listMemberFollowUps(db, workspaceId, input.uid));
+    // A record not counting can still be this request's own delete, replayed (D100).
+    const guard = counting.some((r) => r.id === input.id) ? undefined : sql`false`;
+    done = await softDelete(db, memberFollowUps, c, guard);
+  }
+  return done ? { ok: true } : { ok: false, code: "not_found" };
 }
