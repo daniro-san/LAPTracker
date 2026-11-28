@@ -258,10 +258,14 @@ export const patchNotes: PatchNote[] = [
       "Board: a member can set the days they are away on their own page. Roll call, Raid prep, the KvK plan and Follow-up respect them, and officers see them on the card as the member's own report.",
       "New public alliance page: leader, might, members and server rank, the alliance's statement, might and members over 7, 30 or 90 days, and each member's rank, quest points, Help coins, tech donated and might. Never online, last seen, join date or positions.",
       "Link previews: a player, event or alliance link pasted in Discord shows a card with its numbers.",
+      "Follow-up: a member who joined in the last 7 days appears under Worth a hello with the join date, and stays New. Officers can name a buddy on the member card.",
+      'Alliance page: a "Joins & leaves" tab counts who joined and left over 7 and 30 days, and names each person with the alliance they came from or went to ("not in a tracked alliance" when we cannot tell).',
+      "Notices and Discord translate: an alliance glossary of words never translated (tags, nicknames, game words), kept exactly as written in every translation.",
+      "Player page: the same head and growth card as the alliance page, with the alliance linked, might and kills over 7, 30 or 90 days, and the comparison with a typical alliance member.",
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
-      815, 816, 819, 835, 836, 837, 838, 839, 840, 841,
+      815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847,
     ],
     officer: [
       {
