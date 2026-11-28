@@ -121,6 +121,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   },
   "raid-opponent/route.ts": { POST: { body: { action: "clear", saturday: "2026-11-28" } } },
   "kvk-castle/route.ts": { POST: { body: { castleX: null, castleY: null } } },
+  "insights/debrief/card/route.ts": { GET: {} },
   "roll-call/route.ts": {
     POST: { body: { action: "add", kind: "cheese", day: "2026-11-16", requestId: ID } },
   },

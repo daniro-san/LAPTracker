@@ -49,7 +49,7 @@ export function Fold(props: { summary: ReactNode; className?: string; children: 
  * a tick at 100 % across the columns (D158): a day past 100 % draws taller than it, a day that lost more a
  * hairline.
  */
-function RecoveryDays({ days, noData }: { days: BarRow[]; noData: string }) {
+export function RecoveryDays({ days, noData }: { days: BarRow[]; noData: string }) {
   return (
     <ol className="mt-2 grid grid-cols-7 gap-0.5 text-center">
       {days.map((d) => (
@@ -224,6 +224,15 @@ export function KvkCard(props: {
   return (
     <Card id={KVK_CARD} title={t["insights.kvk.head"]} based={kvk.based}>
       <HelpList kvk={kvk} slug={slug} t={t} followUp={props.followUp} />
+      <a
+        href={`/w/${slug}/insights/debrief`}
+        className="text-link mt-2 flex min-h-11 items-center border-t border-rule font-semibold"
+      >
+        {t["debrief.link"]}
+        <span aria-hidden="true" className="ml-1">
+          ›
+        </span>
+      </a>
       <Fold summary={t["insights.more"]} className="mt-2">
         {newest && (
           <div className="pb-2">
