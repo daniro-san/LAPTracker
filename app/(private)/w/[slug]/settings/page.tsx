@@ -31,6 +31,7 @@ import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { glossaryView } from "@/lib/private/glossary";
 import { toReviewCount } from "@/lib/private/import-view";
+import { headroomView } from "@/lib/private/key-headroom";
 import { calloutsView } from "@/lib/private/post-callouts";
 import { postsView } from "@/lib/private/post-settings";
 import { pushView } from "@/lib/private/push-settings";
@@ -49,6 +50,7 @@ import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { GlossaryCard } from "../../../_ui/GlossaryCard";
+import { KeyHeadroom } from "../../../_ui/KeyHeadroom";
 import { PostCallouts } from "../../../_ui/PostCallouts";
 import { PostCatalog } from "../../../_ui/PostCatalog";
 import { PushSettings } from "../../../_ui/PushSettings";
@@ -116,23 +118,42 @@ async function readSettings(
   const shieldRead = shieldSettingsView(db, access, ctx.language);
   // The webhooks, read once: the Posts card names the channels from them.
   const channelsRead = webhookViews(db, access, env);
-  const [view, waiting, bot, channels, squads, features, shield, push, callouts, posts, glossary] =
-    await Promise.all([
-      settingsKeyView(db, access, env, now),
-      toReviewCount(db, access, now),
-      botView(db, access, env),
-      channelsRead,
-      squadsReader(db, access, env, now).then((key) =>
-        key ? squadsToday(db, access, env, now) : null,
-      ),
-      allianceFeaturesView(db, access),
-      shieldRead,
-      pushView(db, access, env),
-      shieldRead.then((s) => calloutsView(db, access, ctx.t, s?.language ?? null)),
-      channelsRead.then((c) => postsView(db, access, c, env, ctx.language)),
-      glossaryView(db, access),
-    ]);
+  // The key's view and the features' estimate, read once: the headroom card counts from both (issue 869).
+  const keyRead = settingsKeyView(db, access, env, now);
+  const featuresRead = allianceFeaturesView(db, access);
+  const [
+    view,
+    waiting,
+    bot,
+    channels,
+    squads,
+    features,
+    shield,
+    push,
+    callouts,
+    posts,
+    glossary,
+    headroom,
+  ] = await Promise.all([
+    keyRead,
+    toReviewCount(db, access, now),
+    botView(db, access, env),
+    channelsRead,
+    squadsReader(db, access, env, now).then((key) =>
+      key ? squadsToday(db, access, env, now) : null,
+    ),
+    featuresRead,
+    shieldRead,
+    pushView(db, access, env),
+    shieldRead.then((s) => calloutsView(db, access, ctx.t, s?.language ?? null)),
+    channelsRead.then((c) => postsView(db, access, c, env, ctx.language)),
+    glossaryView(db, access),
+    Promise.all([keyRead, featuresRead]).then(([v, f]) =>
+      headroomView(db, access, v, f.estimate, now),
+    ),
+  ]);
   return {
+    headroom,
     view,
     waiting,
     bot,
@@ -152,6 +173,9 @@ function TrackerKeyCard(props: {
   slug: string;
   view: ReturnType<typeof keyForm>;
   squads: string | null;
+  headroom: Awaited<ReturnType<typeof headroomView>>;
+  siteKey: boolean;
+  language: WorkspaceLanguage;
   t: Awaited<ReturnType<typeof workspaceWords>>["t"];
 }) {
   const { t } = props;
@@ -168,6 +192,14 @@ function TrackerKeyCard(props: {
         t={t}
       />
       {props.squads && <p className="mt-3 text-body-sm tabular-nums">{props.squads}</p>}
+      {props.headroom && (
+        <KeyHeadroom
+          headroom={props.headroom}
+          siteKey={props.siteKey}
+          t={t}
+          language={props.language}
+        />
+      )}
     </section>
   );
 }
@@ -267,6 +299,9 @@ function SettingsCards(props: {
         slug={slug}
         view={keyForm(view, t, language, now)}
         squads={squads && squadsLine(squads, t, env.SERVER_TZ)}
+        headroom={props.page.headroom}
+        siteKey={view.siteKey}
+        language={language}
         t={t}
       />
       {features.groups.length > 0 && (

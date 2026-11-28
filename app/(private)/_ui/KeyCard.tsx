@@ -4,6 +4,7 @@
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { KeyState } from "@/lib/private/tracker-key";
+import { fill } from "@/lib/words";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
@@ -13,11 +14,24 @@ export function KeyCard({
   slug,
   t,
   state,
+  headroom,
 }: {
   slug: string;
   t: WorkspaceDictionary;
   state: KeyState;
+  /** Issue 869: today's plan needs more calls than the key has left; set only for a key that works. */
+  headroom: { planned: number; left: number } | null;
 }) {
+  if (state === "ok" && headroom) {
+    return (
+      <p role="status" className="mt-4 border-l-4 border-seal pl-3 first:mt-0">
+        {fill(t["headroom.home"], { planned: headroom.planned, left: headroom.left })}{" "}
+        <a href={`/w/${slug}/settings`} className={LINK}>
+          {t["settings.link"]}
+        </a>
+      </p>
+    );
+  }
   if (state === "off" || state === "ok") return null;
   const fix = state === "invalid" || state === "out_of_quota" || state === "reenter";
   return (

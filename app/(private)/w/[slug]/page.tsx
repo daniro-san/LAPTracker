@@ -199,7 +199,7 @@ function Home(props: {
         even
         main={
           <>
-            <KeyCard slug={slug} t={t} state={props.desk.key} />
+            <KeyCard slug={slug} t={t} state={props.desk.key} headroom={props.desk.headroom} />
             <HomeFollowUp slug={slug} t={t} language={language} followUp={props.desk.followUp} />
             <ReviewJump t={t} waiting={props.waiting} />
             <NextUp slug={slug} t={t} items={props.next} />

@@ -54,6 +54,27 @@ export const settingsEn = {
     "This is the site’s key; reads will share its daily quota and keep the event reserve.",
   "key.quota": "Quota left: {n}",
   "key.checked": "Checked {when}",
+  // Issue 869: the key's headroom card, and Home's one line.
+  "headroom.head": "Today’s calls on this key",
+  "headroom.squads": "Squads, with Friday’s Raid Shield read",
+  "headroom.shield": "Raid Shield morning read",
+  "headroom.afterReset": "After-reset read",
+  "headroom.recruit": "Recruit check",
+  "headroom.raid": "Raid opponent",
+  "headroom.daily": "Daily update",
+  "headroom.notCounted": "not counted",
+  "headroom.planned": "Still planned today: about {n}",
+  "headroom.left": "Left on the key: {n}",
+  "headroom.leftNone": "Left on the key: not known yet",
+  "headroom.short":
+    "Today’s plan needs about {planned} calls; {left} are left. Some reads may be skipped.",
+  "headroom.shortSaturday":
+    "Today’s plan needs about {planned} calls; {left} are left. The after-reset read may be skipped.",
+  "headroom.shared":
+    "This key is the site’s, so its quota is shared with the site. The plan cannot be checked against it.",
+  "headroom.fits": "Today’s plan fits in what is left.",
+  "headroom.home":
+    "Today’s plan needs about {planned} calls; {left} are left. A read may be skipped.",
   "key.label": "Your tracker key",
   "key.help":
     "It starts with lap_. Saving tests it with one call on this key’s quota. It is stored encrypted and never shown again.",
@@ -153,6 +174,26 @@ export const settingsPt: typeof settingsEn = {
     "Esta é a chave do site; as leituras vão dividir a cota diária dela e manter a reserva do evento.",
   "key.quota": "Cota restante: {n}",
   "key.checked": "Verificada {when}",
+  "headroom.head": "Chamadas de hoje nesta chave",
+  "headroom.squads": "Esquadrões, com a leitura de sexta do Raid Shield",
+  "headroom.shield": "Leitura da manhã do Raid Shield",
+  "headroom.afterReset": "Leitura após o reset",
+  "headroom.recruit": "Verificação de recrutas",
+  "headroom.raid": "Oponente do raid",
+  "headroom.daily": "Atualização diária",
+  "headroom.notCounted": "não contado",
+  "headroom.planned": "Ainda previsto para hoje: cerca de {n}",
+  "headroom.left": "Restante na chave: {n}",
+  "headroom.leftNone": "Restante na chave: ainda não se sabe",
+  "headroom.short":
+    "O plano de hoje precisa de cerca de {planned} chamadas; restam {left}. Algumas leituras podem ser puladas.",
+  "headroom.shortSaturday":
+    "O plano de hoje precisa de cerca de {planned} chamadas; restam {left}. A leitura após o reset pode ser pulada.",
+  "headroom.shared":
+    "Esta chave é a do site, então a cota é dividida com o site. O plano não pode ser conferido com ela.",
+  "headroom.fits": "O plano de hoje cabe no que resta.",
+  "headroom.home":
+    "O plano de hoje precisa de cerca de {planned} chamadas; restam {left}. Uma leitura pode ser pulada.",
   "key.label": "Sua chave do tracker",
   "key.help":
     "Começa com lap_. Ao salvar, ela é testada com uma chamada na cota desta chave. Fica guardada criptografada e nunca é mostrada de novo.",
@@ -254,6 +295,26 @@ export const settingsFr: typeof settingsEn = {
   "key.siteKey":
     "C’est la clé du site ; les lectures partageront son quota quotidien et garderont la réserve de l’événement.",
   "key.checked": "Vérifiée {when}",
+  "headroom.head": "Appels du jour sur cette clé",
+  "headroom.squads": "Escouades, avec la lecture du vendredi du Raid Shield",
+  "headroom.shield": "Lecture du matin du Raid Shield",
+  "headroom.afterReset": "Lecture après la réinitialisation",
+  "headroom.recruit": "Vérification de recrues",
+  "headroom.raid": "Adversaire du raid",
+  "headroom.daily": "Mise à jour quotidienne",
+  "headroom.notCounted": "non compté",
+  "headroom.planned": "Encore prévus aujourd’hui : environ {n}",
+  "headroom.left": "Restant sur la clé : {n}",
+  "headroom.leftNone": "Restant sur la clé : pas encore connu",
+  "headroom.short":
+    "Le plan d’aujourd’hui demande environ {planned} appels ; il en reste {left}. Certaines lectures peuvent être sautées.",
+  "headroom.shortSaturday":
+    "Le plan d’aujourd’hui demande environ {planned} appels ; il en reste {left}. La lecture après la réinitialisation peut être sautée.",
+  "headroom.shared":
+    "Cette clé est celle du site, donc son quota est partagé avec le site. Le plan ne peut pas être comparé à ce quota.",
+  "headroom.fits": "Le plan d’aujourd’hui tient dans ce qui reste.",
+  "headroom.home":
+    "Le plan d’aujourd’hui demande environ {planned} appels ; il en reste {left}. Une lecture peut être sautée.",
   "key.label": "Votre clé du tracker",
   "key.help":
     "Elle commence par lap_. L’enregistrer la teste avec un appel sur le quota de cette clé. Elle est stockée chiffrée et n’est plus jamais affichée.",

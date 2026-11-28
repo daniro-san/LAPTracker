@@ -9,6 +9,7 @@ import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { followUpCounts } from "@/lib/private/follow-up";
+import { headroomWarning } from "@/lib/private/key-headroom";
 import { linkReviews } from "@/lib/private/me-link";
 import type { MembersView } from "@/lib/private/members";
 import { picturesDue } from "@/lib/private/notice-picture-due";
@@ -23,9 +24,13 @@ export async function cards(
   members: Promise<MembersView>,
 ) {
   const { now, zone } = clock;
-  const [due, key, channel, links, followUp, reports, whatsNew] = await Promise.all([
+  const [due, keyRead, channel, links, followUp, reports, whatsNew] = await Promise.all([
     picturesDue(db, access, now, { SERVER_TZ: zone }),
-    trackerKeyView(db, access, getEnv(), now).then((v) => v.state),
+    // Issue 869: the key's state, and a warning only when today's plan needs more than the key has left.
+    trackerKeyView(db, access, getEnv(), now).then(async (v) => ({
+      state: v.state,
+      headroom: await headroomWarning(db, access, v, now),
+    })),
     channelNames(db, access, getEnv()).then((c) => c.members),
     linkReviews(db, access),
     members.then((view) => followUpCounts(db, access, view, now, zone)),
@@ -35,5 +40,6 @@ export async function cards(
     ),
     whatsNewLine(db, access),
   ]);
-  return { due, key, channel, links, followUp, reports, whatsNew };
+  const { state: key, headroom } = keyRead;
+  return { due, key, headroom, channel, links, followUp, reports, whatsNew };
 }
