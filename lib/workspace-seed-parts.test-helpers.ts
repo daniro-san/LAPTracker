@@ -28,7 +28,13 @@ import {
 } from "./schema-notices";
 import { pushMarks, pushSubscriptions } from "./schema-push";
 import { workspaceDataEvents } from "./schema-retention";
-import { shieldChecks, shieldQueue, shieldSettings } from "./schema-shield";
+import {
+  raidOpponents,
+  raidReads,
+  shieldChecks,
+  shieldQueue,
+  shieldSettings,
+} from "./schema-shield";
 import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "./schema-squads";
 import { theftAttackers, theftFollowUps, thefts } from "./schema-thefts";
 
@@ -260,6 +266,29 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
     .insert(workspaceDiscord)
     .values({ workspaceId: ws, botSeenAt: SEED_AT, commands: [], commandsAt: SEED_AT });
   await seedPush(db, ws, officer);
+}
+
+/** D165: a raid opponent and one of its reads. */
+export async function seedRaid(db: Db, ws: number, officer: number) {
+  await db.insert(raidOpponents).values({
+    workspaceId: ws,
+    saturday: "2026-11-21",
+    server: 328,
+    unionId: 67190001,
+    tag: "ZZZ",
+    setBy: officer,
+    setAt: SEED_AT,
+  });
+  await db.insert(raidReads).values({
+    workspaceId: ws,
+    saturday: "2026-11-21",
+    phase: "start",
+    side: "them",
+    unionId: 67190001,
+    memberUids: [9],
+    isFresh: true,
+    readAt: SEED_AT,
+  });
 }
 
 /** Issue 833: the recruit check's count of the day. */

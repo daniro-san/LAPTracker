@@ -7,10 +7,12 @@
 // chip, as the Roll call list's counts link it; anything else opens on "To mark".
 import { notFound } from "next/navigation";
 
+import { addDays } from "@/lib/calendar-time";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { webhookViews } from "@/lib/private/discord-webhooks";
+import { raidOpponentView } from "@/lib/private/raid-opponent";
 import { prepView } from "@/lib/private/raid-prep";
 import type { Occasion } from "@/lib/private/roll-call";
 import { callRead } from "@/lib/private/roll-call-view";
@@ -21,6 +23,7 @@ import { calendarWords } from "../../../../_ui/calendar-data";
 import { openedFrom } from "../../../../_ui/drilldown-event";
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { prepHead, prepRows } from "../../../../_ui/prep-data";
+import { RaidOpponent } from "../../../../_ui/RaidOpponent";
 import { RaidPrepMarks } from "../../../../_ui/RaidPrepMarks";
 import {
   headerOf,
@@ -53,11 +56,13 @@ async function readMark(
   if (!read) return null;
   // The roster, facts and marks the roll call read serve Raid prep too, and go no further than here.
   const { view, loaded } = read;
-  if (view.opened.kind !== "shield") return { ...view, prep: null };
+  if (view.opened.kind !== "shield") return { ...view, prep: null, raid: null };
   const shieldChannel = hooks.some((h) => h.channel === "shield" && h.state === "set");
   const clock = { zone, now: new Date(), shieldChannel };
   const prep = await prepView(db, access, view.opened, clock, loaded);
-  return { ...view, prep };
+  // Issue 861: this raid's opponent, behind the Raid Shield check's switch (null while it is off).
+  const raid = await raidOpponentView(db, access, addDays(prep.friday, 1), getEnv(), clock.now);
+  return { ...view, prep, raid };
 }
 
 type Page = Awaited<ReturnType<typeof openRollCall<Awaited<ReturnType<typeof readMark>>>>>;
@@ -89,11 +94,17 @@ function Marks(props: {
   };
   if (!view.prep) return <RollCallMarks {...common} shield={o.kind === "shield"} />;
   return (
-    <RaidPrepMarks
-      {...common}
-      prep={prepRows(view.prep, t, page.zone, language)}
-      head={prepHead(view.prep, t, page.zone)}
-    />
+    <>
+      <RaidPrepMarks
+        {...common}
+        prep={prepRows(view.prep, t, page.zone, language)}
+        head={prepHead(view.prep, t, page.zone)}
+      />
+      {/* Issue 861: this raid's opponent and its result, below the marks. */}
+      {view.raid && (
+        <RaidOpponent slug={slug} view={view.raid} t={t} language={language} zone={page.zone} />
+      )}
+    </>
   );
 }
 
