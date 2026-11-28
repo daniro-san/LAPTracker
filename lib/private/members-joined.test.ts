@@ -8,8 +8,9 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace } from "./access";
+import { followUpCounts, followUpView } from "./follow-up";
 import { helloOnly, worklist } from "./follow-up-rules";
-import { saveFacts } from "./member-facts";
+import { saveFacts, type FactChange } from "./member-facts";
 import { membersView, type MemberRow } from "./members";
 import { statusOf } from "./members-sheet";
 import { createSession } from "./session";
@@ -63,12 +64,36 @@ async function roster(day: string, uids: number[]) {
   });
 }
 
-async function read(onBreak = false) {
+async function signIn() {
   const ws = await findWorkspaceBySlug(db, "ogs");
   const userId = await recordSignIn(db, ws?.id ?? 0, "officer-ogs", "Officer", NOW);
   const { token } = await createSession(db, ws?.id ?? 0, userId, NOW, null, "officer");
   const access = await requireWorkspace(db, "ogs", { get: () => ({ value: token }) }, NOW);
   if (!access.ok) throw new Error("no access");
+  return access;
+}
+
+/** Every fact Follow-up asks a new member for, recorded for `uids`. */
+async function recordAllFacts(access: Awaited<ReturnType<typeof signIn>>, uids: number[]) {
+  const changes: Omit<FactChange, "version" | "source">[] = [
+    { field: "squadMight", value: 1_000_000 },
+    { field: "troopTier", value: 8 },
+    { field: "adTech", value: 50 },
+    { field: "timeZone", value: "Europe/Paris" },
+    { field: "languages", value: ["en"] },
+  ];
+  for (const uid of uids)
+    await saveFacts(
+      db,
+      access,
+      uid,
+      changes.map((c) => ({ ...c, version: 0, source: "officer" }) as FactChange),
+      NOW,
+    );
+}
+
+async function read(onBreak = false) {
+  const access = await signIn();
   if (onBreak)
     await saveFacts(
       db,
@@ -98,6 +123,21 @@ describe("a member who joined this week (issue 828)", () => {
     // A new member's facts still to ask put them among those to look at anyway (D104); a hello adds none.
     const none = { ...(item as NonNullable<typeof item>), toAsk: [] };
     expect(helloOnly(none)).toBe(true);
+  });
+
+  it("counts a hello among the members to look at only with a fact still to ask", async () => {
+    const access = await signIn();
+    const week = async () => {
+      const view = await membersView(db, access, NOW, ZONE);
+      const counts = await followUpCounts(db, access, view, NOW, ZONE);
+      const page = await followUpView(db, access, NOW, ZONE);
+      return { toLook: counts?.toLook, listed: page.items.map((i) => i.member.uid) };
+    };
+    // 1, 2 and 3 are new, 1 and 3 with a hello; all three have facts to ask: all counted.
+    expect(await week()).toEqual({ toLook: 3, listed: [1, 2, 3] });
+    // With every fact recorded the hello alone is listed, and counted for no one.
+    await recordAllFacts(access, [1, 2, 3]);
+    expect(await week()).toEqual({ toLook: 0, listed: [1, 3] });
   });
 
   it("is not worth a hello once 7 days have passed since joined_at", async () => {

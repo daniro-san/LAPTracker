@@ -95,6 +95,30 @@ describe("POST /api/w/[slug]/members/[uid]/buddy (issue 828)", () => {
     ]);
   });
 
+  it("refuses a bad body with 400 and another origin with 403", async () => {
+    for (const body of [
+      { version: 0, buddy: 1.5 },
+      { version: 0, buddy: 102, extra: true },
+    ])
+      expect(await answer(await post("nse", tokens.officer, body))).toEqual([
+        400,
+        { code: "bad_request" },
+      ]);
+    const elsewhere = new Request(`${ORIGIN}/api/w/nse/members/101/buddy`, {
+      method: "POST",
+      headers: {
+        origin: "https://elsewhere.test",
+        "content-type": "application/json",
+        cookie: `${SESSION_COOKIE}=${tokens.officer}`,
+      },
+      body: JSON.stringify({ version: 0, buddy: 102 }),
+    });
+    const res = await route.POST(elsewhere, {
+      params: Promise.resolve({ slug: "nse", uid: "101" }),
+    });
+    expect(await answer(res)).toEqual([403, { code: "forbidden" }]);
+  });
+
   it("refuses a member's session with 401 and another workspace's officer with 404", async () => {
     expect(await answer(await post("nse", tokens.member, { version: 0, buddy: 102 }))).toEqual([
       401,
