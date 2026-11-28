@@ -43,12 +43,21 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
-    text: "KvK matchup, before Saturday's KvK: on /admin → KvK opponent, save the opponent's server by Saturday 10:00 ST; the card then suggests its 15 largest alliances from that server's ranks board (untick or add tags, then save). After the Start (12:00 ST), check each tag's outcome on that card, then turn the kvk-matchup flag on in PostHog (it exists and is off).",
+    text: "KvK matchup: the opponent's server is saved for the 28 Nov KvK. After the Start (12:00 ST), check each tag's outcome on /admin → KvK opponent, then turn the kvk-matchup flag on in PostHog (it exists and is still off).",
     issue: 306,
   },
   {
-    text: "After the next Raid Shield window (Friday 23:30 ST), check that the leaders' Discord summary appears as a forum post in the Raid Shield channel.",
+    text: "Raid Shield summary: posted in the Raid Shield channel on Fri 27 Nov at 23:31 ST (checked 2026-11-28).",
     issue: 527,
+    done: true,
+  },
+  {
+    text: "Alliances recruiting on /alliances: look at it on a phone with real data, then turn the alliances-recruiting flag on in PostHog (it exists and is off).",
+    issue: 792,
+  },
+  {
+    text: "Choose how alliances will pay for the paid plan (the comparison is in the private plan Claude prepared). Nothing is charged until you decide.",
+    issue: 788,
   },
   {
     text: "After the next raid, compare the two shield shares on the desk with Raid prep's own counts for that week.",
@@ -86,6 +95,7 @@ export const ownerTodo: OwnerTodo[] = [
   {
     text: "Decide #617: the 12 real game screenshots (and 6 OCR texts) with player names in the test fixtures. Recommendation: replace them with rendered screens with invented names; the real ones stay in git history.",
     issue: 617,
+    done: true,
   },
   {
     text: 'Decide #621: a read-only "Who can open the desk" card in Alliance settings (roles and counts, or names too; who sees it).',
@@ -133,14 +143,17 @@ export const ownerTodo: OwnerTodo[] = [
   },
   {
     text: "Set the Raid Shield channel (Alliance settings → Discord) before Friday 23:30 ST, then tap Send a test message; without the channel no summary is posted.",
+    done: true,
   },
   {
     text: 'For the OGs alliance, Discord: on its desk, Alliance settings → Discord, tap Check, save both webhooks and send a test message. When /admin shows both channels as "set", delete WORKSPACE_DISCORD_WEBHOOKS in Vercel.',
     issue: 527,
+    done: true,
   },
   {
     text: "For the OGs alliance, Raid prep: check once that the Raid Shield check is allowed on /admin and turned on in Alliance settings → Features. Optional: turn on the Raid Shield summary (it needs the Raid Shield channel) and check Saturday's time (10:00 by default).",
     issue: 527,
+    done: true,
   },
   {
     text: "Guide: sign in once at /w with the new Discord permissions, then review the guide screenshots of /w and Alliance settings → Features.",
@@ -178,7 +191,7 @@ export const ownerTodo: OwnerTodo[] = [
     done: true,
   },
   {
-    text: "Around 2026-11-28, look at Neon's compute graph. If it is well below 100 CU-hours a month, consider the Free plan. Then decide between Neon and Supabase.",
+    text: "Neon compute, checked 2026-11-28: about 37 CU-hours a month at the last week's pace, well below the Free plan's 100. Decide whether to move to the Free plan (and Neon vs Supabase).",
     issue: 527,
   },
   {
