@@ -20,7 +20,7 @@ import { rangeOf } from "@/app/_ui/growth";
 import { GrowthCard, type GrowthSeries } from "@/app/_ui/GrowthCard";
 import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { AllianceBadge } from "@/app/_ui/Pictures";
-import { previewImage } from "@/app/_ui/preview";
+import { cardPreview } from "@/app/_ui/preview";
 import { sharedEvents, sharedRead } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -87,11 +87,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const data = unionId === null ? null : await load(unionId);
   if (!data || unionId === null) return notFoundTitle();
   const copy = await requestCopy();
-  const { label, badgeId } = labelOf(data, unionId);
-  return {
-    title: `${label} · ${copy.site.name}`,
-    ...(badgeId != null && previewImage(`/img/badge/${badgeId}`, label)),
-  };
+  const { label } = labelOf(data, unionId);
+  const title = `${label} · ${copy.site.name}`;
+  return { title, ...cardPreview(`/img/card/alliance/${unionId}`, title, label) };
 }
 
 /** Might and members, one point per daily read, on one time axis. */
