@@ -12,7 +12,8 @@ import { dayIn } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import { featureOn } from "./features";
 import { LANGUAGE_DAYS, tipsOf, type followUpsOf } from "./follow-up";
-import { historyLine, weekStart, worklist } from "./follow-up-rules";
+import { kvkEvents, kvkHelp, recordsSince } from "./follow-up-kvk";
+import { historyLine, kvkOpen, sinceMonday, weekStart, worklist } from "./follow-up-rules";
 import { DAY_MS } from "./member-week";
 import type { MemberRow } from "./members";
 import { inputOf, messageLanguage, readyTexts } from "./ready-message";
@@ -84,6 +85,22 @@ function weekOf(records: Records, item: unknown, at: At, date: (at: Date | strin
   return { week: onList ? at.t["card.followup.none"] : null, note: null, onList };
 }
 
+/** The member in a set of one when Follow-up's "After KvK, offer help" holds them (#585 S5), else empty. */
+async function kvkOf(
+  db: Db,
+  access: WorkspaceAccess,
+  member: MemberRow,
+  records: Records,
+  reads: readonly RosterRead[],
+  at: At,
+) {
+  const after = kvkHelp(await kvkEvents(db, access, at.now, at.zone), { reads }, at.now, at.zone);
+  if (!after) return new Set<number>();
+  const since = recordsSince(at.now, at.zone);
+  const rows = records.filter((r) => r.at >= since).reverse();
+  return kvkOpen(after.help, rows, sinceMonday(at.now, at.zone), after.afterAt);
+}
+
 /**
  * The card's Follow-up block, or null while the Follow-up tab is off (D126). `records`: the member's
  * records still counting, newest first (`followUpsOf`); `reads`: the end-of-day reads `membersView`
@@ -99,12 +116,17 @@ export async function cardFollowUp(
   date: (at: Date | string) => string,
 ): Promise<CardFollowUp | null> {
   if (!featureOn(access, "follow_up")) return null;
-  // The work item with this week's records not counted: the message stays the same after a Talked.
-  const [item] = worklist([member], new Set(), tipsOf([member], reads));
+  // The work item with this week's records not counted: the message stays the same after a Talked. The KvK
+  // group is Follow-up's own (`kvkOpen`, on the member's records), so the card agrees with the list.
+  const [kvk, language] = await Promise.all([
+    kvkOf(db, access, member, records, reads, at),
+    languageOf(db, access, member, at),
+  ]);
+  const [item] = worklist([member], new Set(), tipsOf([member], reads), kvk);
   return {
     ...weekOf(records, item, at, date),
     message: {
-      language: await languageOf(db, access, member, at),
+      language,
       texts: readyTexts(
         inputOf(item ?? { member, checkIn: false, tip: false, toAsk: [], kvk: false }),
       ),

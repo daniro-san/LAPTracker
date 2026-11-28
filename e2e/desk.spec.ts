@@ -153,7 +153,7 @@ test("Home shows the alliance, its activity and its week line", async ({ page },
   await expect(row).toContainText(new RegExp(`Since ${usDay(days.marked)} · added by ${officer}`));
   await sees(row, `“${NEEDS_HELP.note}”`);
   await expect(row).toContainText(
-    new RegExp(`Last week: ${officer} · ${usDay(days.talked)}: Talked to them`),
+    new RegExp(`Recorded last week: ${officer} · ${usDay(days.talked)}: Talked to them`),
   );
   await sees(row, `“${NEEDS_HELP.said}”`);
   await expect(page.getByRole("region", { name: /^Worth a hello/ })).toHaveCount(0);

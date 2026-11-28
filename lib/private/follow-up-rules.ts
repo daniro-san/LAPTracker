@@ -285,7 +285,7 @@ export function markLines(
   return [head, ...quoted(mark.note, t)];
 }
 
-/** Last week's record as context (#585 S2): "Last week: Tomas · Thu, Nov 12: Talked to them", its note. */
+/** Last week's record as context (#585 S2): "Recorded last week: Tomas · Thu, Nov 12: Talked to them", its note. */
 export function lastWeekLines(
   row: HistoryRow,
   t: WorkspaceDictionary,
