@@ -45,7 +45,7 @@
 
 - Webhook look only once a title or icon was saved; a workspace that never saved posts as before (D167 note, tests updated).
 - Icon URL carries `v=<choice>-<badge id or hash>`; CDN fetch at 256 or 512 px, downscaled; manifest falls back to defaults if the read throws; `botIn` reused; a title over 80 code points or naming clyde/discord drops `username`; zod raw bound 1000.
-- `deskBranding` uses React `cache` in `lib/desk-branding.ts`, outside the folders the issue 471 test scans (the cache lasts one request).
+- `deskBranding` stays uncached (orchestrator): the review's suggestion to share one read per page view through React `cache` conflicts with the issue 471 guard, so the layout, metadata and frame each run the small branding read. Follow-up: pass the layout's read down to the frame instead.
 - UX: accent swatches and preview always carry their own `data-accent` (burgundy rules restored in tokens.css); the preview shows a tab strip and the real header (desk name, alliance line) above the Icon group; Save is off while the title is too long; refusal clears on change; own saved line; teal dark value changed to #236569 and the contrast test covers the 90 % subtitle; save limit 60 per 15 minutes.
 - Tests added: Check keeps and clears the icon hash, malformed hash or guild id fetches nothing, shield summary look.
 

@@ -7,9 +7,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { MASK_CLASS } from "@/lib/analytics/sanitise";
-import { deskBranding } from "@/lib/desk-branding";
 import { iconPath } from "@/lib/workspace-branding";
 
+import { deskBranding } from "../../_ui/desk-branding";
 import { workspaceWords } from "../../_ui/Frame";
 
 export async function generateMetadata({
