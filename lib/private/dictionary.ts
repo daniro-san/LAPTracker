@@ -151,6 +151,9 @@ const en = {
   "howto.lead": "For the alliance’s R4 and R5. Pin this page in your Discord.",
   "howto.after":
     "Then open it from the icon, like any app. You stay signed in for a day. After that, Discord checks your role again.",
+  "howto.tools": "Other community tools",
+  "howto.tools.body":
+    "Several community sites cover game data that the tracker deliberately does not build: hero, building and research databases, calculators, team builders and gift codes. They are not affiliated with LAPTracker, and this list is not a ranking or a recommendation. Added 2026-11-28.",
   "howto.open": "Open the Officers’ Desk",
   "time.server": "{time} ST",
   "tab.review": "Follow-up",

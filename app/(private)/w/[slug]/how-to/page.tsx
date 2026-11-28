@@ -11,6 +11,15 @@ import { SLUG } from "@/lib/private/sign-in";
 import { CopyButton } from "../../../_ui/CopyButton";
 import { Frame, workspaceWords } from "../../../_ui/Frame";
 
+// Alphabetical, names only, not a ranking (issue 783). Re-check the list whenever the guide is updated.
+const COMMUNITY_SITES = [
+  "last-asylum-unofficial.com",
+  "lastasylum.gg",
+  "lastasylumbuilder.com",
+  "lastasylumplague.com",
+  "wiki-last-asylum.com",
+];
+
 export default async function HowToPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -57,6 +66,23 @@ export default async function HowToPage({ params }: { params: Promise<{ slug: st
         <p className="mt-1">{t["howto.android.body"]}</p>
         <p className="mt-3">{t["howto.share"]}</p>
         <p className="mt-6">{t["howto.after"]}</p>
+        <h2 className={h2}>{t["howto.tools"]}</h2>
+        <p className="mt-2">{t["howto.tools.body"]}</p>
+        <ul className="mt-2">
+          {COMMUNITY_SITES.map((site) => (
+            <li key={site}>
+              <a
+                href={`https://${site}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                translate="no"
+                className="inline-flex min-h-11 items-center py-2 font-semibold break-all underline underline-offset-4"
+              >
+                {site}
+              </a>
+            </li>
+          ))}
+        </ul>
         <a href={`/w/${slug}`} className={buttonClass("primary", "mt-6 w-full text-lg")}>
           {t["howto.open"]}
         </a>
