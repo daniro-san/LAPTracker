@@ -7,7 +7,9 @@ import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { featuresBySlug } from "@/lib/private/features";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
+import { whatsNew } from "@/lib/private/whats-new";
 import { workspaces, workspaceUsers } from "@/lib/schema";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null, token: "" }));
@@ -79,9 +81,13 @@ async function signIn(workspaceId: number, tier: "officer" | "member") {
 const seen = async () => (await db.select().from(workspaceUsers)).map((u) => u.whatsNewSeen);
 
 describe("What's new is the officers' page (issue 782)", () => {
-  it("renders for the workspace's own officer", async () => {
+  it("renders for the workspace's own officer and marks the newest release it can see as seen", async () => {
     await signIn(1, "officer");
     expect(await outcome()).toBe("rendered");
+    const features = await featuresBySlug(db, "ogs");
+    const newest = features && whatsNew({ features }, "en")[0]?.version;
+    expect(newest).toMatch(/^v\d+\.\d+\.\d+$/);
+    expect(await seen()).toEqual([newest]);
   });
 
   it("sends a member to the board and marks nothing seen", async () => {
