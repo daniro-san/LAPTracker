@@ -5,6 +5,8 @@
 import { apiProbeDue } from "./api-probe";
 import type { AppContext } from "./app-context";
 import type { Db } from "./db";
+import { RAID_RANGE, raidPhaseAt, raidReadDue } from "./raid-opponent";
+import { raidTargets } from "./raid-read";
 import { REHEARSAL_AFTER_MS } from "./rehearsal";
 import { getDailyRead } from "./repo/daily-reads";
 import { hasPendingRehearsal } from "./repo/rehearsals";
@@ -155,6 +157,31 @@ async function resetMayBeDue(ctx: AppContext, db: Db, now: Date): Promise<boolea
 }
 
 /**
+ * Whether some workspace's raid opponent read is due now (issue 861, D165): only on Saturday and Sunday
+ * 00:00–02:15 ST, and only on the ticks of a minute some workspace with an opponent set chose. As the
+ * after-reset check's: "no raid read at minute m" is kept for every minute of the day's phase, all from one
+ * read, forgotten by a save.
+ */
+async function raidMayBeDue(ctx: AppContext, db: Db, now: Date): Promise<boolean> {
+  const day = raidPhaseAt(now, ctx.env);
+  if (!day) return false;
+  let read: Promise<Set<number>> | null = null;
+  const minutes = () =>
+    (read ??= raidTargets(db, ctx, now).then((targets) => new Set(targets.map((t) => t.minute))));
+  const nobodyAt = (m: number) =>
+    ctx.wakeCache.holds(
+      `raid-none:${day.saturday}:${day.phase}:${m}`,
+      KEPT_MAX_AGE_S,
+      async () => !(await minutes()).has(m),
+    );
+  const nobody = await Promise.all(
+    RAID_RANGE.filter((m) => raidReadDue(now, ctx.env, m)).map(nobodyAt),
+  );
+  if (read) await Promise.all(RAID_RANGE.map(nobodyAt));
+  return !nobody.every(Boolean);
+}
+
+/**
  * Whether the tick needs the database now: the clock's windows, the Raid Shield check's (D137), the squads
  * queue, or a rehearsal pressed on /admin that is still pending. False means 204 with no query at all.
  */
@@ -164,6 +191,8 @@ export async function tickMayBeDue(ctx: AppContext, db: Db): Promise<boolean> {
   // Issue 827: the after-reset check's ticks (Saturdays 02:30 and 02:45 ST by default; issue 859, each
   // alliance's own).
   if (await resetMayBeDue(ctx, db, now)) return true;
+  // Issue 861: the raid opponent's Start and End reads (Saturday and Sunday 00:00 ST by default).
+  if (await raidMayBeDue(ctx, db, now)) return true;
   // Issue 789: the one-off /v1 discovery's window (2026-11-29 02:30 ST); removed by a follow-up PR.
   if (apiProbeDue(now, ctx.env)) return true;
   if (await squadsMayRun(ctx, db)) return true;

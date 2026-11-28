@@ -51,6 +51,8 @@ export const DESK_FEATURES = [
   "features",
   // D137: Alliance settings → Raid Shield check (the morning read's time and the leaders' message).
   "raid_prep",
+  // D165: Raid prep → This week's raid opponent (set "save", times "edit", clear "delete", "undo").
+  "raid_opponent",
   // D142: a member's "This is me" approved or removed by an officer.
   "member_link",
   // D154: what a member sent about themselves, put on the card ("accept") or marked seen ("mark").

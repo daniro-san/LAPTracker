@@ -207,9 +207,13 @@ export interface RecruitDeps {
 /**
  * Issue 855: on LAP_API_KEY, whether one read leaves the site key's reserve (the squads read's margin and the
  * event's reads, D117). The quota left is what the alliance's squads read or the day's read last saw; none
- * known refuses.
+ * known refuses. The raid opponent's check (issue 861) keeps it too.
  */
-async function siteReserveKept(db: Db, deps: RecruitDeps, unionId: number): Promise<boolean> {
+export async function siteReserveKept(
+  db: Db,
+  deps: Pick<RecruitDeps, "now" | "env">,
+  unionId: number,
+): Promise<boolean> {
   const { now, env } = deps;
   const day = quotaDayRead(now, env);
   const [daily, squads] = await Promise.all([

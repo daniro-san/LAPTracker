@@ -175,12 +175,12 @@ describe("two layers over the defaults (D134)", () => {
   it("estimates tracker calls from the members: squads every day, the shield check on Saturdays", () => {
     expect(trackerEstimate(new Set(["squads"]), 101)).toEqual({ daily: 108, peak: 108 });
     // D137: three shield reads (issue 827: the after-reset check); with the squads read on, Friday's
-    // shield read is that day's squads read.
+    // shield read is that day's squads read. Issue 861: the raid opponent's 6 calls a week at most.
     expect(trackerEstimate(new Set(["squads", "shield_check"]), 100)).toEqual({
       daily: 106,
-      peak: 306,
+      peak: 312,
     });
-    expect(trackerEstimate(new Set(["shield_check"]), 100)).toEqual({ daily: 0, peak: 300 });
+    expect(trackerEstimate(new Set(["shield_check"]), 100)).toEqual({ daily: 0, peak: 306 });
     expect(trackerEstimate(new Set(["thefts"]), 100)).toEqual({ daily: 0, peak: 0 });
     // Issue 833: the recruit check counts its whole daily cap, whatever the roster's size.
     expect(trackerEstimate(new Set(["recruit_check"]), 100)).toEqual({ daily: 20, peak: 20 });

@@ -169,9 +169,14 @@ async function readAlliance(deps: SquadsDeps, db: Db, run: Run) {
  * The quota the read starts from and the reserve it keeps, as the morning check's start: our key, what
  * the day's squads read (or the daily read) left; a workspace key, one /quota call on it (D124). The
  * reserve is the morning check's own plus its most calls (`SHIELD_CALLS_MAX`): both spend from Saturday's
- * UTC quota day. While the alliance's squads read is still running, `squads_busy` and no call at all.
+ * UTC quota day. While the alliance's squads read is still running, `squads_busy` and no call at all. The
+ * raid opponent's reads (lib/raid-read.ts, issue 861) start the same way.
  */
-async function startRead(deps: SquadsDeps, db: Db, run: Run & { daily: StartDaily }) {
+export async function startRead(
+  deps: SquadsDeps,
+  db: Db,
+  run: Pick<Run, "day" | "target" | "signal"> & { daily: StartDaily },
+) {
   const { target } = run;
   const squads = await getSquadRead(db, run.day, target.unionId);
   if (squads?.status === "running")

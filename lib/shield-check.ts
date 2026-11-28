@@ -243,7 +243,7 @@ export function passWindows(
   };
 }
 
-type Span = { from: Date; to: Date };
+export type Span = { from: Date; to: Date };
 const overlap = (a: Span, b: Span) => a.from < b.to && b.from < a.to;
 
 /**
@@ -279,7 +279,7 @@ function clash(
 }
 
 /** The read windows of `times` for the check of Friday `day`: night, after-reset (when on), morning. */
-const readSpans = (day: string, cfg: Zone, times: ShieldTimes): Span[] => {
+export const readSpans = (day: string, cfg: Zone, times: ShieldTimes): Span[] => {
   const w = passWindows(day, cfg, times);
   return [
     w.night,
@@ -290,10 +290,15 @@ const readSpans = (day: string, cfg: Zone, times: ShieldTimes): Span[] => {
 
 /**
  * Why officers may not choose `times`, or null: a read's window overlaps an event's window (D160) in one
- * of the next four weeks, or another read's window (the counts would mix).
+ * of the next four weeks, or another read's window (the counts would mix). `others`: the raid opponent's
+ * read windows of the same week (issue 861), which may not meet these either.
  */
-export const timesRefusal = (times: ShieldTimes, cfg: ScheduleConfig, now: Date) =>
-  clash((day) => readSpans(day, cfg, times), cfg, now);
+export const timesRefusal = (
+  times: ShieldTimes,
+  cfg: ScheduleConfig,
+  now: Date,
+  others: (day: string) => Span[] = () => [],
+) => clash((day) => [...readSpans(day, cfg, times), ...others(day)], cfg, now);
 
 /** The times each read may be given now: those of `timeRanges` whose window meets no event's. */
 export function timeChoices(cfg: ScheduleConfig, now: Date) {

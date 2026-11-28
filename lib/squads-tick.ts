@@ -9,6 +9,7 @@ import { after } from "next/server";
 import { apiProbe } from "./api-probe";
 import { secretsOf, type AppContext } from "./app-context";
 import { recordAppError } from "./app-errors";
+import { raidRead } from "./raid-read";
 import { shieldReset } from "./shield-reset";
 import { shieldTick } from "./shield-tick";
 import { SQUADS_BATCH_MS, squadsQueueDay } from "./squads";
@@ -58,6 +59,8 @@ export async function squadsBatch(
       if (ctx.now().getTime() - startedAt + SQUADS_BATCH_MS > press.budgetMs) break;
     }
     if (origin !== undefined) {
+      // Issue 861: the raid opponent's reads first, Saturday and Sunday 00:00 ST by default.
+      await raidRead(deps, db, startedAt + AFTER_BUDGET_MS);
       await shieldTick({ ...deps, origin }, db, startedAt + AFTER_BUDGET_MS);
       // Issue 827: the after-reset check, Saturdays 02:30 ST.
       await shieldReset(deps, db, startedAt + AFTER_BUDGET_MS);

@@ -64,13 +64,15 @@ export const SPENDS: Partial<Record<Feature, Allowance>> = {
  * reads of every member, Friday 23:30 ST, Saturday 02:30 ST after the reset (issue 827) and Saturday
  * morning, all in Saturday's UTC quota day; with the squads read on, Friday's read is that day's squads
  * read, so only the other two are extra. Recruit check (issue 833): at most `perDay` new reads a quota day,
- * whatever the roster's size, counted as if all were used.
+ * whatever the roster's size, counted as if all were used. Raid opponent (issue 861, D165, behind the Raid
+ * Shield check's switch): at most `perWeek` calls a week, the opponent and our own alliance at the Start and
+ * the End, and on a workspace key one /quota call before each, counted as if an opponent were set.
  */
 export const TRACKER_CALLS: Partial<
-  Record<Feature, { perMember: number; weekly: boolean; perDay?: number }>
+  Record<Feature, { perMember: number; weekly: boolean; perDay?: number; perWeek?: number }>
 > = {
   squads: { perMember: 1.06, weekly: false },
-  shield_check: { perMember: 3, weekly: true },
+  shield_check: { perMember: 3, weekly: true, perWeek: 6 },
   recruit_check: { perMember: 0, weekly: false, perDay: 20 },
 };
 
@@ -92,12 +94,12 @@ export function trackerEstimate(
   let weekly = 0;
   for (const [f, calls] of Object.entries(TRACKER_CALLS) as [
     Feature,
-    { perMember: number; weekly: boolean; perDay?: number },
+    { perMember: number; weekly: boolean; perDay?: number; perWeek?: number },
   ][]) {
     if (!on.has(f)) continue;
     // D137: Friday's shield read is the squads read of that quota day when both are on.
     const per = f === "shield_check" && on.has("squads") ? calls.perMember - 1 : calls.perMember;
-    const n = Math.ceil(members * per) + (calls.perDay ?? 0);
+    const n = Math.ceil(members * per) + (calls.perDay ?? 0) + (calls.perWeek ?? 0);
     if (calls.weekly) weekly += n;
     else daily += n;
   }

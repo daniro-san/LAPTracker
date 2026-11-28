@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import type { Db } from "../db";
 import { latestMemberCounts } from "../queries/rosters";
+import { raidSpans, raidTimesOf } from "../raid-opponent";
 import { recordFailure } from "../repo/auth-attempts";
 import { saveShieldSettings, shieldSettingsOf } from "../repo/shield-checks";
 import type { ScheduleConfig } from "../schedule";
@@ -98,7 +99,9 @@ export async function saveShield(
     morning: input.morningMinute,
     reset: input.resetRead ? input.resetMinute : null,
   };
-  const refused = timesRefusal(times, ctx.env, ctx.now);
+  // Issue 861: the raid opponent's reads at the alliance's times may not meet these either.
+  const raid = raidTimesOf(await shieldSettingsOf(db, access.workspaceId));
+  const refused = timesRefusal(times, ctx.env, ctx.now, (day) => raidSpans(day, ctx.env, raid));
   if (refused) return { ok: false, code: refused };
   await saveShieldSettings(db, {
     workspaceId: access.workspaceId,

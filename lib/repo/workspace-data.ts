@@ -57,7 +57,13 @@ import {
 } from "../schema-notices";
 import { pushMarks, pushSubscriptions } from "../schema-push";
 import { workspaceDataEvents, type DataAction } from "../schema-retention";
-import { shieldChecks, shieldQueue, shieldSettings } from "../schema-shield";
+import {
+  raidOpponents,
+  raidReads,
+  shieldChecks,
+  shieldQueue,
+  shieldSettings,
+} from "../schema-shield";
 import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "../schema-squads";
 import { theftAttackers, theftFollowUps, thefts } from "../schema-thefts";
 
@@ -168,6 +174,10 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: null, table: workspaceGlossary, scope: "workspace" },
   { file: null, table: shieldChecks, scope: "union" },
   { file: null, table: shieldQueue, scope: "union" },
+  // D165: the raid opponent of each raid and its Start and End reads (totals and uid arrays, ours and
+  // another alliance's): deleted with the workspace, not in the download, as the Raid Shield check's rows.
+  { file: null, table: raidOpponents, scope: "workspace" },
+  { file: null, table: raidReads, scope: "workspace" },
   // D148: officers' devices for notifications, sealed like the webhooks, and what each trigger last sent.
   { file: null, table: pushSubscriptions, scope: "workspace" },
   { file: null, table: pushMarks, scope: "workspace" },

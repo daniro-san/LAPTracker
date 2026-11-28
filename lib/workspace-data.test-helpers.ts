@@ -31,6 +31,7 @@ import {
   seedImports,
   seedKeyAndData,
   seedNotices,
+  seedRaid,
   seedRecruitReads,
   WEEK,
 } from "./workspace-seed-parts.test-helpers";
@@ -194,4 +195,5 @@ export async function seedEverything(
   await seedImports(db, ws);
   await seedKeyAndData(db, ws, unionId, officer);
   await seedRecruitReads(db, ws);
+  await seedRaid(db, ws, officer);
 }
