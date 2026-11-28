@@ -235,6 +235,7 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Merge                                 | Fusie                                       | `merge.title`, `merge.link` — the merge simulator                                                           |
 | cap (member cap)                      | grens                                       | `merge.cap`, `merge.over`, `merge.answer` — the member limit                                                |
 | Member flow                           | Ledenstroom                                 | `flow.title` — moves between tracked alliances between two days                                             |
+| Race to #1 / pace                     | Race naar #1 / tempo                        | `race.title`, `race.lead`, `race.line` — the weekly change that projects an alliance's place                |
 | English                               | nl                                          | Key and use                                                                                                 |
 | -------------------------             | --------------------------------            | ------------------------------------------------------------------------------                              |
 | Server 325 · Event Ledger             | Server 325 · Eventlogboek                   | `site.ledger` — the page title                                                                              |

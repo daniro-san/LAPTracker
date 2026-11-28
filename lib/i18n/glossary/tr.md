@@ -305,6 +305,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | growth (an alliance's Might over days) | Büyüme                          | `alliancePage.growth` — the growth card, shared with the player page                                                                     |
 | help coins                             | Yardım jetonu                   | `alliancePage.coins` — the Alliance Help coins a member has                                                                              |
 | joins & leaves (alliance page section) | Katılan & ayrılan               | `alliancePage.movesTab` — members who joined or left between daily updates; the filters reuse `alliancePage.joinedFilter` / `leftFilter` |
+| pace                                   | tempo                           | `race.*` — the weekly change the race to #1 projects forward                                                                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

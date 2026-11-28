@@ -376,6 +376,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Growth                                | Pertumbuhan                         | `alliancePage.growth` — the growth card's heading, shared with the player page                                                   |
 | Quest points                          | Poin quest                          | `alliancePage.active`, `alliancePage.read` — a member's quest points since Monday                                                |
 | Joins & leaves                        | Masuk & keluar                      | `alliancePage.movesTab`, `alliancePage.joinedFilter`, `alliancePage.leftFilter` — the alliance page's members who joined or left |
+| Race to #1 / pace                     | Lomba ke #1 / laju                  | `race.*` — the pace is the middle of an alliance's weekly might changes; arithmetic, never a forecast                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

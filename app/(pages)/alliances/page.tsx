@@ -12,6 +12,7 @@ import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { dayDate } from "@/app/_ui/format";
 import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { sharedAllianceList, sharedEventAllianceIds, sharedEvents } from "@/app/_ui/public-reads";
+import { RacePace } from "@/app/_ui/RacePace";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TRACKED_COUNT } from "@/config/alliances";
@@ -104,6 +105,7 @@ export default async function AlliancesPage({ searchParams }: { searchParams: Se
                 copy={copy}
               />
             )}
+            {list.page === 1 && <RacePace clock={clock} locale={locale} copy={copy} />}
             {list.page === 1 && (
               <section aria-labelledby="tracked-h" className="mt-6">
                 <h2 id="tracked-h" className="mb-2 font-subhead text-display-md">

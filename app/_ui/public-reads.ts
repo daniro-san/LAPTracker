@@ -10,6 +10,7 @@ import {
   playerHistory,
   playerInAlliance,
   playerProgress,
+  racePace,
   recruitingAlliances,
   upstreamRows,
 } from "@/lib/queries";
@@ -46,6 +47,10 @@ export async function sharedAllianceList(asked: number) {
  * went stale. The daily read and the details lookup write `daily_rosters` and invalidate `reads`. */
 export const sharedRecruiting = (today: string) =>
   sharedRead("recruiting", [today], (db) => recruitingAlliances(db, today));
+
+/** /alliances' "Race to #1" (issue 285). The daily read and the details lookup write `daily_rosters` and
+ * invalidate `reads`; the tracked set is written by the same tick. */
+export const sharedRace = () => sharedRead("race", [], racePace);
 
 /** The alliances an event read: which list rows link into it. */
 export const sharedEventAllianceIds = (eventId: number) =>

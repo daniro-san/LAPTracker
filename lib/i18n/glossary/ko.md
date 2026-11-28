@@ -269,6 +269,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Growth                    | 성장                   | `alliancePage.growth` — the growth card's heading, shared with the player page                                              |
 | Range                     | 기간                   | `alliancePage.range` — the growth card's range links (`7d`, `30d`, `90d`)                                                   |
 | Unknown (a figure)        | 미상                   | `members.startUnknown`, `members.endUnknown` — a member's figure at Start or End that was not read                          |
+| Pace                      | 속도                   | `race.lead`, `race.line`, `race.none` — the middle weekly change of an alliance's might, as a rate                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

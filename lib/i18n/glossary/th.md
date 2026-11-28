@@ -346,6 +346,7 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Event reading (Start or End)        | การอ่านของกิจกรรม               | `ledger.readoutEventRead` — a line chart's value at an event's Start or End, not a daily read                                                                    |
 | by alliance (an interval split)     | แยกตามพันธมิตร                  | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split by alliance                                                                 |
 | Growth                              | การเติบโต                      | `alliancePage.growth` — the growth card, shared with the player page                                                                                             |
+| Pace (a race's weekly change)       | อัตรา                          | `race.*` — an alliance's middle weekly change in might; `race.line` reads `{pace} ต่อสัปดาห์`                                                                       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
