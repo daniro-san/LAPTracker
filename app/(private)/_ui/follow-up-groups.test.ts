@@ -74,6 +74,20 @@ describe("Follow-up's groups (issue 585 slice 2)", () => {
     ]);
   });
 
+  it("says the join date and the buddy next to it under Worth a hello (issue 828)", () => {
+    const joined = {
+      ...member(10, "Aster"),
+      reasons: [{ kind: "joined" as const, at: new Date("2026-11-16T10:00:00Z") }],
+      buddy: { uid: 11, name: "Bram" },
+    };
+    const groups = groupsOf([item(joined, {})], t, f, "en");
+    expect(groups[0]?.title).toBe("Worth a hello · 1");
+    expect(groups[0]?.rows[0]?.lines).toEqual([
+      { text: "Worth a hello: joined on Mon, Nov 16" },
+      { text: "Buddy: Bram" },
+    ]);
+  });
+
   it("says a line every row of a group holds once under its title, never a mark, and keeps each row's own", () => {
     const all = ["squadMight", "troopTier", "adTech", "timeZone", "languages"] as const;
     const fresh = (uid: number, name: string, toAsk: FollowUpItem["toAsk"]) =>

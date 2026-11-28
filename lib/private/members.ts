@@ -22,6 +22,7 @@ import {
 } from "../repo/workspace-rosters";
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
+import { buddyOf } from "./buddy";
 import { awayNoteUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
 import { progressOf, thanksWeek, TREND_FIELDS, type Progress } from "./fact-trend";
 import { duelSaved } from "./import-save";
@@ -52,13 +53,16 @@ const LOOKBACK_READS = 15;
 const NOT_SEEN_DAYS = 3;
 /** A scheduled event (the Saturday KvK) counts for its "no kills gained" reason for this long. */
 const KVK_DAYS = 7;
+/** A member who joined this recently is worth a hello (issue 828); `joined_at` of the newest read is the evidence. */
+const JOINED_DAYS = 7;
 
 /** A "Check in" reason and its evidence (D75). */
 export type Reason =
   | ({ kind: "idle" } & Idle)
   | { kind: "might"; days: number }
   | { kind: "kvk"; at: Date }
-  | { kind: "seen"; at: Date };
+  | { kind: "seen"; at: Date }
+  | { kind: "joined"; at: Date };
 
 export interface MemberRow {
   uid: number;
@@ -102,6 +106,8 @@ export interface MemberRow {
   officerStatus: OfficerStatus | null;
   /** The last day of an away note that still runs; the member is On a break until then. */
   awayUntil: string | null;
+  /** The buddy an officer named (issue 828), while they are still a member. */
+  buddy?: { uid: number; name: string } | null;
   /** From a roster read before the first end-of-day read: nothing computed, no status. */
   early: boolean;
 }
@@ -153,19 +159,22 @@ interface Signals {
   facts: Map<number, MemberFacts>;
   /** Today's server day, for away notes. */
   today: string;
+  /** The names of the roster's members, for the buddy. */
+  names: Map<number, string>;
 }
 
 /** The member's facts, the status an officer set, and an away note that still runs. */
-function factsPart(uid: number, s: Pick<Signals, "facts" | "today">) {
+function factsPart(uid: number, s: Pick<Signals, "facts" | "today" | "names">) {
   const facts = s.facts.get(uid) ?? {};
   return {
     facts,
     officerStatus: facts.status?.value ?? null,
     awayUntil: awayNoteUntil(facts, s.today),
+    buddy: buddyOf(facts, uid, s.names),
   };
 }
 
-const onBreak = (p: ReturnType<typeof factsPart>) =>
+const onBreak = (p: Pick<MemberRow, "officerStatus" | "awayUntil">) =>
   p.officerStatus === "break" || p.awayUntil !== null;
 
 /** Issue 821: the roster's `last_online_at` is the evidence; a member with none is never listed. */
@@ -173,6 +182,14 @@ function seenReason(m: RosterMember, readAt: Date): Reason[] {
   const seen = m.lastOnlineAt;
   return seen && readAt.getTime() - seen.getTime() >= NOT_SEEN_DAYS * DAY_MS
     ? [{ kind: "seen", at: seen }]
+    : [];
+}
+
+/** Issue 828: a member whose `joined_at` is within JOINED_DAYS of the read is worth a hello, with the date. */
+function joinedReason(m: RosterMember, readAt: Date): Reason[] {
+  const joined = m.joinedAt;
+  return joined && readAt.getTime() - joined.getTime() < JOINED_DAYS * DAY_MS
+    ? [{ kind: "joined", at: joined }]
     : [];
 }
 
@@ -193,6 +210,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
         ...(idle ? [{ kind: "idle" as const, ...idle }] : []),
         ...(flat !== undefined ? [{ kind: "might" as const, days: flat }] : []),
         ...(settling ? [] : seenReason(m, newest.at)),
+        ...joinedReason(m, newest.at),
         ...(s.event && killsGained(s.event, m.uid) === 0
           ? [{ kind: "kvk" as const, at: s.event.at }]
           : []),
@@ -271,8 +289,13 @@ function earlyView(
       reads: [],
     };
   const week = gameWeek(serverDay(roster.at, { SERVER_TZ: zone }));
+  const names = new Map(roster.members.map((m) => [m.uid, m.name]));
   const members = roster.members
-    .map((m) => ({ ...plainRow(m, week, s.firstSeen), ...factsPart(m.uid, s), early: true }))
+    .map((m) => ({
+      ...plainRow(m, week, s.firstSeen),
+      ...factsPart(m.uid, { ...s, names }),
+      early: true,
+    }))
     .sort(order);
   const zones = usedZones(s.facts, [...roster.members.map((m) => m.uid), ...s.pending]);
   const view = {
@@ -350,6 +373,7 @@ export async function membersView(
     duel: await duelSaved(db, access, week[0] as string),
     facts,
     today,
+    names: new Map(newest.members.map((m) => [m.uid, m.name])),
   };
   const members = newest.members.map((m) => rowOf(m, week, signals)).sort(order);
   // D75: thanks are a comparison, so members on a break are left out of them.

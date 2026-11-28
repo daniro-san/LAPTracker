@@ -15,6 +15,7 @@ import { Tag } from "@/lib/brand/components/Tag";
 import type { CardData } from "@/lib/private/member-card";
 import { fill } from "@/lib/words";
 
+import { CardBuddy } from "./CardBuddy";
 import { CardFollowUp } from "./CardFollowUp";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
@@ -287,6 +288,10 @@ function Overview({ card, editor, onChanged }: CardProps) {
             <li key={line}>{line}</li>
           ))}
         </ul>
+      )}
+      {/* Issue 828: the buddy an officer named, and the list to pick one from. */}
+      {card.buddy && (
+        <CardBuddy slug={editor.slug} uid={card.uid} data={card.buddy} onChanged={onChanged} />
       )}
       {/* Issue 516: this week's follow-up, Talked and the ready message, without leaving the card. */}
       {card.followUp && (

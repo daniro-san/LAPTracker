@@ -13,6 +13,7 @@ import { gameLanguageReads } from "../repo/player-reads";
 import { endOfDayReads } from "../repo/workspace-rosters";
 import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
+import { cardBuddy, type CardBuddy } from "./buddy";
 import { dayIn } from "./calendar-time";
 import { cardFollowUp, type CardFollowUp } from "./card-follow-up";
 import { cardShield, type CardShield } from "./card-shield";
@@ -145,6 +146,8 @@ export interface CardData {
   link?: CardLink | null;
   /** Issue 516: this week's follow-up and the ready message; null while the Follow-up tab is off. */
   followUp?: CardFollowUp | null;
+  /** Issue 828: the buddy an officer named, and the list to pick one from. */
+  buddy?: CardBuddy;
   /** Issue 634: the Raid Shield block, from Friday's night check until KvK starts; null otherwise. */
   shield?: CardShield | null;
   /** Issue 814: the game's language from the newest own-alliance read; null with no read (D75). */
@@ -441,5 +444,6 @@ export async function memberCard(
   });
   const mark = marks.get(uid);
   const statusMark = mark ? markLines(mark, at.t, f.date) : [];
-  return { ...card, statusMark, squads, link, followUp, shield, selfReport, gameLanguage };
+  const buddy = cardBuddy(member, view.members, at.t);
+  return { ...card, statusMark, squads, link, followUp, shield, selfReport, gameLanguage, buddy };
 }

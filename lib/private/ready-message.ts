@@ -69,10 +69,15 @@ export const readyWords = (language: WorkspaceLanguage): ReadyWords => READY_MES
  */
 export const inputOf = (item: Pick<WorkItem, "member" | "checkIn" | "tip" | "toAsk" | "kvk">) => ({
   name: item.member.name,
-  isNew: item.member.isNew,
+  isNew: item.member.isNew || item.member.reasons.some((r) => r.kind === "joined"),
   reasons: [
     ...(item.kvk ? (["kvk"] as const) : []),
-    ...(item.checkIn ? item.member.reasons.map((r) => (r.kind === "seen" ? "idle" : r.kind)) : []),
+    // A new member's hello is a welcome already (issue 828): "joined" adds no line of its own.
+    ...(item.checkIn
+      ? item.member.reasons.flatMap((r) =>
+          r.kind === "joined" ? [] : [r.kind === "seen" ? ("idle" as const) : r.kind],
+        )
+      : []),
   ],
   tip: item.tip,
   toAsk: item.toAsk,

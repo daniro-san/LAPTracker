@@ -23,6 +23,7 @@ import type { FollowUpGroup, FollowUpRow, RowLine } from "./FollowUpList";
 function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
   if (r.kind === "kvk") return reasonText(r, t, f);
   if (r.kind === "seen") return fill(t["followup.reason.seen"], { date: f.date(r.at) });
+  if (r.kind === "joined") return fill(t["followup.reason.joined"], { date: f.date(r.at) });
   return fill(
     plural(
       r.days,
@@ -55,6 +56,8 @@ function partsOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats, kvk: st
   const reasons = [
     ...(item.kvk && kvk ? [kvk] : []),
     ...(checkIn ? member.reasons.map((r) => reasonLine(r, t, f)) : []),
+    // Issue 828: the buddy an officer named, next to the reasons.
+    ...(checkIn && member.buddy ? [fill(t["followup.buddy"], { name: member.buddy.name })] : []),
   ];
   // Every fact still to ask, by name (issue 460): never only a count.
   const list = toAsk.map((field) => t[`facts.${field}`]).join(", ");
