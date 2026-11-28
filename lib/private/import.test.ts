@@ -33,7 +33,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await truncateAll(db);
   await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
-  // The OGs roster of 2026-11-16 (public names), plus an invented member "Ana" for the chat tests.
+  // OGs' invented roster (fixtures/screenshots/roster.json), plus an invented member "Ana" for the chat tests.
   const members = [...ogsCandidates(), { uid: 1, names: ["Ana"] }];
   await db.insert(dailyReads).values({ day: "2026-11-15", startedAt: NOW, status: "complete" });
   await db.insert(dailyRosters).values({
@@ -89,13 +89,13 @@ describe("drafts from pictures (issue 299)", () => {
       pictures("26-alliance-duel-weekly-server"),
       sent(),
     );
-    // Row 3 is Derek-Tom of [Ratz].
+    // Row 3 is Milo-Fenn of [Wisp].
     expect(drafts[0]?.leftOut).toBe(1);
     expect(drafts[0]?.rows).toBe(7);
   });
 
   it("makes no draft from a map, even when the officer picks a type", async () => {
-    const map = ["0/s 15 8 12 0/s", "#325 [OGs] MissJackson", "#325 [OGs] meonDoc", "Map"];
+    const map = ["0/s 15 8 12 0/s", "#325 [OGs] MissPickles", "#325 [OGs] taraDoc", "Map"];
     const result = await createDrafts(
       db,
       await officer("1", "Ana"),

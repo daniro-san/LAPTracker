@@ -29,7 +29,7 @@ describe("the shared OCR worker", () => {
   it("rejects a read when its thread dies, and the next read starts a new worker", async () => {
     const { failureCode, readUpload } = await import("./import-read");
     const { ReaderFailedError } = await import("../screenshot/read-screenshot");
-    const picture = screenshot("22-donation-weekly");
+    const picture = screenshot("synthetic-donation-weekly");
     const error = await readUpload(picture).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ReaderFailedError);
     expect(failureCode("w.import.read_failed", error)).toBe(

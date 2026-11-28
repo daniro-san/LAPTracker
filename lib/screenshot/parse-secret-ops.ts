@@ -10,7 +10,7 @@ import { nameKey } from "./name-key";
 export interface SecretOpsEntry {
   /** null when no sentence under the name was readable: a person has to say which it is. */
   kind: "theft" | "help" | null;
-  /** "" when the bracket after the tag was not read (`[ANMcinalice`). */
+  /** "" when the bracket after the tag was not read (`[YRTrolabeth`). */
   tag: string;
   name: string;
   /** `MM-DD HH:MM`, server time; null when the time was not read. */

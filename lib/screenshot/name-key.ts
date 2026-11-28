@@ -14,7 +14,7 @@ const LOOKALIKE_FROM = "авекмнорстухіјѕ" + "αεικνορτυχ"
 const LOOKALIKE_TO = "abekmhopctyxijs" + "aeikvoptux";
 const LOOKALIKE = new Map([...LOOKALIKE_FROM].map((c, i) => [c, LOOKALIKE_TO[i] as string]));
 
-/** Characters that join two names in one (`Kasoar•Thorne`). */
+/** Characters that join two names in one (`Tavish•Fearne`). */
 const JOINER = /[•·∙|/\\]+/u;
 
 /** Shortest segment that may stand for a whole name. */

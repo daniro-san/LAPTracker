@@ -42,7 +42,7 @@ function classify(line: string): Line {
     const isValue = /[,.]/.test(t) || t.replace(/\D/g, "").length >= 4;
     return isValue ? { k: "value", v: toInt(t) } : { k: "rank", v: toInt(t) };
   }
-  // "4 Lordanirosan 87,244,291" on one line
+  // "4 Thistlemoore 87,244,291" on one line
   const m = /^(\d{1,3})\s+(.+?)\s+([\dOoIl][\dOoIl,.]*[\dOoIl])$/.exec(t.replace(TAG_TAIL, ""));
   if (m)
     return {

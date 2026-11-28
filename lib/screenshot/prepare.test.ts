@@ -46,7 +46,7 @@ function greyRows(out: Uint8Array): { width: number; height: number; rows: Uint8
 
 describe("prepareForOcr", () => {
   it("turns a screenshot into an 8-bit greyscale PNG of the target width", () => {
-    const source = screenshot("27-alliance-duel-weekly-mine");
+    const source = screenshot("synthetic-alliance-duel-weekly-mine");
     const out = Buffer.from(prepareForOcr(source));
     expect(out.subarray(1, 4).toString("latin1")).toBe("PNG");
     expect(out.readUInt32BE(16)).toBe(TARGET_WIDTH);

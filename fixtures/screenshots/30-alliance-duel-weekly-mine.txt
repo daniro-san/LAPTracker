@@ -1,28 +1,28 @@
 “= Rank
 Daily Weekly
 Rank Player Point @
-“2 Dwarfelf
+“2 Gnomeorc
 25 48,729,337
 3% [0Gs]OldGrandmas
-% Commerage
+% Tollhouse
 26 48,113,316
 a. [0Gs]OldGrandmas
-[®F3 wildfire6058
+[®F3 moonglow3317
 27 ~ 47,751,991
 > [OGs)OldGrandmas
 mee)
-28 BeksQueenOfChaos 46.713.339
+28 LolaQueenOfMists 46.713.339
 [ [0Gs]OldGrandmas ida
-B DanishTea
+B NordicPie
 29 46,022,303
 [0Gs]OldGrandmas
-[FR doclLs
+[FR vetkKs
 30 x 44,580,588
 4 J [0Gs]OldGrandmas
-538 moens
+538 brisk
 3 44,293,588
 [OGs]OldGrandmas
-( 1 dialogofthedead
+( 1 echoesofthefens
 32 a 43,572,355
 [OGs]OldGrandmas
 My Alliance Vv

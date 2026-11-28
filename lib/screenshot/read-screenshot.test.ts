@@ -1,6 +1,6 @@
 // Opt-in OCR test: OCR_TEST=1 pnpm vitest run lib/screenshot/read-screenshot.test.ts
-// It runs the real Tesseract on three screenshots (about 1 s each on an idle machine, much more on a
-// loaded one) and compares with the text recorded in fixtures/screenshots. Not part of `pnpm check`:
+// It runs the real Tesseract on three synthetic screens (about 1 s each on an idle machine, much more on a
+// loaded one) and compares with the text recorded from them in fixtures/screenshots. Not part of `pnpm check`:
 // the default run skips it. Re-recording a fixture is a deliberate act, never a side effect of a test.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -29,13 +29,14 @@ describe.skipIf(process.env.OCR_TEST !== "1")("screenshot OCR (OCR_TEST=1)", () 
   it(
     "reads an Alliance Duel page to the text and rows that were recorded",
     async () => {
-      const name = "27-alliance-duel-weekly-mine";
+      const name = "synthetic-alliance-duel-weekly-mine";
       const lines = await reader.read(screenshot(name));
       expect(sameLines(lines, recorded(name))).toBeGreaterThanOrEqual(SAME_LINES);
       const weekly = { scope: "weekly" } as const;
       expect(parseAllianceDuelRanking(lines, weekly)).toEqual(
         parseAllianceDuelRanking(recorded(name), weekly),
       );
+      expect(parseAllianceDuelRanking(lines, weekly)).toHaveLength(8);
     },
     SLOW,
   );
@@ -43,10 +44,11 @@ describe.skipIf(process.env.OCR_TEST !== "1")("screenshot OCR (OCR_TEST=1)", () 
   it(
     "reads a Donation page to the text and rows that were recorded",
     async () => {
-      const name = "22-donation-weekly";
+      const name = "synthetic-donation-weekly";
       const lines = await reader.read(screenshot(name));
       expect(sameLines(lines, recorded(name))).toBeGreaterThanOrEqual(SAME_LINES);
       expect(parseRanking(lines)).toEqual(parseRanking(recorded(name)));
+      expect(parseRanking(lines)).toHaveLength(7);
     },
     SLOW,
   );
@@ -54,10 +56,11 @@ describe.skipIf(process.env.OCR_TEST !== "1")("screenshot OCR (OCR_TEST=1)", () 
   it(
     "reads a Secret Operations report to the text and entries that were recorded",
     async () => {
-      const name = "53-secret-ops-report";
+      const name = "synthetic-secret-ops-report";
       const lines = await reader.read(screenshot(name));
       expect(sameLines(lines, recorded(name))).toBeGreaterThanOrEqual(SAME_LINES);
       expect(parseSecretOpsReport(lines)).toEqual(parseSecretOpsReport(recorded(name)));
+      expect(parseSecretOpsReport(lines)).toHaveLength(6);
     },
     SLOW,
   );

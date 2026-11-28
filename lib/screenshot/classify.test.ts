@@ -30,7 +30,7 @@ describe("classifyScreen", () => {
   });
 
   it("recognises the other sessions' screens (invented lines, after the real reads)", () => {
-    const damage = ["Reward Details", "Damage Phase: 5", "MVP Bonus: Reward x10", "LD21 17.0B"];
+    const damage = ["Reward Details", "Damage Phase: 5", "MVP Bonus: Reward x10", "QK47 17.0B"];
     const undead = ["Mail", "Your Alliance withstood", "1280 waves of attacks on Lv.4 difficulty."];
     const elixir = ["Elixir Battle", "Participants: 18/20", "Team A", "Team B"];
     expect(classifyScreen(damage).kind).toBe("damage_event");
@@ -54,7 +54,7 @@ describe("classifyScreen", () => {
 
   it("recognises a map, and says nothing about a picture it cannot place", () => {
     // Invented lines: the map's labels and controls as the OCR reads them.
-    const map = ["0/s 15 8 12 0/s", "#325 [OGs] MissJackson", "P9325 [ods] Biomat", "Map", "Bag"];
+    const map = ["0/s 15 8 12 0/s", "#325 [OGs] MissPickles", "P9325 [ods] Corvex", "Map", "Bag"];
     expect(classifyScreen(map).kind).toBe("map");
     expect(classifyScreen(["Mail", "Weekly Donation Ranking Reward", "Congratulations"]).kind).toBe(
       null,
