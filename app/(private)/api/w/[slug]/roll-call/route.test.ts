@@ -15,7 +15,7 @@ import { UNDO_MS } from "@/lib/private/roll-call";
 import { archivedInWeek, archivedItems, callView, weekItems } from "@/lib/private/roll-call-view";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { dailyReads, dailyRosters, workspaces, workspaceUsers } from "@/lib/schema";
-import { rollCalls } from "@/lib/schema-rollcall";
+import { rollCallResults, rollCalls } from "@/lib/schema-rollcall";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -317,5 +317,74 @@ describe("deleting and archiving a roll call (issue 424, D120)", () => {
     await post(remove(id, randomUUID()), { who: "Ana" });
     const undo = await post({ action: "undo", occasion: { id }, items: written }, { who: "Ana" });
     expect([undo.status, await undo.json()]).toEqual([404, { code: "not_found" }]);
+  });
+});
+
+describe("an Elixir Scramble result and score (issue 468)", () => {
+  /** Team A's week with 101 on the team. */
+  const team = async () => {
+    const officer = await requireWorkspace(
+      db,
+      "ogs",
+      { get: () => ({ value: tokens.Ana ?? "" }) },
+      T0,
+    );
+    if (!officer.ok) throw new Error("no access");
+    const entry = { kind: "elixir", variant: "A", day: "2026-11-06", minute: 1080, notes: null };
+    const made = await createEntry(
+      db,
+      officer,
+      { ...entry, link: null, forMembers: false, notice: null, weekly: false } as NewEntry,
+      randomUUID(),
+    );
+    if (!made.ok) throw new Error(made.code);
+    const occasion = { entry: made.id, week: WEEK };
+    await post({ action: "team", occasion, uids: [101], on: true }, { who: "Ana" });
+    return occasion;
+  };
+  const result = (occasion: object, extra: object = {}) => ({
+    action: "result",
+    occasion,
+    opponent: "Foxes",
+    ourScore: 1200,
+    theirScore: 900,
+    ...extra,
+  });
+
+  it("saves a result for an officer and refuses a member, another workspace and a non-Elixir roll call", async () => {
+    const occasion = await team();
+    expect((await post(result(occasion), { who: "Ana" })).status).toBe(200);
+    expect(await db.select().from(rollCallResults)).toMatchObject([
+      { opponent: "Foxes", ourScore: 1200, theirScore: 900 },
+    ]);
+    expect((await post(result(occasion), { who: "Mo" })).status).toBe(401);
+    expect((await post(result(occasion), { who: "Zed" })).status).toBe(401);
+    const shield = await post(result({ entry: kvk, week: WEEK }), { who: "Ana" });
+    expect([shield.status, await shield.json()]).toEqual([404, { code: "not_found" }]);
+  });
+
+  it("answers 400 for scores and an opponent out of bounds, and for a score off Joined", async () => {
+    const occasion = await team();
+    const bad = [
+      result(occasion, { ourScore: -1 }),
+      result(occasion, { theirScore: 1.5 }),
+      result(occasion, { ourScore: Number.MAX_SAFE_INTEGER + 1 }),
+      result(occasion, { opponent: "x".repeat(41) }),
+    ];
+    for (const body of bad) expect((await post(body, { who: "Ana" })).status).toBe(400);
+    const scored = (mark: string, score: number) => ({
+      action: "mark",
+      occasion,
+      uid: 101,
+      mark,
+      version: 0,
+      score,
+    });
+    expect((await post(scored("yes", -1), { who: "Ana" })).status).toBe(400);
+    expect((await post(scored("yes", 2147483648), { who: "Ana" })).status).toBe(400);
+    const off = await post(scored("no", 5), { who: "Ana" });
+    expect([off.status, await off.json()]).toEqual([400, { code: "invalid" }]);
+    expect((await post(scored("yes", 2147483647), { who: "Ana" })).status).toBe(200);
+    expect(await db.select().from(rollCallResults)).toEqual([]);
   });
 });

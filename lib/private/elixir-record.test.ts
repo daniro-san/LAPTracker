@@ -5,7 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
-import { dailyReads, dailyRosters } from "../schema";
+import { dailyReads, dailyRosters, rollCallResults } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { createEntry } from "./calendar";
 import type { NewEntry } from "./calendar-model";
@@ -201,5 +201,52 @@ describe("Elixir Scramble in more detail (issue 468)", () => {
     );
     expect(said(["no", true], ["sub", true], ["excused", true], [null, false])).toBeNull();
     expect(said(["no", false], ["no", false], ["no", true])).toBeNull();
+  });
+
+  it("refuses a result from another workspace or on another kind, and a score off Joined or off Elixir", async () => {
+    const ana = await signedIn("ogs", "Ana");
+    const week = await elixirWeek(ana, 0);
+    const call = (await callView(db, ana, week, "en", ZONE))?.opened.call?.id ?? 0;
+    const result = { opponent: "Foxes", ourScore: 1, theirScore: 2 };
+    await saveWorkspace(db, {
+      unionId: 2,
+      slug: "other",
+      discordGuildId: "9",
+      leaderRoleIds: ["3"],
+    });
+    const bo = await signedIn("other", "Bo");
+    expect(await setResult(db, bo, { occasion: { id: call }, ...result }, NOW)).toEqual({
+      ok: false,
+      code: "not_found",
+    });
+    expect(await db.select().from(rollCallResults)).toEqual([]);
+    const kvk = await createEntry(
+      db,
+      ana,
+      {
+        kind: "kvk",
+        day: "2026-11-21",
+        minute: 720,
+        notes: null,
+        link: null,
+        forMembers: false,
+        notice: null,
+        weekly: false,
+      } as NewEntry,
+      randomUUID(),
+    );
+    if (!kvk.ok) throw new Error(kvk.code);
+    const shield = { entry: kvk.id, week: "2026-11-16" };
+    expect(await setResult(db, ana, { occasion: shield, ...result }, NOW)).toEqual({
+      ok: false,
+      code: "not_found",
+    });
+    const score = (occasion: Occasion, mark: "no" | "sub" | "yes") =>
+      markOne(db, ana, { occasion, uid: 101, mark, version: 0, score: 5 }, NOW);
+    const invalid = { ok: false, code: "invalid" };
+    expect(await score(week, "no")).toEqual(invalid);
+    expect(await score(week, "sub")).toEqual(invalid);
+    expect(await score(shield, "yes")).toEqual(invalid);
+    expect(await db.select().from(rollCallResults)).toEqual([]);
   });
 });

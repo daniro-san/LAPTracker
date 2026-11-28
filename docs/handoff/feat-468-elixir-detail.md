@@ -18,6 +18,7 @@ Issue 468: Elixir Scramble in more detail. Closes #468.
 - A seat is a row of `roll_call_team` on a live Elixir Scramble roll call whose Calendar entry is still there. "Last 4" is the member's 4 newest seats.
 - Joined and Did not join reuse `yes` and `no`; the four new marks are new values of the same column.
 - `by_rest` column: the task says the line is built only from explicit marks, and "the rest" writes Did not join in bulk. A column marks those writes so they are not read as explicit.
+- The migration backfills `by_rest = true` on every existing `no` mark of an Elixir Scramble roll call (an old "the rest" write cannot be told from a tap), so the follow-up line does not appear on day one from them. Hand-written UPDATE in the generated SQL, as in `0061_member_player_links.sql`.
 - A tie reads "Tie". The issue names only Won and Lost.
 - The result save has no version check: the newest save replaces the last. Analytics reports it as the existing `save` action (no new tracking-plan word).
 - The card block reads only while the Roll call feature is on for the workspace.
