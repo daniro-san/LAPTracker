@@ -23,6 +23,29 @@ export const alliancePageCopy = {
   /** The member list's tab: `Members (97)`. */
   membersTab: "Members ({n})",
   historyTab: "History",
+  /** The joins and leaves tab with the net change of the last 7 days: `Joins & leaves (−2)`. */
+  movesTab: "Joins & leaves ({n})",
+  /** Its counts' headings. */
+  week: "Last 7 days",
+  month: "Last 30 days",
+  /** A count: `+4` above it. */
+  net: "net",
+  /** The filters' group label, and the filters. */
+  filters: "Show",
+  all: "All",
+  joinedFilter: "Joined",
+  leftFilter: "Left",
+  /** One person's line: `[TAG]` is the alliance they came from or went to. */
+  joinedFrom: "Joined · from {tag}",
+  leftTo: "Left · to {tag}",
+  /** The other side is an alliance we do not read every day: never "no alliance now". */
+  joinedUntracked: "Joined · was not in a tracked alliance",
+  leftUntracked: "Left · not in a tracked alliance",
+  /** Under the counts: how the other alliance is found. */
+  movesNote: "From the daily updates: each day's members compared with the day before by player.",
+  /** No change in the window, and fewer than two daily updates to compare. */
+  movesNone: "No one joined or left in the last 30 days.",
+  movesFirst: "Joins and leaves show from the second daily update.",
   /** Above the member list: the read the three per-member figures come from. */
   read: "As read on {date}: quest points since Monday, and that day's Alliance Help coins and tech donated.",
   /** A member's chips, beside their number. */

@@ -337,6 +337,7 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Tech donated                          | Tech gedoneerd                              | `alliancePage.tech`, `alliancePage.read` — tech a member donated that day                                   |
 | Server rank                           | Serverrang                                  | `alliancePage.serverRank` — the alliance's place by might on the ranks board                                |
 | Range                                 | Periode                                     | `alliancePage.range` — the 7d / 30d / 90d links of the growth card                                          |
+| Joins & leaves                        | Erbij & weg                                 | `alliancePage.movesTab`, `alliancePage.joinedFilter`, `alliancePage.leftFilter` — members in or out by day  |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

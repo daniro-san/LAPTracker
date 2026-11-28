@@ -139,6 +139,8 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | War turnout                     | Participação                       | `ledger.fought`, `ledger.arrivedTurnout` — the War turnout row                                   |
 | by alliance (an interval split) | por aliança                        | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split by alliance |
 | Earlier · Later                 | Mais cedo · Mais tarde             | `ledger.readoutEarlier`, `ledger.readoutLater` — the steps under a pulse or chart                |
+| joins & leaves                  | entradas/saídas                    | `alliancePage.movesTab`, `alliancePage.movesFirst` — members who joined or left an alliance      |
+| net (change)                    | saldo                              | `alliancePage.net` — joined minus left, under a count                                            |
 
 - Might, Kills and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Members stays English only as the column label (`ledger.members`) and inside `± Members`. Every other sentence, title or label says "membros" ("Fluxo de membros", "Membros que estavam na aliança…").

@@ -78,6 +78,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Interval                      | Интервал                       | `ledger.liveInterval`, `ledger.splitBack` — a span of minutes in a pulse or the fight clock                                                       |
 | Loss (kills that fell)        | Убыль                          | `ledger.splitLossPart` — an alliance's kills that fell in an interval, drawn and shared as 0                                                      |
 | Alliances recruiting          | Альянсы набирают               | `alliances.recruiting`, `alliances.recruitingLead`, `alliances.recruitingNone` — alliances with a free seat; the heading must read at first sight |
+| Joins & leaves                | Приходы и уходы                | `alliancePage.movesTab` — the alliance page's tab; the people who came in and left by day                                                         |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

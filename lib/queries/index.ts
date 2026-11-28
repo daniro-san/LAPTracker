@@ -33,6 +33,14 @@ export {
   type GrowthPoint,
 } from "./alliance-page";
 export {
+  allianceMoves,
+  MOVES_DAYS,
+  WEEK_DAYS,
+  type AllianceMove,
+  type AllianceMoves,
+  type MoveCounts,
+} from "./alliance-moves";
+export {
   FLOW_DAYS,
   defaultPeriod,
   flowPage,

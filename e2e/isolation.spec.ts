@@ -198,6 +198,7 @@ test.describe("no answer carries a private roster field", () => {
         [`/players/${memberUid("b", 0)}`, ALLIANCES.b.names[0] as string],
         [`/alliances/${ALLIANCES.a.unionId}/history`, A],
         [`/alliances/${ALLIANCES.a.unionId}`, A],
+        [`/alliances/${ALLIANCES.a.unionId}?tab=moves`, A],
       ],
     ],
     [
