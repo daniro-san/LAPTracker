@@ -184,8 +184,8 @@ describe("the Raid Shield check's reads (D137)", () => {
     await tick(d);
     expect(d.posts).toHaveLength(1);
     expect(d.posts[0]?.method).toBe("POST");
-    expect(d.posts[0]?.content).toContain("23:39 ST: 2 of 4 with a shield seen");
-    expect(d.posts[0]?.content).toContain("Not seen yet: Wren2, Wren4");
+    expect(d.posts[0]?.content).toContain("23:39 ST: shield seen on 2 of 4 maps so far");
+    expect(d.posts[0]?.content).not.toContain("Wren");
     d.at = SAT;
     await tick(d);
     expect(d.posts[1]?.method).toBe("PATCH");
@@ -255,7 +255,9 @@ describe("the Raid Shield check's reads (D137)", () => {
     await db.insert(shieldSettings).values({ workspaceId: ws, discord: true, updatedAt: FRI });
     const d = deps(FRI);
     await tick(d);
-    const content = d.posts[0]?.content ?? "";
+    d.at = SAT;
+    await tick(d);
+    const content = d.posts[1]?.content ?? "";
     expect(content).toContain("\\[click\\](https://evil.test) @\u200beveryone");
     expect(content).not.toContain("[click](");
   });

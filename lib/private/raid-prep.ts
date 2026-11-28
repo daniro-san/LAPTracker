@@ -121,7 +121,7 @@ export interface PrepView {
   reset: number;
   /**
    * "Check by hand: n" (issue 726): the members with a reason to, not away and with no officer's Shield
-   * mark, in roster order. Null while the check is off or before either check read anyone.
+   * mark, in roster order. Null while the check is off or before the morning check read anyone (issue 826).
    */
   handCheck: number[] | null;
   /**
@@ -219,14 +219,16 @@ const fromTrackerOf = (marks: {
 /** The row's tracker hint and its reason to check by hand; neither while the check is off. */
 function trackerOf(
   read: { night: StoredReading | null; morning: StoredReading | null },
-  check: { tracker: boolean; reset: number },
+  check: { tracker: boolean; reset: number; named: boolean },
 ): Pick<PrepRow, "tracker" | "hand"> {
   if (!check.tracker) return { tracker: null, hand: null };
   const hint = read.morning || read.night ? hintOf(read.night, read.morning) : null;
   // A checkpoint's time falls back to the read's when the map's is missing: not a map, for the list.
   const mapped = (r: StoredReading | null) => (r?.mapAt ? r : null);
   const maps = hintOf(mapped(read.night), mapped(read.morning)).checkpoints;
-  return { tracker: hint, hand: handReason(hint, maps, check.reset) };
+  // Names to check by hand only once the morning check has read (issue 826): the night check's maps are
+  // mostly from before the reset, so "not seen" there says little.
+  return { tracker: hint, hand: check.named ? handReason(hint, maps, check.reset) : null };
 }
 
 /**
@@ -255,7 +257,7 @@ function prepRow(
   read: { night: StoredReading | null; morning: StoredReading | null },
   marks: { main: MarkRow | undefined; wall: MarkRow | undefined; checkedAt: Date | null },
   facts: MemberFacts | undefined,
-  check: { tracker: boolean; reset: number },
+  check: { tracker: boolean; reset: number; named: boolean },
 ): PrepRow {
   const { wall } = marks;
   return {
@@ -313,7 +315,7 @@ export async function prepView(
     roster.map((m) => {
       const read = { night: nightOf.get(m.uid) ?? null, morning: morningOf.get(m.uid) ?? null };
       const marks = { main: mainOf.get(m.uid), wall: wallOf.get(m.uid), checkedAt };
-      const check = { tracker, reset: reset.getTime() };
+      const check = { tracker, reset: reset.getTime(), named: reads.morning.length > 0 };
       return [m.uid, prepRow(read, marks, facts.get(m.uid), check)];
     }),
   );
@@ -324,7 +326,7 @@ export async function prepView(
     .map(([uid]) => mainOf.get(uid)?.at.getTime() ?? 0);
   const uids = new Set(roster.map((m) => m.uid));
   const counts = { night: countOf(uids, reads.night), morning: countOf(uids, reads.morning) };
-  const hand = handOf(asked, { main, wall, checkedAt }, !!(counts.night || counts.morning));
+  const hand = handOf(asked, { main, wall, checkedAt }, !!counts.morning);
   // Only the check still ahead of KvK has a state to infer from today's settings (review of PR 590).
   const current = clock.now.getTime() < kvkAt.getTime();
   const on = { discord: !!settings?.discord, channel: !!clock.shieldChannel, current };

@@ -5,7 +5,7 @@
 // Discord summary's state (a past week's check shows only what it recorded).
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { eq, gte } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -119,6 +119,21 @@ describe("Raid prep (D137)", () => {
       now: at("2026-11-21T01:40:00Z"),
     });
     expect(friday.when).toBe("reset");
+  });
+
+  it("names the members to check by hand only once the morning check has read (issue 826)", async () => {
+    const access = await signedIn();
+    const occasion = await raidPrep(access);
+    const opened = await openOccasion(db, access, occasion);
+    const clock = { zone: ZONE, now: NOW };
+    const morning = await prepView(db, access, opened as NonNullable<typeof opened>, clock);
+    expect(morning.handCheck).not.toBeNull();
+    await db.delete(playerReads).where(gte(playerReads.readAt, at("2026-11-21T10:00:00Z")));
+    const night = await prepView(db, access, opened as NonNullable<typeof opened>, clock);
+    expect(night.night).toMatchObject({ read: 3, on: 2 });
+    expect(night.morning).toBeNull();
+    expect(night.handCheck).toBeNull();
+    expect([...night.rows.values()].every((r) => r.hand === null)).toBe(true);
   });
 
   it("Accept the tracker's marks ✓ only those seen with a shield and not marked yet", async () => {

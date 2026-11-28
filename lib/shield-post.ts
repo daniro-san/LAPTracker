@@ -2,7 +2,8 @@
 // night's read and edited in place by Saturday morning's, only through the workspace's own Raid Shield
 // channel (D147, owner's rule of 2026-11-21): without one, nothing is posted, never to the leaders' channel.
 // Only when the officers turned it on in Alliance settings, never to the members' channel or anywhere
-// public. Names only of members the tracker did not see shielded, as a hint (D75); away members are left
+// public. Friday night shows counts only; after the morning check, names only of members the tracker did not
+// see shielded, as a hint (D75, issue 826); away members are left
 // out of the names, as the desk's "Copy names" leaves them out, and shown as a count only (D137,
 // 2026-11-22). Nothing is logged but counts, and the webhook URL never is.
 import { createHash } from "node:crypto";
@@ -116,9 +117,15 @@ export function summarize(
   return { shielded, read, unread: members.length - read, notSeen, away: awayNotSeen, at };
 }
 
-function readLine(w: ShieldPostWords, s: ReadSummary, day: string, zone: string) {
+function readLine(
+  w: ShieldPostWords,
+  s: ReadSummary,
+  day: string,
+  zone: string,
+  words: "read" | "night" = "read",
+) {
   const time = s.at ? discordClock(zone).time(s.at) : "–";
-  const line = fill(w.read, { day, time, n: s.shielded, total: s.read });
+  const line = fill(w[words], { day, time, n: s.shielded, total: s.read });
   return s.unread > 0 ? `${line} · ${fill(w.unread, { n: s.unread })}` : line;
 }
 
@@ -130,8 +137,8 @@ const names = (w: ShieldPostWords, list: string[]) => {
 };
 
 /**
- * The message: the title, each read's line, who was not seen in the newest read (then how many away members
- * were left out, a count only), the hint, the link.
+ * The message: the title, each read's line, who was not seen in the morning read (then how many away members
+ * were left out, a count only; before it, counts only and no names), the hint, the link.
  */
 export function shieldMessage(
   w: ShieldPostWords,
@@ -140,17 +147,20 @@ export function shieldMessage(
   url: string,
   language: string,
 ): string {
-  const lines = [readLine(w, reads.night, w.fri, zone)];
-  if (reads.morning) lines.push(readLine(w, reads.morning, w.sat, zone));
-  const newest = reads.morning ?? reads.night;
+  // Friday night: counts only, no names (issue 826). Names wait for the morning check, when the maps are
+  // from after the reset.
+  if (!reads.morning) {
+    const night = readLine(w, reads.night, w.fri, zone, "night");
+    return `${w.title}\n${night}\n${w.hint}\n${fill(w.link, { url })}`;
+  }
+  const lines = [readLine(w, reads.night, w.fri, zone), readLine(w, reads.morning, w.sat, zone)];
+  const newest = reads.morning;
   const head = `${w.title}\n${lines.join("\n")}`;
   const away = newest.away
     ? fill(plural(newest.away, { one: w.awayOne, other: w.away }, language), { n: newest.away })
     : "";
   const shown = [names(w, newest.notSeen), away].filter(Boolean).join(" · ");
-  const list = shown
-    ? `\n${fill(reads.morning ? w.notSeenMorning : w.notSeen, { names: shown })}`
-    : "";
+  const list = shown ? `\n${fill(w.notSeenMorning, { names: shown })}` : "";
   return `${head}${list}\n${w.hint}\n${fill(w.link, { url })}`;
 }
 
