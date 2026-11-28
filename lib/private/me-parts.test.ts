@@ -5,7 +5,7 @@ import { zonedInstant } from "./calendar-time";
 import { endOf } from "./calendar-words";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { nameMatches } from "./me-link";
-import { neededLines, recoveryLine, seriesOf, weekCard } from "./me-parts";
+import { killsThanks, neededLines, recoveryLine, seriesOf, weekCard } from "./me-parts";
 
 const t = WORKSPACE_DICTIONARIES.en;
 const f = {
@@ -226,5 +226,44 @@ describe("the officer's name hint (D142)", () => {
     // A part of a joined name (D74's segment match) is no match.
     expect(nameMatches("Fennel", 3, roster)).toBe(false);
     expect(nameMatches(null, 1, roster)).toBe(false);
+  });
+});
+
+describe("the thanks for the member's own KvK kills (issue 793)", () => {
+  /** A read of the member: window, phase, between windows, kills; fresh unless said. */
+  const read = (
+    window: number,
+    phase: "before" | "after",
+    between: boolean,
+    kills: number,
+    isFresh = true,
+  ) => ({ window, phase, between, isFresh, totalPower: 1000, totalKills: kills });
+  const thanks = (reads: ReturnType<typeof read>[]) =>
+    killsThanks({ day: "2026-10-31", reads }, t, f);
+
+  it("gives no line when the Start or the End is stale or failed", () => {
+    expect(thanks([read(1, "before", false, 100, false), read(1, "after", false, 900)])).toBeNull();
+    expect(thanks([read(1, "before", false, 100), read(1, "after", false, 900, false)])).toBeNull();
+    expect(thanks([read(1, "before", false, 100), read(1, "after", false, 900)])).toBe(
+      "Thanks for the 800 kills you gained in KvK (2026-10-31).",
+    );
+  });
+
+  it("gives no line when the member is missing from a read between windows", () => {
+    // Window 2's Before does not list the member (`isFresh` false), so the windows' sum is unknown.
+    const reads = [
+      read(1, "before", false, 100),
+      read(1, "after", true, 300),
+      read(2, "before", true, 300, false),
+      read(2, "after", false, 900),
+    ];
+    expect(thanks(reads)).toBeNull();
+    // With window 2's Before missing altogether, the same.
+    expect(thanks(reads.filter((r) => !(r.window === 2 && r.phase === "before")))).toBeNull();
+  });
+
+  it("gives no line for a gain of 0 or a fall", () => {
+    expect(thanks([read(1, "before", false, 500), read(1, "after", false, 500)])).toBeNull();
+    expect(thanks([read(1, "before", false, 500), read(1, "after", false, 400)])).toBeNull();
   });
 });

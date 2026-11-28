@@ -179,9 +179,12 @@ async function linked(who: string, uid: number) {
   await post("member-links", "alpha:Rook", { action: "approve", user: users[who], uid });
 }
 
-/** A public scheduled event on Sat, Oct 31 with the alliance's reads: window, phase, between windows, kills. */
-async function kvk(reads: [number, "before" | "after", boolean, Record<number, number>][]) {
-  const at = new Date("2026-10-31T14:00:00Z");
+/** A public scheduled event (Sat, Oct 31 unless `at`) with the alliance's reads: window, phase, between
+ * windows, kills. */
+async function kvk(
+  reads: [number, "before" | "after", boolean, Record<number, number>][],
+  at = new Date("2026-10-31T14:00:00Z"),
+) {
   const [event] = await db
     .insert(events)
     .values({
@@ -396,6 +399,14 @@ describe("a member's own page (D142, issue 471)", () => {
   });
 
   it("shows no thanks line when no KvK was read in the last 30 days", async () => {
+    // Sat, Oct 3 is 35 days before T0: older than the 30 days the page covers.
+    await kvk(
+      [
+        [1, "before", false, { 101: 1_000_000 }],
+        [1, "after", false, { 101: 2_000_000 }],
+      ],
+      new Date("2026-10-03T14:00:00Z"),
+    );
     await linked("alpha:Ana Invented", 101);
     expect(await shown("alpha:Ana Invented")).toMatchObject({ progress: { thanks: null } });
   });

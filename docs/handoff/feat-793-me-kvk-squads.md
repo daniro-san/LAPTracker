@@ -26,6 +26,7 @@ Issue #793 (adopted in spike #789). D142 amended 2026-11-28.
 - `pnpm vitest related --run` on the changed files: 107 of 108 files passed on the first run. The one failure was the new test's seed, which was missing `status`. After the fix, `me/route.test.ts` passed 12 of 12.
 - `pnpm check`: prettier, eslint, tsc, vitest (390 files, 2,121 tests), drift and i18n all passed.
 - The thanks test uses a two-window event: 200K + 500K = "700K". A plain End − Start would give 1M, so the test fails if the window sum is lost.
+- After the review of PR 805, `killsThanks` has unit tests in `lib/private/me-parts.test.ts` for its null branches: a stale Start or End, the member missing from a read between windows, and a gain of 0 or a fall. `me/route.test.ts` checks that an event older than 30 days gives no line. In the read, an event whose alliance Start or End is stale or failed is skipped for the next older usable one (D159's rule). So the stale case gives no line only inside `killsThanks`, which is where it is tested. `pnpm check` passed: 2,124 tests.
 - Not rendered in a browser. There is no local data with a two-window event.
 
 ## Open issues
