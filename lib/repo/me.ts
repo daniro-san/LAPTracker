@@ -87,17 +87,17 @@ export async function ownName(db: Db, unionId: number, uid: number): Promise<str
 }
 
 /**
- * The member's might at the Start of the alliance's newest public scheduled event (the Saturday KvK)
- * between `since` and `now`; null when none read them.
+ * The member's might at the Start of each of the alliance's public scheduled events between `since` and
+ * `now` that read them, the newest first (about one a week: the caller picks the KvK, #806).
  */
-export async function mightBeforeEvent(
+export async function mightBeforeEvents(
   db: Db,
   unionId: number,
   uid: number,
   since: Date,
   now: Date,
-): Promise<{ at: Date; power: number } | null> {
-  const [row] = await db
+): Promise<{ at: Date; power: number }[]> {
+  const rows = await db
     .select({ at: events.eventAtUtc, power: memberSnapshots.power })
     .from(memberSnapshots)
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
@@ -120,9 +120,8 @@ export async function mightBeforeEvent(
         sql`${memberSnapshots.power} is not null`,
       ),
     )
-    .orderBy(desc(events.eventAtUtc))
-    .limit(1);
-  return row && row.power !== null ? { at: row.at, power: row.power } : null;
+    .orderBy(desc(events.eventAtUtc));
+  return rows.flatMap((r) => (r.power === null ? [] : [{ at: r.at, power: r.power }]));
 }
 
 /** The member's figures in one Before or After of an event (D160: `window` from 1). */
@@ -138,9 +137,10 @@ export interface OwnEventRead {
 }
 
 /**
- * The member's reads in the alliance's newest public scheduled event (the KvK) between `since` and `now`
- * whose Start and End rows of the alliance are both fresh and not failed (D159's rule), with the reads
- * between its windows (D160); null when there is none. Only the member's own uid, power and kills.
+ * The member's reads in the alliance's newest public scheduled event between `since` and `now` that `keep`
+ * accepts (the caller's KvK test, #806) and whose Start and End rows of the alliance are both fresh and not
+ * failed (D159's rule), with the reads between its windows (D160); null when there is none. Only the
+ * member's own uid, power and kills.
  */
 export async function ownEventReads(
   db: Db,
@@ -148,6 +148,7 @@ export async function ownEventReads(
   uid: number,
   since: Date,
   now: Date,
+  keep: (at: Date) => boolean,
 ): Promise<{ at: Date; reads: OwnEventRead[] } | null> {
   const rows = await db
     .select({
@@ -187,7 +188,7 @@ export async function ownEventReads(
   for (const id of ids) {
     const own = rows.filter((r) => r.eventId === id);
     const edge = (phase: string) => own.find((r) => r.phase === phase && !r.between);
-    if (!edge("before")?.usable || !edge("after")?.usable) continue;
+    if (!own[0] || !keep(own[0].at) || !edge("before")?.usable || !edge("after")?.usable) continue;
     return {
       at: own[0]?.at ?? now,
       reads: own.map((r) => ({

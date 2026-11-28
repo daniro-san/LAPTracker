@@ -8,8 +8,9 @@
 // 793) reads only their own uid's power and kills in that event's Start, End and reads between windows.
 import type { Db } from "../db";
 import { heroNames } from "../repo/hero-catalog";
-import { mightBeforeEvent, ownDays, ownEventReads, ownMarks, ownSeats, ownTeam } from "../repo/me";
+import { mightBeforeEvents, ownDays, ownEventReads, ownMarks, ownSeats, ownTeam } from "../repo/me";
 import { squadPairs } from "../repo/squads";
+import { isKvkDay } from "../schedule";
 import type { MeAccess } from "./access";
 import { addDays, dayIn, mondayOf, zonedInstant } from "./calendar-time";
 import { endOf } from "./calendar-words";
@@ -70,9 +71,11 @@ export async function meView(
   // INVARIANT me.left-closes: a member the newest roster does not list sees nothing more.
   if (newest && !newest.listed) return { left: true, name };
   const since = new Date(now.getTime() - PROGRESS_DAYS * DAY_MS);
-  const [before, event, pairs, heroes, team, seats, marks] = await Promise.all([
-    mightBeforeEvent(db, me.unionId, me.uid, since, now),
-    ownEventReads(db, me.unionId, me.uid, since, now),
+  // KvKs only: never an Origin of Chaos (#806).
+  const isKvk = (at: Date) => isKvkDay(dayIn(zone, at.getTime()));
+  const [starts, event, pairs, heroes, team, seats, marks] = await Promise.all([
+    mightBeforeEvents(db, me.unionId, me.uid, since, now),
+    ownEventReads(db, me.unionId, me.uid, since, now, isKvk),
     squadPairs(db, me.unionId, me.uid),
     heroNames(db),
     ownTeam(db, me.workspaceId, me.uid, week),
@@ -81,7 +84,9 @@ export async function meView(
   ]);
   const f = cardFormats(at.language, zone, now);
   const d = daysFormats(t, f);
-  const kvk = before && { day: dayIn(zone, before.at.getTime()), power: before.power };
+  // "Before KvK": the newest KvK's Start.
+  const start = starts.find((s) => isKvk(s.at));
+  const kvk = start ? { day: dayIn(zone, start.at.getTime()), power: start.power } : null;
   return {
     left: false,
     name,

@@ -5,7 +5,13 @@
 // `workspace_posts`). A post goes out at most once per period (`post_runs`), only in a tick that opens the
 // database anyway (D141). Pure and browser-safe: the settings card reads it too.
 import { hhmm } from "./calendar-time";
-import { serverDay, serverMinuteOfDay, serverWeekday, type ScheduleConfig } from "./schedule";
+import {
+  isKvkDay,
+  serverDay,
+  serverMinuteOfDay,
+  serverWeekday,
+  type ScheduleConfig,
+} from "./schedule";
 import type { CatalogPost, PostChannel } from "./schema-discord";
 import { NIGHT_MINUTE } from "./shield-check";
 import type { Feature } from "./workspace-features";
@@ -131,14 +137,17 @@ const weekdayAt = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
 
 /**
  * The period a post is due in at `now`: its server day ("2026-11-23") when `now` falls on it at or after the
- * post's `from`, else null.
+ * post's `from`, else null. A post on the `event` weekday is due on a KvK's day only: an Origin of Chaos
+ * Saturday is not one (#806).
  */
 export function postPeriod(post: CatalogPost, now: Date, cfg: PostClock): string | null {
   const weekday = weekdayOf(post, cfg);
+  const day = serverDay(now, cfg);
   const due =
     (weekday === null || weekdayAt(now, cfg) === weekday) &&
-    hhmm(serverMinuteOfDay(now, cfg)) >= fromOf(post, cfg);
-  return due ? serverDay(now, cfg) : null;
+    hhmm(serverMinuteOfDay(now, cfg)) >= fromOf(post, cfg) &&
+    (POST_CATALOG[post].weekday !== "event" || isKvkDay(day));
+  return due ? day : null;
 }
 
 /** Whether any catalog post can be due at `now`, by the clock alone: no query before this holds. */

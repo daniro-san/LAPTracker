@@ -213,6 +213,17 @@ describe("KvK cost and recovery (issue 489)", () => {
       "No KvK in these weeks has both a Start and an End read yet. This fills in after the next one.",
     ]);
   });
+
+  it("leaves an Origin of Chaos out: the newest event shown is the KvK before it (#806)", () => {
+    const kvk = event("2026-11-28", [[1, 100]], [[1, 60]]);
+    const ooc = event("2026-12-05", [[1, 90]], [[1, 50]]);
+    const later = [read("2026-11-29", [member(1, 70)]), read("2026-12-06", [member(1, 80)])];
+
+    const view = kvkOf([kvk, ooc], later, ZONE, new Set(), new Date("2026-12-06T15:00:00Z"));
+
+    expect(view.events.map((e) => e.day)).toEqual(["2026-11-28"]);
+    expect(view.waiting).toBeNull();
+  });
 });
 
 describe("squads seen (issue 489)", () => {

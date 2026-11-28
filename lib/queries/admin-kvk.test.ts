@@ -7,13 +7,14 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { saveOpponent, SUGGEST_STALE_AFTER_MS } from "../repo/kvk";
 import { events, snapshots } from "../schema";
 import { kvkOpponents, kvkReads, kvkSuggestions } from "../schema-kvk";
-import { adminKvk } from "./admin-kvk";
+import { adminKvk, kvkTimes } from "./admin-kvk";
 
 const WAR = new Date("2026-11-28T14:00:00Z"); // Sat 12:00 ST, the next KvK
 const NOW = new Date("2026-11-26T18:00:00Z"); // Thu 16:00 ST
+const CFG = { SERVER_TZ: "Etc/GMT+2" };
 
 /** The card's canSuggest for the next KvK at `now`. */
-const canSuggest = async (now = NOW) => (await adminKvk(db, WAR, now))[0]?.canSuggest;
+const canSuggest = async (now = NOW) => (await adminKvk(db, WAR, now, CFG))[0]?.canSuggest;
 
 /** The (KvK, server 326) board read as stored, in place of a real read. */
 const stored = (status: "running" | "read" | "failed", attempts: number, claimedAt = NOW) =>
@@ -79,5 +80,26 @@ describe("adminKvk canSuggest (D155)", () => {
       readAt: NOW,
     });
     expect(await canSuggest()).toBe(false);
+  });
+});
+
+describe("kvkTimes (#806)", () => {
+  it("offers the next KvK and the KvKs before it, never an Origin of Chaos", async () => {
+    const at = (iso: string) => new Date(iso);
+    await db.insert(events).values(
+      ["2026-11-21T14:00:00Z", "2026-11-28T14:00:00Z", "2026-12-05T02:10:00Z"].map((iso) => ({
+        name: "Scheduled",
+        eventAtUtc: at(iso),
+        allianceIds: [],
+        beforeAt: at(iso),
+        afterAt: at(iso),
+      })),
+    );
+    const times = await kvkTimes(db, at("2026-12-12T14:00:00Z"), CFG);
+    expect(times.map((t) => t.toISOString())).toEqual([
+      "2026-12-12T14:00:00.000Z",
+      "2026-11-28T14:00:00.000Z",
+      "2026-11-21T14:00:00.000Z",
+    ]);
   });
 });

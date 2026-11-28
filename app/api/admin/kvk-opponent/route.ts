@@ -1,6 +1,6 @@
 // POST /api/admin/kvk-opponent — /admin's "KvK opponent" card (D152, issue 306): the opponent's server and up to
-// 15 alliance tags for one scheduled event, or the war's result. Only the next scheduled event and the 4 before
-// it; the server and tags only before the war and while no Before or After of it runs, and the server not once
+// 15 alliance tags for one scheduled event, or the war's result. Only the next KvK and the KvKs among the 4
+// scheduled events before it (an Origin of Chaos is not one, #806); the server and tags only before the war and while no Before or After of it runs, and the server not once
 // its Start read a tag. The result is admin-only. PIN only, with the PIN's rate limiter. A save of a server, or
 // the "Suggest tags" press, reads that server's ranks board once for the KvK (D155): no quota, /admin only.
 import { z } from "zod";
@@ -12,9 +12,10 @@ import { MAX_OPPONENT_TAGS } from "@/lib/budget";
 import type { Db } from "@/lib/db";
 import { opponentTag } from "@/lib/kvk";
 import { suggestTags } from "@/lib/opponent-suggest";
-import { kvkEventTimes, opponentsAt, saveOpponent, setOpponentResult } from "@/lib/repo/kvk";
+import { kvkTimes } from "@/lib/queries/admin-kvk";
+import { opponentsAt, saveOpponent, setOpponentResult } from "@/lib/repo/kvk";
 import { errorResponse, withContext } from "@/lib/route";
-import { nextEvent } from "@/lib/schedule";
+import { nextKvk } from "@/lib/schedule";
 
 const eventAt = z.iso.datetime().transform((s) => new Date(s));
 
@@ -70,7 +71,7 @@ export function POST(request: Request): Promise<Response> {
     if (!parsed.success) return errorResponse(400, "bad_request");
     const input = parsed.data;
     const now = ctx.now();
-    const times = await kvkEventTimes(db, nextEvent(now, ctx.env).eventAtUtc);
+    const times = await kvkTimes(db, nextKvk(now, ctx.env).eventAtUtc, ctx.env);
     if (!times.some((t) => t.getTime() === input.event_at.getTime()))
       return errorResponse(404, "not_a_kvk");
     const refused = await write(ctx, db, input, now);

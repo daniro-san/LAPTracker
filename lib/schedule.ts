@@ -151,10 +151,25 @@ function eventOn(day: Day, cfg: ScheduleConfig): ScheduledEvent {
   };
 }
 
+/**
+ * Whether the scheduled event of server day `day` ("2026-12-05") is a KvK: the env's weekly event, outside
+ * the cycle's Origin of Chaos weeks. KvK and Origin of Chaos never share a Saturday (08zzh answer 1), so a
+ * KvK-only output skips every other event (#806).
+ */
+export function isKvkDay(day: string): boolean {
+  const [y = 0, m = 0, d = 0] = day.split("-").map(Number);
+  return !isOriginOfChaosWeek({ y, m, d });
+}
+
+/** The event day of `now`'s week: its EVENT_WEEKDAY on or before `now`, server time. */
+function thisWeekOf(now: Date, cfg: ScheduleConfig): Day {
+  const local = wallClock(now, cfg.SERVER_TZ);
+  return addDays(local, -((local.weekday - cfg.EVENT_WEEKDAY + 7) % 7));
+}
+
 /** The last, this and next week's events around `now`, in time order. */
 function eventsAround(now: Date, cfg: ScheduleConfig): ScheduledEvent[] {
-  const local = wallClock(now, cfg.SERVER_TZ);
-  const thisWeek = addDays(local, -((local.weekday - cfg.EVENT_WEEKDAY + 7) % 7));
+  const thisWeek = thisWeekOf(now, cfg);
   return [-7, 0, 7].map((n) => eventOn(addDays(thisWeek, n), cfg));
 }
 
@@ -191,6 +206,16 @@ export function eventsToCreate(now: Date, cfg: ScheduleConfig): ScheduledEvent[]
 export function nextEvent(now: Date, cfg: ScheduleConfig): ScheduledEvent {
   const events = eventsAround(now, cfg);
   return events.find((e) => e.afterAt > now) ?? (events.at(-1) as ScheduledEvent);
+}
+
+/** The first KvK whose AFTER is still ahead of `now`, for /admin's opponent form: an Origin of Chaos week is
+ * passed over (#806). Two weeks ahead is enough: Origin of Chaos is one week in four. */
+export function nextKvk(now: Date, cfg: ScheduleConfig): ScheduledEvent {
+  const thisWeek = thisWeekOf(now, cfg);
+  const day = [-7, 0, 7, 14]
+    .map((n) => addDays(thisWeek, n))
+    .find((d) => !isOriginOfChaosWeek(d) && eventOn(d, cfg).afterAt > now) as Day;
+  return eventOn(day, cfg);
 }
 
 /** The most recent occurrence of "<day> HH:MM" (server time) at or before `now`. */

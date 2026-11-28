@@ -6,6 +6,7 @@
 // Help, never blame: the list is in name order with no number beside a name, leaves out members on a break
 // (D75), and tests the whole percents the page shows, so a name never sits beside "now 80%".
 import type { EventMight, RosterRead } from "../repo/workspace-rosters";
+import { isKvkDay } from "../schedule";
 import { addDays, dayIn } from "./calendar-time";
 
 /** Events shown: about a month of Saturdays inside the page's 36 reads. */
@@ -185,7 +186,9 @@ export function kvkOf(
   const newest = reads.at(-1);
   if (!first || !newest) return { events: [], waiting: null, readsFrom: null };
   const from = addDays(first.day, KVK_SHOWN_FROM);
-  const inside = events
+  // KvKs only: an Origin of Chaos is neither shown nor a "next event" that ends a KvK's week (#806).
+  const kvks = events.filter((e) => isKvkDay(dayIn(zone, e.at.getTime())));
+  const inside = kvks
     .filter((e) => dayIn(zone, e.at.getTime()) >= from)
     .sort((a, b) => b.at.getTime() - a.at.getTime());
   // An event whose End is newer than the newest read waits for the next read (KvK day, End to 23:30):
@@ -199,7 +202,7 @@ export function kvkOf(
       return one ? [one] : [];
     }),
     waiting: day ? { day, today: day === dayIn(zone, now.getTime()) } : null,
-    readsFrom: inside.length < events.length ? first.day : null,
+    readsFrom: inside.length < kvks.length ? first.day : null,
   };
 }
 
