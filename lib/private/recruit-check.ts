@@ -251,7 +251,9 @@ export async function readRecruit(
     return { ok: false, code: "cap_reached" };
   }
   try {
-    // INVARIANT keys.own-quota-only: the workspace's own key, never LAP_API_KEY.
+    // INVARIANT keys.own-quota-only: the workspace's own saved key, never LAP_API_KEY in its place. A saved
+    // key that is LAP_API_KEY itself (issue 855), in any workspace, reads for that workspace's OWN alliance
+    // only, above the site reserve (`siteReserveKept`).
     const player = await deps.v1.fetchPlayer(uid, undefined, undefined, {
       apiKey: key.apiKey,
       maxRetries: 0,

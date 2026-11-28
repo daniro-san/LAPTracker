@@ -1,7 +1,7 @@
 // Issue 855: a workspace's saved key that is LAP_API_KEY itself reads as the site's key. The squads read keeps
 // the site key's event reserve and pauses in the event's window, starts from the day's read (no second quota
-// count), and a 429 on it marks no workspace key; a key that differs keeps D124's rules. Neither key reaches a
-// log line.
+// count), and a 429 on it marks no workspace key; the daily read takes it as the site's, in any workspace; a
+// key that differs keeps D124's rules. Neither key reaches a log line.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
@@ -15,7 +15,7 @@ import { dailyReads, dailyRosters, runLogs } from "./schema";
 import { QuotaExhaustedError, type CallOptions } from "./sources/types";
 import { runSquadsBatch, type SquadsDeps } from "./squads-read";
 import { playerAnswer } from "./squads.test-helpers";
-import { sealKey, squadTargets } from "./workspace-keys";
+import { dailyTargets, sealKey, squadTargets } from "./workspace-keys";
 
 /** Invented, low-entropy values: never real keys. */
 const SECRET = Buffer.alloc(32, 7).toString("base64");
@@ -129,6 +129,29 @@ describe("a saved key equal to LAP_API_KEY (issue 855)", () => {
     const lines = JSON.stringify(await db.select().from(runLogs));
     expect(lines).toContain("quota_429");
     expect(lines).not.toContain(SITE_KEY);
+  });
+
+  it("daily read: a site-equal key is the site's (key null), in another alliance's workspace too; a different key stays set", async () => {
+    const add = async (unionId: number, slug: string, key: string) => {
+      await saveWorkspace(db, { unionId, slug, discordGuildId: slug, leaderRoleIds: ["2"] });
+      const id = (await db.query.workspaces.findMany()).find((w) => w.slug === slug)?.id ?? 0;
+      await storeKey(
+        db,
+        id,
+        sealKey(SECRET, id, key),
+        { status: "ok", quotaRemaining: 900 },
+        FRI.now,
+      );
+    };
+    await saveKey(SITE_KEY);
+    await add(67100002, "nse", SITE_KEY);
+    await add(67100003, "own", OTHER_KEY);
+    const targets = await dailyTargets(db, SECRET, FRI.now, []);
+    expect(targets.map((t) => [t.unionId, t.key?.apiKey ?? null])).toEqual([
+      [OWN_ALLIANCE_ID, null],
+      [67100002, null],
+      [67100003, OTHER_KEY],
+    ]);
   });
 
   it("leaves a key that differs on D124's rules: its own quota call and only the margin", async () => {

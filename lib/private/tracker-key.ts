@@ -57,19 +57,30 @@ export interface TrackerKeyView {
   checkedAt: Date | null;
 }
 
-/** The key's view, and `siteKey`: the saved key is LAP_API_KEY itself (issue 855), a boolean only. */
 export async function trackerKeyView(
   db: Db,
   access: WorkspaceAccess,
   env: Pick<Env, "WORKSPACE_KEYS_SECRET">,
   now: Date,
+): Promise<TrackerKeyView> {
+  return keyViewOf(access, await keyFacts(db, access.workspaceId), env.WORKSPACE_KEYS_SECRET, now);
+}
+
+/**
+ * Alliance settings' key card only: the view and `siteKey`, the saved key is LAP_API_KEY itself (issue 855),
+ * a boolean. Opens the key, so Home and the routes read `trackerKeyView` instead.
+ */
+export async function settingsKeyView(
+  db: Db,
+  access: WorkspaceAccess,
+  env: Pick<Env, "WORKSPACE_KEYS_SECRET">,
+  now: Date,
 ): Promise<TrackerKeyView & { siteKey: boolean }> {
-  const secret = env.WORKSPACE_KEYS_SECRET;
-  const [facts, siteKey] = await Promise.all([
-    keyFacts(db, access.workspaceId),
-    savedIsSiteKey(db, secret, access.workspaceId),
+  const [view, siteKey] = await Promise.all([
+    trackerKeyView(db, access, env, now),
+    savedIsSiteKey(db, env.WORKSPACE_KEYS_SECRET, access.workspaceId),
   ]);
-  return { ...keyViewOf(access, facts, secret, now), siteKey };
+  return { ...view, siteKey };
 }
 
 /** The same, from the key's facts already read (the read status bar reads them once, D135). */

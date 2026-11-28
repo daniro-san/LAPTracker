@@ -232,6 +232,26 @@ describe("the recruit check (issue 833)", () => {
     vi.unstubAllEnvs();
   });
 
+  it("on a saved key equal to LAP_API_KEY, a 429 then a 401 leave the workspace key as it was (issue 855)", async () => {
+    vi.stubEnv("LAP_API_KEY", OWN_KEY);
+    await saveKey(nse, OWN_KEY);
+    const day = quotaDayRead(NOW, TEST_ENV);
+    await db.insert(dailyReads).values({
+      day,
+      startedAt: NOW,
+      status: "complete",
+      callsUsed: 21,
+      quotaRemainingBefore: 900,
+    });
+    for (const status of [429, 401]) {
+      fails = playerFailure(status);
+      expect(await answer(await post(202))).toEqual([502, { code: "unavailable" }]);
+      expect(await keyOf(nse)).toEqual({ status: "ok", quotaRemaining: 900 });
+    }
+    expect(calls).toHaveLength(2);
+    vi.unstubAllEnvs();
+  });
+
   it("never reads on another workspace's key or on LAP_API_KEY", async () => {
     // Only the other workspace saved a key.
     expect(await answer(await post(202))).toEqual([409, { code: "no_key" }]);

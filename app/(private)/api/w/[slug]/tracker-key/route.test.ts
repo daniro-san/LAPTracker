@@ -13,7 +13,7 @@ import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { requireWorkspace } from "@/lib/private/access";
 import { activityPage } from "@/lib/private/desk-activity";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
-import { trackerKeyView } from "@/lib/private/tracker-key";
+import { settingsKeyView, trackerKeyView } from "@/lib/private/tracker-key";
 import { listWorkspaces } from "@/lib/queries/workspaces";
 import {
   appErrors,
@@ -165,9 +165,9 @@ describe("POST /api/w/[slug]/tracker-key (D124)", () => {
     const site = `lap_${"our-site-test-key-".repeat(2)}x`;
     vi.stubEnv("LAP_API_KEY", site);
     await setKey(tokens.officer);
-    expect((await trackerKeyView(db, await officerAccess(), ENV, T0)).siteKey).toBe(false);
+    expect((await settingsKeyView(db, await officerAccess(), ENV, T0)).siteKey).toBe(false);
     await setKey(tokens.officer, site);
-    expect((await trackerKeyView(db, await officerAccess(), ENV, T0)).siteKey).toBe(true);
+    expect((await settingsKeyView(db, await officerAccess(), ENV, T0)).siteKey).toBe(true);
   });
 
   it("never lets the key into an answer, a page read, /admin, Home's activity, a log, the console or analytics", async () => {
