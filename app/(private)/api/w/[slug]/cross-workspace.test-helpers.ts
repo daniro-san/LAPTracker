@@ -53,6 +53,9 @@ const ROUTES: Record<string, () => Promise<unknown>> = {
   "workspace-deletion": () => import("./workspace-deletion/route"),
 };
 
+/** Loads every route module once, so a test body spends its time on requests, not on first imports. */
+export const loadRoutes = () => Promise.all(Object.values(ROUTES).map((load) => load()));
+
 const ORIGIN = "https://laptracker.test";
 export const ALPHA = 900_001;
 export const BRAVO = 900_002;

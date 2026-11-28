@@ -21,6 +21,7 @@ import {
   eventWorkspaces,
   type Ids,
   idsOf,
+  loadRoutes,
   SEED_AT,
   seedTwo,
   theft,
@@ -40,6 +41,9 @@ let two: Two;
 let b: Ids;
 beforeAll(async () => {
   db = await openTestDb();
+  // Under a full run the first import of the routes the seed does not touch took ~25 s inside the first
+  // test's body (10 s limit); a hook has the long limit.
+  await loadRoutes();
 });
 beforeEach(async () => {
   two = await seedTwo(db, holder);
