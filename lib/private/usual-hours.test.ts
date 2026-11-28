@@ -14,6 +14,7 @@ import { requireWorkspace } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { insightsView } from "./insights";
 import { usualLine, usualWords } from "./insights-usual-words";
+import { memberCard } from "./member-card";
 import { createSession } from "./session";
 import { distinctReadings, usualOf } from "./usual-hours";
 
@@ -107,7 +108,7 @@ async function desk() {
   return access;
 }
 
-/** Member 101: twelve daily rosters, six at 20:xx and six at 21:xx ST; member 102: four distinct times. */
+/** Member 101: twelve daily rosters, six at 20:xx and six at 21:xx ST; member 102: three distinct times. */
 async function seed() {
   for (let d = 10; d <= 21; d++) {
     const seen = new Date(at(d, d <= 15 ? 20 : 21, d)).toISOString();
@@ -162,5 +163,23 @@ describe("the Insights Usual hours card", () => {
     const page = await alliancePage(db, OURS);
     expect(findBlockedKeys(page, { allowActivity: true })).toEqual([]);
     expect(JSON.stringify(page)).not.toMatch(/last_seen|last_online|usual/i);
+  });
+});
+
+describe("the member card's usual-hours line", () => {
+  it("says the band from the rosters and player reads, and not enough readings under 7", async () => {
+    await seed();
+    await db.insert(playerReads).values({
+      unionId: OURS,
+      uid: 101,
+      readAt: new Date(at(9, 21, 5)),
+      lastSeenAt: new Date(at(9, 21, 5)),
+    });
+    const access = await desk();
+    const at_ = { now: NOW, zone: ZONE, language: "en" as const, t: WORKSPACE_DICTIONARIES.en };
+    const enough = await memberCard(db, access, 101, at_);
+    expect(enough?.presence).toContain("Usually in game around 20:00–21:59 ST (from 13 readings)");
+    const few = await memberCard(db, access, 102, at_);
+    expect(few?.presence).toContain("Usual hours in game: not enough readings yet (3 so far)");
   });
 });
