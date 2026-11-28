@@ -29,6 +29,7 @@ import {
   type NewEvent,
 } from "./repo/events";
 import { purgeOldFeedback } from "./repo/feedback";
+import { joinSince, purgeOldJoinRequests } from "./repo/join-requests";
 import { pruneEndedPictures } from "./repo/notice-picture-cleanup";
 import { clearOldPlayerRaw } from "./repo/player-reads";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
@@ -179,6 +180,9 @@ async function purgeWorkspaces(ctx: AppContext, db: Db, now: Date, day: string):
   await purgeOldFeedback(db, now)
     .then((rows) => done("feedback.purged", { rows }))
     .catch(tickJobFailed(ctx, "feedback.purge_failed", log));
+  await purgeOldJoinRequests(db, joinSince(now))
+    .then((rows) => done("join_requests.purged", { rows }))
+    .catch(tickJobFailed(ctx, "join_requests.purge_failed", log));
 }
 
 /** A tick job's failure: a code-only line (also in `log`, which mirrors it to the console), and PostHog's

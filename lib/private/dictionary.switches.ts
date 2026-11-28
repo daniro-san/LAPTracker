@@ -32,6 +32,7 @@ export const switchesEn = {
   "switches.name.discord_send": "Send to LAPTracker",
   "switches.name.discord_translate_me": "Translate for me",
   "switches.name.discord_translate_everyone": "Translate for everyone",
+  "switches.name.discord_join": "Join requests (/join)",
   "switches.name.post_callouts": "Your line on our posts",
   // D159: switched in Alliance settings → Posts, never on this card; named for type completeness.
   "switches.name.post_week": "This week in the alliance",
@@ -83,6 +84,7 @@ export const switchesPt: typeof switchesEn = {
   "switches.name.discord_send": "Enviar ao LAPTracker",
   "switches.name.discord_translate_me": "Traduzir para mim",
   "switches.name.discord_translate_everyone": "Traduzir para todos",
+  "switches.name.discord_join": "Pedidos para entrar (/join)",
   "switches.name.post_callouts": "Sua frase nos nossos posts",
   "switches.name.post_week": "Esta semana na aliança",
   "switches.name.post_shield_up": "Lembrete do escudo",
@@ -132,6 +134,7 @@ export const switchesFr: typeof switchesEn = {
   "switches.name.discord_send": "Envoyer à LAPTracker",
   "switches.name.discord_translate_me": "Traduire pour moi",
   "switches.name.discord_translate_everyone": "Traduire pour tout le monde",
+  "switches.name.discord_join": "Demandes pour rejoindre (/join)",
   "switches.name.post_callouts": "Votre phrase sur nos messages",
   "switches.name.post_week": "Cette semaine dans l’alliance",
   "switches.name.post_shield_up": "Rappel du bouclier",

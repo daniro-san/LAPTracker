@@ -11,7 +11,7 @@ import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { setSwitch } from "../repo/workspace-features";
 import { findWorkspaceBySlug, saveWorkspace } from "../repo/workspaces";
-import { dailyReads, dailyRosters } from "../schema";
+import { dailyReads, dailyRosters, workspaceUsers } from "../schema";
 import { postRuns, workspacePosts } from "../schema-discord";
 import { PRIVATE_MARKERS } from "../workspace-data.test-helpers";
 import type { WorkspaceAccess } from "./access";
@@ -134,6 +134,24 @@ describe("Welcome new members (D159, post 3)", () => {
     expect(await db.select().from(postRuns)).toMatchObject([
       { postKey: "welcome", period: TUESDAY, status: "posted", sent: 1, attempts: 1 },
     ]);
+  });
+
+  it("leaves out a newcomer an officer's /join Approve already welcomed (issue 868)", async () => {
+    await turnWelcomeOn();
+    await readDay(MONDAY, MONDAY_ROSTER);
+    await readDay(TUESDAY, TUESDAY_ROSTER);
+    await db.insert(workspaceUsers).values({
+      workspaceId: ws,
+      discordUserId: "700000000000000004",
+      playerUid: 4,
+      playerLink: "approved",
+      playerLinkedAt: TUESDAY_2330,
+      welcomedAt: new Date(TUESDAY_2330.getTime() - 3_600_000),
+    });
+    const { send, posts } = sender(TUESDAY_2330);
+    await send();
+    expect(posts[0]?.content).toContain("Welcome, Eve Newcomer!");
+    expect(posts[0]?.content).not.toContain("Dee Newcomer");
   });
 
   it("gives a count instead of names above 15 new members, and names up to 15", async () => {

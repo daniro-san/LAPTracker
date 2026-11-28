@@ -3,6 +3,7 @@
 import type { Db } from "./db";
 import { memberFollowUps, rollCallMarks, rollCalls, rollCallTeam } from "./schema";
 import {
+  joinRequests,
   postRuns,
   workspaceDiscord,
   workspacePosts,
@@ -318,6 +319,14 @@ async function seedCallout(db: Db, ws: number, officer: number) {
   await db
     .insert(postRuns)
     .values({ workspaceId: ws, postKey: "week", period: WEEK, status: "posted", at: SEED_AT });
+  // Issue 868: a `/join` request waiting for an officer.
+  await db.insert(joinRequests).values({
+    workspaceId: ws,
+    discordUserId: `joiner-${ws}`,
+    discordName: "Wren Invented",
+    typed: "Wren",
+    createdAt: SEED_AT,
+  });
 }
 
 /** D148: an officer's sealed device (never downloaded, like the webhook) and a trigger's mark. */

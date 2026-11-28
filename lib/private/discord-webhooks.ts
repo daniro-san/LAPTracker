@@ -22,6 +22,7 @@ import { findWorkspaceBySlug } from "../repo/workspaces";
 import { WEBHOOK_CHANNELS, type WebhookChannel } from "../schema-discord";
 import { masterFingerprint, openKey, sealKey } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
+import { roleId } from "./discord-member-role";
 import { privateLog } from "./log";
 import { postMessages, type Channel, type Channels } from "./notice-publish";
 
@@ -56,6 +57,10 @@ export const discordInput = z.discriminatedUnion("action", [
     .strict(),
   z.object({ action: z.literal("remove_webhook"), channel }).strict(),
   z.object({ action: z.literal("test"), channel }).strict(),
+  // Issue 868: the member role an approved `/join` gets (lib/private/discord-member-role.ts).
+  z.object({ action: z.literal("roles") }).strict(),
+  z.object({ action: z.literal("member_role"), role: roleId }).strict(),
+  z.object({ action: z.literal("remove_member_role") }).strict(),
 ]);
 export type DiscordInput = z.infer<typeof discordInput>;
 

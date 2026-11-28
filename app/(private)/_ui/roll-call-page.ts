@@ -45,7 +45,13 @@ export async function openRollCall<T>(
   ) => Promise<T>,
   /** D126: the switch this page belongs to. */
   feature:
-    "roll_call" | "garrison" | "follow_up" | "insights" | "notices" | "recruit_check" = "roll_call",
+    | "roll_call"
+    | "garrison"
+    | "follow_up"
+    | "insights"
+    | "notices"
+    | "recruit_check"
+    | "discord_join" = "roll_call",
 ) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();

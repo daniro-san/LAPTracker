@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { APP_COMMANDS, commandsFor, IMPORT_COMMAND, registerAppCommands } from "./app-commands";
+import {
+  APP_COMMANDS,
+  commandsFor,
+  IMPORT_COMMAND,
+  JOIN_COMMAND,
+  registerAppCommands,
+} from "./app-commands";
 
 const env = {
   DISCORD_CLIENT_ID: "900000000000000001",
@@ -58,11 +64,12 @@ describe("registerAppCommands (D96, D101)", () => {
     ]);
     for (const put of puts) {
       expect(new Headers(put.init.headers).get("authorization")).toBe("Bearer bearer-for-tests");
-      // One PUT replaces the guild's whole set, so all three go together (D101).
+      // One PUT replaces the guild's whole set, so all of them go together (D101), `/join` too (issue 868).
       expect(JSON.parse(String(put.init.body))).toEqual([
         { name: "Send to LAPTracker", type: 3 },
         { name: "Translate for me", type: 3 },
         { name: "Translate for everyone", type: 3 },
+        JOIN_COMMAND,
       ]);
     }
   });

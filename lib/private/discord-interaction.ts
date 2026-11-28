@@ -1,5 +1,6 @@
-// The app's Discord interactions on one public route: "Apps → Send to LAPTracker" (issue 299, D96), and the
-// two Translate commands with their picker (D101, discord-translate.ts). The Ed25519 signature is checked
+// The app's Discord interactions on one public route: "Apps → Send to LAPTracker" (issue 299, D96), the
+// two Translate commands with their picker (D101, discord-translate.ts), and `/join` (issue 868,
+// discord-join.ts). The Ed25519 signature is checked
 // with the app's Public Key and a PING is answered. For "Send to LAPTracker" only, the person must pass the
 // workspace's own rule (its server's leadership roles, or the allowlist), the same as the sign-in (D71).
 // Discord wants an answer within 3 s: the route answers "thinking…" visible only to the sender, and the
@@ -8,7 +9,13 @@ import { createPublicKey, verify } from "node:crypto";
 
 import { z } from "zod";
 
-import { IMPORT_COMMAND, TRANSLATE_FOR_EVERYONE, TRANSLATE_FOR_ME } from "../app-commands";
+import {
+  IMPORT_COMMAND,
+  JOIN_COMMAND,
+  JOIN_OPTION,
+  TRANSLATE_FOR_EVERYONE,
+  TRANSLATE_FOR_ME,
+} from "../app-commands";
 import type { Db } from "../db";
 import { allianceLabelOf } from "../repo/alliances";
 import { claimPictures, picturesDrafts, recordOfficer } from "../repo/import";
@@ -29,6 +36,7 @@ import {
   PONG,
   REPLY,
 } from "./discord-api";
+import { joinCommand, type JoinNote } from "./discord-join";
 import { translateCommand, translateComponent, type TranslationJob } from "./discord-translate";
 import { featureOn, featuresById } from "./features";
 import { privately } from "./http";
@@ -74,6 +82,8 @@ const interactionSchema = z.object({
   guild_id: z.string().optional(),
   channel_id: z.string().optional(),
   locale: z.string().optional(),
+  /** The server's own language as set in Discord (Community servers); `/join`'s leaders' note uses it. */
+  guild_locale: z.string().optional(),
   member: z
     .object({
       nick: z.string().nullish(),
@@ -90,6 +100,16 @@ const interactionSchema = z.object({
       type: z.number().optional(),
       custom_id: z.string().optional(),
       values: z.array(z.string()).optional(),
+      /** A slash command's options (`/join`'s one text option). */
+      options: z
+        .array(
+          z.object({
+            name: z.string(),
+            type: z.number(),
+            value: z.union([z.string(), z.number(), z.boolean()]).optional(),
+          }),
+        )
+        .optional(),
       target_id: z.string().optional(),
       resolved: z
         .object({
@@ -134,7 +154,7 @@ export interface Job {
 }
 
 export type Handled =
-  | { status: 200; body: unknown; job?: Job; translation?: TranslationJob }
+  | { status: 200; body: unknown; job?: Job; translation?: TranslationJob; joinNote?: JoinNote }
   | { status: 400 | 401; body: { code: string } };
 
 const reply = (content: string) => ({
@@ -189,6 +209,33 @@ function commandOf(i: Interaction) {
   return Object.hasOwn(names, name) ? names[name as keyof typeof names] : null;
 }
 
+/** `/join` (issue 868): a slash command, type 1. */
+const isJoin = (i: Interaction) =>
+  i.type === APPLICATION_COMMAND &&
+  i.data?.type === JOIN_COMMAND.type &&
+  i.data.name === JOIN_COMMAND.name;
+
+/** `/join`'s private answer, and the leaders' note when the request is new (discord-join.ts). */
+async function join(db: Db, i: Interaction, now: Date): Promise<Handled> {
+  const member = i.member;
+  const input = {
+    guildId: i.guild_id,
+    userId: member?.user.id,
+    name: member && (member.nick ?? member.user.global_name ?? member.user.username),
+    locale: i.locale,
+    guildLocale: i.guild_locale,
+    typed: i.data?.options?.find((o) => o.name === JOIN_OPTION)?.value,
+  };
+  const answer = await joinCommand(db, input, now);
+  return { status: 200, body: answer.body, ...(answer.note && { joinNote: answer.note }) };
+}
+
+/** A press in the Translate picker, or `/join`: the two interactions not used on a message; else null. */
+function pressOrJoin(db: Db, i: Interaction, now: Date, bot: boolean): Promise<Handled> | null {
+  if (i.type === MESSAGE_COMPONENT) return translatePress(db, i, now, bot);
+  return isJoin(i) ? join(db, i, now) : null;
+}
+
 /** The message the command was used on, as Discord sends it resolved. */
 const targetMessage = (i: Interaction) =>
   i.data?.target_id ? i.data.resolved?.messages?.[i.data.target_id] : undefined;
@@ -235,7 +282,8 @@ export async function handleInteraction(
   const interaction = parse(request.body);
   if (!interaction) return { status: 400, body: { code: "bad_request" } };
   if (interaction.type === PING) return { status: 200, body: { type: PONG } };
-  if (interaction.type === MESSAGE_COMPONENT) return translatePress(db, interaction, now, bot);
+  const notOnAMessage = pressOrJoin(db, interaction, now, bot);
+  if (notOnAMessage) return notOnAMessage;
   const which = commandOf(interaction);
   if (which === "import") return command(db, interaction, now, origin);
   if (!which) return { status: 400, body: { code: "unknown_command" } };

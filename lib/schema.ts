@@ -430,6 +430,8 @@ export const workspaceUsers = pgTable(
     playerLinkedAt: tstz("player_linked_at"),
     /** Issue 782: the newest release whose officer notes this officer opened on What's new; null: none. */
     whatsNewSeen: text("whats_new_seen"),
+    /** Issue 868: when an officer's `/join` Approve posted this member's welcome; the daily welcome skips them. */
+    welcomedAt: tstz("welcomed_at"),
   },
   (t) => [
     unique("workspace_users_workspace_discord_unique").on(t.workspaceId, t.discordUserId),

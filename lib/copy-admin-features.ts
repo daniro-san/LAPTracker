@@ -45,6 +45,7 @@ export const featuresAdminCopy = {
     discord_send: "Send to LAPTracker",
     discord_translate_me: "Translate for me",
     discord_translate_everyone: "Translate for everyone",
+    discord_join: "Join requests (/join)",
     post_callouts: "Alliance's line on our posts",
     post_week: "Post: This week in the alliance (off until the alliance turns it on)",
     post_shield_up: "Post: Shield-up reminder (off until the alliance turns it on)",

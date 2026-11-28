@@ -6,6 +6,7 @@
 // link's lock on this server, and a saved webhook after a master key change.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { JOIN_COMMAND } from "@/lib/app-commands";
 import type { AppContext } from "@/lib/app-context";
 import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
@@ -136,15 +137,22 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
 
     botIn = true;
     const found = await post({ action: "check" });
-    // A new alliance has the paid Translate commands off (D126): only Send to LAPTracker is registered.
-    expect(await found.json()).toEqual({ firstSeen: true, commands: ["Send to LAPTracker"] });
+    // A new alliance has the paid Translate commands off (D126): only the free Send to LAPTracker and
+    // `/join` (issue 868) are registered.
+    expect(await found.json()).toEqual({
+      firstSeen: true,
+      commands: ["Send to LAPTracker", "join"],
+    });
     const puts = calls.filter((c) => c.method === "PUT");
     expect(puts.map((p) => p.url)).toEqual([
       `https://discord.test/api/applications/${ENV.DISCORD_CLIENT_ID}/guilds/${GUILD}/commands`,
     ]);
-    expect(JSON.parse(puts[0]?.body ?? "")).toEqual([{ name: "Send to LAPTracker", type: 3 }]);
+    expect(JSON.parse(puts[0]?.body ?? "")).toEqual([
+      { name: "Send to LAPTracker", type: 3 },
+      JOIN_COMMAND,
+    ]);
     const [state] = await db.select().from(workspaceDiscord);
-    expect(state?.commands).toEqual(["Send to LAPTracker"]);
+    expect(state?.commands).toEqual(["Send to LAPTracker", "join"]);
     expect(await (await post({ action: "check" })).json()).toMatchObject({ firstSeen: false });
   });
 
@@ -238,7 +246,7 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
     expect(Object.fromEntries(link.searchParams)).toEqual({
       client_id: ENV.DISCORD_CLIENT_ID,
       scope: "bot applications.commands",
-      permissions: "309237648384",
+      permissions: "309506083840",
       guild_id: GUILD,
       disable_guild_select: "true",
     });
@@ -270,5 +278,67 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
       ],
     ]);
     expect(Object.keys(report.mock.calls[0]?.[1] ?? {}).sort()).toEqual(["kind", "route"]);
+  });
+});
+
+describe("the member role a /join approval gives (issue 868)", () => {
+  const role = (n: number) => `90000000000000061${n}`;
+  const [member, integration, bot, top, officers, admins] = [1, 2, 3, 4, 5, 6].map(role) as [
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
+  /** The server's roles as Discord answers them, and the bot holding its own; anything else is a 404. */
+  function stubRoles(extra: { id: string; name: string; position: number; permissions: string }[]) {
+    const roles = [
+      { id: GUILD, name: "@everyone", position: 0, permissions: "1024" },
+      { id: member, name: "Member", position: 1, permissions: "3072" },
+      { id: integration, name: "Some app", position: 2, permissions: "0", managed: true },
+      { id: bot, name: "LAPTracker", position: 5, permissions: "268435456", managed: true },
+      { id: top, name: "Top", position: 8, permissions: "0" },
+      ...extra,
+    ];
+    const ctx = holder.ctx as AppContext;
+    ctx.fetch = async (input) => {
+      const url = String(input);
+      if (url.endsWith(`/guilds/${GUILD}/roles`)) return Response.json(roles);
+      if (url.endsWith(`/guilds/${GUILD}/members/${ENV.DISCORD_CLIENT_ID}`))
+        return Response.json({ roles: [bot] });
+      return new Response("", { status: 404 });
+    };
+  }
+
+  /** `role` is not offered, and saving it is refused with nothing stored. */
+  async function refused(role: string) {
+    expect(await (await post({ action: "roles" })).json()).toEqual({
+      roles: [{ id: member, name: "Member" }],
+    });
+    const saved = await post({ action: "member_role", role });
+    expect([saved.status, await saved.json()]).toEqual([422, { code: "not_below" }]);
+    expect((await db.select().from(workspaceDiscord))[0]?.memberRoleId ?? null).toBeNull();
+  }
+
+  it("offers and saves only a role below the bot's highest, as Discord says at save time", async () => {
+    stubRoles([]);
+    await refused(top);
+    const below = await post({ action: "member_role", role: member });
+    expect(await below.json()).toEqual({ role: { id: member, name: "Member" } });
+    expect(await db.select().from(workspaceDiscord)).toMatchObject([
+      { memberRoleId: member, memberRoleName: "Member" },
+    ]);
+  });
+
+  it("never offers or saves a leadership role, which would make its holder an officer", async () => {
+    await db.update(workspaces).set({ leaderRoleIds: ["2", officers] });
+    stubRoles([{ id: officers, name: "R4", position: 3, permissions: "1024" }]);
+    await refused(officers);
+  });
+
+  it("never offers or saves a role with Administrator or another powerful permission", async () => {
+    stubRoles([{ id: admins, name: "Helpers", position: 3, permissions: String(1n << 3n) }]);
+    await refused(admins);
   });
 });

@@ -40,6 +40,7 @@ import {
 } from "../post-catalog";
 import { calendarRows } from "../repo/calendar";
 import { freshRosterOfDay, freshUidsBetween, getDailyRead } from "../repo/daily-reads";
+import { welcomedUids } from "../repo/join-requests";
 import { findKvkPlan } from "../repo/kvk-plans";
 import { liveCallout } from "../repo/post-touches";
 import { anyRoster } from "../repo/workspace-any-roster";
@@ -273,17 +274,23 @@ async function soonOf(
 
 type Due = Awaited<ReturnType<typeof postsDue>>[number];
 
+/** How long a welcome posted by a `/join` Approve keeps that member out of the daily welcome (issue 868). */
+const WELCOMED_MS = 7 * 86_400_000;
+
 /**
  * The members in the day's roster who were not in the day before's, by name; undefined until the day's
- * end-of-day read is over and both rosters were read and fresh. Who left is never looked at.
+ * end-of-day read is over and both rosters were read and fresh. Who left is never looked at. Issue 868: a
+ * member an officer's `/join` Approve already welcomed in the last WELCOMED_DAYS days is left out.
  */
-async function joinersOf(db: Db, unionId: number, day: string): Promise<string[] | undefined> {
+async function joinersOf(db: Db, due: Due, day: string, now: Date): Promise<string[] | undefined> {
+  const unionId = due.unionId;
   const read = await getDailyRead(db, day);
   if (!read || read.status === "running") return undefined;
   const today = await freshRosterOfDay(db, day, unionId);
   const before = today && (await freshRosterOfDay(db, addDays(day, -1), unionId));
   if (!today || !before) return undefined;
-  const known = new Set(before.uids);
+  const welcomed = await welcomedUids(db, due.workspaceId, new Date(now.getTime() - WELCOMED_MS));
+  const known = new Set([...before.uids, ...welcomed]);
   return today.names.filter((_, i) => !known.has(today.uids[i] as number));
 }
 
@@ -308,8 +315,8 @@ const BODIES: Record<
     weekText(await weekOf(db, due.workspaceId, period), language),
   shield_up: async (_db, _due, _period, language) =>
     WORKSPACE_DICTIONARIES[language]["posts.shield_up.body"],
-  welcome: async (db, due, period, language) => {
-    const joiners = await joinersOf(db, due.unionId, period);
+  welcome: async (db, due, period, language, _cfg, now) => {
+    const joiners = await joinersOf(db, due, period, now);
     return joiners && welcomeText(joiners, language);
   },
   summary: async (db, due, period, language) =>

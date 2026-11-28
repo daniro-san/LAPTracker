@@ -8,6 +8,7 @@ import { discordFr } from "./dictionary.discord-fr";
 import { glossaryEn, glossaryFr, glossaryPt } from "./dictionary.glossary";
 import { inviteEn, invitePt } from "./dictionary.invite";
 import { inviteFr } from "./dictionary.invite-fr";
+import { joinEn, joinFr, joinPt } from "./dictionary.join";
 import { postsEn, postsFr, postsPt } from "./dictionary.posts";
 import { pushEn, pushFr, pushPt } from "./dictionary.push";
 
@@ -120,6 +121,7 @@ export const settingsEn = {
   "squads.stop.cap": "today’s 120 reads are used",
   // D129: Alliance settings → Discord.
   ...discordEn,
+  ...joinEn,
   ...inviteEn,
   ...chooserEn,
   ...calloutsEn,
@@ -241,6 +243,7 @@ export const settingsPt: typeof settingsEn = {
   "squads.stop.cap": "as 120 leituras de hoje foram usadas",
   // D129: Alliance settings → Discord.
   ...discordPt,
+  ...joinPt,
   ...invitePt,
   ...chooserPt,
   ...calloutsPt,
@@ -363,6 +366,7 @@ export const settingsFr: typeof settingsEn = {
     "Escouades aujourd’hui : pas encore commencé. Elles sont lues après la mise à jour quotidienne.",
   // D129: Alliance settings → Discord.
   ...discordFr,
+  ...joinFr,
   ...inviteFr,
   ...chooserFr,
   ...calloutsFr,

@@ -25,6 +25,7 @@ export const FEATURE_GROUPS = {
     "discord_send",
     "discord_translate_me",
     "discord_translate_everyone",
+    "discord_join",
     "post_callouts",
     "post_week",
     "post_shield_up",

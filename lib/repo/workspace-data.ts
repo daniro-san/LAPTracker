@@ -27,6 +27,7 @@ import {
 } from "../schema";
 import { startHere, thanksShares, thanksTakedowns } from "../schema-board";
 import {
+  joinRequests,
   postRuns,
   workspaceDiscord,
   workspacePosts,
@@ -183,6 +184,8 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: null, table: pushMarks, scope: "workspace" },
   // D159: each catalog post's claim per period: codes and counts, like the push marks.
   { file: null, table: postRuns, scope: "workspace" },
+  // Issue 868: `/join` requests, open 7 days: who asked in Discord, never the alliance's own record.
+  { file: null, table: joinRequests, scope: "workspace" },
   // D157: what officers and members sent the site's owner; it is for the owner, so never downloaded.
   { file: null, table: feedback, scope: "workspace" },
   { file: null, table: feedbackPictures, scope: "workspace" },

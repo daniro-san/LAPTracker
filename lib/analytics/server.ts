@@ -65,6 +65,8 @@ export const DESK_FEATURES = [
   "post_callout",
   // D159: Alliance settings → Posts (a catalog post turned on or off, or its settings saved), with `post`.
   "posts",
+  // Issue 868: a `/join` request approved or declined on Members → Requests. Never who or the typed name.
+  "join_request",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 
