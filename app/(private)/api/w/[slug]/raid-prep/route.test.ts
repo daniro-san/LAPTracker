@@ -116,6 +116,13 @@ describe("POST /api/w/[slug]/raid-prep (D137)", () => {
     expect(await stored()).toBeNull();
   });
 
+  it("refuses an after-reset check that would not end before the morning check starts", async () => {
+    const body = { ...times, resetMinute: 600, morningMinute: 600, discord: false }; // both 10:00 ST
+    const res = await post({ ...body, language: "en" });
+    expect([res.status, await res.json()]).toEqual([409, { code: "reads_overlap" }]);
+    expect(await stored()).toBeNull();
+  });
+
   it("refuses a member's save and keeps the officers' morning time", async () => {
     await post({ ...times, morningMinute: 630, discord: false, language: "en" }); // 10:30 ST
     const res = await post(

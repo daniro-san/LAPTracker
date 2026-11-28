@@ -44,6 +44,23 @@ export const RESET_ALERT = 6;
 const RESET_GAP_MS = 10 * 60_000;
 
 /**
+ * Each shield-check alliance whose after-reset check is on, with its time (issue 859): the targets the
+ * check reads (a turned-off or deleted workspace is none) and their saved times, 02:30 ST by default. The
+ * tick's gate (lib/tick-gate.ts) keeps which minutes these are.
+ */
+export async function resetTargets(db: Db, secret: string | undefined, now: Date) {
+  const [targets, settings] = await Promise.all([
+    squadTargets(db, secret, now, "shield_check"),
+    allShieldSettings(db),
+  ]);
+  return targets.flatMap((target) => {
+    const row = target.workspaceId === null ? null : (settings.get(target.workspaceId) ?? null);
+    const minute = timesOf(row).reset;
+    return minute === null ? [] : [{ target, minute }];
+  });
+}
+
+/**
  * The after-reset check on this tick: claimed, then each shield-check alliance's members not read yet this
  * Saturday, until the cap, the reserve, a stop or `deadline` (epoch ms). An alliance not started before
  * `deadline` waits for the next tick. One `shield.reset` run-log line per alliance read or stopped, counts
@@ -53,16 +70,9 @@ export async function shieldReset(deps: SquadsDeps, db: Db, deadline: number): P
   const now = deps.now();
   // The clock first: outside Saturday 00:15–10:45 ST no alliance's check can be due.
   if (!resetSpanOpen(now, deps.env)) return;
-  const [targets, settings] = await Promise.all([
-    squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now, "shield_check"),
-    allShieldSettings(db),
-  ]);
-  // Issue 859: each alliance on its own time; one that turned the check off is never read.
-  const due = targets.flatMap((target) => {
-    const row = target.workspaceId === null ? null : (settings.get(target.workspaceId) ?? null);
-    const minute = timesOf(row).reset;
-    return minute !== null && resetReadDue(now, deps.env, minute) ? [{ target, minute }] : [];
-  });
+  const due = (await resetTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now)).filter((t) =>
+    resetReadDue(now, deps.env, t.minute),
+  );
   if (due.length === 0) return;
   // One statement, so two overlapping ticks never both win.
   if (!(await claimAlert(db, RESET_ALERT, now, RESET_GAP_MS))) return;

@@ -11,6 +11,7 @@ import {
   shieldPassAt,
   shieldWindowOpen,
   suggestionOf,
+  timeChoices,
   timesOf,
 } from "./shield-check";
 
@@ -29,6 +30,14 @@ describe("the Raid Shield check's rules (D137)", () => {
       from: at("2026-11-21T04:30:00Z"), // Sat 02:30 ST
       to: at("2026-11-21T05:15:00Z"),
     });
+  });
+
+  it("offers no after-reset time whose window meets an event's window (D160, issue 859)", () => {
+    // The next four weeks from 2026-11-28 hold Origin of Chaos on 2026-12-05 (00:10–01:30 ST).
+    const { reset } = timeChoices(TEST_ENV, at("2026-11-28T12:00:00Z"));
+    expect(reset).not.toContain(30); // 00:30 ST
+    expect(reset).toContain(90); // 01:30 ST
+    expect(reset).toContain(150); // 02:30 ST
   });
 
   it("moves the night read and its window to the alliance's later time (issue 859)", () => {

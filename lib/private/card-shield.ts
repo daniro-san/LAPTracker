@@ -53,6 +53,10 @@ function checkLine(c: Checkpoint, t: WorkspaceDictionary, zone: string, tone: Sh
   };
 }
 
+/** Whether `now` (epoch ms) is from the raid's night check until KvK starts. */
+const during = (raid: { night: Date; kvk: Date }, now: number) =>
+  now >= raid.night.getTime() && now < raid.kvk.getTime();
+
 /** The member's Raid Shield block now, or null outside the window or with the check off. */
 export async function cardShield(
   db: Db,
@@ -62,11 +66,14 @@ export async function cardShield(
 ): Promise<CardShield | null> {
   if (!featureOn(access, "shield_check")) return null;
   const { t, zone } = at;
+  const day = dayIn(zone, at.now.getTime());
+  const now = at.now.getTime();
+  // No night check starts before 23:30 ST (`DEFAULT_TIMES`): nothing is read outside the raid.
+  if (!during(raidOf(day, { SERVER_TZ: zone }), now)) return null;
   // The alliance's own read times (issue 859): its night check opens the block, its windows count.
   const times = timesOf(await shieldSettingsOf(db, access.workspaceId));
-  const raid = raidOf(dayIn(zone, at.now.getTime()), { SERVER_TZ: zone }, times);
-  const now = at.now.getTime();
-  if (now < raid.night.getTime() || now >= raid.kvk.getTime()) return null;
+  const raid = raidOf(day, { SERVER_TZ: zone }, times);
+  if (!during(raid, now)) return null;
   const head = t["card.shield.head"];
   if (awayOn(member.facts, raid.saturday, zone))
     return { head, lines: [{ text: t["card.shield.away"], scan: null, tone: "plain" }] };

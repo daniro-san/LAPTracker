@@ -5,11 +5,11 @@
 - `lib/shield-check.ts`: `ShieldTimes`, `DEFAULT_TIMES` (23:30, 10:00, after-reset on at 02:30 ST), `timesOf(row)`, `snapToTick`, `timeRanges` (night `DAILY_ROSTER_AT`–23:45, morning 10:00–11:00, after-reset 00:15–10:15 ST, every 15 min), `timeChoices` (the ranges minus times whose window meets an event's), `timesRefusal` (`event_window` / `reads_overlap` over the next four weeks), `resetSpanOpen` (Saturday 00:15–10:45 ST). `shieldPassAt`, `passWindows`, `resetWindow`, `resetReadDue` and `raidOf` take the alliance's times; their defaults give today's windows.
 - `lib/schedule.ts`: `eventsAround` exported (used by the event check).
 - Storage: `shield_settings` gets `night_minute` (default 1410), `reset_read` (default true), `reset_minute` (default 150), with range checks. Migration `drizzle/0091_shield_times.sql`, additive only.
-- Schedulers: `passesAt` (night and morning) uses each target's times; Friday's burst reads only the alliances whose night time has come (`SquadsRun.unionIds` in `lib/squads-read.ts`); `shieldReset` picks the alliances whose after-reset time is due now and skips those with it off, then claims and reads as before; `tick-gate.ts` opens Saturday 00:15–10:45 ST only while some alliance moved its after-reset time (`resetMovedFrom`, wake-cache fact `shield-reset-default`).
+- Schedulers: `passesAt` (night and morning) uses each target's times; Friday's burst reads only the alliances whose night time has come (`SquadsRun.unionIds` in `lib/squads-read.ts`); `shieldReset` picks the alliances whose after-reset time is due now and skips those with it off, then claims and reads as before (`resetTargets`, shared with the gate); `tick-gate.ts` (`resetMayBeDue`) opens only on the ticks of a minute some shield-check alliance chose: the wake cache keeps `shield-reset-none:<m>` for every possible minute, all primed from one read, forgotten by a save.
 - Readers on the alliance's times: `shield-post.ts`, `push-uses.ts`, `raid-prep-fill.ts`, `private/raid-prep.ts` (no after-reset readings while it is off), `card-shield.ts`, `shield-status.ts`, `insights.ts`/`insights-shield.ts`, `kvk-map.ts`.
 - `POST /api/w/[slug]/raid-prep`: body `{nightMinute, morningMinute, resetRead, resetMinute, discord, language}`; times snap to the next tick; 400 `out_of_range`, 409 `event_window` / `reads_overlap`; a save forgets the wake cache.
 - Card (`RaidPrepSettings.tsx`): night, after-reset switch and time, morning selects (only `timeChoices`), the tracker-call line (`switches.callsWeekly`, 3 or 2 reads × members), the trade-off line, the two refusal messages. Raid prep's "Night check: Friday from {night} ST" now shows the alliance's time. Copy EN, PT-BR, FR.
-- Tests (one per behaviour): defaults unchanged and a later night time moving the read and its window (`lib/shield-check.test.ts`); ticks snap and event overlap refused (`raid-prep/route.test.ts`); after-reset off → no read (`lib/shield-reset.test.ts`); the estimate shown (`_ui/RaidPrepSettings.test.ts`). Existing fixtures updated for the new body and row fields.
+- Tests (one per behaviour): defaults unchanged and a later night time moving the read and its window (`lib/shield-check.test.ts`); ticks snap and event overlap refused (`raid-prep/route.test.ts`); after-reset off → no read (`lib/shield-reset.test.ts`); the estimate shown (`_ui/RaidPrepSettings.test.ts`). Review fixes: the gate sleeps on other Saturday ticks, opens only on a moved time's ticks and sees a save, and an alliance at 03:00 is read at 03:00, not 02:30 (`lib/shield-reset.test.ts`); 409 `reads_overlap` (route test); `timeChoices` drops an event-clashing time (`lib/shield-check.test.ts`); Friday's burst waits for the alliance's own night time (`lib/shield-read.test.ts`). The member card returns before reading `shield_settings` outside 23:30 ST–KvK. Existing fixtures updated for the new body and row fields.
 - D137 amendment 2026-11-28c.
 
 ## Decisions
@@ -27,7 +27,7 @@
 ## Verified
 
 - `pnpm vitest related --run <changed files>`: 2 files failed first (a partial settings fixture in `shield-post.test.ts`, an expired session in the new route test); fixed; then green.
-- `pnpm check`: exit 0, 420 test files, 2301 tests passed, drift and i18n checks fine.
+- `pnpm check`: exit 0, 420 test files, 2306 tests passed, drift and i18n checks fine (after the review fixes).
 - Not run: the card in a browser at 360/640/1280 px.
 
 ## Open issues

@@ -145,6 +145,17 @@ describe("the Raid Shield check's reads (D137)", () => {
     expect(await db.select().from(playerReads)).toHaveLength(60);
   });
 
+  it("reads nobody on Friday night before the alliance's own night time (issue 859)", async () => {
+    await dayRead(range(20));
+    await db.insert(shieldSettings).values({ workspaceId: ws, nightMinute: 1425, updatedAt: FRI });
+    const d = deps(FRI); // 23:39 ST, before its 23:45
+    await tick(d);
+    expect(d.calls).toEqual([]);
+    d.at = new Date("2026-11-21T01:46:00Z"); // 23:46 ST
+    await tick(d);
+    expect(d.calls.toSorted((a, b) => a - b)).toEqual(range(20));
+  });
+
   it("reads everyone once more on Saturday from the alliance's own time, and nothing at other times", async () => {
     await dayRead(range(30));
     await db.insert(shieldSettings).values({ workspaceId: ws, morningMinute: 630, updatedAt: SAT });

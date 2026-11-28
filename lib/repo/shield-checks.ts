@@ -167,16 +167,6 @@ export async function saveShieldSettings(db: Db, row: typeof shieldSettings.$inf
     });
 }
 
-/** Whether some alliance's after-reset check is on at a time other than `minute` (issue 859). */
-export async function resetMovedFrom(db: Db, minute: number): Promise<boolean> {
-  const [row] = await db
-    .select({ workspaceId: shieldSettings.workspaceId })
-    .from(shieldSettings)
-    .where(and(eq(shieldSettings.resetRead, true), sql`${shieldSettings.resetMinute} <> ${minute}`))
-    .limit(1);
-  return row !== undefined;
-}
-
 /** Every workspace's settings, for the tick. */
 export async function allShieldSettings(db: Db): Promise<Map<number, ShieldSettingsRow>> {
   const rows = await db.select().from(shieldSettings);
