@@ -41,7 +41,7 @@ const m: MemberRow = {
 describe("the member card's map position (D136)", () => {
   it("leaves it out of the shown details and keeps it behind Show map position", () => {
     const f = cardFormats("en", "Etc/GMT+2", new Date("2026-11-20T12:00:00Z"));
-    const shown = { joined: false, lastOnline: false, duel: false };
+    const shown = { duel: false };
     const card = cardData(m, WORKSPACE_DICTIONARIES.en, f, shown);
     expect(card.details.map((d) => d.label)).toEqual(["Seen since"]);
     expect(card.map).toEqual({
@@ -74,6 +74,41 @@ describe("the member card's earlier values (D136)", () => {
       "Main squad might: 19.4M · Mon, Nov 16",
       "Time zone: Europe/Paris · UTC+1 · Thu, Nov 12",
       "Main squad might: 18.1M · Tue, Nov 10",
+    ]);
+  });
+});
+
+describe("the member card's presence lines (issue 821)", () => {
+  const f = cardFormats("en", "Etc/GMT+2", new Date("2026-11-20T12:00:00Z"));
+  const shown = { duel: false };
+
+  it("shows the last seen and the joined dates", () => {
+    const row = {
+      ...m,
+      lastOnlineAt: new Date("2026-11-18T10:00:00Z"),
+      joinedAt: new Date("2026-09-02T10:00:00Z"),
+    };
+    expect(cardData(row, WORKSPACE_DICTIONARIES.en, f, shown).presence).toEqual([
+      "Last seen in game: Wed, Nov 18",
+      "In the alliance since: Wed, Sep 2",
+    ]);
+  });
+
+  it("shows each fact once: the Details tab does not repeat them", () => {
+    const row = {
+      ...m,
+      lastOnlineAt: new Date("2026-11-18T10:00:00Z"),
+      joinedAt: new Date("2026-09-02T10:00:00Z"),
+    };
+    expect(cardData(row, WORKSPACE_DICTIONARIES.en, f, shown).details.map((d) => d.label)).toEqual([
+      "Seen since",
+    ]);
+  });
+
+  it("says no data with no reading", () => {
+    expect(cardData(m, WORKSPACE_DICTIONARIES.en, f, shown).presence).toEqual([
+      "Last seen in game: no data",
+      "In the alliance since: no data",
     ]);
   });
 });

@@ -108,6 +108,8 @@ export interface CardData {
   statusMark: string[];
   /** The reasons with their evidence, or when a new member was first seen. */
   statusLines: string[];
+  /** Issue 821: "Last seen in game: …" and "In the alliance since: …"; "no data" with no reading. */
+  presence: string[];
   /** "No data": the name of the marker drawn where a value is "—". */
   noData: string;
   /** The last 7 days; null before the alliance's first end-of-day read (`daysEarly` says so). */
@@ -191,27 +193,18 @@ export function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
   return { status, label, lines: quietDayLine(m, t, f) };
 }
 
-/** Rows empty for the whole alliance (Joined and Last online, sent as null since 2026-11-16) are left out. */
+/** What the card shows only when someone has it. Joined and Last seen are header lines (issue 821). */
 export interface Shown {
-  joined: boolean;
-  lastOnline: boolean;
   /** Alliance Duel points were saved from a photo for someone this week (issue 299). */
   duel: boolean;
 }
 
 export const shownOf = (members: MemberRow[]): Shown => ({
-  joined: members.some((m) => m.joinedAt !== null),
-  lastOnline: members.some((m) => m.lastOnlineAt !== null),
   duel: members.some((m) => Object.keys(m.duel).length > 0),
 });
 
-function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: Shown) {
-  const date = (at: Date | null) => (at ? f.date(at) : NONE);
-  return [
-    ...(shown.joined ? [{ label: t["sheet.joined"], value: date(m.joinedAt) }] : []),
-    { label: t["sheet.seen"], value: m.seenSince ? f.date(m.seenSince) : NONE },
-    ...(shown.lastOnline ? [{ label: t["sheet.lastOnline"], value: date(m.lastOnlineAt) }] : []),
-  ];
+function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats) {
+  return [{ label: t["sheet.seen"], value: m.seenSince ? f.date(m.seenSince) : NONE }];
 }
 
 /** Map position, shown on the Info tab only after "Show map position" (D136: D71 allows it, people first). */
@@ -301,6 +294,15 @@ const NO_EXTRAS: CardExtras = {
 /** The header shows a status only when it says something: not Fine, and not "No data" (#461). */
 const HEADLINE: readonly Status[] = ["checkin", "help", "break", "new"];
 
+/** Issue 821: "Last seen in game" and "In the alliance since", "no data" with no reading. */
+function presenceLines(m: MemberRow, t: WorkspaceDictionary, f: CardFormats) {
+  const date = (at: Date | null) => (at ? f.date(at) : t["members.don.none"]);
+  return [
+    fill(t["card.lastSeen"], { date: date(m.lastOnlineAt) }),
+    fill(t["card.since"], { date: date(m.joinedAt) }),
+  ];
+}
+
 export function cardData(
   m: MemberRow,
   t: WorkspaceDictionary,
@@ -327,12 +329,13 @@ export function cardData(
     status,
     statusLabel: headline ? label : "",
     statusMark: [],
+    presence: presenceLines(m, t, f),
     statusLines: headline ? lines : [],
     noData: t["nodata.mark"],
     days: x.days ? daysCard(x.days, t, daysFormats(t, f)) : null,
     daysEarly: t["card.days.early"],
     duel: shown.duel ? duel : null,
-    details: detailsOf(m, t, f, shown),
+    details: detailsOf(m, t, f),
     map: mapOf(m, t),
     toAsk: toAskLine(m.facts, t),
     factLines: factLines(m.facts, t, f, x.previous, x.thisWeek),

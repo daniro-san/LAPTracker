@@ -13,10 +13,12 @@ import {
   snapshots,
 } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
+import { cardFormats } from "./member-card";
 import { saveFacts, type FactChange } from "./member-facts";
 import { killsGained, membersView, rankOf, type MemberRow } from "./members";
 import { whoOf } from "./members-list";
-import { statusOf } from "./members-sheet";
+import { reasonText, statusOf } from "./members-sheet";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -34,7 +36,10 @@ const NONE = { tech: null, active: null };
 const QUIET = { tech: null, active: 50 };
 
 /** uid → the roster fields the read keeps; a member's might and kills arrays come from the same values. */
-type Members = Record<number, { tech?: number | null; active?: number | null; power?: number }>;
+type Members = Record<
+  number,
+  { tech?: number | null; active?: number | null; power?: number; lastOnline?: string }
+>;
 
 let db: Db;
 beforeAll(async () => {
@@ -88,6 +93,7 @@ async function endOfDay(unionId: number, day: string, members: Members, extra: o
           active:
             members[uid]?.active === undefined ? 10 + Number(day.slice(8)) : members[uid].active,
           avatar_url: "https://phs-image.globallap.com/a.png",
+          last_online_at: members[uid]?.lastOnline ?? null,
         })),
         ...extra,
       ],
@@ -390,5 +396,55 @@ describe("the roster read", () => {
     expect(rankOf({ rankCode: 104, rankLabel: "R4" })).toBe("R4");
     expect(rankOf({ rankCode: 105, rankLabel: "R5" })).toBe("R5");
     expect(rankOf({ rankCode: null, rankLabel: null })).toBeNull();
+  });
+});
+
+describe("the not-seen reason (issue 821)", () => {
+  /** The newest read is Tuesday dayOf(1) 23:37 ST, 2026-11-11T01:37Z. */
+  const seenOf = async (slug: "ogs" | "nse", uid: number) => {
+    const view = await membersView(db, await signedIn(slug), NOW, ZONE);
+    return view.members.find((m) => m.uid === uid)?.reasons.filter((r) => r.kind === "seen");
+  };
+
+  it("lists a member last seen 3 days before the newest read, with the date, and not one seen 2 days before", async () => {
+    for (const n of [0, 1])
+      await endOfDay(OGS, dayOf(n), {
+        1: { lastOnline: "2026-11-08T01:00:00Z" },
+        2: { lastOnline: "2026-11-09T01:00:00Z" },
+      });
+    expect(await seenOf("ogs", 1)).toEqual([
+      { kind: "seen", at: new Date("2026-11-08T01:00:00Z") },
+    ]);
+    expect(await seenOf("ogs", 2)).toEqual([]);
+    const f = cardFormats("en", ZONE, NOW);
+    expect(
+      reasonText(
+        { kind: "seen", at: new Date("2026-11-08T01:00:00Z") },
+        WORKSPACE_DICTIONARIES.en,
+        f,
+      ),
+    ).toBe("not seen in game since Sat, Nov 7");
+  });
+
+  it("does not list a new member, who stays New (D127 grace)", async () => {
+    await endOfDay(OGS, dayOf(0), { 1: {} });
+    await endOfDay(OGS, dayOf(1), { 1: {}, 2: { lastOnline: "2026-11-01T01:00:00Z" } });
+    expect(await seenOf("ogs", 2)).toEqual([]);
+    const view = await membersView(db, await signedIn("ogs"), NOW, ZONE);
+    expect(statusOf(view.members.find((m) => m.uid === 2) as MemberRow)).toBe("new");
+  });
+
+  it("never lists a member with no reading", async () => {
+    for (const n of [0, 1]) await endOfDay(OGS, dayOf(n), { 1: {} });
+    expect(await seenOf("ogs", 1)).toEqual([]);
+  });
+
+  it("never uses another alliance's reading of the same player", async () => {
+    for (const n of [0, 1]) {
+      await endOfDay(OGS, dayOf(n), { 1: { lastOnline: "2026-11-10T01:00:00Z" } });
+      await endOfDay(NSE, dayOf(n), { 1: { lastOnline: "2026-11-01T01:00:00Z" } });
+    }
+    expect(await seenOf("ogs", 1)).toEqual([]);
+    expect(await seenOf("nse", 1)).toHaveLength(1);
   });
 });

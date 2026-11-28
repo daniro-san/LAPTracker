@@ -35,7 +35,7 @@ import {
 export { KEY_MARKER, PICTURE, SEED_AT } from "./workspace-seed-parts.test-helpers";
 
 /** Values that must never leave in a download: the roster's private fields (x, y, last online, photo). */
-export const PRIVATE_MARKERS = ["98765", "54321", "1763337600", "avatar.example.test"];
+export const PRIVATE_MARKERS = ["98765", "54321", "1795000000", "avatar.example.test"];
 
 /** Every row the workspace owns (D125's list) and its own row, as JSON: to show none of it changed. */
 export async function ownedRows(db: Db, ws: { id: number; unionId: number }) {
@@ -67,7 +67,7 @@ export async function seedRoster(db: Db, unionId: number) {
           x: 98765,
           y: 54321,
           online: true,
-          last_online_at: 1763337600,
+          last_online_at: 1795000000,
           avatar_url: "https://avatar.example.test/a.png",
         },
       ],

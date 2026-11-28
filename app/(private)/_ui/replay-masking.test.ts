@@ -116,7 +116,7 @@ describe("session replay on the member card (issue 634, D137)", () => {
   it("records none of the Raid Shield block, which the card still shows", () => {
     const member = { ...SOURCE, uid: 8, name: "Fennick" };
     const card = {
-      ...cardData(member, t, f, { joined: false, lastOnline: false, duel: false }),
+      ...cardData(member, t, f, { duel: false }),
       shield: {
         head: "Raid Shield",
         lines: [

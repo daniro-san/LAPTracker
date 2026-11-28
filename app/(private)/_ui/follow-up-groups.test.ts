@@ -62,6 +62,18 @@ describe("Follow-up's groups (issue 585 slice 2)", () => {
     expect(groups[1]?.hint).toBeUndefined();
   });
 
+  it("says the not-seen reason with its date under Worth a hello (issue 821)", () => {
+    const seen = {
+      ...member(9, "Moss"),
+      reasons: [{ kind: "seen" as const, at: new Date("2026-11-17T10:00:00Z") }],
+    };
+    const groups = groupsOf([item(seen, {})], t, f, "en");
+    expect(groups[0]?.title).toBe("Worth a hello · 1");
+    expect(groups[0]?.rows[0]?.lines).toEqual([
+      { text: "Worth a hello: not seen in game since Tue, Nov 17" },
+    ]);
+  });
+
   it("says a line every row of a group holds once under its title, never a mark, and keeps each row's own", () => {
     const all = ["squadMight", "troopTier", "adTech", "timeZone", "languages"] as const;
     const fresh = (uid: number, name: string, toAsk: FollowUpItem["toAsk"]) =>

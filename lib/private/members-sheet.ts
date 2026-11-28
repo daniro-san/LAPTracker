@@ -24,6 +24,7 @@ export function reasonText(r: Reason, t: WorkspaceDictionary, f: Formats): strin
       { n: r.days },
     );
   if (r.kind === "kvk") return fill(t["reason.kvk"], { date: f.date(r.at) });
+  if (r.kind === "seen") return fill(t["reason.seen"], { date: f.date(r.at) });
   return fill(
     plural(r.days, { one: t["reason.idle.one"], other: t["reason.idle.other"] }, f.language),
     { n: r.days },
