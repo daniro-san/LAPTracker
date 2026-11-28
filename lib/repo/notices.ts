@@ -233,7 +233,7 @@ export async function writeNotice<R>(
   db: Db,
   target: NoticeWrite,
   decide: (current: FieldRow[]) => { write: NewEditRow[] } | { refuse: R },
-  after?: (tx: Pick<Db, "select" | "insert">, id: number) => Promise<unknown>,
+  after?: (tx: Pick<Db, "select" | "insert" | "execute">, id: number) => Promise<unknown>,
 ): Promise<{ id: number } | { refuse: R } | null> {
   const { workspaceId, noticeId, userId, now, requestId } = target;
   return db.transaction(async (tx) => {

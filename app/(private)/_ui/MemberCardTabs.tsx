@@ -14,6 +14,7 @@ import { chip } from "@/lib/brand/components/controls";
 import { CARD_TABS, type CardTab } from "@/lib/private/dictionary.card";
 import type { CardData } from "@/lib/private/member-card";
 
+import { FollowUpNotes } from "./FollowUpNotes";
 import { withNoData } from "./NoData";
 
 const TAB_KEY = "ws.cardTab";
@@ -103,25 +104,32 @@ export function CardTabs({
   );
 }
 
-/** The History tab: the follow-up notes, then the earlier values (D136). */
-export function History({ card }: { card: CardData }) {
-  const parts = [card.followUps, card.versions].filter((p) => p.lines.length > 0);
-  if (parts.length === 0)
-    return <p className="mt-3 text-body-sm text-ink/75">{card.versions.none}</p>;
+/** The History tab: the follow-up notes, each with its Delete (D123 phase 2), then the earlier values (D136). */
+export function History(props: {
+  card: CardData;
+  slug: string;
+  onChanged?: (() => void) | undefined;
+}) {
+  const { card } = props;
+  const { versions } = card;
   return (
     <>
-      {parts.map((p) => (
-        <section key={p.head} className="mt-3">
-          <h3 className="text-body-sm font-semibold">{p.head}</h3>
+      <FollowUpNotes card={card} slug={props.slug} onChanged={props.onChanged} />
+      {versions.lines.length > 0 && (
+        <section className="mt-3">
+          <h3 className="text-body-sm font-semibold">{versions.head}</h3>
           <ul className="text-body-sm whitespace-pre-line">
-            {p.lines.map((line, i) => (
+            {versions.lines.map((line, i) => (
               <li key={i} className="border-t border-rule py-1.5 tabular-nums">
                 {line}
               </li>
             ))}
           </ul>
         </section>
-      ))}
+      )}
+      {card.followUps.lines.length === 0 && versions.lines.length === 0 && (
+        <p className="mt-3 text-body-sm text-ink/75">{versions.none}</p>
+      )}
     </>
   );
 }

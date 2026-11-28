@@ -28,13 +28,13 @@ export const reviewParts = (ws: number, since: string, before: string, n: number
         r.reviewer_id
       from notice_reviews r
       where r.workspace_id = ${ws} and r.asked_by is not null and r.asked_at >= ${since}
-        and r.asked_at < ${before}
+        and r.asked_at < ${before} and r.deleted_at is null
       order by r.asked_at desc limit ${n})
     union all
     (select 'reviewAnswered', o.by, o.at, r.notice_id, o.outcome, r.language, null, null, null
       from notice_review_outcomes o join notice_reviews r on r.id = o.review_id
       where o.workspace_id = ${ws} and o.by is not null and o.at >= ${since}
-        and o.at < ${before}
+        and o.at < ${before} and r.deleted_at is null
       order by o.at desc limit ${n})`;
 
 type Row = {

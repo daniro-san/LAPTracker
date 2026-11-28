@@ -1,6 +1,7 @@
 // Home's recent activity (D108): records deleted, as more parts of lib/repo/desk-activity.ts's small-sources
 // union read. Notices deleted and restored from the trash (D118); Calendar entries, thefts and new members
-// deleted (D123). Who, when and which record: never a theft's people or note. An undone delete is not one
+// deleted (D123); follow-up records deleted and review requests withdrawn (D123 phase 2). Who, when and
+// which record: never a theft's people or note, nor a follow-up's choice or note. An undone delete is not one
 // (Undo clears `deleted_at`). Roll calls have their own parts (./desk-activity-calls, D120).
 import { sql } from "drizzle-orm";
 
@@ -38,10 +39,28 @@ export const trashParts = (ws: number, since: string, before: string, n: number)
       from pending_members m
       where m.workspace_id = ${ws} and m.dismissed_at >= ${since} and m.dismissed_at < ${before}
         and m.deleted_by is not null and m.matched_uid is null
-      order by m.dismissed_at desc limit ${n})`;
+      order by m.dismissed_at desc limit ${n})
+    union all
+    (select 'followUpDeleted', f.deleted_by, f.deleted_at, null, null, null, null, null, f.uid
+      from member_follow_ups f
+      where f.workspace_id = ${ws} and f.deleted_at >= ${since} and f.deleted_at < ${before}
+        and f.deleted_by is not null
+      order by f.deleted_at desc limit ${n})
+    union all
+    (select 'reviewWithdrawn', r.deleted_by, r.deleted_at, r.notice_id, null, null, null, null, null
+      from notice_reviews r
+      where r.workspace_id = ${ws} and r.deleted_at >= ${since} and r.deleted_at < ${before}
+        and r.deleted_by is not null
+      order by r.deleted_at desc limit ${n})`;
 
 export type TrashKind =
-  "noticeDeleted" | "noticeRestored" | "entryDeleted" | "theftDeleted" | "newMemberDeleted";
+  | "noticeDeleted"
+  | "noticeRestored"
+  | "entryDeleted"
+  | "theftDeleted"
+  | "newMemberDeleted"
+  | "followUpDeleted"
+  | "reviewWithdrawn";
 
 /** A notice's delete or restore: who, when and which notice. */
 export interface TrashDone {
@@ -76,6 +95,14 @@ interface NewMemberDeleted {
   name: string;
 }
 
+/** A follow-up record deleted from a member's history (D123 phase 2): whose, never the choice or note. */
+export interface FollowUpDeleted {
+  kind: "followUpDeleted";
+  by: number;
+  at: Date;
+  uid: number;
+}
+
 /** A D123 delete as a line of the feed, never folded into another line. */
 export type DeleteLine =
   | Omit<EntryDeleted, "by" | "at">
@@ -86,9 +113,12 @@ export type DeleteLine =
 export interface TrashRows {
   noticeDeletes: TrashDone[];
   noticeRestores: TrashDone[];
+  /** Review requests withdrawn (D123 phase 2), by their notice. */
+  reviewWithdraws: TrashDone[];
   entryDeletes: EntryDeleted[];
   theftDeletes: TheftDeleted[];
   newMemberDeletes: NewMemberDeleted[];
+  followUpDeletes: FollowUpDeleted[];
 }
 
 type Row = {
@@ -103,11 +133,18 @@ type Row = {
 
 /** The parts' rows, from the union's readers of notice rows and of rows by kind. */
 export const trashRows = (
-  notice: (kind: "noticeDeleted" | "noticeRestored") => TrashDone[],
+  notice: (kind: "noticeDeleted" | "noticeRestored" | "reviewWithdrawn") => TrashDone[],
   of: (kind: TrashKind) => Row[],
 ): TrashRows => ({
   noticeDeletes: notice("noticeDeleted"),
   noticeRestores: notice("noticeRestored"),
+  reviewWithdraws: notice("reviewWithdrawn"),
+  followUpDeletes: of("followUpDeleted").map(({ by, at, uid }) => ({
+    kind: "followUpDeleted",
+    by,
+    at,
+    uid: Number(uid),
+  })),
   entryDeletes: of("entryDeleted").map(({ by, at, a, b, level, title, uid }) => ({
     kind: "entryDeleted",
     by,

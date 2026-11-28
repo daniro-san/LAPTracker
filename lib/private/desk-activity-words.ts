@@ -155,13 +155,34 @@ function noticeLine(
 
 /**
  * The weekly thanks shared or taken down (D114), the tracker key saved or removed (D124), the alliance's
- * data downloaded and its deletion asked or cancelled (D125), or a post's own line changed (D156).
+ * data downloaded and its deletion asked or cancelled (D125), a post's own line changed (D156), or a theft,
+ * a new member or a follow-up note deleted (D123): a theft's people are never named, a new member's name as
+ * typed is, and a follow-up note names whose it was, never its choice or note.
  */
 function plainLine(
   t: WorkspaceDictionary,
   who: string,
-  item: Extract<ActivityItem, { kind: "thanks" | "trackerKey" | "workspaceData" | "callout" }>,
+  item: Extract<
+    ActivityItem,
+    {
+      kind:
+        | "thanks"
+        | "trackerKey"
+        | "workspaceData"
+        | "callout"
+        | "theftDeleted"
+        | "newMemberDeleted"
+        | "followUpDeleted";
+    }
+  >,
 ): string {
+  if (item.kind === "theftDeleted") return fill(t["activity.theftDeleted"], { who });
+  if (item.kind === "newMemberDeleted")
+    return fill(t["activity.newMemberDeleted"], { who, member: isolate(item.name) });
+  if (item.kind === "followUpDeleted") {
+    const member = isolate(item.member ?? t["activity.aMember"]);
+    return fill(t["activity.followUpDeleted"], { who, member });
+  }
   if (item.kind === "thanks") return fill(t[`activity.thanks.${item.target}`], { who });
   if (item.kind === "callout") return fill(t[`activity.callout.${item.post}`], { who });
   if (item.kind === "workspaceData") return fill(t[`activity.data.${item.action}`], { who });
@@ -191,15 +212,11 @@ export function activityLine(
     case "thefts":
     case "newMember":
       return countLine(t, who, item, language);
-    // D123: a theft's people are never named; a new member's name as typed is.
-    case "theftDeleted":
-      return fill(t["activity.theftDeleted"], { who });
-    case "newMemberDeleted":
-      return fill(t["activity.newMemberDeleted"], { who, member: isolate(item.name) });
     case "theftStep":
       return fill(t["activity.theftStep"], { who, state: t[`thefts.state.${item.state}`] });
     // The rest is about a notice: saved, posted, deleted (D118), its picture added, kept or used in another
-    // notice (D119), or a review request or its outcome (D113); else the thanks or the tracker key.
+    // notice (D119), or a review request or its outcome (D113); else the thanks, the tracker key, or a
+    // record deleted (D123).
     default:
       return "title" in item ? noticeLine(t, who, item) : plainLine(t, who, item);
   }

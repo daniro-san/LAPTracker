@@ -13,11 +13,14 @@ import {
   openReviewCount,
   openReviewsFor,
   reviewsOfNotice,
+  stillOpen,
   workspaceOfficers,
   type ReviewRow,
   type Tx,
 } from "../repo/notice-reviews";
 import { noticeInWorkspace, noticeTitles } from "../repo/notices";
+import { softDelete, undoDelete } from "../repo/trash";
+import { noticeReviews as reviewTable } from "../schema-notices";
 import type { WorkspaceAccess } from "./access";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "./notice-rules";
 
@@ -37,6 +40,15 @@ export const reviewBody = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("approve"), review: id, requestId: z.uuid() }).strict(),
+  // D123 phase 2: withdraw an open request, or with `undo` take the officer's own withdraw back.
+  z
+    .object({
+      action: z.literal("withdraw"),
+      review: id,
+      requestId: z.uuid(),
+      undo: z.literal(true).optional(),
+    })
+    .strict(),
 ]);
 
 /** One request as the notice page shows it. */
@@ -130,6 +142,26 @@ export async function answerReview(
     by: access.user.id,
     at: now,
   });
+}
+
+/**
+ * Withdraws an open request of the workspace (D123 phase 2): any officer, as every delete at the desk; or
+ * with `undo` takes the officer's own withdraw made under the same request id back within UNDO_MS.
+ * "not_found": no such open request, or nothing of this officer's to undo, or the request got an outcome
+ * meanwhile (both rules run in the write's own statement, `stillOpen`).
+ */
+export async function withdrawReview(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { review: number; requestId: string; undo?: true | undefined },
+  now: Date,
+): Promise<"ok" | "not_found"> {
+  const { workspaceId, user } = access;
+  const c = { workspaceId, userId: user.id, now, id: input.review, requestId: input.requestId };
+  const done = input.undo
+    ? await undoDelete(db, reviewTable, c, stillOpen)
+    : await softDelete(db, reviewTable, c, stillOpen);
+  return done ? "ok" : "not_found";
 }
 
 /** A notice's requests, newest first, as the viewer sees them, and the officers a new one can name. */

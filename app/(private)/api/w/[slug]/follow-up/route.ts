@@ -2,11 +2,14 @@
 // 340, D104): "Talked to them", On a break until a day, Needs help or "All fine", with a short note and the
 // sheet's request id (D100). Same origin and JSON only (D71), zod-parsed, a session of this workspace (401
 // signed_out, D99). On a break and Needs help go through the member facts (D80): another officer's newer
-// value answers 409 with it in the officer's words. The lib call runs in `privately`; nothing is logged.
+// value answers 409 with it in the officer's words. A member card's history deletes one record, with a short
+// Undo (D123 phase 2): 404 when it is not there. The lib call runs in `privately`; nothing is logged.
 import { z } from "zod";
 
+import type { AppContext } from "@/lib/app-context";
 import { isolate } from "@/lib/copy";
-import { requireWorkspace } from "@/lib/private/access";
+import type { Db } from "@/lib/db";
+import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { isDay } from "@/lib/private/calendar-time";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { withActionEvent } from "@/lib/private/desk-action";
@@ -14,7 +17,7 @@ import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dic
 import type { FactValues } from "@/lib/private/fact-fields";
 import { factText } from "@/lib/private/fact-text";
 import { featureOn } from "@/lib/private/features";
-import { recordFollowUp, undoFollowUp } from "@/lib/private/follow-up";
+import { deleteFollowUp, recordFollowUp, undoFollowUp } from "@/lib/private/follow-up";
 import { FOLLOW_UP_ACTIONS } from "@/lib/private/follow-up-rules";
 import {
   isSameOriginJson,
@@ -46,7 +49,32 @@ const record = z
 const undo = z
   .object({ uid, action: z.literal("undo"), target: z.uuid(), requestId: z.uuid(), ...place })
   .strict();
-const body = z.union([record, undo]);
+/** D123 phase 2: delete one record of the member's history (`id`), or with `undo` take it back. */
+const deletion = z
+  .object({
+    uid,
+    action: z.literal("delete"),
+    id: z.number().int().positive(),
+    requestId: z.uuid(),
+    undo: z.literal(true).optional(),
+  })
+  .strict();
+const body = z.union([record, undo, deletion]);
+
+/** A delete from a member card's history, or its Undo: 404 when there is no such record of the officer's. */
+async function remove(
+  ctx: AppContext,
+  db: Db,
+  access: WorkspaceAccess,
+  input: z.infer<typeof deletion>,
+  now: Date,
+): Promise<Response> {
+  const removed = await privately("follow_up.delete", () => deleteFollowUp(db, access, input, now));
+  if (!removed.ok) return privateError(404, "not_found");
+  const done = Response.json({ ok: true }, { headers: NO_STORE });
+  const action = input.undo ? "undo_delete" : "delete";
+  return withActionEvent(ctx, access, "follow_up", action, done, { from: "card", on_list: false });
+}
 
 export async function POST(
   request: Request,
@@ -65,25 +93,18 @@ export async function POST(
     if (!featureOn(access, "follow_up")) return privateError(403, "turned_off");
     const zone = ctx.env.SERVER_TZ;
     const input = parsed.data;
-    const result = await privately(
-      `follow_up.${input.action === "undo" ? "undo" : "record"}`,
-      () =>
-        input.action === "undo"
-          ? undoFollowUp(db, access, input, { now, zone })
-          : recordFollowUp(db, access, input, { now, zone }),
+    if (input.action === "delete") return remove(ctx, db, access, input, now);
+    const kind = input.action === "undo" ? "undo" : "record";
+    const result = await privately(`follow_up.${kind}`, () =>
+      input.action === "undo"
+        ? undoFollowUp(db, access, input, { now, zone })
+        : recordFollowUp(db, access, input, { now, zone }),
     );
     if (result.ok) {
       const done = Response.json({ ok: true }, { headers: NO_STORE });
       // The Follow-up tab sends no place: its members are on the list.
       const at = { from: input.from ?? "follow_up", on_list: input.onList ?? true } as const;
-      return withActionEvent(
-        ctx,
-        access,
-        "follow_up",
-        input.action === "undo" ? "undo" : "record",
-        done,
-        at,
-      );
+      return withActionEvent(ctx, access, "follow_up", kind, done, at);
     }
     if (result.code === "not_found") return privateError(409, result.code);
     if (result.code !== "stale") return privateError(400, result.code);

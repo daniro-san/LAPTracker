@@ -1,12 +1,18 @@
 // notice_reviews and notice_review_outcomes (D113): a review request is stored once under the ask sheet's
-// request id, and closed by its first outcome. Neither table is ever updated. Also the workspace's officers,
-// the people a request can name.
+// request id, and closed by its first outcome. An open request can be withdrawn (D123 phase 2, the shared
+// soft delete); nothing else updates either table. Also the workspace's officers, the people a request can
+// name.
 import { and, count, desc, eq, isNotNull, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
 import { workspaceSessions, workspaceUsers } from "../schema";
 import { noticeReviewOutcomes, noticeReviews, notices } from "../schema-notices";
+import { live } from "./trash";
+
+/** Only an open request is withdrawn: one with an outcome is history (D123 phase 2). */
+export const stillOpen = sql`not exists (select 1 from notice_review_outcomes o
+  where o.review_id = ${noticeReviews.id})`;
 
 export interface ReviewRow {
   id: number;
@@ -25,7 +31,7 @@ export interface ReviewRow {
 }
 
 /** A save's transaction or the database: the outcome of an edit is written in the save's (D113). */
-export type Tx = Pick<Db, "select" | "insert">;
+export type Tx = Pick<Db, "select" | "insert" | "execute">;
 
 /** The request's notice, not deleted (D118): a deleted notice's requests leave every list. */
 const ofLiveNotice = and(eq(notices.id, noticeReviews.noticeId), isNull(notices.deletedAt));
@@ -58,7 +64,7 @@ function reviewRows(db: Tx, workspaceId: number, where: SQL) {
     .leftJoin(asker, eq(asker.id, noticeReviews.askedBy))
     .leftJoin(reviewer, eq(reviewer.id, noticeReviews.reviewerId))
     .leftJoin(closer, eq(closer.id, noticeReviewOutcomes.by))
-    .where(and(eq(noticeReviews.workspaceId, workspaceId), where))
+    .where(and(eq(noticeReviews.workspaceId, workspaceId), live(noticeReviews), where))
     .orderBy(desc(noticeReviews.id));
 }
 
@@ -140,7 +146,7 @@ export async function openReviewCount(db: Db, workspaceId: number, userId: numbe
     .from(noticeReviews)
     .innerJoin(notices, ofLiveNotice)
     .leftJoin(noticeReviewOutcomes, eq(noticeReviewOutcomes.reviewId, noticeReviews.id))
-    .where(and(eq(noticeReviews.workspaceId, workspaceId), openFor(userId)));
+    .where(and(eq(noticeReviews.workspaceId, workspaceId), live(noticeReviews), openFor(userId)));
   return row?.n ?? 0;
 }
 
@@ -155,20 +161,25 @@ export interface NewOutcome {
 
 /**
  * Closes the request. "ok": this outcome is stored, now or by an earlier try with the same request id.
- * "closed": another outcome closed it first.
+ * "closed": another outcome closed it first. "not_found": the request was withdrawn and has no outcome.
  */
-export async function insertOutcome(db: Tx, o: NewOutcome): Promise<"ok" | "closed"> {
-  const made = await db
-    .insert(noticeReviewOutcomes)
-    .values(o)
-    .onConflictDoNothing()
-    .returning({ id: noticeReviewOutcomes.id });
-  if (made.length > 0) return "ok";
+export async function insertOutcome(db: Tx, o: NewOutcome): Promise<"ok" | "closed" | "not_found"> {
+  // Only while the request is not withdrawn, checked in the insert's own statement (D123 phase 2): a
+  // withdraw committed after the caller's read is seen here.
+  const made = await db.execute(sql`insert into notice_review_outcomes
+      (workspace_id, review_id, request_id, outcome, "by", "at")
+    select ${o.workspaceId}, ${o.reviewId}, ${o.requestId}, ${o.outcome}, ${o.by}, ${o.at}
+    where exists (select 1 from notice_reviews r
+      where r.id = ${o.reviewId} and r.workspace_id = ${o.workspaceId} and r.deleted_at is null)
+    on conflict do nothing
+    returning id`);
+  if (made.rows.length > 0) return "ok";
   const [first] = await db
     .select({ requestId: noticeReviewOutcomes.requestId })
     .from(noticeReviewOutcomes)
     .where(eq(noticeReviewOutcomes.reviewId, o.reviewId));
-  return first?.requestId === o.requestId ? "ok" : "closed";
+  if (!first) return "not_found";
+  return first.requestId === o.requestId ? "ok" : "closed";
 }
 
 /** The workspace's officers: everyone with an officer session on record and not blocked, by name. */

@@ -50,7 +50,7 @@ import { messageLanguage } from "./ready-message";
 import type { AttackerGroup } from "./theft-groups";
 import { theftsView } from "./thefts";
 
-export { undoFollowUp } from "./follow-up-undo";
+export { deleteFollowUp, undoFollowUp } from "./follow-up-undo";
 
 export interface FollowUpView {
   /** Before the alliance's first end-of-day read: nothing is computed, so nobody has a reason (D80). */

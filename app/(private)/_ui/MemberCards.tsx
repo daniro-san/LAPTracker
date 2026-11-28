@@ -339,7 +339,9 @@ export function MemberCard(props: CardProps) {
         {tab === "overview" && <Overview {...props} />}
         {tab === "info" && <Info card={card} editor={props.editor} />}
         {tab === "squads" && card.squads && <MemberSquads squads={card.squads} />}
-        {tab === "history" && <History card={card} />}
+        {tab === "history" && (
+          <History card={card} slug={props.editor.slug} onChanged={props.onChanged} />
+        )}
       </div>
       <Editor
         card={card}

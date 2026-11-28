@@ -6,7 +6,7 @@
 // language. Lower down, the "Review" section: the answered requests ("Rook approved Português · Tue 19:08")
 // and "Ask for a review". The ask sheet picks the whole notice or one language (preselected when opened from
 // a language), and the whole team or one officer. Each write carries a request id (D100). Nothing here blocks
-// Publish.
+// Publish. Any officer can withdraw an open request (D123 phase 2, the shared delete), with a short Undo.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -17,7 +17,9 @@ import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
+import { fill } from "@/lib/words";
 
+import { DeleteButton, UndoLine } from "./DeleteRecord";
 import { LANGUAGE_NAME } from "./languages";
 import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
@@ -62,6 +64,41 @@ const refusal = (code: string, t: WorkspaceDictionary) =>
     ? SIGNED_OUT
     : t[code === "closed" ? "notices.review.closed" : "notices.review.failed"];
 
+/** A withdraw or its Undo (D123 phase 2), as DeleteButton reads the answer. */
+const withdraw = async (slug: string, body: object) => {
+  const answer = await send(slug, { action: "withdraw", ...body });
+  return answer === "lost" ? "failed" : answer;
+};
+
+/** "Withdraw" on an open request: asks first, any officer (D123 phase 2). */
+function WithdrawButton(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  request: ReviewProps["open"][number];
+  onWithdrawn: (requestId: string | null) => void;
+}) {
+  const { t, request } = props;
+  return (
+    <DeleteButton
+      id={`review-withdraw-${request.id}`}
+      words={{
+        label: t["notices.review.withdraw"],
+        ask: t["notices.review.withdrawAsk"],
+        confirm: t["notices.review.withdraw"],
+        deleting: t["notices.review.withdrawing"],
+        keep: t["notices.review.keep"],
+        failed: t["notices.review.withdrawFailed"],
+      }}
+      ariaLabel={fill(t["notices.review.withdrawName"], { line: request.line })}
+      send={(id) => withdraw(props.slug, { review: request.id, requestId: id })}
+      onDeleted={props.onWithdrawn}
+    >
+      <p className="mt-2 text-body-sm">{request.line}</p>
+      <p className="mt-2 text-body-sm">{t["notices.review.withdrawWhere"]}</p>
+    </DeleteButton>
+  );
+}
+
 function OpenRequest(props: {
   slug: string;
   t: WorkspaceDictionary;
@@ -70,6 +107,8 @@ function OpenRequest(props: {
   active: NoticeLanguage;
   onEdit: () => void;
   onJump: (language: NoticeLanguage) => void;
+  /** After a withdraw: its request id, or null when someone else withdrew it first. */
+  onWithdrawn: (requestId: string | null) => void;
 }) {
   const { t, request } = props;
   const router = useRouter();
@@ -103,16 +142,24 @@ function OpenRequest(props: {
             {request.jump}
           </a>
         )}
-        {request.mine && (
-          <span className="mt-1 flex flex-wrap gap-2">
-            <button type="button" disabled={busy} onClick={() => void approve()} className={chip()}>
-              {request.approve}
-            </button>
-            <button type="button" onClick={props.onEdit} className={chip()}>
-              {request.edit}
-            </button>
-          </span>
-        )}
+        <span className="mt-1 flex flex-wrap items-center gap-2">
+          {request.mine && (
+            <>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void approve()}
+                className={chip()}
+              >
+                {request.approve}
+              </button>
+              <button type="button" onClick={props.onEdit} className={chip()}>
+                {request.edit}
+              </button>
+            </>
+          )}
+          <WithdrawButton {...props} />
+        </span>
         {error && (
           <RefusalLine
             text={refusal(error, t)}
@@ -134,21 +181,47 @@ export function ReviewRequests(props: {
   /** "Jump to Français": that language's tab comes into view. */
   onJump: (language: NoticeLanguage) => void;
 }) {
-  if (props.reviews.open.length === 0) return null;
+  const { t } = props;
+  const router = useRouter();
+  /** The officer's last withdraw, which the line offers to take back (D123 phase 2). */
+  const [withdrawn, setWithdrawn] = useState<{ review: number; requestId: string } | null>(null);
+  const undo = async () => {
+    if (!withdrawn) return false;
+    if ((await withdraw(props.slug, { ...withdrawn, undo: true })) !== "ok") return false;
+    setWithdrawn(null);
+    router.refresh();
+    return true;
+  };
+  if (props.reviews.open.length === 0 && !withdrawn) return null;
   return (
-    <ul aria-label={props.t["notices.review"]} className="mt-3 space-y-2">
-      {props.reviews.open.map((r) => (
-        <OpenRequest
-          key={r.id}
-          slug={props.slug}
-          t={props.t}
-          request={r}
-          active={props.active}
-          onEdit={() => props.onEdit(r.id, r.language)}
-          onJump={props.onJump}
+    <>
+      {withdrawn && (
+        <UndoLine
+          key={withdrawn.requestId}
+          done={t["notices.review.withdrawn"]}
+          undo={t["notices.review.undo"]}
+          failed={t["notices.review.undoFailed"]}
+          onUndo={undo}
         />
-      ))}
-    </ul>
+      )}
+      <ul aria-label={t["notices.review"]} className="mt-3 space-y-2">
+        {props.reviews.open.map((r) => (
+          <OpenRequest
+            key={r.id}
+            slug={props.slug}
+            t={t}
+            request={r}
+            active={props.active}
+            onEdit={() => props.onEdit(r.id, r.language)}
+            onJump={props.onJump}
+            onWithdrawn={(requestId) => {
+              setWithdrawn(requestId ? { review: r.id, requestId } : null);
+              router.refresh();
+            }}
+          />
+        ))}
+      </ul>
+    </>
   );
 }
 

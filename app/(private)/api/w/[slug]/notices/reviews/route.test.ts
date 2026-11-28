@@ -13,11 +13,15 @@ import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { requireWorkspace } from "@/lib/private/access";
+import { recentActivity } from "@/lib/private/desk-activity.test-helpers";
 import { toReviewCount } from "@/lib/private/import-view";
 import { noticeReviews, reviewsForMe } from "@/lib/private/notice-reviews";
 import { noticeDetail } from "@/lib/private/notices";
+import { UNDO_MS } from "@/lib/private/roll-call";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { noticeReviewOutcomes } from "@/lib/schema-notices";
+import { unzip } from "@/lib/zip.test-helpers";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -27,10 +31,12 @@ vi.mock("@/lib/app-context", async (original) => ({
 
 const { POST } = await import("./route");
 const { POST: SAVE } = await import("../route");
+const { POST: EXPORT } = await import("../../data-export/route");
 
 let db: Db;
 const tokens: Record<string, string> = {};
 const ids: Record<string, number> = {};
+let clock: { now: Date };
 const SLUG_OF: Record<string, string> = { Ana: "ogs", Rook: "ogs", Wren: "ogs", Nia: "nse" };
 
 beforeAll(async () => {
@@ -42,7 +48,9 @@ beforeEach(async () => {
     { unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] },
     { unionId: 67109944, slug: "nse", discordGuildId: "3", leaderRoleIds: ["4"] },
   ]);
-  holder.ctx = testContext(db).ctx;
+  const context = testContext(db);
+  holder.ctx = context.ctx;
+  clock = context.clock;
   for (const name of ["Ana", "Rook", "Wren", "Nia"]) {
     const workspaceId = SLUG_OF[name] === "ogs" ? 1 : 2;
     const [user] = await db
@@ -221,5 +229,81 @@ describe("answering a request (D113)", () => {
     expect((await noticeDetail(db, await access("Ana"), id))?.fields["pt-BR"].value).toBe(
       "Reguem às 18:00 ST (Wren).",
     );
+  });
+});
+
+describe("withdrawing a review request (D123 phase 2)", () => {
+  const withdraw = (name: string, review: number, requestId: string, undo?: true) =>
+    call(POST, "notices/reviews", name, {
+      action: "withdraw",
+      review,
+      requestId,
+      ...(undo && { undo }),
+    });
+
+  it("any officer withdraws an open one: it leaves the notice, To review, the tab's number, Home's lines and the download's main file", async () => {
+    const id = await notice();
+    const r = await ask(id, null, null);
+    const tab = async () => toReviewCount(db, await access("Rook"), T0);
+    expect([(await home("Rook")).length, await tab()]).toEqual([1, 1]);
+    expect((await withdraw("Rook", r, randomUUID())).status).toBe(200);
+    expect((await noticeReviews(db, await access("Ana"), id)).list).toEqual([]);
+    expect([(await home("Rook")).length, await tab()]).toEqual([0, 0]);
+    const approve = { action: "approve", review: r, requestId: randomUUID() };
+    expect((await review("Rook", approve)).status).toBe(404);
+    const kinds = (await recentActivity(db, await access("Wren"), T0)).map((l) => l.item.kind);
+    expect([kinds.includes("reviewWithdrawn"), kinds.includes("reviewAsked")]).toEqual([
+      true,
+      false,
+    ]);
+    const res = await call(EXPORT, "data-export", "Ana", { requestId: randomUUID() });
+    const files = unzip(new Uint8Array(await res.arrayBuffer()));
+    const rows = (name: string) => (files.get(name)?.toString("utf8") ?? "").trim().split("\r\n");
+    expect([rows("notice-reviews.csv").length, rows("notice-reviews-deleted.csv").length]).toEqual([
+      1, 2,
+    ]);
+  });
+
+  it("refuses a signed-out request (401), another workspace's officer and an answered request (404)", async () => {
+    const id = await notice();
+    const r = await ask(id, null, null);
+    expect((await withdraw("Nobody", r, randomUUID())).status).toBe(401);
+    expect((await withdraw("Nia", r, randomUUID())).status).toBe(404);
+    await review("Rook", { action: "approve", review: r, requestId: randomUUID() });
+    expect((await withdraw("Rook", r, randomUUID())).status).toBe(404);
+    expect(await isOpen(id, r)).toBe(false);
+  });
+
+  it("Undo is the withdrawer's own, within UNDO_MS", async () => {
+    const id = await notice();
+    const r = await ask(id, null, null);
+    const requestId = randomUUID();
+    await withdraw("Rook", r, requestId);
+    expect((await withdraw("Ana", r, requestId, true)).status).toBe(404);
+    expect((await withdraw("Rook", r, requestId, true)).status).toBe(200);
+    expect(await isOpen(id, r)).toBe(true);
+    const late = randomUUID();
+    await withdraw("Rook", r, late);
+    clock.now = new Date(T0.getTime() + UNDO_MS + 1);
+    expect((await withdraw("Rook", r, late, true)).status).toBe(404);
+    expect(await isOpen(id, r)).toBe(false);
+  });
+
+  it("a withdraw's Undo is refused once the request got an outcome, and Home has no answered line", async () => {
+    const r = await ask(await notice(), null, null);
+    const requestId = randomUUID();
+    await withdraw("Rook", r, requestId);
+    // An outcome written in the same instant as the withdraw (a race the insert's check cannot see).
+    await db.insert(noticeReviewOutcomes).values({
+      workspaceId: 1,
+      reviewId: r,
+      requestId: randomUUID(),
+      outcome: "approved",
+      by: ids.Rook ?? 0,
+      at: T0,
+    });
+    expect((await withdraw("Rook", r, requestId, true)).status).toBe(404);
+    const kinds = (await recentActivity(db, await access("Wren"), T0)).map((l) => l.item.kind);
+    expect(kinds).not.toContain("reviewAnswered");
   });
 });
