@@ -16,7 +16,7 @@ import { serverDay } from "../schedule";
 import { playerHistory } from "../schema-squads";
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
-import { awayUntil } from "./fact-fields";
+import { awayNoteUntil } from "./fact-fields";
 import { featureOn } from "./features";
 import { kvkGroupOpen } from "./follow-up-kvk";
 import { helpStands } from "./follow-up-rules";
@@ -164,7 +164,7 @@ function awayOf(newest: Reads[number], facts: Facts, today: string): Set<number>
     newest.members
       .filter((m) => {
         const f = facts.get(m.uid);
-        return f?.status?.value === "break" || awayUntil(f?.away?.value, today) !== null;
+        return f?.status?.value === "break" || awayNoteUntil(f, today) !== null;
       })
       .map((m) => m.uid),
   );
@@ -364,7 +364,7 @@ export async function insightsView(
         const f = facts.get(m.uid);
         return helpStands({
           officerStatus: f?.status?.value ?? null,
-          awayUntil: awayUntil(f?.away?.value, today),
+          awayUntil: awayNoteUntil(f, today),
         });
       })
       .map((m) => m.uid),

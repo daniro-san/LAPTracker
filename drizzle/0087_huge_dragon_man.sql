@@ -1,0 +1,2 @@
+ALTER TABLE "member_self_reports" DROP CONSTRAINT "member_self_reports_field_check";--> statement-breakpoint
+ALTER TABLE "member_self_reports" ADD CONSTRAINT "member_self_reports_field_check" CHECK ("member_self_reports"."field" in ('adTech', 'timeZone', 'languages', 'away'));

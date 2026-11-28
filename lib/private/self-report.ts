@@ -6,10 +6,13 @@
 // member's own page, the member card and the workspace download.
 import { z } from "zod";
 
+import { dayIn, daysBetween, isDay } from "../calendar-time";
 import type { Db } from "../db";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
 import {
+  AWAY,
   markSeen,
+  ownAway,
   ownReports,
   reportsOfPlayer,
   selfReportLimitKey,
@@ -24,7 +27,7 @@ import { fill } from "../words";
 import type { BoardAccess, MeAccess, WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
 import { selfReportCardWords, type SelfReportCardWords } from "./dictionary.self-report";
-import { LANGUAGES, type FactValues, type MemberFacts } from "./fact-fields";
+import { LANGUAGES, type AwayNote, type FactValues, type MemberFacts } from "./fact-fields";
 import { factText } from "./fact-text";
 import { FACT_VALUES, saveMemberFact, type ChangeResult } from "./member-facts";
 
@@ -167,6 +170,106 @@ export async function sendReport(
   return { conflict, reports: await reports() };
 }
 
+/** The furthest ahead a member may set their last day away, from today (server days). */
+export const AWAY_MAX_DAYS = 90;
+
+const DAY = z.string().refine(isDay);
+/** A member's away days (issue 829): first and last server day, or `clear`. Strict: names no uid. */
+export const AWAY_SEND = z.union([
+  z
+    .object({ from: DAY, until: DAY })
+    .strict()
+    .refine((d) => d.from <= d.until),
+  z.object({ clear: z.literal(true) }).strict(),
+]);
+export type AwaySend = z.infer<typeof AWAY_SEND>;
+
+export interface OwnAway {
+  from: string;
+  until: string;
+}
+
+const awayOf = (value: unknown): OwnAway | null => (value as OwnAway | null) ?? null;
+
+/**
+ * The member's own away days that still count on server day `today` (first day not needed: a last day not
+ * past), for their page. Past days expire by themselves; nothing is deleted.
+ */
+export async function ownAwayDays(
+  db: Db,
+  board: BoardAccess,
+  me: MeAccess,
+  today: string,
+): Promise<OwnAway | null> {
+  const row = await ownAway(db, board.workspaceId, board.userId);
+  const days = row && row.uid === me.uid ? awayOf(row.value) : null;
+  return days && days.until >= today ? days : null;
+}
+
+export type AwayResult = "left" | "past" | "far" | "conflict" | { away: OwnAway | null };
+
+/**
+ * Sets or clears the member's own away days for their own link's uid (issue 829): kept in the member's
+ * self-report row, never in member_facts (D154), and read by the roll call, Follow-up and the card only
+ * as the member's own report. The last day may not be past or more than AWAY_MAX_DAYS ahead. Clearing a
+ * row that holds nothing is a clear all the same.
+ */
+export async function sendAway(
+  db: Db,
+  board: BoardAccess,
+  me: MeAccess,
+  input: AwaySend,
+  now: Date,
+  zone: string,
+): Promise<AwayResult> {
+  const roster = await anyRoster(db, me.unionId);
+  // INVARIANT self-report.member-only: a member who left sends nothing (as Me closes, D142).
+  if (!roster?.members.some((m) => m.uid === me.uid)) return "left";
+  const today = dayIn(zone, now.getTime());
+  if ("from" in input) {
+    if (input.until < today) return "past";
+    if (daysBetween(today, input.until) > AWAY_MAX_DAYS) return "far";
+  }
+  const stored = await ownAway(db, board.workspaceId, board.userId);
+  const row = {
+    workspaceId: board.workspaceId,
+    userId: board.userId,
+    // INVARIANT self-report.own-uid: the link's uid, never one from the request.
+    uid: me.uid,
+    field: AWAY,
+    value: "from" in input ? { from: input.from, until: input.until } : null,
+    requestId: crypto.randomUUID(),
+    writtenAt: now,
+  } as const;
+  if (!(await writeReport(db, row, stored?.version ?? 0))) return "conflict";
+  return { away: await ownAwayDays(db, board, me, today) };
+}
+
+/** What the member card says of the member's own away days, or null when none still count. */
+export interface CardAway {
+  head: string;
+  /** "Away Sat, Nov 29 – Mon, Dec 1 (the member's own report)". */
+  line: string;
+}
+
+export function cardAway(
+  facts: MemberFacts,
+  today: string,
+  t: WorkspaceDictionary,
+  date: (day: Date | string) => string,
+): CardAway | null {
+  const note: AwayNote | null | undefined = facts.ownAway?.value;
+  // Days still to come show too: an officer should know before the first day.
+  if (!note?.from || !note.until || note.until < today) return null;
+  return {
+    head: t["self.card.awayHead"],
+    line: fill(t["self.card.away"], {
+      from: date(note.from),
+      until: date(note.until ?? note.from),
+    }),
+  };
+}
+
 /** One field of what the member sent, as the card shows it. */
 export interface CardReportLine {
   userId: number;
@@ -190,6 +293,8 @@ export interface CardSelfReport {
   unseen: CardReportLine[];
   /** Under a fact on the Info tab: a seen report that is not what the card holds. */
   info: Partial<Record<ReportField, string>>;
+  /** The member's own away days, no answer needed: they act by themselves (issue 829). */
+  away: CardAway | null;
   words: SelfReportCardWords;
 }
 
@@ -197,6 +302,7 @@ interface CardFormat {
   language: string;
   now: Date;
   date: (at: Date | string) => string;
+  zone: string;
 }
 
 /** One unseen report's line, both values labelled: "Member says: …", "On the card: …". */
@@ -237,12 +343,13 @@ export async function cardSelfReport(
   t: WorkspaceDictionary,
   f: CardFormat,
 ): Promise<CardSelfReport | null> {
+  const away = cardAway(facts, dayIn(f.zone, f.now.getTime()), t, f.date);
   const rows = await reportsOfPlayer(db, access.workspaceId, uid);
-  if (rows.length === 0) return null;
+  if (rows.length === 0 && !away) return null;
   const text = { language: f.language, now: f.now, day: (iso: string) => f.date(iso), words: t };
   const shown = (field: ReportField, value: unknown) =>
     factText(field, ordered(field, value) as FactValues[typeof field] | null, text);
-  const report: CardSelfReport = { unseen: [], info: {}, words: selfReportCardWords(t) };
+  const report: CardSelfReport = { unseen: [], info: {}, away, words: selfReportCardWords(t) };
   for (const row of [...rows].sort(
     (a, b) => REPORT_FIELDS.indexOf(a.field) - REPORT_FIELDS.indexOf(b.field),
   )) {
@@ -256,7 +363,7 @@ export async function cardSelfReport(
         day,
       });
   }
-  return report.unseen.length > 0 || Object.keys(report.info).length > 0 ? report : null;
+  return report.unseen.length > 0 || Object.keys(report.info).length > 0 || away ? report : null;
 }
 
 export type AnswerResult = "ok" | "changed" | "removed" | { conflict: ChangeResult };

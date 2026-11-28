@@ -22,7 +22,7 @@ import {
 } from "../repo/workspace-rosters";
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
-import { awayUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
+import { awayNoteUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
 import { progressOf, thanksWeek, TREND_FIELDS, type Progress } from "./fact-trend";
 import { duelSaved } from "./import-save";
 import type { DuelSaved } from "./import-view";
@@ -161,7 +161,7 @@ function factsPart(uid: number, s: Pick<Signals, "facts" | "today">) {
   return {
     facts,
     officerStatus: facts.status?.value ?? null,
-    awayUntil: awayUntil(facts.away?.value, s.today),
+    awayUntil: awayNoteUntil(facts, s.today),
   };
 }
 

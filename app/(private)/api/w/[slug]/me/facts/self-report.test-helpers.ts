@@ -13,6 +13,7 @@ import { dailyReads, dailyRosters, memberFacts, workspaces, workspaceUsers } fro
 
 import * as linksRoute from "../../member-links/route";
 import * as officerRoute from "../../members/[uid]/self-report/route";
+import * as awayRoute from "../away/route";
 import * as memberRoute from "./route";
 
 const ORIGIN = "https://laptracker.test";
@@ -100,11 +101,13 @@ export function selfReportWorld() {
   const { tokens, users } = w;
 
   async function call(url: string, who: string, body: object, params: Record<string, string>) {
-    const mod = url.includes("/me/")
-      ? memberRoute
-      : url.includes("/member-links")
-        ? linksRoute
-        : officerRoute;
+    const mod = url.includes("/me/away")
+      ? awayRoute
+      : url.includes("/me/")
+        ? memberRoute
+        : url.includes("/member-links")
+          ? linksRoute
+          : officerRoute;
     const request = new Request(`${ORIGIN}${url}`, {
       method: "POST",
       headers: {
@@ -124,6 +127,9 @@ export function selfReportWorld() {
   /** A member's send from their own page. */
   const send = (who: string, changes: object[], requestId = ID(1), extra: object = {}) =>
     call("/api/w/alpha/me/facts", who, { requestId, changes, ...extra }, { slug: "alpha" });
+  /** A member's own days away (issue 829). */
+  const away = (who: string, body: object) =>
+    call("/api/w/alpha/me/away", who, body, { slug: "alpha" });
   /** An officer's answer on a member's card. */
   const answer = (who: string, uid: number, body: object, slug = "alpha") =>
     call(`/api/w/${slug}/members/${uid}/self-report`, who, body, { slug, uid: String(uid) });
@@ -166,6 +172,7 @@ export function selfReportWorld() {
       roster(w, unionId, day, people),
     users,
     send,
+    away,
     answer,
     removeLink,
     rook,

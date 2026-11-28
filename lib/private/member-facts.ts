@@ -7,8 +7,10 @@
 import { z } from "zod";
 
 import type { Db } from "../db";
+import { ownAwayOf } from "../member-away";
 import { factVersion, insertFact, latestFacts, type FactRow } from "../repo/member-facts";
 import { findPending } from "../repo/pending-members";
+import { awayReports } from "../repo/self-reports";
 import { anyRoster } from "../repo/workspace-any-roster";
 import { wasInRoster } from "../repo/workspace-past-roster";
 import type { WorkspaceAccess } from "./access";
@@ -105,7 +107,11 @@ function normalise(c: FactChange): unknown {
  */
 export async function factsOf(db: Db, access: WorkspaceAccess): Promise<Map<number, MemberFacts>> {
   const facts = new Map<number, MemberFacts>();
-  for (const r of await latestFacts(db, access.workspaceId)) {
+  const [rows, away] = await Promise.all([
+    latestFacts(db, access.workspaceId),
+    awayReports(db, access.workspaceId),
+  ]);
+  for (const r of rows) {
     const own = facts.get(r.uid) ?? {};
     const value =
       r.field === "languages" && Array.isArray(r.value)
@@ -114,6 +120,12 @@ export async function factsOf(db: Db, access: WorkspaceAccess): Promise<Map<numb
     const at = r.writtenAt.toISOString();
     Object.assign(own, { [r.field]: { value, source: r.source, version: r.version, at } });
     facts.set(r.uid, own);
+  }
+  // Issue 829: a member's own away days lie over the facts, never inside them.
+  for (const a of away) {
+    const own = facts.get(a.uid) ?? {};
+    own.ownAway = ownAwayOf(a.value, a.writtenAt);
+    facts.set(a.uid, own);
   }
   return facts;
 }

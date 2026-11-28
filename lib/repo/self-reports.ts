@@ -4,13 +4,15 @@
 // the reports of the user who holds the approved link to the player now, and is not blocked, so a removed
 // link or an impostor's reports never reach a card. Which fields, the limit and the answers stay in
 // lib/private.
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, lt, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberSelfReports, workspaceUsers } from "../schema";
 import { DAY_KEY_PREFIX } from "./auth-attempts";
 
 export type ReportField = "adTech" | "timeZone" | "languages";
+/** The member's away days (issue 829): `{from, until}` or null; kept out of the three fields' reads below. */
+export const AWAY = "away";
 
 export interface ReportRow {
   userId: number;
@@ -26,6 +28,7 @@ export interface ReportRow {
 export const selfReportLimitKey = (userId: number) => `${DAY_KEY_PREFIX}selfreport:${userId}`;
 
 const r = memberSelfReports;
+const notAway = ne(r.field, AWAY);
 const columns = {
   userId: r.userId,
   uid: r.uid,
@@ -53,7 +56,27 @@ export async function ownReports(
   return db
     .select(columns)
     .from(r)
-    .where(and(eq(r.workspaceId, workspaceId), eq(r.userId, userId)));
+    .where(and(eq(r.workspaceId, workspaceId), eq(r.userId, userId), notAway)) as Promise<
+    ReportRow[]
+  >;
+}
+
+/** The member's own away row for `uid`, whatever its state: the version a next write names. */
+export async function ownAway(db: Db, workspaceId: number, userId: number) {
+  const [row] = await db
+    .select({ uid: r.uid, value: r.value, version: r.version })
+    .from(r)
+    .where(and(eq(r.workspaceId, workspaceId), eq(r.userId, userId), eq(r.field, AWAY)));
+  return row ?? null;
+}
+
+/** Every away report that stands now: from the user who holds the approved link to its player. */
+export async function awayReports(db: Db, workspaceId: number) {
+  return db
+    .select({ uid: r.uid, value: r.value, writtenAt: r.writtenAt })
+    .from(r)
+    .innerJoin(workspaceUsers, heldNow)
+    .where(and(eq(r.workspaceId, workspaceId), eq(r.field, AWAY)));
 }
 
 /** Whether any field of this user was stored under this request id (D100). */
@@ -82,7 +105,7 @@ export async function writeReport(
     workspaceId: number;
     userId: number;
     uid: number;
-    field: ReportField;
+    field: ReportField | typeof AWAY;
     value: unknown;
     requestId: string;
     writtenAt: Date;
@@ -128,7 +151,7 @@ export async function reportsOfPlayer(
     .select(columns)
     .from(r)
     .innerJoin(workspaceUsers, heldNow)
-    .where(and(eq(r.workspaceId, workspaceId), eq(r.uid, uid)));
+    .where(and(eq(r.workspaceId, workspaceId), eq(r.uid, uid), notAway)) as Promise<ReportRow[]>;
 }
 
 /** The reports no officer has seen yet, from users who hold the approved link to their player now. */
@@ -137,8 +160,8 @@ export async function unseenReports(db: Db, workspaceId: number): Promise<Report
     .select(columns)
     .from(r)
     .innerJoin(workspaceUsers, heldNow)
-    .where(and(eq(r.workspaceId, workspaceId), lt(r.seenVersion, r.version)))
-    .orderBy(r.writtenAt);
+    .where(and(eq(r.workspaceId, workspaceId), lt(r.seenVersion, r.version), notAway))
+    .orderBy(r.writtenAt) as Promise<ReportRow[]>;
 }
 
 /**

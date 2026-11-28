@@ -63,7 +63,9 @@ export const memberFacts = pgTable(
  * send makes it new again. Keyed by the workspace user, not the player: only the reports of the user who
  * holds the approved link to `uid` now are shown, so an impostor's never reach the real member's card. A
  * null value is a removal. Never read by `latestFacts`: nothing here changes a fact until an officer
- * says so (D75). Read and written only by lib/repo and lib/private.
+ * says so (D75). The field `away` (issue 829) is the member's first and last day away, `{from, until}`:
+ * the one report that acts by itself (roll call, Follow-up), read by `awayReports`, never by the officer
+ * answers. Read and written only by lib/repo and lib/private.
  */
 export const memberSelfReports = pgTable(
   "member_self_reports",
@@ -77,7 +79,7 @@ export const memberSelfReports = pgTable(
       .references(() => workspaceUsers.id, { onDelete: "cascade" }),
     /** The player of the user's approved link when they sent it. */
     uid: big("uid").notNull(),
-    field: text("field", { enum: ["adTech", "timeZone", "languages"] }).notNull(),
+    field: text("field", { enum: ["adTech", "timeZone", "languages", "away"] }).notNull(),
     value: jsonb("value"),
     version: integer("version").notNull(),
     /** The send's request id (D100): a repeat stores nothing. */
@@ -91,7 +93,7 @@ export const memberSelfReports = pgTable(
     unique("member_self_reports_user_field_unique").on(t.workspaceId, t.userId, t.field),
     check(
       "member_self_reports_field_check",
-      sql`${t.field} in ('adTech', 'timeZone', 'languages')`,
+      sql`${t.field} in ('adTech', 'timeZone', 'languages', 'away')`,
     ),
   ],
 );
