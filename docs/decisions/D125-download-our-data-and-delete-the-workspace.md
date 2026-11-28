@@ -60,3 +60,5 @@ Why: the desk opens to other alliances (issue 438). The owner (2026-11-19): an a
 **Amendment (2026-11-22, issue 713, D157 amended).** `feedback_pictures` is in the list with scope `workspace` (through its `workspace_id`, also `cascade` from its feedback row): deleted with the workspace and never downloaded, like `feedback`.
 
 **Amendment 2026-11-23 (issue 713 part C, D159).** `workspace_posts` is in the list: each catalog post's switch, channel, the officers' own title and language. It is downloaded as `posts.csv` (the README says "The posts we make for you on our own: each one's switch, channel, your title and language.") and deleted with the workspace. `post_runs`, each post's claim per period (status, messages sent, attempts), is deleted with the workspace and never downloaded, like the push marks.
+
+**Amendment 2026-11-27 (issue 469, D107 amended).** `former-members.csv` gains two columns, `left_reason` (the reason an officer saved, in the officer's language) and `left_note`; both are empty when no reason was saved. Every version of the fact is already in `member-facts.csv` as field `leftReason`.

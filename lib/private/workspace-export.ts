@@ -191,8 +191,13 @@ async function buildZip(
     ...dumps.flatMap((d) => sheetsOf(d, { people, members }, words.t)),
     {
       file: "former-members",
-      columns: ["uid", "name", "last_seen", "might", "kills"],
-      rows: former.map((f) => [f.uid, f.name, f.lastSeen, f.might, f.kills]),
+      columns: ["uid", "name", "last_seen", "might", "kills", "left_reason", "left_note"],
+      // Why they left (issue 469), in the officer's words; empty when no reason was saved.
+      rows: former.map((f) => {
+        const left = f.facts.leftReason?.value;
+        const reason = left ? words.t[`former.reason.${left.reason}`] : null;
+        return [f.uid, f.name, f.lastSeen, f.might, f.kills, reason, left?.note || null];
+      }),
       about: words.t["data.file.former-members"],
     },
     activity,

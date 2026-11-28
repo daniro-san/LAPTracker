@@ -27,6 +27,8 @@ export const DESK_FEATURES = [
   "follow_up",
   "new_member",
   "member_facts",
+  // Issue 469: why a former member left, saved on Former members.
+  "left_reason",
   "sheet_import",
   "notice",
   "notice_ai",

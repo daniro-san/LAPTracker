@@ -52,7 +52,23 @@ export interface Fact<F extends FactField = FactField> {
   /** When this version was written (ISO); a past day reads the facts as they were from then (D103). */
   at?: string;
 }
-export type MemberFacts = { [F in FactField]?: Fact<F> };
+/**
+ * Why a former member left (issue 469, D107 amendment 2026-11-27): one of these, in neutral words (D75),
+ * with an optional note. Stored as the member fact `leftReason`, outside FACT_FIELDS: only a former member
+ * gets one, from the Former members view, never from the facts editor.
+ */
+export const LEFT_REASONS = ["left", "otherAlliance", "removed", "inactive", "unknown"] as const;
+export type LeftReasonCode = (typeof LEFT_REASONS)[number];
+export const LEFT_FIELD = "leftReason";
+export const LEFT_NOTE_MAX = 500;
+export interface LeftReason {
+  reason: LeftReasonCode;
+  note: string;
+}
+
+export type MemberFacts = { [F in FactField]?: Fact<F> } & {
+  leftReason?: Omit<Fact, "value"> & { value: LeftReason | null };
+};
 
 /** The languages offered, as codes (issue #297: EN, PT, FR, ES, DE, RU/UK, …). */
 export const LANGUAGES = [
