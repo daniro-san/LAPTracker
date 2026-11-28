@@ -1,7 +1,8 @@
 // player_reads and player_history (D132, issue 490): every /v1/players answer of the squads read, kept for
 // the alliance whose workspace read it. Writes, the 90-day clean-up and each member's newest game language
 // (D140), and one player's own rows for the recruit check (issue 833): no query here returns raw_json, and
-// nothing reads x, y, online, last_online_at or avatar_url out of it (D71, D22).
+// nothing reads x, y, online, last_online_at or avatar_url out of it (D71, D22). The `last_seen_at` column is
+// presence desk data (D163, issue 873): `lastSeenTimes` serves the desk's usual-hours line only.
 import { and, desc, eq, gte, ilike, inArray, isNotNull, lt } from "drizzle-orm";
 
 import type { Db } from "../db";
@@ -129,6 +130,32 @@ export async function gameLanguageReads(
     )
     .orderBy(p.uid, desc(p.readAt));
   return new Map(rows.map((r) => [r.uid, { language: r.language as string, readAt: r.readAt }]));
+}
+
+/**
+ * The distinct `last_seen_at` times of `unionId`'s own reads since `since` (a bounded window, issue 873),
+ * for `uid` only or for every member: one row per member and time, so a time seen in many reads counts once.
+ * Own alliance's rows only (D132); desk only (D163), never a public read model.
+ */
+export async function lastSeenTimes(
+  db: Db,
+  unionId: number,
+  since: Date,
+  uid?: number,
+): Promise<{ uid: number; at: Date }[]> {
+  const p = playerReads;
+  const rows = await db
+    .selectDistinct({ uid: p.uid, at: p.lastSeenAt })
+    .from(p)
+    .where(
+      and(
+        eq(p.unionId, unionId),
+        gte(p.readAt, since),
+        isNotNull(p.lastSeenAt),
+        uid === undefined ? undefined : eq(p.uid, uid),
+      ),
+    );
+  return rows.flatMap((r) => (r.at ? [{ uid: r.uid, at: r.at }] : []));
 }
 
 /** `gameLanguageReads` without the time: each member's newest game language code. */

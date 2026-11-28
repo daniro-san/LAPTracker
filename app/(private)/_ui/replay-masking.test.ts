@@ -150,6 +150,33 @@ describe("session replay on the member card (issue 634, D137)", () => {
   });
 });
 
+describe("session replay on the member card's presence lines (D163 point 3)", () => {
+  it("records none of the last seen, since or usual-hours lines, which the card still shows", () => {
+    const member = {
+      ...SOURCE,
+      uid: 9,
+      name: "Pip",
+      lastOnlineAt: new Date("2026-11-18T20:30:00Z"),
+    };
+    const card = cardData(member, t, f, { duel: false });
+    card.presence = [...card.presence, "Usually in game around 20:00–21:59 ST (from 14 readings)"];
+    const editor = { slug: "ogs", words: t, language: "en" } as unknown as EditorContext;
+    const html = renderToStaticMarkup(
+      createElement(MemberCard, {
+        card,
+        editor,
+        zoneNow: null,
+        mode: null,
+        onEditorClose: () => {},
+      }),
+    );
+    for (const line of card.presence) expect(html, line).toContain(line);
+    const kept = recorded(html);
+    expect(kept).toContain("61.2M");
+    for (const line of card.presence) expect(kept, line).not.toContain(line);
+  });
+});
+
 describe("session replay on a member's own page (D142)", () => {
   it("records none of their own daily bars or numbers, which the page still shows", () => {
     const day = (d: string, active: number): OwnDay => ({

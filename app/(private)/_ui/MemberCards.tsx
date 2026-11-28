@@ -251,11 +251,13 @@ function Header({ card, zoneNow, editor, onChanged }: CardProps) {
           {line}
         </p>
       ))}
-      {card.presence.map((line) => (
-        <p key={line} className="mt-1 text-body-sm text-ink/80">
-          {line}
-        </p>
-      ))}
+      <section className="ph-no-capture">
+        {card.presence.map((line) => (
+          <p key={line} className="mt-1 text-body-sm text-ink/80">
+            {line}
+          </p>
+        ))}
+      </section>
       {card.gameLanguage && (
         <p className="mt-1 text-body-sm text-ink/80">
           {fill(card.gameLanguage.line, {

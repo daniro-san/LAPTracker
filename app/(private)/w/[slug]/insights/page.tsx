@@ -36,7 +36,7 @@ import { KvkMapCard } from "../../../_ui/InsightsKvkMap";
 import { KvkCard, ShieldCard, SquadsCard } from "../../../_ui/InsightsMore";
 import { FlowCard, PulseCard } from "../../../_ui/InsightsSections";
 import { InsightsSetMemory } from "../../../_ui/InsightsSetMemory";
-import { ZonesCard } from "../../../_ui/InsightsZones";
+import { TimeCards } from "../../../_ui/InsightsUsual";
 import { ViewSwitch } from "../../../_ui/MembersHead";
 import { openRollCall } from "../../../_ui/roll-call-page";
 import { PANE_ID } from "../../../_ui/SetSheet";
@@ -140,7 +140,7 @@ export default async function InsightsPage({
       {data.view.shield && (
         <ShieldCard shield={shieldWords(data.view.shield, { t, language })} t={t} noData={noData} />
       )}
-      <ZonesCard view={data.view} now={data.now} {...{ slug, t, language }} />
+      <TimeCards view={data.view} now={data.now} {...{ slug, t, language }} />
     </>
   );
   return (

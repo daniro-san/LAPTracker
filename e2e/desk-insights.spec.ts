@@ -147,9 +147,12 @@ test("Time zones: the largest group and its reset, the groups west to east, and 
     card,
     `Time zone recorded for ${e.known} of the ${e.members} members in the newest daily update.`,
   );
-  // The last card (only the margin's "How this page counts" comes after it), its rows behind the fold.
+  // Second to last card (only "Usual hours in game" and the margin's "How this page counts" come after it), its rows behind the fold.
   const heads = await page.getByRole("main").getByRole("heading", { level: 2 }).allTextContents();
-  expect(heads.slice(heads.indexOf("Time zones") + 1)).toEqual(["How this page counts"]);
+  expect(heads.slice(heads.indexOf("Time zones") + 1)).toEqual([
+    "Usual hours in game",
+    "How this page counts",
+  ]);
   await expect(card.getByText("Not recorded yet")).toBeHidden();
 
   await card.getByText("Show the details").click();

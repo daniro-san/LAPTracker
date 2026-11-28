@@ -3,12 +3,13 @@
 // are left out of the effort comparison), and for the people who joined or left, the public daily rosters
 // of the other alliances we read and the alliance tags in our members' own /v1/players history rows (D132,
 // D136). While the Raid Shield check is on (D134), its weekly counts of the night and morning checks'
-// readings (D137), counts only. The members' recorded time zones, counted (owner, 2026-11-22). A count that stands for a set of members carries the set's uids, and the count is its length (#678). Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are never used; avatar_url is never read.
+// readings (D137), counts only. The members' recorded time zones, counted (owner, 2026-11-22). A count that stands for a set of members carries the set's uids, and the count is its length (#678). Everything is already stored: no upstream call. x, y, online and joined_at are never used here; last_online_at and last_seen_at only as the Usual hours card's readings (issue 873, D163); avatar_url is never read.
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { sightingsElsewhere } from "../queries/roster-stays";
 import { allianceLabels, type AllianceLabel } from "../repo/alliances";
+import { lastSeenTimes } from "../repo/player-reads";
 import { shieldPassCounts, shieldSettingsOf } from "../repo/shield-checks";
 import { latestSquadSightings } from "../repo/squads";
 import { endOfDayReads, firstSeenDays, scheduledEventMight } from "../repo/workspace-rosters";
@@ -55,6 +56,7 @@ import { squadsCoverageOf, type SquadsCoverage } from "./insights-squads";
 import { zoneCountsOf, type ZoneCounts } from "./insights-zones";
 import { factsOf } from "./member-facts";
 import { isNewMember } from "./member-week";
+import { hourCounts, NO_HOURS, presenceTimes, USUAL_DAYS, type HourCounts } from "./usual-hours";
 
 /** End-of-day reads fetched: the PULSE_WEEKS weeks and the read before them, the base of the first move. */
 const READS = PULSE_WEEKS * 7 + 1;
@@ -120,6 +122,8 @@ export interface InsightsView {
   shield: ShieldWeek[] | null;
   /** The newest daily update's members by their recorded time zone, counts only (owner, 2026-11-22). */
   zones: ZoneCounts;
+  /** The newest daily update's members by the server hours they are usually in game (issue 873, D163), counts only. */
+  usual: HourCounts;
   labels: Map<number, AllianceLabel>;
   /**
    * The name of everyone a set can hold (#678): the newest read's members (`current`) and the flow's
@@ -296,6 +300,7 @@ const noReadYet = (): InsightsView => ({
   squads: null,
   shield: null,
   zones: { members: 0, zones: [] },
+  usual: NO_HOURS,
   labels: new Map(),
   people: new Map(),
   roster: [],
@@ -333,10 +338,12 @@ export async function insightsView(
   zone: string,
   asked: AskedLevels = {},
 ): Promise<InsightsView> {
-  const [reads, firstSeen, facts] = await Promise.all([
+  const [reads, firstSeen, facts, seen] = await Promise.all([
     endOfDayReads(db, access.unionId, READS),
     firstSeenDays(db, access.unionId),
     factsOf(db, access),
+    // The one bounded query of the usual-hours card: the own union's player reads of the last 30 days (D163).
+    lastSeenTimes(db, access.unionId, new Date(now.getTime() - USUAL_DAYS * 86_400_000)),
   ]);
   const newest = reads.at(-1);
   if (!newest) return noReadYet();
@@ -394,6 +401,12 @@ export async function insightsView(
     zones: zoneCountsOf(
       newest.members.map((m) => m.uid),
       facts,
+    ),
+    usual: hourCounts(
+      newest.members.map((m) => m.uid),
+      presenceTimes(reads, seen),
+      now,
+      zone,
     ),
     labels,
     people: peopleOf(newest, moves),

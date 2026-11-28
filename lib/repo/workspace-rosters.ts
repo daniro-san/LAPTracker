@@ -466,3 +466,28 @@ export async function latestRoster(db: Db, unionId: number): Promise<RosterEntry
     };
   });
 }
+
+/**
+ * One member's `last_online_at` in each usable end-of-day roster of `unionId` from `sinceDay` on (issue 873):
+ * the desk card's usual-hours readings. A bounded window of rosters, one member's value from each; own
+ * alliance only; desk only (D163).
+ */
+export async function lastOnlineTimes(
+  db: Db,
+  unionId: number,
+  uid: number,
+  sinceDay: string,
+): Promise<Date[]> {
+  const rows = await db
+    .select({
+      at: sql<unknown>`(select m->'last_online_at' from jsonb_array_elements(${dailyRosters.rawJson}->'members') m where (m->>'uid') = ${String(uid)} limit 1)`,
+    })
+    .from(dailyRosters)
+    .where(
+      and(usable(unionId), isNotNull(dailyRosters.rawJson), gte(dailyRosters.readDay, sinceDay)),
+    );
+  return rows.flatMap((r) => {
+    const at = time(r.at);
+    return at ? [at] : [];
+  });
+}
