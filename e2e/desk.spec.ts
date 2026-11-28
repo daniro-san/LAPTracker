@@ -88,7 +88,11 @@ test("Home shows the alliance, its activity and its week line", async ({ page },
     `Alliance Help: ${w.members} of ${w.members} reached 1,000 yesterday · daily quest points yesterday, median ${DAILY.active} · donations ${w.week} ${big(w.donations)}`,
   );
   await expect(week.getByRole("heading", { name: "Top donors" })).toBeVisible();
-  await expect(week.getByRole("listitem").filter({ hasText: A.names[0] as string })).toBeVisible();
+  // Issue 465: the seed puts everyone at the cap every day, so the same name is also in "Helped the alliance
+  // every day"; the first row is the donors one.
+  const named = week.getByRole("listitem").filter({ hasText: A.names[0] as string });
+  await expect(named.first()).toBeVisible();
+  await expect(named.filter({ hasText: "Helped the alliance every day" })).toBeVisible();
   // Issue 585: Follow-up's numbers, linked to Follow-up, in a card of Home's main column before "Today and
   // tomorrow" (slice 4), and no longer in "Members this week". The seed gives everyone quest points and coins
   // at the cap (DAILY) and records no facts for its new members, so the list holds `toLookOf`
