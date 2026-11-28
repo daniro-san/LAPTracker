@@ -18,7 +18,7 @@ The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?privat
 | ---------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `daily_tech`, `daily_honor`, `active`                | yes                                                                      | yes, own uid only                             | per member on public pages, with rank and might, through `lib/queries/alliance-page.ts` (D76 amendment 2026-11-28) |
 | `joined_at`                                          | yes, also in copies and exports (D163)                                   | no                                            | no                                                                                                                 |
-| `x`, `y`, `online`, `last_online_at`, `last_seen_at` | yes, also in copies and exports; a name may sit next to its place (D163) | no                                            | never `online`, `last_online_at`, `last_seen_at` (D163); `x`, `y`: no, pending the owner                           |
+| `x`, `y`, `online`, `last_online_at`, `last_seen_at` | yes, also in copies and exports; a name may sit next to its place (D163) | no                                            | never `online`, `last_online_at`, `last_seen_at` (D163); `x`, `y`: never (owner, 2026-11-28)                       |
 | `avatar_url`                                         | never returned; the photo is the image `/img/avatar/[uid]` serves        | never                                         | never                                                                                                              |
 | badges (`badge_id` 101–110)                          | only as `/img/badge/[id]`                                                | same                                          | same                                                                                                               |
 
@@ -39,6 +39,6 @@ The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?privat
 - [ ] Analytics events and properties (PostHog), which also carry no member names.
 - [ ] Session replay: `/w` and `/admin` text is masked by the layout's `ph-mask`; per-member values such as bars also need `ph-no-capture`.
 - [ ] Fixtures: `x`, `y`, `online`, `last_online_at` and `joined_at` stay neutralised (D76); names are invented.
-- [ ] Public pages never show `online`, `last_online_at`, `last_seen_at`, `joined_at`, squads, VIP or `x`/`y` (D163; `x`/`y` pending the owner).
+- [ ] Public pages never show `online`, `last_online_at`, `last_seen_at`, `joined_at`, squads, VIP or `x`/`y` (D163; owner 2026-11-28: positions stay on the officers' desk and the members' board).
 
 If a change needs a field somewhere this file does not allow, stop and ask the owner; a new use needs a decision in `docs/decisions/`.
