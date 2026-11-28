@@ -12,16 +12,17 @@ import {
   isNotNull,
   isNull,
   lt,
-  notExists,
+  not,
   or,
   sql,
 } from "drizzle-orm";
 
 import { FRESH_MAX_AGE_MS } from "../collector-rows";
 import type { Db } from "../db";
+import { lookedUpThatDay } from "../repo/alliance-lookups";
 import { allianceLabels } from "../repo/alliances";
 import { dailyReads, dailyRosters, runLogs } from "../schema";
-import { allianceLookups, trackedSets } from "../schema-alliances";
+import { trackedSets } from "../schema-alliances";
 import type { UpstreamDetail } from "../sources/types";
 import { DEADLINE_ERROR, runTrace } from "./admin";
 
@@ -46,15 +47,6 @@ const readFields = {
  * never reached still counts. A day read before issue 625 has none: there it counts when it is in the day's
  * tracked set, or when the read wrote a line for it (a workspace's alliance it read). */
 function problemsOf(db: Db, days: string[]) {
-  const lookedUp = db
-    .select({ one: sql`1` })
-    .from(allianceLookups)
-    .where(
-      and(
-        eq(allianceLookups.unionId, dailyRosters.unionId),
-        eq(allianceLookups.day, dailyRosters.readDay),
-      ),
-    );
   const tracked = db
     .select({ one: sql`1` })
     .from(trackedSets)
@@ -85,7 +77,7 @@ function problemsOf(db: Db, days: string[]) {
       and(
         inArray(dailyRosters.readDay, days),
         or(
-          notExists(lookedUp),
+          not(lookedUpThatDay(db)),
           sql`${dailyRosters.unionId} = any(${dailyReads.targetIds})`,
           and(isNull(dailyReads.targetIds), or(exists(tracked), exists(readByRun))),
         ),

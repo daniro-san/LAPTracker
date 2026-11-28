@@ -86,7 +86,8 @@ export async function lookupAlliance(deps: Deps, db: Db, unionId: number): Promi
   try {
     const a = await deps.v1.fetchAlliance(unionId, undefined, undefined, { ...CALL, fresh: false });
     await logRosterCheck(consoleLogger, a);
-    await storeDailyRoster(db, day, dataRow(a, deps.now(), LOOKUP_FRESH_MAX_AGE_MS));
+    const storedAt = deps.now();
+    await storeDailyRoster(db, day, dataRow(a, storedAt, LOOKUP_FRESH_MAX_AGE_MS), storedAt);
     await recordFrames(db, a.members, a.sourceUpdatedAt);
     await finish("done", a.quota?.remaining ?? claim.remaining, null);
     console.info("lookup.done", { quota_remaining: a.quota?.remaining ?? null });

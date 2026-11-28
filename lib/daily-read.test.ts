@@ -6,11 +6,14 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { ago, fakeV1, IDS, minutes, roster, T0 } from "./collector.test-helpers";
 import { autoRetryDailyRead, runDailyRead } from "./daily-read";
+import { dataRow } from "./daily-rows";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
+import { LOOKUP_FRESH_MAX_AGE_MS } from "./lookup";
 import { BLOCKED_ROSTER_KEYS, findBlockedKeys, memberHistoryCard } from "./queries";
 import { listDailyReads } from "./queries/daily-runs";
 import { allianceStatement } from "./queries/statement";
+import { storeDailyRoster } from "./repo/daily-reads";
 import { dayRosterUids } from "./repo/squads";
 import { endOfDayReads } from "./repo/workspace-rosters";
 import { dailyReads, dailyRosters, playerFrames, runLogs, workspaces } from "./schema";
@@ -333,9 +336,10 @@ describe("autoRetryDailyRead (D72)", () => {
 
   describe("a looked-up alliance that became a target (issue 625)", () => {
     const [other = 0, joined = 0] = IDS;
-    /** `joined` was looked up 3 hours before the read at T0, which the quota rule stops before any roster. */
-    async function stoppedRead() {
-      const at = ago(T0, minutes(180));
+    const lookedUpAt = ago(T0, minutes(180));
+    /** `joined` was looked up 3 hours before the read at T0: its claim and the roster it stored. */
+    async function lookup() {
+      const at = lookedUpAt;
       await db.insert(allianceLookups).values({
         unionId: joined,
         day,
@@ -344,16 +348,12 @@ describe("autoRetryDailyRead (D72)", () => {
         status: "done",
         callsUsed: 2,
       });
-      await db.insert(dailyRosters).values({
-        readDay: day,
-        unionId: joined,
-        isFresh: true,
-        sourceUpdatedAt: at,
-        memberUids: [],
-        memberNames: [],
-        memberPower: [],
-        memberKills: [],
-      });
+      // As lib/lookup.ts stores it: the same members as the read's copy, so the identity check passes.
+      await storeDailyRoster(db, day, dataRow(roster(joined, at), at, LOOKUP_FRESH_MAX_AGE_MS), at);
+    }
+    /** The lookup, then the read at T0, which the quota rule stops before any roster. */
+    async function stoppedRead() {
+      await lookup();
       const v1 = fakeV1((id) => roster(id, ago(T0, minutes(1))), 0);
       const summary = await runDailyRead(deps(v1), db, day, ours([other, joined]));
       expect(summary?.error).toMatch(/^quota/);
@@ -373,6 +373,23 @@ describe("autoRetryDailyRead (D72)", () => {
       await autoRetryDailyRead({ v1, now: () => later }, db, day, ours([other, joined]));
 
       expect(v1.calls.toSorted()).toEqual([other, joined]);
+    });
+
+    it("is not read again when the read itself stored its roster, stale from upstream (D72)", async () => {
+      await lookup();
+      const clock = { now: T0 };
+      // The read gets `joined`'s stale copy (as old as the lookup's) and fails `other`.
+      const v1 = fakeV1((id) => (id === joined ? roster(id, lookedUpAt) : new UpstreamError(503)));
+      const d = { v1, now: () => clock.now };
+      expect(await runDailyRead(d, db, day, ours([other, joined]))).toMatchObject({
+        status: "partial",
+      });
+      const calls = v1.calls.length;
+      clock.now = new Date(T0.getTime() + minutes(15));
+
+      await autoRetryDailyRead(d, db, day, ours([other, joined]));
+
+      expect(v1.calls.slice(calls)).toEqual([other]);
     });
   });
 

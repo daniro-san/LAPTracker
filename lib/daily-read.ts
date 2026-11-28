@@ -23,6 +23,7 @@ import {
   finishDailyRead,
   getDailyRead,
   lastMemberUids,
+  lookupRostersBefore,
   reclaimDailyRead,
   storeDailyRoster,
   type DailyReadStatus,
@@ -258,9 +259,10 @@ const AUTO_RETRY_AFTER_MS = 10 * 60_000;
 /**
  * The tick's automatic retry (D72): on a later tick of the same server day, a read that fell short
  * (`failed` or `partial`) reads again only the alliances with no roster for the day, once per day. A
- * looked-up alliance's roster stale at the read's start is the lookup's, which the read never replaced
- * (issue 625): it reads that one again too. Null when the day has a roster of every alliance (a `complete`
- * day included), was retried automatically already, is running, or read too recently.
+ * "Get today's details" roster stored before the read started is not one the read read (issue 625): it reads
+ * that alliance too. A roster the read stored, stale or not, is never read again (D72). Null when the day has
+ * a roster of every alliance (a `complete` day included), was retried automatically already, is running, or
+ * read too recently.
  */
 export async function autoRetryDailyRead(
   deps: Deps,
@@ -272,14 +274,10 @@ export async function autoRetryDailyRead(
   // The claim moves started_at to the retry; the rosters it keeps are judged against the read it completes.
   const before = await getDailyRead(db, day);
   if (!before) return null;
+  const lookups = new Set(await lookupRostersBefore(db, day, before.startedAt));
   const read = new Set(
     (await dailyRosterStates(db, day))
-      .filter(
-        (r) =>
-          r.error === null &&
-          // INVARIANT freshness.20-min, as the read's outcome judges a kept roster.
-          !(r.lookedUp && !isFresh(before.startedAt, r.sourceUpdatedAt, FRESH_MAX_AGE_MS)),
-      )
+      .filter((r) => r.error === null && !lookups.has(r.unionId))
       .map((r) => r.unionId),
   );
   const missing = ids.filter((id) => !read.has(id));
@@ -336,7 +334,7 @@ async function readDay(
   const error = await withDeadline(read, readRosters(read, db, attempt.toRead));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });
   else if (error && !error.startsWith("quota")) await log.error("abort", { reason: error });
-  for (const row of [...read.rows]) await storeDailyRoster(db, day, row);
+  for (const row of [...read.rows]) await storeDailyRoster(db, day, row, deps.now());
   for (const f of read.frames) await recordFrames(db, f.members, f.seenAt);
   // The day's rows, not this attempt's: after a retry they include the rosters it kept (D67).
   const rows = (await dailyRosterStates(db, day)).filter((r) => ids.includes(r.unionId));

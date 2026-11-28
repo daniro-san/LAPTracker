@@ -4,7 +4,6 @@ import {
   asc,
   desc,
   eq,
-  exists,
   gt,
   gte,
   inArray,
@@ -18,7 +17,7 @@ import {
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
-import { allianceLookups } from "../schema-alliances";
+import { lookedUpThatDay } from "./alliance-lookups";
 
 export type DailyReadStatus = "complete" | "partial" | "failed";
 export type NewDailyRoster = Omit<typeof dailyRosters.$inferInsert, "id" | "readDay">;
@@ -125,28 +124,23 @@ export async function getDailyRead(db: Db, day: string) {
  * Stores one alliance's row of the day. On a retry a roster that was read replaces the day's earlier
  * one. INVARIANT daily-read.retry-keeps-rosters: an error row never replaces a roster the day has.
  */
-export async function storeDailyRoster(db: Db, day: string, row: NewDailyRoster): Promise<void> {
-  const insert = db.insert(dailyRosters).values({ ...row, readDay: day });
+export async function storeDailyRoster(
+  db: Db,
+  day: string,
+  row: NewDailyRoster,
+  storedAt: Date,
+): Promise<void> {
+  const insert = db.insert(dailyRosters).values({ ...row, readDay: day, storedAt });
   if (typeof row.error === "string") await insert.onConflictDoNothing();
   else
     await insert.onConflictDoUpdate({
       target: [dailyRosters.readDay, dailyRosters.unionId],
-      set: row,
+      set: { ...row, storedAt },
     });
 }
 
-/** Every row the day has now, for the read's outcome: after a retry that includes the rosters it kept.
- * `lookedUp`: the day has a "Get today's details" claim for the alliance (D133). */
+/** Every row the day has now, for the read's outcome: after a retry that includes the rosters it kept. */
 export function dailyRosterStates(db: Db, day: string) {
-  const lookup = db
-    .select({ one: sql`1` })
-    .from(allianceLookups)
-    .where(
-      and(
-        eq(allianceLookups.unionId, dailyRosters.unionId),
-        eq(allianceLookups.day, dailyRosters.readDay),
-      ),
-    );
   return db
     .select({
       unionId: dailyRosters.unionId,
@@ -154,10 +148,26 @@ export function dailyRosterStates(db: Db, day: string) {
       isFresh: dailyRosters.isFresh,
       error: dailyRosters.error,
       sourceUpdatedAt: dailyRosters.sourceUpdatedAt,
-      lookedUp: sql<boolean>`${exists(lookup)}`,
     })
     .from(dailyRosters)
     .where(eq(dailyRosters.readDay, day));
+}
+
+/** The alliances whose roster of the day is still the "Get today's details" one (D133): looked up that day
+ * and stored before `before`, the start of the day's read, so no read of the day replaced it (issue 625). */
+export async function lookupRostersBefore(db: Db, day: string, before: Date): Promise<number[]> {
+  const rows = await db
+    .select({ unionId: dailyRosters.unionId })
+    .from(dailyRosters)
+    .where(
+      and(
+        eq(dailyRosters.readDay, day),
+        isNull(dailyRosters.error),
+        lt(dailyRosters.storedAt, before),
+        lookedUpThatDay(db),
+      ),
+    );
+  return rows.map((r) => r.unionId);
 }
 
 export async function finishDailyRead(

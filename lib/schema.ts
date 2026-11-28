@@ -352,6 +352,8 @@ export const dailyRosters = pgTable(
     memberPower: big("member_power").array().notNull(),
     memberKills: big("member_kills").array().notNull(),
     rawJson: jsonb("raw_json"),
+    /** Issue 625: when the read or the lookup last wrote this row. Null before the issue. */
+    storedAt: tstz("stored_at"),
   },
   (t) => [
     unique("daily_rosters_day_union_unique").on(t.readDay, t.unionId),
