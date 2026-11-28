@@ -189,7 +189,8 @@ export async function noError(page: Page) {
 
 /** The desk's frame for an alliance: its tag and name under the header, and no error screen. */
 export async function deskFrame(page: Page, a: { tag: string; name: string }) {
-  await expect(page.getByText(`${a.tag} · ${a.name}`)).toBeVisible();
+  // The header's alliance line comes first; Alliance settings' Branding preview repeats it (issue 462).
+  await expect(page.getByText(`${a.tag} · ${a.name}`).first()).toBeVisible();
   await noError(page);
 }
 
