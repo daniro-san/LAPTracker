@@ -9,11 +9,13 @@ import type { AppContext } from "@/lib/app-context";
 import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { requireWorkspace } from "@/lib/private/access";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
+import { shieldSettingsView } from "@/lib/private/shield-settings";
 import { dailyReads, workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceFeatures } from "@/lib/schema-features";
 import { workspaceKeys } from "@/lib/schema-keys";
-import { raidOpponents } from "@/lib/schema-shield";
+import { raidOpponents, shieldSettings } from "@/lib/schema-shield";
 import { sealKey } from "@/lib/workspace-keys";
 
 type AllianceSnapshotInput = Awaited<ReturnType<AppContext["v1"]["fetchAllianceByTag"]>>;
@@ -150,6 +152,21 @@ describe("POST /api/w/[slug]/raid-opponent (issue 861)", () => {
     ]);
     expect(await current()).toBe("ZZZ");
     expect(calls).toHaveLength(1);
+  });
+
+  it("keeps a PT-BR officer's language on the Raid Shield settings after a first raid-times save", async () => {
+    const times = { action: "times", startMinute: 15, endMinute: 0 };
+    expect(await post({ ...times, language: "pt-BR" })).toEqual([200, { undo: null }]);
+    // A later save in another language changes the times only.
+    expect(await post({ ...times, startMinute: 30, language: "en" })).toEqual([
+      200,
+      { undo: null },
+    ]);
+    const access = await requireWorkspace(db, "nse", { get: () => ({ value: officer }) }, NOW);
+    if (!access.ok) throw new Error(access.reason);
+    expect(await shieldSettingsView(db, access, "pt-BR")).toMatchObject({ language: "pt-BR" });
+    const [row] = await db.select().from(shieldSettings).where(eq(shieldSettings.workspaceId, nse));
+    expect(row).toMatchObject({ language: "pt-BR", raidStartMinute: 30, raidEndMinute: 0 });
   });
 
   it("refuses with no_key and sends nothing when the workspace has no key of its own", async () => {

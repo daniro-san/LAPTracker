@@ -67,16 +67,17 @@ function eventWindows(saturday: string, cfg: ScheduleConfig): Span[] {
 /**
  * The minute a read runs in the raid of `saturday`: its time, or, in a week where that tick meets an event's
  * window, the first tick after the window (Origin of Chaos, 00:00–01:30 ST on its Saturday: the Start at
- * 01:30 ST). Null when no tick is clear by 02:00 ST: that week's read is not made.
+ * 01:30 ST). Null when no tick is clear by 02:00 ST: that week's read is not made. `events`: that week's
+ * windows, when the caller already has them (`raidTimeChoices` reads each week's once).
  */
 export function raidMinute(
   saturday: string,
   cfg: ScheduleConfig,
   phase: RaidPhase,
   minute: number,
+  events: readonly Span[] = eventWindows(saturday, cfg),
 ): number | null {
   const day = phase === "start" ? saturday : addDays(saturday, 1);
-  const events = eventWindows(saturday, cfg);
   for (let m = minute; m <= RAID_LATEST; m += TICK_MIN) {
     const tick = tickOf(serverInstant(day, hhmm(m), cfg));
     if (!events.some((e) => overlap(tick, e))) return m;
@@ -86,8 +87,9 @@ export function raidMinute(
 
 /** The raid of Saturday `saturday` (server date): when its Start and End reads run, or null (`raidMinute`). */
 export function raidReadsAt(saturday: string, cfg: ScheduleConfig, times: RaidTimes) {
+  const events = eventWindows(saturday, cfg);
   const at = (phase: RaidPhase, day: string) => {
-    const m = raidMinute(saturday, cfg, phase, times[phase]);
+    const m = raidMinute(saturday, cfg, phase, times[phase], events);
     return m === null ? null : serverInstant(day, hhmm(m), cfg);
   };
   return { start: at("start", saturday), end: at("end", addDays(saturday, 1)) };
@@ -151,9 +153,15 @@ export function raidTimeChoices(
   cfg: ScheduleConfig,
   now: Date,
 ): { start: number[]; end: number[] } {
-  const weeks = weeksFrom(now, cfg).map((day) => addDays(day, 1));
+  // Each week's event windows once, for every time of both reads.
+  const weeks = weeksFrom(now, cfg).map((day) => {
+    const saturday = addDays(day, 1);
+    return { saturday, events: eventWindows(saturday, cfg) };
+  });
   const free = (phase: RaidPhase) =>
-    RAID_RANGE.filter((m) => weeks.every((sat) => raidMinute(sat, cfg, phase, m) !== null));
+    RAID_RANGE.filter((m) =>
+      weeks.every((w) => raidMinute(w.saturday, cfg, phase, m, w.events) !== null),
+    );
   return { start: free("start"), end: free("end") };
 }
 

@@ -38,6 +38,7 @@ import { NotFoundError, UpstreamError, type V1Source } from "../sources/types";
 import type { SquadsConfig } from "../squads";
 import { isSiteKey, keyStatusOf, ownKeyOf, squadsKey } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
+import { WORKSPACE_LANGUAGES } from "./dictionary";
 import { featureOn } from "./features";
 import { privateLog } from "./log";
 import { siteReserveKept } from "./recruit-check";
@@ -65,7 +66,15 @@ export const raidOpponentInput = z.discriminatedUnion("action", [
     .strict(),
   z.object({ action: z.literal("clear"), saturday }).strict(),
   z.object({ action: z.literal("undo"), saturday, id: z.number().int().positive() }).strict(),
-  z.object({ action: z.literal("times"), startMinute: minute, endMinute: minute }).strict(),
+  z
+    .object({
+      action: z.literal("times"),
+      startMinute: minute,
+      endMinute: minute,
+      // The officer's language: a first save's Raid Shield summary language (the card's default).
+      language: z.enum(WORKSPACE_LANGUAGES),
+    })
+    .strict(),
 ]);
 export type RaidOpponentInput = z.infer<typeof raidOpponentInput>;
 
@@ -257,7 +266,7 @@ async function saveTimes(
   db: Db,
   deps: RaidOpponentDeps,
   access: WorkspaceAccess,
-  input: { startMinute: number; endMinute: number; shield: ShieldTimes },
+  input: { startMinute: number; endMinute: number; language: string; shield: ShieldTimes },
 ): Promise<RaidOpponentResult> {
   const raid = { start: input.startMinute, end: input.endMinute };
   if (!RAID_RANGE.includes(raid.start) || !RAID_RANGE.includes(raid.end))
@@ -268,6 +277,7 @@ async function saveTimes(
     workspaceId: access.workspaceId,
     raidStartMinute: raid.start,
     raidEndMinute: raid.end,
+    language: input.language,
     updatedBy: access.user.id,
     updatedAt: deps.now,
   });

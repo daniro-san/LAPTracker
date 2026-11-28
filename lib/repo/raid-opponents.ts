@@ -233,13 +233,18 @@ export async function rosterStoredIn(
     : null;
 }
 
-/** The raid reads' times; the Raid Shield settings' other columns keep their values, or their defaults. */
+/**
+ * The raid reads' times; the Raid Shield settings' other columns keep their values, or their defaults. A
+ * first save takes the officer's `language` for the summary's language, as the card shows with no row; a
+ * later one never changes it.
+ */
 export async function saveRaidTimes(
   db: Db,
   row: {
     workspaceId: number;
     raidStartMinute: number;
     raidEndMinute: number;
+    language: string;
     updatedBy: number;
     updatedAt: Date;
   },

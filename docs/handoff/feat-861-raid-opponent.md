@@ -16,6 +16,8 @@
 
 ## Decisions
 
+- Review fixes (PR 865): the `times` body carries the officer's language, used only in the INSERT of a first `shield_settings` row (never in the conflict update), so a first raid-times save keeps the Raid Shield summary's language as the card showed it (route test: a PT-BR officer stays pt-BR). `raidTimeChoices` reads each week's event windows once and passes them to `raidMinute`; `raidReadsAt` shares one read for both phases.
+
 - New record D165, not a D152 amendment: D152 is the owner's server-level KvK opponent on /admin, read on LAP_API_KEY inside the KvK reserve and shown on a public page. This one is set per workspace by officers, follows the server day, spends the alliance's own key and stays on the desk; none of D152's rules carry over except `opponentTag` and `memberChange`.
 - Origin of Chaos reads 00:00–00:45 ST and is due until 01:30 ST on its Saturday, so the default 00:00 Start meets it one week in four. A read whose tick meets an event's window runs on the first tick after the window that week (Start at 01:30 ST in Origin of Chaos weeks). A time is refused with `event_window` only when no tick is clear by 02:00 ST. The event window here counts from the Before (the tick's own D160 rule), not from the event's start as the shield check's KvK exception does.
 - Times range 00:00–02:00 ST of each day: the owner's "as close to the reset as possible". Times are per workspace (columns on `shield_settings`, the #859 pattern), not per raid.
@@ -39,7 +41,6 @@
 
 ## Open issues
 
-- A first raid-times save on a workspace with no `shield_settings` row inserts one with the column defaults, so Alliance settings → Raid Shield then shows the Discord summary language as English instead of the officer's language fallback.
 - The data download leaves out `raid_opponents` and `raid_reads`; whether the officers' opponent history belongs in it is not decided.
 - The raid End read is on Sunday's UTC quota day, but `trackerEstimate` adds the 6 calls to Saturday's peak.
 - Raid reads of a past week are not re-read; a week whose Start or End tick was missed stays missing in the history for good (as asked).
@@ -47,7 +48,7 @@
 ## Next
 
 - Owner: apply migration 0092 with the release (additive).
-- Follow-ups: designer-persona pass on the card at 360 px and in dark mode; decide whether the opponent history goes in the data download; the language default on a raid-times-only settings row.
+- Follow-ups: designer-persona pass on the card at 360 px and in dark mode; decide whether the opponent history goes in the data download.
 
 What was missing from the task prompt? That Origin of Chaos reads 00:00–01:30 ST on its Saturday, so "Start at Saturday 00:00 ST" and "never inside an event window" conflict one week in four, and that a workspace key's reserve check costs one /quota call per read tick.
 

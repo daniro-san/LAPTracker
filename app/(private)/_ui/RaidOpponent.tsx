@@ -233,7 +233,7 @@ function TimesPart(props: { slug: string; view: RaidOpponentView; w: Words }) {
     setError(null);
     const done = await send(
       props.slug,
-      { action: "times", startMinute: v.start, endMinute: v.end },
+      { action: "times", startMinute: v.start, endMinute: v.end, language: w.language },
       t,
     );
     setBusy(false);

@@ -4,7 +4,8 @@
 //     checks the alliance; `undo` is the opponent it replaced, or null
 //   {action: "clear", saturday}             → 200 {undo}: the opponent cleared, for Undo
 //   {action: "undo", saturday, id}          → 200: that opponent is current again, with no call; 404 gone
-//   {action: "times", startMinute, endMinute} → 200: the Start and End reads' times, each moved to the next tick
+//   {action: "times", startMinute, endMinute, language} → 200: the Start and End reads' times, each moved
+//     to the next tick; `language` is a first save's Raid Shield summary language only
 // 403 turned_off while Raid prep's switch is off (D126); 409 raid_over once the raid's End read is past;
 // 409 no_key: no key reads now (never LAP_API_KEY for another workspace); 503 quota_low: the site key's
 // reserve; 404 not_found, 409 not_unique / wrong_server / own_alliance, 502 unavailable from the check;
