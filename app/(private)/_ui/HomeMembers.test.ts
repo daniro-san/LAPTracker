@@ -91,3 +91,12 @@ describe("Home's Say thanks to (issue 772)", () => {
     expect(textOf(html)).not.toContain(";");
   });
 });
+
+describe("Home's Say thanks to, steady effort (issue 465)", () => {
+  it("lists someone found only by the steady deeds, with the reason's words and no number", () => {
+    const steady = { help: [{ uid: 1, name: "Moss" }], quests: [] };
+    const thanks = { donors: [], steady, progress: [], improved: [] };
+    const html = textOf(margin(null, { ...view, thanks } as unknown as MembersView));
+    expect(html).toContain("Say thanks to Helped the alliance every day: Moss");
+  });
+});

@@ -61,3 +61,5 @@ Why: on 2026-11-19 the owner and a guest alliance's leader checked the tracker's
 - `daily_tech` and `daily_honor` are daily values, as this entry says; nothing changes for them.
 
 **Amendment 2026-11-27 (owner, issue 739): the daily quest points cap is 250.** The owner confirmed in the game that a day with every daily quest done totals 250 (2026-11-26/27). `QUEST_DAY_CAP` is 250 a day (1,750 a week), confirmed; the 240 read from the stored reads, provisional until now, is replaced (D158, amended 2026-11-27).
+
+**Amendment 2026-11-28 (issue 465, see D114).** The "Most active" top 3 quoted above no longer exists: the Members thanks and Home show who did quests every day this week instead, by name and with no number.

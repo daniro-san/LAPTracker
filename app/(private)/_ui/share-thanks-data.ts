@@ -78,7 +78,7 @@ interface ShareInput {
  * The week's people: D109's progress and issue 465's steady effort, merged by uid, in name order; the line
  * says what each did in words, no number (D75).
  */
-function weekPeople(view: MembersView, t: WorkspaceDictionary): SharePerson[] {
+export function weekPeople(view: MembersView, t: WorkspaceDictionary): SharePerson[] {
   const { progress, steady } = view.thanks;
   const people = new Map<number, SharePerson & { parts: string[] }>();
   const person = (uid: number, name: string) => {
