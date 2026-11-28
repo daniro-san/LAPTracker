@@ -18,7 +18,7 @@ import { inEventWindow, serverInstant } from "./schedule";
 import { dailyReads, dailyRosters, runLogs } from "./schema";
 import { memberFacts } from "./schema-facts";
 import { rollCallMarks } from "./schema-rollcall";
-import { shieldChecks } from "./schema-shield";
+import { shieldChecks, shieldSettings } from "./schema-shield";
 import { playerReads, squadReads } from "./schema-squads";
 import { passWindows, resetWindow, SHIELD_CALLS_MAX } from "./shield-check";
 import { shieldReset } from "./shield-reset";
@@ -251,6 +251,17 @@ describe("the after-reset check (issue 827)", () => {
     ]);
   });
 
+  it("reads no alliance whose officers turned the after-reset check off (issue 859)", async () => {
+    const ws = await findWorkspaceBySlug(db, "ogs");
+    await db
+      .insert(shieldSettings)
+      .values({ workspaceId: ws?.id ?? 0, resetRead: false, updatedAt: AT });
+    const d = deps(AT);
+    await read(d);
+    expect(d.calls).toEqual([]);
+    expect(await lines()).toEqual([]);
+  });
+
   it("reads no alliance whose Raid Shield check is off", async () => {
     const ws = await findWorkspaceBySlug(db, "ogs");
     await setSwitch(db, ws?.id ?? 0, "shield_check", false, AT);
@@ -308,5 +319,43 @@ describe("the after-reset check (issue 827)", () => {
     // What /api/tick's `after` runs (scheduleSquadsBatch).
     await squadsBatch(ctx, undefined, "https://laptracker.test");
     expect(sorted(stub.calls)).toEqual(UIDS);
+  });
+
+  it("keeps the gate shut on other Saturday ticks, opens it only on a moved time's ticks once a save forgets (issue 859)", async () => {
+    await db.insert(squadReads).values({
+      day: DAY,
+      unionId: OWN_ALLIANCE_ID,
+      status: "done",
+      startedAt: new Date("2026-11-28T01:31:00Z"),
+      members: UIDS.length,
+      quotaRemaining: 700,
+    });
+    const { ctx, clock } = testContext(db);
+    const at = (iso: string) => ((clock.now = new Date(iso)), tickMayBeDue(ctx, db));
+    // The default 02:30 ST: 04:30 ST asks nothing more once the alliances were read.
+    expect(await at("2026-11-28T06:30:00Z")).toBe(false);
+    const ws = await findWorkspaceBySlug(db, "ogs");
+    await db
+      .insert(shieldSettings)
+      .values({ workspaceId: ws?.id ?? 0, resetMinute: 270, updatedAt: AT }); // 04:30 ST
+    expect(await at("2026-11-28T06:30:00Z")).toBe(false); // kept until a save forgets
+    ctx.wakeCache.forget(); // what POST /api/w/[slug]/raid-prep does
+    expect(await at("2026-11-28T06:30:00Z")).toBe(true);
+    expect(await at("2026-11-28T06:45:00Z")).toBe(true);
+    expect(await at("2026-11-28T07:00:00Z")).toBe(false); // 05:00 ST: its ticks are over
+    expect(await at("2026-11-28T04:30:00Z")).toBe(false); // 02:30 ST: nobody's time any more
+  });
+
+  it("reads an alliance at its own after-reset time: 03:00 ST, not 02:30 (issue 859)", async () => {
+    const ws = await findWorkspaceBySlug(db, "ogs");
+    await db
+      .insert(shieldSettings)
+      .values({ workspaceId: ws?.id ?? 0, resetMinute: 180, updatedAt: AT });
+    const early = deps(AT);
+    await read(early);
+    expect(early.calls).toEqual([]);
+    const own = deps(new Date("2026-11-28T05:00:00Z")); // 03:00 ST
+    await read(own);
+    expect(sorted(own.calls)).toEqual(UIDS);
   });
 });

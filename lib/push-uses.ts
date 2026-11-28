@@ -13,7 +13,7 @@ import { claimPushMark, workspacesOfUnions } from "./repo/push";
 import { getShieldCheck, shieldReadings } from "./repo/shield-checks";
 import { getSquadRead } from "./repo/squads";
 import { serverDay } from "./schedule";
-import { passWindows, type ShieldPass } from "./shield-check";
+import { passWindows, timesOf, type ShieldPass } from "./shield-check";
 import { summarize } from "./shield-post";
 import type { ShieldTarget } from "./shield-read";
 import { fill } from "./words";
@@ -43,7 +43,7 @@ export async function pushShield(
   if (target.workspaceId === null || !pushConfig(deps.env)) return;
   const q = { day, unionId: target.unionId };
   if (!(await passOver(db, q, pass))) return;
-  const w = passWindows(day, deps.env)[pass];
+  const w = passWindows(day, deps.env, timesOf(target.settings))[pass];
   // Away members are left out of the count, as the summary leaves them out of its names (D137, 2026-11-22).
   const { members, away } = await membersOfRaid(db, target, day, deps.env.SERVER_TZ);
   const read = summarize(members, await shieldReadings(db, target.unionId, w.from, w.to), away);

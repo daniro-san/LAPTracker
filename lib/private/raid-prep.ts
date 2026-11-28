@@ -19,12 +19,13 @@ import {
   type StoredReading,
 } from "../repo/shield-checks";
 import {
-  morningMinuteOf,
   passWindows,
   raidOf,
   resetWindow,
   suggestionOf,
+  timesOf,
   type ShieldSuggestion,
+  type ShieldTimes,
 } from "../shield-check";
 import type { WorkspaceAccess } from "./access";
 import { awayOn, type MemberFacts } from "./fact-fields";
@@ -115,6 +116,8 @@ export interface PrepView {
   friday: string;
   /** False while the Raid Shield check is off: no reading is shown. */
   tracker: boolean;
+  /** The alliance's night and morning read times (issue 859), minutes after 00:00 ST. */
+  nightMinute: number;
   morningMinute: number;
   night: ReadCount | null;
   morning: ReadCount | null;
@@ -294,13 +297,22 @@ function prepRow(
   };
 }
 
-/** The three reads of the check of Friday `friday`, each member's newest in its window. */
-async function readingsOf(db: Db, access: WorkspaceAccess, friday: string, zone: string) {
-  const w = passWindows(friday, { SERVER_TZ: zone });
-  const reset = resetWindow(friday, { SERVER_TZ: zone });
+/**
+ * The three reads of the check of Friday `friday`, each member's newest in its window at the alliance's
+ * times (issue 859); no after-reset reading when its check is off.
+ */
+async function readingsOf(
+  db: Db,
+  access: WorkspaceAccess,
+  friday: string,
+  at: { zone: string; times: ShieldTimes },
+) {
+  const cfg = { SERVER_TZ: at.zone };
+  const w = passWindows(friday, cfg, at.times);
+  const reset = at.times.reset === null ? null : resetWindow(friday, cfg, at.times.reset);
   const [night, after, morning] = await Promise.all([
     shieldReadings(db, access.unionId, w.night.from, w.night.to),
-    shieldReadings(db, access.unionId, reset.from, reset.to),
+    reset ? shieldReadings(db, access.unionId, reset.from, reset.to) : [],
     shieldReadings(db, access.unionId, w.morning.from, w.morning.to),
   ]);
   return { night, reset: after, morning };
@@ -322,15 +334,18 @@ export async function prepView(
   const { friday, reset, kvk: kvkAt } = raidOf(opened.day, { SERVER_TZ: clock.zone });
   const tracker = featureOn(access, "shield_check");
   const ids = opened.call ? [opened.call.id] : [];
+  const settingsRead = shieldSettingsOf(db, access.workspaceId);
   const [{ roster, facts, marks: main }, wall, settings, reads, check] = await Promise.all([
     loaded ??
       Promise.all([rosterOf(db, access), factsOf(db, access), newestMarks(db, ids)]).then(
         ([r, f, m]) => ({ roster: r, facts: f, marks: m }),
       ),
     newestMarks(db, ids, "wall"),
-    shieldSettingsOf(db, access.workspaceId),
+    settingsRead,
     tracker
-      ? readingsOf(db, access, friday, clock.zone)
+      ? settingsRead.then((s) =>
+          readingsOf(db, access, friday, { zone: clock.zone, times: timesOf(s) }),
+        )
       : Promise.resolve({ night: [], reset: [], morning: [] }),
     getShieldCheck(db, { day: friday, unionId: access.unionId }),
   ]);
@@ -366,7 +381,8 @@ export async function prepView(
   return {
     friday,
     tracker,
-    morningMinute: morningMinuteOf(settings?.morningMinute),
+    nightMinute: timesOf(settings).night,
+    morningMinute: timesOf(settings).morning,
     ...counts,
     members: roster.length,
     when: clock.now.getTime() < reset.getTime() ? "reset" : "kvk",

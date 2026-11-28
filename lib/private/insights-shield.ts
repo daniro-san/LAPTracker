@@ -4,7 +4,7 @@
 // run, or read nobody, is "no reading", never 0 %. A reading is the tracker's map scan: a shield turned on
 // after it does not show.
 import type { PassCount } from "../repo/shield-checks";
-import { passWindows } from "../shield-check";
+import { passWindows, type ShieldTimes } from "../shield-check";
 import { addDays, mondayOf } from "./calendar-time";
 
 /** The weeks shown, the newest first. */
@@ -40,10 +40,10 @@ export function shieldFridays(today: string, now: Date, zone: string): string[] 
   return Array.from({ length: SHIELD_WEEKS }, (_, i) => addDays(newest, -7 * i));
 }
 
-/** Each Friday's two read windows, for `shieldPassCounts`. */
-export const shieldWindows = (fridays: string[], zone: string) =>
+/** Each Friday's two read windows at the alliance's times (issue 859), for `shieldPassCounts`. */
+export const shieldWindows = (fridays: string[], zone: string, times: ShieldTimes) =>
   fridays.flatMap((day) => {
-    const w = passWindows(day, { SERVER_TZ: zone });
+    const w = passWindows(day, { SERVER_TZ: zone }, times);
     return (["night", "morning"] as const).map((pass) => ({ day, pass, ...w[pass] }));
   });
 

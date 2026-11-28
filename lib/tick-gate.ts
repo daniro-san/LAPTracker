@@ -17,7 +17,8 @@ import {
   serverInstant,
   type ScheduleConfig,
 } from "./schedule";
-import { resetReadDue, shieldWindowOpen } from "./shield-check";
+import { resetReadDue, resetSpanOpen, shieldWindowOpen, timeRanges } from "./shield-check";
+import { resetTargets } from "./shield-reset";
 import { squadsQueueDay } from "./squads";
 import { squadTargets } from "./workspace-keys";
 
@@ -128,14 +129,41 @@ export async function squadsMayRun(ctx: AppContext, db: Db): Promise<boolean> {
 }
 
 /**
+ * Whether some alliance's after-reset check is due now (issue 859): only on Saturday 00:15–10:45 ST, and
+ * only on the ticks of a minute some alliance chose. "No alliance's check at minute m" is kept for every
+ * minute it holds, all from one read of the alliances (the first look of a Saturday, or after a save
+ * forgets them), so the other ticks of the morning ask the database nothing.
+ */
+async function resetMayBeDue(ctx: AppContext, db: Db, now: Date): Promise<boolean> {
+  if (!resetSpanOpen(now, ctx.env)) return false;
+  let read: Promise<Set<number>> | null = null;
+  const minutes = () =>
+    (read ??= resetTargets(db, ctx.env.WORKSPACE_KEYS_SECRET, now).then(
+      (targets) => new Set(targets.map((t) => t.minute)),
+    ));
+  const nobodyAt = (m: number) =>
+    ctx.wakeCache.holds(
+      `shield-reset-none:${m}`,
+      KEPT_MAX_AGE_S,
+      async () => !(await minutes()).has(m),
+    );
+  const all = timeRanges(ctx.env).reset;
+  const nobody = await Promise.all(all.filter((m) => resetReadDue(now, ctx.env, m)).map(nobodyAt));
+  // The alliances were read: keep every other minute's answer from the same read.
+  if (read) await Promise.all(all.map(nobodyAt));
+  return !nobody.every(Boolean);
+}
+
+/**
  * Whether the tick needs the database now: the clock's windows, the Raid Shield check's (D137), the squads
  * queue, or a rehearsal pressed on /admin that is still pending. False means 204 with no query at all.
  */
 export async function tickMayBeDue(ctx: AppContext, db: Db): Promise<boolean> {
   const now = ctx.now();
   if (tickClockDue(now, ctx.env) || shieldWindowOpen(now, ctx.env)) return true;
-  // Issue 827: the after-reset check's ticks, Saturdays 02:30 and 02:45 ST.
-  if (resetReadDue(now, ctx.env)) return true;
+  // Issue 827: the after-reset check's ticks (Saturdays 02:30 and 02:45 ST by default; issue 859, each
+  // alliance's own).
+  if (await resetMayBeDue(ctx, db, now)) return true;
   // Issue 789: the one-off /v1 discovery's window (2026-11-29 02:30 ST); removed by a follow-up PR.
   if (apiProbeDue(now, ctx.env)) return true;
   if (await squadsMayRun(ctx, db)) return true;

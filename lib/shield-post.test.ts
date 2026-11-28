@@ -112,7 +112,15 @@ function discord(forum = false) {
       workspaceId: ws,
       slug: "ogs",
       key: null,
-      settings: { workspaceId: ws, morningMinute: 600, discord: true, language },
+      settings: {
+        workspaceId: ws,
+        morningMinute: 600,
+        nightMinute: 1410,
+        resetRead: true,
+        resetMinute: 150,
+        discord: true,
+        language,
+      },
     } as ShieldTarget;
     return postShieldSummary(deps, db, { day: DAY, target, pass });
   };

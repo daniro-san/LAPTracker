@@ -156,6 +156,9 @@ export async function saveShieldSettings(db: Db, row: typeof shieldSettings.$inf
       target: shieldSettings.workspaceId,
       set: {
         morningMinute: row.morningMinute,
+        nightMinute: row.nightMinute,
+        resetRead: row.resetRead,
+        resetMinute: row.resetMinute,
         discord: row.discord,
         language: row.language,
         updatedBy: row.updatedBy,

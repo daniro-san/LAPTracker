@@ -27,9 +27,9 @@ import {
   type MarkRow,
 } from "./repo/roll-call";
 import { awayReports } from "./repo/self-reports";
-import { shieldReadings, type StoredReading } from "./repo/shield-checks";
+import { shieldReadings, shieldSettingsOf, type StoredReading } from "./repo/shield-checks";
 import { anyRoster } from "./repo/workspace-any-roster";
-import { fridayOf, passWindows, suggestionOf } from "./shield-check";
+import { fridayOf, passWindows, suggestionOf, timesOf } from "./shield-check";
 
 /** One workspace and its own alliance (D71): its roll calls, facts and members only. */
 export interface FillScope {
@@ -57,9 +57,11 @@ export async function awayFacts(db: Db, workspaceId: number): Promise<Map<number
 
 type Read = StoredReading | undefined;
 
-/** Each member's newest reading of the check of Friday `friday`, in each of its two windows. */
-async function readingsOf(db: Db, unionId: number, friday: string, zone: string) {
-  const w = passWindows(friday, { SERVER_TZ: zone });
+/** Each member's newest reading of the check of Friday `friday`, in each of its two windows (its times). */
+async function readingsOf(db: Db, scope: FillScope, friday: string, zone: string) {
+  const { unionId } = scope;
+  const times = timesOf(await shieldSettingsOf(db, scope.workspaceId));
+  const w = passWindows(friday, { SERVER_TZ: zone }, times);
   const [night, morning] = await Promise.all([
     shieldReadings(db, unionId, w.night.from, w.night.to),
     shieldReadings(db, unionId, w.morning.from, w.morning.to),
@@ -113,7 +115,7 @@ async function picks(
   const [roster, facts, reads, marks] = await Promise.all([
     anyRoster(db, scope.unionId),
     awayFacts(db, scope.workspaceId),
-    readingsOf(db, scope.unionId, fridayOf(at.day), input.zone),
+    readingsOf(db, scope, fridayOf(at.day), input.zone),
     at.callId === null ? Promise.resolve([]) : newestMarks(db, [at.callId]),
   ]);
   const members = new Set((roster?.members ?? []).map((m) => m.uid));

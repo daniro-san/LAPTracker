@@ -168,7 +168,7 @@ function thisWeekOf(now: Date, cfg: ScheduleConfig): Day {
 }
 
 /** The last, this and next week's events around `now`, in time order. */
-function eventsAround(now: Date, cfg: ScheduleConfig): ScheduledEvent[] {
+export function eventsAround(now: Date, cfg: ScheduleConfig): ScheduledEvent[] {
   const thisWeek = thisWeekOf(now, cfg);
   return [-7, 0, 7].map((n) => eventOn(addDays(thisWeek, n), cfg));
 }

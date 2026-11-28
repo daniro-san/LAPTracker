@@ -29,7 +29,7 @@ import {
   type StoredReading,
 } from "./repo/shield-checks";
 import { sealedWebhooks } from "./repo/workspace-discord";
-import { passWindows, suggestionOf, type ShieldPass } from "./shield-check";
+import { passWindows, suggestionOf, timesOf, type ShieldPass } from "./shield-check";
 import type { ShieldTarget } from "./shield-read";
 import { fill, plural } from "./words";
 import { masterFingerprint, openKey } from "./workspace-keys";
@@ -246,7 +246,7 @@ async function messageOf(
   run: { day: string; target: ShieldTarget; pass: ShieldPass },
 ) {
   const { target, day } = run;
-  const windows = passWindows(day, deps.env);
+  const windows = passWindows(day, deps.env, timesOf(target.settings));
   const { members, away } = await membersOfRaid(db, target, day, deps.env.SERVER_TZ);
   const night = summarize(
     members,

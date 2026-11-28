@@ -1,9 +1,11 @@
 "use client";
 
-// Alliance settings → Raid Shield check (issue 474, D137): Saturday's read time (10:00 to 11:00 ST) and the
-// Discord summary (only to the Raid Shield channel, D147), opt-in, in a language the officers pick. Shown
-// only while the check is on (D134). One Save, in the settings' save row (issue 585): off while nothing
-// changed, "Not saved yet" while something did; a refusal or no answer says so and keeps what was typed.
+// Alliance settings → Raid Shield check (issue 474, D137): the reads' times (issue 859: the night check, the
+// morning check, the after-reset check on or off and its time; only the times whose window meets no
+// event's), the tracker calls they cost and the trade-off of an earlier after-reset check, and the Discord
+// summary (only to the Raid Shield channel, D147), opt-in, in a language the officers pick. Shown only
+// while the check is on (D134). One Save, in the settings' save row (issue 585): off while nothing changed,
+// "Not saved yet" while something did; a refusal or no answer says so and keeps what was typed.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -12,6 +14,30 @@ import { FIELD } from "@/lib/brand/components/controls";
 import { hhmm } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { ShieldSettingsView } from "@/lib/private/shield-settings";
+import { fill } from "@/lib/words";
+import { TRACKER_CALLS } from "@/lib/workspace-features";
+
+const KEYS = [
+  "nightMinute",
+  "morningMinute",
+  "resetRead",
+  "resetMinute",
+  "discord",
+  "language",
+] as const;
+
+/** Why a save was refused, in the card's words. */
+const REFUSED: Partial<Record<string, keyof WorkspaceDictionary>> = {
+  event_window: "prep.settings.eventWindow",
+  reads_overlap: "prep.settings.readsOverlap",
+};
+
+/**
+ * The tracker calls the reads cost (D124, `TRACKER_CALLS`): one call per member a read, the after-reset
+ * check's only while it is on.
+ */
+export const shieldCalls = (members: number, resetRead: boolean) =>
+  Math.ceil(members * ((TRACKER_CALLS.shield_check?.perMember ?? 0) - (resetRead ? 0 : 1)));
 
 import { SaveRow } from "./SaveRow";
 import { SIGNED_OUT } from "./SignedOut";
@@ -33,7 +59,9 @@ function helpKey(channel: "ok" | "reenter" | "none", on: boolean): keyof Workspa
 }
 
 /** The card's values, how many differ from what the server has, and Save. */
-function useShieldSettings(slug: string, view: ShieldSettingsView, t: WorkspaceDictionary) {
+type CardView = ShieldSettingsView & { members: number };
+
+function useShieldSettings(slug: string, view: CardView, t: WorkspaceDictionary) {
   const router = useRouter();
   const [v, setV] = useState(view);
   // What the server has: the page's view, then each save that went through.
@@ -41,20 +69,19 @@ function useShieldSettings(slug: string, view: ShieldSettingsView, t: WorkspaceD
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const changes = (["morningMinute", "discord", "language"] as const).filter(
-    (k) => v[k] !== kept[k],
-  ).length;
-  const change = (next: ShieldSettingsView) => {
+  const changes = KEYS.filter((k) => v[k] !== kept[k]).length;
+  const change = (next: CardView) => {
     setSaved(false);
     setV(next);
   };
   const save = async () => {
     setBusy(true);
     setError(null);
+    const body = Object.fromEntries(KEYS.map((k) => [k, v[k]]));
     const res = await fetch(`/api/w/${slug}/raid-prep`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(v),
+      body: JSON.stringify(body),
     }).catch(() => null);
     setBusy(false);
     if (res?.ok) {
@@ -63,15 +90,94 @@ function useShieldSettings(slug: string, view: ShieldSettingsView, t: WorkspaceD
       // The page's "On this page" row reads the stored value ("Summary to Discord: on").
       return router.refresh();
     }
-    setError(res?.status === 401 ? SIGNED_OUT : t["prep.settings.failed"]);
+    if (res?.status === 401) return setError(SIGNED_OUT);
+    const code = res?.status === 409 ? ((await res.json().catch(() => null))?.code ?? "") : "";
+    setError(t[REFUSED[code] ?? "prep.settings.failed"]);
   };
   return { v, change, changes, busy, saved, error, save };
 }
 
+/** One read's time: the ticks it may take (`choices`), as ST clock times. */
+function TimeSelect(props: {
+  label: string;
+  value: number;
+  choices: number[];
+  onChange: (minute: number) => void;
+}) {
+  return (
+    <label className="mt-3 grid justify-items-start gap-2">
+      <span className="font-medium">{props.label}</span>
+      <select
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+        className={`${FIELD} max-w-40 text-[16px]`}
+      >
+        {props.choices.map((m) => (
+          <option key={m} value={m}>
+            {hhmm(m)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** The three reads' times in the order they run, with the calls they cost and the after-reset trade-off. */
+function ReadTimes(props: {
+  v: CardView;
+  change: (next: CardView) => void;
+  choices: { night: number[]; morning: number[]; reset: number[] };
+  t: WorkspaceDictionary;
+  language: string;
+}) {
+  const { v, change, choices, t } = props;
+  return (
+    <>
+      <p className="mt-2 font-semibold">
+        {fill(t["switches.callsWeekly"], {
+          n: new Intl.NumberFormat(props.language).format(shieldCalls(v.members, v.resetRead)),
+        })}
+      </p>
+      <TimeSelect
+        label={t["prep.settings.night"]}
+        value={v.nightMinute}
+        choices={choices.night}
+        onChange={(nightMinute) => change({ ...v, nightMinute })}
+      />
+      <div className="mt-3">
+        <CheckField
+          label={t["prep.settings.reset"]}
+          help={t["prep.settings.resetHelp"]}
+          checked={v.resetRead}
+          onChange={(e) => change({ ...v, resetRead: e.target.checked })}
+        />
+      </div>
+      {v.resetRead && (
+        <>
+          <TimeSelect
+            label={t["prep.settings.resetAt"]}
+            value={v.resetMinute}
+            choices={choices.reset}
+            onChange={(resetMinute) => change({ ...v, resetMinute })}
+          />
+          <p className="mt-2 text-body-sm text-ink/80">{t["prep.settings.tradeoff"]}</p>
+        </>
+      )}
+      <TimeSelect
+        label={t["prep.settings.morning"]}
+        value={v.morningMinute}
+        choices={choices.morning}
+        onChange={(morningMinute) => change({ ...v, morningMinute })}
+      />
+    </>
+  );
+}
+
 export function RaidPrepSettings(props: {
   slug: string;
-  view: ShieldSettingsView;
-  choices: number[];
+  view: CardView;
+  /** Each read's times whose window meets no event's (D160), from `timeChoices`. */
+  choices: { night: number[]; morning: number[]; reset: number[] };
   /**
    * ok: the Raid Shield channel can take the message (D129, D147; never the leaders'); reenter:
    * the saved Raid Shield webhook must be pasted again; none: no channel yet.
@@ -92,20 +198,7 @@ export function RaidPrepSettings(props: {
         {t["prep.settings.head"]}
       </h2>
       <p className="mt-1">{t["prep.settings.lead"]}</p>
-      <label className="mt-3 grid justify-items-start gap-2">
-        <span className="font-medium">{t["prep.settings.morning"]}</span>
-        <select
-          value={v.morningMinute}
-          onChange={(e) => change({ ...v, morningMinute: Number(e.target.value) })}
-          className={`${FIELD} max-w-40 text-[16px]`}
-        >
-          {props.choices.map((m) => (
-            <option key={m} value={m}>
-              {hhmm(m)}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ReadTimes v={v} change={change} choices={props.choices} t={t} language={props.language} />
       <div className="mt-3">
         <CheckField
           label={t["prep.settings.discord"]}

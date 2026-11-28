@@ -36,11 +36,12 @@ import { postsView } from "@/lib/private/post-settings";
 import { pushView } from "@/lib/private/push-settings";
 import { serverClock } from "@/lib/private/read-status";
 import { RENEW_MS } from "@/lib/private/session";
-import { MORNING_CHOICES, shieldSettingsView } from "@/lib/private/shield-settings";
+import { shieldSettingsView } from "@/lib/private/shield-settings";
 import { SLUG } from "@/lib/private/sign-in";
 import { squadsReader, squadsToday, type SquadsToday } from "@/lib/private/squads-today";
 import { settingsKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
+import { timeChoices } from "@/lib/shield-check";
 import { fill } from "@/lib/words";
 
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
@@ -275,7 +276,7 @@ function SettingsCards(props: {
         <RaidPrepSettings
           slug={slug}
           view={shield}
-          choices={MORNING_CHOICES}
+          choices={timeChoices(env, now)}
           channel={summaryChannel(channels)}
           t={t}
           language={language}
