@@ -9,6 +9,7 @@ import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
+import { notices } from "../schema-notices";
 import { requireWorkspace } from "./access";
 import { createEntry } from "./calendar";
 import { calendarDates } from "./calendar-words";
@@ -167,5 +168,35 @@ describe("a KvK plan (issue 790)", () => {
       expect(sent).not.toContain(leak);
     }
     expect(sent).toContain("Wren Hollow");
+  });
+
+  it("makes one notice for a repeat of the same request (D100)", async () => {
+    const ana = await officer();
+    await save(0, [{ name: "Scout", uids: [102] }]);
+    const input = { action: "message", entry, week: WEEK, requestId: randomUUID() } as const;
+    const first = await makeKvkMessage(db, ana, input, NOW, words);
+    const again = await makeKvkMessage(db, ana, input, NOW, words);
+    expect(again).toEqual(first);
+    expect(await db.select({ id: notices.id }).from(notices)).toHaveLength(1);
+  });
+
+  it("drops someone who left the alliance from the plan shown and from the message", async () => {
+    await save(0, [{ name: "Rally lead", uids: [101, 102] }]);
+    // The next day's roster no longer lists 102 (Bramble Fox).
+    await db.insert(dailyReads).values({ day: "2026-11-24", startedAt: NOW, status: "complete" });
+    await db.insert(dailyRosters).values({
+      readDay: "2026-11-24",
+      unionId: OGS,
+      memberCount: 2,
+      isFresh: true,
+      sourceUpdatedAt: new Date("2026-11-24T23:30:00Z"),
+      memberUids: [101, 103],
+      memberNames: ["Wren Hollow", "Quillon Ash"],
+      memberPower: [1000, 1000],
+      memberKills: [0, 0],
+    });
+    const view = await kvkPlanView(db, await officer(), entry, WEEK, ZONE);
+    expect(view?.roles).toEqual([{ name: "Rally lead", uids: [101] }]);
+    expect((await message())?.fields.en.value.split("\n")[1]).toBe("Rally lead: Wren Hollow");
   });
 });
