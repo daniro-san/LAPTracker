@@ -48,12 +48,17 @@ import {
 
 /** End-of-day reads fetched: a full week and the reads before it that the offline proxy may walk back. */
 const LOOKBACK_READS = 15;
+/** Not seen in game for this long (issue 821) is a reason to say hello; the newest end-of-day read is the clock. */
+const NOT_SEEN_DAYS = 3;
 /** A scheduled event (the Saturday KvK) counts for its "no kills gained" reason for this long. */
 const KVK_DAYS = 7;
 
 /** A "Check in" reason and its evidence (D75). */
 export type Reason =
-  ({ kind: "idle" } & Idle) | { kind: "might"; days: number } | { kind: "kvk"; at: Date };
+  | ({ kind: "idle" } & Idle)
+  | { kind: "might"; days: number }
+  | { kind: "kvk"; at: Date }
+  | { kind: "seen"; at: Date };
 
 export interface MemberRow {
   uid: number;
@@ -163,6 +168,14 @@ function factsPart(uid: number, s: Pick<Signals, "facts" | "today">) {
 const onBreak = (p: ReturnType<typeof factsPart>) =>
   p.officerStatus === "break" || p.awayUntil !== null;
 
+/** Issue 821: the roster's `last_online_at` is the evidence; a member with none is never listed. */
+function seenReason(m: RosterMember, readAt: Date): Reason[] {
+  const seen = m.lastOnlineAt;
+  return seen && readAt.getTime() - seen.getTime() >= NOT_SEEN_DAYS * DAY_MS
+    ? [{ kind: "seen", at: seen }]
+    : [];
+}
+
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   const newest = s.reads.at(-1) as RosterRead;
   const donations = weekDonations(s.reads, week, m.uid);
@@ -179,6 +192,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     : [
         ...(idle ? [{ kind: "idle" as const, ...idle }] : []),
         ...(flat !== undefined ? [{ kind: "might" as const, days: flat }] : []),
+        ...seenReason(m, newest.at),
         ...(s.event && killsGained(s.event, m.uid) === 0
           ? [{ kind: "kvk" as const, at: s.event.at }]
           : []),

@@ -77,3 +77,27 @@ describe("the member card's earlier values (D136)", () => {
     ]);
   });
 });
+
+describe("the member card's presence lines (issue 821)", () => {
+  const f = cardFormats("en", "Etc/GMT+2", new Date("2026-11-20T12:00:00Z"));
+  const shown = { joined: false, lastOnline: false, duel: false };
+
+  it("shows the last seen and the joined dates", () => {
+    const row = {
+      ...m,
+      lastOnlineAt: new Date("2026-11-18T10:00:00Z"),
+      joinedAt: new Date("2026-09-02T10:00:00Z"),
+    };
+    expect(cardData(row, WORKSPACE_DICTIONARIES.en, f, shown).presence).toEqual([
+      "Last seen in game: Wed, Nov 18",
+      "In the alliance since: Wed, Sep 2",
+    ]);
+  });
+
+  it("says no data with no reading", () => {
+    expect(cardData(m, WORKSPACE_DICTIONARIES.en, f, shown).presence).toEqual([
+      "Last seen in game: no data",
+      "In the alliance since: no data",
+    ]);
+  });
+});

@@ -72,7 +72,7 @@ export const inputOf = (item: Pick<WorkItem, "member" | "checkIn" | "tip" | "toA
   isNew: item.member.isNew,
   reasons: [
     ...(item.kvk ? (["kvk"] as const) : []),
-    ...(item.checkIn ? item.member.reasons.map((r) => r.kind) : []),
+    ...(item.checkIn ? item.member.reasons.map((r) => (r.kind === "seen" ? "idle" : r.kind)) : []),
   ],
   tip: item.tip,
   toAsk: item.toAsk,

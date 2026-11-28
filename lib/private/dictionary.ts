@@ -169,6 +169,7 @@ const en = {
   "members.checkinNone": "Everyone looks fine this week.",
   "reason.might.one": "might unchanged for {n} day",
   "reason.might.other": "might unchanged for {n} days",
+  "reason.seen": "not seen in game since {date}",
   "reason.idle.one": "no new donations or activity for {n} day",
   "reason.idle.other": "no new donations or activity for {n} days",
   "nodata.donations.one": "donations on {n} day",

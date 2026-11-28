@@ -67,7 +67,7 @@ export async function seedRoster(db: Db, unionId: number) {
           x: 98765,
           y: 54321,
           online: true,
-          last_online_at: 1763337600,
+          last_online_at: 1795000000,
           avatar_url: "https://avatar.example.test/a.png",
         },
       ],

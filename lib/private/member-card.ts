@@ -108,6 +108,8 @@ export interface CardData {
   statusMark: string[];
   /** The reasons with their evidence, or when a new member was first seen. */
   statusLines: string[];
+  /** Issue 821: "Last seen in game: …" and "In the alliance since: …"; "no data" with no reading. */
+  presence: string[];
   /** "No data": the name of the marker drawn where a value is "—". */
   noData: string;
   /** The last 7 days; null before the alliance's first end-of-day read (`daysEarly` says so). */
@@ -301,6 +303,15 @@ const NO_EXTRAS: CardExtras = {
 /** The header shows a status only when it says something: not Fine, and not "No data" (#461). */
 const HEADLINE: readonly Status[] = ["checkin", "help", "break", "new"];
 
+/** Issue 821: "Last seen in game" and "In the alliance since", "no data" with no reading. */
+function presenceLines(m: MemberRow, t: WorkspaceDictionary, f: CardFormats) {
+  const date = (at: Date | null) => (at ? f.date(at) : t["members.don.none"]);
+  return [
+    fill(t["card.lastSeen"], { date: date(m.lastOnlineAt) }),
+    fill(t["card.since"], { date: date(m.joinedAt) }),
+  ];
+}
+
 export function cardData(
   m: MemberRow,
   t: WorkspaceDictionary,
@@ -327,6 +338,7 @@ export function cardData(
     status,
     statusLabel: headline ? label : "",
     statusMark: [],
+    presence: presenceLines(m, t, f),
     statusLines: headline ? lines : [],
     noData: t["nodata.mark"],
     days: x.days ? daysCard(x.days, t, daysFormats(t, f)) : null,

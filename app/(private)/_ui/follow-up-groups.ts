@@ -22,6 +22,7 @@ import type { FollowUpGroup, FollowUpRow, RowLine } from "./FollowUpList";
 /** A reason in Follow-up's own words ("Quiet for 3 days. Worth a hello."); the held KvK one as Members says it. */
 function reasonLine(r: Reason, t: WorkspaceDictionary, f: Formats) {
   if (r.kind === "kvk") return reasonText(r, t, f);
+  if (r.kind === "seen") return fill(t["followup.reason.seen"], { date: f.date(r.at) });
   return fill(
     plural(
       r.days,

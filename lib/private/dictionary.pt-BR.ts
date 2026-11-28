@@ -167,6 +167,7 @@ export const pt: WorkspaceDictionary = {
   "members.checkinNone": "Todo mundo parece bem esta semana.",
   "reason.might.one": "might igual há {n} dia",
   "reason.might.other": "might igual há {n} dias",
+  "reason.seen": "sem aparecer no jogo desde {date}",
   "reason.idle.one": "sem doações nem atividade novas há {n} dia",
   "reason.idle.other": "sem doações nem atividade novas há {n} dias",
   "nodata.donations.one": "doações em {n} dia",
