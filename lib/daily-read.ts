@@ -23,6 +23,7 @@ import {
   finishDailyRead,
   getDailyRead,
   lastMemberUids,
+  lookupRostersBefore,
   reclaimDailyRead,
   storeDailyRoster,
   type DailyReadStatus,
@@ -220,8 +221,8 @@ export async function runDailyRead(
   targets: readonly DailyTarget[],
 ): Promise<DailyReadSummary | null> {
   const now = deps.now();
-  if (!(await claimDailyRead(db, day, now))) return null;
   const ids = targets.map((t) => t.unionId);
+  if (!(await claimDailyRead(db, day, now, ids))) return null;
   return readDay(deps, db, day, targets, now, { toRead: ids, code: "daily.start" });
 }
 
@@ -247,8 +248,8 @@ export async function retryDailyRead(
   const day = serverDay(now, cfg);
   // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
   const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
-  if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
   const ids = targets.map((t) => t.unionId);
+  if (!(await reclaimDailyRead(db, day, now, staleBefore, ids))) return null;
   return readDay(deps, db, day, targets, now, { toRead: ids, code: "daily.start" });
 }
 
@@ -257,9 +258,11 @@ const AUTO_RETRY_AFTER_MS = 10 * 60_000;
 
 /**
  * The tick's automatic retry (D72): on a later tick of the same server day, a read that fell short
- * (`failed` or `partial`) reads again only the alliances with no roster for the day, once per day. Null
- * when the day has a roster of every alliance (a `complete` day included), was retried automatically
- * already, is running, or read too recently.
+ * (`failed` or `partial`) reads again only the alliances with no roster for the day, once per day. A
+ * "Get today's details" roster stored before the read started is not one the read read (issue 625): it reads
+ * that alliance too. A roster the read stored, stale or not, is never read again (D72). Null when the day has
+ * a roster of every alliance (a `complete` day included), was retried automatically already, is running, or
+ * read too recently.
  */
 export async function autoRetryDailyRead(
   deps: Deps,
@@ -268,17 +271,20 @@ export async function autoRetryDailyRead(
   targets: readonly DailyTarget[],
 ): Promise<DailyReadSummary | null> {
   const ids = targets.map((t) => t.unionId);
-  const read = new Set(
-    (await dailyRosterStates(db, day)).filter((r) => r.error === null).map((r) => r.unionId),
-  );
-  const missing = ids.filter((id) => !read.has(id));
-  if (missing.length === 0) return null;
   // The claim moves started_at to the retry; the rosters it keeps are judged against the read it completes.
   const before = await getDailyRead(db, day);
   if (!before) return null;
+  const lookups = new Set(await lookupRostersBefore(db, day, before.startedAt));
+  const read = new Set(
+    (await dailyRosterStates(db, day))
+      .filter((r) => r.error === null && !lookups.has(r.unionId))
+      .map((r) => r.unionId),
+  );
+  const missing = ids.filter((id) => !read.has(id));
+  if (missing.length === 0) return null;
   const now = deps.now();
   const startedBefore = new Date(now.getTime() - AUTO_RETRY_AFTER_MS);
-  if (!(await claimAutoRetry(db, day, now, startedBefore))) return null;
+  if (!(await claimAutoRetry(db, day, now, startedBefore, ids))) return null;
   return readDay(deps, db, day, targets, now, {
     toRead: missing,
     code: "daily.auto-retry",
@@ -328,7 +334,7 @@ async function readDay(
   const error = await withDeadline(read, readRosters(read, db, attempt.toRead));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });
   else if (error && !error.startsWith("quota")) await log.error("abort", { reason: error });
-  for (const row of [...read.rows]) await storeDailyRoster(db, day, row);
+  for (const row of [...read.rows]) await storeDailyRoster(db, day, row, deps.now());
   for (const f of read.frames) await recordFrames(db, f.members, f.seenAt);
   // The day's rows, not this attempt's: after a retry they include the rosters it kept (D67).
   const rows = (await dailyRosterStates(db, day)).filter((r) => ids.includes(r.unionId));

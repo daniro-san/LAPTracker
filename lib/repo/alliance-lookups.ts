@@ -1,10 +1,26 @@
 // alliance_lookups (D133): "Get today's details", one claim row per alliance and server day.
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, exists, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
+import { dailyRosters } from "../schema";
 import { allianceLookups } from "../schema-alliances";
 
 export type LookupStatus = "running" | "done" | "refused" | "failed";
+
+/** A condition on a `daily_rosters` row: the row's day has a claim for its alliance (any status: a roster can
+ * be stored and the claim still end "failed"). /admin/runs and the tick's automatic retry both use it. */
+export const lookedUpThatDay = (db: Db) =>
+  exists(
+    db
+      .select({ one: sql`1` })
+      .from(allianceLookups)
+      .where(
+        and(
+          eq(allianceLookups.unionId, dailyRosters.unionId),
+          eq(allianceLookups.day, dailyRosters.readDay),
+        ),
+      ),
+  );
 
 /** A claim still "running" this long after it was made belongs to a killed function: it reads as failed. */
 export const LOOKUP_STALE_AFTER_MS = 5 * 60_000;

@@ -25,12 +25,16 @@ async function seed(
   start: Date,
   parts: {
     tracked: number[];
+    /** The latest attempt's targets (issue 625); left out, the day was read before it. */
+    targets?: number[];
     rows: (Partial<typeof dailyRosters.$inferInsert> & { unionId: number; isFresh: boolean })[];
     lookups: { unionId: number; status: "done" | "failed"; at: Date }[];
     lines: number[];
   },
 ) {
-  await db.insert(dailyReads).values({ day, startedAt: start, status: "partial" });
+  await db
+    .insert(dailyReads)
+    .values({ day, startedAt: start, status: "partial", targetIds: parts.targets ?? null });
   await db
     .insert(trackedSets)
     .values({ day, allianceIds: parts.tracked, source: "board", createdAt: start });
@@ -97,6 +101,21 @@ describe("a daily read's problems on /admin/runs (D133)", () => {
       lookups: [{ unionId: FAILED, status: "failed", at: new Date("2026-11-18T16:05:00Z") }],
       lines: [FAILED],
     });
+    // Sat 2026-11-21, read at 23:30 ST with its targets stored (issue 625): LOOKED_UP is not one of them, and
+    // its lookup's roster is stale.
+    await seed("2026-11-21", new Date("2026-11-22T01:30:00Z"), {
+      tracked: [READ],
+      targets: [READ],
+      rows: [
+        { unionId: LOOKED_UP, isFresh: false, sourceUpdatedAt: new Date("2026-11-21T15:30:00Z") },
+      ],
+      lookups: [{ unionId: LOOKED_UP, status: "done", at: new Date("2026-11-21T16:05:00Z") }],
+      lines: [],
+    });
+  });
+
+  it("names no looked-up alliance outside the targets the read stored", async () => {
+    expect(await problemsOf("2026-11-21")).toEqual([]);
   });
 
   it("names the read's own stale alliances, never a lookup's roster of an alliance it did not read", async () => {

@@ -10,17 +10,19 @@ import {
   exists,
   inArray,
   isNotNull,
+  isNull,
   lt,
-  notExists,
+  not,
   or,
   sql,
 } from "drizzle-orm";
 
 import { FRESH_MAX_AGE_MS } from "../collector-rows";
 import type { Db } from "../db";
+import { lookedUpThatDay } from "../repo/alliance-lookups";
 import { allianceLabels } from "../repo/alliances";
 import { dailyReads, dailyRosters, runLogs } from "../schema";
-import { allianceLookups, trackedSets } from "../schema-alliances";
+import { trackedSets } from "../schema-alliances";
 import type { UpstreamDetail } from "../sources/types";
 import { DEADLINE_ERROR, runTrace } from "./admin";
 
@@ -41,18 +43,10 @@ const readFields = {
  * includes a roster a retry kept from an earlier read, once it is more than 20 minutes older than the
  * start of the day's latest read (D67), as the read's own outcome counts it. A "Get today's details" roster
  * stored under the day (D133) is not the read's: an alliance the day has a lookup claim for counts only when
- * it is in the day's tracked set (the read's targets on LAP_API_KEY, stored before it reads, so a roster the
- * read never reached still counts), or when the read wrote a line for it (a workspace's alliance it read). */
+ * it is one of the targets the latest attempt stored when it claimed the day (issue 625), so a roster the read
+ * never reached still counts. A day read before issue 625 has none: there it counts when it is in the day's
+ * tracked set, or when the read wrote a line for it (a workspace's alliance it read). */
 function problemsOf(db: Db, days: string[]) {
-  const lookedUp = db
-    .select({ one: sql`1` })
-    .from(allianceLookups)
-    .where(
-      and(
-        eq(allianceLookups.unionId, dailyRosters.unionId),
-        eq(allianceLookups.day, dailyRosters.readDay),
-      ),
-    );
   const tracked = db
     .select({ one: sql`1` })
     .from(trackedSets)
@@ -82,7 +76,11 @@ function problemsOf(db: Db, days: string[]) {
     .where(
       and(
         inArray(dailyRosters.readDay, days),
-        or(notExists(lookedUp), exists(tracked), exists(readByRun)),
+        or(
+          not(lookedUpThatDay(db)),
+          sql`${dailyRosters.unionId} = any(${dailyReads.targetIds})`,
+          and(isNull(dailyReads.targetIds), or(exists(tracked), exists(readByRun))),
+        ),
         or(
           eq(dailyRosters.isFresh, false),
           isNotNull(dailyRosters.error),

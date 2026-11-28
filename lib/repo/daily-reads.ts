@@ -17,15 +17,21 @@ import {
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
+import { lookedUpThatDay } from "./alliance-lookups";
 
 export type DailyReadStatus = "complete" | "partial" | "failed";
 export type NewDailyRoster = Omit<typeof dailyRosters.$inferInsert, "id" | "readDay">;
 
-/** True for exactly one caller per server day. */
-export async function claimDailyRead(db: Db, day: string, startedAt: Date): Promise<boolean> {
+/** True for exactly one caller per server day. Each claim stores its attempt's `targetIds` (issue 625). */
+export async function claimDailyRead(
+  db: Db,
+  day: string,
+  startedAt: Date,
+  targetIds: number[],
+): Promise<boolean> {
   const rows = await db
     .insert(dailyReads)
-    .values({ day, startedAt, status: "running" })
+    .values({ day, startedAt, status: "running", targetIds })
     .onConflictDoNothing()
     .returning({ day: dailyReads.day });
   return rows.length > 0;
@@ -39,10 +45,11 @@ export async function reclaimDailyRead(
   day: string,
   startedAt: Date,
   staleBefore: Date,
+  targetIds: number[],
 ): Promise<boolean> {
   const rows = await db
     .update(dailyReads)
-    .set({ startedAt, finishedAt: null, status: "running", error: null })
+    .set({ startedAt, finishedAt: null, status: "running", error: null, targetIds })
     .where(
       and(
         eq(dailyReads.day, day),
@@ -67,10 +74,18 @@ export async function claimAutoRetry(
   day: string,
   startedAt: Date,
   startedBefore: Date,
+  targetIds: number[],
 ): Promise<boolean> {
   const rows = await db
     .update(dailyReads)
-    .set({ startedAt, finishedAt: null, status: "running", error: null, autoRetryAt: startedAt })
+    .set({
+      startedAt,
+      finishedAt: null,
+      status: "running",
+      error: null,
+      autoRetryAt: startedAt,
+      targetIds,
+    })
     .where(
       and(
         eq(dailyReads.day, day),
@@ -109,13 +124,18 @@ export async function getDailyRead(db: Db, day: string) {
  * Stores one alliance's row of the day. On a retry a roster that was read replaces the day's earlier
  * one. INVARIANT daily-read.retry-keeps-rosters: an error row never replaces a roster the day has.
  */
-export async function storeDailyRoster(db: Db, day: string, row: NewDailyRoster): Promise<void> {
-  const insert = db.insert(dailyRosters).values({ ...row, readDay: day });
+export async function storeDailyRoster(
+  db: Db,
+  day: string,
+  row: NewDailyRoster,
+  storedAt: Date,
+): Promise<void> {
+  const insert = db.insert(dailyRosters).values({ ...row, readDay: day, storedAt });
   if (typeof row.error === "string") await insert.onConflictDoNothing();
   else
     await insert.onConflictDoUpdate({
       target: [dailyRosters.readDay, dailyRosters.unionId],
-      set: row,
+      set: { ...row, storedAt },
     });
 }
 
@@ -131,6 +151,23 @@ export function dailyRosterStates(db: Db, day: string) {
     })
     .from(dailyRosters)
     .where(eq(dailyRosters.readDay, day));
+}
+
+/** The alliances whose roster of the day is still the "Get today's details" one (D133): looked up that day
+ * and stored before `before`, the start of the day's read, so no read of the day replaced it (issue 625). */
+export async function lookupRostersBefore(db: Db, day: string, before: Date): Promise<number[]> {
+  const rows = await db
+    .select({ unionId: dailyRosters.unionId })
+    .from(dailyRosters)
+    .where(
+      and(
+        eq(dailyRosters.readDay, day),
+        isNull(dailyRosters.error),
+        lt(dailyRosters.storedAt, before),
+        lookedUpThatDay(db),
+      ),
+    );
+  return rows.map((r) => r.unionId);
 }
 
 export async function finishDailyRead(

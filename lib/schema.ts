@@ -310,6 +310,9 @@ export const dailyReads = pgTable(
     error: text("error"),
     /** D72: when the tick's automatic retry took this day; at most one per day. */
     autoRetryAt: tstz("auto_retry_at"),
+    /** Issue 625: the latest attempt's targets (the tracked set and the workspaces' alliances, D133), stored
+     * when it claims the day, so /admin/runs names a target the read never reached. Null before the issue. */
+    targetIds: big("target_ids").array(),
   },
   (t) => [
     check(
@@ -349,6 +352,8 @@ export const dailyRosters = pgTable(
     memberPower: big("member_power").array().notNull(),
     memberKills: big("member_kills").array().notNull(),
     rawJson: jsonb("raw_json"),
+    /** Issue 625: when the read or the lookup last wrote this row. Null before the issue. */
+    storedAt: tstz("stored_at"),
   },
   (t) => [
     unique("daily_rosters_day_union_unique").on(t.readDay, t.unionId),
