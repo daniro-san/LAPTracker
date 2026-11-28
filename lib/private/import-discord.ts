@@ -10,9 +10,12 @@ import { serverDay } from "../schedule";
 import { readScreen } from "../screenshot/classify";
 import { ImageRefusedError } from "../screenshot/prepare";
 import type { ScreenshotReader } from "../screenshot/read-screenshot";
+import { fill } from "../words";
+import { FREE_SHOTS_A_WEEK } from "../workspace-features";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { editOriginal } from "./discord-api";
 import type { Attachment, Job } from "./discord-interaction";
+import { useShotReads } from "./features";
 import { createDrafts, MAX_PICTURES, type PictureText } from "./import";
 import { failureCode } from "./import-read";
 import { outcomeLines } from "./import-words";
@@ -203,6 +206,16 @@ export async function runJob(deps: JobDeps, job: Job): Promise<void> {
   const all = job.pictures.map((p) => p.id);
   let content = t["shots.discord.failed"];
   try {
+    // D162: the free plan's weekly screenshots, the message's pictures at once; none is read if refused,
+    // and each can be sent again next week.
+    // With no cap the clock is not read here: the reading's deadline is counted from its first look.
+    const n = Math.min(job.pictures.length, MAX_PICTURES);
+    const capped = job.access.features.shotsAWeek !== null;
+    if (capped && (await useShotReads(db, job.access, n, deps.now())) === "cap_reached") {
+      content = fill(t["shots.cap"], { n: FREE_SHOTS_A_WEEK });
+      await settlePictures(db, key, new Map(), all);
+      return;
+    }
     const { pictures, ids, lost } = await readPictures(deps, job);
     const result = await createDrafts(db, job.access, pictures, {
       source: "discord",

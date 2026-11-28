@@ -114,10 +114,13 @@ function Switch(props: {
   );
 }
 
-/** D162: the workspace's plan and its grandfather flag, one tap each; nothing is deleted either way. */
+/**
+ * D162: the workspace's plan and its grandfathering, one tap each (On: everything for 3 months from now);
+ * nothing is deleted either way.
+ */
 function PlanSwitch(props: { id: number; view: FeaturesView; run: Run; busy: boolean }) {
   const { plan, grandfathered } = props.view.plan;
-  const send = (next: { plan: Plan; grandfathered: boolean }) =>
+  const send = (next: { plan: Plan; grandfathered?: boolean }) =>
     props.run({
       url: URL,
       body: { action: "plan", workspace_id: props.id, ...next },
@@ -133,7 +136,7 @@ function PlanSwitch(props: { id: number; view: FeaturesView; run: Run; busy: boo
           type="button"
           disabled={props.busy}
           className={chip()}
-          onClick={() => send({ plan: other, grandfathered })}
+          onClick={() => send({ plan: other })}
         >
           {other === "premium" ? t.plan.setPremium : t.plan.setFree}
         </button>

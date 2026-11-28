@@ -38,26 +38,33 @@ export async function toPng(
   );
 }
 
-/** A POST whose failure throws an Error carrying the HTTP status. */
+/** A POST whose failure throws an Error carrying the HTTP status, and the answer's code as its cause. */
 export async function post(url: string, body: BodyInit, type: string) {
   const res = await fetch(url, { method: "POST", headers: { "content-type": type }, body });
-  if (!res.ok) throw new Error(String(res.status));
+  if (!res.ok) {
+    const code = ((await res.json().catch(() => null)) as { code?: string } | null)?.code;
+    throw new Error(String(res.status), { cause: code });
+  }
   return res.json();
 }
 
 /** Whether `post` failed on a 401: the session ended (D99). */
 export const isSignedOut = (e: unknown) => e instanceof Error && e.message === "401";
 
+/** Whether `post` failed because the free plan's screenshots for the week are used (D162). */
+export const isCapReached = (e: unknown) => e instanceof Error && e.cause === "cap_reached";
+
 /**
  * Each picture's text lines, one request each; a picture that cannot be converted or read is skipped.
- * A 401 stops the reading: the session ended, so no picture is wrongly called unreadable (ADV-1).
+ * A 401 stops the reading: the session ended, so no picture is wrongly called unreadable (ADV-1). So does
+ * the week's cap on the free plan (D162, `capped`).
  */
 export async function readAll(
   files: File[],
   slug: string,
   statusBar: { share: number; aspect: number },
   onProgress: (p: { n: number; total: number }) => void,
-): Promise<{ pages: string[][]; signedOut: boolean }> {
+): Promise<{ pages: string[][]; signedOut: boolean; capped?: true }> {
   const pages: string[][] = [];
   for (const [i, file] of files.entries()) {
     onProgress({ n: i + 1, total: files.length });
@@ -70,6 +77,7 @@ export async function readAll(
       pages.push(read.lines);
     } catch (e) {
       if (isSignedOut(e)) return { pages, signedOut: true };
+      if (isCapReached(e)) return { pages, signedOut: false, capped: true };
       // Otherwise counted by the caller as a picture that could not be read.
     }
   }

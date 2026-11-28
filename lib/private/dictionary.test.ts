@@ -154,6 +154,13 @@ const DELETION_FORM: [string, string] = [
   'return dateWords(language, "UTC").withYear(at);',
 ];
 const SENTENCE_CALLERS: Record<string, [string, string][]> = {
+  "plans.current.grandfathered": [
+    [
+      "app/(private)/_ui/GrandfatherNotice.tsx",
+      'fill(t["plans.current.grandfathered"], { date: deletionDate(until, language) })',
+    ],
+    DELETION_FORM,
+  ],
   "delete.asked": [
     [
       "app/(private)/_ui/WorkspaceDataForm.tsx",

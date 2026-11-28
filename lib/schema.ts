@@ -407,8 +407,11 @@ export const workspaces = pgTable(
     plan: text("plan", { enum: ["free", "premium"] })
       .notNull()
       .default("free"),
-    /** D162: a workspace made before plans keeps what it had, whatever its plan, until the owner clears it. */
-    planGrandfathered: boolean("plan_grandfathered").notNull().default(false),
+    /**
+     * D162: until when the workspace keeps everything, whatever its plan (null: not grandfathered). The
+     * migration set it 3 months ahead for every workspace made before plans (owner, 2026-11-28).
+     */
+    planGrandfatheredUntil: tstz("plan_grandfathered_until"),
   },
   (t) => [check("workspaces_plan_check", sql`${t.plan} in ('free', 'premium')`)],
 );

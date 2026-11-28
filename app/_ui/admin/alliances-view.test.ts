@@ -41,7 +41,7 @@ const view = (over: Partial<FeaturesView> = {}): FeaturesView => ({
   changed: [],
   allianceOff: [],
   locked: [],
-  plan: { plan: "free", grandfathered: false },
+  plan: { plan: "free", grandfathered: false, grandfatheredUntil: null },
   planLine: "",
   on: 0,
   caps: { ai: 20, translate: null },

@@ -6,6 +6,7 @@
 // again": the pictures are read in memory only and never kept, so nothing waits for the sign-in.
 import { recordAppError } from "@/lib/app-errors";
 import { requireWorkspace } from "@/lib/private/access";
+import { useShotReads } from "@/lib/private/features";
 import {
   isShareTarget,
   privateError,
@@ -79,6 +80,9 @@ export async function POST(
     // One reading at a time per officer, as "Read from a screenshot" and Send screenshots (D109).
     if (!startReading(access.user.id)) return go(`${home}?shared=busy`);
     try {
+      // D162: the free plan's weekly screenshots, all the shared pictures at once; none is read if refused.
+      if ((await useShotReads(db, access, files.length, now)) === "cap_reached")
+        return go(`${home}?shared=cap`);
       const pages = await privately(
         (error) => failureCode("w.import.share_failed", error),
         () => readAll(files),

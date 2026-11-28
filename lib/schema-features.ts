@@ -72,20 +72,23 @@ export const featureDefaults = pgTable(
   (t) => [check("feature_defaults_one_row", sql`${t.id} = 1`)],
 );
 
-/** How much of each allowance a workspace used on a UTC day: counts only, nothing about what was asked. */
+/**
+ * How much of each allowance a workspace used on a UTC day: counts only, nothing about what was asked.
+ * D162: `ocr` counts the screenshots read on a capped plan, on the row of the UTC week's Monday.
+ */
 export const workspaceUsage = pgTable(
   "workspace_usage",
   {
     workspaceId: integer("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    allowance: text("allowance", { enum: ["ai", "translate"] }).notNull(),
+    allowance: text("allowance", { enum: ["ai", "translate", "ocr"] }).notNull(),
     day: date("day", { mode: "string" }).notNull(),
     used: integer("used").notNull(),
   },
   (t) => [
     primaryKey({ name: "workspace_usage_pk", columns: [t.workspaceId, t.allowance, t.day] }),
-    check("workspace_usage_allowance_check", sql`${t.allowance} in ('ai', 'translate')`),
+    check("workspace_usage_allowance_check", sql`${t.allowance} in ('ai', 'translate', 'ocr')`),
   ],
 );
 

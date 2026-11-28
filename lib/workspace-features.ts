@@ -44,19 +44,42 @@ export const FEATURES: readonly Feature[] = Object.values(FEATURE_GROUPS).flat()
 export const PLANS = ["free", "premium"] as const;
 export type Plan = (typeof PLANS)[number];
 
-/** A workspace's plan, and whether it keeps what it had before plans (D162, grandfathered). */
+/**
+ * A workspace's plan, and until when it keeps what it had before plans (D162, grandfathered; null: not).
+ * `grandfathered`: that instant is still ahead (the database's clock, as read with the settings).
+ */
 export interface PlanState {
   plan: Plan;
   grandfathered: boolean;
+  grandfatheredUntil: Date | null;
 }
 
 /** A workspace made from now on (the schema's defaults): the free plan, not grandfathered. */
-export const NEW_PLAN: PlanState = { plan: "free", grandfathered: false };
+export const NEW_PLAN: PlanState = { plan: "free", grandfathered: false, grandfatheredUntil: null };
+
+/** D162 (owner, 2026-11-28): a grandfathered workspace keeps everything for 3 months from when it was set. */
+export const GRANDFATHER_MONTHS = 3;
 
 /**
- * D162: the complementary features that cost processing (tracker calls, the model, our server's reader).
- * Everything else is the core and stays on the free plan: privacy, safety, export and delete, the members'
- * board, and Discord sending of what officers write are never here.
+ * D162 (owner, 2026-11-28): the screenshots our server reads for a workspace on the free plan in one UTC
+ * week (Monday 00:00 to Monday 00:00), every way in counted: a cap, not a lock. Premium has no weekly cap.
+ */
+export const FREE_SHOTS_A_WEEK = 20;
+
+/** The UTC week a screenshot count belongs to: its Monday, as YYYY-MM-DD. */
+export function shotsWeek(now: Date): string {
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() - ((now.getUTCDay() + 6) % 7));
+  return monday.toISOString().slice(0, 10);
+}
+
+/**
+ * D162: the complementary features that cost processing (tracker calls, the model). Everything else is the
+ * core and stays on the free plan: privacy, safety, export and delete, the members' board, and Discord
+ * sending of what officers write are never here. `shield_check` is the Raid Shield check's automated reads
+ * and what is made from them (Accept the tracker's, To check by hand, the counts post, the read times);
+ * Raid prep's own marks and copies are the roll call's, and the Shield-up reminder is `post_shield_up`,
+ * both free (owner, 2026-11-28). The screenshot reader (`ocr`) is free up to FREE_SHOTS_A_WEEK a week.
  */
 const PREMIUM: ReadonlySet<Feature> = new Set<Feature>([
   "garrison",
@@ -65,11 +88,11 @@ const PREMIUM: ReadonlySet<Feature> = new Set<Feature>([
   "notice_improve",
   "notice_fit",
   "thanks_draft",
-  "ocr",
   "discord_translate_me",
   "discord_translate_everyone",
   "squads",
   "shield_check",
+  "recruit_check",
 ]);
 
 /** D162: the features each plan covers. */
@@ -88,6 +111,12 @@ export const isPremium = (f: Feature): boolean => PREMIUM.has(f);
 export function planLocked(unionId: number, state: PlanState): Feature[] {
   if (unionId === OWN_ALLIANCE_ID || state.grandfathered) return [];
   return FEATURES.filter((f) => !PLAN_FEATURES[state.plan].includes(f));
+}
+
+/** D162: the weekly screenshot cap (null: none). Only the free plan has one; never OGs or a grandfathered one. */
+export function planShotsAWeek(unionId: number, state: PlanState): number | null {
+  if (unionId === OWN_ALLIANCE_ID || state.grandfathered || state.plan === "premium") return null;
+  return FREE_SHOTS_A_WEEK;
 }
 
 /** The daily allowances: Groq requests (D81) and Discord translations (D101), each capped per workspace. */
@@ -160,17 +189,24 @@ export function trackerEstimate(
 /**
  * What a workspace has: the features the owner did not allow (`off`), each allowance's daily cap (null: no
  * cap), the allowed features its officers turned off in Alliance settings (`allianceOff`, D134), and the
- * features its plan leaves out (`locked`, D162), which count as not allowed wherever `off` is read.
+ * features its plan leaves out (`locked`, D162), which count as not allowed wherever `off` is read. D162
+ * also: the plan's weekly screenshot cap (`shotsAWeek`, null: none) and, while it is grandfathered, until
+ * when (`grandfatheredUntil`; null for OGs, which keeps everything forever).
  */
 export interface FeatureSettings {
   off: readonly Feature[];
   caps: Record<Allowance, number | null>;
   allianceOff: readonly Feature[];
   locked: readonly Feature[];
+  shotsAWeek: number | null;
+  grandfatheredUntil: Date | null;
 }
 
 /** The owner's values for a workspace: what is allowed, and the caps. */
-export type OwnerSettings = Omit<FeatureSettings, "allianceOff" | "locked">;
+export type OwnerSettings = Omit<
+  FeatureSettings,
+  "allianceOff" | "locked" | "shotsAWeek" | "grandfatheredUntil"
+>;
 
 /** D134, D162: the owner allows the feature and the workspace's plan covers it. */
 export const allowed = (settings: FeatureSettings, f: Feature): boolean =>
@@ -242,10 +278,15 @@ export function defaultSettings(
   return storedSettings(unionId, null, defaults, plan);
 }
 
-/** A workspace's features as served: which are on (its settings, less any globally paused allowance). */
+/**
+ * A workspace's features as served: which are on (its settings, less any globally paused allowance), the
+ * caps, and its plan's screenshot cap and grandfathering end (D162).
+ */
 export interface WorkspaceFeatures {
   on: ReadonlySet<Feature>;
   caps: FeatureSettings["caps"];
+  shotsAWeek: FeatureSettings["shotsAWeek"];
+  grandfatheredUntil: FeatureSettings["grandfatheredUntil"];
 }
 
 /**
@@ -264,7 +305,8 @@ export function resolveFeatures(
       !(spends && paused.includes(spends))
     );
   });
-  return { on: new Set(on), caps: settings.caps };
+  const { caps, shotsAWeek, grandfatheredUntil } = settings;
+  return { on: new Set(on), caps, shotsAWeek, grandfatheredUntil };
 }
 
 /** Notice pictures are shown, warned about and cleaned up only while both notices and pictures are on. */
@@ -293,6 +335,9 @@ export function storedSettings(
     },
     allianceOff: FEATURES.filter((f) => !pick(s.alliance, f, allianceDefaultOn(unionId, f))),
     locked: planLocked(unionId, plan),
+    shotsAWeek: planShotsAWeek(unionId, plan),
+    grandfatheredUntil:
+      unionId !== OWN_ALLIANCE_ID && plan.grandfathered ? plan.grandfatheredUntil : null,
   };
 }
 

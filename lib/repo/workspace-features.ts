@@ -17,6 +17,7 @@ import {
 import { noticePictures } from "../schema-notices";
 import {
   ALLOWANCES,
+  GRANDFATHER_MONTHS,
   NO_DEFAULTS,
   ownerDefaults,
   storedSettings,
@@ -50,7 +51,9 @@ const COLUMNS = {
   slug: workspaces.slug,
   unionId: workspaces.unionId,
   plan: workspaces.plan,
-  grandfathered: workspaces.planGrandfathered,
+  grandfatheredUntil: workspaces.planGrandfatheredUntil,
+  // D162: the window is read on the database's clock, so every read of one moment agrees.
+  grandfathered: sql<boolean>`coalesce(${workspaces.planGrandfatheredUntil} > now(), false)`,
   switches: workspaceFeatures.switches,
   caps: workspaceFeatures.caps,
   alliance: workspaceFeatures.allianceSwitches,
@@ -63,6 +66,7 @@ type Row = {
   slug: string;
   unionId: number;
   plan: Plan;
+  grandfatheredUntil: Date | null;
   grandfathered: boolean;
   switches: Record<string, boolean> | null;
   caps: StoredDefaults["caps"] | null;
@@ -78,7 +82,11 @@ const settingsOf = (row: Row): WorkspaceSettings => {
     caps: row.caps ?? {},
     alliance: row.alliance ?? {},
   };
-  const plan = { plan: row.plan, grandfathered: row.grandfathered };
+  const plan = {
+    plan: row.plan,
+    grandfathered: row.grandfathered,
+    grandfatheredUntil: row.grandfatheredUntil,
+  };
   return {
     workspaceId: row.workspaceId,
     slug: row.slug,
@@ -217,14 +225,26 @@ export async function setAllianceSwitch(
 }
 
 /**
- * D162: the owner sets a workspace's plan and whether it is grandfathered, in one statement. Nothing else
- * changes: every switch stays stored, so a feature the plan leaves out comes back as it was. False: no such
- * workspace.
+ * D162: the owner sets a workspace's plan and, when given, its grandfathering: on keeps everything for
+ * GRANDFATHER_MONTHS from now, off ends it. One statement; nothing else changes: every switch stays stored,
+ * so a feature the plan leaves out comes back as it was. False: no such workspace.
  */
-export async function setPlan(db: Db, workspaceId: number, state: PlanState): Promise<boolean> {
+export async function setPlan(
+  db: Db,
+  workspaceId: number,
+  state: { plan: Plan; grandfathered?: boolean | undefined },
+): Promise<boolean> {
+  const until =
+    state.grandfathered === undefined
+      ? {}
+      : {
+          planGrandfatheredUntil: state.grandfathered
+            ? sql`now() + make_interval(months => ${GRANDFATHER_MONTHS})`
+            : null,
+        };
   const rows = await db
     .update(workspaces)
-    .set({ plan: state.plan, planGrandfathered: state.grandfathered })
+    .set({ plan: state.plan, ...until })
     .where(eq(workspaces.id, workspaceId))
     .returning({ id: workspaces.id });
   return rows.length > 0;
@@ -316,12 +336,13 @@ export async function setPaused(
  * Counts `units` of an allowance for the workspace's UTC `day`, in one statement: the row is made or
  * incremented only while the day's total stays within `cap` (null: no cap). Postgres locks the row for the
  * update and checks the cap against its latest count, so concurrent requests at the boundary never pass it.
- * Returns the day's new total, or null when the cap would be passed (nothing is counted then).
+ * Returns the day's new total, or null when the cap would be passed (nothing is counted then). D162: `ocr`
+ * is the free plan's screenshots, `day` the UTC week's Monday.
  */
 export async function spend(
   db: Db,
   workspaceId: number,
-  allowance: Allowance,
+  allowance: Allowance | "ocr",
   day: string,
   units: number,
   cap: number | null,
@@ -377,6 +398,8 @@ export async function usageOn(
     .where(eq(workspaceUsage.day, day));
   const byWorkspace = new Map<number, Record<Allowance, number>>();
   for (const r of rows) {
+    // D162: a Monday's `ocr` row is the week's screenshots, not a daily allowance.
+    if (r.allowance === "ocr") continue;
     const counts = byWorkspace.get(r.workspaceId) ?? { ai: 0, translate: 0 };
     counts[r.allowance] = r.used;
     byWorkspace.set(r.workspaceId, counts);

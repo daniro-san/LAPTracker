@@ -1,5 +1,6 @@
 // /w/[slug]/settings/plans: Alliance settings → Plans (D162). What the alliance's plan is, what each plan
-// covers (from PLAN_FEATURES, the one mapping) and why, and that changing plans deletes nothing. No price and
+// covers (from PLAN_FEATURES, the one mapping) and why, the free plan's weekly screenshots, until when a
+// grandfathered alliance keeps everything, and that changing plans deletes nothing. No price and
 // no payment yet: PlanPaymentSlot renders nothing until a payment link exists. Officers only: a member's
 // session goes to the board (refuse.ts), so members never see plan words.
 import { cookies } from "next/headers";
@@ -10,13 +11,20 @@ import { TextLink } from "@/lib/brand/components/TextLink";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { alliancePlanView } from "@/lib/private/alliance-features";
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { toReviewCount } from "@/lib/private/import-view";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
-import { isPremium, PLAN_FEATURES, type Feature } from "@/lib/workspace-features";
+import { fill } from "@/lib/words";
+import {
+  FREE_SHOTS_A_WEEK,
+  isPremium,
+  PLAN_FEATURES,
+  type Feature,
+} from "@/lib/workspace-features";
 
 import { SignedInFrame, workspaceWords } from "../../../../_ui/Frame";
+import { grandfatheredLine } from "../../../../_ui/GrandfatherNotice";
 import { PlanPaymentSlot } from "../../../../_ui/PlanPaymentSlot";
 import { refuse } from "../../../../_ui/refuse";
 
@@ -26,9 +34,11 @@ const PAYMENT_HREF: string | null = null;
 function currentLine(
   view: Awaited<ReturnType<typeof alliancePlanView>>,
   t: WorkspaceDictionary,
+  language: WorkspaceLanguage,
 ): string {
   if (view.own) return t["plans.current.own"];
-  if (view.grandfathered) return t["plans.current.grandfathered"];
+  if (view.grandfathered && view.grandfatheredUntil)
+    return grandfatheredLine(t, language, view.grandfatheredUntil);
   return t[`plans.current.${view.plan}`];
 }
 
@@ -79,8 +89,9 @@ export default async function PlansPage({ params }: { params: Promise<{ slug: st
   return (
     <SignedInFrame access={access} language={language} t={t} current={null} waiting={page.waiting}>
       <PageHead title={t["plans.title"]} />
-      <p className="max-w-2xl font-semibold">{currentLine(plan, t)}</p>
+      <p className="max-w-2xl font-semibold">{currentLine(plan, t, language)}</p>
       <p className="mt-2 max-w-2xl">{t["plans.lead"]}</p>
+      <p className="mt-2 max-w-2xl">{fill(t["plans.shots"], { n: FREE_SHOTS_A_WEEK })}</p>
       <PlanCard
         id="plan-free"
         head={t["plans.free.head"]}

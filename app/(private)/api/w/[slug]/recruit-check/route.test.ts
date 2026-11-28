@@ -52,7 +52,14 @@ let fails: Error | null = null;
 async function workspace(slug: string, unionId: number, on: boolean) {
   const [ws] = await db
     .insert(workspaces)
-    .values({ unionId, slug, discordGuildId: String(unionId), leaderRoleIds: ["2"] })
+    // D162: premium, the plan the recruit check is in.
+    .values({
+      unionId,
+      slug,
+      discordGuildId: String(unionId),
+      leaderRoleIds: ["2"],
+      plan: "premium",
+    })
     .returning({ id: workspaces.id });
   const id = ws?.id ?? 0;
   // A new alliance's tracker features wait for the owner and the officers (D134).

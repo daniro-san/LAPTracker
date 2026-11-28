@@ -30,7 +30,10 @@ function planLine(unionId: number, state: PlanState): string {
   const t = copy.admin.features.plan;
   if (unionId === OWN_ALLIANCE_ID) return t.own;
   const line = fill(t.line, { plan: t.names[state.plan] });
-  return state.grandfathered ? `${line} · ${t.grandfathered}` : line;
+  const until = state.grandfathered ? state.grandfatheredUntil : null;
+  return until
+    ? `${line} · ${fill(t.grandfathered, { date: until.toISOString().slice(0, 10) })}`
+    : line;
 }
 
 export function featuresView(all: AdminFeatures, w: AdminWorkspace): FeaturesView {

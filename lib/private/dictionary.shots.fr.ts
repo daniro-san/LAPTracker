@@ -67,6 +67,8 @@ export const shotsFr: ShotsWords = {
     "Ces captures ont déjà été envoyées au Bureau des officiers. Aucun nouveau brouillon n’a été créé.",
   "shots.discord.failed":
     "Les captures n’ont pas pu être lues cette fois. Rien n’a été enregistré. Réessayez, ou envoyez-les depuis le bureau.",
+  "shots.cap":
+    "Votre alliance a utilisé les {n} lectures de captures de la semaine de l’offre Gratuite, donc celles-ci n’ont pas été lues. La saisie fonctionne toujours. Le compte repart le lundi à 00:00 UTC.",
   "shots.draft.back": "Retour à l’accueil",
   "shots.draft.type": "Type",
   "shots.draft.tab": "Onglet",

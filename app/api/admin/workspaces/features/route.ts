@@ -6,7 +6,8 @@
 //   {action: "pause", allowance, paused}                a paid allowance off for every workspace
 //   {action: "default_switch", feature, on}             "Defaults for new alliances": one switch
 //   {action: "default_cap", allowance, cap}             "Defaults for new alliances": one cap (null: no cap)
-//   {action: "plan", workspace_id, plan, grandfathered} D162: the workspace's plan and grandfather flag
+//   {action: "plan", workspace_id, plan, grandfathered?} D162: the workspace's plan; grandfathered true
+//                                                        keeps everything 3 months from now, false ends it
 // Only overrides are stored: a workspace value set to its default is stored as no value, so it follows the
 // default when the default changes. Nothing is deleted: a feature turned off keeps its data. Each change
 // counts as `ws_action` with feature `features` and no person (area admin).
@@ -70,7 +71,7 @@ const body = z.discriminatedUnion("action", [
       action: z.literal("plan"),
       workspace_id: id,
       plan: z.enum(PLANS),
-      grandfathered: z.boolean(),
+      grandfathered: z.boolean().optional(),
     })
     .strict(),
 ]);

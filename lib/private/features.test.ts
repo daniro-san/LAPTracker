@@ -2,6 +2,7 @@
 // (today's behaviour, from code, with no data row); a new workspace starts with the paid features off; a
 // cap stops at N, starts again the next UTC day, and holds when requests arrive together at the boundary.
 // D162: the plan joins the owner's layer; nothing is deleted when it leaves a feature out.
+import { eq, sql } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../../config/alliances";
@@ -17,9 +18,11 @@ import {
   settingsById,
 } from "../repo/workspace-features";
 import { saveWorkspace } from "../repo/workspaces";
+import { workspaces } from "../schema";
 import { workspaceUsage } from "../schema-features";
 import {
   FEATURES,
+  FREE_SHOTS_A_WEEK,
   isPremium,
   NEW_PLAN,
   NO_DEFAULTS,
@@ -29,7 +32,7 @@ import {
   TRACKER_CALLS,
   trackerEstimate,
 } from "../workspace-features";
-import { featuresBySlug, giveBackAllowance, useAllowance } from "./features";
+import { featuresBySlug, giveBackAllowance, useAllowance, useShotReads } from "./features";
 
 const NOW = new Date("2026-11-19T23:59:00Z");
 const NEXT_DAY = new Date("2026-11-20T00:01:00Z");
@@ -200,16 +203,19 @@ describe("two layers over the defaults (D134)", () => {
 describe("plans (D162)", () => {
   const PREMIUM_PLAN = { plan: "premium", grandfathered: false } as const;
   const FREE_PLAN = { plan: "free", grandfathered: false } as const;
+  const MONDAY = new Date("2026-11-23T00:00:00Z");
 
   it("maps each plan to its features: the core is free, premium is everything", () => {
     expect(PLAN_FEATURES.premium).toEqual(FEATURES);
     expect(PLAN_FEATURES.free).toEqual(FEATURES.filter((f) => !isPremium(f)));
-    // The owner's examples are premium; privacy, safety, export, the board and Discord sending stay free.
+    // The owner's examples and the processing-heavy reads are premium; privacy, safety, export, the
+    // board, Discord sending, Raid prep's own marks (roll_call) and the screenshot reader (a cap) are free.
     for (const f of [
       "garrison",
       "insights",
       "shield_check",
       "squads",
+      "recruit_check",
       "notice_translate",
     ] as const) {
       expect(PLAN_FEATURES.free).not.toContain(f);
@@ -221,9 +227,25 @@ describe("plans (D162)", () => {
       "notices",
       "discord_send",
       "post_shield_up",
+      "ocr",
     ] as const) {
       expect(PLAN_FEATURES.free).toContain(f);
     }
+  });
+
+  it("caps the free plan's screenshot reads a UTC week, and premium not at all", async () => {
+    const nse = { workspaceId: 2, features: await served("nse") };
+    expect(nse.features.on.has("ocr")).toBe(true);
+    const sunday = new Date("2026-11-29T23:59:00Z");
+    expect(await useShotReads(db, nse, FREE_SHOTS_A_WEEK - 1, MONDAY)).toBe("ok");
+    expect(await useShotReads(db, nse, 2, sunday)).toBe("cap_reached");
+    expect(await useShotReads(db, nse, 1, sunday)).toBe("ok");
+    expect(await useShotReads(db, nse, 1, sunday)).toBe("cap_reached");
+    expect(await useShotReads(db, nse, 1, new Date("2026-11-30T00:00:00Z"))).toBe("ok");
+    await setPlan(db, 2, PREMIUM_PLAN);
+    const premium = { workspaceId: 2, features: await served("nse") };
+    expect(premium.features.shotsAWeek).toBeNull();
+    expect(await useShotReads(db, premium, 5, sunday)).toBe("ok");
   });
 
   it("hides a premium feature on the free plan, even allowed and turned on", async () => {
@@ -237,9 +259,22 @@ describe("plans (D162)", () => {
     expect((await served("nse")).on.has("insights")).toBe(true);
   });
 
-  it("keeps it for a grandfathered workspace on the free plan", async () => {
+  it("keeps everything for a grandfathered workspace for 3 months, then the free plan applies", async () => {
     await setPlan(db, 2, { plan: "free", grandfathered: true });
-    expect((await served("nse")).on.has("insights")).toBe(true);
+    const kept = await served("nse");
+    expect([kept.on.has("insights"), kept.shotsAWeek]).toEqual([true, null]);
+    const until = kept.grandfatheredUntil?.getTime() ?? 0;
+    const months = (until - Date.now()) / (24 * 3600 * 1000);
+    expect(months).toBeGreaterThan(88);
+    expect(months).toBeLessThan(93);
+    // The window ended: the plan's limits apply, and Home's notice goes with it.
+    await db
+      .update(workspaces)
+      .set({ planGrandfatheredUntil: sql`now() - interval '1 minute'` })
+      .where(eq(workspaces.id, 2));
+    const ended = await served("nse");
+    expect([ended.on.has("insights"), ended.shotsAWeek]).toEqual([false, FREE_SHOTS_A_WEEK]);
+    expect(ended.grandfatheredUntil).toBeNull();
   });
 
   it("deletes nothing on a downgrade: every switch comes back as it was", async () => {
@@ -255,8 +290,11 @@ describe("plans (D162)", () => {
     expect((await served("nse")).on.has("squads")).toBe(true);
   });
 
-  it("leaves OGs with every feature on, whatever its plan says", async () => {
-    await setPlan(db, 1, FREE_PLAN);
-    expect([...(await served("ogs")).on].sort()).toEqual([...FEATURES].sort());
+  it("leaves OGs with every feature on forever, whatever its plan or grandfathering says", async () => {
+    await setPlan(db, 1, { plan: "free", grandfathered: true });
+    const ogs = await served("ogs");
+    expect([...ogs.on].sort()).toEqual([...FEATURES].sort());
+    // No screenshot cap and no grandfathering end, so Home never warns OGs.
+    expect([ogs.shotsAWeek, ogs.grandfatheredUntil]).toEqual([null, null]);
   });
 });

@@ -2,10 +2,11 @@
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
 import { fill, plural } from "@/lib/words";
+import { FREE_SHOTS_A_WEEK } from "@/lib/workspace-features";
 
 /**
  * What became of a share from the phone (D110), from the share target's redirect: `shared=again` (not
- * signed in as an officer), `limit`, `empty`, `busy`, `failed`, or `done` with `made` drafts and `none` pictures that made
+ * signed in as an officer), `limit`, `empty`, `busy`, `failed`, `cap` (the free plan's week, D162), or `done` with `made` drafts and `none` pictures that made
  * none. Null for any other visit.
  */
 export function sharedLines(
@@ -17,6 +18,8 @@ export function sharedLines(
   switch (query.shared) {
     case "again":
       return [t["shots.share.again"]];
+    case "cap":
+      return [fill(t["shots.cap"], { n: FREE_SHOTS_A_WEEK })];
     case "limit":
     case "empty":
     case "busy":

@@ -75,7 +75,14 @@ beforeEach(async () => {
   holder.ctx = test.ctx;
   const [ws] = await db
     .insert(workspaces)
-    .values({ unionId: NSE, slug: "nse", discordGuildId: "1", leaderRoleIds: ["2"] })
+    // D162: premium, the plan the Raid Shield check's reads are in.
+    .values({
+      unionId: NSE,
+      slug: "nse",
+      discordGuildId: "1",
+      leaderRoleIds: ["2"],
+      plan: "premium",
+    })
     .returning({ id: workspaces.id });
   nse = ws?.id ?? 0;
   const switches = { shield_check: true };

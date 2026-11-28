@@ -96,7 +96,11 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     const plan = (p: string, grandfathered: boolean, id = 2) =>
       post(TEST_PIN, { action: "plan", workspace_id: id, plan: p, grandfathered });
     expect((await plan("free", false)).status).toBe(200);
-    expect((await settingsById(db, 2))?.plan).toEqual({ plan: "free", grandfathered: false });
+    expect((await settingsById(db, 2))?.plan).toEqual({
+      plan: "free",
+      grandfathered: false,
+      grandfatheredUntil: null,
+    });
     expect((await settingsOf(2))?.locked).toContain("insights");
     expect((await plan("free", true)).status).toBe(200);
     expect((await settingsOf(2))?.locked).toEqual([]);
@@ -120,6 +124,8 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
       caps: { ai: null, translate: null },
       allianceOff: ["squads", "shield_check", "recruit_check"],
       locked: [],
+      shotsAWeek: null,
+      grandfatheredUntil: null,
     });
     expect((await post(TEST_PIN, { action: "copy", workspace_id: 3, from_id: 3 })).status).toBe(
       400,
