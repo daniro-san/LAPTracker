@@ -11,6 +11,7 @@ import {
   targetEvent,
   type ScheduleConfig,
 } from "./schedule";
+import { tickClockDue } from "./tick-gate";
 
 // Saturdays at 12:00 server time (UTC−2), so Saturday 2026-11-07 is 14:00Z.
 const cfg: ScheduleConfig = {
@@ -75,6 +76,16 @@ describe("the 4-week cycle", () => {
       "Origin of Chaos 2027-01-30",
       "Origin of Chaos 2027-12-04",
     ]);
+  });
+
+  it("opens the tick's clock gate for the day-ahead row and each window, not in the gap (D141)", () => {
+    const due = [
+      "2026-12-04T02:00:00Z",
+      "2026-12-05T02:00:00Z",
+      "2026-12-05T08:00:00Z",
+      "2026-12-05T14:15:00Z",
+    ].map((t) => tickClockDue(new Date(t), cfg));
+    expect(due).toEqual([true, true, false, true]);
   });
 
   it("pauses inside each window only, not in the gap between them", () => {
