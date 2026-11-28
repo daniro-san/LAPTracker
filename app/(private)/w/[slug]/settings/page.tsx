@@ -281,7 +281,14 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           </MarginNote>
         }
         main={
-          <SettingsCards slug={slug} page={page} data={data} ctx={{ env, now, language }} t={t} />
+          <SettingsCards
+            slug={slug}
+            page={page}
+            data={data}
+            ctx={{ env, now, language }}
+            subtitle={access.alliance ? `${access.alliance.tag} · ${access.alliance.name}` : null}
+            t={t}
+          />
         }
       />
     </SignedInFrame>
@@ -294,6 +301,8 @@ function SettingsCards(props: {
   page: Awaited<ReturnType<typeof readSettings>>;
   data: SettingsIndexInput["data"];
   ctx: { env: Env; now: Date; language: WorkspaceLanguage };
+  /** The alliance line of the header, for the Branding preview. */
+  subtitle: string | null;
   t: Awaited<ReturnType<typeof workspaceWords>>["t"];
 }) {
   const { slug, t } = props;
@@ -346,6 +355,7 @@ function SettingsCards(props: {
             accent: branding.accent,
             badgeId: branding.badgeId,
             discordIconHash: branding.discordIconHash,
+            subtitle: props.subtitle,
           }}
           t={t}
           language={language}

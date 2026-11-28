@@ -11,6 +11,7 @@ import { analyticsPerson } from "@/lib/analytics/person";
 import { AppShell } from "@/lib/brand/components/layout/AppShell";
 import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
+import { deskBranding } from "@/lib/desk-branding";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
@@ -27,7 +28,6 @@ import type { Feature } from "@/lib/workspace-features";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";
 import { DeletionBanner } from "./DeletionBanner";
-import { deskBranding } from "./desk-branding";
 import { type DeskView, SideNav, Tabs, VIEW_TAB } from "./DeskNav";
 import { Feedback } from "./Feedback";
 import { FirstUse } from "./FirstUse";

@@ -54,6 +54,8 @@ let workspaceId = 0;
 /** Every call the stub received, and whether the bot is in the server. */
 let calls: { method: string; url: string; body: string }[] = [];
 let botIn = false;
+/** The server's icon hash the stub answers (null: none). */
+let guildIcon: string | null = null;
 /** What Discord answers a PUT of commands. */
 let putStatus = 200;
 
@@ -65,7 +67,9 @@ function stubDiscord(): typeof fetch {
     if (url.endsWith("/oauth2/token")) return Response.json({ access_token: "bearer-test" });
     if (method === "PUT") return new Response("", { status: putStatus });
     if (url.endsWith(`/guilds/${GUILD}`)) {
-      return botIn ? Response.json({ id: GUILD }) : new Response("", { status: 403 });
+      return botIn
+        ? Response.json({ id: GUILD, icon: guildIcon })
+        : new Response("", { status: 403 });
     }
     // A webhook's GET answers its server; a PUT of commands or a post answers a plain ok.
     const guild = url.includes("theirs") ? OTHER_GUILD : GUILD;
@@ -83,6 +87,7 @@ beforeEach(async () => {
   holder.ctx = ctx;
   calls = [];
   botIn = false;
+  guildIcon = null;
   putStatus = 200;
   const [ws] = await db
     .insert(workspaces)
@@ -156,6 +161,16 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
     expect(await (await post({ action: "check" })).json()).toMatchObject({ firstSeen: false });
   });
 
+  it("Check keeps the server's icon hash for Branding, and clears it when the icon is gone", async () => {
+    botIn = true;
+    guildIcon = "e".repeat(32);
+    await post({ action: "check" });
+    expect((await db.select().from(workspaces))[0]?.discordIconHash).toBe("e".repeat(32));
+    guildIcon = null;
+    await post({ action: "check" });
+    expect((await db.select().from(workspaces))[0]?.discordIconHash).toBeNull();
+  });
+
   it("refuses a webhook of another server, and saves its own sealed, never answering the URL", async () => {
     const theirs = await save(THEIRS);
     expect([theirs.status, await theirs.json()]).toEqual([422, { code: "wrong_server" }]);
@@ -193,12 +208,20 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
   it("posts to the saved webhook over the site's, and back to the site's after Remove", async () => {
     expect((await noticeChannels(db, await access(), opener())).members?.url).toBe(SITE);
     await save(OURS);
-    // It posts as the workspace's tab title (issue 462).
+    // A workspace that never saved Branding posts exactly as before: no name or avatar override.
     expect((await noticeChannels(db, await access(), opener())).members).toEqual({
       url: OURS,
       name: "town-square",
       forum: false,
-      look: { username: "[NSE] Desk" },
+      look: {},
+    });
+    // Once an officer saved a title (issue 462), it posts as that title, with the icon from our own address.
+    await db.update(workspaces).set({ brandTitle: "Night Watch" });
+    const members = (await noticeChannels(db, await access(), { ...opener(), origin: ORIGIN }))
+      .members;
+    expect(members?.look).toEqual({
+      username: "Night Watch",
+      avatar_url: `${ORIGIN}/icon/512`,
     });
     await post({ action: "remove_webhook", channel: "members" });
     expect((await noticeChannels(db, await access(), opener())).members?.url).toBe(SITE);

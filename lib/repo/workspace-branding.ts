@@ -64,6 +64,9 @@ const isIcon = (v: string | null): v is BrandIcon =>
 const isAccent = (v: string | null): v is Accent =>
   (ACCENTS as readonly string[]).includes(v ?? "");
 
+const iconOf = (v: string | null) => (isIcon(v) ? v : DEFAULT_ICON);
+const accentOf = (v: string | null) => (isAccent(v) ? v : DEFAULT_ACCENT);
+
 /**
  * A workspace's branding as every surface shows it, defaults filled in; null when no workspace has the slug.
  * `fallback`: the title for an alliance with no tag, in the reader's language.
@@ -72,7 +75,9 @@ export async function workspaceBranding(
   db: Db,
   slug: string,
   fallback: string = DESK_TITLE,
-): Promise<(Branding & { workspaceId: number; guildId: string; tag: string | null }) | null> {
+): Promise<
+  (Branding & { workspaceId: number; guildId: string; tag: string | null; saved: boolean }) | null
+> {
   const row = await brandingBySlug(db, slug);
   if (!row) return null;
   const label = await allianceLabelOf(db, row.unionId);
@@ -82,17 +87,21 @@ export async function workspaceBranding(
     tag: label?.tag ?? null,
     title: row.title ?? defaultTitle(label?.tag ?? null, fallback),
     custom: row.title !== null,
-    icon: isIcon(row.icon) ? row.icon : DEFAULT_ICON,
-    accent: isAccent(row.accent) ? row.accent : DEFAULT_ACCENT,
+    saved: row.title !== null || row.icon !== null,
+    icon: iconOf(row.icon),
+    accent: accentOf(row.accent),
     badgeId: label?.badgeId ?? null,
     discordIconHash: row.discordIconHash,
   };
 }
 
-/** Who a workspace's webhook messages post as (issue 462); nothing when the workspace is gone. */
+/**
+ * Who a workspace's webhook messages post as (issue 462). Only once an officer saved a title or an icon:
+ * a workspace that never did posts exactly as it always has, under the webhook's own name and avatar.
+ */
 export async function webhookLook(db: Db, slug: string, origin?: string): Promise<WebhookLook> {
   const b = await workspaceBranding(db, slug);
-  return b ? lookOf(b, slug, origin) : {};
+  return b?.saved ? lookOf(b, slug, origin) : {};
 }
 
 /** The server's icon hash as the bot last read it (null: the server has none). */

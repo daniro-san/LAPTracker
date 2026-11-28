@@ -57,7 +57,10 @@ describe("the desk's manifest follows the branding", () => {
     });
     const m = await manifest();
     expect(m.name).toBe("[NSE] Desk");
-    expect(m.icons.map((i) => i.src)).toEqual(["/img/desk/nse?size=192", "/img/desk/nse?size=512"]);
+    expect(m.icons.map((i) => i.src)).toEqual([
+      "/img/desk/nse?size=192&v=badge-103",
+      "/img/desk/nse?size=512&v=badge-103",
+    ]);
     // The desk's scope and share target do not depend on it (D110).
     expect([m.scope, m.share_target.action]).toEqual(["/w/nse", "/w/nse/share"]);
   });
@@ -75,6 +78,25 @@ describe("the desk's manifest follows the branding", () => {
   it("names the server's icon through our own route, never Discord's CDN", async () => {
     await db.update(workspaces).set({ brandIcon: "discord", discordIconHash: "b".repeat(32) });
     const m = await manifest();
-    expect(m.icons.map((i) => i.src)).toEqual(["/img/desk/nse?size=192", "/img/desk/nse?size=512"]);
+    expect(m.icons.map((i) => i.src)).toEqual([
+      `/img/desk/nse?size=192&v=discord-${"b".repeat(32)}`,
+      `/img/desk/nse?size=512&v=discord-${"b".repeat(32)}`,
+    ]);
+  });
+
+  it("falls back to the defaults when the database cannot be read", async () => {
+    holder.ctx = {
+      openDb: () => ({
+        db: {
+          select: () => {
+            throw new Error("down");
+          },
+        },
+        close: async () => {},
+      }),
+    } as unknown as AppContext;
+    const m = await manifest();
+    expect(m.name).toBe("Officers’ Desk");
+    expect(m.icons.map((i) => i.src)).toEqual(["/icon/192", "/icon/512"]);
   });
 });

@@ -88,9 +88,13 @@ describe("POST /api/w/[slug]/branding (D167)", () => {
     ]);
     expect((await stored("nse"))?.brandTitle).toBe("Night bWatch/b");
     expect((await save({ ...look, title: "x".repeat(40) })).status).toBe(200);
+    // 40 emoji are well past the old raw bound but are 40 characters: kept; 41 are refused as too long.
+    expect((await save({ ...look, title: "😀".repeat(40) })).status).toBe(200);
+    const emoji = await save({ ...look, title: "😀".repeat(41) });
+    expect([emoji.status, await emoji.json()]).toEqual([400, { code: "too_long" }]);
     const long = await save({ ...look, title: "x".repeat(41) });
     expect([long.status, await long.json()]).toEqual([400, { code: "too_long" }]);
-    expect((await stored("nse"))?.brandTitle).toBe("x".repeat(40));
+    expect((await stored("nse"))?.brandTitle).toBe("😀".repeat(40));
   });
 
   it("stores the defaults as none and a chosen look as it is", async () => {

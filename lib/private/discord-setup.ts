@@ -100,8 +100,8 @@ export type CheckResult =
  * Whether the bot is in the server: Discord answers a guild read only for a member bot. When it is, the
  * server's icon hash comes with it (issue 462: the Branding card's Discord icon); null when it has none.
  */
-async function botIn(
-  env: DiscordEnv,
+export async function botIn(
+  env: Pick<DiscordEnv, "DISCORD_API_BASE_URL" | "DISCORD_BOT_TOKEN">,
   doFetch: typeof fetch,
   guildId: string,
 ): Promise<{ state: "in"; icon: string | null } | { state: "missing" | "unreachable" }> {

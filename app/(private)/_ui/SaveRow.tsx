@@ -18,6 +18,8 @@ export function SaveRow({
   onSave,
   t,
   language,
+  blocked = false,
+  savedText,
 }: {
   /** How many settings differ from what is saved. */
   changes: number;
@@ -29,6 +31,10 @@ export function SaveRow({
   onSave: () => void;
   t: WorkspaceDictionary;
   language: string;
+  /** The card cannot be saved as it stands (a title too long): Save stays off. */
+  blocked?: boolean;
+  /** The card's own "Saved." line, when it has one. */
+  savedText?: string;
 }) {
   useLeaveWarning(changes > 0);
   const pending = fill(
@@ -37,7 +43,7 @@ export function SaveRow({
   );
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-      <Button disabled={busy || changes === 0} onClick={onSave}>
+      <Button disabled={busy || changes === 0 || blocked} onClick={onSave}>
         {busy ? t["save.saving"] : t["save.button"]}
       </Button>
       <p role="status" className="text-body-sm font-semibold">
@@ -47,7 +53,7 @@ export function SaveRow({
             {pending}
           </span>
         ) : (
-          saved && !error && t["save.saved"]
+          saved && !error && (savedText ?? t["save.saved"])
         )}
       </p>
       {error && <RefusalLine text={error} className="w-full font-semibold text-seal" />}

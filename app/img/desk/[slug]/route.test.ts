@@ -73,7 +73,7 @@ describe("GET /img/desk/[slug]", () => {
     // Fetched by the server, with redirects refused; only the one icon of the workspace's own server.
     expect(fetched).toEqual([
       {
-        url: `https://cdn.discordapp.com/icons/424242/${HASH}.png?size=192`,
+        url: `https://cdn.discordapp.com/icons/424242/${HASH}.png?size=256`,
         redirect: "error",
       },
     ]);
@@ -87,5 +87,20 @@ describe("GET /img/desk/[slug]", () => {
     expect((await get("nowhere")).status).toBe(404);
     expect((await get("nse", "?size=64")).status).toBe(404);
     expect(fetched).toEqual([]);
+  });
+
+  it("fetches nothing for a malformed icon hash or a guild id that is not a number", async () => {
+    await db.update(workspaces).set({ brandIcon: "discord", discordIconHash: "../evil" });
+    expect((await get()).status).toBe(404);
+    await db.update(workspaces).set({ discordIconHash: HASH, discordGuildId: "12/../345" });
+    expect((await get()).status).toBe(404);
+    expect(fetched).toEqual([]);
+  });
+
+  it("asks Discord's CDN for a power-of-two size and serves the size asked", async () => {
+    await db.update(workspaces).set({ brandIcon: "discord" });
+    await get("nse", "?size=192");
+    await get("nse", "?size=512");
+    expect(fetched.map((f) => new URL(f.url).searchParams.get("size"))).toEqual(["256", "512"]);
   });
 });

@@ -33,7 +33,7 @@ function sourceOf(
   const hash = b.discordIconHash;
   if (b.icon !== "discord" || !hash || !ICON_HASH.test(hash) || !/^\d{5,25}$/.test(b.guildId))
     return null;
-  return `${DISCORD_CDN}/icons/${b.guildId}/${hash}.png?size=${size}`;
+  return `${DISCORD_CDN}/icons/${b.guildId}/${hash}.png?size=${size <= 256 ? 256 : 512}`;
 }
 
 export async function GET(

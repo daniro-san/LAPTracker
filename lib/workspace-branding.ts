@@ -46,15 +46,21 @@ export interface Branding {
  * The icon's address on our own origin, `/img/...`, never Discord's: the badge by its id, the server's icon
  * through `/img/desk/<slug>`, the desk mark as the site's drawn icon. A choice with nothing behind it (no
  * badge id, no server icon) falls back to the desk mark. `size`: the icon's pixels, 192 or 512 for the app.
+ * `v` is the choice and its badge id or icon hash: the address changes with the icon, so a cached copy of the
+ * old one is never served after a change.
  */
 export function iconPath(
   b: Pick<Branding, "icon" | "badgeId" | "discordIconHash">,
   slug: string,
   size: 192 | 512,
 ): string {
-  if (b.icon === "badge" && b.badgeId !== null) return `/img/desk/${slug}?size=${size}`;
-  if (b.icon === "discord" && b.discordIconHash) return `/img/desk/${slug}?size=${size}`;
-  return `/icon/${size}`;
+  const version =
+    b.icon === "badge" && b.badgeId !== null
+      ? `badge-${b.badgeId}`
+      : b.icon === "discord" && b.discordIconHash
+        ? `discord-${b.discordIconHash}`
+        : null;
+  return version ? `/img/desk/${slug}?size=${size}&v=${version}` : `/icon/${size}`;
 }
 
 /** What a webhook message posts as (issue 462): Discord's per-message `username` and `avatar_url`. */
@@ -68,17 +74,19 @@ const NAME_REFUSED = /clyde|discord/i;
 
 /**
  * The tab title as the message's name and the chosen icon as its avatar. `origin`: our own address, which
- * Discord fetches the avatar from; without it the avatar stays the webhook's own. A name Discord would refuse
- * is left out.
+ * Discord fetches the avatar from; without it the avatar stays the webhook's own.
  */
 export function lookOf(
   b: Pick<Branding, "title" | "icon" | "badgeId" | "discordIconHash">,
   slug: string,
   origin?: string,
 ): WebhookLook {
-  const name = b.title.slice(0, 80);
+  // Never cut: a title Discord would refuse (over 80 code points, or naming "clyde" or "discord") is left out,
+  // so the post still goes out under the webhook's own name.
+  const name = b.title;
+  const fits = name.trim() !== "" && Array.from(name).length <= 80 && !NAME_REFUSED.test(name);
   return {
-    ...(name.trim() !== "" && !NAME_REFUSED.test(name) && { username: name }),
+    ...(fits && { username: name }),
     ...(origin && { avatar_url: `${origin}${iconPath(b, slug, 512)}` }),
   };
 }

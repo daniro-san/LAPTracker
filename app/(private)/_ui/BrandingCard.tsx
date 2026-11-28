@@ -34,6 +34,8 @@ export interface BrandingView {
   accent: Accent;
   badgeId: number | null;
   discordIconHash: string | null;
+  /** The alliance line under the desk's name in the header: "NSE · Natural Selection"; null while unnamed. */
+  subtitle: string | null;
 }
 
 interface Look {
@@ -66,6 +68,7 @@ function useBranding(slug: string, view: BrandingView, t: WorkspaceDictionary) {
   ).length;
   const change = (next: Partial<Look>) => {
     setSaved(false);
+    setError(null);
     setLook((l) => ({ ...l, ...next }));
   };
   const save = async () => {
@@ -94,16 +97,20 @@ function useBranding(slug: string, view: BrandingView, t: WorkspaceDictionary) {
 
 /**
  * The icon the preview draws. The badge and the mark need nothing saved; the server's icon is served once it
- * is the saved choice, so until then the preview shows none rather than a broken picture.
+ * is the saved choice, so until then the preview shows the desk mark (and says so).
  */
-function previewSrc(look: Look, kept: Look, view: BrandingView, slug: string): string | null {
-  if (look.icon === "discord")
-    return kept.icon === "discord" && view.discordIconHash ? `/img/desk/${slug}?size=192` : null;
+function previewSrc(look: Look, kept: Look, view: BrandingView, slug: string): string {
+  if (look.icon === "discord" && kept.icon === "discord" && view.discordIconHash)
+    return `/img/desk/${slug}?size=192`;
   if (look.icon === "badge" && view.badgeId !== null) return `/img/badge/${view.badgeId}`;
   return "/icon/192";
 }
 
-/** The header band as it will look: the chosen colour, icon and title. */
+/**
+ * The header as it will look: a small browser-tab strip with the tab title, and under it the real header
+ * band (the desk's name and the alliance line) in the chosen colour with the chosen icon. The band is always
+ * given its own `data-accent`, so it shows the choice, not the accent the page is wearing now.
+ */
 function Preview(props: {
   slug: string;
   look: Look;
@@ -114,26 +121,37 @@ function Preview(props: {
   const { look, view, t } = props;
   const src = previewSrc(look, props.kept, view, props.slug);
   const title = cleanTitle(look.title) || view.standard;
+  const pending = look.icon === "discord" && src === "/icon/192";
+  const icon = (
+    <img
+      src={src}
+      alt=""
+      width={32}
+      height={32}
+      className="size-8 shrink-0 rounded-xs bg-wax-paper object-cover"
+    />
+  );
   return (
     <figure className="mt-4">
       <figcaption className="text-label text-ink/75">{t["branding.preview"]}</figcaption>
-      <div
-        data-accent={look.accent === "burgundy" ? undefined : look.accent}
-        className="mt-1 flex items-center gap-3 bg-burgundy px-3 py-2 text-wax-paper"
-      >
-        {src && (
-          <img
-            src={src}
-            alt=""
-            width={32}
-            height={32}
-            className="size-8 shrink-0 rounded-xs bg-wax-paper object-cover"
-          />
-        )}
-        <span className="min-w-0 font-display text-display-sm break-words ph-no-capture">
-          {title}
-        </span>
+      <p className="mt-2 text-label text-ink/75">{t["branding.preview.tab"]}</p>
+      <div className="flex max-w-xs items-center gap-2 border border-rule bg-paper px-3 py-1.5 text-body-sm">
+        <img src={src} alt="" width={16} height={16} className="size-4 shrink-0 object-cover" />
+        <span className="line-clamp-2 min-w-0 break-words ph-no-capture">{title}</span>
       </div>
+      <div
+        data-accent={look.accent}
+        className="mt-2 flex items-center gap-3 bg-burgundy px-3 py-2 text-wax-paper"
+      >
+        {icon}
+        <div className="min-w-0">
+          <p className="font-display text-display-sm">{t["app.name"]}</p>
+          {view.subtitle && (
+            <p className="text-body-sm opacity-90 ph-no-capture">{view.subtitle}</p>
+          )}
+        </div>
+      </div>
+      {pending && <p className="mt-1 text-body-sm text-ink/75">{t["branding.preview.discord"]}</p>}
     </figure>
   );
 }
@@ -188,7 +206,7 @@ function AccentChoice(props: {
       />
       <span
         aria-hidden="true"
-        data-accent={value === "burgundy" ? undefined : value}
+        data-accent={value}
         className="size-6 shrink-0 rounded-xs bg-burgundy"
       />
       <span className="font-medium">{t[`branding.accent.${value}`]}</span>
@@ -234,6 +252,8 @@ function TitleField(props: {
   );
 }
 
+const isOver = (look: Look) => titleLength(cleanTitle(look.title)) > TITLE_LIMIT;
+
 export function BrandingCard(props: {
   slug: string;
   view: BrandingView;
@@ -253,6 +273,7 @@ export function BrandingCard(props: {
       </h2>
       <p className="mt-1">{t["branding.lead"]}</p>
       <TitleField look={look} view={view} t={t} onChange={(title) => change({ title })} />
+      <Preview slug={props.slug} look={look} kept={kept} view={view} t={t} />
       <fieldset className="mt-4 grid gap-2">
         <legend className="font-medium">{t["branding.icon.legend"]}</legend>
         {BRAND_ICONS.map((value) => (
@@ -278,7 +299,6 @@ export function BrandingCard(props: {
           />
         ))}
       </fieldset>
-      <Preview slug={props.slug} look={look} kept={kept} view={view} t={t} />
       <SaveRow
         changes={changes}
         busy={busy}
@@ -287,6 +307,8 @@ export function BrandingCard(props: {
         onSave={() => void save()}
         t={t}
         language={props.language}
+        blocked={isOver(look)}
+        savedText={t["branding.saved"]}
       />
     </section>
   );

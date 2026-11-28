@@ -18,23 +18,22 @@ import {
   DEFAULT_ICON,
   defaultTitle,
   DESK_TITLE,
-  ICON_HASH,
   TITLE_LIMIT,
   titleLength,
 } from "../workspace-branding";
 import type { WorkspaceAccess } from "./access";
+import { botIn } from "./discord-setup";
 
 export { workspaceBranding } from "../repo/workspace-branding";
 
-/** At most this many saves per 15 minutes per workspace: far above an officer trying looks. */
-const SAVES = 30;
+/** At most this many saves per 15 minutes per workspace: an officer trying looks saves often. */
+const SAVES = 60;
 const WINDOW_MS = 15 * 60_000;
-const TIMEOUT_MS = 10_000;
 
 /** The raw title is bounded at the boundary; its length is checked once cleaned. "" is the default title. */
 export const brandingInput = z
   .object({
-    title: z.string().max(TITLE_LIMIT * 8),
+    title: z.string().max(1000),
     icon: z.enum(BRAND_ICONS),
     accent: z.enum(ACCENTS),
   })
@@ -42,22 +41,6 @@ export const brandingInput = z
 export type BrandingInput = z.infer<typeof brandingInput>;
 
 type DiscordEnv = Pick<Env, "DISCORD_API_BASE_URL" | "DISCORD_BOT_TOKEN">;
-
-/** The server's icon hash through the bot: a hash, null (the server has none), or undefined (no answer). */
-export async function readGuildIcon(
-  env: DiscordEnv,
-  doFetch: typeof fetch,
-  guildId: string,
-): Promise<string | null | undefined> {
-  if (!env.DISCORD_BOT_TOKEN) return undefined;
-  const res = await doFetch(`${env.DISCORD_API_BASE_URL.replace(/\/$/, "")}/guilds/${guildId}`, {
-    headers: { authorization: `Bot ${env.DISCORD_BOT_TOKEN}` },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  }).catch(() => null);
-  if (!res?.ok) return undefined;
-  const body = (await res.json().catch(() => null)) as { icon?: unknown } | null;
-  return typeof body?.icon === "string" && ICON_HASH.test(body.icon) ? body.icon : null;
-}
 
 export type BrandingResult =
   | { ok: true; title: string; custom: boolean }
@@ -81,7 +64,8 @@ export async function saveBrandingFor(
   const before = await workspaceBranding(db, access.slug);
   if (!before) throw new Error("branding: workspace not found");
   if (input.icon === "discord") {
-    const hash = await readGuildIcon(deps.env, deps.fetch, before.guildId);
+    const found = await botIn(deps.env, deps.fetch, before.guildId);
+    const hash = found.state === "in" ? found.icon : null;
     if (!hash) return { ok: false, code: "no_discord_icon" };
     await setDiscordIconHash(db, access.workspaceId, hash);
   }

@@ -29,7 +29,9 @@ export async function GET(
   const t = WORKSPACE_DICTIONARIES[language];
   const desk = `/w/${slug}`;
   const { db, close } = getAppContext().openDb();
-  const branding = await workspaceBranding(db, slug, t["app.name"]).finally(close);
+  const branding = await workspaceBranding(db, slug, t["app.name"])
+    .catch(() => null)
+    .finally(close);
   const name = branding?.title ?? t["app.name"];
   const accent = branding?.accent ?? DEFAULT_ACCENT;
   const manifest: MetadataRoute.Manifest = {
