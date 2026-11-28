@@ -29,6 +29,7 @@ import {
   tabId,
   useCardTab,
 } from "./MemberCardTabs";
+import { MemberDuelWeeks } from "./MemberDuelWeeks";
 import { MemberLastDays } from "./MemberLastDays";
 import { CardLink } from "./MemberLinks";
 import { MemberSquads } from "./MemberSquads";
@@ -314,6 +315,12 @@ function Overview({ card, editor, onChanged }: CardProps) {
         <p className="mt-3 text-body-sm text-ink/75">{card.daysEarly}</p>
       )}
       {card.duel && <Details rows={[card.duel]} noData={card.noData} />}
+      {/* ph-no-capture: each week's points of the member never reach session replay. */}
+      {card.duelWeeks && (
+        <div className="ph-no-capture">
+          <MemberDuelWeeks duel={card.duelWeeks} />
+        </div>
+      )}
     </>
   );
 }

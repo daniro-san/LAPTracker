@@ -119,7 +119,7 @@ async function readPage(
       : null;
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
-  const members = membersWithProgress(db, access, now, zone);
+  const members = membersWithProgress(db, access, now, zone, true);
   const [view, channels, followUp, set] = await Promise.all([
     members,
     channelNames(db, access, getEnv()),

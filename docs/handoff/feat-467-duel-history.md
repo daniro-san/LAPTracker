@@ -1,0 +1,52 @@
+# feat-467-duel-history
+
+## Built
+
+- `lib/private/duel-history.ts`: reads the workspace's saved Alliance Duel week totals (`alliance_duel_points`, `day = 'week'`) for the last 8 game weeks, and works out a member's weeks, the member's average, the alliance's weekly average and "most improved".
+- `lib/repo/import.ts`: `duelWeekTotals`, one query filtered by `workspace_id`.
+- Member card, Overview tab: "Alliance Duel by week" (`MemberDuelWeeks.tsx`, `member-card-parts.ts` `duelCard`). One HTML bar per week with the date and the number beside it (D68). Bars are drawn against the alliance's best member-week in the shown weeks (D158 rule 2); a real 0 week is the 1 px hairline, a week with nothing saved shows the NoData mark and no bar. Under the rows: the member's average and the alliance's weekly average, each with the number of weeks it rests on.
+- Members page thanks box: a "Most improved in Alliance Duel" group, names in alphabetical order, no numbers (`MembersThanks.tsx`, `members.ts` `thanks.improved`).
+- EN, PT-BR and FR strings in `dictionary.card.ts` and `dictionary.members*.ts`.
+- Tests: `lib/private/duel-history.test.ts` (weeks with a "no data" gap, average over data weeks only, alliance average, most improved in alphabetical order and across a gap, exactly +10 %, the running week, another workspace's rows never read), `member-card.test.ts` (`duelCard`: no-data week, hairline for a real 0, "so far" label, averages with their week counts) and `members.test.ts` (`membersView` names the improved members only when asked).
+
+## Decisions
+
+- No migration, no new D-number. The work follows D75 and D136 as written.
+- Week points are the `week` row of each saved week. A week with only daily rows saved counts as no data for that member.
+- Alliance weekly average: the mean, over finished weeks that have data, of the sum of the current members' week points that week.
+- The game week still running (orchestrator decision): shown on the card's bars as "so far" (EN, PT-BR, FR), counted in no average and not in "most improved", so it never lowers anyone's numbers.
+- Most improved: a member whose points in the newest finished week are 10 % or more above their own points in the week directly before it (`IMPROVED_PERCENT`, integer maths, so exactly +10 % counts). A member with no data for either week, or with a no-data week in between, is left out, not counted. Members on a break are left out (same list as the other thanks).
+- `thanks.improved` is read only when `membersView` is asked for it (`improved` argument, passed by the Members page through `membersWithProgress`), in parallel with the other reads. Home, the card route and the list do not run the query.
+- The weeks shown are 8 (`DUEL_WEEKS`), the current game week last. The card's read covers the workspace's rows for those weeks, restricted to the current roster for the alliance average.
+
+## Deviations
+
+- The "most improved" group is on the Members page thanks box only. It is not in Home's thanks, not in the "Share the thanks" sheet and not in the shared post: those take deeds from a fixed list (`squad`, `ad`, `steady`) that feeds the writing help, the post template and its validation, so adding a deed there is a larger change than the issue states.
+- `HomeMembers.test.ts` and `CheckInLine.test.ts` literals got `improved: []` because the thanks type gained a field.
+
+## Verified
+
+- `pnpm vitest related --run` over the changed files passed.
+- `pnpm check`: prettier, eslint, tsc, vitest, drift and i18n checks passed. Two lint rules (complexity, function length) made me move the card's duel words into `cardDuelWeeks`.
+- Not checked in a browser: the layout (grid of 8 rem date, bar, 4.5 rem number) is meant for 360 px but was not viewed.
+
+## UX review changes
+
+- Row labels are "Nov 23" and "Nov 23 · so far" and fit one line. The running week's bar and number are lighter.
+- Averages read "Average 1.18M a week · N finished weeks" and "Alliance total, average 9.44M a week · N finished weeks". The legend reads "○ No picture saved for that week." A member with no saved week gets one line instead of the rows.
+- The bar track fills the middle column. The thanks group says "last week" and the "Thank them in the game." line shows when "most improved" is the only content.
+
+## Open issues
+
+- The line "Alliance Duel this week · from a screenshot" above the bars partly repeats the running week's row. Left as it is; a follow-up can fold it into the bars.
+
+- A partial picture (top rows only) lowers the alliance total of that week. The average says how many weeks it rests on, not how many members.
+
+## Next
+
+- Add the "most improved" group to Home's thanks and to the share sheet (needs a new deed in `thanks.ts` `draftInput`, `thanks-post.ts` and `ai/thanks-writing`).
+- Designer-persona review at 360 / 640 / 1280 and dark mode before the owner (memory: UX review before the owner).
+
+What was missing from the task prompt? Which week row to use when only daily pictures are saved, and what "improved" means in numbers.
+
+PR: (added by the orchestrator)

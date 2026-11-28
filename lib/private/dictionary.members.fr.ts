@@ -99,6 +99,9 @@ export const membersFr: MembersWords = {
   "thanks.progress": "Dites merci à",
   "thanks.adDone": "a terminé l’AD Tech",
   "thanks.squadUp": "a fait grandir son escouade principale",
+  "thanks.improved": "Les plus progressés à l’Alliance Duel la semaine dernière",
+  "thanks.improvedWhy":
+    "Au moins 10 % de points en plus la semaine dernière que la semaine d’avant.",
   "thanks.both": "a terminé l’AD Tech et fait grandir son escouade principale",
   "updates.open": "Coller des mises à jour",
   "updates.help":
