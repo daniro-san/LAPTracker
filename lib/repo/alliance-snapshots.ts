@@ -54,21 +54,39 @@ export async function insertAllianceRow(
   });
 }
 
-/** A sample's row (D69): the members as D60's parallel arrays (a null power or kills stays null, D15), no
- * member_snapshots rows and no raw_json, so a sample never stores a blocked roster key. An error row has
- * no arrays. */
+const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+/** A map square for the int[] columns; anything else is null, so an odd value never fails the row. */
+const square = (v: unknown) => (Number.isSafeInteger(v) ? (v as number) : null);
+
+/** Each member's map place from the read's raw members (D163), by uid. */
+function placesOf(raw: unknown): Map<number, { x: number | null; y: number | null }> {
+  const list = (raw as { members?: unknown } | null)?.members;
+  if (!Array.isArray(list)) return new Map();
+  return new Map(
+    list.flatMap((m: { uid?: unknown; x?: unknown; y?: unknown }) => {
+      const uid = num(m?.uid);
+      return uid === null ? [] : [[uid, { x: square(m.x), y: square(m.y) }] as const];
+    }),
+  );
+}
+
+/** A sample's row (D69): the members as D60's parallel arrays (a null power or kills stays null, D15), with
+ * their map places (D163), no member_snapshots rows and no raw_json. An error row has no arrays. */
 export async function insertSampleRow(
   db: Db,
   snapshotId: number,
   row: AllianceRow,
   members: MemberRow[],
 ): Promise<void> {
+  const at = placesOf(row.raw);
   const arrays = row.error === null && {
     memberUids: members.map((m) => m.uid),
     memberNames: members.map((m) => m.name),
     // Drizzle types the elements as numbers; a null stays null in the array.
     memberPower: members.map((m) => m.power) as number[],
     memberKills: members.map((m) => m.kills) as number[],
+    memberX: members.map((m) => at.get(m.uid)?.x ?? null) as number[],
+    memberY: members.map((m) => at.get(m.uid)?.y ?? null) as number[],
   };
   // `row.raw` names no column, so the insert drops it; raw_json stays null.
   await db.insert(allianceSnapshots).values({ ...row, snapshotId, rawJson: null, ...arrays });

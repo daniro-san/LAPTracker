@@ -5,6 +5,7 @@ export const BLOCKED_ROSTER_KEYS = [
   "y",
   "online",
   "last_online_at",
+  "last_seen_at",
   "joined_at",
   "daily_honor",
   "daily_tech",

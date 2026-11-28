@@ -12,6 +12,13 @@ const roster: unknown = JSON.parse(
     "utf8",
   ),
 );
+/** A live roster, the read that carries `last_seen_at` (D163). */
+const live: unknown = JSON.parse(
+  readFileSync(
+    join(queriesDir, "../../fixtures/probe-67110320-20261104T153605Z/01-before.json"),
+    "utf8",
+  ),
+);
 
 /** Read-model sources: everything in lib/queries except the list itself and tests. */
 const readModelFiles = readdirSync(queriesDir).filter(
@@ -22,9 +29,15 @@ const readModelFiles = readdirSync(queriesDir).filter(
 const usage = (key: string) => new RegExp(`(\\.${key}\\b|\\b${key}\\s*:|["'\`]${key}["'\`])`);
 
 describe("BLOCKED_ROSTER_KEYS (plan §12.1)", () => {
-  it("finds every blocked key in a real /v1 roster, so the detector is not vacuous", () => {
-    const found = new Set(findBlockedKeys(roster).map((p) => p.split(".").at(-1)));
+  it("finds every blocked key in a real /v1 roster or live roster, so the detector is not vacuous", () => {
+    const found = new Set(findBlockedKeys([roster, live]).map((p) => p.split(".").at(-1)));
     for (const key of BLOCKED_ROSTER_KEYS) expect(found).toContain(key);
+  });
+
+  it("blocks last_seen_at, as CLAUDE.md's roster-fields rule names it (D163)", () => {
+    expect(findBlockedKeys({ members: [{ uid: 1, last_seen_at: 1 }] })).toEqual([
+      "members.0.last_seen_at",
+    ]);
   });
 
   it("reports nothing for an object made only of served fields", () => {

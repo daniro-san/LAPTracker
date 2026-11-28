@@ -1,6 +1,7 @@
-// Insights → KvK's map (issue 791): dots in 3 bands of kills gained, near/mid/far only with a castle point,
-// and a read that sees only the workspace's own alliance and its own castle point, with no uid or name, from
-// the newest public event since the date with a fresh Start and End.
+// Insights → KvK's map (issue 791): dots in 3 bands of kills gained, each with its member's name (D163),
+// near/mid/far only with a castle point and naming their members, and a read that sees only the workspace's
+// own alliance and its own castle point, from the newest public event since the date with a fresh Start
+// and End.
 // Against a real Postgres (PGlite). Invented names and places only.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -15,6 +16,7 @@ import { kvkMapOf, kvkMapView } from "./kvk-map";
 const AT = new Date("2026-11-21T14:00:00Z");
 const END_AT = new Date("2026-11-21T16:00:00Z");
 const place = (x: number, y: number, before: number | null, after: number | null) => ({
+  name: `Invented ${x}-${y}`,
   x,
   y,
   before,
@@ -39,7 +41,13 @@ describe("kvkMapOf", () => {
       null,
     );
     expect(map.median).toBe(20);
-    expect(map.dots.map((d) => d.band)).toEqual(["none", "fewer", "fewer", "more", null]);
+    expect(map.dots.map((d) => [d.name, d.band])).toEqual([
+      ["Invented 1-1", "none"],
+      ["Invented 2-2", "fewer"],
+      ["Invented 3-3", "fewer"],
+      ["Invented 4-4", "more"],
+      ["Invented 5-5", null],
+    ]);
   });
 
   it("has near, mid and far rows only once a castle point is set", () => {
@@ -59,9 +67,30 @@ describe("kvkMapOf", () => {
     };
     expect(kvkMapOf(end, null).bands).toBeNull();
     expect(kvkMapOf(end, { x: 100, y: 100 }).bands).toEqual([
-      { band: "near", from: 0, to: 5, members: 2, kills: 12 },
-      { band: "mid", from: 10, to: 20, members: 2, kills: 9 },
-      { band: "far", from: 60, to: 90, members: 2, kills: 3 },
+      {
+        band: "near",
+        from: 0,
+        to: 5,
+        members: 2,
+        kills: 12,
+        names: ["Invented 100-100", "Invented 103-104"],
+      },
+      {
+        band: "mid",
+        from: 10,
+        to: 20,
+        members: 2,
+        kills: 9,
+        names: ["Invented 100-120", "Invented 110-100"],
+      },
+      {
+        band: "far",
+        from: 60,
+        to: 90,
+        members: 2,
+        kills: 3,
+        names: ["Invented 100-190", "Invented 160-100"],
+      },
     ]);
     expect(kvkMapOf({ ...end, places: end.places.slice(0, 2) }, { x: 1, y: 1 }).bands).toBeNull();
   });
@@ -143,16 +172,16 @@ describe("kvkMapView and eventEndPlaces", () => {
     }
   }
 
-  it("shows the own alliance's End places and the own castle point only, with no uid or name", async () => {
+  it("shows the own alliance's End places with names and the own castle point only", async () => {
     await saveCastle(db, ids.theirs, { x: 9, y: 9 });
     const access = { workspaceId: ids.ours, unionId: OURS } as WorkspaceAccess;
     const map = await kvkMapView(db, access, new Date("2026-11-22T00:00:00Z"));
     expect(map?.dots).toEqual([
-      { x: 401, y: 601, band: "fewer" },
-      { x: 402, y: 602, band: "more" },
+      { name: "Invented 1", x: 401, y: 601, band: "fewer" },
+      { name: "Invented 2", x: 402, y: 602, band: "more" },
     ]);
     expect(map?.castle).toBeNull();
-    expect(JSON.stringify(map)).not.toMatch(/"uid"|"name"|Invented|online/);
+    expect(JSON.stringify(map)).not.toMatch(/Invented [789]/);
   });
 
   const NOW = new Date("2026-11-22T00:00:00Z");

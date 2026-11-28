@@ -1,8 +1,8 @@
 // Insights → KvK's map (issue 791, D71 amendment 2026-11-27): where the own alliance's members were at the
 // newest KvK's End read, each dot in one of 3 bands of kills gained, and, only once the officers typed a
 // castle point, how many members were near, mid-way and far from it with the kills they gained. Officers
-// only, behind requireWorkspace, for the workspace's own alliance. The view carries no uid and no name: a
-// dot is a place and a band. x and y never go to copies, exports, Discord, logs, analytics or AI. Nothing
+// only, behind requireWorkspace, for the workspace's own alliance. Each dot carries its member's name, and
+// each distance band names its members (D163). Places and names never go to logs, analytics or AI. Nothing
 // here says why a member gained kills: the End read shows where a member was then, not where they fought.
 import { z } from "zod";
 
@@ -23,6 +23,7 @@ const SINCE_MS = KVK_EVENTS * 7 * 86_400_000;
 export type KillBand = "none" | "fewer" | "more";
 
 export interface KvkMapDot {
+  name: string;
   x: number;
   y: number;
   /** Null when the kills are not known on one side (not in the Start read, or no kills sent). */
@@ -36,11 +37,14 @@ export interface DistanceBand {
   to: number;
   members: number;
   kills: number;
+  /** The band's members, in name order (D163). */
+  names: string[];
 }
 
 export interface KvkMap {
   at: Date;
   endAt: Date;
+  /** In name order, so the readout's steps walk the members by name. */
   dots: KvkMapDot[];
   /** The gainers' median kills gained: "fewer" is up to it, "more" above it; null with no gainer. */
   median: number | null;
@@ -51,17 +55,19 @@ export interface KvkMap {
   bands: DistanceBand[] | null;
 }
 
+const byName = (a: string, b: string) => a.localeCompare(b);
+
 const gainOf = (p: { before: number | null; after: number | null }) =>
   p.before === null || p.after === null ? null : Math.max(0, p.after - p.before);
 
 /** Near, mid and far thirds of `known` by distance from `castle`, each with its range and kills. */
 function bandsOf(
-  known: { x: number; y: number; gain: number }[],
+  known: { name: string; x: number; y: number; gain: number }[],
   castle: CastlePoint,
 ): DistanceBand[] | null {
   if (known.length < 3) return null;
   const far = known
-    .map((p) => ({ d: Math.hypot(p.x - castle.x, p.y - castle.y), gain: p.gain }))
+    .map((p) => ({ d: Math.hypot(p.x - castle.x, p.y - castle.y), gain: p.gain, name: p.name }))
     .sort((a, b) => a.d - b.d);
   const cuts = [0, Math.round(far.length / 3), Math.round((far.length * 2) / 3), far.length];
   return (["near", "mid", "far"] as const).map((band, i) => {
@@ -72,13 +78,16 @@ function bandsOf(
       to: Math.round(part.at(-1)?.d ?? 0),
       members: part.length,
       kills: part.reduce((a, p) => a + p.gain, 0),
+      names: part.map((p) => p.name).sort(byName),
     };
   });
 }
 
 /** The map of one End read: dots in kill bands, and near/mid/far only with a castle point. */
 export function kvkMapOf(end: EventEndPlaces, castle: CastlePoint | null): KvkMap {
-  const gains = end.places.map((p) => ({ x: p.x, y: p.y, gain: gainOf(p) }));
+  const gains = end.places
+    .map((p) => ({ name: p.name, x: p.x, y: p.y, gain: gainOf(p) }))
+    .sort((a, b) => byName(a.name, b.name));
   const up = gains.flatMap((p) => (p.gain !== null && p.gain > 0 ? [p.gain] : []));
   up.sort((a, b) => a - b);
   const median = up.length > 0 ? (up[Math.floor((up.length - 1) / 2)] as number) : null;
@@ -94,7 +103,7 @@ export function kvkMapOf(end: EventEndPlaces, castle: CastlePoint | null): KvkMa
   return {
     at: end.at,
     endAt: end.endAt,
-    dots: gains.map((p) => ({ x: p.x, y: p.y, band: band(p.gain) })),
+    dots: gains.map((p) => ({ name: p.name, x: p.x, y: p.y, band: band(p.gain) })),
     median,
     unplaced: end.unplaced,
     castle,

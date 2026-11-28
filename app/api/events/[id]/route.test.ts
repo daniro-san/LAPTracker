@@ -80,9 +80,12 @@ describe("GET /api/events/[id]", () => {
       },
       members,
     );
-    // Not vacuous: what is stored carries every blocked key.
+    // Not vacuous: what is stored carries every blocked key /v1's alliance roster sends (last_seen_at
+    // comes only in the live roster and the player read).
     const stored = new Set(findBlockedKeys(roster).map((p) => p.split(".").at(-1)));
-    expect([...BLOCKED_ROSTER_KEYS].every((k) => stored.has(k))).toBe(true);
+    expect(
+      BLOCKED_ROSTER_KEYS.filter((k) => k !== "last_seen_at").every((k) => stored.has(k)),
+    ).toBe(true);
 
     return eventId;
   }

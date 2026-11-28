@@ -29,6 +29,11 @@ export const insightsMapEn = {
   "insights.map.bands.few": "Fewer than 3 members have known kills, so there are no rows.",
   "insights.map.bands.empty":
     "Type a castle point to see how many members were near, mid-way and far from it.",
+  "insights.map.tap": "Tap a dot, or step with ‹ ›, to see whose it is.",
+  "insights.map.place": "X {x}, Y {y}",
+  "insights.map.prev": "Previous member by name",
+  "insights.map.next": "Next member by name",
+  "insights.map.bands.who": "Who ({n})",
   "insights.map.castle.head": "Castle point (optional)",
   "insights.map.castle.help":
     "Where the castle stands on the map, 0 to 999. Only officers see it; it is not in copies or exports.",
@@ -71,6 +76,11 @@ export const insightsMapPt: MapWords = {
   "insights.map.bands.few": "Menos de 3 membros têm abates conhecidos, então não há linhas.",
   "insights.map.bands.empty":
     "Digite um ponto do castelo para ver quantos membros estavam perto, no meio e longe dele.",
+  "insights.map.tap": "Toque num ponto, ou use ‹ ›, para ver de quem é.",
+  "insights.map.place": "X {x}, Y {y}",
+  "insights.map.prev": "Membro anterior pelo nome",
+  "insights.map.next": "Próximo membro pelo nome",
+  "insights.map.bands.who": "Quem ({n})",
   "insights.map.castle.head": "Ponto do castelo (opcional)",
   "insights.map.castle.help":
     "Onde o castelo fica no mapa, de 0 a 999. Só os oficiais veem; não vai em cópias nem exportações.",
@@ -111,6 +121,11 @@ export const insightsMapFr: MapWords = {
   "insights.map.bands.few": "Moins de 3 membres ont des éliminations connues : aucune ligne.",
   "insights.map.bands.empty":
     "Saisissez un point du château pour voir combien de membres étaient près, à mi-chemin et loin.",
+  "insights.map.tap": "Touchez un point, ou passez avec ‹ ›, pour voir à qui il est.",
+  "insights.map.place": "X {x}, Y {y}",
+  "insights.map.prev": "Membre précédent par nom",
+  "insights.map.next": "Membre suivant par nom",
+  "insights.map.bands.who": "Qui ({n})",
   "insights.map.castle.head": "Point du château (facultatif)",
   "insights.map.castle.help":
     "Où se trouve le château sur la carte, de 0 à 999. Seuls les officiers le voient ; il n’est ni dans les copies ni dans les exports.",

@@ -135,7 +135,9 @@ describe("runDailyRead (D60)", () => {
       .from(dailyRosters)
       .where(eq(dailyRosters.unionId, id));
     const stored = new Set(findBlockedKeys(row?.rawJson).map((p) => p.split(".").at(-1)));
-    for (const key of BLOCKED_ROSTER_KEYS) expect(stored).toContain(key);
+    // last_seen_at comes only in the live roster and the player read, not in /v1's alliance roster.
+    for (const key of BLOCKED_ROSTER_KEYS.filter((k) => k !== "last_seen_at"))
+      expect(stored).toContain(key);
     const card = await memberHistoryCard(db, id, at);
     expect(card?.roster).toHaveLength(3);
     expect(findBlockedKeys(card)).toEqual([]);

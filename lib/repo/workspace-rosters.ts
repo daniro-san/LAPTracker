@@ -227,8 +227,10 @@ export async function scheduledEventKills(
   return { at: event.at, before: byUid(startId), after: byUid(endId) };
 }
 
-/** A member placed by a scheduled event's End read (issue 791): where it saw them, their kills on both sides. */
+/** A member placed by a scheduled event's End read (issue 791, D163): their name, where it saw them, their
+ * kills on both sides. */
 export interface EndPlace {
+  name: string;
   x: number;
   y: number;
   /** Lifetime kills at the Start and End reads; null when that read has none (D15). */
@@ -253,7 +255,7 @@ const placesOf = sql<
 
 /**
  * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
- * not failed: each End member's place on the map and kills on both sides, no uid or name; null when there
+ * not failed: each End member's name, place on the map and kills on both sides; null when there
  * is none. Three statements, bounded by the date and by the two rows' ids (D149).
  */
 export async function eventEndPlaces(
@@ -269,6 +271,7 @@ export async function eventEndPlaces(
       .select({
         id: memberSnapshots.allianceSnapshotId,
         uid: memberSnapshots.uid,
+        name: memberSnapshots.name,
         kills: memberSnapshots.kills,
       })
       .from(memberSnapshots)
@@ -285,7 +288,9 @@ export async function eventEndPlaces(
   const end = kills.filter((k) => k.id === endId);
   const places = end.flatMap((k) => {
     const place = at.get(k.uid);
-    return place ? [{ ...place, before: start.get(k.uid) ?? null, after: k.kills }] : [];
+    return place
+      ? [{ name: k.name, ...place, before: start.get(k.uid) ?? null, after: k.kills }]
+      : [];
   });
   return { at: event.at, endAt: event.endAt, places, unplaced: end.length - places.length };
 }
