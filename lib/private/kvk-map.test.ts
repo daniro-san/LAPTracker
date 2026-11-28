@@ -339,4 +339,11 @@ describe("kvkMapView and eventEndPlaces", () => {
       )?.at,
     ).toEqual(AT);
   });
+
+  it("shows the KvK when an Origin of Chaos is newer, and no map when only that is in range (#877)", async () => {
+    await kvk(new Date("2026-12-05T00:10:00Z"));
+    const access = { workspaceId: ids.ours, unionId: OURS } as WorkspaceAccess;
+    expect((await kvkMapView(db, access, new Date("2026-12-06T00:00:00Z"), "UTC"))?.at).toEqual(AT);
+    expect(await kvkMapView(db, access, new Date("2026-12-20T00:00:00Z"), "UTC")).toBeNull();
+  });
 });
