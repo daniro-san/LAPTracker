@@ -7,6 +7,7 @@ import { gameLanguages } from "../repo/player-reads";
 import { latestRoster } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceLanguage } from "./dictionary";
+import { writingOff } from "./features";
 import { DAY_MS } from "./member-week";
 import { messageLanguage } from "./ready-message";
 
@@ -36,12 +37,16 @@ export function countLanguages(codes: readonly string[], total: number): MemberL
   return { read: codes.length, total, counts, other };
 }
 
-/** The own alliance's members' game languages; null before a roster or while no member has a language. */
+/**
+ * The own alliance's members' game languages; null before a roster, with no language read, or while
+ * Translate is off (D126: a help turned off is not there, so nothing is read for it).
+ */
 export async function memberLanguages(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
 ): Promise<MemberLanguages | null> {
+  if (writingOff(access).includes("translate")) return null;
   const roster = await latestRoster(db, access.unionId);
   const since = new Date(now.getTime() - NOTICE_LANGUAGE_DAYS * DAY_MS);
   const game = await gameLanguages(

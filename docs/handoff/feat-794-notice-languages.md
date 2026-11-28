@@ -11,6 +11,8 @@ Closes #794 (adopted in spike #789).
 - Dated amendment 2026-11-28 in D113. No new decision.
 - Tests: `lib/private/notice-languages.test.ts` (4 tests: grouping and order; members with no language left out and "read of total"; own alliance only; null with no language).
 
+- Review fixes: `memberLanguages` returns null without reading when Translate is turned off for the alliance (D126, `writingOff`). Render tests for the line (counts with "from N of M", hidden when null, hidden when Translate is off) are in `turned-off-helps.test.ts`; a query test leaves out a read older than 60 days. In the notice page, `versionOf` replaces the inline `map` to stay inside the function-length limit with one `languages` constant.
+
 ## Decisions
 
 - D113 and the notice code did not use `player_reads.language`; the field was used only for Follow-up message languages (D137, D140). This reuses `gameLanguages` and `messageLanguage`.

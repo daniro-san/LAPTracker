@@ -26,6 +26,8 @@ import {
 } from "../../../../_ui/notice-pages";
 import { NoticeScreen } from "../../../../_ui/NoticeScreen";
 
+const versionOf = (field: { version: number }) => field.version;
+
 export default async function NoticePage({
   params,
 }: {
@@ -54,7 +56,8 @@ export default async function NoticePage({
     `/${id}`,
   );
   if (!data) notFound();
-  const { notice, history, last, calendar, reviews, channels } = data;
+  const { notice, history, last, calendar, reviews, channels, spoken } = data;
+  const languages = languagesFor(language);
   const words = noticeWords(language, t);
   const audience = audienceOf(notice.forMembers);
   const nameOf = (a: string) =>
@@ -62,9 +65,7 @@ export default async function NoticePage({
   // A new version of any field remounts the screen, so a save or a refresh closes the editor. A picture
   // change does not (D119): the editor closes itself after a picture-only save, and stays open, in step with
   // the stored picture, when the text save after it fails.
-  const key = Object.values(notice.fields)
-    .map((f) => f.version)
-    .join(".");
+  const key = Object.values(notice.fields).map(versionOf).join(".");
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <p>
@@ -85,9 +86,9 @@ export default async function NoticePage({
         t={t}
         viewer={language}
         ai={getAppContext().ai !== null}
-        memberLanguages={data.spoken}
-        languages={languagesFor(language)}
-        source={sourceFor(languagesFor(language), notice.fields, notice.stale)}
+        memberLanguages={spoken}
+        languages={languages}
+        source={sourceFor(languages, notice.fields, notice.stale)}
         meta={{
           written: words.written(notice.createdBy, notice.createdAt),
           changed: words.changed(notice.updatedBy, notice.updatedAt),

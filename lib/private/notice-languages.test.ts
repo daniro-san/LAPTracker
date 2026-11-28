@@ -48,8 +48,8 @@ async function roster(uids: number[]) {
   });
 }
 
-const read = (uid: number, language: string | null, unionId = OGS) =>
-  db.insert(playerReads).values({ unionId, uid, readAt: NOW, language });
+const read = (uid: number, language: string | null, unionId = OGS, readAt = NOW) =>
+  db.insert(playerReads).values({ unionId, uid, readAt, language });
 
 describe("countLanguages", () => {
   it("counts per notice language, most first, and the rest as other", () => {
@@ -81,6 +81,16 @@ describe("memberLanguages", () => {
     await roster([1, 2]);
     await read(1, "fr");
     await read(2, "en", OTHER);
+    expect(await memberLanguages(db, await officer(), NOW)).toMatchObject({
+      read: 1,
+      counts: [{ language: "fr", n: 1 }],
+    });
+  });
+
+  it("leaves out a language read older than 60 days", async () => {
+    await roster([1, 2]);
+    await read(1, "en", OGS, new Date("2026-09-20T12:00:00Z"));
+    await read(2, "fr", OGS, new Date("2026-11-20T12:00:00Z"));
     expect(await memberLanguages(db, await officer(), NOW)).toMatchObject({
       read: 1,
       counts: [{ language: "fr", n: 1 }],
