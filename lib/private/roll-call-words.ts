@@ -8,7 +8,7 @@ import type { Placed } from "./calendar-model";
 import { agoText, titleOf } from "./calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { RollKey } from "./dictionary.rollcall";
-import { REST, type Mark, type RollKind, type Tally } from "./roll-call-rules";
+import { isElixirMark, REST, type Mark, type RollKind, type Tally } from "./roll-call-rules";
 
 /** The word set each kind's ✓ and ✗ use. */
 const SET: Record<RollKind, "shield" | "join" | "did"> = {
@@ -21,6 +21,7 @@ const SET: Record<RollKind, "shield" | "join" | "did"> = {
 
 export function markWord(mark: Mark, kind: RollKind, t: WorkspaceDictionary): string {
   if (mark === "assumed") return t["roll.assumed"];
+  if (isElixirMark(mark)) return t[`roll.${mark}` as RollKey];
   return t[`roll.${mark}.${SET[kind]}` as RollKey];
 }
 
@@ -70,7 +71,7 @@ export function tallyParts(
     n: tally[set],
     text: fill(t["roll.count"], { word, n: tally[set] }),
   });
-  const marked = tally.yes + tally.no + tally.assumed;
+  const marked = tally.yes + tally.no + tally.assumed + tally.other;
   return [
     {
       set: "marked",
@@ -80,6 +81,7 @@ export function tallyParts(
     part("yes", markWord("yes", kind, t)),
     ...(tally.assumed > 0 ? [part("assumed", t["roll.assumed"])] : []),
     part("no", markWord("no", kind, t)),
+    ...(tally.other > 0 ? [part("other", t["roll.other"])] : []),
     part("notSet", t["roll.notSet"]),
     ...(tally.away > 0 ? [part("away", t["roll.away"])] : []),
   ];
@@ -97,7 +99,9 @@ export function staleSaid(
 ): string {
   const mark = (newest?.mark ?? null) as Mark | null;
   const word = (m: Mark) =>
-    part === "wall" && m !== "assumed" ? t[`roll.prep.wall.${m}`] : markWord(m, kind, t);
+    part === "wall" && (m === "yes" || m === "no")
+      ? t[`roll.prep.wall.${m}`]
+      : markWord(m, kind, t);
   return fill(t[mark ? "roll.conflict" : "roll.conflict.cleared"], {
     // D137 (2026-11-21): the tick's fill writes with no officer, as the tracker; Accept on its officer's name.
     name: newest?.by

@@ -136,6 +136,11 @@ export interface MarkWords {
   yes: string;
   no: string;
   assumed: string;
+  /** An Elixir Scramble's extra marks (issue 468). */
+  registered: string;
+  early: string;
+  sub: string;
+  excused: string;
   rest: { button: string; done: string } | null;
 }
 
@@ -143,6 +148,10 @@ export const markWords = (kind: RollKind, t: WorkspaceDictionary): MarkWords => 
   yes: markWord("yes", kind, t),
   no: markWord("no", kind, t),
   assumed: markWord("assumed", kind, t),
+  registered: markWord("registered", kind, t),
+  early: markWord("early", kind, t),
+  sub: markWord("sub", kind, t),
+  excused: markWord("excused", kind, t),
   rest: restWords(kind, t),
 });
 
@@ -151,6 +160,7 @@ export interface MarkRowView {
   name: string;
   mark: Mark | null;
   version: number;
+  score: number | null;
   /** "until Sat, Nov 21", "On a break", or null when the member is asked. */
   away: string | null;
   note: AwayNote | null;
@@ -164,6 +174,7 @@ export function markRows(rows: CallRow[], { t, language }: Omit<Ctx, "zone">): M
     name: r.name,
     mark: r.mark,
     version: r.version,
+    score: r.score,
     away:
       r.away === null
         ? null

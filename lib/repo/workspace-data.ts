@@ -21,6 +21,7 @@ import {
   pendingMembers,
   rollCallMarks,
   rollCalls,
+  rollCallResults,
   rollCallTeam,
   workspaceSessions,
   workspaceUsers,
@@ -128,6 +129,8 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "roll-calls", table: rollCalls, scope: "workspace" },
   { file: "roll-call-marks", table: rollCallMarks, scope: "rollCall" },
   { file: "roll-call-teams", table: rollCallTeam, scope: "rollCall" },
+  // Issue 468: an Elixir Scramble team's result, the opponent and both scores.
+  { file: "roll-call-results", table: rollCallResults, scope: "rollCall" },
   { file: "follow-ups", table: memberFollowUps, scope: "workspace" },
   { file: "thefts", table: thefts, scope: "workspace" },
   { file: "theft-steps", table: theftFollowUps, scope: "workspace" },

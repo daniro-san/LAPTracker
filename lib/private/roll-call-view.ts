@@ -10,9 +10,11 @@ import {
   archivedCount,
   callsOfWeeks,
   newestMarks,
+  resultsOf,
   teamCalls,
   teamsOf,
   type MarkRow,
+  type ResultRow,
   type RollCallRow,
 } from "../repo/roll-call";
 import { endOfDayReads } from "../repo/workspace-rosters";
@@ -40,6 +42,8 @@ type Member = { uid: number; name: string; rankCode: number | null };
 export interface CallRow extends Member {
   mark: Mark | null;
   version: number;
+  /** An Elixir Scramble Joined mark's optional score (issue 468). */
+  score: number | null;
   /** Left out that day; `until` is the away note's last day (null: On a break). */
   away: { until: string | null } | null;
   /** The member's away note and its version, for the away dates sheet. */
@@ -160,6 +164,8 @@ export interface CallView {
   tally: Tally;
   /** An Elixir Scramble team's size; null for other kinds. */
   team: number | null;
+  /** An Elixir Scramble team's result (issue 468); null before one was saved. */
+  result: ResultRow | null;
 }
 
 /** The roster, member facts and newest marks a roll call's page read, so Raid prep's part reads them once. */
@@ -195,11 +201,12 @@ export async function callRead(
   const opened = await openOccasion(db, access, occasion);
   if (!opened) return null;
   const ids = opened.call ? [opened.call.id] : [];
-  const [roster, facts, marks, team] = await Promise.all([
+  const [roster, facts, marks, team, results] = await Promise.all([
     rosterOf(db, access),
     factsOf(db, access),
     newestMarks(db, ids),
     teamsOf(db, ids),
+    resultsOf(db, ids),
   ]);
   const members = opened.kind === "elixir" ? teamMembers(team, roster) : roster;
   const byUid = new Map(marks.map((m) => [m.uid, m]));
@@ -208,6 +215,7 @@ export async function callRead(
     ...m,
     mark: own.get(m.uid) ?? null,
     version: byUid.get(m.uid)?.version ?? 0,
+    score: byUid.get(m.uid)?.score ?? null,
     note: facts.get(m.uid)?.away?.value ?? null,
     noteVersion: facts.get(m.uid)?.away?.version ?? 0,
   }));
@@ -216,6 +224,7 @@ export async function callRead(
     rows,
     tally: tally(rows, own),
     team: opened.kind === "elixir" ? team.length : null,
+    result: results[0] ?? null,
   };
   return { view, loaded: { roster, facts, marks } };
 }

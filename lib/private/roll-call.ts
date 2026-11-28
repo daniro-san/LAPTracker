@@ -13,6 +13,7 @@ import {
   insertMarks,
   newestMark,
   newestMarks,
+  saveResult,
   teamHas,
   teamsOf,
   type MarkPart,
@@ -31,6 +32,7 @@ import { awayOn } from "./fact-fields";
 import { factsOf, isMember } from "./member-facts";
 import {
   FROM_CALENDAR,
+  isElixirMark,
   REST,
   tapMark,
   type ADDED_KINDS,
@@ -141,7 +143,7 @@ async function asks(db: Db, o: Opened, inRoster: boolean, uid: number): Promise<
 async function openForMark(
   db: Db,
   access: WorkspaceAccess,
-  input: { occasion: Occasion; uid: number; mark: Mark | null },
+  input: { occasion: Occasion; uid: number; mark: Mark | null; score?: number | null | undefined },
   part: MarkPart,
 ): Promise<{ ok: true; o: Opened } | Missing> {
   if (!tapMark(input.mark)) return { ok: false, code: "invalid" };
@@ -151,6 +153,10 @@ async function openForMark(
   ]);
   if (!o) return { ok: false, code: "not_found" };
   if (part === "wall" && o.kind !== "shield") return { ok: false, code: "invalid" };
+  // Issue 468: Registered, 09:00 only, Sub and Excused, and a score, are an Elixir Scramble's only.
+  if ((isElixirMark(input.mark) || input.score != null) && o.kind !== "elixir")
+    return { ok: false, code: "invalid" };
+  if (input.score != null && input.mark !== "yes") return { ok: false, code: "invalid" };
   if (!(await asks(db, o, inRoster, input.uid))) return { ok: false, code: "not_member" };
   return { ok: true, o };
 }
@@ -168,6 +174,8 @@ export async function markOne(
     mark: Mark | null;
     version: number;
     part?: MarkPart | undefined;
+    /** An Elixir Scramble Joined mark's optional score (issue 468). */
+    score?: number | null | undefined;
   },
   now: Date,
 ): Promise<MarkResult> {
@@ -186,7 +194,14 @@ export async function markOne(
         ? { ok: true, version: at }
         : { ok: false, code: "stale", kind: o.kind, newest };
     }
-    const row = { rollCallId: call.id, uid: input.uid, part, version: at + 1, mark: input.mark };
+    const row = {
+      rollCallId: call.id,
+      uid: input.uid,
+      part,
+      version: at + 1,
+      mark: input.mark,
+      score: input.score ?? null,
+    };
     const [done] = await insertMarks(db, [{ ...row, writtenBy: access.user.id, writtenAt: now }]);
     if (done) return { ok: true, version: done.version };
   }
@@ -221,6 +236,8 @@ export async function markRest(
       mark,
       writtenBy: access.user.id,
       writtenAt: clock.now,
+      // An assumption, not an officer's own mark (issue 468): the follow-up never reads it.
+      byRest: true,
     }));
   return { ok: true, mark, written: await insertMarks(db, rows) };
 }
@@ -317,4 +334,34 @@ export async function archiveCall(
 ): Promise<"ok" | "not_found"> {
   const c = { workspaceId: access.workspaceId, id: input.id, userId: access.user.id, now };
   return (await setCallArchived(db, { ...c, on: input.on })) ? "ok" : "not_found";
+}
+
+/**
+ * An Elixir Scramble team's result for its week (issue 468): the opponent and both scores, each optional;
+ * Won or Lost is read from the two scores. The newest write replaces the last.
+ */
+export async function setResult(
+  db: Db,
+  access: WorkspaceAccess,
+  input: {
+    occasion: Occasion;
+    opponent: string | null;
+    ourScore: number | null;
+    theirScore: number | null;
+  },
+  now: Date,
+): Promise<{ ok: true } | Missing> {
+  const o = await openOccasion(db, access, input.occasion);
+  if (o?.kind !== "elixir") return { ok: false, code: "not_found" };
+  const call = await ensureCall(db, access, o);
+  const { opponent, ourScore, theirScore } = input;
+  await saveResult(db, {
+    rollCallId: call.id,
+    opponent: opponent || null,
+    ourScore,
+    theirScore,
+    writtenBy: access.user.id,
+    writtenAt: now,
+  });
+  return { ok: true };
 }

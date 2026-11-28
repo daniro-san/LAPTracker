@@ -28,6 +28,7 @@ import {
   deleteCall,
   markOne,
   markRest,
+  setResult,
   undoMarks,
 } from "@/lib/private/roll-call";
 import { ADDED_KINDS, MARKS } from "@/lib/private/roll-call-rules";
@@ -60,6 +61,18 @@ const body = z.discriminatedUnion("action", [
       version: z.number().int().min(0),
       // D137: Raid prep's second mark, squads off the wall.
       part: z.enum(["main", "wall"]).optional(),
+      // Issue 468: an Elixir Scramble Joined mark's optional score.
+      score: z.number().int().min(0).max(2147483647).nullable().optional(),
+    })
+    .strict(),
+  // Issue 468: an Elixir Scramble team's result, the opponent and both scores (each may be empty).
+  z
+    .object({
+      action: z.literal("result"),
+      occasion,
+      opponent: z.string().trim().max(40).nullable(),
+      ourScore: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(),
+      theirScore: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(),
     })
     .strict(),
   z.object({ action: z.literal("rest"), occasion, uids }).strict(),
@@ -158,6 +171,8 @@ async function run(input: Body, c: Ctx): Promise<Response> {
       const done = await privately(`roll_call.${input.action}`, () => {
         const clock = { now, zone: c.zone };
         if (input.action === "accept") return acceptTracker(db, access, input, clock);
+        // Issue 468: an Elixir Scramble team's result.
+        if (input.action === "result") return setResult(db, access, input, now);
         return input.action === "rest"
           ? markRest(db, access, input, clock)
           : undoMarks(db, access, input, now);
@@ -171,6 +186,7 @@ async function run(input: Body, c: Ctx): Promise<Response> {
 function deskAction(input: Body): DeskAction {
   if (input.action === "delete") return input.undo ? "undo_delete" : "delete";
   if (input.action === "archive") return input.on ? "archive" : "unarchive";
+  if (input.action === "result") return "save";
   return input.action;
 }
 

@@ -18,11 +18,20 @@ import { SIGNED_OUT } from "./SignedOut";
 export interface Shown {
   mark: Mark | null;
   version: number;
+  /** An Elixir Scramble Joined mark's optional score (issue 468). */
+  score: number | null;
 }
 type Written = { uid: number; version: number }[];
-type Rows = Pick<MarkRowView, "uid" | "mark" | "version">[];
+type Rows = (Pick<MarkRowView, "uid" | "mark" | "version"> & { score?: number | null })[];
 /** The marking page's refusal line, and which roll call it is for analytics (issue 585). */
 type Marking = { failed: string; roll_call: RollCallType };
+
+/** What the page read for a member. */
+const stored = (row: Rows[number] | undefined): Shown => ({
+  mark: row?.mark ?? null,
+  version: row?.version ?? 0,
+  score: row?.score ?? null,
+});
 
 /** `extra` `{ part: "wall" }`: Raid prep's second mark, squads off the wall (D137). */
 export function useMarks(slug: string, occasion: Occasion, rows: Rows, page: Marking, extra = {}) {
@@ -37,22 +46,21 @@ export function useMarks(slug: string, occasion: Occasion, rows: Rows, page: Mar
   const shown = (uid: number): Shown => {
     const row = byUid.get(uid);
     const mine = local[uid];
-    return mine && mine.version >= (row?.version ?? 0)
-      ? mine
-      : { mark: row?.mark ?? null, version: row?.version ?? 0 };
+    return mine && mine.version >= (row?.version ?? 0) ? mine : stored(row);
   };
   const put = (uid: number, s: Shown) => setLocal((l) => ({ ...l, [uid]: s }));
   const base = (uid: number) =>
     Math.max(byUid.get(uid)?.version ?? 0, confirmed.current.get(uid) ?? 0);
 
   /** `keep`: D137's ✓ on the tracker's own ✓ makes it the officer's (it stays ✓) instead of clearing it. */
-  const tap = (uid: number, tapped: "yes" | "no", keep = false) => {
+  const tap = (uid: number, tapped: Exclude<Mark, "assumed">, keep = false, saved?: number) => {
     const before = shown(uid);
     const mark = keep ? tapped : toggled(before.mark, tapped);
-    put(uid, { mark, version: before.version });
+    const score = mark === "yes" ? (saved ?? null) : null;
+    put(uid, { mark, version: before.version, score });
     setError(null);
     const run = async () => {
-      const body = { action: "mark", occasion, uid, mark, version: base(uid), ...extra };
+      const body = { action: "mark", occasion, uid, mark, version: base(uid), score, ...extra };
       const { status, json } = await sendRoll<{ version: number; mark: Mark | null; said: string }>(
         slug,
         body,
@@ -61,7 +69,8 @@ export function useMarks(slug: string, occasion: Occasion, rows: Rows, page: Mar
       if (status === 200 || status === 409) {
         const version = json.version ?? 0;
         confirmed.current.set(uid, version);
-        put(uid, { mark: status === 200 ? mark : (json.mark ?? null), version });
+        const stale = { mark: json.mark ?? null, version, score: null };
+        put(uid, status === 200 ? { mark, version, score } : stale);
         setNotes((n) => ({ ...n, [uid]: status === 409 ? (json.said ?? "") : "" }));
         return;
       }
@@ -77,7 +86,7 @@ export function useMarks(slug: string, occasion: Occasion, rows: Rows, page: Mar
     for (const w of written) confirmed.current.set(w.uid, w.version);
     setLocal((l) => ({
       ...l,
-      ...Object.fromEntries(written.map((w) => [w.uid, { mark, version: w.version }])),
+      ...Object.fromEntries(written.map((w) => [w.uid, { mark, version: w.version, score: null }])),
     }));
     router.refresh();
   };

@@ -21,6 +21,7 @@ import { fill } from "@/lib/words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
 import { openedFrom } from "../../../../_ui/drilldown-event";
+import { ElixirResult } from "../../../../_ui/ElixirResult";
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { prepHead, prepRows } from "../../../../_ui/prep-data";
 import { RaidOpponent } from "../../../../_ui/RaidOpponent";
@@ -92,7 +93,27 @@ function Marks(props: {
     filter: filterOf(props.filter),
     opened: openedFrom(props.filter),
   };
-  if (!view.prep) return <RollCallMarks {...common} shield={o.kind === "shield"} />;
+  if (!view.prep) {
+    const team = o.kind === "elixir";
+    return (
+      <>
+        <RollCallMarks {...common} shield={o.kind === "shield"} elixir={team} />
+        {/* Issue 468: an Elixir Scramble team's result; Won or Lost is read from the two scores. */}
+        {team && o.placed && (
+          <ElixirResult
+            slug={slug}
+            occasion={occasion}
+            words={common.words}
+            saved={{
+              opponent: view.result?.opponent ?? "",
+              ourScore: String(view.result?.ourScore ?? ""),
+              theirScore: String(view.result?.theirScore ?? ""),
+            }}
+          />
+        )}
+      </>
+    );
+  }
   return (
     <>
       <RaidPrepMarks

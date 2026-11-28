@@ -209,6 +209,26 @@ function ShieldBlock({ shield }: { shield: NonNullable<CardData["shield"]> }) {
 }
 
 /**
+ * Issue 468: "Last 4 Elixir", one row per seat in the officers' own marks, and the follow-up line only when
+ * officers explicitly marked two of them "Did not join". A suggestion to ask, never a flag (D75).
+ */
+function ElixirBlock({ elixir }: { elixir: NonNullable<CardData["elixir"]> }) {
+  return (
+    <section className="ph-no-capture mt-3 text-body-sm">
+      <h3 className="font-semibold">{elixir.head}</h3>
+      <ul>
+        {elixir.rows.map((row, i) => (
+          <li key={i} className="py-0.5">
+            {row}
+          </li>
+        ))}
+      </ul>
+      {elixir.followUp && <p className="mt-1 text-ink/80">{elixir.followUp}</p>}
+    </section>
+  );
+}
+
+/**
  * Status, the Raid Shield block during the raid (issue 634), the stat strip, their time and languages,
  * where they came from and who on Discord is linked to them (D142): the same on every tab.
  */
@@ -305,6 +325,7 @@ function Overview({ card, editor, onChanged }: CardProps) {
           onChanged={onChanged}
         />
       )}
+      {card.elixir && <ElixirBlock elixir={card.elixir} />}
       {card.days ? (
         // ph-no-capture (issue 549): session replay records the bars as an empty box, so no bar height or
         // daily number of the member reaches analytics.
