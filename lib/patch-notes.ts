@@ -249,9 +249,13 @@ export const patchNotes: PatchNote[] = [
       '/alliances: an "Alliances recruiting" list of alliances with spots free, from the last 2 days\' reads, with what each asks to join. Hidden until the alliances-recruiting flag is on.',
       "Origin of Chaos weeks are never called KvK: the KvK recap is not sent that Saturday, the member page's recovery and thank-you lines and the Insights and Follow-up KvK lines count from the newest KvK, and the /admin KvK opponent form lists KvKs only.",
       "Notices: beside Translate, a line counts the members' game languages (for example English 18 · Português 9, from 31 of 40 members). It is a suggestion only and never picks a language.",
+      "Members: a member's card on the desk shows their game language and the day it was read.",
+      "Officers' map: tapping a dot names the member, and each near, mid and far ring lists who is in it. Positions, presence and names are now desk data for the own alliance (D163); public pages never show whether a player is online.",
+      'How-to: an "Other community tools" section lists sites for hero, building and research data, calculators and gift codes. They are not affiliated with LAPTracker and the list is not a ranking.',
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
+      815, 816, 819,
     ],
     officer: [
       {
