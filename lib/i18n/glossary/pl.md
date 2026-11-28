@@ -171,6 +171,7 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | Day by day                    | Dzień po dniu                      | `history.playerTitle` — the player page's history section title                                                                                                                |
 | Moved to {tag} from {from}    | Przejście do {tag} z {from}        | `history.moved` — a player's line when they are in another tracked alliance than at the reading before                                                                         |
 | Alliances recruiting          | Sojusze przyjmujące nowych         | `alliances.recruiting`, `alliances.recruitingLead` — alliances with a free seat; the heading must read at first sight                                                          |
+| Growth                        | Wzrost                             | `alliancePage.growth` — the growth card, shared with the player page                                                                                                           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

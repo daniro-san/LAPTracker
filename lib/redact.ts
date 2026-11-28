@@ -1,7 +1,7 @@
 // Scrubs secrets and private roster values from anything headed for run_logs, app_errors, console or
 // Discord (plan §12.2, §12.5; D115's 2026-11-21 amendment). lib/logger.ts passes every `data` object through
 // redact(); it must stay dependency-free: its one import, lib/queries/blocked-keys.ts, imports nothing.
-import { BLOCKED_ROSTER_KEYS, PHOTO_HOST } from "./queries/blocked-keys";
+import { PHOTO_HOST, UNLOGGED_ROSTER_KEYS } from "./queries/blocked-keys";
 
 export const REDACTED = "[redacted]";
 /** What a private roster field's value becomes in error text. */
@@ -10,10 +10,10 @@ export const PRIVATE_VALUE = "…";
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const camel = (key: string) => key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 /**
- * The private keys as error text names them: each of BLOCKED_ROSTER_KEYS in snake_case and camelCase
+ * The private keys as error text names them: each of UNLOGGED_ROSTER_KEYS in snake_case and camelCase
  * (lib/private's rows say `lastOnlineAt`), in any case. Our own `daily_read` and `daily_rosters` are not keys.
  */
-const KEY = `(?:${[...new Set(BLOCKED_ROSTER_KEYS.flatMap((k) => [k, camel(k)]))]
+const KEY = `(?:${[...new Set(UNLOGGED_ROSTER_KEYS.flatMap((k) => [k, camel(k)]))]
   .sort((a, b) => b.length - a.length)
   .map(escape)
   .join("|")})`;

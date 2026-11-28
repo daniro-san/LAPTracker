@@ -47,6 +47,9 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | Matchup                   | Đối đầu                         | `kvk.title` — the KvK section on the event page                                                                    |
 | Alliances recruiting      | Liên minh đang tuyển thành viên | `alliances.recruiting` — the section of alliances with a free seat                                                 |
 | Minimum                   | tối thiểu                       | `alliances.minMight`, `alliances.minHq` — an alliance's entry requirement                                          |
+| Quest points              | Điểm nhiệm vụ                   | `alliancePage.active`, `alliancePage.read` — a member's quest points since Monday                                  |
+| Help coins                | Xu trợ giúp                     | `alliancePage.coins`, `alliancePage.read` — the Alliance Help coins a member gave that day                         |
+| Tech donated              | Góp công nghệ                   | `alliancePage.tech`, `alliancePage.read` — the tech a member donated that day                                      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

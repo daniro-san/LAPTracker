@@ -22,7 +22,7 @@ export const allianceHref = (
 ) =>
   homeId !== null && inHome.has(unionId)
     ? `/events/${homeId}/alliances/${unionId}`
-    : `/alliances/${unionId}/history`;
+    : `/alliances/${unionId}`;
 
 /** One group of the list: `#n`, the emblem and the name (a link), then might and kills. */
 export function AllianceRows({

@@ -4,13 +4,14 @@
 // sentinels. Runs on the phone project only: none of it depends on the window.
 import { request, type APIRequestContext, type Page } from "@playwright/test";
 
-import { BLOCKED_ROSTER_KEYS } from "../lib/queries/blocked-keys";
+import { UNLOGGED_ROSTER_KEYS } from "../lib/queries/blocked-keys";
 import { unzip } from "../lib/zip.test-helpers";
 import { BASE_URL } from "./env";
 import {
   ALLIANCES,
   calendarOf,
   KVK_ENTRY,
+  DAILY,
   lastRosterDay,
   LEAVER,
   LINKED,
@@ -52,7 +53,8 @@ async function signInScreenOnly(page: Page, side: Side) {
   for (const name of [a.name, ...a.names]) expect(html).not.toContain(name);
 }
 const cal = calendarOf(seededAt());
-/** Private fields no JSON answer has as a key, as stored or as the app names them (daily_* and active: D76). */
+/** Private fields no JSON answer has as a key, as stored or as the app names them (daily_* and active are
+ * public on the alliance page since the D76 amendment of 2026-11-28, and no JSON answer serves them). */
 const PRIVATE_KEYS = new Set([
   "x",
   "y",
@@ -66,7 +68,7 @@ const PRIVATE_KEYS = new Set([
 ]);
 
 /** Columns no exported CSV may have (D125, as lib/repo/workspace-data.ts NEVER drops them). */
-const EXPORT_NEVER = new Set<string>([...BLOCKED_ROSTER_KEYS, "avatar_url"]);
+const EXPORT_NEVER = new Set<string>([...UNLOGGED_ROSTER_KEYS, "avatar_url"]);
 /** The banned columns in an exported CSV's header (English files use ","; a BOM may lead). */
 const bannedColumns = (csv: string) =>
   (csv.replace(/^\uFEFF/, "").split("\r\n")[0] ?? "")
@@ -195,6 +197,7 @@ test.describe("no answer carries a private roster field", () => {
         [`/players/${memberUid("a", 0)}`, ALLIANCES.a.names[0] as string],
         [`/players/${memberUid("b", 0)}`, ALLIANCES.b.names[0] as string],
         [`/alliances/${ALLIANCES.a.unionId}/history`, A],
+        [`/alliances/${ALLIANCES.a.unionId}`, A],
       ],
     ],
     [
@@ -325,7 +328,8 @@ test.describe("no answer carries a private roster field", () => {
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/members`, membersBody)).toEqual([]);
     expect(leaksIn(`${BASE_URL}/`, membersBody)).toContain("a.joined_at");
     await ctx.dispose();
-    // D142: the member's own page, with their own daily quest points, which a public page may not show.
+    // D142: the member's own page, with their own daily quest points; of the public pages only the alliance
+    // page shows them (D76 amendment 2026-11-28).
     const board = await api(cookiesOf("a", "member")[0] as string);
     const mePath = `/w/${slug("a")}/board/me`;
     const meBody = await (await board.get(mePath)).text();
@@ -334,9 +338,25 @@ test.describe("no answer carries a private roster field", () => {
     await board.dispose();
   });
 
-  // The daily fields, each by surface: a public page and the board's home show none; the member's own page
-  // and the desk show the own alliance's (D142, CLAUDE.md), never another's; an export keeps joined_at but
-  // not the map position (D71).
+  // The public alliance page renders the seeded daily fields per member (D76 amendment 2026-11-28), and the
+  // sweep above found no other private field on it.
+  test("the public alliance page shows each member's seeded daily fields", async () => {
+    const ctx = await api(null);
+    const body = await (await ctx.get(`/alliances/${ALLIANCES.a.unionId}`)).text();
+    expect(body).toContain(ALLIANCES.a.names[0] as string);
+    for (const label of ["Quest points", "Help coins", "Tech donated"])
+      expect(body).toContain(label);
+    // Exact spellings, from the page's exact-numbers spans.
+    expect(body).toContain(`>${DAILY.tech.toLocaleString("en")}<`);
+    expect(body).toContain(`>${DAILY.honor.toLocaleString("en")}<`);
+    expect(leaksIn(`${BASE_URL}/alliances/${ALLIANCES.a.unionId}`, body)).toEqual([]);
+    await ctx.dispose();
+  });
+
+  // The daily fields, each by surface: the public alliance page shows any alliance's (D76 amendment
+  // 2026-11-28), every other public page and the board's home show none; the member's own page and the desk
+  // show the own alliance's (D142, CLAUDE.md), never another's; an export keeps joined_at but not the map
+  // position (D71).
   test("the scan sees the daily fields and the export's fields where no rule allows them", () => {
     const [a, b] = [SENTINELS.a, SENTINELS.b];
     const daily = `{"active":${a.active},"dailyTech":${a.tech},"dailyHonor":1000}`;
@@ -349,6 +369,10 @@ test.describe("no answer carries a private roster field", () => {
       ]),
     );
     expect(leaksIn(`${BASE_URL}/api/events`, `donations 3,917`)).toContain("a.daily_tech");
+    const alliancePage = `${BASE_URL}/alliances/${ALLIANCES.b.unionId}`;
+    expect(leaksIn(alliancePage, daily)).toEqual([]);
+    expect(leaksIn(alliancePage, `map ${a.x}`)).toEqual(["a.x"]);
+    expect(leaksIn(`${alliancePage}/history`, daily)).toContain("a.active");
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board`, daily)).toContain("a.active");
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board/me`, daily)).toEqual([]);
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board/me`, `Average ${b.active}`)).toContain(

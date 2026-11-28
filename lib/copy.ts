@@ -7,6 +7,7 @@
 // `{name}` is a placeholder filled by `fill()` from lib/words.ts; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin-tracked";
+import { alliancePageCopy } from "./copy-alliance-page";
 import { balanceCopy } from "./copy-balance";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
@@ -143,6 +144,8 @@ export const en = {
   statement: statementCopy,
   /** Every alliance on the server (D133, #459): the list, the ledger's link, "Get today's details". */
   alliances: alliancesCopy,
+  /** The public alliance page (#822): its head, growth card and member list. */
+  alliancePage: alliancePageCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
   history: {
     title: "Member history",

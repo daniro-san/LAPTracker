@@ -6,7 +6,7 @@ import { and, asc, desc, eq, getTableColumns, sql, type SQL } from "drizzle-orm"
 import { getTableConfig, type PgColumn, type PgTable } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
-import { BLOCKED_ROSTER_KEYS } from "../queries/blocked-keys";
+import { UNLOGGED_ROSTER_KEYS } from "../queries/blocked-keys";
 import {
   calendarEntries,
   calendarOccurrences,
@@ -154,7 +154,7 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
 ];
 
 /** Never downloaded from any table, whatever the list says (CLAUDE.md, D71, D22). */
-const NEVER = new Set<string>([...BLOCKED_ROSTER_KEYS, "avatar_url"]);
+const NEVER = new Set<string>([...UNLOGGED_ROSTER_KEYS, "avatar_url"]);
 
 const columnsOf = (table: PgTable) => getTableColumns(table) as Record<string, PgColumn>;
 

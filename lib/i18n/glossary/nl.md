@@ -332,6 +332,11 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | bar (chart)                           | balk                                        | `ledger.carriedGapKey` — one bar of the kill-share vs might-share gap                                       |
 | hollow dot                            | open stip                                   | `ledger.progressEvents` — a reading inside an event band on the might chart                                 |
 | recruiting (alliances)                | werven (Allianties werven)                  | `alliances.recruiting`, `alliances.recruitingLead`, `alliances.recruitingNone` — alliances with a seat free |
+| Quest points                          | Questpunten                                 | `alliancePage.active`, `alliancePage.read` — a member's quest points since Monday                           |
+| Help coins                            | Help-munten                                 | `alliancePage.coins`, `alliancePage.read` — Alliance Help coins a member gave that day                      |
+| Tech donated                          | Tech gedoneerd                              | `alliancePage.tech`, `alliancePage.read` — tech a member donated that day                                   |
+| Server rank                           | Serverrang                                  | `alliancePage.serverRank` — the alliance's place by might on the ranks board                                |
+| Range                                 | Periode                                     | `alliancePage.range` — the 7d / 30d / 90d links of the growth card                                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

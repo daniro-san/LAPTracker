@@ -139,6 +139,9 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Lookup                    | 照会                      | `alliances.get*`, `alliances.usedUp`, `alliances.failed`, `alliances.tooMany` — one request for an alliance's details, shared by everyone                                              |
 | KvK matchup               | KvK 対戦                  | `kvk.title`, `kvk.versus` — the two servers' KvK section on the event page                                                                                                             |
 | Start to End              | 開始から終了まで          | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — the change between the Start and End readings                                                                                      |
+| Quest points              | クエストポイント          | `alliancePage.active` — a member's quest points since Monday, on the alliance page                                                                                                     |
+| Help coins                | ヘルプコイン              | `alliancePage.coins`, `alliancePage.read` — the Alliance Help coins a member gave that day                                                                                             |
+| Tech donated              | 寄付した科学              | `alliancePage.tech`, `alliancePage.read` — the tech a member donated that day (科学 is also the word in `balance.includes`)                                                            |
 | Alliances recruiting      | 募集中の同盟              | `alliances.recruiting`, `alliances.recruitingLead`, `alliances.recruitingNone`, `alliances.spot*`, `alliances.min*` — alliances with a free seat; the heading must read at first sight |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).

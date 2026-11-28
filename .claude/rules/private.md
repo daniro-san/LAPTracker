@@ -10,17 +10,17 @@ paths:
 
 # Private workspace: roster fields
 
-The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?private?/**` is `app/(private)/**` written so every glob matcher reads the parentheses literally. Sources: D22, D71, D76, D142, D143, D148, D163. The list itself is `BLOCKED_ROSTER_KEYS` in `lib/queries/blocked-keys.ts`.
+The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?private?/**` is `app/(private)/**` written so every glob matcher reads the parentheses literally. Sources: D22, D71, D76 (amended 2026-11-28), D142, D143, D148, D163. The list itself is `BLOCKED_ROSTER_KEYS` in `lib/queries/blocked-keys.ts`.
 
 ## The fields
 
-| Field                                                | Desk (officers, `requireWorkspace`, own alliance)                        | Member's own page `/w/[slug]/board/me` (D142) | Public pages, `/admin`                                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `daily_tech`, `daily_honor`, `active`                | yes                                                                      | yes, own uid only                             | D76 only: alliance aggregates on public pages, per member on `/admin`, `OWN_ALLIANCE_ID` only |
-| `joined_at`                                          | yes, also in copies and exports (D163)                                   | no                                            | no                                                                                            |
-| `x`, `y`, `online`, `last_online_at`, `last_seen_at` | yes, also in copies and exports; a name may sit next to its place (D163) | no                                            | never `online`, `last_online_at`, `last_seen_at` (D163); `x`, `y`: no, pending the owner      |
-| `avatar_url`                                         | never returned; the photo is the image `/img/avatar/[uid]` serves        | never                                         | never                                                                                         |
-| badges (`badge_id` 101–110)                          | only as `/img/badge/[id]`                                                | same                                          | same                                                                                          |
+| Field                                                | Desk (officers, `requireWorkspace`, own alliance)                        | Member's own page `/w/[slug]/board/me` (D142) | Public pages, `/admin`                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `daily_tech`, `daily_honor`, `active`                | yes                                                                      | yes, own uid only                             | per member on public pages, with rank and might, through `lib/queries/alliance-page.ts` (D76 amendment 2026-11-28) |
+| `joined_at`                                          | yes, also in copies and exports (D163)                                   | no                                            | no                                                                                                                 |
+| `x`, `y`, `online`, `last_online_at`, `last_seen_at` | yes, also in copies and exports; a name may sit next to its place (D163) | no                                            | never `online`, `last_online_at`, `last_seen_at` (D163); `x`, `y`: no, pending the owner                           |
+| `avatar_url`                                         | never returned; the photo is the image `/img/avatar/[uid]` serves        | never                                         | never                                                                                                              |
+| badges (`badge_id` 101–110)                          | only as `/img/badge/[id]`                                                | same                                          | same                                                                                                               |
 
 ## Where they may go
 
@@ -35,9 +35,10 @@ The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?privat
 - [ ] Discord messages.
 - [ ] AI or translation requests.
 - [ ] Any shared cache (D143 caches hold public reads only).
-- [ ] Copies and exports outside the desk: leave out `x`, `y`, `online` and `last_online_at`. On the desk, for the own alliance, they may be included (D163).
+- [ ] Copies and exports outside the desk: leave out `x`, `y`, `online` and `last_online_at`. On the desk, for the own alliance, they may be included (D163). `daily_tech`, `daily_honor` and `active` stay out of logs, `run_logs`, Discord, AI requests and workspace exports although public pages show them (`UNLOGGED_ROSTER_KEYS`, D76 amendment 2026-11-28).
 - [ ] Analytics events and properties (PostHog), which also carry no member names.
 - [ ] Session replay: `/w` and `/admin` text is masked by the layout's `ph-mask`; per-member values such as bars also need `ph-no-capture`.
 - [ ] Fixtures: `x`, `y`, `online`, `last_online_at` and `joined_at` stay neutralised (D76); names are invented.
+- [ ] Public pages never show `online`, `last_online_at`, `last_seen_at`, `joined_at`, squads, VIP or `x`/`y` (D163; `x`/`y` pending the owner).
 
 If a change needs a field somewhere this file does not allow, stop and ask the owner; a new use needs a decision in `docs/decisions/`.

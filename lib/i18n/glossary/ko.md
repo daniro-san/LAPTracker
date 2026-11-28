@@ -270,6 +270,8 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Typical member (median)   | 전형적인 멤버          | `ledger.progressMedian` — the alliance's median member's might change, `{tag}` is `[OGs]`                                   |
 | Start to End              | 시작~종료              | `kvk.change`, `kvk.changeLater` — an alliance's KvK reading at the Start against its reading at the End                     |
 | KvK matchup               | KvK 대진               | `kvk.title` — the two servers' KvK, side by side on the event page                                                          |
+| Growth                    | 성장                   | `alliancePage.growth` — the growth card's heading, shared with the player page                                              |
+| Range                     | 기간                   | `alliancePage.range` — the growth card's range links (`7d`, `30d`, `90d`)                                                   |
 | Unknown (a figure)        | 미상                   | `members.startUnknown`, `members.endUnknown` — a member's figure at Start or End that was not read                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
