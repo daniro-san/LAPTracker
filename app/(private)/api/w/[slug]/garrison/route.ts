@@ -81,7 +81,7 @@ export async function POST(
       postGarrison(db, access, input, {
         fetch: ctx.fetch,
         now,
-        channels: await noticeChannels(db, access, ctx),
+        channels: await noticeChannels(db, access, { ...ctx, origin: new URL(request.url).origin }),
         t: WORKSPACE_DICTIONARIES[language],
         language,
       }),

@@ -99,7 +99,7 @@ export async function POST(request: Request): Promise<Response> {
       // here, before the answer, and used once after it; a channel without one gets nothing.
       const note = handled.joinNote;
       const ws = { workspaceId: note.workspaceId, slug: note.slug };
-      const channel = (await noticeChannels(db, ws, ctx)).leaders;
+      const channel = (await noticeChannels(db, ws, { ...ctx, origin })).leaders;
       if (channel) {
         const { title, text } = joinNoteMessage(note, origin);
         after(async () => {

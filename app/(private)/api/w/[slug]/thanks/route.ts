@@ -60,7 +60,7 @@ export async function POST(
       shareThanks(db, access, ask, {
         fetch: ctx.fetch,
         now,
-        channels: await noticeChannels(db, access, ctx),
+        channels: await noticeChannels(db, access, { ...ctx, origin: new URL(request.url).origin }),
         names: LANGUAGE_NAME,
       }),
     );

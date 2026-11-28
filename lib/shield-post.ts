@@ -28,10 +28,12 @@ import {
   shieldReadings,
   type StoredReading,
 } from "./repo/shield-checks";
+import { webhookLook } from "./repo/workspace-branding";
 import { sealedWebhooks } from "./repo/workspace-discord";
 import { passWindows, suggestionOf, timesOf, type ShieldPass } from "./shield-check";
 import type { ShieldTarget } from "./shield-read";
 import { fill, plural } from "./words";
+import type { WebhookLook } from "./workspace-branding";
 import { masterFingerprint, openKey } from "./workspace-keys";
 
 /** Names listed at most, so the message stays far under Discord's 2,000 characters. */
@@ -52,10 +54,11 @@ export interface PostDeps {
  * URL's sha256 (on one host: discordapp.com is discord.com), stored with the message so it is edited only
  * through the same webhook (D147).
  */
-type Hook = { url: string; forum: boolean; key: string };
-const hookOf = (url: string, forum: boolean): Hook => ({
+type Hook = { url: string; forum: boolean; key: string; look: WebhookLook };
+const hookOf = (url: string, forum: boolean, look: WebhookLook): Hook => ({
   url,
   forum,
+  look,
   key: createHash("sha256")
     .update(url.replace(/^https:\/\/discordapp\.com\//, "https://discord.com/"))
     .digest("hex"),
@@ -66,14 +69,20 @@ const hookOf = (url: string, forum: boolean): Hook => ({
  * saved, one the master key cannot open, or no master key posts nothing, never to the leaders' channel or
  * the site's.
  */
-async function summaryHook(db: Db, env: PostEnv, target: ShieldTarget): Promise<Hook | null> {
+async function summaryHook(
+  db: Db,
+  env: PostEnv,
+  target: ShieldTarget,
+  origin: string,
+): Promise<Hook | null> {
   const id = target.workspaceId as number;
   const secret = env.WORKSPACE_KEYS_SECRET;
   if (!secret) return null;
   const row = (await sealedWebhooks(db, id)).find((r) => r.channel === "shield");
   if (!row || row.masterFp !== masterFingerprint(secret)) return null;
   try {
-    return hookOf(openKey(secret, id, row, "webhook-shield"), row.forum);
+    const look = await webhookLook(db, target.slug, origin);
+    return hookOf(openKey(secret, id, row, "webhook-shield"), row.forum, look);
   } catch {
     return null;
   }
@@ -185,7 +194,7 @@ export async function postShieldSummary(
   const { target } = run;
   if (!target.settings?.discord || target.workspaceId === null) return false;
   const q = { day: run.day, unionId: target.unionId };
-  const hook = await summaryHook(db, deps.env, target);
+  const hook = await summaryHook(db, deps.env, target, deps.origin);
   if (!hook) return false;
   const posted = await postedThrough(db, q, hook);
   if (posted?.hash === GONE) return false;
@@ -223,7 +232,7 @@ async function deliver(
     id: string | null;
   },
 ): Promise<boolean> {
-  const body = { content: m.content, allowed_mentions: { parse: [] } };
+  const body = { ...m.hook.look, content: m.content, allowed_mentions: { parse: [] } };
   if (!m.id) {
     const first = m.hook.forum ? { ...body, thread_name: m.title } : body;
     const id = await sendOrEdit(deps.fetch, m.hook.url, first, null);

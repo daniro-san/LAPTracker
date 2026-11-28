@@ -193,10 +193,12 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
   it("posts to the saved webhook over the site's, and back to the site's after Remove", async () => {
     expect((await noticeChannels(db, await access(), opener())).members?.url).toBe(SITE);
     await save(OURS);
+    // It posts as the workspace's tab title (issue 462).
     expect((await noticeChannels(db, await access(), opener())).members).toEqual({
       url: OURS,
       name: "town-square",
       forum: false,
+      look: { username: "[NSE] Desk" },
     });
     await post({ action: "remove_webhook", channel: "members" });
     expect((await noticeChannels(db, await access(), opener())).members?.url).toBe(SITE);

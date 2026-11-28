@@ -22,10 +22,12 @@ import {
 } from "@/lib/private/dictionary";
 import { frameReadStatus } from "@/lib/private/read-status";
 import { fill } from "@/lib/words";
+import { iconPath } from "@/lib/workspace-branding";
 import type { Feature } from "@/lib/workspace-features";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";
 import { DeletionBanner } from "./DeletionBanner";
+import { deskBranding } from "./desk-branding";
 import { type DeskView, SideNav, Tabs, VIEW_TAB } from "./DeskNav";
 import { Feedback } from "./Feedback";
 import { FirstUse } from "./FirstUse";
@@ -81,8 +83,19 @@ export async function Frame({
   children: ReactNode;
 }) {
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
+  // Issue 462 (D167): the alliance's chosen icon beside the name, once signed in.
+  const branding = tabs ? await deskBranding(tabs.slug, t["app.name"]) : null;
   const bar = (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+      {tabs && branding && (
+        <img
+          src={iconPath(branding, tabs.slug, 192)}
+          alt=""
+          width={32}
+          height={32}
+          className="size-8 shrink-0 rounded-xs bg-wax-paper object-cover"
+        />
+      )}
       {/* Its own width first (issue 720): when the name and the alliance do not fit beside "?" and
           EN · PT · FR on one line each, those move under them, at the right, instead of the two lines
           wrapping into four. */}

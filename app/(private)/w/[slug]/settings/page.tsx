@@ -24,6 +24,7 @@ import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { allianceFeaturesView } from "@/lib/private/alliance-features";
+import { workspaceBranding } from "@/lib/private/branding";
 import { agoText } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { botView } from "@/lib/private/discord-setup";
@@ -44,8 +45,10 @@ import { settingsKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 import { timeChoices } from "@/lib/shield-check";
 import { fill } from "@/lib/words";
+import { defaultTitle } from "@/lib/workspace-branding";
 
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
+import { BrandingCard } from "../../../_ui/BrandingCard";
 import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
@@ -133,6 +136,7 @@ async function readSettings(
     callouts,
     posts,
     glossary,
+    branding,
     headroom,
   ] = await Promise.all([
     keyRead,
@@ -148,6 +152,7 @@ async function readSettings(
     shieldRead.then((s) => calloutsView(db, access, ctx.t, s?.language ?? null)),
     channelsRead.then((c) => postsView(db, access, c, env, ctx.language)),
     glossaryView(db, access),
+    workspaceBranding(db, access.slug, ctx.t["app.name"]),
     Promise.all([keyRead, featuresRead]).then(([v, f]) =>
       headroomView(db, access, v, f.estimate, now),
     ),
@@ -165,6 +170,7 @@ async function readSettings(
     callouts,
     posts,
     glossary,
+    branding,
   };
 }
 
@@ -209,7 +215,7 @@ function indexInput(
   page: Awaited<ReturnType<typeof readSettings>>,
   data: SettingsIndexInput["data"],
 ): SettingsIndexInput {
-  const { view, bot, channels, features, shield, push, callouts, posts, glossary } = page;
+  const { view, bot, channels, features, shield, push, callouts, posts, glossary, branding } = page;
   const allowed = features.groups.flatMap((g) => g.features);
   return {
     key: view.state,
@@ -225,6 +231,7 @@ function indexInput(
       n: callouts.length,
     },
     glossary: glossary && glossary.length,
+    branding: branding?.title ?? "",
     data,
   };
 }
@@ -293,6 +300,7 @@ function SettingsCards(props: {
   const { env, now, language } = props.ctx;
   const { view, bot, channels, squads, features, shield, push, callouts, posts, glossary } =
     props.page;
+  const { branding } = props.page;
   return (
     <>
       <TrackerKeyCard
@@ -328,6 +336,21 @@ function SettingsCards(props: {
       {posts && <PostCatalog slug={slug} rows={posts} t={t} language={language} />}
       {callouts && <PostCallouts slug={slug} rows={callouts} t={t} language={language} />}
       {glossary && <GlossaryCard slug={slug} words={glossary} t={t} language={language} />}
+      {branding && (
+        <BrandingCard
+          slug={slug}
+          view={{
+            title: branding.custom ? branding.title : "",
+            standard: defaultTitle(branding.tag, t["app.name"]),
+            icon: branding.icon,
+            accent: branding.accent,
+            badgeId: branding.badgeId,
+            discordIconHash: branding.discordIconHash,
+          }}
+          t={t}
+          language={language}
+        />
+      )}
       <WorkspaceDataForm
         slug={slug}
         t={t}

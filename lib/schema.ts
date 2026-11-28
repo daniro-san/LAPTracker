@@ -398,6 +398,15 @@ export const workspaces = pgTable("workspaces", {
    */
   castleX: integer("castle_x"),
   castleY: integer("castle_y"),
+  /**
+   * Alliance settings → Branding (issue 462, D167): the tab title an officer typed (null: "[TAG] Desk"), the
+   * icon choice ("badge" | "discord" | "mark"; null: the badge) and the accent colour's id (null: the
+   * default). `discord_icon_hash` is the server's icon hash as the bot last read it, never shown.
+   */
+  brandTitle: text("brand_title"),
+  brandIcon: text("brand_icon"),
+  brandAccent: text("brand_accent"),
+  discordIconHash: text("discord_icon_hash"),
 });
 
 /**

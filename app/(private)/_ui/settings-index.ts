@@ -30,6 +30,8 @@ export interface SettingsIndexInput {
   callouts: { set: number; n: number } | null;
   /** "Glossary" (#832), shown while a translating feature is on: how many words. */
   glossary: number | null;
+  /** "Branding" (issue 462), always shown: the tab title as it is now. */
+  branding: string;
   /** `download`: the data card is shown (D126); `deletionDate`: a deletion is asked, its date. */
   data: { download: boolean; deletionDate: string | null };
 }
@@ -97,7 +99,12 @@ export function settingsIndex(input: SettingsIndexInput, t: WorkspaceDictionary)
       state: fill(t["settings.state.posts"], input.posts),
       attention: false,
     });
-  rows.push(...ownWordsRows(input, t));
+  rows.push(...ownWordsRows(input, t), {
+    id: "branding",
+    label: t["branding.head"],
+    state: input.branding,
+    attention: false,
+  });
   const deletion = input.data.deletionDate;
   rows.push({
     id: input.data.download ? "workspace-data" : "workspace-delete-head",
