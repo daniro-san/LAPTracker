@@ -123,7 +123,6 @@ export const fr: WorkspaceDictionary = {
   "sheet.joined": "Arrivée",
   "sheet.seen": "Vu depuis",
   "sheet.status": "Situation",
-  "sheet.lastOnline": "Dernière connexion",
   "sheet.map": "Position sur la carte",
   "sheet.mapValue": "X {x} · Y {y}",
   "day.mon": "lun",

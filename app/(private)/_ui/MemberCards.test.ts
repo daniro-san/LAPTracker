@@ -62,13 +62,7 @@ describe("the officer's member card in session replay (issue 549)", () => {
       },
     } satisfies CardExtras;
     const f = cardFormats("en", "Etc/GMT+2", new Date("2026-11-20T12:00:00Z"));
-    const card = cardData(
-      m,
-      WORKSPACE_DICTIONARIES.en,
-      f,
-      { joined: false, lastOnline: false, duel: false },
-      extras,
-    );
+    const card = cardData(m, WORKSPACE_DICTIONARIES.en, f, { duel: false }, extras);
     const html = renderToStaticMarkup(
       createElement(MemberCard, {
         card,

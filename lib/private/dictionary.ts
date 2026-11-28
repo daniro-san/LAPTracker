@@ -126,7 +126,6 @@ const en = {
   "sheet.joined": "Joined",
   "sheet.seen": "Seen since",
   "sheet.status": "Status",
-  "sheet.lastOnline": "Last online",
   "sheet.map": "Map position",
   "sheet.mapValue": "X {x} · Y {y}",
   "day.mon": "Mon",
