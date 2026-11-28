@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { getAppContext } from "@/lib/app-context";
 import { getEnv } from "@/lib/env";
 import { channelNames } from "@/lib/private/discord-webhooks";
+import { memberLanguages } from "@/lib/private/notice-languages";
 import { audienceOf, lastPublish } from "@/lib/private/notice-publish";
 import { noticeReviews } from "@/lib/private/notice-reviews";
 import { noticeDetail, noticeHistory } from "@/lib/private/notices";
@@ -39,22 +40,22 @@ export default async function NoticePage({
     async (db, a) => {
       const notice = await noticeDetail(db, a, id);
       if (!notice) return null;
-      const [history, last, calendar, reviews, channels] = await Promise.all([
+      const [history, last, calendar, reviews, channels, spoken] = await Promise.all([
         noticeHistory(db, a, id),
         lastPublish(db, a, id),
         noticeCalendar(db, a, id, serverDay(new Date(), getEnv()), { t, language }),
         noticeReviews(db, a, id),
         // Only the channels' names reach the page, never their webhooks (D102, D129).
         channelNames(db, a, getEnv()),
+        memberLanguages(db, a, new Date()),
       ]);
-      return { notice, history, last, calendar, reviews, channels };
+      return { notice, history, last, calendar, reviews, channels, spoken };
     },
     `/${id}`,
   );
   if (!data) notFound();
   const { notice, history, last, calendar, reviews, channels } = data;
   const words = noticeWords(language, t);
-  const languages = languagesFor(language);
   const audience = audienceOf(notice.forMembers);
   const nameOf = (a: string) =>
     channels[a === "members" ? "members" : "leaders"]?.replace(/^#/, "") ?? null;
@@ -84,8 +85,9 @@ export default async function NoticePage({
         t={t}
         viewer={language}
         ai={getAppContext().ai !== null}
-        languages={languages}
-        source={sourceFor(languages, notice.fields, notice.stale)}
+        memberLanguages={data.spoken}
+        languages={languagesFor(language)}
+        source={sourceFor(languagesFor(language), notice.fields, notice.stale)}
         meta={{
           written: words.written(notice.createdBy, notice.createdAt),
           changed: words.changed(notice.updatedBy, notice.updatedAt),

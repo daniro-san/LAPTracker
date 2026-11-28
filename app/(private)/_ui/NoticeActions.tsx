@@ -13,7 +13,7 @@ import { DRAFT_LIMIT, NOTICE_LIMIT } from "@/lib/private/notice-rules";
 import { fill } from "@/lib/words";
 
 import { ActionButton, ActionNote, AI_REASON_ID, ImproveButton } from "./LanguageEditorParts";
-import { LANGUAGE_CODE } from "./languages";
+import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
 import { canFit, translatePlan } from "./notice-draft";
 import type { Editor, EditorProps } from "./notice-editor-state";
 
@@ -51,6 +51,23 @@ function actionsOf(p: EditorProps, e: Editor) {
     /** Translate would turn text already in the other languages into drafts. */
     replaces: plan?.from === language && plan.to.some((l) => e.draft.values[l].trim() !== ""),
   };
+}
+
+/** A suggestion for Translate, never applied (issue 794): counts of the members' game languages. */
+function MemberLanguagesLine({ p }: { p: EditorProps }) {
+  const { t, memberLanguages: m } = p;
+  if (!m) return null;
+  const number = new Intl.NumberFormat(p.viewer);
+  const parts = m.counts.map((c) => `${LANGUAGE_NAME[c.language]} ${number.format(c.n)}`);
+  if (m.other > 0) parts.push(`${t["notices.langs.other"]} ${number.format(m.other)}`);
+  return (
+    <p className="mt-2 text-body-sm text-ink/75">
+      {fill(t["notices.langs.line"], { list: parts.join(" · ") })}{" "}
+      <span className="whitespace-nowrap">
+        ({fill(t["notices.langs.from"], { read: m.read, total: m.total })})
+      </span>
+    </p>
+  );
 }
 
 export function NoticeActions({ p, e }: { p: EditorProps; e: Editor }) {
@@ -104,6 +121,7 @@ export function NoticeActions({ p, e }: { p: EditorProps; e: Editor }) {
         )}
       </div>
       <ActionNote t={t} reason={reason} message={e.aiMessage} replaces={replaces} />
+      {show.translate && <MemberLanguagesLine p={p} />}
     </>
   );
 }

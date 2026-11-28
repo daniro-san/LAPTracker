@@ -12,6 +12,7 @@ import type {
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
+import type { MemberLanguages } from "@/lib/private/notice-languages";
 import type { PictureView } from "@/lib/private/notice-picture-rules";
 import {
   isNoticeLanguage,
@@ -58,6 +59,8 @@ export interface EditorProps {
   ai: boolean;
   /** The writing helps the site's owner turned off for the alliance (D126): their buttons are left out. */
   aiOff?: readonly AiKind[] | undefined;
+  /** The members' game languages, counted, as a suggestion beside Translate (issue 794). */
+  memberLanguages?: MemberLanguages | null | undefined;
   /** The viewer's language first. */
   languages: NoticeLanguage[];
   /** The language a stale one is updated from (the newest text). */

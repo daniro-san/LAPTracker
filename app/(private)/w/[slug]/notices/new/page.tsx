@@ -1,6 +1,7 @@
 // /w/[slug]/notices/new (issue 304): write a notice. The officer writes in any of the three languages and
 // can fill the others with Translate before saving; the first save makes the notice.
 import { getAppContext } from "@/lib/app-context";
+import { memberLanguages } from "@/lib/private/notice-languages";
 import { NOTICE_FIELDS } from "@/lib/private/notice-rules";
 
 import { SignedInFrame, workspaceWords } from "../../../../_ui/Frame";
@@ -14,7 +15,11 @@ const EMPTY = Object.fromEntries(
 
 export default async function NewNoticePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { access, waiting } = await noticePage(slug, async () => true, "/new");
+  const { access, data, waiting } = await noticePage(
+    slug,
+    (db, a) => memberLanguages(db, a, new Date()),
+    "/new",
+  );
   const { language, t } = await workspaceWords();
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
@@ -36,6 +41,7 @@ export default async function NewNoticePage({ params }: { params: Promise<{ slug
         viewer={language}
         ai={getAppContext().ai !== null}
         {...editorSwitches(access, null)}
+        memberLanguages={data}
         languages={languagesFor(language)}
         source={null}
       />
