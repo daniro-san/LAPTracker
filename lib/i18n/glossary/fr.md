@@ -86,6 +86,7 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | All intervals | Tous intervalles | `ledger.splitBack` — the path's Back step from an interval's split; two words, a label |
 | loss (noun) | perte | `ledger.splitLossPart` — an alliance whose Kills fell in an interval, counted as 0; the verb in `ledger.splitLoss` is `perdu` |
 | Day by day | Jour par jour | `history.playerTitle` — the player page's history section title |
+| Joins & leaves | Arrivées et départs | `alliancePage.movesTab` — the alliance page's tab; the filters reuse `Arrivés` / `Partis` (`members.joined`, `members.left`) |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

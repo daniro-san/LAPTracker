@@ -240,6 +240,7 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Alliances recruiting      | 招募中的联盟            | `alliances.recruiting` — section heading, alliances with a spot free                                                      |
 | spot free                 | 空位                    | `alliances.spotsFree`, `alliances.spotFree`, `statement.seats` — an open place in an alliance                             |
 | Growth                    | 增长                    | `alliancePage.growth`, `alliancePage.over*` — the growth card's heading and its change line (shared with the player page) |
+| joins & leaves            | 加入与离开              | `alliancePage.movesTab`, `alliancePage.movesFirst` — members who joined or left an alliance across the daily updates      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

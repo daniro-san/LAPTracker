@@ -143,6 +143,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Help coins                | ヘルプコイン              | `alliancePage.coins`, `alliancePage.read` — the Alliance Help coins a member gave that day                                                                                             |
 | Tech donated              | 寄付した科学              | `alliancePage.tech`, `alliancePage.read` — the tech a member donated that day (科学 is also the word in `balance.includes`)                                                            |
 | Alliances recruiting      | 募集中の同盟              | `alliances.recruiting`, `alliances.recruitingLead`, `alliances.recruitingNone`, `alliances.spot*`, `alliances.min*` — alliances with a free seat; the heading must read at first sight |
+| Joins & leaves            | 加入・脱退                | `alliancePage.movesTab`, `alliancePage.joinedFilter`, `alliancePage.leftFilter` — the alliance page's moves tab; 加入 and 脱退 as in `ledger.joined` and `ledger.left`                 |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

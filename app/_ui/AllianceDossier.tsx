@@ -68,29 +68,42 @@ export function allianceFacts(
   ];
 }
 
-/** Members and History: History is the member history's own page. */
+/** Members, Joins & leaves (`?tab=moves`, issue 823, with the 7 days' net) and History, the member
+ * history's own page. */
 export function AllianceTabs({
   unionId,
   members,
+  net,
+  current,
   copy,
 }: {
   unionId: number;
   members: number;
+  /** `+2`, `−2`, `0`. */
+  net: string;
+  current: "members" | "moves";
   copy: Dictionary;
 }) {
   const p = copy.alliancePage;
+  const tabs = [
+    { key: "members", href: `/alliances/${unionId}`, label: fill(p.membersTab, { n: members }) },
+    { key: "moves", href: `/alliances/${unionId}?tab=moves`, label: fill(p.movesTab, { n: net }) },
+  ] as const;
   return (
     <nav aria-label={p.sections} className="mt-8 border-b border-rule">
-      <ul className="flex gap-2">
-        <li>
-          <Link
-            href={`/alliances/${unionId}`}
-            aria-current="page"
-            className={`${TAB} border-b-2 border-plum`}
-          >
-            {fill(p.membersTab, { n: members })}
-          </Link>
-        </li>
+      <ul className="flex flex-wrap gap-x-2">
+        {tabs.map((t) => (
+          <li key={t.key}>
+            <Link
+              href={t.href}
+              scroll={false}
+              aria-current={t.key === current ? "page" : undefined}
+              className={`${TAB} border-b-2 border-transparent aria-[current=page]:border-plum`}
+            >
+              {t.label}
+            </Link>
+          </li>
+        ))}
         <li>
           <TextLink href={`/alliances/${unionId}/history`} className={TAB}>
             {p.historyTab}

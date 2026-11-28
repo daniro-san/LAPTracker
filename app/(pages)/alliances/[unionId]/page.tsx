@@ -1,7 +1,7 @@
-// `/alliances/[unionId][?range=7d|30d|90d]`: one alliance's public page (issue 822). The head (server, leader,
-// might, members of capacity, server rank), the statement and joining card (D128), the growth card and the
-// member list with each member's public figures (D76 amendment 2026-11-28); History is the member history's
-// page (D60). An alliance outside the daily read also gets "Get today's details" (D133). A union id with no
+// `/alliances/[unionId][?range=7d|30d|90d][&tab=moves[&show=joined|left]]`: one alliance's public page (issue
+// 822). The head (server, leader, might, members of capacity, server rank), the statement and joining card
+// (D128), the growth card and the member list with each member's public figures (D76 amendment 2026-11-28),
+// or its joins and leaves of the last 30 days (issue 823); History is the member history's page (D60). An alliance outside the daily read also gets "Get today's details" (D133). A union id with no
 // usable roster and on no ranks board is a 404.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -9,6 +9,13 @@ import { cache } from "react";
 
 import { AllianceDetails } from "@/app/_ui/AllianceDetails";
 import { AllianceMembers, AllianceTabs, allianceFacts } from "@/app/_ui/AllianceDossier";
+import {
+  AllianceMovesView,
+  moveFilterOf,
+  netOf,
+  signed,
+  type MoveFilter,
+} from "@/app/_ui/AllianceMoves";
 import { detailsView } from "@/app/_ui/AllianceRows";
 import { AllianceStatementCard } from "@/app/_ui/AllianceStatement";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
@@ -29,8 +36,16 @@ import { DataUnavailableError } from "@/lib/data-unavailable";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { alliancePage, allianceStatement, homeEvent, type GrowthPoint } from "@/lib/queries";
+import {
+  allianceMoves,
+  alliancePage,
+  allianceStatement,
+  homeEvent,
+  NO_MOVES,
+  type GrowthPoint,
+} from "@/lib/queries";
 import { allianceOnBoard, detailsState, type DetailsState } from "@/lib/queries/alliance-list";
+import { serverDay } from "@/lib/schedule";
 
 type Params = Promise<{ unionId: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -56,16 +71,22 @@ const load = cache(async (unionId: number) => {
     ]);
     return page || board ? { page, board } : null;
   };
-  const [rows, events, statement] = await Promise.all([
+  // Joins and leaves are keyed by the server day too: a new day drops the window that went stale. Null (no
+  // usable roster in the window, an unknown id among them) is never cached.
+  const today = serverDay(now, env);
+  const [rows, events, statement, moves] = await Promise.all([
     sharedRead("alliance-page", [unionId, lookup], read),
     sharedEvents(),
     sharedRead("statement", [unionId, lookup], (db) => allianceStatement(db, unionId)).catch(
       unlessDown,
     ),
+    sharedRead("alliance-moves", [unionId, today, lookup], (db) =>
+      allianceMoves(db, unionId, today),
+    ),
   ]);
   if (!rows) return null;
   const homeId = homeEvent(events, now, env.SNAPSHOT_WINDOW_MIN)?.id ?? null;
-  return { ...rows, events, homeId, details, statement };
+  return { ...rows, events, homeId, details, statement, moves: moves ?? NO_MOVES };
 });
 
 const unionIdOf = async (params: Params) => {
@@ -108,6 +129,18 @@ const growthSeries = (growth: GrowthPoint[], locale: string, copy: Dictionary): 
   },
 ];
 
+type Tab = "members" | "moves";
+
+const tabOf = (v: unknown): Tab => (v === "moves" ? "moves" : "members");
+
+/** The page's link with this range, tab and filter; the tab's and the filter's defaults are left out. */
+function pageHref(unionId: number, range: number, tab: Tab, filter: MoveFilter) {
+  const q = new URLSearchParams({ range: `${range}d` });
+  if (tab === "moves") q.set("tab", tab);
+  if (tab === "moves" && filter !== "all") q.set("show", filter);
+  return `/alliances/${unionId}?${q}`;
+}
+
 /** The daily read's line, or "Get today's details" for an alliance outside it (D133). */
 function Details({
   details,
@@ -147,6 +180,7 @@ export default async function AlliancePublicPage({
   const { page, board, events, homeId } = data;
   const { label, badgeId } = labelOf(data, unionId);
   const growth = page?.growth ?? [];
+  const [tab, range, filter] = [tabOf(sp.tab), rangeOf(sp.range), moveFilterOf(sp.show)];
   return (
     <>
       <SiteHeader events={events} currentId={null} homeId={homeId} clock={clock} copy={copy} />
@@ -174,14 +208,28 @@ export default async function AlliancePublicPage({
         {growth.length > 0 && (
           <GrowthCard
             series={growthSeries(growth, locale, copy)}
-            range={rangeOf(sp.range)}
-            hrefOf={(r) => `/alliances/${unionId}?range=${r}d`}
+            range={range}
+            hrefOf={(r) => pageHref(unionId, r, tab, filter)}
             clock={clock}
             copy={copy}
           />
         )}
-        <AllianceTabs unionId={unionId} members={page?.roster.length ?? 0} copy={copy} />
-        {page ? (
+        <AllianceTabs
+          unionId={unionId}
+          members={page?.roster.length ?? 0}
+          net={signed(netOf(data.moves.week))}
+          current={tab}
+          copy={copy}
+        />
+        {tab === "moves" ? (
+          <AllianceMovesView
+            data={data.moves}
+            filter={filter}
+            hrefOf={(f) => pageHref(unionId, range, "moves", f)}
+            clock={clock}
+            copy={copy}
+          />
+        ) : page ? (
           <AllianceMembers page={page} clock={clock} copy={copy} />
         ) : (
           <EmptyState>{copy.alliances.noRoster}</EmptyState>
