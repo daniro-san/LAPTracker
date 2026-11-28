@@ -4,12 +4,23 @@
 // only, behind requireWorkspace, for the workspace's own alliance. Each dot carries its member's name, and
 // each distance band names its members (D163). Places and names never go to logs, analytics or AI. Nothing
 // here says why a member gained kills: the End read shows where a member was then, not where they fought.
+// Each member also carries their newest Raid Shield reading before that KvK (issue 817): the night and morning
+// reads of its raid, with the map scan's time as "as of". No reading is "unknown", never "unshielded" (D75).
 import { z } from "zod";
 
+import { dayIn } from "../calendar-time";
 import type { Db } from "../db";
 import { recordFailure } from "../repo/auth-attempts";
+import { shieldReadings } from "../repo/shield-checks";
 import { eventEndPlaces, type EventEndPlaces } from "../repo/workspace-rosters";
 import { castleOf, saveCastle, type CastlePoint } from "../repo/workspaces";
+import {
+  passWindows,
+  raidOf,
+  suggestionOf,
+  type ShieldReading,
+  type ShieldSuggestion,
+} from "../shield-check";
 import type { WorkspaceAccess } from "./access";
 import { KVK_EVENTS } from "./insights-kvk";
 
@@ -28,6 +39,8 @@ export interface KvkMapDot {
   y: number;
   /** Null when the kills are not known on one side (not in the Start read, or no kills sent). */
   band: KillBand | null;
+  /** The newest Raid Shield reading before that KvK: seen, not seen, or no reading (D75). */
+  shield: ShieldSuggestion;
 }
 
 /** A third of the members with known kills, by distance from the castle point (map squares). */
@@ -53,6 +66,8 @@ export interface KvkMap {
   castle: CastlePoint | null;
   /** Near, mid, far; null without a castle point or with fewer than 3 members whose kills are known. */
   bands: DistanceBand[] | null;
+  /** The newest map scan among the members' shield readings ("as of"); null with no reading. */
+  shieldAt: Date | null;
 }
 
 const byName = (a: string, b: string) => a.localeCompare(b);
@@ -83,10 +98,15 @@ function bandsOf(
   });
 }
 
-/** The map of one End read: dots in kill bands, and near/mid/far only with a castle point. */
-export function kvkMapOf(end: EventEndPlaces, castle: CastlePoint | null): KvkMap {
+/** The map of one End read: dots in kill bands with their shield, and near/mid/far only with a castle point. */
+export function kvkMapOf(
+  end: EventEndPlaces,
+  castle: CastlePoint | null,
+  readings: (ShieldReading & { uid: number })[] = [],
+): KvkMap {
+  const read = new Map(readings.map((r) => [r.uid, r]));
   const gains = end.places
-    .map((p) => ({ name: p.name, x: p.x, y: p.y, gain: gainOf(p) }))
+    .map((p) => ({ uid: p.uid, name: p.name, x: p.x, y: p.y, gain: gainOf(p) }))
     .sort((a, b) => byName(a.name, b.name));
   const up = gains.flatMap((p) => (p.gain !== null && p.gain > 0 ? [p.gain] : []));
   up.sort((a, b) => a - b);
@@ -99,29 +119,47 @@ export function kvkMapOf(end: EventEndPlaces, castle: CastlePoint | null): KvkMa
         : median !== null && gain > median
           ? "more"
           : "fewer";
+  const scans = end.places.flatMap((p) => {
+    const r = read.get(p.uid);
+    return r && r.shielding !== null ? [(r.mapAt ?? r.readAt).getTime()] : [];
+  });
   const known = gains.flatMap((p) => (p.gain === null ? [] : [{ ...p, gain: p.gain }]));
   return {
     at: end.at,
     endAt: end.endAt,
-    dots: gains.map((p) => ({ name: p.name, x: p.x, y: p.y, band: band(p.gain) })),
+    dots: gains.map((p) => ({
+      name: p.name,
+      x: p.x,
+      y: p.y,
+      band: band(p.gain),
+      shield: suggestionOf(read.get(p.uid) ?? null),
+    })),
     median,
     unplaced: end.unplaced,
     castle,
     bands: castle ? bandsOf(known, castle) : null,
+    shieldAt: scans.length > 0 ? new Date(Math.max(...scans)) : null,
   };
 }
 
-/** The workspace's own alliance's map as of `now`; null with no KvK End read in the last month. */
+/**
+ * The workspace's own alliance's map as of `now`; null with no KvK End read in the last month. The shields
+ * are each member's newest reading from that KvK's raid: Friday's night read to KvK's start (`zone` is ST).
+ */
 export async function kvkMapView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
+  zone: string,
 ): Promise<KvkMap | null> {
   const [end, castle] = await Promise.all([
     eventEndPlaces(db, access.unionId, new Date(now.getTime() - SINCE_MS)),
     castleOf(db, access.workspaceId),
   ]);
-  return end ? kvkMapOf(end, castle) : null;
+  if (!end) return null;
+  const raid = raidOf(dayIn(zone, end.at.getTime()), { SERVER_TZ: zone });
+  const from = passWindows(raid.friday, { SERVER_TZ: zone }).night.from;
+  return kvkMapOf(end, castle, await shieldReadings(db, access.unionId, from, raid.kvk));
 }
 
 const square = z.number().int().min(0).max(MAP_MAX);

@@ -1,7 +1,7 @@
 // Insights → KvK's map (issue 791): dots in 3 bands of kills gained, each with its member's name (D163),
-// near/mid/far only with a castle point and naming their members, and a read that sees only the workspace's
-// own alliance and its own castle point, from the newest public event since the date with a fresh Start
-// and End.
+// near/mid/far only with a castle point and naming their members, each member's newest shield reading of
+// that KvK's raid (issue 817), and a read that sees only the workspace's own alliance, its own castle point
+// and its own shield readings, from the newest public event since the date with a fresh Start and End.
 // Against a real Postgres (PGlite). Invented names and places only.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -10,12 +10,14 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { eventEndPlaces } from "../repo/workspace-rosters";
 import { saveCastle } from "../repo/workspaces";
 import { allianceSnapshots, events, memberSnapshots, snapshots, workspaces } from "../schema";
+import { playerReads } from "../schema-squads";
 import type { WorkspaceAccess } from "./access";
 import { kvkMapOf, kvkMapView } from "./kvk-map";
 
 const AT = new Date("2026-11-21T14:00:00Z");
 const END_AT = new Date("2026-11-21T16:00:00Z");
 const place = (x: number, y: number, before: number | null, after: number | null) => ({
+  uid: x * 1000 + y,
   name: `Invented ${x}-${y}`,
   x,
   y,
@@ -93,6 +95,30 @@ describe("kvkMapOf", () => {
       },
     ]);
     expect(kvkMapOf({ ...end, places: end.places.slice(0, 2) }, { x: 1, y: 1 }).bands).toBeNull();
+  });
+
+  it("marks each member's shield: seen, not seen, or no reading, with the newest map scan as of", () => {
+    const end = {
+      at: AT,
+      endAt: END_AT,
+      unplaced: 0,
+      places: [place(1, 1, 0, 1), place(2, 2, 0, 1), place(3, 3, 0, 1)],
+    };
+    const read = (uid: number, shielding: number | null, mapAt: string) => ({
+      uid,
+      shielding,
+      shieldType: 0,
+      mapAt: new Date(mapAt),
+      readAt: new Date("2026-11-21T10:30:00Z"),
+    });
+    const map = kvkMapOf(end, null, [
+      read(1001, 1, "2026-11-21T10:10:00Z"),
+      read(2002, 0, "2026-11-21T10:20:00Z"),
+      read(9009, 1, "2026-11-21T11:00:00Z"),
+    ]);
+    expect(map.dots.map((d) => d.shield)).toEqual(["on", "not_seen", "unknown"]);
+    expect(map.shieldAt).toEqual(new Date("2026-11-21T10:20:00Z"));
+    expect(kvkMapOf(end, null).shieldAt).toBeNull();
   });
 });
 
@@ -172,14 +198,31 @@ describe("kvkMapView and eventEndPlaces", () => {
     }
   }
 
-  it("shows the own alliance's End places with names and the own castle point only", async () => {
+  it("shows the own alliance's End places with names, its castle point and its shields only", async () => {
     await saveCastle(db, ids.theirs, { x: 9, y: 9 });
-    const access = { workspaceId: ids.ours, unionId: OURS } as WorkspaceAccess;
-    const map = await kvkMapView(db, access, new Date("2026-11-22T00:00:00Z"));
-    expect(map?.dots).toEqual([
-      { name: "Invented 1", x: 401, y: 601, band: "fewer" },
-      { name: "Invented 2", x: 402, y: 602, band: "more" },
+    const reading = (unionId: number, uid: number, readAt: string) => ({
+      unionId,
+      uid,
+      readAt: new Date(readAt),
+      shielding: 1,
+      shieldType: 0,
+      mapUpdatedAt: new Date(readAt),
+    });
+    await db.insert(playerReads).values([
+      // Friday's night read of the raid before that KvK (ST is UTC here).
+      reading(OURS, 1, "2026-11-20T23:40:00Z"),
+      // After KvK started: not that raid's reading.
+      reading(OURS, 2, "2026-11-21T12:30:00Z"),
+      // Another alliance's reading of the same uid.
+      reading(THEIRS, 2, "2026-11-21T10:30:00Z"),
     ]);
+    const access = { workspaceId: ids.ours, unionId: OURS } as WorkspaceAccess;
+    const map = await kvkMapView(db, access, new Date("2026-11-22T00:00:00Z"), "UTC");
+    expect(map?.dots).toEqual([
+      { name: "Invented 1", x: 401, y: 601, band: "fewer", shield: "on" },
+      { name: "Invented 2", x: 402, y: 602, band: "more", shield: "unknown" },
+    ]);
+    expect(map?.shieldAt).toEqual(new Date("2026-11-20T23:40:00Z"));
     expect(map?.castle).toBeNull();
     expect(JSON.stringify(map)).not.toMatch(/Invented [789]/);
   });
@@ -202,7 +245,14 @@ describe("kvkMapView and eventEndPlaces", () => {
     expect((await eventEndPlaces(db, OURS, SINCE))?.at).toEqual(AT);
     expect(await eventEndPlaces(db, OURS, new Date("2026-11-21T15:00:00Z"))).toBeNull();
     expect(
-      (await kvkMapView(db, { workspaceId: ids.ours, unionId: OURS } as WorkspaceAccess, NOW))?.at,
+      (
+        await kvkMapView(
+          db,
+          { workspaceId: ids.ours, unionId: OURS } as WorkspaceAccess,
+          NOW,
+          "UTC",
+        )
+      )?.at,
     ).toEqual(AT);
   });
 });

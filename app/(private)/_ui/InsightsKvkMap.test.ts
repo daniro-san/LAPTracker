@@ -1,6 +1,7 @@
-// Insights → KvK's map (issue 791, D163): the readout names the first dot's member, with ‹ › steps by name,
-// and each near/mid/far row names its members; the plot, the readout and the table sit inside ph-no-capture,
-// posthog-js's block class (.claude/rules/private.md). Invented names, places and kills.
+// Insights → KvK's map (issues 791, 817, D163): one drawn house a member with its name under it, a shield ring
+// or a dashed "no reading" ring, the two "as of" lines, the readout naming the first member with ‹ › steps by
+// name, and each near/mid/far row naming its members; the plot, the readout and the table sit inside
+// ph-no-capture, posthog-js's block class (.claude/rules/private.md). Invented names, places and kills.
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -13,19 +14,24 @@ import { KvkMapCard } from "./InsightsKvkMap";
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ SERVER_TZ: "Etc/GMT+2" }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => undefined }) }));
 
+const AT0 = new Date("2026-11-21T09:45:00Z");
 const map = kvkMapOf(
   {
     at: new Date("2026-11-21T14:00:00Z"),
     endAt: new Date("2026-11-21T16:00:00Z"),
     unplaced: 1,
     places: [
-      { name: "Dawn", x: 431, y: 612, before: 50, after: 50 },
-      { name: "Birch", x: 437, y: 618, before: 50, after: 61 },
-      { name: "Cedar", x: 452, y: 640, before: 50, after: 97 },
-      { name: "Alder", x: 470, y: 655, before: null, after: 70 },
+      { uid: 4, name: "Dawn", x: 431, y: 612, before: 50, after: 50 },
+      { uid: 2, name: "Birch", x: 437, y: 618, before: 50, after: 61 },
+      { uid: 3, name: "Cedar", x: 452, y: 640, before: 50, after: 97 },
+      { uid: 1, name: "Alder", x: 470, y: 655, before: null, after: 70 },
     ],
   },
   { x: 440, y: 620 },
+  [
+    { uid: 2, shielding: 1, shieldType: 0, mapAt: new Date("2026-11-21T09:40:00Z"), readAt: AT0 },
+    { uid: 3, shielding: 0, shieldType: 0, mapAt: new Date("2026-11-21T09:35:00Z"), readAt: AT0 },
+  ],
 );
 
 describe("the KvK map card (issue 791, D163)", () => {
@@ -40,9 +46,26 @@ describe("the KvK map card (issue 791, D163)", () => {
     );
     const figure = html.slice(html.indexOf("<figure"), html.indexOf("</figure>"));
     expect(html.match(/<figure[^>]*>/)?.[0]).toMatch(/class="ph-no-capture /);
-    // Dots in name order; the readout opens on the first, with its place and band.
-    expect(figure.match(/data-at="\d+"/g)).toHaveLength(4);
-    expect(figure).toMatch(/Alder<\/span> · X 470, Y 655 · Kills not known/);
+    // One house a member in name order, each with its name; the readout opens on the first.
+    expect([...figure.matchAll(/data-glyph="(\w+)"/g)].map((m) => m[1])).toEqual([
+      "unknown",
+      "on",
+      "not_seen",
+      "unknown",
+    ]);
+    expect(
+      [...figure.matchAll(/<span data-at="\d+"[^>]*><bdi[^>]*>([^<]+)/g)].map((m) => m[1]),
+    ).toEqual(["Alder", "Birch", "Cedar", "Dawn"]);
+    // Shield seen: the light ring; no reading: the dashed ring and the words, never "unshielded" (D75).
+    expect(figure.match(/fill-opacity="0.14"/g)).toHaveLength(1);
+    expect(figure.match(/>no reading</g)).toHaveLength(2);
+    expect(html).not.toMatch(/unshielded/i);
+    expect(figure).toMatch(
+      /Alder<\/span> · X 470, Y 655 · Kills not known \(not in the Start reading\) · no reading/,
+    );
+    // Two "as of" lines: places at the End reading, shields at the newest map scan (ST is UTC-2 here).
+    expect(html).toContain("Places as of Sat, Nov 21, 14:00 ST (End reading).");
+    expect(html).toContain("Shields as of Sat, Nov 21, 07:40 ST (newest map scan before KvK).");
     expect(figure).toContain('aria-label="Next member by name"');
     const table = html.slice(html.indexOf("<table"), html.indexOf("</table>"));
     expect(html.match(/<table[^>]*>/)?.[0]).toMatch(/class="ph-no-capture /);

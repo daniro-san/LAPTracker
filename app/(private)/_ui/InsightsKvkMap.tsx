@@ -1,20 +1,28 @@
-// Insights → KvK's map (issue 791), server-rendered: the own alliance's members where the newest KvK's End
-// reading saw them, as a hand-built inline SVG scatter (D68, D158): one dot a member, in 3 bands of kills
-// gained told apart by shape and fill, not colour alone. A tap on a dot, or the 44 px ‹ › steps in name
-// order, names its member in the readout under the plot (D158 rule 7 (a), D163). Labels and numbers are
-// HTML beside the plot, which is aria-hidden; the plot, the readout and the names are ph-no-capture. Both
+// Insights → KvK's map (issues 791, 817), server-rendered: the own alliance's members where the newest KvK's
+// End reading saw them, as a hand-built inline SVG scene (D68, D158): one drawn house a member with its name
+// in HTML under it, the castle drawn at the officers' castle point, a light ring round a member whose newest
+// shield reading before that KvK saw a shield and a dashed ring with "no reading" when there is none (D75).
+// A tap on a house or a name, or the 44 px ‹ › steps in name order, names its member in the readout under the
+// plot, with its kills band and shield (D158 rule 7 (a), D163). The plot and its names are aria-hidden (the
+// readout and the "Who" lists say the same); the plot, the readout and the names are ph-no-capture. Both
 // axes use one scale, so distances look as they are; the plot spans the members (and the castle point) with
 // the squares written under it. The near/mid/far table shows only once officers typed a castle point, each
 // row with its members' names behind a tap. Nothing here says why a member gained kills.
 import type { ReactNode } from "react";
 
 import { Readout } from "@/app/_ui/charts/Readout";
+import {
+  CastleGlyph,
+  HouseGlyph,
+  NoReadingRing,
+  ShieldBubble,
+} from "@/lib/brand/components/MapGlyphs";
 import { getEnv } from "@/lib/env";
 import { clockIn, dayIn } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { compact, whole } from "@/lib/private/insights-format";
-import type { KillBand, KvkMap } from "@/lib/private/kvk-map";
+import type { KillBand, KvkMap, KvkMapDot } from "@/lib/private/kvk-map";
 import { fill, plural } from "@/lib/words";
 
 import { Card } from "./InsightsBars";
@@ -22,36 +30,35 @@ import { Caret } from "./InsightsSets";
 import { KvkCastleForm } from "./KvkCastleForm";
 
 const MAP_CARD = "insights-kvk-map";
-/** The plot's inner margin, in viewBox units of 100. */
-const PAD = 5;
+/** The plot's inner margin, in viewBox units of 100: room for a name under a house at the edge. */
+const PAD = 12;
 /** The smallest span drawn, in map squares, so a tight cluster is not blown up past what it is. */
 const MIN_SPAN = 20;
+/** Glyph sizes in plot units (of 100): a house, its shield ring, the castle. */
+const HOUSE = 4;
+const RING = 8;
+const CASTLE = 7;
 
 type Mark = KillBand | "unknown";
+type Shield = KvkMapDot["shield"];
 
-/** One band's mark at (cx, cy): hollow ring, small grey dot, larger plum dot, faint dot when not known. */
-function Dot({ mark, cx, cy }: { mark: Mark; cx: number; cy: number }) {
-  if (mark === "none")
-    return <circle cx={cx} cy={cy} r={1.3} className="fill-none stroke-ink" strokeWidth={0.5} />;
-  if (mark === "fewer") return <circle cx={cx} cy={cy} r={1.2} className="fill-ink/60" />;
-  if (mark === "more") return <circle cx={cx} cy={cy} r={1.8} className="fill-plum" />;
-  return <circle cx={cx} cy={cy} r={0.8} className="fill-ink/30" />;
-}
-
-/** The castle point's mark: a plus in seal. */
-function Castle({ cx, cy }: { cx: number; cy: number }) {
+/** A member's house at (cx, cy) with its shield ring: drawn when seen, dashed with no reading (D75). */
+function Member({ shield, cx, cy }: { shield: Shield; cx: number; cy: number }) {
   return (
-    <g className="stroke-seal" strokeWidth={1} strokeLinecap="round">
-      <line x1={cx - 2.5} y1={cy} x2={cx + 2.5} y2={cy} />
-      <line x1={cx} y1={cy - 2.5} x2={cx} y2={cy + 2.5} />
-    </g>
+    <>
+      {shield === "on" && <ShieldBubble cx={cx} cy={cy} size={RING} className="text-plum" />}
+      {shield === "unknown" && (
+        <NoReadingRing cx={cx} cy={cy} size={RING} className="text-ink/60" />
+      )}
+      <HouseGlyph cx={cx} cy={cy} size={HOUSE} className="text-ink" />
+    </>
   );
 }
 
 /** A legend swatch: the mark drawn on its own, 16 px. */
 function Swatch({ children }: { children: ReactNode }) {
   return (
-    <svg viewBox="-3 -3 6 6" aria-hidden="true" className="size-4 shrink-0">
+    <svg viewBox="-4.5 -4.5 9 9" aria-hidden="true" className="size-4 shrink-0">
       {children}
     </svg>
   );
@@ -86,58 +93,94 @@ function markWords(map: KvkMap, t: WorkspaceDictionary, language: string): Recor
   };
 }
 
-/** The plot; each dot (`data-at`, its index in name order) is a tap target the readout picks up. */
-function Plot({ map }: { map: KvkMap }) {
+/**
+ * The scene: houses, rings and the castle in the SVG, each member's name in HTML under its house (D68). A
+ * house and its name carry `data-at` (its index in name order), the tap target the readout picks up.
+ */
+function Plot({ map, noReading }: { map: KvkMap; noReading: string }) {
   const { at } = frameOf(map);
+  const castle = map.castle && at(map.castle.x, map.castle.y);
   return (
-    <svg
-      viewBox="0 0 100 100"
+    <div
       aria-hidden="true"
-      className="mt-2 aspect-square w-full max-w-md border border-rule"
+      className="relative mt-2 aspect-square w-full max-w-md overflow-hidden border border-rule"
     >
+      <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
+        {castle && <CastleGlyph {...castle} size={CASTLE} className="text-seal" />}
+        {map.dots.map((d, i) => {
+          const p = at(d.x, d.y);
+          return (
+            <g key={i} data-at={i} data-glyph={d.shield} className="group/dot cursor-pointer">
+              <Member shield={d.shield} {...p} />
+              <circle
+                {...p}
+                r={RING / 2 + 0.6}
+                className="fill-none stroke-seal opacity-0 group-aria-[current=true]/dot:opacity-100"
+                strokeWidth={0.6}
+              />
+              {/* A wider transparent target than the house, so a finger finds it. */}
+              <circle {...p} r={RING / 2} className="fill-transparent" />
+            </g>
+          );
+        })}
+      </svg>
       {map.dots.map((d, i) => {
         const p = at(d.x, d.y);
         return (
-          <g key={i} data-at={i} className="group/dot cursor-pointer">
-            <Dot mark={d.band ?? "unknown"} {...p} />
-            <circle
-              {...p}
-              r={3}
-              className="fill-none stroke-seal opacity-0 group-aria-[current=true]/dot:opacity-100"
-              strokeWidth={0.6}
-            />
-            {/* A wider transparent target than the dot, so a finger finds it. */}
-            <circle {...p} r={4} className="fill-transparent" />
-          </g>
+          <span
+            key={i}
+            data-at={i}
+            className="absolute max-w-[24%] -translate-x-1/2 cursor-pointer truncate rounded-sm bg-paper/75 px-0.5 text-center text-xs leading-tight aria-[current=true]:font-semibold"
+            style={{ left: `${p.cx}%`, top: `${p.cy + RING / 2}%` }}
+          >
+            <bdi translate="no">{d.name}</bdi>
+            {d.shield === "unknown" && <span className="block text-ink/80">{noReading}</span>}
+          </span>
         );
       })}
-      {map.castle && <Castle {...at(map.castle.x, map.castle.y)} />}
-    </svg>
+    </div>
   );
 }
 
 function Legend({ map, t, language }: { map: KvkMap; t: WorkspaceDictionary; language: string }) {
   const count = (mark: Mark) => map.dots.filter((d) => (d.band ?? "unknown") === mark).length;
+  const shields = (s: Shield) => map.dots.filter((d) => d.shield === s).length;
   const words = markWords(map, t, language);
-  const rows = (["more", "fewer", "none", "unknown"] as const).map((m) => [m, words[m]] as const);
+  const scene = [
+    ["on", t["insights.map.legend.shield"]],
+    ["not_seen", t["insights.map.legend.notSeen"]],
+    ["unknown", t["insights.map.legend.noReading"]],
+  ] as const;
+  const bands = (["more", "fewer", "none", "unknown"] as const).map((m) => [m, words[m]] as const);
+  const row = "flex min-h-6 items-center gap-2 border-t border-rule py-1";
   return (
     <ul className="mt-2 text-body-sm">
-      {rows.map(
+      {scene.map(
+        ([shield, label]) =>
+          shields(shield) > 0 && (
+            <li key={shield} className={row}>
+              <Swatch>
+                <Member shield={shield} cx={0} cy={0} />
+              </Swatch>
+              <span className="min-w-0 flex-1">{label}</span>
+              <span className="font-semibold tabular-nums">{whole(shields(shield), language)}</span>
+            </li>
+          ),
+      )}
+      {bands.map(
         ([mark, label]) =>
           count(mark) > 0 && (
-            <li key={mark} className="flex items-center gap-2 border-t border-rule py-1">
-              <Swatch>
-                <Dot mark={mark} cx={0} cy={0} />
-              </Swatch>
+            <li key={mark} className={row}>
+              <span className="size-4 shrink-0" />
               <span className="min-w-0 flex-1">{label}</span>
               <span className="font-semibold tabular-nums">{whole(count(mark), language)}</span>
             </li>
           ),
       )}
       {map.castle && (
-        <li className="flex items-center gap-2 border-t border-rule py-1">
+        <li className={row}>
           <Swatch>
-            <Castle cx={0} cy={0} />
+            <CastleGlyph cx={0} cy={0} size={CASTLE} className="text-seal" />
           </Swatch>
           <span>{fill(t["insights.map.legend.castle"], { ...map.castle })}</span>
         </li>
@@ -210,6 +253,50 @@ function Bands({ map, t, language }: { map: KvkMap; t: WorkspaceDictionary; lang
   );
 }
 
+/** The readout's line per member, in name order: place, kills band and shield. */
+function itemsOf(map: KvkMap, t: WorkspaceDictionary, language: string) {
+  const words = markWords(map, t, language);
+  const shieldWords: Record<Shield, string> = {
+    on: t["insights.map.shield.on"],
+    not_seen: t["insights.map.shield.notSeen"],
+    unknown: t["insights.map.shield.none"],
+  };
+  return map.dots.map((d) => ({
+    label: d.name,
+    line: [
+      fill(t["insights.map.place"], { x: d.x, y: d.y }),
+      words[d.band ?? "unknown"],
+      shieldWords[d.shield],
+    ].join(" · "),
+  }));
+}
+
+/** The two "as of" lines: places at the End reading, shields at the newest map scan (or none). */
+function AsOf(props: {
+  map: KvkMap;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  zone: string;
+}) {
+  const { map, t, language, zone } = props;
+  const when = (at: Date) => {
+    const on = dayIn(zone, at.getTime());
+    return { date: calendarDates(language).short(on), time: clockIn(at.getTime(), zone, on).time };
+  };
+  return (
+    <>
+      <p className="text-body-sm tabular-nums">
+        {fill(t["insights.map.asof.places"], when(map.endAt))}
+      </p>
+      <p className="text-body-sm tabular-nums">
+        {map.shieldAt
+          ? fill(t["insights.map.asof.shields"], when(map.shieldAt))
+          : t["insights.map.asof.noShields"]}
+      </p>
+    </>
+  );
+}
+
 export function KvkMapCard(props: {
   map: KvkMap | null;
   slug: string;
@@ -249,27 +336,23 @@ export function KvkMapCard(props: {
   ];
   const frame = frameOf(map);
   const time = clockIn(map.endAt.getTime(), zone, day).time;
-  const words = markWords(map, t, language);
-  const items = map.dots.map((d) => ({
-    label: d.name,
-    line: `${fill(t["insights.map.place"], { x: d.x, y: d.y })} · ${words[d.band ?? "unknown"]}`,
-  }));
   return (
     <Card id={MAP_CARD} title={t["insights.map.head"]} based={based}>
       <p className="mt-1 text-body-sm text-ink/80">{t["insights.map.tap"]}</p>
       <figure className="ph-no-capture mt-1">
         <Readout
           id="kvk-map"
-          items={items}
+          items={itemsOf(map, t, language)}
           initial={0}
           words={{ earlier: t["insights.map.prev"], later: t["insights.map.next"] }}
         >
-          <Plot map={map} />
+          <Plot map={map} noReading={t["insights.map.shield.none"]} />
         </Readout>
         <figcaption className="mt-1 text-body-sm font-medium">
           {fill(t["insights.map.caption"], { time })}
         </figcaption>
       </figure>
+      <AsOf map={map} t={t} language={language} zone={zone} />
       <p className="text-body-sm text-ink/80 tabular-nums">
         {fill(t["insights.map.axes"], {
           x1: frame.x1,
