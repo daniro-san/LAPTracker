@@ -164,9 +164,14 @@ interface StartEndRows {
  * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
  * not failed, with those two rows' ids; null when there is none. The one place the event rules live: not
  * manual, not a test, not `admin` (D28), and only the event's Start and End, never a sample or a row
- * between windows (D160).
+ * between windows (D160). `keep` drops events the caller does not want, such as an Origin of Chaos (#877).
  */
-async function newestStartEnd(db: Db, unionId: number, since: Date): Promise<StartEndRows | null> {
+async function newestStartEnd(
+  db: Db,
+  unionId: number,
+  since: Date,
+  keep: (at: Date) => boolean = () => true,
+): Promise<StartEndRows | null> {
   const rows = await db
     .select({
       eventId: events.id,
@@ -194,7 +199,9 @@ async function newestStartEnd(db: Db, unionId: number, since: Date): Promise<Sta
     .orderBy(desc(events.eventAtUtc));
   const side = (eventId: number, phase: string) =>
     rows.find((r) => r.eventId === eventId && r.phase === phase);
-  const event = rows.find((r) => side(r.eventId, "before") && side(r.eventId, "after"));
+  const event = rows.find(
+    (r) => keep(r.at) && side(r.eventId, "before") && side(r.eventId, "after"),
+  );
   const [before, after] = event
     ? [side(event.eventId, "before"), side(event.eventId, "after")]
     : [];
@@ -257,14 +264,16 @@ const placesOf = sql<
 /**
  * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
  * not failed: each End member's name, place on the map and kills on both sides; null when there
- * is none. Three statements, bounded by the date and by the two rows' ids (D149).
+ * is none. Three statements, bounded by the date and by the two rows' ids (D149). `keep` drops events by
+ * their time (the officers' map keeps KvKs only, #877).
  */
 export async function eventEndPlaces(
   db: Db,
   unionId: number,
   since: Date,
+  keep?: (at: Date) => boolean,
 ): Promise<EventEndPlaces | null> {
-  const event = await newestStartEnd(db, unionId, since);
+  const event = await newestStartEnd(db, unionId, since, keep);
   if (!event) return null;
   const { startId, endId } = event;
   const [kills, [raw]] = await Promise.all([

@@ -23,6 +23,7 @@ import {
   type RosterMember,
 } from "../repo/workspace-rosters";
 import { castleOf, saveCastle, type CastlePoint } from "../repo/workspaces";
+import { isKvkDay } from "../schedule";
 import {
   passWindows,
   raidOf,
@@ -208,7 +209,10 @@ export async function kvkMapView(
   zone: string,
 ): Promise<KvkMap | null> {
   const [end, castle, settings] = await Promise.all([
-    eventEndPlaces(db, access.unionId, new Date(now.getTime() - SINCE_MS)),
+    // KvKs only: never an Origin of Chaos (#877, as #806).
+    eventEndPlaces(db, access.unionId, new Date(now.getTime() - SINCE_MS), (at) =>
+      isKvkDay(dayIn(zone, at.getTime())),
+    ),
     castleOf(db, access.workspaceId),
     shieldSettingsOf(db, access.workspaceId),
   ]);
