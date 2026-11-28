@@ -104,6 +104,11 @@ function attacks(ours: number): Step[] {
     ["garrison", { body: { action: "enemy", entry, week: WEEK, version: 0, value: 5000 } }],
     ["garrison", { body: { action: "save", entry, week: WEEK, rev: 0, pairs: [] } }],
     ["garrison", { body: { action: "post", entry, week: WEEK, requestId: id() } }],
+    // D161: Bravo's entry's KvK plan, saved and made into a message.
+    ...b.kvk.flatMap((kvk): Step[] => [
+      ["kvk-plan", { body: { action: "save", entry: kvk, rev: 1, roles: [], note: "" } }],
+      ["kvk-plan", { body: { action: "message", entry: kvk, week: WEEK, requestId: id() } }],
+    ]),
     ...b.notices.flatMap((n): Step[] => [
       ["notices", { body: { id: n, changes: [{ field: "title", value: "Taken", version: 1 }] } }],
       ["notices/delete", { body: { id: n, requestId: id() } }],

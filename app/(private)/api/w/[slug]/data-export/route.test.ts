@@ -106,6 +106,7 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
       "calendar-entries",
       "calendar-weeks",
       "garrison-plans",
+      "kvk-plans",
       "notices",
       "notice-texts",
       "notice-posts",

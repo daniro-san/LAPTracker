@@ -144,6 +144,7 @@ export const calendarFr: CalendarWords = {
   "calendar.roles.choose": "Choisir les rôles ›",
   "calendar.rollCall": "Appel ›",
   "calendar.garrison": "Plan de garnison ›",
+  "calendar.kvkPlan": "Plan de la KvK ›",
   "calendar.pickTeam": "Choisir l’équipe ›",
   "calendar.delete.weekly": "Sauter ou supprimer",
   "calendar.delete.askWeekly": "Sauter une semaine ou arrêter la répétition ?",

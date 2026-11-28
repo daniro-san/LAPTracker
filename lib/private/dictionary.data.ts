@@ -68,6 +68,7 @@ export const dataEn = {
   "data.file.calendar-weeks":
     "Weeks of a Calendar entry that differ from the plan: moved, cancelled, caravan picks.",
   "data.file.garrison-plans": "Undead Siege garrison plans.",
+  "data.file.kvk-plans": "KvK plans: the roles, who is in them by member id, and the note.",
   "data.file.notices": "Notices: who wrote them and when.",
   "data.file.notice-texts": "Every saved title and text of each notice, in every language.",
   "data.file.notice-posts": "Notices posted to Discord.",
@@ -170,6 +171,8 @@ export const dataPt: typeof dataEn = {
   "data.file.calendar-weeks":
     "Semanas de um item do Calendário diferentes do plano: movidas, canceladas, escolhas da caravana.",
   "data.file.garrison-plans": "Planos de guarnição do Undead Siege.",
+  "data.file.kvk-plans":
+    "Planos da KvK: as funções, quem está nelas pelo id do membro, e o recado.",
   "data.file.notices": "Avisos: quem escreveu e quando.",
   "data.file.notice-texts": "Cada título e texto salvo de cada aviso, em todos os idiomas.",
   "data.file.notice-posts": "Avisos publicados no Discord.",
@@ -275,6 +278,8 @@ export const dataFr: typeof dataEn = {
   "data.file.calendar-weeks":
     "Les semaines d’un élément du Calendrier qui diffèrent du plan : déplacées, annulées, choix de la caravane.",
   "data.file.garrison-plans": "Les plans de garnison de l’Undead Siege.",
+  "data.file.kvk-plans":
+    "Les plans de la KvK : les rôles, qui y est par identifiant de membre, et la note.",
   "data.file.notices": "Les annonces : qui les a écrites et quand.",
   "data.file.notice-texts":
     "Chaque titre et texte enregistré de chaque annonce, dans toutes les langues.",

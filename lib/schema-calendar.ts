@@ -197,3 +197,37 @@ export const garrisonPlans = pgTable(
     check("garrison_plans_enemy_might_check", sql`${t.enemyMight} > 0`),
   ],
 );
+
+/** One role of a KvK plan (D161): its name as the officers wrote it and the members in it, by uid. */
+export interface KvkRole {
+  name: string;
+  uids: number[];
+}
+
+/**
+ * A KvK calendar entry's plan (D161): the roles in the officers' order, their note, `rev` for the 409 check,
+ * who saved last and when, and the last notice made from it ("Make the message"). One row per entry; a
+ * weekly KvK keeps one plan for every week.
+ */
+export const kvkPlans = pgTable(
+  "kvk_plans",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    entryId: integer("entry_id")
+      .notNull()
+      .references(() => calendarEntries.id, { onDelete: "cascade" }),
+    roles: jsonb("roles").$type<KvkRole[]>().notNull().default([]),
+    note: text("note").notNull().default(""),
+    rev: integer("rev").notNull().default(0),
+    savedBy: integer("saved_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    savedAt: tstz("saved_at"),
+    noticeId: integer("notice_id").references(() => notices.id, { onDelete: "set null" }),
+  },
+  (t) => [
+    unique("kvk_plans_entry_unique").on(t.entryId),
+    index("kvk_plans_workspace_idx").on(t.workspaceId),
+  ],
+);

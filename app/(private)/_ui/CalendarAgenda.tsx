@@ -76,6 +76,12 @@ function Roles({
             {words["calendar.garrison"]}
           </a>
         )}
+        {/* D161: the KvK plan makes a notice, so it lives under the Notices switch. */}
+        {item.form.kind === "kvk" && !off.includes("notices") && (
+          <a href={`/w/${slug}/calendar/kvk?${query}`} className={LINK}>
+            {words["calendar.kvkPlan"]}
+          </a>
+        )}
       </p>
     );
   }
