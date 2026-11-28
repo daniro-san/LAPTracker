@@ -252,10 +252,16 @@ export const patchNotes: PatchNote[] = [
       "Members: a member's card on the desk shows their game language and the day it was read.",
       "Officers' map: tapping a dot names the member, and each near, mid and far ring lists who is in it. Positions, presence and names are now desk data for the own alliance (D163); public pages never show whether a player is online.",
       'How-to: an "Other community tools" section lists sites for hero, building and research data, calculators and gift codes. They are not affiliated with LAPTracker and the list is not a ranking.',
+      'Members: the card shows "Last seen in game" and "In the alliance since", and "Worth a hello" lists members not seen in game for 3 days or more, with the date. A new member stays New, and members on a break or away are never listed.',
+      "Officers' map: a drawn map with a house and a name per member, our own castle in the centre, and a light ring for a shield seen (a dashed ring when there is no reading). Fit, +, − and Find, other tracked alliances as \"TAG · n\" at their members' centre (3 members or more), and a sheet with might, kills gained, shield, distance to the castle and last seen.",
+      'Raid Shield: the Friday night post now gives counts only ("shield seen on 32 of 97 maps so far; maps refresh after the reset"). Names of members still not seen come after the morning check, in To check by hand.',
+      "Board: a member can set the days they are away on their own page. Roll call, Raid prep, the KvK plan and Follow-up respect them, and officers see them on the card as the member's own report.",
+      "New public alliance page: leader, might, members and server rank, the alliance's statement, might and members over 7, 30 or 90 days, and each member's rank, quest points, Help coins, tech donated and might. Never online, last seen, join date or positions.",
+      "Link previews: a player, event or alliance link pasted in Discord shows a card with its numbers.",
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
-      815, 816, 819,
+      815, 816, 819, 835, 836, 837, 838, 839, 840, 841,
     ],
     officer: [
       {
