@@ -3,8 +3,9 @@
 import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
+import { duelHistory } from "./duel-history";
 import { cardData, cardFormats } from "./member-card";
-import { versionLines } from "./member-card-parts";
+import { duelCard, versionLines } from "./member-card-parts";
 import type { MemberRow } from "./members";
 
 const m: MemberRow = {
@@ -110,5 +111,32 @@ describe("the member card's presence lines (issue 821)", () => {
       "Last seen in game: no data",
       "In the alliance since: no data",
     ]);
+  });
+});
+
+describe("the member card's Alliance Duel by week (issue 467, D158)", () => {
+  const f = cardFormats("en", "Etc/GMT+2", new Date("2026-11-23T12:00:00Z"));
+  const row = (uid: number, week: string, points: number) => ({ uid, week, points });
+
+  it("leaves a no-data week without a value or a bar, draws a real 0 as a hairline, and says so far", () => {
+    const rows = [
+      row(1, "2026-11-02", 4_000_000),
+      row(1, "2026-11-16", 0),
+      row(2, "2026-11-02", 8_000_000),
+      row(1, "2026-11-23", 2_000_000),
+    ];
+    const h = duelHistory(rows, new Set([1, 2]), 1, "2026-11-23");
+    if (!h) throw new Error("no history");
+    const card = duelCard(h, WORKSPACE_DICTIONARIES.en, f);
+    const at = (week: string) => card.rows.find((r) => r.label.includes(f.date(week)));
+    // 2026-11-09 has no picture: no value, no share, never 0.
+    expect(at("2026-11-09")).toMatchObject({ value: null, share: null });
+    // Bars are drawn against the alliance's best member-week (8M), and a real 0 has a share of 0.
+    expect(at("2026-11-02")?.share).toBe(0.5);
+    expect(at("2026-11-16")).toMatchObject({ value: "0", share: 0 });
+    expect(card.rows.at(-1)?.label).toBe(`Week of ${f.date("2026-11-23")} · so far`);
+    // The running week (2M) is in no average: the member has 4M and 0 in the finished weeks.
+    expect(card.average).toBe("Average 2.00M · 2 weeks with points");
+    expect(card.alliance).toBe("Alliance average 6.00M a week · 2 weeks with data");
   });
 });

@@ -57,6 +57,7 @@ describe("most improved in Alliance Duel (D75)", () => {
       row(1, "2026-11-16", 1_500_000),
       row(2, "2026-11-09", 2_000_000),
       row(2, "2026-11-16", 2_400_000),
+      // No picture for Nov 9, the week directly before: missing data, left out, not compared with Nov 2.
       row(3, "2026-11-02", 1_000_000),
       row(3, "2026-11-16", 2_000_000),
       // Fell: not named, and not named as anything else.
@@ -66,7 +67,21 @@ describe("most improved in Alliance Duel (D75)", () => {
       row(5, "2026-11-02", 1_000_000),
       row(5, "2026-11-09", 1_000_000),
     ];
-    expect(mostImproved(rows, members, "2026-11-23")).toEqual(["Bramble", "Ilsa", "Wren"]);
+    expect(mostImproved(rows, members, "2026-11-23")).toEqual(["Ilsa", "Wren"]);
+  });
+
+  it("counts exactly +10 % and not a point less", () => {
+    const members = [
+      { uid: 1, name: "Exact" },
+      { uid: 2, name: "Short" },
+    ];
+    const rows = [
+      row(1, "2026-11-02", 1_000_000),
+      row(1, "2026-11-09", 1_100_000),
+      row(2, "2026-11-02", 1_000_000),
+      row(2, "2026-11-09", 1_099_999),
+    ];
+    expect(mostImproved(rows, members, "2026-11-16")).toEqual(["Exact"]);
   });
 });
 

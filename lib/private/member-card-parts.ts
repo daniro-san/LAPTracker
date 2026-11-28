@@ -111,9 +111,8 @@ export interface DuelCard {
   none: string;
 }
 
-/** The weeks as the desk shows them. Bars are drawn against the member's best saved week. */
+/** The weeks as the desk shows them. Bars are drawn against the alliance's best member-week (D158). */
 export function duelCard(h: DuelHistory, t: WorkspaceDictionary, f: CardFormats): DuelCard {
-  const best = Math.max(0, ...h.weeks.map((w) => w.points ?? 0));
   const line = (key: "average" | "alliance", a: DuelHistory["average"]) =>
     a &&
     fill(
@@ -128,7 +127,8 @@ export function duelCard(h: DuelHistory, t: WorkspaceDictionary, f: CardFormats)
         date: f.date(w.week),
       }),
       value: w.points === null ? null : f.compact(w.points),
-      share: w.points === null || best === 0 ? null : w.points / best,
+      // D158: drawn against the alliance's best member-week; a real 0 is a hairline, no data draws nothing.
+      share: w.points === null ? null : h.best > 0 ? w.points / h.best : 0,
     })),
     average: line("average", h.average),
     alliance: line("alliance", h.alliance),

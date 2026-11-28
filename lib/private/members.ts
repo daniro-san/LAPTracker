@@ -132,7 +132,7 @@ export interface MembersView {
     donors: Thank[];
     activity: Thank[];
     progress: Progress[];
-    /** Names of who improved most in Alliance Duel (issue 467), alphabetical; empty without `history`. */
+    /** Names of who improved most in Alliance Duel (issue 467), alphabetical; empty unless asked for. */
     improved: string[];
   };
   /** The time zones the members have, most used first (the picker lists them first). */
@@ -345,9 +345,20 @@ export const progressHistory = (db: Db, access: WorkspaceAccess, now: Date, zone
     new Date(Date.parse(`${thanksWeek(serverDay(now, { SERVER_TZ: zone }))}T00:00:00Z`) - DAY_MS),
   );
 
-/** The Members tab with the week's progress in its thanks (D109), as Home and Members show it. */
-export const membersWithProgress = (db: Db, access: WorkspaceAccess, now: Date, zone: string) =>
-  progressHistory(db, access, now, zone).then((h) => membersView(db, access, now, zone, h));
+/**
+ * The Members tab with the week's progress in its thanks (D109), as Home and Members show it. Only the
+ * Members page passes `improved` (issue 467): Home does not show it, so it does not read it.
+ */
+export const membersWithProgress = (
+  db: Db,
+  access: WorkspaceAccess,
+  now: Date,
+  zone: string,
+  improved = false,
+) =>
+  progressHistory(db, access, now, zone).then((h) =>
+    membersView(db, access, now, zone, h, improved),
+  );
 
 /** The Members tab of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function membersView(
@@ -360,9 +371,12 @@ export async function membersView(
    * show the week's progress (Members, Home); without it `thanks.progress` is empty (D109).
    */
   history?: readonly FactRow[],
+  /** Issue 467: also read the Alliance Duel week totals for `thanks.improved`; only the Members page shows it. */
+  improved = false,
 ): Promise<MembersView> {
   const unionId = access.unionId;
-  const [reads, firstSeen, might, event, facts, pendingRows] = await Promise.all([
+  const today = serverDay(now, { SERVER_TZ: zone });
+  const [reads, firstSeen, might, event, facts, pendingRows, duel] = await Promise.all([
     endOfDayReads(db, unionId, LOOKBACK_READS),
     firstSeenDays(db, unionId),
     mightUnchanged(db, unionId),
@@ -371,10 +385,10 @@ export async function membersView(
       : null,
     factsOf(db, access),
     openPendings(db, access.workspaceId),
+    improved ? duelTotals(db, access, mondayOf(today)) : [],
   ]);
   // Open new members' uids (D106): their zones count among the alliance's.
   const pending = pendingRows.map((p) => -p.id);
-  const today = serverDay(now, { SERVER_TZ: zone });
   const newest = reads.at(-1);
   if (!newest)
     return earlyView(await anyRoster(db, unionId), { facts, today, firstSeen, pending }, zone);
@@ -407,10 +421,7 @@ export async function membersView(
       donors: topOf(counted, (m) => weekTotal(weekDonations(thanksReads, thanksDays, m.uid))),
       activity: topOf(counted, (m) => weekQuestPoints(thanksReads, m.uid)),
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
-      // Issue 467: read only where the week's progress is shown, so the card and the list do not pay for it.
-      improved: history
-        ? mostImproved(await duelTotals(db, access, mondayOf(today)), counted, mondayOf(today))
-        : [],
+      improved: improved ? mostImproved(duel, counted, mondayOf(today)) : [],
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),
     facts,

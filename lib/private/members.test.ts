@@ -12,6 +12,7 @@ import {
   memberSnapshots,
   snapshots,
 } from "../schema";
+import { allianceDuelPoints } from "../schema-import";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { cardFormats } from "./member-card";
@@ -245,6 +246,24 @@ describe("member facts on the Members tab (#297)", () => {
       { uid: 1, name: "P1", value: 700 },
       { uid: 2, name: "P2", value: 600 },
     ]);
+  });
+
+  it("names who improved in Alliance Duel only when asked for (issue 467)", async () => {
+    await endOfDay(OGS, dayOf(0), { 1: {}, 2: {} });
+    const access = await signedIn("ogs");
+    // NOW is Monday 2026-11-16: the newest finished week is Nov 9, the one before it Nov 2.
+    const saved = (uid: number, week: string, points: number) =>
+      ({ workspaceId: access.workspaceId, uid, week, day: "week", points, savedAt: NOW }) as const;
+    await db
+      .insert(allianceDuelPoints)
+      .values([
+        saved(1, "2026-11-02", 1_000_000),
+        saved(1, "2026-11-09", 2_000_000),
+        saved(2, "2026-11-02", 2_000_000),
+        saved(2, "2026-11-09", 1_000_000),
+      ]);
+    expect((await membersView(db, access, NOW, ZONE, [], true)).thanks.improved).toEqual(["P1"]);
+    expect((await membersView(db, access, NOW, ZONE, [])).thanks.improved).toEqual([]);
   });
 
   it("shows last week's donations in the thanks on a Monday (D114)", async () => {
