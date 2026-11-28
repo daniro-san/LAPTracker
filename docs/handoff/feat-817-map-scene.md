@@ -7,6 +7,7 @@ Part 1 of issue #817: the drawn scene on the officers' map (Insights → KvK).
   - Each member is a house at their X/Y, with a 5.6-unit house and an 11.2-unit ring (1.4× the first cut, after the coordinator's review). Their name is in HTML (D68): the name only, with a paper-coloured halo (`text-shadow` in `--color-paper`, which follows the theme), so a name over a neighbour's house or ring stays legible.
   - Names are placed by `labelsOf`, starting with the members nearest the castle. Each name tries 8 spots in turn: under, above, right and left of its house, then its four corners. It takes the first spot inside the plot that covers neither the castle (plus 1 unit around it), nor another name, nor another house's ring. When no spot is free, it takes the one that covers the fewest names, then the fewest rings, and never the castle if any spot avoids it. Label sizes are estimated for 12 px text in a 293 px plot (one line of 5.2 units, 2.6 a letter, at most 30 wide).
   - A member whose shield was seen gets the light ring. A member with no reading gets the dashed ring; the words "no reading" are in the readout line and the legend, not on the map's label (coordinator, 2026-11-28). A reading that saw no shield gets no ring.
+  - Tap targets (PR #836 review): each house has a transparent circle 15.5 plot units across, 45 px on the 293 px plot at 360 px. Each name has a transparent `::before` at least 44 × 44 px centred on it; the name truncates inside its `<bdi>`, so the label doesn't clip that target. Overlapping targets are allowed, and the later one in DOM order wins. The castle is `pointer-events-none`, so taps reach the houses under it. The visuals are unchanged.
   - The castle drawing replaces the old seal-coloured plus. It is 17.5 units (2.5× the first cut), in full ink (`text-ink`), and drawn after the houses and rings so they never cover it.
   - A house and its name both carry `data-at`, so tapping either picks that member in the readout. The readout line now ends with the shield word ("shield seen", "no shield seen" or "no reading").
   - There are two new "as of" lines. Places are as of the End reading's start. Shields are as of the newest map scan among the readings, or a line saying there was no reading before that KvK.
@@ -19,6 +20,7 @@ Part 1 of issue #817: the drawn scene on the officers' map (Insights → KvK).
 - `lib/private/dictionary.insights-map.ts`: 10 new keys in EN, PT-BR and FR. `insights.map.tap` now says "house" instead of "dot".
 - Tests:
   - `kvk-map.test.ts` has a pure test for the three shield states and `shieldAt`. Its DB test also checks that only the own alliance's readings inside the raid window count.
+  - `InsightsKvkMap.test.ts` also has a pure test of the exported `labelsOf` and `keepOutOf`. A dense cluster of 7 members, one right beside the castle, has no name box on the castle's keep-out box and none outside the plot. The data uses short names so every member has a free spot (with long names, one member had no spot clear of the castle, which the rule allows).
   - `InsightsKvkMap.test.ts` checks one glyph per member in name order, each name under its house, one light ring, two "no reading" labels, no "unshielded" anywhere, and both "as of" lines.
 
 ## Decisions
@@ -37,6 +39,7 @@ Part 1 of issue #817: the drawn scene on the officers' map (Insights → KvK).
 ## Verified
 - `pnpm vitest related --run` on the changed files: 136 files. The first run caught the French term rule (`dictionary.test.ts`) and a test regex, and both were fixed. In the second run, `cross-workspace.test.ts` failed once under load; it passed alone (4 of 4), and it passed in the full suite below.
 - `pnpm check`: passed (398 files, 2165 tests; drift and i18n clean). Before that it caught a lint function-length error and an import order, both fixed.
+- After the PR #836 review: measured in Chrome at 360 px, all 12 house targets are 45 px wide and all 12 name targets at least 44 × 44 px. The re-render looks the same as before.
 - After the coordinator's review: `pnpm vitest related --run` on InsightsKvkMap.tsx passed (2 files, 3 tests), and `pnpm check` passed again (398 files, 2165 tests). Same results after the second review round.
 - Screenshots: a 360 px render of a sample of 12 invented members (castle point set, 6 shield seen, 2 not seen, 4 no reading), light and dark. The card was rendered with `renderToStaticMarkup` plus the app's compiled Tailwind CSS, in system Chrome via Playwright. No horizontal scroll (scrollWidth 360). After the review, re-rendered at the same paths: the castle is large, in ink, above the rings and clear of every name, in both themes. The rings are correct and both "as of" lines show. Screenshots are kept outside the repo.
 

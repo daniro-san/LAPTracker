@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { kvkMapOf } from "@/lib/private/kvk-map";
 
-import { KvkMapCard } from "./InsightsKvkMap";
+import { KvkMapCard, keepOutOf, labelsOf, type Box } from "./InsightsKvkMap";
 
 vi.mock("@/lib/env", () => ({ getEnv: () => ({ SERVER_TZ: "Etc/GMT+2" }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => undefined }) }));
@@ -77,5 +77,43 @@ describe("the KvK map card (issue 791, D163)", () => {
       "Cedar",
     ]);
     expect(table).toContain("Who (1)");
+  });
+});
+
+describe("the KvK map's name labels (issue 817)", () => {
+  const overlaps = (a: Box, b: Box) =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+  it("keeps every name off the castle in a dense cluster with a member right beside it", () => {
+    const castle = { cx: 50, cy: 50 };
+    const spots = [
+      [61, 50],
+      [70, 41],
+      [72, 49],
+      [68, 57],
+      [76, 54],
+      [65, 43],
+      [58, 61],
+    ] as const;
+    // Short names, so each member has at least one spot inside the plot that is clear of the castle.
+    const names = ["Ash", "Oak", "Elm", "Fir", "Yew", "Ivy", "Bay"];
+    const dots = spots.map(([x, y], i) => ({
+      name: names[i] as string,
+      x,
+      y,
+      band: null,
+      shield: "unknown" as const,
+    }));
+    const boxes = labelsOf(
+      dots,
+      spots.map(([cx, cy]) => ({ cx, cy })),
+      castle,
+    );
+    const keep = keepOutOf(castle);
+    expect(boxes).toHaveLength(spots.length);
+    for (const b of boxes) {
+      expect(overlaps(b, keep)).toBe(false);
+      expect(b.x >= 0 && b.y >= 0 && b.x + b.w <= 100 && b.y + b.h <= 100).toBe(true);
+    }
   });
 });

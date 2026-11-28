@@ -43,28 +43,32 @@ const CASTLE = 17.5;
 const LINE = 5.2;
 const LETTER = 2.6;
 const NAME_MAX = 30;
+/** A house's tap target, in plot units: 15.5 of 100 is 45 px on the 293 px plot at 360 px, more when wider. */
+const HIT = 15.5;
 
-type Point = { cx: number; cy: number };
-type Box = { x: number; y: number; w: number; h: number };
+export type Point = { cx: number; cy: number };
+export type Box = { x: number; y: number; w: number; h: number };
 
 const dist = (a: Point, b: Point) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
 
 const overlaps = (a: Box, b: Box) =>
   a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-/**
- * Where each member's name goes, in plot units, nearest the castle first: of under, above, right, left and the four
- * corners of its house,
- * the first spot inside the plot that covers neither the castle nor another name nor another house's ring.
- * When none is free, the spot that covers the fewest names, then rings; never the castle when any spot
- * avoids it.
- */
-function labelsOf(dots: KvkMapDot[], points: Point[], castle: Point | null): Box[] {
+/** The box no name may cover around the castle: the drawing and 1 plot unit round it. */
+export function keepOutOf(castle: Point): Box {
   const clear = CASTLE / 2 + 1;
+  return { x: castle.cx - clear, y: castle.cy - clear, w: 2 * clear, h: 2 * clear };
+}
+
+/**
+ * Where each member's name goes, in plot units, nearest the castle first: of under, above, right, left and
+ * the four corners of its house, the first spot inside the plot that covers neither the castle nor another
+ * name nor another house's ring. When none is free, the spot that covers the fewest names, then rings; never
+ * the castle when any spot avoids it.
+ */
+export function labelsOf(dots: KvkMapDot[], points: Point[], castle: Point | null): Box[] {
   const r = RING / 2;
-  const keep = castle
-    ? [{ x: castle.cx - clear, y: castle.cy - clear, w: 2 * clear, h: 2 * clear }]
-    : [];
+  const keep = castle ? [keepOutOf(castle)] : [];
   const rings = points.map((p) => ({ x: p.cx - r, y: p.cy - r, w: RING, h: RING }));
   const names: Box[] = [];
   const count = (b: Box, of: Box[]) => of.filter((o) => overlaps(b, o)).length;
@@ -179,13 +183,15 @@ function Plot({ map }: { map: KvkMap }) {
                 className="fill-none stroke-seal opacity-0 group-aria-[current=true]/dot:opacity-100"
                 strokeWidth={0.6}
               />
-              {/* A wider transparent target than the house, so a finger finds it. */}
-              <circle {...p} r={RING / 2} className="fill-transparent" />
+              {/* A transparent target of at least 44 px round the house, so a finger finds it. */}
+              <circle {...p} r={HIT / 2} className="fill-transparent" />
             </g>
           );
         })}
-        {/* The castle above the rings, so a member's ring never hides it. */}
-        {castle && <CastleGlyph {...castle} size={CASTLE} className="text-ink" />}
+        {/* The castle above the rings, so a member's ring never hides it; taps go through to the houses. */}
+        {castle && (
+          <CastleGlyph {...castle} size={CASTLE} className="pointer-events-none text-ink" />
+        )}
       </svg>
       {map.dots.map((d, i) => {
         const box = labels[i] as Box;
@@ -193,10 +199,13 @@ function Plot({ map }: { map: KvkMap }) {
           <span
             key={i}
             data-at={i}
-            className="absolute cursor-pointer truncate px-0.5 text-center [text-shadow:0_0_2px_var(--color-paper),0_0_2px_var(--color-paper),0_0_3px_var(--color-paper)] text-xs leading-tight aria-[current=true]:font-semibold"
+            className="absolute cursor-pointer px-0.5 text-center [text-shadow:0_0_2px_var(--color-paper),0_0_2px_var(--color-paper),0_0_3px_var(--color-paper)] text-xs leading-tight before:absolute before:top-1/2 before:left-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-1/2 before:content-[''] aria-[current=true]:font-semibold"
             style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%` }}
           >
-            <bdi translate="no">{d.name}</bdi>
+            {/* The name truncates inside; the label itself does not clip, so its 44 px target (::before) stays. */}
+            <bdi translate="no" className="block truncate">
+              {d.name}
+            </bdi>
           </span>
         );
       })}
