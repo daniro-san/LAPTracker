@@ -126,7 +126,9 @@ export async function runSquadsBatch(
   // our event reads (D124).
   const eventOn = inEventWindow(now, deps.env);
   // INVARIANT keys.own-quota-only: a workspace is read only on its own key; LAP_API_KEY only for the own
-  // alliance (D124).
+  // alliance (D124), or for a workspace whose saved key is LAP_API_KEY itself (issue 855): any workspace,
+  // the own alliance's or another's, holding the site key is read on it for its OWN alliance only, under
+  // the site reserve and the event pause (`key: null`).
   const feature = run.shield ? "shield_check" : "squads";
   const targets = (await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now, feature)).filter(
     (t) => (run.unionId === undefined || t.unionId === run.unionId) && (t.key || !eventOn),

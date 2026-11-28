@@ -17,7 +17,14 @@ import {
   storeKey,
 } from "../repo/workspace-keys";
 import type { V1Source } from "../sources/types";
-import { checkKey, keyUsable, masterFingerprint, sealKey, TRACKER_KEY } from "../workspace-keys";
+import {
+  checkKey,
+  keyUsable,
+  masterFingerprint,
+  savedIsSiteKey,
+  sealKey,
+  TRACKER_KEY,
+} from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
 
 /** The route's body: a key to set (or replace), or Remove. The key is checked here, at the boundary. */
@@ -57,6 +64,23 @@ export async function trackerKeyView(
   now: Date,
 ): Promise<TrackerKeyView> {
   return keyViewOf(access, await keyFacts(db, access.workspaceId), env.WORKSPACE_KEYS_SECRET, now);
+}
+
+/**
+ * Alliance settings' key card only: the view and `siteKey`, the saved key is LAP_API_KEY itself (issue 855),
+ * a boolean. Opens the key, so Home and the routes read `trackerKeyView` instead.
+ */
+export async function settingsKeyView(
+  db: Db,
+  access: WorkspaceAccess,
+  env: Pick<Env, "WORKSPACE_KEYS_SECRET">,
+  now: Date,
+): Promise<TrackerKeyView & { siteKey: boolean }> {
+  const [view, siteKey] = await Promise.all([
+    trackerKeyView(db, access, env, now),
+    savedIsSiteKey(db, env.WORKSPACE_KEYS_SECRET, access.workspaceId),
+  ]);
+  return { ...view, siteKey };
 }
 
 /** The same, from the key's facts already read (the read status bar reads them once, D135). */

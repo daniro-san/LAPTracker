@@ -50,6 +50,8 @@ export const settingsEn = {
   "key.state.site": "No key yet. Your squads are read with the site’s key until you add yours.",
   "key.state.none": "No key yet. Squads from the tracker stay off until you add one.",
   "key.state.off": "Tracker keys are not set up on this site yet. Ask the site’s owner.",
+  "key.siteKey":
+    "This is the site’s key; reads will share its daily quota and keep the event reserve.",
   "key.quota": "Quota left: {n}",
   "key.checked": "Checked {when}",
   "key.label": "Your tracker key",
@@ -147,6 +149,8 @@ export const settingsPt: typeof settingsEn = {
     "Ainda sem chave. Os esquadrões do tracker ficam desligados até você adicionar uma.",
   "key.state.off":
     "As chaves do tracker ainda não estão configuradas neste site. Fale com o dono do site.",
+  "key.siteKey":
+    "Esta é a chave do site; as leituras vão dividir a cota diária dela e manter a reserva do evento.",
   "key.quota": "Cota restante: {n}",
   "key.checked": "Verificada {when}",
   "key.label": "Sua chave do tracker",
@@ -247,6 +251,8 @@ export const settingsFr: typeof settingsEn = {
   "key.state.off":
     "Les clés du tracker ne sont pas encore configurées sur ce site. Demandez au propriétaire du site.",
   "key.quota": "Quota restant : {n}",
+  "key.siteKey":
+    "C’est la clé du site ; les lectures partageront son quota quotidien et garderont la réserve de l’événement.",
   "key.checked": "Vérifiée {when}",
   "key.label": "Votre clé du tracker",
   "key.help":

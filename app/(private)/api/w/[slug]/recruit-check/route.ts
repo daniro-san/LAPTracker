@@ -2,8 +2,9 @@
 // stores do not hold yet. Officers only: same origin, JSON, an officer's session (401 signed_out, D99). {uid}.
 // 200 {called}: false when the player was stored already (no call). 403 turned_off (D126); 409 no_key: the
 // alliance has no own key that reads now (never LAP_API_KEY, D124); 429 cap_reached: the day's reads are used
-// (reset 00:00 UTC); 404 not_found: the tracker does not know the uid; 502 unavailable. Nothing of the
-// player leaves in a log or an event.
+// (reset 00:00 UTC); 404 not_found: the tracker does not know the uid; 502 unavailable; 503 quota_low: the
+// saved key is LAP_API_KEY and the read would cut into its reserve (issue 855; shown with the "try again
+// later" line). Nothing of the player leaves in a log or an event.
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
@@ -26,6 +27,7 @@ const STATUS = {
   cap_reached: 429,
   not_found: 404,
   unavailable: 502,
+  quota_low: 503,
 } as const;
 
 export async function POST(
@@ -42,7 +44,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
-    const deps = { v1: ctx.v1, secret: ctx.env.WORKSPACE_KEYS_SECRET, now };
+    const deps = { v1: ctx.v1, secret: ctx.env.WORKSPACE_KEYS_SECRET, now, env: ctx.env };
     const done = await privately("recruit.read", () => readRecruit(db, deps, access, uid));
     if (!done.ok) return privateError(STATUS[done.code], done.code);
     return Response.json({ called: done.called }, { headers: NO_STORE });

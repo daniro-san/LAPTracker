@@ -39,7 +39,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { MORNING_CHOICES, shieldSettingsView } from "@/lib/private/shield-settings";
 import { SLUG } from "@/lib/private/sign-in";
 import { squadsReader, squadsToday, type SquadsToday } from "@/lib/private/squads-today";
-import { trackerKeyView } from "@/lib/private/tracker-key";
+import { settingsKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 import { fill } from "@/lib/words";
 
@@ -87,7 +87,7 @@ function summaryChannel(channels: Awaited<ReturnType<typeof webhookViews>>) {
 
 /** The key card's state, last 4, quota left and "checked …" line, in the officer's words. */
 function keyForm(
-  view: Awaited<ReturnType<typeof trackerKeyView>>,
+  view: Awaited<ReturnType<typeof settingsKeyView>>,
   t: Awaited<ReturnType<typeof workspaceWords>>["t"],
   language: WorkspaceLanguage,
   now: Date,
@@ -101,7 +101,7 @@ function keyForm(
     view.quotaRemaining === null
       ? null
       : fill(t["key.quota"], { n: new Intl.NumberFormat(language).format(view.quotaRemaining) });
-  return { state: view.state, last4: view.last4, quota, checked };
+  return { state: view.state, last4: view.last4, quota, checked, siteKey: view.siteKey };
 }
 
 /** Everything the page shows, read after requireWorkspace, in parallel. */
@@ -117,7 +117,7 @@ async function readSettings(
   const channelsRead = webhookViews(db, access, env);
   const [view, waiting, bot, channels, squads, features, shield, push, callouts, posts, glossary] =
     await Promise.all([
-      trackerKeyView(db, access, env, now),
+      settingsKeyView(db, access, env, now),
       toReviewCount(db, access, now),
       botView(db, access, env),
       channelsRead,

@@ -46,9 +46,19 @@ async function send(
   }
 }
 
-type View = { state: KeyState; last4: string | null; quota: string | null; checked: string | null };
+type View = {
+  state: KeyState;
+  last4: string | null;
+  quota: string | null;
+  checked: string | null;
+  /** The saved key is the site's own (issue 855). */
+  siteKey: boolean;
+};
 
-/** The saved key: "Key set, ends in ••••abcd", its state, quota left and when it was checked. */
+/**
+ * The saved key: "Key set, ends in ••••abcd", its state, quota left and when it was checked, and a line when
+ * it is the site's own key (issue 855).
+ */
 function KeySummary({ view, t }: { view: View; t: WorkspaceDictionary }) {
   const details = [view.quota, view.checked].filter(Boolean).join(" · ");
   return (
@@ -64,6 +74,7 @@ function KeySummary({ view, t }: { view: View; t: WorkspaceDictionary }) {
         {t[`key.state.${view.state}`]}
       </p>
       {details && <p className="text-body-sm text-ink/75">{details}</p>}
+      {view.siteKey && <p className="text-body-sm">{t["key.siteKey"]}</p>}
     </>
   );
 }
