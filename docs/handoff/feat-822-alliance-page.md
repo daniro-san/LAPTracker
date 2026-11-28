@@ -18,10 +18,10 @@
 - Links to the new page: rows on `/alliances` for alliances outside the home event (`allianceHref`, which linked to `/history` before), alliance names in the member flow (`FlowView`), and the history page's breadcrumb when the alliance is not in the home event.
 - Copy: `lib/copy-alliance-page.ts` (`copy.alliancePage`), translated into all 17 public languages with the translate-copy skill, then stamped.
 - Rules:
-  - D76 has a dated amendment (owner, 2026-11-28) covering D163 as well.
+  - D76 has a dated amendment (owner, 2026-11-28), and D163 has a one-line dated pointer to it.
   - CLAUDE.md's roster-fields rule and `.claude/rules/private.md` are updated.
   - `lib/queries/blocked-keys.ts`:
-    - `BLOCKED_ROSTER_KEYS` is now `x`, `y`, `online`, `last_online_at`, `joined_at` and `avatar_url`.
+    - `BLOCKED_ROSTER_KEYS` is now `x`, `y`, `online`, `last_online_at`, `last_seen_at` (kept from D163, with its test), `joined_at` and `avatar_url`.
     - New `ACTIVITY_KEYS` holds `daily_honor`, `daily_tech` and `active`.
     - New `UNLOGGED_ROSTER_KEYS` holds both lists. The redactor (`lib/redact.ts`), the workspace export's `NEVER` set (`lib/repo/workspace-data.ts`), the Discord body check in `lib/notify.test.ts` and the e2e `EXPORT_NEVER` now use it, so logs, Discord and exports behave as before.
 - Tests:
@@ -31,9 +31,8 @@
 
 ## Decisions
 
-- **The amendment is on D76 only.** D163 is not on `dev` yet (PR 819, `feat/d163-map-and-names`), so its file cannot be amended here. The D76 amendment says it also amends D163 point 2's "other public-page uses … stay as they are". When PR 819 merges, add a one-line amendment to D163 that points to D76's 2026-11-28 amendment.
+- **Rebased onto `dev` after D163 (PR 819) merged.** `CLAUDE.md` and `.claude/rules/private.md` keep D163's wording on the desk. The public-page rule now reads: per member, rank, quest points, Help coins, tech donated and might may be shown; online, last online, last seen, join date, squads, VIP and X/Y never are.
 - **The blocked list is split instead of shortened.** Taking the three activity keys out of `BLOCKED_ROSTER_KEYS` alone would also have let them into error text, Discord bodies and workspace exports. `UNLOGGED_ROSTER_KEYS` keeps those paths exactly as they were.
-- **`last_seen_at` is not added to `BLOCKED_ROSTER_KEYS`.** It is a `/v1/players` key, not a roster key. The list's first test checks every key against a real roster fixture, and the new read model never reads `last_seen_at`.
 - **Labels:**
   - `active` is labelled "Quest points" (GLOSSARY: daily quest points, a weekly running total), not "weekly activity". The line above the list says "quest points since Monday".
   - `daily_honor` is "Help coins". The line above the list names "Alliance Help coins" in full.
@@ -50,11 +49,12 @@
 - `pnpm vitest related --run` on the changed files: 252 files, 1458 tests passed (before the translations).
 - `pnpm typecheck`: clean.
 - `pnpm check`: green. 401 test files passed and 2 were skipped (2174 tests). Prettier, eslint, tsc, drift and i18n (17 languages up to date) all passed. The first two runs failed on import order, function complexity and length, and the D71 fence test (`lib/private/roster-fields.test.ts`). That test now allows `lib/queries/alliance-page.ts`.
-- Not run: a browser check at 360, 640 and 1280 px, light and dark. This worktree has no local database seeded, and the designer-persona review is the orchestrator's step.
+- Rendered on a production build (`next build`, then `next start`) against a local Postgres seeded by the e2e setup (D150, invented names), through a temporary Playwright spec that was not committed. Screenshots of `/alliances/900101` at 360, 640 and 1280 px, light and dark, plus 360 light with `?range=7d`, are outside the repo. The head, statement card, growth card (might `−5.35M over 13 days`, members `No change over 13 days`), tabs, chips and member links render with no overflow. The Server fact is left out because the seed's roster has no `sid`.
 
 ## Open issues
 
-- A design persona panel and a UX review at 360, 640 and 1280 px, light and dark, have not been done. The orchestrator owes them before the merge.
+- The design persona review has not been done yet; the screenshots are its input.
+- At 360 px the Exact numbers toggle wraps under the title, as it does on the other alliance pages.
 - Translators kept "Quest points", "Help coins" and "tech" in English in some languages (for example pt-BR) because the glossary has no in-game word for them.
 - No feature flag gates the page (the task did not ask for one). It is live as soon as this merges, and `/alliances` rows link to it.
 
@@ -65,8 +65,7 @@
 - `/alliances` rows of home-event alliances still open the event's alliance page. Decide whether every row should open the new page.
 - The private thefts log (`app/(private)/_ui/theft-data.ts`) still links to `/history`.
 - Joins and leaves tab (issue 818's reference): not in issue 822, so not built here.
-- After PR 819 merges: add the D163 amendment line and reconcile CLAUDE.md and `.claude/rules/private.md`. Both PRs edit the same rule sentence and table row.
 
-What was missing from the task prompt? D163 exists only on the unmerged PR 819, so "amend D163" could not be done on a branch cut from `dev`.
+What was missing from the task prompt? D163 was still on the unmerged PR 819 when the work started; it was amended after the rebase.
 
 PR: (added by the orchestrator)
