@@ -15,6 +15,8 @@ import { peerRank } from "./players";
 export interface ProgressReading {
   /** When the game's data was read. */
   at: Date;
+  /** The daily read's server day (YYYY-MM-DD); null for an event's reading. */
+  day: string | null;
   /** The event and its Start (`before`) or End (`after`); null for a daily read. */
   event: HistoryEvent | null;
   unionId: number;
@@ -54,6 +56,7 @@ async function dailyOf(db: Db, uid: number): Promise<ProgressReading[]> {
   const rows = await db
     .select({
       at: dailyRosters.sourceUpdatedAt,
+      day: dailyRosters.readDay,
       unionId: dailyRosters.unionId,
       tag: dailyRosters.tag,
       name: sql<string | null>`(${dailyRosters.memberNames})[${i}]`,
@@ -101,6 +104,7 @@ async function eventsOf(db: Db, uid: number): Promise<ProgressReading[]> {
   return pickRosterRows(rows, () => true).map(({ uid: _, eventId: __, phase: ___, ...r }) => ({
     ...r,
     at: r.at as Date,
+    day: null,
   }));
 }
 

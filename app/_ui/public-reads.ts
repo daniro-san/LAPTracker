@@ -8,6 +8,7 @@ import { withOwnDb } from "@/lib/page";
 import {
   listEvents,
   playerHistory,
+  playerInAlliance,
   playerProgress,
   recruitingAlliances,
   upstreamRows,
@@ -64,12 +65,18 @@ export const sharedEventAllianceLabels = (eventId: number) =>
 export const sharedPlayerSearch = (q: string) =>
   sharedRead("player-search", [q], (db) => searchPlayers(db, q));
 
-/** A player page's reads: the history and the progress; null (never kept) for an unknown uid. Its link
- * preview card reads the same entry (issue 830). */
+/** A player page's reads: the history, the progress and the newest daily read's alliance, rank and quest
+ * points (issue 824); null (never kept) for an unknown uid. Its link preview card reads the same entry (issue
+ * 830). */
 export const sharedPlayer = (uid: number) =>
   sharedRead("player", [uid], async (db) => {
     const history = await playerHistory(db, uid);
-    return history && { history, progress: await playerProgress(db, uid) };
+    if (!history) return null;
+    const [progress, read] = await Promise.all([
+      playerProgress(db, uid),
+      playerInAlliance(db, uid),
+    ]);
+    return { history, progress, read };
   });
 
 /** An alliance page's link preview card (issue 830): its newest tag and name and its ranks board row; null

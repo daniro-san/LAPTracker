@@ -9,7 +9,6 @@ import {
   boardOf,
   calendarOf,
   changedAtLastEvent,
-  endOf,
   eventTotals,
   FILLERS,
   intervalParts,
@@ -105,21 +104,31 @@ test("the alliance list shows yesterday's ranks board", async ({ page }) => {
   expect(await sideways(page)).toBe(false);
 });
 
-test("a player page shows the player's figures at the last event's End", async ({ page }) => {
+test("a player page's head shows the newest read's figures and links the alliance's page", async ({
+  page,
+}) => {
   await page.goto(`/players/${memberUid("a", 0)}`);
   await expect(page.getByRole("heading", { level: 1, name: A.names[0] as string })).toBeVisible();
-  const figures = page.getByRole("region", { name: "Player" });
-  const end = endOf("a", 0);
-  await sees(figures, `Might ${big(end.might)}`);
-  await sees(figures, `Kills ${big(end.kills)}`);
+  const figures = page.locator("main dl").first();
+  const newest = rosterOf("a", 0);
+  await sees(figures, `Might ${big(newest.might)}`);
+  await sees(figures, `Kills ${big(newest.kills)}`);
+  await sees(figures, "Rank R5");
   await sees(figures, "Level 25");
-  await sees(
-    figures,
-    `As of ${shown(lastEvent, "en-GB", { day: "numeric", month: "short" })}, 14:00 server time`,
-  );
-  await expect(page.getByRole("link", { name: `[${A.tag}] ${A.name}` }).first()).toBeVisible();
+  const alliance = figures.getByRole("link", { name: `[${A.tag}] ${A.name}` });
+  await expect(alliance).toHaveAttribute("href", `/alliances/${A.unionId}`);
   await noErrorOrEmpty(page);
   expect(await sideways(page)).toBe(false);
+});
+
+test("a player page's History tab keeps day by day under the growth card", async ({ page }) => {
+  await page.goto(`/players/${memberUid("a", 0)}?range=7d`);
+  await expect(page.getByRole("heading", { level: 2, name: "Growth" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "7d" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { level: 2, name: "History" })).toBeVisible();
+  const days = page.locator("section#days");
+  await expect(days.getByRole("heading", { level: 2 })).toBeVisible();
+  await expect(days.locator("li").first()).toBeVisible();
 });
 
 test("a player's might chart names a reading under it at a step, and the address keeps it (D158)", async ({
@@ -127,7 +136,12 @@ test("a player's might chart names a reading under it at a step, and the address
 }) => {
   await page.goto(`/players/${memberUid("a", 0)}`);
   await expect(page.getByRole("heading", { level: 1, name: A.names[0] as string })).toBeVisible();
-  const progress = page.locator("section").filter({ hasText: "Daily progress" });
+  const progress = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { level: 2, name: "Growth" }) });
+  // What was Daily progress is in the growth card: the 7-day comparison and the events' note.
+  await sees(progress, `Typical [${A.tag}] member`);
+  await sees(progress, "Might often drops in war events.");
   // The first readout in the card is the might chart's; it starts on the newest reading, the last daily read.
   const line = progress.locator("p[aria-live]").first();
   const day = shown(lastRosterDay(), "en-GB", { day: "numeric", month: "short" });
@@ -144,10 +158,13 @@ test("a player's might chart names a reading under it at a step, and the address
   await expect(line).not.toHaveText(newest);
   await expect(later).toBeEnabled();
   const stepped = (await line.textContent()) ?? "";
-  await expect(page).toHaveURL(/#at-might-\d+$/);
-  // Back to the page (a reload here) shows the same reading.
+  await expect(page).toHaveURL(/#at-growth-power-\d+$/);
+  // Back to the page (a reload here) shows the same reading. The range links' prefetches finish first, so the
+  // guard reads every answer (a reload would cut them off unread); the public player page does not poll.
+  await page.waitForLoadState("networkidle");
   await page.reload();
   await expect(line).toHaveText(stepped);
+  await page.waitForLoadState("networkidle");
 });
 
 test("an event's ledger marks the change that members who joined or left moved, and splits it", async ({

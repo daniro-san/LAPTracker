@@ -2,8 +2,9 @@
 // fields and the growth of might and members, from the alliance's usable daily rosters (D60, D72). Per member
 // it serves rank, name, might, weekly activity (`active`), Alliance Help coins (`daily_honor`) and tech donated
 // (`daily_tech`), public since the owner's decision of 2026-11-28 (D76 amendment). Only those keys leave
-// raw_json, picked out in SQL; never a key of BLOCKED_ROSTER_KEYS.
-import { and, desc, eq, gt, gte, isNotNull, isNull, sql } from "drizzle-orm";
+// raw_json, picked out in SQL; never a key of BLOCKED_ROSTER_KEYS. `playerInAlliance` gives the player page
+// (issue 824) one member's rank and weekly activity from the same rosters.
+import { and, arrayContains, desc, eq, gt, gte, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { addDays } from "../calendar-time";
 import type { Db } from "../db";
@@ -82,13 +83,12 @@ const capped = (members: number | null, capacity: number | null) =>
   members !== null && capacity !== null ? Math.min(members, capacity) : members;
 
 /** A fresh roster with no error and at least one member (D60). */
-const usable = (unionId: number) =>
-  and(
-    eq(dailyRosters.unionId, unionId),
-    eq(dailyRosters.isFresh, true),
-    isNull(dailyRosters.error),
-    gt(dailyRosters.memberCount, 0),
-  );
+const fit = and(
+  eq(dailyRosters.isFresh, true),
+  isNull(dailyRosters.error),
+  gt(dailyRosters.memberCount, 0),
+);
+const usable = (unionId: number) => and(eq(dailyRosters.unionId, unionId), fit);
 
 function memberOf(m: RawMember): AlliancePageMember | null {
   const uid = num(m.uid);
@@ -176,5 +176,51 @@ export async function alliancePage(db: Db, unionId: number): Promise<AlliancePag
             },
           ],
     ),
+  };
+}
+
+export interface PlayerInAlliance {
+  unionId: number;
+  tag: string | null;
+  name: string | null;
+  badgeId: number | null;
+  /** The roster's server day and when the upstream read it. */
+  day: string;
+  at: Date | null;
+  server: number | null;
+  /** 1 to 5 (R1–R5); null when the read has no rank. */
+  rank: number | null;
+  role: Role | null;
+  /** Quest points since Monday's reset (D127); null: not sent. */
+  active: number | null;
+}
+
+/** The player's newest usable daily roster that kept its response: the alliance, its server, and the player's
+ * rank and quest points there. Null when no such roster holds the player. */
+export async function playerInAlliance(db: Db, uid: number): Promise<PlayerInAlliance | null> {
+  const [row] = await db
+    .select({
+      unionId: dailyRosters.unionId,
+      day: dailyRosters.readDay,
+      at: dailyRosters.sourceUpdatedAt,
+      tag: dailyRosters.tag,
+      name: dailyRosters.name,
+      badgeId: dailyRosters.badgeId,
+      server: raw("sid"),
+      member: sql<RawMember | null>`(select jsonb_build_object('rank_code', m->'rank_code', 'rank_label', m->'rank_label', 'active', m->'active') from jsonb_array_elements(${dailyRosters.rawJson}->'members') m where m->'uid' = to_jsonb(${uid}::bigint) limit 1)`,
+    })
+    .from(dailyRosters)
+    .where(and(fit, isNotNull(dailyRosters.rawJson), arrayContains(dailyRosters.memberUids, [uid])))
+    .orderBy(desc(dailyRosters.readDay), desc(dailyRosters.sourceUpdatedAt))
+    .limit(1);
+  if (!row) return null;
+  const { member, server, ...rest } = row;
+  const m = member && memberOf({ ...member, uid });
+  return {
+    ...rest,
+    server: num(server),
+    rank: m?.rank ?? null,
+    role: m?.role ?? null,
+    active: m?.active ?? null,
   };
 }

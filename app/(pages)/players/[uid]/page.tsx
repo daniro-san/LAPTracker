@@ -1,26 +1,31 @@
-// `/players/[uid]`: one player across events, shaped like the alliance page (plan Phase 5d, 5e).
+// `/players/[uid][?range=7d|30d|90d]`: one player, on the alliance page's head and growth card (issue 824): the
+// photo, the name and the head's facts; might and kills over 7, 30 or 90 days of daily reads, with the 7-day
+// comparison line and the events' readings as hollow dots (what was "Daily progress", issue 270); then History:
+// the timelines and name history, day by day (issue 773) and the across-events view (plan Phase 5d, 5e).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { PlayerCompareLink } from "@/app/_ui/ComparePicker";
+import { DossierHead } from "@/app/_ui/DossierHead";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
+import { rangeOf } from "@/app/_ui/growth";
+import { GrowthCard } from "@/app/_ui/GrowthCard";
 import { cardText, playerCard } from "@/app/_ui/link-card-facts";
 import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
-import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
 import { PlayerDays } from "@/app/_ui/PlayerDays";
-import { PlayerProgress } from "@/app/_ui/PlayerProgress";
+import { HistoryHeading, playerAlliance, playerFacts, playerGrowth } from "@/app/_ui/PlayerDossier";
+import { bandsOf, EventNote, summaryText } from "@/app/_ui/PlayerProgress";
 import { cardPreview } from "@/app/_ui/preview";
 import { sharedEvents, sharedPlayer } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
-import { FreshDots, Legend } from "@/app/_ui/Status";
-import { RoleMark } from "@/lib/brand/components/RoleMark";
+import { Legend } from "@/app/_ui/Status";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
@@ -79,43 +84,6 @@ function Timelines({
   );
 }
 
-/** The latest stored Might, Kills and Level as one band (no second title), like the alliance page's. */
-function Summary({
-  current,
-  clock,
-  copy,
-}: {
-  current: PlayerHistory["current"];
-  clock: Clock;
-  copy: Dictionary;
-}) {
-  const l = copy.ledger;
-  const figures = [
-    { label: l.might, value: current.power },
-    { label: l.kills, value: current.kills },
-    { label: l.level, value: current.lv },
-  ];
-  const state = { isFresh: current.isFresh, updatedAt: current.updatedAt, failed: false };
-  return (
-    <section aria-label={l.player} className="drawn-card">
-      <dl className="grid grid-cols-3 divide-x divide-rule">
-        {figures.map((f) => (
-          <div key={f.label} className="min-w-0 px-2 py-2 sm:px-4">
-            <dt className={LABEL}>{f.label}</dt>
-            <dd className="text-xl font-medium tabular-nums">
-              <Num n={f.value} />
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <p className="flex min-h-11 flex-wrap items-center gap-x-3 border-t border-rule px-2 text-sm text-ink/70 sm:px-4">
-        {current.updatedAt && fill(l.asOf, { time: clock.at(current.updatedAt) })}
-        <FreshDots before={null} after={state} copy={copy} />
-      </p>
-    </section>
-  );
-}
-
 /** Shared by the page and its <title> within one request, and with every viewer until the next write (D143).
  * An unknown uid is not kept (lib/public-cache.ts). */
 const loadPlayer = cache(async (uid: number) => {
@@ -149,49 +117,73 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title, ...cardPreview(`/img/card/player/${data.history.uid}`, title, facts) };
 }
 
-/** The title row: photo, name, alliance link and role, with Compare and the exact-numbers switch. */
-function PlayerHead({
-  history,
-  allianceName,
+type Loaded = NonNullable<Awaited<ReturnType<typeof loadPlayer>>>;
+
+/** The History tab: the timelines and name history, day by day and the across-events view. */
+function History({
+  data: { history, progress },
+  before,
+  clock,
   copy,
 }: {
-  history: PlayerHistory;
-  allianceName: string | null;
+  data: Loaded;
+  before: Date | null;
+  clock: Clock;
   copy: Dictionary;
 }) {
-  const { current } = history;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-      <div className="flex min-w-0 items-center gap-3">
-        <PlayerAvatar uid={history.uid} photo={current} size="lg" />
-        <div className="min-w-0">
-          <h1 className="break-words font-display text-display-lg leading-tight">
-            <bdi>{current.name}</bdi>
-          </h1>
-          <TextLink
-            href={`/events/${current.eventId}/alliances/${current.unionId}`}
-            className="inline-flex min-h-11 items-center gap-2 font-medium"
-          >
-            <AllianceBadge badgeId={current.badgeId} />
-            {allianceLabel(current.tag, allianceName)}
-          </TextLink>
-          {current.role && (
-            <p className="flex items-center gap-2 text-sm text-ink/70">
-              <RoleMark role={current.role} />
-              {current.role.kind === "officer" ? current.role.title : copy.leadership.leader}
-            </p>
-          )}
-        </div>
+    <>
+      <HistoryHeading copy={copy} />
+      <div className="mt-3">
+        <Legend copy={copy} />
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <PlayerCompareLink
-          eventIds={history.rows.map((r) => r.eventId)}
-          uid={history.uid}
-          copy={copy}
-        />
-        <ExactToggle />
-      </div>
-    </div>
+      <Timelines history={history} clock={clock} copy={copy} />
+      <PlayerDays
+        uid={history.uid}
+        steps={progressSteps(progress.readings)}
+        before={before}
+        clock={clock}
+        copy={copy}
+      />
+      <PlayerAcrossEvents
+        rows={history.rows}
+        clock={clock}
+        showAlliance={new Set(history.alliances.map((a) => a.unionId)).size > 1}
+      />
+    </>
+  );
+}
+
+/** The head: photo, name, Compare and the exact-numbers switch, the facts, and when they were read. */
+function Head({ data, clock, copy }: { data: Loaded; clock: Clock; copy: Dictionary }) {
+  const { history, progress, read } = data;
+  const { current, uid } = history;
+  const newest = progress.readings.at(-1);
+  const alliance = playerAlliance(read, newest, history);
+  const asOf = newest?.at ?? current.updatedAt;
+  return (
+    <>
+      <DossierHead
+        picture={<PlayerAvatar uid={uid} photo={current} size="lg" />}
+        title={<bdi>{current.name}</bdi>}
+        actions={
+          <>
+            <PlayerCompareLink
+              eventIds={history.rows.map((r) => r.eventId)}
+              uid={uid}
+              copy={copy}
+            />
+            <ExactToggle />
+          </>
+        }
+        facts={playerFacts({ read, alliance, newest, history, copy })}
+      />
+      {asOf && (
+        <p className="mt-1 text-body-sm text-ink/70">
+          {fill(copy.ledger.asOf, { time: clock.at(asOf) })}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -204,16 +196,19 @@ export default async function PlayerPage({
 }) {
   const uid = await uidOf(params);
   if (uid === null) notFound();
-  const [data, clock, copy, before] = await Promise.all([
+  const [data, clock, copy, locale, before, sp] = await Promise.all([
     loadPlayer(uid),
     requestClock(),
     requestCopy(),
+    requestLocale(),
     beforeOf(searchParams),
+    searchParams,
   ]);
   if (!data) notFound();
-  const { history, events, progress } = data;
-  const { current } = history;
-  const allianceName = history.alliances.at(-1)?.name ?? null;
+  const { history, events, progress, read } = data;
+  const alliance = playerAlliance(read, progress.readings.at(-1), history);
+  const growth = playerGrowth(progress.readings, locale, copy);
+  const bands = bandsOf(progress.readings);
   return (
     <>
       <SiteHeader
@@ -230,33 +225,30 @@ export default async function PlayerPage({
             { key: "ledger", href: "/", label: copy.site.home },
             {
               key: "alliance",
-              href: `/events/${current.eventId}/alliances/${current.unionId}`,
+              href: alliance.href,
               label: (
                 <>
-                  <AllianceBadge badgeId={current.badgeId} />
-                  {allianceLabel(current.tag, allianceName)}
+                  <AllianceBadge badgeId={alliance.badgeId} />
+                  {allianceLabel(alliance.tag, alliance.name)}
                 </>
               ),
             },
           ]}
         />
-        <PlayerHead history={history} allianceName={allianceName} copy={copy} />
-        <Legend copy={copy} />
-        <Timelines history={history} clock={clock} copy={copy} />
-        <Summary current={current} clock={clock} copy={copy} />
-        <PlayerProgress progress={progress} clock={clock} />
-        <PlayerDays
-          uid={uid}
-          steps={progressSteps(progress.readings)}
-          before={before}
-          clock={clock}
-          copy={copy}
-        />
-        <PlayerAcrossEvents
-          rows={history.rows}
-          clock={clock}
-          showAlliance={new Set(history.alliances.map((a) => a.unionId)).size > 1}
-        />
+        <Head data={data} clock={clock} copy={copy} />
+        {growth.length > 0 && (
+          <GrowthCard
+            series={growth}
+            range={rangeOf(sp.range)}
+            hrefOf={(r) => `/players/${uid}?range=${r}d`}
+            clock={clock}
+            copy={copy}
+            lead={summaryText(progress, clock, locale, copy)}
+            bands={bands}
+            note={<EventNote bands={bands} clock={clock} copy={copy} />}
+          />
+        )}
+        <History data={data} before={before} clock={clock} copy={copy} />
       </main>
       <SiteFooter ornament="granny" copy={copy} />
     </>

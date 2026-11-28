@@ -182,6 +182,7 @@ describe("progressSteps: the player's day by day (issue 773)", () => {
 
   const reading = (day: string, over: Partial<ProgressReading> = {}): ProgressReading => ({
     at: at(day),
+    day,
     event: null,
     unionId: 1,
     tag: "OGs",
