@@ -49,6 +49,14 @@ Persona check (scratchpad `427-personas.md`): an officer on a phone (20s, 360 px
 - `pnpm check` (prettier, eslint, tsc, vitest 2056 passed, drift, i18n): passes. The first run failed on two complexity lint errors (the follow-up route, `activityLine`), fixed in one round.
 - Not run: a browser pass at 360/1280 (no dev server here).
 
+### PR review fixes (PR 787, 2026-11-27)
+
+- The follow-up delete's "still counts" rule moved from a read in TypeScript into one SQL guard on the delete (`stillCounting` in `lib/repo/member-follow-ups.ts`), so a Follow-up Undo committed between the officer's view and the delete is seen. The inline sql`false` is gone.
+- `insertOutcome` stores an outcome only while the request is not withdrawn, in the insert's own statement (`insert … select … where exists … deleted_at is null`), and answers `not_found` otherwise. Its transaction type (`Tx`, and the notice save's `after` hook) now includes `execute`.
+- A withdraw's Undo is refused once the request has an outcome (`stillOpen`). Home's answered line leaves a withdrawn request out.
+- New tests: the delete refused once the record no longer counts; the Needs help mark without a deleted record; Home with a deleted record between a record and its withdrawn; `lib/repo/notice-reviews.test.ts` (outcome refused on a withdrawn request; a `lib/repo` test, since `app/` may not import `lib/repo`); a withdraw's Undo refused after an outcome, with no answered line. Each fix was removed once and its test failed, then restored. The Needs help test fails only when both `deleted_at` filters in `helpRecords` are removed: either one alone keeps the record out.
+- Left as it was: Follow-up's own Undo (`undoFollowUp`) still reads the newest record and then inserts "withdrawn" in two statements (from before this PR). A delete committed between them is not seen by that Undo. Fixing it would mean a transaction or lock around `undoFollowUp` and its fact write; listed under Next.
+
 ## Open issues
 
 - Undo shows 10 s on the page; a slower reader may miss it. A "Recently deleted" list would cover it.
@@ -61,6 +69,8 @@ Persona check (scratchpad `427-personas.md`): an officer on a phone (20s, 360 px
 - `alliance_duel_points`: delete a wrong day's save.
 - "Restore from trash?" for Calendar entries, thefts and new members when an officer saves over a deleted one.
 - A "Recently deleted" list for any type.
+- Follow-up's Undo (`undoFollowUp`, pre-existing): make its read and its "withdrawn" insert one step (a per-member lock in a transaction), so a concurrent delete cannot shift which record it cancels.
+- Regenerate migration 0080 after PR 784 merges (coordinator).
 
 What was missing from the task prompt? That phase 1 and batch 1 (D123, PR 439) were already merged, so the work was phase 2.
 

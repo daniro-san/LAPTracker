@@ -34,7 +34,7 @@ export const reviewParts = (ws: number, since: string, before: string, n: number
     (select 'reviewAnswered', o.by, o.at, r.notice_id, o.outcome, r.language, null, null, null
       from notice_review_outcomes o join notice_reviews r on r.id = o.review_id
       where o.workspace_id = ${ws} and o.by is not null and o.at >= ${since}
-        and o.at < ${before}
+        and o.at < ${before} and r.deleted_at is null
       order by o.at desc limit ${n})`;
 
 type Row = {

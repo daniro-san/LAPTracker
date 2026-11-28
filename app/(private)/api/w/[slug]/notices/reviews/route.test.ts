@@ -20,6 +20,7 @@ import { noticeDetail } from "@/lib/private/notices";
 import { UNDO_MS } from "@/lib/private/roll-call";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { noticeReviewOutcomes } from "@/lib/schema-notices";
 import { unzip } from "@/lib/zip.test-helpers";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -286,5 +287,23 @@ describe("withdrawing a review request (D123 phase 2)", () => {
     clock.now = new Date(T0.getTime() + UNDO_MS + 1);
     expect((await withdraw("Rook", r, late, true)).status).toBe(404);
     expect(await isOpen(id, r)).toBe(false);
+  });
+
+  it("a withdraw's Undo is refused once the request got an outcome, and Home has no answered line", async () => {
+    const r = await ask(await notice(), null, null);
+    const requestId = randomUUID();
+    await withdraw("Rook", r, requestId);
+    // An outcome written in the same instant as the withdraw (a race the insert's check cannot see).
+    await db.insert(noticeReviewOutcomes).values({
+      workspaceId: 1,
+      reviewId: r,
+      requestId: randomUUID(),
+      outcome: "approved",
+      by: ids.Rook ?? 0,
+      at: T0,
+    });
+    expect((await withdraw("Rook", r, requestId, true)).status).toBe(404);
+    const kinds = (await recentActivity(db, await access("Wren"), T0)).map((l) => l.item.kind);
+    expect(kinds).not.toContain("reviewAnswered");
   });
 });

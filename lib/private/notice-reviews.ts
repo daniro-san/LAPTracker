@@ -147,7 +147,8 @@ export async function answerReview(
 /**
  * Withdraws an open request of the workspace (D123 phase 2): any officer, as every delete at the desk; or
  * with `undo` takes the officer's own withdraw made under the same request id back within UNDO_MS.
- * "not_found": no such open request, or nothing of this officer's to undo.
+ * "not_found": no such open request, or nothing of this officer's to undo, or the request got an outcome
+ * meanwhile (both rules run in the write's own statement, `stillOpen`).
  */
 export async function withdrawReview(
   db: Db,
@@ -158,7 +159,7 @@ export async function withdrawReview(
   const { workspaceId, user } = access;
   const c = { workspaceId, userId: user.id, now, id: input.review, requestId: input.requestId };
   const done = input.undo
-    ? await undoDelete(db, reviewTable, c)
+    ? await undoDelete(db, reviewTable, c, stillOpen)
     : await softDelete(db, reviewTable, c, stillOpen);
   return done ? "ok" : "not_found";
 }

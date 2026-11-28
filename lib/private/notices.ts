@@ -253,7 +253,7 @@ export async function saveNotice(
   /** A new notice's request id (D100); a retry with it answers the first notice's id. */
   requestId: string | null = null,
   /** Runs in the save's transaction after the edits (D113: closes the review request it came from). */
-  after?: (tx: Pick<Db, "select" | "insert">, id: number) => Promise<unknown>,
+  after?: (tx: Pick<Db, "select" | "insert" | "execute">, id: number) => Promise<unknown>,
 ): Promise<SaveResult> {
   if (id === null && !changes.some((c) => c.field === "title")) {
     return { ok: false, reason: "no_title" };
