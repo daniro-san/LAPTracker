@@ -1,5 +1,6 @@
-// A member who joined in the last 7 days is worth a hello, with the join date as evidence (issue 828): left
-// out once the 7 days have passed and while the member is on a break. Invented data only.
+// A member who joined in the last 7 days is worth a hello in Follow-up, with the join date as evidence (issue
+// 828): still New on the Members tab, no reason to check in and no count of members to look at; left out once
+// the 7 days have passed and while the member is on a break. Invented data only.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -7,11 +8,10 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace } from "./access";
-import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { cardFormats } from "./member-card";
+import { helloOnly, worklist } from "./follow-up-rules";
 import { saveFacts } from "./member-facts";
-import { membersView } from "./members";
-import { reasonText } from "./members-sheet";
+import { membersView, type MemberRow } from "./members";
+import { statusOf } from "./members-sheet";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -31,10 +31,14 @@ beforeAll(async () => {
 beforeEach(async () => {
   await truncateAll(db);
   await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
-  const day = "2026-11-14";
+  // An earlier read without them, so they were first seen on the newest one and are New.
+  await roster("2026-11-13", [9]);
+  await roster("2026-11-14", [...JOINED.keys()]);
+});
+
+async function roster(day: string, uids: number[]) {
   const at = new Date(`${day}T23:37:00-02:00`);
   await db.insert(dailyReads).values({ day, startedAt: at, status: "complete" });
-  const uids = [...JOINED.keys()];
   await db.insert(dailyRosters).values({
     readDay: day,
     unionId: OGS,
@@ -57,7 +61,7 @@ beforeEach(async () => {
       })),
     },
   });
-});
+}
 
 async function read(onBreak = false) {
   const ws = await findWorkspaceBySlug(db, "ogs");
@@ -74,28 +78,35 @@ async function read(onBreak = false) {
       NOW,
     );
   const view = await membersView(db, access, NOW, ZONE);
-  return (uid: number) => view.members.find((m) => m.uid === uid)?.reasons ?? [];
+  return (uid: number) => view.members.find((m) => m.uid === uid) as MemberRow;
 }
 
 describe("a member who joined this week (issue 828)", () => {
-  it("is listed with the join date when joined_at is within 7 days of the newest read", async () => {
-    const reasons = await read();
-    expect(reasons(1)).toEqual([{ kind: "joined", at: new Date("2026-11-11T12:00:00Z") }]);
-    const [joined] = reasons(1);
-    expect(
-      reasonText(
-        joined as NonNullable<typeof joined>,
-        WORKSPACE_DICTIONARIES.en,
-        cardFormats("en", ZONE, NOW),
-      ),
-    ).toBe("joined on Wed, Nov 11");
+  it("is worth a hello with the join date when joined_at is within 7 days of the newest read", async () => {
+    expect((await read())(1).joinedHello).toEqual(new Date("2026-11-11T12:00:00Z"));
   });
 
-  it("is not listed once 7 days have passed since joined_at", async () => {
-    expect((await read())(2)).toEqual([]);
+  it("stays New on the Members tab, with no reason to check in", async () => {
+    const m = (await read())(1);
+    expect(m.reasons).toEqual([]);
+    expect(statusOf(m)).toBe("new");
   });
 
-  it("is never listed while the member is on a break", async () => {
-    expect((await read(true))(3)).toEqual([]);
+  it("is on Follow-up's list for a hello alone, which adds to no count of members to look at", async () => {
+    const [item] = worklist([(await read())(1)], new Set());
+    expect(item).toMatchObject({ hello: true, checkIn: false });
+    // A new member's facts still to ask put them among those to look at anyway (D104); a hello adds none.
+    const none = { ...(item as NonNullable<typeof item>), toAsk: [] };
+    expect(helloOnly(none)).toBe(true);
+  });
+
+  it("is not worth a hello once 7 days have passed since joined_at", async () => {
+    expect((await read())(2).joinedHello).toBeNull();
+  });
+
+  it("is never worth a hello while the member is on a break", async () => {
+    const m = (await read(true))(3);
+    expect(m.joinedHello).toBeNull();
+    expect(worklist([m], new Set())).toEqual([]);
   });
 });

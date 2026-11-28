@@ -61,8 +61,7 @@ export type Reason =
   | ({ kind: "idle" } & Idle)
   | { kind: "might"; days: number }
   | { kind: "kvk"; at: Date }
-  | { kind: "seen"; at: Date }
-  | { kind: "joined"; at: Date };
+  | { kind: "seen"; at: Date };
 
 export interface MemberRow {
   uid: number;
@@ -106,6 +105,12 @@ export interface MemberRow {
   officerStatus: OfficerStatus | null;
   /** The last day of an away note that still runs; the member is On a break until then. */
   awayUntil: string | null;
+  /**
+   * Issue 828: the day the member joined, while it is within JOINED_DAYS of the newest read and the member
+   * is not on a break. Only Follow-up's "Worth a hello" and the welcome say it: the member stays New, and
+   * it is no reason to check in.
+   */
+  joinedHello?: Date | null;
   /** The buddy an officer named (issue 828), while they are still a member. */
   buddy?: { uid: number; name: string } | null;
   /** From a roster read before the first end-of-day read: nothing computed, no status. */
@@ -186,11 +191,11 @@ function seenReason(m: RosterMember, readAt: Date): Reason[] {
 }
 
 /** Issue 828: a member whose `joined_at` is within JOINED_DAYS of the read is worth a hello, with the date. */
-function joinedReason(m: RosterMember, readAt: Date): Reason[] {
+function joinedHello(m: RosterMember, readAt: Date, away: boolean): Date | null {
   const joined = m.joinedAt;
-  return joined && readAt.getTime() - joined.getTime() < JOINED_DAYS * DAY_MS
-    ? [{ kind: "joined", at: joined }]
-    : [];
+  return !away && joined && readAt.getTime() - joined.getTime() < JOINED_DAYS * DAY_MS
+    ? joined
+    : null;
 }
 
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
@@ -210,7 +215,6 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
         ...(idle ? [{ kind: "idle" as const, ...idle }] : []),
         ...(flat !== undefined ? [{ kind: "might" as const, days: flat }] : []),
         ...(settling ? [] : seenReason(m, newest.at)),
-        ...joinedReason(m, newest.at),
         ...(s.event && killsGained(s.event, m.uid) === 0
           ? [{ kind: "kvk" as const, at: s.event.at }]
           : []),
@@ -234,6 +238,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     isNew,
     settling,
     reasons,
+    joinedHello: joinedHello(m, newest.at, onBreak(part)),
     missing: missing.fields,
     missingDays: missing.days,
     ...part,

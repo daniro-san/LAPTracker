@@ -27,6 +27,7 @@ const member = (uid: number, name: string) =>
 const item = (m: MemberRow, extra: Partial<FollowUpItem>): FollowUpItem => ({
   member: m,
   checkIn: true,
+  hello: false,
   help: false,
   toAsk: [],
   tip: false,
@@ -77,10 +78,11 @@ describe("Follow-up's groups (issue 585 slice 2)", () => {
   it("says the join date and the buddy next to it under Worth a hello (issue 828)", () => {
     const joined = {
       ...member(10, "Aster"),
-      reasons: [{ kind: "joined" as const, at: new Date("2026-11-16T10:00:00Z") }],
+      reasons: [],
+      joinedHello: new Date("2026-11-16T10:00:00Z"),
       buddy: { uid: 11, name: "Bram" },
     };
-    const groups = groupsOf([item(joined, {})], t, f, "en");
+    const groups = groupsOf([item(joined, { checkIn: false, hello: true })], t, f, "en");
     expect(groups[0]?.title).toBe("Worth a hello · 1");
     expect(groups[0]?.rows[0]?.lines).toEqual([
       { text: "Worth a hello: joined on Mon, Nov 16" },

@@ -6,7 +6,12 @@ import { isolate } from "@/lib/copy";
 import { dateWords } from "@/lib/date-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { FollowUpView, NotedItem } from "@/lib/private/follow-up";
-import { inKvkGroup, notedLine, type FollowUpAction } from "@/lib/private/follow-up-rules";
+import {
+  helloOnly,
+  inKvkGroup,
+  notedLine,
+  type FollowUpAction,
+} from "@/lib/private/follow-up-rules";
 import type { Formats } from "@/lib/private/members-sheet";
 import type { AttackerGroup } from "@/lib/private/theft-groups";
 import { fill, plural } from "@/lib/words";
@@ -32,19 +37,21 @@ export function FollowUpHead(props: {
   const { data, t, language } = props;
   // "After KvK, offer help" (issue 585 S5): the members in it, not those under Needs help.
   const hit = data.items.filter(inKvkGroup).length;
+  // Issue 828: a hello to a new member is on the list but not among the members to look at.
+  const toLook = data.items.filter((i) => !helloOnly(i)).length;
   return (
     <>
       <h1 className="font-display text-display-lg">{t["tab.review"]}</h1>
       <p className="mt-1 font-semibold">
         {fill(t["followup.week"], { range: weekRange(data.week, language) })}
       </p>
-      {data.items.length === 0 ? (
+      {toLook === 0 ? (
         <>
           <p className="font-semibold">{t["followup.empty"]}</p>
           {data.early && <p className="mt-1 text-body-sm text-ink/80">{t["followup.early"]}</p>}
         </>
       ) : (
-        <p className="font-semibold">{fill(t["followup.count"], { n: data.items.length })}</p>
+        <p className="font-semibold">{fill(t["followup.count"], { n: toLook })}</p>
       )}
       <div className="flex flex-wrap gap-x-4">
         {hit > 0 && (

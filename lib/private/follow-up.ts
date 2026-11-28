@@ -28,6 +28,7 @@ import { featureOn } from "./features";
 import { kvkEvents, kvkHelp, recordsSince } from "./follow-up-kvk";
 import {
   coinsTip,
+  helloOnly,
   helpMark,
   kvkOpen,
   lastWeekOf,
@@ -150,7 +151,7 @@ export async function followUpCounts(
   ]);
   const kvk = kvkHelp(events, view, now, zone);
   const { items, noted } = weekLists(view, rows, sinceMonday(now, zone), kvk);
-  return { toLook: items.length, noted: noted.length };
+  return { toLook: items.filter((i) => !helloOnly(i)).length, noted: noted.length };
 }
 
 /**

@@ -39,7 +39,6 @@ export const cardEn = {
   "card.lastSeen": "Last seen in game: {date}",
   "card.since": "In the alliance since: {date}",
   // Issue 828: a member who joined this week is worth a hello; the buddy an officer named.
-  "reason.joined": "joined on {date}",
   "card.buddy.line": "Buddy: {name}",
   "card.buddy.add": "Name a buddy",
   "card.buddy.change": "Change buddy",
@@ -115,7 +114,6 @@ export const cardPt: CardWords = {
   "card.gameLanguage": "Idioma no jogo: {name} (lido em {date})",
   "card.lastSeen": "Visto no jogo pela última vez: {date}",
   "card.since": "Na aliança desde: {date}",
-  "reason.joined": "entrou em {date}",
   "card.buddy.line": "Parceiro: {name}",
   "card.buddy.add": "Escolher um parceiro",
   "card.buddy.change": "Trocar parceiro",
@@ -186,7 +184,6 @@ export const cardFr: CardWords = {
   "card.gameLanguage": "Langue de jeu : {name} (lue le {date})",
   "card.lastSeen": "Dernière fois vu en jeu : {date}",
   "card.since": "Dans l’alliance depuis : {date}",
-  "reason.joined": "arrivé le {date}",
   "card.buddy.line": "Parrain : {name}",
   "card.buddy.add": "Choisir un parrain",
   "card.buddy.change": "Changer de parrain",

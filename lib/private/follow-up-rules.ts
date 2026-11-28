@@ -20,6 +20,8 @@ export interface WorkItem {
   member: MemberRow;
   /** A reason to look, as the Members tab shows it (under Check in, or under Needs help). */
   checkIn: boolean;
+  /** Joined this week (issue 828): worth a hello with the join date, not a reason to check in. */
+  hello: boolean;
   /** An officer's Needs help mark stands, not paused by a break (#585 S2): on the list by itself. */
   help: boolean;
   /** A new member's facts not recorded yet (Members' "Missing info"). */
@@ -42,6 +44,10 @@ export const helpStands = (m: Pick<MemberRow, "officerStatus" | "awayUntil">) =>
  * line instead. The group, the head's jump and Insights' link count by it.
  */
 export const inKvkGroup = (item: Pick<WorkItem, "kvk" | "help">) => item.kvk && !item.help;
+
+/** On the list only for a hello to a new member (issue 828): it adds to no count of members to look at. */
+export const helloOnly = (i: WorkItem) =>
+  i.hello && !i.checkIn && !i.help && !i.kvk && !i.tip && i.toAsk.length === 0;
 
 /** D140 (owner, issue 460): the tip shows when coins were below 1,000 on at least 5 days with data. */
 export const COINS_TIP_DAYS = 5;
@@ -76,12 +82,14 @@ export function worklist(
     .flatMap((member) => {
       const who = whoOf(member);
       const checkIn = member.reasons.length > 0 && needsAWord(who);
-      const toAsk = who.includes("new") && !who.includes("break") ? factsToAsk(member.facts) : [];
-      const tip = tips.has(member.uid) && !who.includes("break");
+      const active = !who.includes("break");
+      const toAsk = who.includes("new") && active ? factsToAsk(member.facts) : [];
+      const tip = tips.has(member.uid) && active;
       const help = helpStands(member);
-      const hit = kvk.has(member.uid) && !who.includes("break");
-      return help || checkIn || toAsk.length > 0 || tip || hit
-        ? [{ member, checkIn, help, toAsk, tip, kvk: hit }]
+      const hello = member.joinedHello != null && active;
+      const hit = kvk.has(member.uid) && active;
+      return [help, checkIn, hello, toAsk.length > 0, tip, hit].some(Boolean)
+        ? [{ member, checkIn, hello, help, toAsk, tip, kvk: hit }]
         : [];
     })
     .sort((a, b) => a.member.name.localeCompare(b.member.name));
