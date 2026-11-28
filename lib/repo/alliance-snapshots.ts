@@ -55,6 +55,8 @@ export async function insertAllianceRow(
 }
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+/** A map square for the int[] columns; anything else is null, so an odd value never fails the row. */
+const square = (v: unknown) => (Number.isSafeInteger(v) ? (v as number) : null);
 
 /** Each member's map place from the read's raw members (D163), by uid. */
 function placesOf(raw: unknown): Map<number, { x: number | null; y: number | null }> {
@@ -63,7 +65,7 @@ function placesOf(raw: unknown): Map<number, { x: number | null; y: number | nul
   return new Map(
     list.flatMap((m: { uid?: unknown; x?: unknown; y?: unknown }) => {
       const uid = num(m?.uid);
-      return uid === null ? [] : [[uid, { x: num(m.x), y: num(m.y) }] as const];
+      return uid === null ? [] : [[uid, { x: square(m.x), y: square(m.y) }] as const];
     }),
   );
 }
