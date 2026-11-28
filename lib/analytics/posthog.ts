@@ -112,7 +112,13 @@ export function startPostHog(key: string): PostHog {
       recordHeaders: false,
       recordBody: false,
     },
-    before_send: (event) => sanitiseEvent(event, location.pathname),
+    before_send: (event) => {
+      const sent = sanitiseEvent(event, location.pathname);
+      // Issue 781: an error says which deploy it came from (the footer's version, D59, inlined at build).
+      const release = process.env.BUILD_VERSION;
+      if (sent.event === "$exception" && release) sent.properties.release = release;
+      return sent;
+    },
   });
   // PostHog keeps its own record of a "yes"; ours decides, so a cleared or partial store asks again.
   if (granted && !posthog.has_opted_in_capturing()) posthog.opt_in_capturing();

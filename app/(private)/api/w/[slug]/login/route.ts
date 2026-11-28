@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 import { privateError, redirectWith } from "@/lib/private/http";
-import { SLUG, startSignIn } from "@/lib/private/sign-in";
+import { countSignIn, SLUG, startSignIn } from "@/lib/private/sign-in";
 import { parseQuery, withContext } from "@/lib/route";
 
 const query = z
@@ -22,7 +22,9 @@ export async function GET(
   return withContext("/api/w/[slug]/login", slug, async (ctx, db) => {
     const deps = { env: ctx.env, fetch: ctx.fetch, now: ctx.now() };
     const origin = new URL(request.url).origin;
-    const step = await startSignIn(db, deps, slug, origin, parsed.silent === "1", parsed.next);
+    const silent = parsed.silent === "1";
+    const step = await startSignIn(db, deps, slug, origin, silent, parsed.next);
+    countSignIn(ctx, "workspace", step, { silent });
     if (step.kind === "refused") return privateError(step.status, step.code);
     return redirectWith(step.location, step.cookies);
   });

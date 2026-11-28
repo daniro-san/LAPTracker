@@ -7,6 +7,7 @@
 // its own; nobody is listed as missing (D75).
 import { useState } from "react";
 
+import { track, type ThanksFailure } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { thanksPost, withWords } from "@/lib/private/thanks-post";
@@ -40,6 +41,10 @@ const template = (chosen: (SharePerson & { note: string })[], lastWeek: boolean)
   fr: thanksPost(chosen, "fr", lastWeek),
 });
 
+/** Issue 781: the draft's code when no text came, so the thanks stops unless the officer writes it. */
+const draftFailure = (answer: string): ThanksFailure =>
+  answer === SIGNED_OUT || answer === "busy" || answer === "lost" ? answer : "failed";
+
 /**
  * "Write the thank-you": the draft route's three texts; or the template to edit by hand, without the
  * writing help or when nobody has a few words (then the route is not asked).
@@ -61,12 +66,13 @@ function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string
     });
     setBusy(false);
     if (typeof answer !== "string") return setTexts(answer);
-    if (answer === SIGNED_OUT) return setNote(SIGNED_OUT);
     // D126: turned off for the alliance reads like no writing help; a used-up daily limit says so.
     if (answer === "not_set_up" || answer === "turned_off" || answer === "cap_reached") {
       setNote(words[answer === "cap_reached" ? "features.cap.ai" : "share.ai.off"]);
       return setTexts(own);
     }
+    track("ws_thanks_failed", { stage: "draft", reason: draftFailure(answer) });
+    if (answer === SIGNED_OUT) return setNote(SIGNED_OUT);
     setNote(words[answer === "busy" ? "share.ai.busy" : "share.ai.failed"]);
   };
   const back = () => {
@@ -144,7 +150,10 @@ export function ShareThanks(props: ShareThanksProps & { nudge?: boolean }) {
       {props.nudge && <p className="text-body-sm font-semibold">{words["share.nudge"]}</p>}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          track("ws_thanks_started");
+        }}
         className={buttonClass("secondary", "mt-1")}
       >
         {words["share.open"]}

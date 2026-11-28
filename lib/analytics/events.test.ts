@@ -121,6 +121,8 @@ const SERVER_EVENTS = [
   "$exception",
   "$ai_generation",
   "discord_command_used",
+  "ws_sign_in_started",
+  "ws_sign_in_failed",
   "ws_action",
 ] as const;
 

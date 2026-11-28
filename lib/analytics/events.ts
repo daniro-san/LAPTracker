@@ -123,6 +123,13 @@ export type PublicDrilldownKind = "joined" | "left" | "kills" | "alliances";
 
 type NoProperties = Record<string, never>;
 
+/**
+ * Why a weekly thanks stopped (issue 781): the writing help's or the share route's code, `empty` (no text to
+ * share), `lost` (no answer came) or `failed` (any other). A code only, never the text or a name.
+ */
+export type ThanksFailure =
+  "empty" | "posting" | "recent" | "not_set_up" | "busy" | "signed_out" | "lost" | "failed";
+
 export interface AnalyticsEvents {
   ws_sign_in_completed: NoProperties;
   ws_first_use_done: NoProperties;
@@ -143,8 +150,13 @@ export interface AnalyticsEvents {
   // D115, docs/analytics/tracking-plan.md: each answers one product question there.
   /** A draft discarded from its review: its type only. */
   ws_draft_discarded: { kind: ScreenshotKind };
-  /** "Send screenshots" made no draft: no picture read (`read`), or the drafts' request failed (`drafts`). */
-  ws_screenshot_failed: { stage: "read" | "drafts" };
+  /** "Send screenshots" given pictures (issue 781), before any is read: nothing about them. */
+  ws_screenshot_started: NoProperties;
+  /**
+   * "Send screenshots" made no draft: no picture read (`read`), the drafts' request failed (`drafts`), more
+   * pictures than allowed (`too_many`), or the session ended on the way (`signed_out`, issue 781).
+   */
+  ws_screenshot_failed: { stage: "read" | "drafts" | "too_many" | "signed_out" };
   /** Members' "Paste updates" → Check: a draft made, no line with a name and a value, or the request failed. */
   ws_updates_pasted: { outcome: "draft" | "nothing" | "failed" };
   /** "Read from a screenshot" beside a paste box: where, and whether text came back. */
@@ -168,6 +180,12 @@ export interface AnalyticsEvents {
   ws_roll_call_marked: { how: "tap" | "rest" | "tracker"; roll_call: RollCallType };
   /** The weekly thanks shared (D114, issue 404): posted to the board or Discord, or copied for the game. */
   ws_thanks_shared: { to: "game" | "discord" | "board" };
+  /** "Share the thanks" opened (issue 781). */
+  ws_thanks_started: NoProperties;
+  /** The thanks stopped (issue 781): at the writing help's draft, or at a share to the board or Discord. */
+  ws_thanks_failed:
+    | { stage: "draft"; reason: ThanksFailure }
+    | { stage: "share"; to: "discord" | "board"; reason: ThanksFailure };
   /** A ready message copied (D140, issue 516): from a member card or Follow-up's panel, for the game or Discord. */
   ws_message_copied: { where: "card" | "follow_up"; to: "game" | "discord" };
   /**
@@ -235,6 +253,7 @@ export const ANALYTICS_EVENTS = [
   "ws_screenshot_sent",
   "ws_draft_saved",
   "ws_draft_discarded",
+  "ws_screenshot_started",
   "ws_screenshot_failed",
   "ws_updates_pasted",
   "ws_text_read",
@@ -245,6 +264,8 @@ export const ANALYTICS_EVENTS = [
   "ws_notice_published",
   "ws_roll_call_marked",
   "ws_thanks_shared",
+  "ws_thanks_started",
+  "ws_thanks_failed",
   "ws_message_copied",
   "ws_drilldown_opened",
   "ws_board_section_viewed",

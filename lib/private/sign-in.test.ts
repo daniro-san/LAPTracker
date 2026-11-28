@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
@@ -22,7 +22,7 @@ import {
   SESSION_COOKIE,
   SESSION_MS,
 } from "./session";
-import { finishSignIn, startSignIn, STATE_COOKIE } from "./sign-in";
+import { countSignIn, finishSignIn, startSignIn, STATE_COOKIE } from "./sign-in";
 import {
   cookieValue,
   deps,
@@ -80,6 +80,37 @@ describe("workspace sign-in (D71)", () => {
     expect(location((await signIn("ogs", "officer", T0, on)).step)).toBe("/w/ogs#signed-in");
     const preview = { VERCEL_ENV: "preview", POSTHOG_KEY: "phc_test" };
     expect(location((await signIn("ogs", "officer", T0, preview)).step)).toBe("/w/ogs");
+  });
+
+  it("counts a start and a failure's reason code in PostHog, with nothing else (issue 781)", async () => {
+    const on = { VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" };
+    const refused = (await signIn("ogs", "outsider", T0, on)).step;
+    const sent = vi.fn<typeof fetch>(async () => new Response("{}"));
+    const ctx = { ...deps(T0, on), fetch: sent };
+    countSignIn(
+      ctx,
+      "workspace",
+      { kind: "redirect", location: "https://discord.com/x", cookies: [] },
+      {
+        silent: true,
+      },
+    );
+    countSignIn(ctx, "workspace", refused);
+    countSignIn(ctx, "chooser", { kind: "redirect", location: "/w/ogs#signed-in", cookies: [] });
+    await vi.waitFor(() => expect(sent).toHaveBeenCalledTimes(2));
+    const events = sent.mock.calls.flatMap(([, init]) => {
+      const body = JSON.parse(String(init?.body)) as {
+        batch: { event: string; properties: Record<string, unknown> }[];
+      };
+      return body.batch.map(({ event, properties: { $lib, $process_person_profile, ...rest } }) => {
+        expect([$lib, $process_person_profile]).toEqual(["laptracker-server", false]);
+        return { event, ...rest };
+      });
+    });
+    expect(events).toEqual([
+      { event: "ws_sign_in_started", via: "workspace", silent: true },
+      { event: "ws_sign_in_failed", via: "workspace", reason: "not_member" },
+    ]);
   });
 
   it("lets in an account through an allowlist entry that has not expired", async () => {

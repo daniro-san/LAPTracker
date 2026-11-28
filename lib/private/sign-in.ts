@@ -8,6 +8,14 @@
 import { randomBytes } from "node:crypto";
 
 import { analyticsKey, SIGNED_IN_HASH } from "../analytics/events";
+import {
+  captureServer,
+  sendLater,
+  SIGN_IN_FAILURES,
+  type ServerEvent,
+  type SignInFailure,
+  type SignInVia,
+} from "../analytics/server";
 import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -174,6 +182,39 @@ export function landing(env: Env, to: string, cookies: (string | null)[]): Step 
   const made = cookies.filter((c): c is string => c !== null);
   const hash = made.length > 0 && analyticsKey(env) !== undefined ? SIGNED_IN_HASH : "";
   return go(`${to}${hash}`, [clearState, ...made]);
+}
+
+/**
+ * Why a step ends the sign-in without a session (issue 781): a refusal's code, the sign-in page's `e` or the
+ * no-access page's `why`, when it is one of SIGN_IN_FAILURES; null for anything else (Discord, a landing).
+ */
+export function signInFailure(step: Step): SignInFailure | null {
+  let code: string | null = step.kind === "refused" ? step.code : null;
+  if (step.kind === "redirect") {
+    const url = new URL(step.location, PROBE);
+    const key = url.pathname.endsWith("/no-access") ? "why" : "e";
+    code = url.origin === PROBE ? url.searchParams.get(key) : null;
+  }
+  return SIGN_IN_FAILURES.find((f) => f === code) ?? null;
+}
+
+/**
+ * The sign-in's PostHog events (issue 781), after the response: `ws_sign_in_started` when `start` is given
+ * (the login routes), `ws_sign_in_failed` when the step ends without a session. Codes only: no slug, no id.
+ */
+export function countSignIn(
+  ctx: Pick<SignInDeps, "env" | "fetch">,
+  via: SignInVia,
+  step: Step,
+  start?: { silent: boolean },
+): void {
+  if (!analyticsKey(ctx.env)) return;
+  const reason = signInFailure(step);
+  const events: ServerEvent[] = [
+    ...(start ? [{ event: "ws_sign_in_started" as const, properties: { via, ...start } }] : []),
+    ...(reason ? [{ event: "ws_sign_in_failed" as const, properties: { via, reason } }] : []),
+  ];
+  if (events.length > 0) sendLater(() => captureServer(ctx.env, ctx.fetch, events));
 }
 
 /**

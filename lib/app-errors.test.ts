@@ -68,6 +68,32 @@ describe("app errors", () => {
     expect(unknown).not.toHaveProperty("alliance");
   });
 
+  it("sends the route pattern, the error's class and frames, the release and the commit, and no private value (issue 781)", async () => {
+    vi.stubEnv("BUILD_VERSION", "v5.70.0");
+    const commit = "959b8851a0c4e2f7d3b6a9e1c5f0d2b4a6c8e0f1";
+    const { ctx, posts } = testContext(db, { ...ON, VERCEL_GIT_COMMIT_SHA: commit });
+    const error = new RangeError("Bad row: x=98765 y=54321");
+    await recordAppError(ctx, {
+      route: "/w/[slug]/members",
+      kind: "render",
+      digest: null,
+      error,
+      slug: "ogs",
+    });
+    await vi.waitFor(() => expect(exceptions(posts)).toHaveLength(1));
+    const [sent] = exceptions(posts);
+    expect(sent).toMatchObject({
+      $exception_list: [{ type: "RangeError", stacktrace: { type: "raw" } }],
+      route: "/w/[slug]/members",
+      release: "v5.70.0",
+      commit,
+    });
+    // The slug's workspace does not exist here, so no `workspace`; never a private value.
+    for (const leak of ["98765", "54321", '"ogs"'])
+      expect(JSON.stringify(sent)).not.toContain(leak);
+    vi.unstubAllEnvs();
+  });
+
   it("stores the request's slug in a slug's shape only, for /admin's errors by workspace (D144)", async () => {
     const { ctx, clock } = testContext(db);
     for (const [i, slug] of ["ogs", "Not A Slug!", undefined].entries()) {

@@ -74,7 +74,7 @@ function sectionOfRoute(route: string): string | undefined {
 /**
  * PostHog's error tracking: the error's class, its message (after redact(), redactPrivate and scrubMessage)
  * and its redacted frames, `kind`, the route pattern and its section, and under a workspace its slug and tag
- * (issue 452), only for a slug a workspace has. No request body, query string or user text: only the error's
+ * (issue 452), only for a slug a workspace has, and the release and commit (issue 781). No request body, query string or user text: only the error's
  * own. Sent after the response, so the error path never waits for it.
  */
 export function sendException(
@@ -92,6 +92,9 @@ export function sendException(
     ...(detail.stack && { stack: detail.stack }),
     handled: entry.handled,
     ...(section && { section }),
+    // Issue 781: the deploy, so a regression can be matched to it. BUILD_VERSION is inlined at build (D59).
+    ...(process.env.BUILD_VERSION && { release: process.env.BUILD_VERSION }),
+    ...(ctx.env.VERCEL_GIT_COMMIT_SHA && { commit: ctx.env.VERCEL_GIT_COMMIT_SHA }),
   };
   sendLater(async () => {
     const where = workspace && analyticsKey(ctx.env) ? await workspace() : null;
