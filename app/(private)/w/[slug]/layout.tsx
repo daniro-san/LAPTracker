@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const { t } = await workspaceWords();
+  const { t } = await workspaceWords(slug);
   const branding = await deskBranding(slug, t["app.name"]);
   const icon = branding ? [{ url: iconPath(branding, slug, 192), sizes: "192x192" }] : undefined;
   return {
@@ -47,7 +47,7 @@ export default async function WorkspaceLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { t } = await workspaceWords();
+  const { t } = await workspaceWords(slug);
   const branding = await deskBranding(slug, t["app.name"]);
   // The default accent needs no attribute: it is the stylesheet's own --burgundy.
   const accent = branding && branding.accent !== "burgundy" ? branding.accent : undefined;

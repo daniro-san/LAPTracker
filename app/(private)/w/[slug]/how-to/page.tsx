@@ -26,7 +26,7 @@ export default async function HowToPage({ params }: { params: Promise<{ slug: st
   const head = await headers();
   const proto = head.get("x-forwarded-proto") ?? "https";
   const address = `${proto}://${head.get("host") ?? ""}/w/${slug}`;
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const h2 = "mt-6 font-subhead text-display-sm";
   return (
     <Frame language={language} t={t}>

@@ -12,7 +12,7 @@ import { PicturesDueList } from "../../../../_ui/PicturesDue";
 
 export default async function PicturesDuePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const { access, data, waiting } = await noticePage(
     slug,
     async (db, a) => {

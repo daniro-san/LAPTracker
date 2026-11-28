@@ -241,6 +241,11 @@ describe("pickWorkspaceLanguage", () => {
     expect(pickWorkspaceLanguage("fr", "pt-BR,pt;q=0.9")).toBe("fr");
   });
 
+  it("takes the workspace's default over the browser's languages, and the cookie over the default (issue 438)", () => {
+    expect(pickWorkspaceLanguage(undefined, "pt-BR", "fr")).toBe("fr");
+    expect(pickWorkspaceLanguage("en", "pt-BR", "fr")).toBe("en");
+  });
+
   it("reads Portuguese from the browser as pt-BR", () => {
     expect(pickWorkspaceLanguage(undefined, "pt-BR,pt;q=0.9")).toBe("pt-BR");
   });

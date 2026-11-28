@@ -222,7 +222,7 @@ export default async function MePage({ params }: { params: Promise<{ slug: strin
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   const now = new Date();
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const env = getEnv();
   const at = { now, zone: env.SERVER_TZ, endRead: env.SNAPSHOT_AFTER, language, t };
   const { board, shown } = await readMe(slug, jar, at);

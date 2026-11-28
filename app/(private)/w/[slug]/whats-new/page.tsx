@@ -24,7 +24,7 @@ export default async function WhatsNewPage({ params }: { params: Promise<{ slug:
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   const now = new Date();
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, items, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);

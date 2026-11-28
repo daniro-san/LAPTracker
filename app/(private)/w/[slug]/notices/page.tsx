@@ -73,7 +73,7 @@ export default async function NoticesPage({
       ? { id: Number(deleted), requestId: undo }
       : null;
   const { access, data: list, waiting } = await noticePage(slug, noticesList, "");
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const words = noticeWords(language, t);
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>

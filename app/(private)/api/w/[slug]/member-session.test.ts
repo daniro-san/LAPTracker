@@ -103,6 +103,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "callouts/route.ts": { POST: { body: { post: "thanks", callout: "Thanks, family" } } },
   "glossary/route.ts": { POST: { body: { words: ["[ZZZ]"] } } },
   "branding/route.ts": { POST: { body: { title: "", icon: "badge", accent: "teal" } } },
+  "desk-language/route.ts": { POST: { body: { language: "fr" } } },
   "recruit-check/route.ts": { POST: { body: { uid: 101 } } },
   "posts/route.ts": {
     POST: {

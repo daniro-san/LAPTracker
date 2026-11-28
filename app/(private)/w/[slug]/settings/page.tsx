@@ -26,6 +26,7 @@ import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { allianceFeaturesView } from "@/lib/private/alliance-features";
 import { workspaceBranding } from "@/lib/private/branding";
 import { agoText } from "@/lib/private/calendar-words";
+import { workspaceDefaultLanguage } from "@/lib/private/desk-language";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
@@ -49,6 +50,7 @@ import { defaultTitle } from "@/lib/workspace-branding";
 
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { BrandingCard } from "../../../_ui/BrandingCard";
+import { DeskLanguageCard } from "../../../_ui/DeskLanguageCard";
 import { siteBotOff } from "../../../_ui/discord-step";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
@@ -137,6 +139,7 @@ async function readSettings(
     posts,
     glossary,
     branding,
+    deskLanguage,
     headroom,
   ] = await Promise.all([
     keyRead,
@@ -153,6 +156,7 @@ async function readSettings(
     channelsRead.then((c) => postsView(db, access, c, env, ctx.language)),
     glossaryView(db, access),
     workspaceBranding(db, access.slug, ctx.t["app.name"]),
+    workspaceDefaultLanguage(db, access.slug),
     Promise.all([keyRead, featuresRead]).then(([v, f]) =>
       headroomView(db, access, v, f.estimate, now),
     ),
@@ -171,6 +175,7 @@ async function readSettings(
     posts,
     glossary,
     branding,
+    deskLanguage,
   };
 }
 
@@ -242,7 +247,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   const jar = await cookies();
   const now = new Date();
   const { env } = getAppContext();
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, page } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
@@ -309,7 +314,7 @@ function SettingsCards(props: {
   const { env, now, language } = props.ctx;
   const { view, bot, channels, squads, features, shield, push, callouts, posts, glossary } =
     props.page;
-  const { branding } = props.page;
+  const { branding, deskLanguage } = props.page;
   return (
     <>
       <TrackerKeyCard
@@ -345,6 +350,7 @@ function SettingsCards(props: {
       {posts && <PostCatalog slug={slug} rows={posts} t={t} language={language} />}
       {callouts && <PostCallouts slug={slug} rows={callouts} t={t} language={language} />}
       {glossary && <GlossaryCard slug={slug} words={glossary} t={t} language={language} />}
+      <DeskLanguageCard slug={slug} saved={deskLanguage} t={t} language={language} />
       {branding && (
         <BrandingCard
           slug={slug}

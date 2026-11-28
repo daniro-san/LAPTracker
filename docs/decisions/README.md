@@ -174,3 +174,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D165 — This week's raid opponent: one alliance of any server set in Raid prep, read at Saturday 00:00 ST and Sunday 00:00 ST with our own alliance on the alliance's own key, and the result on the desk (2026-11-28, owner, issue 861; amends D137, D141, D134)](D165-raid-opponent-start-and-end-reads-on-the-desk.md)
 - [D166 — A hotfix branches from `main`, ships as a patch release, and comes back to `dev` (2026-11-28, owner; amends D29)](D166-hotfix-branches-from-main.md)
 - [D167 — Workspace branding: the tab title, one of three icons and one of six colours, and the same name and icon on webhook posts (2026-11-28, owner scope 2026-11-19 and 2026-11-20, issue 462; amends D22, D110)](D167-workspace-branding-tab-title-icon-and-accent.md)
+- [D168 — A default desk language per workspace (2026-11-28, issue 438)](D168-workspace-default-desk-language.md)

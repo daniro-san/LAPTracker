@@ -21,6 +21,7 @@ import {
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 import { frameReadStatus } from "@/lib/private/read-status";
+import { SLUG } from "@/lib/private/sign-in";
 import { fill } from "@/lib/words";
 import { iconPath } from "@/lib/workspace-branding";
 import type { Feature } from "@/lib/workspace-features";
@@ -28,6 +29,7 @@ import type { Feature } from "@/lib/workspace-features";
 import { AnalyticsPerson } from "./AnalyticsPerson";
 import { DeletionBanner } from "./DeletionBanner";
 import { deskBranding } from "./desk-branding";
+import { deskDefaultLanguage } from "./desk-default-language";
 import { type DeskView, SideNav, Tabs, VIEW_TAB } from "./DeskNav";
 import { Feedback } from "./Feedback";
 import { FirstUse } from "./FirstUse";
@@ -38,16 +40,19 @@ import { SignedOutProvider } from "./SignedOut";
 import { SignOutButton } from "./SignOutButton";
 import type { TabId } from "./TabIcon";
 
-/** The request's workspace language and its words (the switch's cookie, else Accept-Language). */
-export async function workspaceWords(): Promise<{
+/**
+ * The request's workspace language and its words (the switch's cookie, else the workspace's saved language
+ * when its `slug` is given, else Accept-Language).
+ */
+export async function workspaceWords(slug?: string): Promise<{
   language: WorkspaceLanguage;
   t: WorkspaceDictionary;
 }> {
   const [jar, head] = await Promise.all([cookies(), headers()]);
-  const language = pickWorkspaceLanguage(
-    jar.get(WORKSPACE_LANG_COOKIE)?.value,
-    head.get("accept-language"),
-  );
+  const cookie = jar.get(WORKSPACE_LANG_COOKIE)?.value;
+  // The cookie wins, so the saved language is read only for a viewer who has not switched.
+  const preset = !cookie && slug && SLUG.test(slug) ? await deskDefaultLanguage(slug) : null;
+  const language = pickWorkspaceLanguage(cookie, head.get("accept-language"), preset);
   return { language, t: WORKSPACE_DICTIONARIES[language] };
 }
 

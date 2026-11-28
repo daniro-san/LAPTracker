@@ -93,7 +93,7 @@ export default async function DraftPage({
     refuse(slug, access.reason, `/w/${slug}/shots/${id}`);
     redirect(`/w/${slug}`);
   }
-  const { language, t } = await workspaceWords();
+  const { language, t } = await workspaceWords(slug);
   const kinds = Object.fromEntries(KINDS.map((k) => [k, t[`shots.kind.${k}`]])) as Record<
     ImportKind,
     string

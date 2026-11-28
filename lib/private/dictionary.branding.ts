@@ -31,6 +31,14 @@ export const brandingEn = {
     "The bot could not read a server icon. Add the bot in the Discord card, give your server an icon, then save again.",
   "branding.failed": "That didn’t save. Try again.",
   "branding.rateLimited": "Too many saves just now. Wait 15 minutes, then try again.",
+  "deskLang.head": "Language",
+  "deskLang.lead":
+    "The language your desk opens in for anyone who has not picked EN, PT or FR at the top. Each person can still switch for themselves.",
+  "deskLang.legend": "Desk language",
+  "deskLang.browser": "Follow each person’s browser",
+  "deskLang.saved": "Saved. The desk opens in this language now.",
+  "deskLang.failed": "That didn’t save. Try again.",
+  "deskLang.rateLimited": "Too many saves just now. Wait 15 minutes, then try again.",
 };
 
 export const brandingPt: typeof brandingEn = {
@@ -65,6 +73,14 @@ export const brandingPt: typeof brandingEn = {
     "O bot não conseguiu ler o ícone do servidor. Adicione o bot no cartão do Discord, coloque um ícone no servidor e salve de novo.",
   "branding.failed": "Não salvou. Tente de novo.",
   "branding.rateLimited": "Muitos salvamentos agora. Espere 15 minutos e tente de novo.",
+  "deskLang.head": "Idioma",
+  "deskLang.lead":
+    "O idioma em que o painel abre para quem não escolheu EN, PT ou FR no topo. Cada pessoa ainda pode trocar para si.",
+  "deskLang.legend": "Idioma do painel",
+  "deskLang.browser": "Seguir o navegador de cada pessoa",
+  "deskLang.saved": "Salvo. O painel agora abre neste idioma.",
+  "deskLang.failed": "Não salvou. Tente de novo.",
+  "deskLang.rateLimited": "Muitos salvamentos agora. Espere 15 minutos e tente de novo.",
 };
 
 export const brandingFr: typeof brandingEn = {
@@ -99,5 +115,14 @@ export const brandingFr: typeof brandingEn = {
     "Le bot n’a pas pu lire l’icône du serveur. Ajoutez le bot dans la carte Discord, donnez une icône à votre serveur, puis enregistrez de nouveau.",
   "branding.failed": "L’enregistrement a échoué. Réessayez.",
   "branding.rateLimited":
+    "Trop d’enregistrements à l’instant. Attendez 15 minutes, puis réessayez.",
+  "deskLang.head": "Langue",
+  "deskLang.lead":
+    "La langue dans laquelle le bureau s’ouvre pour qui n’a pas choisi EN, PT ou FR en haut. Chacun peut toujours changer pour soi.",
+  "deskLang.legend": "Langue du bureau",
+  "deskLang.browser": "Suivre le navigateur de chacun",
+  "deskLang.saved": "Enregistré. Le bureau s’ouvre maintenant dans cette langue.",
+  "deskLang.failed": "L’enregistrement a échoué. Réessayez.",
+  "deskLang.rateLimited":
     "Trop d’enregistrements à l’instant. Attendez 15 minutes, puis réessayez.",
 };
