@@ -89,7 +89,6 @@ export const fr: WorkspaceDictionary = {
   "thanks.head": "Les meilleurs de la semaine",
   "thanks.intro": "Remerciez-les dans le jeu.",
   "thanks.donors": "Plus gros donateurs",
-  "thanks.activity": "Points de quêtes du jour",
   "members.search.ph": "Nom (sans les émojis)",
   "members.search.aria": "Chercher un membre",
   "members.filter.aria": "Filtre",

@@ -26,7 +26,7 @@ export type ShareWords = Pick<WorkspaceDictionary, (typeof SHARE_KEYS)[number]>;
 export interface SharePerson {
   uid: number;
   name: string;
-  did: ("squad" | "ad" | "steady")[];
+  did: ("squad" | "ad" | "steady" | "help" | "quests")[];
   line: string;
 }
 
@@ -74,19 +74,44 @@ interface ShareInput {
   switches: ThanksSwitches;
 }
 
+/**
+ * The week's people: D109's progress and issue 465's steady effort, merged by uid, in name order; the line
+ * says what each did in words, no number (D75).
+ */
+export function weekPeople(view: MembersView, t: WorkspaceDictionary): SharePerson[] {
+  const { progress, steady } = view.thanks;
+  const people = new Map<number, SharePerson & { parts: string[] }>();
+  const person = (uid: number, name: string) => {
+    const known = people.get(uid) ?? { uid, name, did: [], line: "", parts: [] };
+    people.set(uid, known);
+    return known;
+  };
+  for (const x of progress) {
+    const p = person(x.uid, x.name);
+    if (x.squadGrowth !== null) p.did.push("squad");
+    if (x.adDone) p.did.push("ad");
+    p.parts.push(progressText(x, t));
+  }
+  for (const x of steady.help) {
+    const p = person(x.uid, x.name);
+    p.did.push("help");
+    p.parts.push(t["thanks.helpLine"]);
+  }
+  for (const x of steady.quests) {
+    const p = person(x.uid, x.name);
+    p.did.push("quests");
+    p.parts.push(t["thanks.questsLine"]);
+  }
+  return [...people.values()]
+    .map(({ parts, ...p }) => ({ ...p, line: parts.join(", ") }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** The sheet's props; the members' channel and the writing help come from the environment. */
 export function shareThanksProps(p: ShareInput & { view: MembersView }): ShareThanksProps {
   return sharePropsFor({
     ...p,
-    people: p.view.thanks.progress.map((x) => ({
-      uid: x.uid,
-      name: x.name,
-      did: [
-        ...(x.squadGrowth !== null ? ["squad" as const] : []),
-        ...(x.adDone ? ["ad" as const] : []),
-      ],
-      line: progressText(x, p.t),
-    })),
+    people: weekPeople(p.view, p.t),
     roster: p.view.members.map((m) => ({ uid: m.uid, name: m.name })),
   });
 }

@@ -20,7 +20,7 @@ const view = {
   members: [],
   early: false,
   reads: [],
-  thanks: { donors: [], activity: [], progress: [], improved: [] },
+  thanks: { donors: [], steady: { help: [], quests: [] }, progress: [], improved: [] },
 } as unknown as MembersView;
 
 const card = (followUp: WeekCounts | null) =>
@@ -81,7 +81,7 @@ describe("Home's Say thanks to (issue 772)", () => {
       { uid: 2, name: "Thistle", adDone: true, squadGrowth: null },
       { uid: 3, name: "Moss", adDone: false, squadGrowth: 0.08 },
     ];
-    const thanks = { donors: [], activity: [], progress, improved: [] };
+    const thanks = { donors: [], steady: { help: [], quests: [] }, progress, improved: [] };
     const html = margin(null, { ...view, thanks } as unknown as MembersView);
     // textOf puts a space between elements; the comma follows the name.
     expect(textOf(html).replaceAll(" ,", ",")).toContain(
@@ -89,5 +89,14 @@ describe("Home's Say thanks to (issue 772)", () => {
     );
     expect(html.match(/<li>/g)).toHaveLength(2);
     expect(textOf(html)).not.toContain(";");
+  });
+});
+
+describe("Home's Say thanks to, steady effort (issue 465)", () => {
+  it("lists someone found only by the steady deeds, with the reason's words and no number", () => {
+    const steady = { help: [{ uid: 1, name: "Moss" }], quests: [] };
+    const thanks = { donors: [], steady, progress: [], improved: [] };
+    const html = textOf(margin(null, { ...view, thanks } as unknown as MembersView));
+    expect(html).toContain("Say thanks to Helped the alliance every day: Moss");
   });
 });

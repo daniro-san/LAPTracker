@@ -148,15 +148,14 @@ export function HomeMembers(props: {
   const members = `/w/${slug}/members`;
   const now = new Date();
   const f = cardFormats(language, getEnv().SERVER_TZ, now);
-  // The top 3 donors; the most active when no donation was read this week.
-  const [key, thanks] =
-    view.thanks.donors.length > 0
-      ? (["thanks.donors", view.thanks.donors] as const)
-      : (["thanks.activity", view.thanks.activity] as const);
+  // The top 3 donors. Issue 465's steady effort (helped every day, quests every day) is in "Say thanks to".
+  const thanks = view.thanks.donors;
   // Members' own count while the Follow-up tab is off; while it is on, HomeFollowUp says its numbers.
   const check = props.followUp === null ? checkInLink(slug, view, null, t, f) : null;
   const today = serverDay(now, getEnv());
-  const sharing = view.thanks.progress.length > 0 || nudge;
+  const { steady } = view.thanks;
+  const sharing =
+    view.thanks.progress.length > 0 || steady.help.length > 0 || steady.quests.length > 0 || nudge;
   return (
     <MarginNote id="home-members" title={t["home.members.head"]}>
       {view.early ? (
@@ -165,7 +164,7 @@ export function HomeMembers(props: {
         <>
           {thanks.length > 0 && (
             <div className="max-w-sm py-2">
-              <h3 className="text-body-sm font-semibold text-ink/75">{t[key]}</h3>
+              <h3 className="text-body-sm font-semibold text-ink/75">{t["thanks.donors"]}</h3>
               {/* ph-no-capture (issue 549): each name's week of donations or quest points, in their order,
                   never reaches session replay. */}
               <ol className="ph-no-capture">
