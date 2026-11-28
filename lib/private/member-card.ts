@@ -9,17 +9,16 @@ import { compactLarge } from "../compact";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { factHistory, type FactRow } from "../repo/member-facts";
-import { gameLanguageReads, lastSeenTimes } from "../repo/player-reads";
-import { endOfDayReads, lastOnlineTimes } from "../repo/workspace-rosters";
+import { gameLanguageReads } from "../repo/player-reads";
+import { endOfDayReads } from "../repo/workspace-rosters";
 import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { cardBuddy, type CardBuddy } from "./buddy";
-import { addDays, dayIn, mondayOf } from "./calendar-time";
+import { dayIn } from "./calendar-time";
 import { cardFollowUp, type CardFollowUp } from "./card-follow-up";
 import { cardShield, type CardShield } from "./card-shield";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import type { CardTab } from "./dictionary.card";
-import { duelHistory, duelTotals } from "./duel-history";
 import {
   FACT_FIELDS,
   type FactField,
@@ -31,11 +30,10 @@ import { factText, NONE } from "./fact-text";
 import { cardBase, lastTwo, TREND_FIELDS, type Progress, type TrendField } from "./fact-trend";
 import { followUpsOf, helpMarksOf } from "./follow-up";
 import { historyLine, markLines } from "./follow-up-rules";
-import { usualLine } from "./insights-usual-words";
 import { cardLink, type CardLink } from "./me-link";
+import { cardDuelWeeks, cardGameLanguage, cardUsualLine } from "./member-card-more";
 import {
   daysFormats,
-  duelCard,
   duelText,
   quietDayLine,
   toAskLine,
@@ -63,10 +61,8 @@ import {
   type Status,
 } from "./members-sheet";
 import { NOTICE_LANGUAGE_DAYS } from "./notice-languages";
-import { messageLanguage } from "./ready-message";
 import { cardSelfReport, type CardSelfReport } from "./self-report";
 import { trendOf, type Previous, type WeekBase } from "./trend-words";
-import { usualOf, USUAL_DAYS } from "./usual-hours";
 
 const exact = (n: number, language: string) =>
   new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(Math.abs(n));
@@ -390,19 +386,6 @@ function cardDays(reads: Parameters<typeof lastDays>[0], uid: number): LastDays 
   return days && { ...days, best: allianceBest(reads, days.days) };
 }
 
-/** Issue 467: Alliance Duel by week; null until a week of the alliance has saved points. */
-function cardDuelWeeks(
-  totals: Parameters<typeof duelHistory>[0],
-  members: readonly MemberRow[],
-  uid: number,
-  monday: string,
-  t: WorkspaceDictionary,
-  f: CardFormats,
-): DuelCard | null {
-  const weeks = duelHistory(totals, new Set(members.map((m) => m.uid)), uid, monday);
-  return weeks && duelCard(weeks, t, f);
-}
-
 /** One member's card in `language`, or null when the uid is not in the workspace's own alliance. */
 export async function memberCard(
   db: Db,
@@ -410,15 +393,12 @@ export async function memberCard(
   uid: number,
   at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
 ): Promise<CardData | null> {
-  const monday = mondayOf(dayIn(at.zone, at.now.getTime()));
-  const [view, followUps, history, reads, totals] = await Promise.all([
+  const [view, followUps, history, reads] = await Promise.all([
     membersView(db, access, at.now, at.zone),
     followUpsOf(db, access, uid),
     factHistory(db, access.workspaceId, FACT_FIELDS, uid),
     // One read more: the first day's quest points are its running total less the day before's (#739).
     endOfDayReads(db, access.unionId, LAST_DAYS + 1),
-    // Issue 467: the workspace's saved Alliance Duel week totals, for this alliance only.
-    duelTotals(db, access, monday),
   ]);
   const member = view.members.find((m) => m.uid === uid);
   if (!member) return null;
@@ -431,8 +411,7 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const since = new Date(at.now.getTime() - USUAL_DAYS * DAY_MS);
-  const [squads, origin, link, followUp, marks, shield, selfReport, game, seen, online] =
+  const [squads, origin, link, followUp, marks, shield, selfReport, game, usual, duelWeeks] =
     await Promise.all([
       squadsCard(db, access, uid, at.t, f),
       memberOrigin(db, access, uid, at.zone, at.t, f.date),
@@ -453,19 +432,10 @@ export async function memberCard(
         [uid],
         new Date(at.now.getTime() - NOTICE_LANGUAGE_DAYS * DAY_MS),
       ),
-      // Issue 873, D163: this member's presence readings of the last 30 days, the own alliance's rows only.
-      lastSeenTimes(db, access.unionId, since, uid),
-      lastOnlineTimes(db, access.unionId, uid, addDays(today, -USUAL_DAYS)),
+      cardUsualLine(db, access, uid, at),
+      cardDuelWeeks(db, access, view.members, uid, at, f),
     ]);
-  const read = game.get(uid);
-  const gameLanguage: CardGameLanguage | null = read
-    ? {
-        line: at.t["card.gameLanguage"],
-        language: messageLanguage([read.language]),
-        other: at.t["notices.langs.other"],
-        date: f.date(read.readAt),
-      }
-    : null;
+  const gameLanguage = cardGameLanguage(game.get(uid), at.t, f);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => ({
       id: row.id,
@@ -480,12 +450,7 @@ export async function memberCard(
   const mark = marks.get(uid);
   const statusMark = mark ? markLines(mark, at.t, f.date) : [];
   const buddy = cardBuddy(member, view.members, at.t);
-  const usual = usualOf(
-    [...seen.map((s) => s.at), ...online].map((d) => d.getTime()),
-    at.now,
-    at.zone,
-  );
-  card.presence = [...card.presence, usualLine(usual, { t: at.t, language: at.language })];
+  card.presence = [...card.presence, usual];
   return {
     ...card,
     statusMark,
@@ -496,6 +461,6 @@ export async function memberCard(
     selfReport,
     gameLanguage,
     buddy,
-    duelWeeks: cardDuelWeeks(totals, view.members, uid, monday, at.t, f),
+    duelWeeks,
   };
 }
