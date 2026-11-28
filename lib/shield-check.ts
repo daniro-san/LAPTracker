@@ -93,28 +93,29 @@ export function raidOf(day: string, cfg: Pick<ScheduleConfig, "SERVER_TZ">) {
 }
 
 /**
- * The after-reset check (issue 827, D137 2026-11-28b): one read of every member on the tick that falls in
- * Saturday 02:30–02:45 ST, when most maps are from after the reset (the probes of issue 726).
+ * The after-reset check (issue 827, D137 2026-11-28b): one read of every member on the ticks that fall in
+ * Saturday 02:30–03:00 ST (02:30, and 02:45 for what 02:30 left), when most maps are from after the reset
+ * (the probes of issue 726).
  */
 export const RESET_FROM = 2 * 60 + 30;
-export const RESET_TO = 2 * 60 + 45;
+export const RESET_TO = 3 * 60;
 
-/** Whether the after-reset check's tick is now: Saturday 02:30–02:45 ST. */
+/** Whether an after-reset check's tick is now: Saturday 02:30–03:00 ST. */
 export function resetReadDue(now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): boolean {
   const minute = serverMinuteOfDay(now, cfg);
   return serverWeekday(now, cfg) === SATURDAY && minute >= RESET_FROM && minute < RESET_TO;
 }
 
 /**
- * Where the after-reset check's answers fall, for the check of Friday `day`: Saturday 02:30–03:00 ST (its
- * window's last tick plus the tick's 180 s budget ends by 02:48). Apart from `passWindows`, so the night
+ * Where the after-reset check's answers fall, for the check of Friday `day`: Saturday 02:30–03:15 ST (its
+ * window's last tick plus the tick's 180 s budget ends by 03:03). Apart from `passWindows`, so the night
  * and morning counts, the summary, the pushes and the fill never count it; Raid prep reads it.
  */
 export function resetWindow(day: string, cfg: Pick<ScheduleConfig, "SERVER_TZ">) {
   const saturday = addDay(day);
   return {
     from: serverInstant(saturday, hhmm(RESET_FROM), cfg),
-    to: serverInstant(saturday, "03:00", cfg),
+    to: serverInstant(saturday, "03:15", cfg),
   };
 }
 

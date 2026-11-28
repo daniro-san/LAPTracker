@@ -1,13 +1,17 @@
-// The Raid Shield check's after-reset check (issue 827, D137 2026-11-28b): every Saturday, on the tick that
-// falls in 02:30–02:45 ST, every member of each alliance whose `shield_check` is on (D134) is read once with
-// the checks' call (`readOne`, no `fresh`) on the alliance's own key (D124), from the day's roster. At that
-// hour most maps are from after the 00:00 ST reset (issue 726: 64 % and 56 % in the two probes), so its
-// readings tell Raid prep's "To check by hand" which members a map near the reset vouches for; officers
-// still confirm. They land in `player_reads` at 02:30–02:48 ST, in `resetWindow` and outside both
-// `passWindows`, so the night and morning counts, the summary, the pushes and the fill never count them. It
-// writes no Raid prep mark, no shield_checks row, no might version, no post and no push. It keeps the
-// morning check's calls in reserve, makes no call for an alliance whose squads read is still running, and
-// the `app_alerts` claim (RESET_ALERT) makes it run at most once a week.
+// The Raid Shield check's after-reset check (issue 827, D137 2026-11-28b): every Saturday, on the ticks of
+// 02:30 and 02:45 ST, every member of each alliance whose `shield_check` is on (D134) is read once with the
+// checks' call (`readOne`, no `fresh`) on the alliance's own key (D124), from the day's roster. At that hour
+// most maps are from after the 00:00 ST reset (issue 726: 64 % and 56 % in the two probes), so its readings
+// tell Raid prep's "To check by hand" which members a map near the reset vouches for; officers still
+// confirm. They land in `player_reads` at 02:30–03:03 ST, in `resetWindow` and outside both `passWindows`,
+// so the night and morning counts, the summary, the pushes and the fill never count them. It writes no Raid
+// prep mark, no shield_checks row, no might version, no post and no push. It keeps the morning check's
+// calls in reserve and makes no call for an alliance whose squads read is still running.
+//
+// Resumable: a tick reads only the members with no reading in this Saturday's `resetWindow`, so the 02:45
+// tick goes on where the 02:30 tick's budget ended, or retries an alliance skipped at 02:30, and no member
+// is read twice in a week. An alliance with nobody left is skipped with no log line. The `app_alerts` claim
+// (RESET_ALERT) lets only one of two overlapping ticks run.
 import { TRACKED_COUNT } from "../config/alliances";
 import type { Db } from "./db";
 import { opponentReserve } from "./kvk-reserve";
@@ -15,9 +19,10 @@ import { createRunLogger } from "./logger";
 import { claimAlert } from "./repo/app-errors";
 import { getDailyRead } from "./repo/daily-reads";
 import { insertRunLog } from "./repo/run-logs";
+import { shieldReadings } from "./repo/shield-checks";
 import { dayRosterUids, getSquadRead } from "./repo/squads";
 import { quotaDayRead } from "./schedule";
-import { resetReadDue, SHIELD_CALLS_MAX } from "./shield-check";
+import { resetReadDue, resetWindow, SHIELD_CALLS_MAX } from "./shield-check";
 import { SQUADS_SAFETY_MARGIN, squadsReserve } from "./squads";
 import { readOne, startQuota, type Batch, type StartDaily } from "./squads-call";
 import { PACE_MS, type SquadsDeps } from "./squads-read";
@@ -25,14 +30,16 @@ import { squadTargets, type SquadTarget } from "./workspace-keys";
 
 /**
  * The after-reset check's claim row in `app_alerts` (1: retired, 2: the tick-silence alert, 3 and 4: issue
- * 726's probe reads, 5: issue 789's API probe). Its gap is under a week, so next Saturday's tick claims it.
+ * 726's probe reads, 5: issue 789's API probe). Claimed per tick: its gap is under the 15 minutes between
+ * the 02:30 and 02:45 ticks, so a second tick overlapping the first is refused and the next one runs.
  */
 export const RESET_ALERT = 6;
-const RESET_GAP_MS = 6 * 86_400_000;
+const RESET_GAP_MS = 10 * 60_000;
 
 /**
- * The after-reset check: claimed once a week, then each shield-check alliance's day roster once, until the
- * cap, the reserve, a stop or `deadline` (epoch ms). One `shield.reset` run-log line per alliance, counts
+ * The after-reset check on this tick: claimed, then each shield-check alliance's members not read yet this
+ * Saturday, until the cap, the reserve, a stop or `deadline` (epoch ms). An alliance not started before
+ * `deadline` waits for the next tick. One `shield.reset` run-log line per alliance read or stopped, counts
  * and a reason only (D71).
  */
 export async function shieldReset(deps: SquadsDeps, db: Db, deadline: number): Promise<void> {
@@ -45,8 +52,10 @@ export async function shieldReset(deps: SquadsDeps, db: Db, deadline: number): P
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Math.max(0, deadline - now.getTime()));
   try {
-    for (const target of targets)
+    for (const target of targets) {
+      if (controller.signal.aborted || deps.now().getTime() >= deadline) return;
       await readTarget(deps, db, { day, target, signal: controller.signal, deadline });
+    }
   } finally {
     clearTimeout(timer);
   }
@@ -66,7 +75,9 @@ async function readTarget(deps: SquadsDeps, db: Db, run: Run) {
     },
   );
   try {
-    const { members, calls, b } = await readAlliance(deps, db, run);
+    const read = await readAlliance(deps, db, run);
+    if (!read) return;
+    const { members, calls, b } = read;
     const data = {
       union_id: run.target.unionId,
       members,
@@ -82,7 +93,11 @@ async function readTarget(deps: SquadsDeps, db: Db, run: Run) {
   }
 }
 
-/** The roster, the quota check, then the calls. `calls` counts a workspace key's /quota call too. */
+/**
+ * The members still to read, the quota check, then the calls; null when everyone on the roster has a
+ * reading in this Saturday's window. `members` is those still to read; `calls` counts a workspace key's
+ * /quota call too.
+ */
 async function readAlliance(deps: SquadsDeps, db: Db, run: Run) {
   const b: Batch = {
     calls: 0,
@@ -94,12 +109,18 @@ async function readAlliance(deps: SquadsDeps, db: Db, run: Run) {
     remaining: null,
     stop: null,
   };
-  const uids = await dayRosterUids(db, run.day, run.target.unionId);
+  const roster = await dayRosterUids(db, run.day, run.target.unionId);
   const daily = await getDailyRead(db, run.day);
-  if (!uids || !daily) {
+  if (!roster || !daily) {
     b.stop = "no_roster";
-    return { members: uids?.length ?? 0, calls: 0, b };
+    return { members: roster?.length ?? 0, calls: 0, b };
   }
+  const w = resetWindow(run.day, deps.env);
+  const done = new Set(
+    (await shieldReadings(db, run.target.unionId, w.from, w.to)).map((r) => r.uid),
+  );
+  const uids = roster.filter((uid) => !done.has(uid));
+  if (uids.length === 0) return null;
   const start = await startRead(deps, db, { ...run, daily: daily as StartDaily });
   b.remaining = start.remaining;
   b.stop = start.reason;
