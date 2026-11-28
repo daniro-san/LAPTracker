@@ -168,6 +168,8 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
     const reads = csv("player-reads.csv").slice(1).split("\r\n")[0]?.split(";") ?? [];
     expect(reads).toContain("shielding");
     expect(reads).not.toContain("raw_json");
+    // Issue 782: the officer's What's new seen version is screen state, not alliance data.
+    expect(csv("people.csv").slice(1).split("\r\n")[0]?.split(";")).not.toContain("whats_new_seen");
     // No byte of any file: the private roster fields, the sealed key, sessions or Discord ids.
     const all = Buffer.concat([...files.values()]).toString("latin1");
     for (const marker of [

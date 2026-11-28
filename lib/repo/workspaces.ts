@@ -308,6 +308,27 @@ export async function updateWorkspaceUser(
     .where(and(eq(workspaceUsers.id, userId), eq(workspaceUsers.workspaceId, workspaceId)));
 }
 
+/** What's new (issue 782): the newest release whose officer notes this officer opened, or null. */
+export async function whatsNewSeen(db: Db, workspaceId: number, userId: number) {
+  const [row] = await db
+    .select({ seen: workspaceUsers.whatsNewSeen })
+    .from(workspaceUsers)
+    .where(and(eq(workspaceUsers.id, userId), eq(workspaceUsers.workspaceId, workspaceId)));
+  return row?.seen ?? null;
+}
+
+export async function setWhatsNewSeen(
+  db: Db,
+  workspaceId: number,
+  userId: number,
+  version: string,
+): Promise<void> {
+  await db
+    .update(workspaceUsers)
+    .set({ whatsNewSeen: version })
+    .where(and(eq(workspaceUsers.id, userId), eq(workspaceUsers.workspaceId, workspaceId)));
+}
+
 /** Ends one session, only inside its own workspace. */
 export async function deleteSession(db: Db, workspaceId: number, tokenHash: string): Promise<void> {
   await db

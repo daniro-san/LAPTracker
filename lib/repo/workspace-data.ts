@@ -73,14 +73,15 @@ export interface WorkspaceTable {
  * In the download's order. Never downloaded: sessions (token hashes), the sealed tracker key (D124) and
  * webhooks (D129),
  * Discord's message ids of pictures already read (D100) and the squads reads' counts. People leave out
- * their Discord id; a notice picture's bytes go as files, not in a cell.
+ * their Discord id and What's new's seen version; a notice picture's bytes go as files, not in a cell.
  */
 export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   {
     file: "people",
     table: workspaceUsers,
     scope: "workspace",
-    omit: ["discord_user_id", "allowlist_added_by"],
+    // Issue 782: What's new's seen version is the officer's own screen state, not alliance data.
+    omit: ["discord_user_id", "allowlist_added_by", "whats_new_seen"],
   },
   { file: "member-facts", table: memberFacts, scope: "workspace" },
   // D154: what members sent about themselves; a fact only once an officer put it on the card.
