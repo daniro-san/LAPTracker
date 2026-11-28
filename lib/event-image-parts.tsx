@@ -1,5 +1,9 @@
 // What the event picture's sections share (lib/event-image.tsx, lib/event-image-turnout.tsx): the 2×
-// scale, the row and section heights, which characters the fonts can draw, and the section heading.
+// scale, the row and section heights, the fonts, which characters the fonts can draw, and the section
+// heading. The fonts and `drawable` also serve the public pages' link preview cards (lib/link-card.tsx).
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { cloneElement, type ReactElement } from "react";
 
 import type { Token } from "./brand/palette";
@@ -11,6 +15,23 @@ export const SECTION = 36;
 export const ROW = 35;
 
 export type Colors = Record<Token, string>;
+
+/** The brand's three fonts, committed as TTF in lib/brand/fonts/ (next/font ships WOFF2, which Satori cannot
+ * read), read once. */
+const FONT_FILES = [
+  ["Alegreya", "Alegreya-Regular.ttf", 400],
+  ["Alegreya Sans", "AlegreyaSans-Bold.ttf", 700],
+  ["Source Sans 3", "SourceSans3-Regular.ttf", 400],
+  ["Source Sans 3", "SourceSans3-Semibold.ttf", 600],
+] as const;
+let fonts: { name: string; data: Buffer; weight: 400 | 600 | 700; style: "normal" }[] | undefined;
+export const loadFonts = () =>
+  (fonts ??= FONT_FILES.map(([name, file, weight]) => ({
+    name,
+    weight,
+    style: "normal" as const,
+    data: readFileSync(join(process.cwd(), "lib/brand/fonts", file)),
+  })));
 
 /**
  * Only what the loaded fonts draw (owner, 2026-11-09): other scripts (꧁ ꧂, CJK, Thai), emoji and their

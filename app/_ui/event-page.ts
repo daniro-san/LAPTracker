@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 import { getAppContext } from "@/lib/app-context";
+import { copy } from "@/lib/copy";
 import { DONE_MAX_AGE_S, LIVE_MAX_AGE_S } from "@/lib/event-cache";
 import { isOn } from "@/lib/flags";
 import { withOwnDb, withPageDb } from "@/lib/page";
@@ -18,6 +19,7 @@ import {
 } from "@/lib/queries/fight-clock";
 import { eventProgressOf, progressRows } from "@/lib/queries/live";
 
+import { comparisonRows } from "./event-rows";
 import { requestClock, requestCopy } from "./locale";
 import { sharedEvents, sharedRead } from "./public-reads";
 
@@ -53,6 +55,18 @@ export async function eventTitle({
   if (!page) return {};
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   return { title: `${clock.weekday(page.detail.eventAtUtc)} · ${copy.site.name}` };
+}
+
+/** The event's ledger rows as its page orders them, in English, for the link preview cards (issue 830); null
+ * for no such (public) event. */
+export async function eventCardRows(id: number) {
+  const { page } = await loadEventPage(id);
+  if (!page) return null;
+  const { detail, changes, names, ranks } = page;
+  return {
+    detail,
+    rows: comparisonRows(detail.snapshots, changes, names, ranks, copy, detail.between),
+  };
 }
 
 /**

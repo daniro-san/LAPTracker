@@ -16,6 +16,7 @@ import { EventMembers } from "@/app/_ui/EventMembers";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { Leadership } from "@/app/_ui/Leadership";
+import { allianceCard, cardText } from "@/app/_ui/link-card-facts";
 import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { leadership, viewsOf } from "@/app/_ui/member-views";
 import { memberScope } from "@/app/_ui/mover-lists";
@@ -23,7 +24,7 @@ import { Movers } from "@/app/_ui/Movers";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
 import { Delta, Num, Rank } from "@/app/_ui/Num";
 import { AllianceBadge } from "@/app/_ui/Pictures";
-import { previewImage } from "@/app/_ui/preview";
+import { cardPreview } from "@/app/_ui/preview";
 import { sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -204,19 +205,25 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const [ids, sp] = await Promise.all([idsOf(params), searchParams]);
   const data = ids && (await loadAlliance(ids.eventId, ids.unionId));
   if (!data) return notFoundTitle();
-  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
+  const [clock, copy, locale] = await Promise.all([requestClock(), requestCopy(), requestLocale()]);
   const now = data.detail.after ?? data.detail.before;
   const event = data.events.find((e) => e.id === ids.eventId);
   const label = allianceLabel(now?.tag ?? String(ids.unionId), now?.name ?? null);
-  const parts = [label, event && clock.weekday(event.eventAtUtc), copy.site.name];
-  return {
-    title: parts.filter(Boolean).join(" · "),
-    ...(now?.badgeId != null && previewImage(`/img/badge/${now.badgeId}`, label)),
-    ...noIndex(sp),
-  };
+  const title = [label, event && clock.weekday(event.eventAtUtc), copy.site.name]
+    .filter(Boolean)
+    .join(" · ");
+  const url = `/img/card/event/${ids.eventId}/alliance/${ids.unionId}`;
+  return { title, ...cardPreview(url, title, summaryText(data, copy, locale)), ...noIndex(sp) };
 }
 
 type Loaded = NonNullable<Awaited<ReturnType<typeof loadAlliance>>>;
+
+/** The summary band's figures and rank, as the page shows them: the link preview's text (issue 830). */
+function summaryText({ detail, ledger, change }: Loaded, copy: Dictionary, locale: string) {
+  const metrics = totalsMetrics(detail, canChange(detail), change, copy);
+  const rank = ledger?.after?.might ?? ledger?.before?.might ?? null;
+  return cardText(allianceCard({ tag: "", name: "", metrics, rank }, null, copy, locale));
+}
 
 /** `Ledger · Sat, Oct 31 › [TAG] Name`: back to the event (`/` when it is the home event), then this page. */
 function crumbsFor(data: Loaded, eventId: number, label: string, clock: Clock, copy: Dictionary) {

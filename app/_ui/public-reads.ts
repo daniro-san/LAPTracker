@@ -5,8 +5,14 @@
 import { getAppContext } from "@/lib/app-context";
 import type { Db } from "@/lib/db";
 import { withOwnDb } from "@/lib/page";
-import { listEvents, recruitingAlliances, upstreamRows } from "@/lib/queries";
-import { allianceList, eventAllianceIds } from "@/lib/queries/alliance-list";
+import {
+  listEvents,
+  playerHistory,
+  playerProgress,
+  recruitingAlliances,
+  upstreamRows,
+} from "@/lib/queries";
+import { allianceList, allianceOnBoard, eventAllianceIds } from "@/lib/queries/alliance-list";
 import { sampledEventIds } from "@/lib/queries/fight-clock";
 import { allianceNames } from "@/lib/queries/names";
 import { searchPlayers } from "@/lib/queries/player-search";
@@ -57,6 +63,27 @@ export const sharedEventAllianceLabels = (eventId: number) =>
 
 export const sharedPlayerSearch = (q: string) =>
   sharedRead("player-search", [q], (db) => searchPlayers(db, q));
+
+/** A player page's reads: the history and the progress; null (never kept) for an unknown uid. Its link
+ * preview card reads the same entry (issue 830). */
+export const sharedPlayer = (uid: number) =>
+  sharedRead("player", [uid], async (db) => {
+    const history = await playerHistory(db, uid);
+    return history && { history, progress: await playerProgress(db, uid) };
+  });
+
+/** An alliance page's link preview card (issue 830): its newest tag and name and its ranks board row; null
+ * (never kept) for an alliance with neither. */
+export const sharedAllianceCard = (unionId: number) =>
+  sharedRead("alliance-card", [unionId], async (db) => {
+    const [board, names] = await Promise.all([
+      allianceOnBoard(db, unionId),
+      allianceNames(db, [unionId]),
+    ]);
+    const last = names.get(unionId)?.at(-1);
+    if (!board && !last) return null;
+    return { board, tag: board?.tag ?? last?.tag ?? null, name: board?.name ?? last?.name ?? null };
+  });
 
 /** The upstream banner's rows; "down" is computed from them per request (upstreamStatusOf). */
 export const sharedUpstreamRows = () => sharedRead("upstream", [], upstreamRows);
