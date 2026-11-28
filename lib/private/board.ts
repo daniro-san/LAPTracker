@@ -4,15 +4,16 @@
 // passed (title, end day, text per language, its picture's address (D119); no author), and Start here.
 // Nothing about any person, except the weekly thank-you an officer chose to put there (D114, amending D105):
 // its text per language, its week and the officer's name as its signature; never a value, a ranking or who
-// was left out.
+// was left out. A viewer with an approved link (D142) also gets their own name when the card names them.
 import type { Db } from "../db";
 import { calendarRows } from "../repo/calendar";
+import { ownName } from "../repo/me";
 import { pictureFacts } from "../repo/notice-pictures";
 import { newestNoticeValues } from "../repo/notices";
 import { readStartHere } from "../repo/start-here";
 import { boardThanks, type BoardThanksRow } from "../repo/thanks";
 import type { StartHereText } from "../schema-board";
-import type { BoardAccess } from "./access";
+import { meAccess, type BoardAccess } from "./access";
 import { layOut, type EntryRow } from "./calendar-model";
 import { addDays, mondayOf } from "./calendar-time";
 import { pictureView, type PictureView } from "./notice-picture-rules";
@@ -49,6 +50,19 @@ export interface BoardView {
   startHere: Partial<Record<NoticeLanguage, StartHereText>>;
   /** The weekly thank-you card, until the next one or a Take down (D114). */
   thanks: BoardThanksRow | null;
+  /**
+   * The viewer's own player name when the card names them (issue 772): only through an approved link
+   * (meAccess, D142), from the newest roster's public names; null otherwise.
+   */
+  thanked: string | null;
+}
+
+/** The viewer's own name, when their approved link's player is one of the card's names. */
+async function thankedName(db: Db, access: BoardAccess, thanks: BoardThanksRow | null) {
+  const me = meAccess(access);
+  if (!thanks || !me) return null;
+  const name = await ownName(db, me.unionId, me.uid);
+  return name !== null && thanks.names.includes(name) ? name : null;
 }
 
 /** The notices the board shows: marked for members, end day not before `today`; newest change first. */
@@ -146,5 +160,6 @@ export async function boardView(db: Db, access: BoardAccess, today: string): Pro
     notices,
     startHere: record?.texts ?? {},
     thanks,
+    thanked: await thankedName(db, access, thanks),
   };
 }

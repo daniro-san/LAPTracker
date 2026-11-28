@@ -73,3 +73,21 @@ describe("Home's Follow-up card (issue 585 slice 4)", () => {
     expect(textOf(checkIn)).toContain("1 person to check in with or help");
   });
 });
+
+describe("Home's Say thanks to (issue 772)", () => {
+  it("lists one line per reason with the names after it, never one run-on sentence", () => {
+    const progress = [
+      { uid: 1, name: "Bramble", adDone: false, squadGrowth: 0.12 },
+      { uid: 2, name: "Thistle", adDone: true, squadGrowth: null },
+      { uid: 3, name: "Moss", adDone: false, squadGrowth: 0.08 },
+    ];
+    const thanks = { donors: [], activity: [], progress };
+    const html = margin(null, { ...view, thanks } as unknown as MembersView);
+    // textOf puts a space between elements; the comma follows the name.
+    expect(textOf(html).replaceAll(" ,", ",")).toContain(
+      "Say thanks to Finished AD Tech: Thistle Grew their main squad: Bramble, Moss",
+    );
+    expect(html.match(/<li>/g)).toHaveLength(2);
+    expect(textOf(html)).not.toContain(";");
+  });
+});

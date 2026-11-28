@@ -128,6 +128,16 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
         language={language}
       />
       <h1 className="font-display text-display-lg">{t["board.title"]}</h1>
+      {/* Issue 772: the thank-you first, so a member named on it sees that before anything else. */}
+      <BoardThanks
+        thanks={view.thanks}
+        thanked={view.thanked}
+        t={t}
+        language={language}
+        slug={slug}
+        alliance={alliance}
+        officer={access.officer}
+      />
       <p className="mt-1">
         {t["board.lead"]}{" "}
         <a href="#board-start" className={LINK}>
@@ -140,14 +150,6 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
           {t["me.open"]}
         </a>
       </p>
-      <BoardThanks
-        thanks={view.thanks}
-        t={t}
-        language={language}
-        slug={slug}
-        alliance={alliance}
-        officer={access.officer}
-      />
       <Week {...{ t, language, today, now: now.getTime() }} {...view} />
       <Notices t={t} language={language} notices={view.notices} linked={linked} />
       <StartHere

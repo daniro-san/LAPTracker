@@ -10,7 +10,7 @@ import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
-import { workspaces, workspaceUsers } from "@/lib/schema";
+import { authAttempts, workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceFeatures, workspaceUsage } from "@/lib/schema-features";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -49,7 +49,7 @@ beforeEach(async () => {
   holder.ctx = { ...testContext(db).ctx, ai: () => ai };
 });
 
-const draft = () =>
+const draft = (people: object[] = [{ name: "Bramble", did: ["squad"], note: "led the rally" }]) =>
   POST(
     new Request("https://laptracker.test/api/w/ogs/thanks/draft", {
       method: "POST",
@@ -58,7 +58,8 @@ const draft = () =>
         "content-type": "application/json",
         cookie: `${SESSION_COOKIE}=${token}`,
       },
-      body: JSON.stringify({ people: [{ name: "Bramble", did: ["squad"] }], lastWeek: false }),
+      // By default a few words, so the model is asked (issue 772: without them, the template alone).
+      body: JSON.stringify({ people, lastWeek: false }),
     }),
     { params: Promise.resolve({ slug: "ogs" }) },
   );
@@ -86,5 +87,15 @@ describe("POST /api/w/[slug]/thanks/draft and the alliance's switches (D126)", (
     expect(languages.sort()).toEqual(["Brazilian Portuguese (pt-BR)", "English", "French"]);
     // English and Portuguese answered and stay counted; French failed and was given back.
     expect(await used()).toEqual([2]);
+  });
+
+  it("answers the template without the officer's words, asking no model and counting nothing (issue 772)", async () => {
+    const res = await draft([{ name: "Bramble", did: ["squad"] }]);
+    expect(res.status).toBe(200);
+    const { texts } = (await res.json()) as { texts: Record<string, string> };
+    expect(texts.en).toContain("Grew their main squad: Bramble");
+    expect(asked).toEqual([]);
+    expect(await used()).toEqual([]);
+    expect(await db.select().from(authAttempts)).toEqual([]);
   });
 });
