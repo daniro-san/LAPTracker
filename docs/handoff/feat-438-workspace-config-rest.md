@@ -16,6 +16,11 @@
 - API routes under `/api/w/[slug]/*` still pick their error-message language from the cookie or the browser only. They carry error words only.
 - No row in the settings "On this page" index for the new card.
 
+## Review fixes
+- The manifest route reads the default too, on its own connection; the cookie guard is `isWorkspaceLanguage`, in `workspaceWords` and the manifest, so a stale cookie falls to the default.
+- `workspaceWords(slug)` test added (`Frame.test.ts`).
+- The settings page reads the default once more in `readSettings`: the card shows the saved value even when a cookie is set, so `workspaceWords` cannot supply it. The repeated small read stays: no React `cache` (issue 471 guard). Follow-up the coordinator is filing.
+
 ## Verified
 - `pnpm vitest related --run` on the changed files: 122 files, 708 tests passed.
 - `pnpm check`: passed (prettier, eslint, tsc, vitest, drift, i18n).

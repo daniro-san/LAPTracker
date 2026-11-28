@@ -15,6 +15,7 @@ import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import {
+  isWorkspaceLanguage,
   pickWorkspaceLanguage,
   WORKSPACE_DICTIONARIES,
   type WorkspaceDictionary,
@@ -50,8 +51,11 @@ export async function workspaceWords(slug?: string): Promise<{
 }> {
   const [jar, head] = await Promise.all([cookies(), headers()]);
   const cookie = jar.get(WORKSPACE_LANG_COOKIE)?.value;
-  // The cookie wins, so the saved language is read only for a viewer who has not switched.
-  const preset = !cookie && slug && SLUG.test(slug) ? await deskDefaultLanguage(slug) : null;
+  // A valid cookie wins, so the saved language is read only for a viewer who has not switched.
+  const preset =
+    !isWorkspaceLanguage(cookie) && slug && SLUG.test(slug)
+      ? await deskDefaultLanguage(slug)
+      : null;
   const language = pickWorkspaceLanguage(cookie, head.get("accept-language"), preset);
   return { language, t: WORKSPACE_DICTIONARIES[language] };
 }

@@ -4,7 +4,7 @@ Why: issue 438 asks for a default language per workspace. Posts already had one 
 
 **What an officer sets.** Alliance settings → Language: English, Portuguese, French, or "Follow each person's browser" (the default, stored as none). One Save for the card.
 
-**What it does.** The desk language of a request is the switch's cookie, else the workspace's saved language, else Accept-Language, else English (`pickWorkspaceLanguage`). A person's own EN · PT · FR switch always wins. Desk pages under `/w/[slug]` read it through `workspaceWords(slug)`: one small query, only for a viewer with no cookie. API routes keep answering in the cookie or browser language; they carry error words only.
+**What it does.** The desk language of a request is the switch's cookie, else the workspace's saved language, else Accept-Language, else English (`pickWorkspaceLanguage`). A person's own EN · PT · FR switch always wins. Desk pages under `/w/[slug]` read it through `workspaceWords(slug)`: one small query per request, made only for a viewer with no valid language cookie (a request that renders several layouts and the page repeats it; no `cache`, issue 471). The workspace manifest reads it the same way, on its own connection. API routes keep answering in the cookie or browser language; they carry error words only.
 
 **Access.** `POST /api/w/[slug]/desk-language` needs the officer session of that workspace (`requireWorkspace`); a member or another workspace's officer changes nothing (401). 60 saves per 15 minutes per workspace. The value is one of three language codes, never a roster field.
 
