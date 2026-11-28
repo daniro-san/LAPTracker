@@ -175,11 +175,24 @@ export async function answerJoinRequest(
   // The delete is the claim: of two officers answering at once, only one goes on.
   if (!(await deleteJoinRequest(db, access.workspaceId, request.id)))
     return { ok: false, code: "gone" };
-  const userId = await joinUser(db, access.workspaceId, request.discordUserId, request.discordName);
-  const link = { uid: player.uid, state: "approved" as const, at: now };
-  if ((await setLink(db, access.workspaceId, userId, link)) === "taken") {
-    // Nothing was done: the request comes back as it was, for the officer to look again.
-    await recordJoinRequest(db, { ...request, at: request.createdAt }, joinSince(now));
+  // Nothing was done when the link fails or is taken: the request comes back as it was.
+  const putBack = () =>
+    recordJoinRequest(db, { ...request, at: request.createdAt }, joinSince(now));
+  let userId: number;
+  let linked: Awaited<ReturnType<typeof setLink>>;
+  try {
+    userId = await joinUser(db, access.workspaceId, request.discordUserId, request.discordName);
+    linked = await setLink(db, access.workspaceId, userId, {
+      uid: player.uid,
+      state: "approved",
+      at: now,
+    });
+  } catch (error) {
+    await putBack();
+    throw error;
+  }
+  if (linked === "taken") {
+    await putBack();
     return { ok: false, code: "taken" };
   }
   const given = await role(db, access, deps, request.discordUserId);
