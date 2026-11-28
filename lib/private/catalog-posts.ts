@@ -236,8 +236,9 @@ const MINUTE_MS = 60_000;
 
 /**
  * The KvK reminder for one mark ("2026-11-28 T-60"): undefined before the mark, null (settled) once the next
- * mark or the start has come, or when the day has no KvK entry; else its text. The first KvK of the day by
- * time is the one reminded.
+ * mark or the start has come, or when the day has no KvK entry members can see; else its text. The first
+ * KvK of the day by time that officers marked "Members can see this" (D105) is the one reminded, so an
+ * officers-only plan never reaches the members' channel.
  */
 async function soonOf(
   db: Db,
@@ -249,7 +250,7 @@ async function soonOf(
 ): Promise<string | null | undefined> {
   const { day, mark } = markOf(period);
   const kvk = (await weekOf(db, due.workspaceId, mondayOf(day))).find(
-    (p) => p.day === day && p.entry.kind === "kvk" && p.minute !== null,
+    (p) => p.day === day && p.entry.kind === "kvk" && p.entry.forMembers && p.minute !== null,
   );
   if (!kvk) return null;
   const minute = kvk.minute as number;

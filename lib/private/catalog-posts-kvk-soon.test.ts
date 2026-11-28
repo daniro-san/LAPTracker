@@ -58,11 +58,14 @@ beforeEach(async () => {
   });
 });
 
-/** A KvK at 12:00 ST on `day`: Bo confirmed in Castle defence, Cy only asked for Scout, and a note. */
-async function kvkOn(day: string) {
+/**
+ * A KvK at 12:00 ST on `day`, marked "Members can see this" unless `forMembers` is false: Bo confirmed in
+ * Castle defence, Cy only asked for Scout, and a note.
+ */
+async function kvkOn(day: string, forMembers = true) {
   const [entry] = await db
     .insert(calendarEntries)
-    .values({ workspaceId: ws, kind: "kvk", day, minute: 720 })
+    .values({ workspaceId: ws, kind: "kvk", day, minute: 720, forMembers })
     .returning({ id: calendarEntries.id });
   const entryId = entry?.id ?? 0;
   const roles = [
@@ -135,6 +138,17 @@ describe("KvK reminder (D159, post 6)", () => {
     await setSwitch(db, ws, "post_kvk_soon", false, at(SATURDAY, "00:00"));
     expect(await tickAt(at(SATURDAY, "13:00"))).toEqual([]);
     expect(await db.select().from(postRuns)).toEqual([]);
+  });
+
+  it("posts nothing for a KvK entry officers did not mark for members, and settles both marks", async () => {
+    await turnOn();
+    await kvkOn(SATURDAY, false);
+    expect(await tickAt(at(SATURDAY, "13:00"))).toEqual([]); // 11:00 ST
+    expect(await tickAt(at(SATURDAY, "13:45"))).toEqual([]); // 11:45 ST
+    expect((await db.select().from(postRuns)).map((r) => [r.period, r.status]).sort()).toEqual([
+      [`${SATURDAY} T-15`, "skipped"],
+      [`${SATURDAY} T-60`, "skipped"],
+    ]);
   });
 
   it("is not due on an Origin of Chaos Saturday (#806): nothing posted and nothing settled", async () => {

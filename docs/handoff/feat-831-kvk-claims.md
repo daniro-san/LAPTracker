@@ -8,7 +8,7 @@ Closes #831. Extends D161 (members' asks, the desk's answers) and D159 (catalog 
 - **Rules.** `lib/private/kvk-claims.ts`:
   - `meKvkView(db, me, now, zone)`: the open KvK, which is the next KvK entry marked "Members can see this", with a saved plan, on a KvK day (`isKvkDay`), before its start, from today through the next week. It returns the roles with the confirmed names in name order and the member's own state (`in`, `asked` or null).
   - `claimKvkRole`: ask or withdraw for the MeAccess uid only.
-  - `asksOf`: the desk's open asks, on roles still in the plan, by members still on the roster.
+  - `asksOf`: the desk's open asks, on roles still in the plan, by members still on the roster, in name order.
   - `answerKvkClaim`: Confirm writes the uid into the role over the plan's current `rev` and deletes the ask. Decline deletes the ask.
 - **Member route.** `POST /api/w/[slug]/me/kvk {entry, role, action}`. Behind requireBoard, the board and Notices switches, and `meAccess`. The body is strict, so it carries no uid. Excluded from the officer-route walk in `member-session.test.ts`.
 - **Officer route.** `/api/w/[slug]/kvk-plan` gains `{action: "answer", entry, role, uid, answer: confirm | decline}` (requireWorkspace). Analytics: `kvk_plan` `approve` and `decline` (`decline` is new in `DESK_ACTIONS`).
@@ -24,7 +24,7 @@ Closes #831. Extends D161 (members' asks, the desk's answers) and D159 (catalog 
 - **Docs.** Amendments to D161, D159, D156, D141 and D71. Updated the tracking plan (row and Changed line), `.claude/rules/private.md`, `REVIEW.md`, the `eslint.config.mjs` zone comment, and the e2e index count ("Posts 1 of 6 on").
 - **Tests.**
   - `app/(private)/api/w/[slug]/me/kvk/route.test.ts` (4 tests): a member asks and withdraws for their own uid, and a body that names a uid gets 400. A pending or missing link gets 403 and an unknown role gets 404, with nothing stored. An officer confirms one ask and declines another; another workspace's officer gets 401; a confirmed member cannot withdraw. The card shows 12:00 ST and 15:00 in Paris.
-  - `lib/private/catalog-posts-kvk-soon.test.ts` (4 tests): the exact T-60 text and the T-15 text, once each, with no post at 10:45, 11:15 or 12:00 ST; the asker and the note are absent. Nothing is sent while the post is off or not allowed. Nothing is sent on an Origin of Chaos Saturday. The card shows 11:00–14:00.
+  - `lib/private/catalog-posts-kvk-soon.test.ts` (4 tests): the exact T-60 text and the T-15 text, once each, with no post at 10:45, 11:15 or 12:00 ST; the asker and the note are absent. An officers-only KvK entry posts nothing and settles both marks (review of PR 850). Nothing is sent while the post is off or not allowed. Nothing is sent on an Origin of Chaos Saturday. The card shows 11:00–14:00.
   - `self-report.test-helpers.ts` gains `kvk(who, body, path)`. Its route switch is now a lookup table.
 
 ## Decisions
@@ -35,6 +35,7 @@ Closes #831. Extends D161 (members' asks, the desk's answers) and D159 (catalog 
 - **Asks are keyed by the role's name, as the plan stores roles.** The plan's roles have no ids, and adding ids would change D161's stored shape.
 - **Answers are off while the plan is dirty.** The editor is keyed by `rev`, so this rule keeps a Confirm from dropping unsaved edits.
 - **Reminder timing rides the event window (D160).** The post is due from the Before read on the event weekday. The window's 15-minute ticks already open the database, so a KvK at 12:00 ST is reminded at 11:00 and 11:45 ST. `tickMayBeDue` is not widened. The minutes in the text are counted from the sending tick ("in 60 minutes").
+- **Reminder scope (review of PR 850):** only a KvK entry marked "Members can see this" is reminded, as the board card and post 1 do, so an officers-only plan never reaches the members' channel.
 - **Reminder content:** the time, then the roles with confirmed people by public name, then a closing line. Asks that are not confirmed and the officers' note are left out. Names come from `anyRoster`, the same read the plan page uses.
 - **The member's ask sends no analytics event,** like `me/away`.
 

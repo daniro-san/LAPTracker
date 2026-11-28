@@ -127,7 +127,10 @@ export async function claimKvkRole(
   return { ok: true };
 }
 
-/** The asks an officer answers on the plan's page: roles still in the plan, members still on the roster. */
+/**
+ * The asks an officer answers on the plan's page: roles still in the plan, members still on the roster, in
+ * name order (D75: never in the order they asked).
+ */
 export async function asksOf(
   db: Db,
   access: WorkspaceAccess,
@@ -136,13 +139,15 @@ export async function asksOf(
   names: ReadonlyMap<number, string>,
 ): Promise<{ role: string; uid: number; name: string }[]> {
   const claims = await claimsOf(db, access.workspaceId, entry);
-  return claims.flatMap((c) => {
-    const role = roles?.find((r) => r.name === c.role);
-    const name = names.get(c.uid);
-    return role && name !== undefined && !role.uids.includes(c.uid)
-      ? [{ role: c.role, uid: c.uid, name }]
-      : [];
-  });
+  return claims
+    .flatMap((c) => {
+      const role = roles?.find((r) => r.name === c.role);
+      const name = names.get(c.uid);
+      return role && name !== undefined && !role.uids.includes(c.uid)
+        ? [{ role: c.role, uid: c.uid, name }]
+        : [];
+    })
+    .sort((a, b) => byName(a.name, b.name) || a.uid - b.uid);
 }
 
 export type AnswerResult =
