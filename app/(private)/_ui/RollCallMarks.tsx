@@ -14,7 +14,7 @@ import { Tag } from "@/lib/brand/components/Tag";
 import { isolate } from "@/lib/copy";
 import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
-import type { Mark } from "@/lib/private/roll-call-rules";
+import { ELIXIR_MARKS, type Mark } from "@/lib/private/roll-call-rules";
 import { fill } from "@/lib/words";
 
 import { AwaySheet, type AwayWho } from "./AwaySheet";
@@ -32,7 +32,9 @@ function MarkTile(props: {
   note: string | undefined;
   words: RollSheetWords;
   marks: MarkWords;
-  onTap: (uid: number, tapped: "yes" | "no") => void;
+  onTap: (uid: number, tapped: Exclude<Mark, "assumed">) => void;
+  /** An Elixir Scramble tile: the extra marks and a Joined score (issue 468). */
+  elixir?: { onScore: (uid: number, score: number | null) => void } | undefined;
 }) {
   const { row, shown, marks } = props;
   return (
@@ -59,14 +61,73 @@ function MarkTile(props: {
           </button>
         ))}
       </div>
+      {props.elixir && <ElixirExtras {...props} elixir={props.elixir} />}
     </li>
+  );
+}
+
+/**
+ * An Elixir Scramble tile's extra marks, neutral and never counted against anyone (issue 468): Registered,
+ * Registered for 09:00 only, Sub (not used), Excused, and a Joined mark's optional score. 44 px tall.
+ */
+function ElixirExtras(props: {
+  row: MarkRowView;
+  shown: Shown;
+  words: RollSheetWords;
+  marks: MarkWords;
+  onTap: (uid: number, tapped: Exclude<Mark, "assumed">) => void;
+  elixir: { onScore: (uid: number, score: number | null) => void };
+}) {
+  const { row, shown, marks } = props;
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        {ELIXIR_MARKS.map((v) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={shown.mark === v}
+            aria-label={fill(props.words["roll.button"], {
+              word: marks[v],
+              name: isolate(row.name),
+            })}
+            onClick={() => props.onTap(row.uid, v)}
+            className={`${chip(shown.mark === v)} min-h-11 justify-center text-center text-body-sm leading-4`}
+          >
+            {marks[v]}
+          </button>
+        ))}
+      </div>
+      {shown.mark === "yes" && (
+        <label className="block">
+          <span className="block text-body-sm text-ink/80">{props.words["roll.score"]}</span>
+          <input
+            // Keyed by the saved score, so a refreshed page shows what was stored.
+            key={shown.score ?? "none"}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={1}
+            defaultValue={shown.score ?? ""}
+            aria-label={fill(props.words["roll.score.for"], { name: isolate(row.name) })}
+            onBlur={(e) => {
+              const text = e.currentTarget.value.trim();
+              const score = text === "" ? null : Number(text);
+              if (score !== null && !(Number.isInteger(score) && score >= 0)) return;
+              if (score !== shown.score) props.elixir.onScore(row.uid, score);
+            }}
+            className={FIELD}
+          />
+        </label>
+      )}
+    </>
   );
 }
 
 /** The mark in words under the name, "Not set" while there is none, so a tile keeps its height. */
 export function MarkLine(props: {
   mark: Mark | null;
-  words: { yes: string; no: string; assumed?: string };
+  words: { yes: string; no: string } & Partial<Record<Mark, string>>;
   notSet: string;
 }) {
   const said = props.mark ? props.words[props.mark] : undefined;
@@ -212,6 +273,8 @@ interface RollCallMarksProps {
   words: RollSheetWords;
   marks: MarkWords;
   shield: boolean;
+  /** An Elixir Scramble team (issue 468): the extra marks and a score on each tile. */
+  elixir?: boolean;
   language: string;
   /** Today's server day, the first day an away note gets when none is picked (D103). */
   today: string;
@@ -244,6 +307,7 @@ export function RollCallMarks(props: RollCallMarksProps) {
         marks={marks}
         shield={props.shield}
         undo={r.undoable && !r.fresh ? () => void r.undo() : null}
+        more={props.elixir ? [words["roll.elixir.legend"]] : []}
       />
       <SearchBar q={q} words={words} onQ={setQ} onAway={() => setAway("pick")} />
       {found && !asked.some(found) && (
@@ -264,6 +328,11 @@ export function RollCallMarks(props: RollCallMarksProps) {
             words={words}
             marks={marks}
             onTap={m.tap}
+            elixir={
+              props.elixir
+                ? { onScore: (uid, score) => m.tap(uid, "yes", true, score ?? undefined) }
+                : undefined
+            }
           />
         )}
       />

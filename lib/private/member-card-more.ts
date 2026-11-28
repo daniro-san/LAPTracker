@@ -1,7 +1,7 @@
 // Two reads the member card adds beside its main one, apart from member-card.ts for its size: Alliance Duel by
 // week (issue 467) and the usual hours line of the presence lines (issue 873, D163).
 import type { Db } from "../db";
-import { lastSeenTimes } from "../repo/player-reads";
+import { gameLanguageReads, lastSeenTimes } from "../repo/player-reads";
 import { lastOnlineTimes } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn, mondayOf } from "./calendar-time";
@@ -11,6 +11,7 @@ import { usualLine } from "./insights-usual-words";
 import type { CardFormats, CardGameLanguage } from "./member-card";
 import { duelCard, type DuelCard } from "./member-card-parts";
 import { DAY_MS } from "./member-week";
+import { NOTICE_LANGUAGE_DAYS } from "./notice-languages";
 import { messageLanguage } from "./ready-message";
 import { usualOf, USUAL_DAYS } from "./usual-hours";
 
@@ -62,11 +63,16 @@ export async function cardUsualLine(
 }
 
 /** The line "Game language: {name} (read {date})" from the newest read of the member's language, or null. */
-export function cardGameLanguage(
-  read: { language: string; readAt: Date } | undefined,
-  t: WorkspaceDictionary,
+export async function cardGameLanguage(
+  db: Db,
+  access: WorkspaceAccess,
+  uid: number,
+  at: { now: Date; t: WorkspaceDictionary },
   f: CardFormats,
-): CardGameLanguage | null {
+): Promise<CardGameLanguage | null> {
+  const since = new Date(at.now.getTime() - NOTICE_LANGUAGE_DAYS * DAY_MS);
+  const read = (await gameLanguageReads(db, access.unionId, [uid], since)).get(uid);
+  const t = at.t;
   return read
     ? {
         line: t["card.gameLanguage"],

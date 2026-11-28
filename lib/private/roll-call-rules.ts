@@ -24,8 +24,17 @@ export const FROM_CALENDAR: Readonly<Record<string, RollKind>> = {
 };
 
 /** `assumed` is "no problem seen": the Raid Shield's answer for the rest, not checked one by one. */
-export const MARKS = ["yes", "no", "assumed"] as const;
+export const MARKS = ["yes", "no", "assumed", "registered", "early", "sub", "excused"] as const;
 export type Mark = (typeof MARKS)[number];
+
+/**
+ * An Elixir Scramble team's extra marks (issue 468, D103 amended): Registered, Registered for 09:00 only,
+ * Sub (not used) and Excused. They are neither ✓ nor ✗ and never count against anyone (D75). Joined and
+ * Did not join stay `yes` and `no`.
+ */
+export const ELIXIR_MARKS = ["registered", "early", "sub", "excused"] as const;
+export const isElixirMark = (mark: Mark | null): boolean =>
+  mark !== null && (ELIXIR_MARKS as readonly string[]).includes(mark);
 
 /**
  * What "the rest" becomes (owner, issue 298): the shield's rest is "no problem seen", never a silent "shield
@@ -41,6 +50,14 @@ export const REST: Readonly<Record<RollKind, Mark | null>> = {
   cheese: "yes",
 };
 
+export type Outcome = "won" | "lost" | "tie";
+
+/** An Elixir Scramble team's Won or Lost, read from the two scores (issue 468); null while either is unknown. */
+export function outcomeOf(our: number | null, their: number | null): Outcome | null {
+  if (our === null || their === null) return null;
+  return our > their ? "won" : our < their ? "lost" : "tie";
+}
+
 /** Players per Elixir Scramble team (the game's own limit). */
 export const TEAM_MAX = 20;
 
@@ -51,17 +68,19 @@ export const TEAM_MAX = 20;
  */
 export const registrationOpen = (day: string, today: string) => today < addDays(mondayOf(day), 3);
 
-/** A tap marks ✓ or ✗, or clears; `assumed` comes only from the shield's "the rest". */
-export const tapMark = (mark: Mark | null) => mark === null || mark === "yes" || mark === "no";
+/** A tap marks ✓ or ✗ (or an Elixir Scramble's extra mark), or clears; `assumed` comes only from "the rest". */
+export const tapMark = (mark: Mark | null) => mark !== "assumed";
 
 /** The next mark when a button is tapped: the same button again clears it. */
-export const toggled = (current: Mark | null, tapped: "yes" | "no"): Mark | null =>
+export const toggled = (current: Mark | null, tapped: Exclude<Mark, "assumed">): Mark | null =>
   current === tapped ? null : tapped;
 
 export interface Tally {
   yes: number;
   no: number;
   assumed: number;
+  /** An Elixir Scramble's registered, 09:00 only, sub and excused marks: marked, neither ✓ nor ✗. */
+  other: number;
   notSet: number;
   away: number;
 }
@@ -74,10 +93,13 @@ export function tally(
   members: readonly { uid: number; away: unknown }[],
   marks: ReadonlyMap<number, Mark | null>,
 ): Tally {
-  const t: Tally = { yes: 0, no: 0, assumed: 0, notSet: 0, away: 0 };
+  const t: Tally = { yes: 0, no: 0, assumed: 0, other: 0, notSet: 0, away: 0 };
   for (const m of members) {
+    const mark = marks.get(m.uid) ?? null;
     if (m.away) t.away += 1;
-    else t[marks.get(m.uid) ?? "notSet"] += 1;
+    else if (mark === null) t.notSet += 1;
+    else if (isElixirMark(mark)) t.other += 1;
+    else t[mark as "yes" | "no" | "assumed"] += 1;
   }
   return t;
 }

@@ -21,7 +21,7 @@ const item: WeekItem = {
   day: "2026-11-18",
   placed: null,
   callId: 41,
-  tally: { yes: 72, no: 20, assumed: 0, notSet: 6, away: 2 },
+  tally: { yes: 72, no: 20, assumed: 0, other: 0, notSet: 6, away: 2 },
   team: null,
 };
 

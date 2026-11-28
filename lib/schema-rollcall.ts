@@ -111,6 +111,10 @@ export const rollCallMarks = pgTable(
     writtenBy: integer("written_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     writtenAt: tstz("written_at").notNull(),
     byTracker: boolean("by_tracker").notNull().default(false),
+    /** An Elixir Scramble Joined mark's optional score (issue 468). */
+    score: integer("score"),
+    /** Written by "the rest", not tapped by an officer: an assumption, never an explicit mark (issue 468). */
+    byRest: boolean("by_rest").notNull().default(false),
   },
   (t) => [
     unique("roll_call_marks_version_unique").on(t.rollCallId, t.uid, t.part, t.version),
@@ -118,7 +122,12 @@ export const rollCallMarks = pgTable(
     index("roll_call_marks_written_idx").on(t.writtenAt),
     // /admin's "first roll call marked" (D145): each roll call's first mark from the index alone (D149).
     index("roll_call_marks_call_written_idx").on(t.rollCallId, t.writtenAt),
-    check("roll_call_marks_mark_check", sql`${t.mark} in ('yes', 'no', 'assumed')`),
+    // Issue 468: an Elixir Scramble team also takes registered, early (registered for 09:00 only), sub, excused.
+    check(
+      "roll_call_marks_mark_check",
+      sql`${t.mark} in ('yes', 'no', 'assumed', 'registered', 'early', 'sub', 'excused')`,
+    ),
+    check("roll_call_marks_score_check", sql`${t.score} is null or ${t.score} >= 0`),
     check("roll_call_marks_part_check", sql`${t.part} in ('main', 'wall')`),
   ],
 );
@@ -136,4 +145,28 @@ export const rollCallTeam = pgTable(
     addedAt: tstz("added_at").notNull(),
   },
   (t) => [primaryKey({ columns: [t.rollCallId, t.uid] })],
+);
+
+/**
+ * An Elixir Scramble team's result for its week (issue 468): the opponent and both scores. Won or Lost is
+ * read from the two scores, never stored. One row per roll call, written by an officer.
+ */
+export const rollCallResults = pgTable(
+  "roll_call_results",
+  {
+    rollCallId: integer("roll_call_id")
+      .primaryKey()
+      .references(() => rollCalls.id, { onDelete: "cascade" }),
+    opponent: text("opponent"),
+    ourScore: big("our_score"),
+    theirScore: big("their_score"),
+    writtenBy: integer("written_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    writtenAt: tstz("written_at").notNull(),
+  },
+  (t) => [
+    check(
+      "roll_call_results_scores_check",
+      sql`(${t.ourScore} is null or ${t.ourScore} >= 0) and (${t.theirScore} is null or ${t.theirScore} >= 0)`,
+    ),
+  ],
 );

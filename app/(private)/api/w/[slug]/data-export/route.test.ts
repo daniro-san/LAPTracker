@@ -118,6 +118,7 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
       "roll-calls",
       "roll-call-marks",
       "roll-call-teams",
+      "roll-call-results",
       "follow-ups",
       "thefts",
       "theft-steps",

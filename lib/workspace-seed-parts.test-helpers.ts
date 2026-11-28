@@ -1,7 +1,7 @@
 // Test-only (D125): the parts of lib/workspace-data.test-helpers.ts's seed, split for size: notices, roll
 // calls and thefts, imports, and the key and data requests. Invented names and values only.
 import type { Db } from "./db";
-import { memberFollowUps, rollCallMarks, rollCalls, rollCallTeam } from "./schema";
+import { memberFollowUps, rollCallMarks, rollCallResults, rollCalls, rollCallTeam } from "./schema";
 import {
   joinRequests,
   postRuns,
@@ -117,6 +117,9 @@ export async function seedCallsAndThefts(db: Db, ws: number, officer: number) {
   await db
     .insert(rollCallTeam)
     .values({ rollCallId: call, uid: 101, name: "Ana Example", addedAt: SEED_AT });
+  await db
+    .insert(rollCallResults)
+    .values({ rollCallId: call, opponent: "Foxes", writtenAt: SEED_AT });
   await db.insert(memberFollowUps).values({
     workspaceId: ws,
     uid: 101,

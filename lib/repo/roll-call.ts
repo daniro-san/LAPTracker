@@ -4,7 +4,7 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { rollCallMarks, rollCalls, rollCallTeam, workspaceUsers } from "../schema";
+import { rollCallMarks, rollCallResults, rollCalls, rollCallTeam, workspaceUsers } from "../schema";
 
 export type RollCallRow = typeof rollCalls.$inferSelect;
 /** Not deleted (D120): a deleted roll call leaves every list, count and Home. */
@@ -13,7 +13,7 @@ export const live = isNull(rollCalls.deletedAt);
  * Its Calendar entry is there and not deleted (D123). A deleted entry keeps its id on the roll call (a soft
  * delete, not the old cascade), so `entry_id is null` no longer says the entry is gone.
  */
-const entryLive = sql`exists (select 1 from calendar_entries c
+export const entryLive = sql`exists (select 1 from calendar_entries c
   where c.id = ${rollCalls.entryId} and c.deleted_at is null)`;
 /** A connection or a transaction. */
 type Tx = Pick<Db, "select" | "insert" | "delete" | "execute">;
@@ -30,6 +30,10 @@ export interface MarkRow {
   tracker: boolean;
   /** An officer wrote it (`written_by` set): a tap, or "Accept the tracker's" for a tracker mark. */
   officer: boolean;
+  /** An Elixir Scramble Joined mark's optional score (issue 468). */
+  score: number | null;
+  /** Written by "the rest", an assumption and not an explicit mark (issue 468). */
+  rest: boolean;
 }
 
 const markColumns = {
@@ -41,6 +45,8 @@ const markColumns = {
   at: rollCallMarks.writtenAt,
   tracker: rollCallMarks.byTracker,
   officer: sql<boolean>`${rollCallMarks.writtenBy} is not null`,
+  score: rollCallMarks.score,
+  rest: rollCallMarks.byRest,
 };
 
 export async function findCall(
@@ -284,4 +290,56 @@ export async function removeFromTeam(tx: Tx, callId: number, uids: number[]) {
   await tx
     .delete(rollCallTeam)
     .where(and(eq(rollCallTeam.rollCallId, callId), inArray(rollCallTeam.uid, uids)));
+}
+
+/** An Elixir Scramble team's result: the opponent and both scores (issue 468); any of them may be unknown. */
+export interface ResultRow {
+  rollCallId: number;
+  opponent: string | null;
+  ourScore: number | null;
+  theirScore: number | null;
+}
+
+export async function resultsOf(db: Pick<Db, "select">, callIds: number[]): Promise<ResultRow[]> {
+  if (callIds.length === 0) return [];
+  return db
+    .select({
+      rollCallId: rollCallResults.rollCallId,
+      opponent: rollCallResults.opponent,
+      ourScore: rollCallResults.ourScore,
+      theirScore: rollCallResults.theirScore,
+    })
+    .from(rollCallResults)
+    .where(inArray(rollCallResults.rollCallId, callIds));
+}
+
+/** Writes the team's result, the newest write replacing the last. */
+export async function saveResult(db: Db, row: ResultRow & { writtenBy: number; writtenAt: Date }) {
+  const { opponent, ourScore, theirScore, writtenBy, writtenAt } = row;
+  await db.insert(rollCallResults).values(row).onConflictDoUpdate({
+    target: rollCallResults.rollCallId,
+    set: { opponent, ourScore, theirScore, writtenBy, writtenAt },
+  });
+}
+
+/**
+ * The member's seats: the workspace's live Elixir Scramble roll calls (Calendar entry still there) whose
+ * team they are on, the newest day first (issue 468).
+ */
+export async function seatCalls(db: Db, workspaceId: number, uid: number, limit: number) {
+  return db
+    .select({ id: rollCalls.id, day: rollCalls.day, variant: rollCalls.variant })
+    .from(rollCalls)
+    .innerJoin(rollCallTeam, eq(rollCallTeam.rollCallId, rollCalls.id))
+    .where(
+      and(
+        eq(rollCalls.workspaceId, workspaceId),
+        eq(rollCalls.kind, "elixir"),
+        eq(rollCallTeam.uid, uid),
+        live,
+        entryLive,
+      ),
+    )
+    .orderBy(desc(rollCalls.day), desc(rollCalls.id))
+    .limit(limit);
 }

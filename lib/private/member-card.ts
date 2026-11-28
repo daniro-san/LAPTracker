@@ -9,12 +9,12 @@ import { compactLarge } from "../compact";
 import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import { factHistory, type FactRow } from "../repo/member-facts";
-import { gameLanguageReads } from "../repo/player-reads";
 import { endOfDayReads } from "../repo/workspace-rosters";
 import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { cardBuddy, type CardBuddy } from "./buddy";
 import { dayIn } from "./calendar-time";
+import { cardElixir, type CardElixir } from "./card-elixir";
 import { cardFollowUp, type CardFollowUp } from "./card-follow-up";
 import { cardShield, type CardShield } from "./card-shield";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
@@ -50,7 +50,6 @@ import {
 } from "./member-days";
 import { memberOrigin } from "./member-origin";
 import { squadsCard, type SquadsCard } from "./member-squads";
-import { DAY_MS } from "./member-week";
 import { membersView, type MemberRow } from "./members";
 import {
   breakText,
@@ -60,7 +59,6 @@ import {
   type Formats,
   type Status,
 } from "./members-sheet";
-import { NOTICE_LANGUAGE_DAYS } from "./notice-languages";
 import { cardSelfReport, type CardSelfReport } from "./self-report";
 import { trendOf, type Previous, type WeekBase } from "./trend-words";
 
@@ -159,6 +157,8 @@ export interface CardData {
   buddy?: CardBuddy;
   /** Issue 634: the Raid Shield block, from Friday's night check until KvK starts; null otherwise. */
   shield?: CardShield | null;
+  /** Issue 468: the member's last 4 Elixir Scramble seats and, from explicit marks only, a follow-up line. */
+  elixir?: CardElixir | null;
   /** Issue 814: the game's language from the newest own-alliance read; null with no read (D75). */
   gameLanguage?: CardGameLanguage | null;
   /** D154: what the member sent about themselves from their own link; null when nothing to show. */
@@ -411,31 +411,37 @@ export async function memberCard(
   const thisWeek = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const [squads, origin, link, followUp, marks, shield, selfReport, game, usual, duelWeeks] =
-    await Promise.all([
-      squadsCard(db, access, uid, at.t, f),
-      memberOrigin(db, access, uid, at.zone, at.t, f.date),
-      cardLink(db, access, uid, at.t),
-      cardFollowUp(db, access, member, followUps, view.reads, at, f.date),
-      // Follow-up's own rule, read only while the status is Needs help (#585 S2), on the records read above.
-      helpMarksOf(
-        db,
-        access.workspaceId,
-        member.officerStatus === "help" ? [uid] : [],
-        [...followUps].reverse(),
-      ),
-      cardShield(db, access, member, at),
-      cardSelfReport(db, access, uid, member.facts, at.t, f),
-      gameLanguageReads(
-        db,
-        access.unionId,
-        [uid],
-        new Date(at.now.getTime() - NOTICE_LANGUAGE_DAYS * DAY_MS),
-      ),
-      cardUsualLine(db, access, uid, at),
-      cardDuelWeeks(db, access, view.members, uid, at, f),
-    ]);
-  const gameLanguage = cardGameLanguage(game.get(uid), at.t, f);
+  const [
+    squads,
+    origin,
+    link,
+    followUp,
+    marks,
+    shield,
+    selfReport,
+    gameLanguage,
+    usual,
+    duelWeeks,
+    elixir,
+  ] = await Promise.all([
+    squadsCard(db, access, uid, at.t, f),
+    memberOrigin(db, access, uid, at.zone, at.t, f.date),
+    cardLink(db, access, uid, at.t),
+    cardFollowUp(db, access, member, followUps, view.reads, at, f.date),
+    // Follow-up's own rule, read only while the status is Needs help (#585 S2), on the records read above.
+    helpMarksOf(
+      db,
+      access.workspaceId,
+      member.officerStatus === "help" ? [uid] : [],
+      [...followUps].reverse(),
+    ),
+    cardShield(db, access, member, at),
+    cardSelfReport(db, access, uid, member.facts, at.t, f),
+    cardGameLanguage(db, access, uid, at, f),
+    cardUsualLine(db, access, uid, at),
+    cardDuelWeeks(db, access, view.members, uid, at, f),
+    cardElixir(db, access, uid, at),
+  ]);
   const card = cardData(member, at.t, f, shownOf(view.members), {
     followUps: followUps.map((row) => ({
       id: row.id,
@@ -449,8 +455,8 @@ export async function memberCard(
   });
   const mark = marks.get(uid);
   const statusMark = mark ? markLines(mark, at.t, f.date) : [];
-  const buddy = cardBuddy(member, view.members, at.t);
   card.presence = [...card.presence, usual];
+  card.elixir = elixir;
   return {
     ...card,
     statusMark,
@@ -460,7 +466,7 @@ export async function memberCard(
     shield,
     selfReport,
     gameLanguage,
-    buddy,
+    buddy: cardBuddy(member, view.members, at.t),
     duelWeeks,
   };
 }

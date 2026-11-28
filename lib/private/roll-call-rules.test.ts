@@ -29,7 +29,7 @@ describe("roll call rules (issue 298)", () => {
         [6, "no"],
       ]),
     );
-    expect(t).toEqual({ yes: 1, no: 1, assumed: 1, notSet: 2, away: 1 });
+    expect(t).toEqual({ yes: 1, no: 1, assumed: 1, other: 0, notSet: 2, away: 1 });
   });
 
   it("offers each kind's rest button (Cheese Trap took part, none for plunders), and a second tap of the same button clears", () => {
@@ -94,14 +94,14 @@ describe("roll call rules (issue 298)", () => {
     const t = WORKSPACE_DICTIONARIES.en;
     const parts = (tl: Parameters<typeof tallyParts>[0]) =>
       tallyParts(tl, "shield", t).map((p) => p.text);
-    expect(parts({ yes: 1, no: 2, assumed: 0, notSet: 5, away: 0 })).toEqual([
+    expect(parts({ yes: 1, no: 2, assumed: 0, other: 0, notSet: 5, away: 0 })).toEqual([
       "3 of 8 marked",
       "Shield up 1",
       "No shield 2",
       "Not set 5",
     ]);
     // "No problem seen" sits beside "Shield up": both are the ✓ chip (drilldown, 2026-11-22).
-    expect(parts({ yes: 0, no: 0, assumed: 4, notSet: 0, away: 2 })).toEqual([
+    expect(parts({ yes: 0, no: 0, assumed: 4, other: 0, notSet: 0, away: 2 })).toEqual([
       "4 of 4 marked",
       "Shield up 0",
       "No problem seen 4",
