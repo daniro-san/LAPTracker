@@ -13,7 +13,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { requireWorkspace } from "@/lib/private/access";
 import { recentActivity } from "@/lib/private/desk-activity.test-helpers";
-import { followUpCounts, followUpsOf } from "@/lib/private/follow-up";
+import { followUpCounts, followUpsOf, helpMarksOf } from "@/lib/private/follow-up";
 import { membersView } from "@/lib/private/members";
 import { UNDO_MS } from "@/lib/private/roll-call";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
@@ -121,9 +121,9 @@ const post = async (body: unknown, who = "Ana") => {
 };
 
 /** Ana records a follow-up about Bramble: its id and request id. */
-async function record(action = "talked") {
+async function record(action = "talked", note = "") {
   const requestId = randomUUID();
-  await post({ uid: 101, action, note: "", until: null, version: 0, requestId });
+  await post({ uid: 101, action, note, until: null, version: 0, requestId });
   const rows = await db.select({ id: memberFollowUps.id }).from(memberFollowUps);
   return { id: Math.max(...rows.map((r) => r.id)), requestId };
 }
@@ -198,5 +198,35 @@ describe("deleting a follow-up record from a member's history (D123 phase 2)", (
     await post({ uid: 101, action: "undo", target: first.requestId, requestId: randomUUID() });
     expect(await post(remove(second.id, requestId, true))).toBe(404);
     expect(await history()).toBe(0);
+  });
+
+  it("is refused once the record no longer counts; the record still counting under it is deleted", async () => {
+    const first = await record("talked");
+    const second = await record("fine");
+    // Follow-up's Undo cancels the second, which then no longer counts.
+    await post({ uid: 101, action: "undo", target: second.requestId, requestId: randomUUID() });
+    expect(await post(remove(second.id, randomUUID()))).toBe(404);
+    expect(await post(remove(first.id, randomUUID()))).toBe(200);
+    expect(await history()).toBe(0);
+  });
+
+  it("the Needs help mark leaves a deleted record out", async () => {
+    const { id } = await record("help", "Needs bandwidth");
+    const note = async () =>
+      (await helpMarksOf(db, (await access()).workspaceId, [101])).get(101)?.note;
+    expect(await note()).toBe("Needs bandwidth");
+    await post(remove(id, randomUUID()));
+    // The status stays Needs help (a fact), without the deleted record's note.
+    expect(await note()).toBeNull();
+  });
+
+  it("Home does not bring back a withdrawn record when a deleted one sits between them", async () => {
+    const first = await record("talked");
+    const second = await record("fine");
+    await post(remove(second.id, randomUUID()));
+    // Rows: first, second (deleted), withdrawn (cancelling first).
+    await post({ uid: 101, action: "undo", target: first.requestId, requestId: randomUUID() });
+    const kinds = (await recentActivity(db, await access(), T0)).map((l) => l.item.kind);
+    expect([kinds.includes("followUp"), kinds.includes("followUpDeleted")]).toEqual([false, true]);
   });
 });

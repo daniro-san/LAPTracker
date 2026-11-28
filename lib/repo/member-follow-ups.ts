@@ -18,6 +18,20 @@ export const noWithdrawSince = sql`not exists (select 1 from member_follow_ups w
   where w.workspace_id = ${memberFollowUps.workspaceId} and w.uid = ${memberFollowUps.uid}
     and w.action = 'withdrawn' and w.written_at >= ${memberFollowUps.deletedAt})`;
 
+/**
+ * A delete's rule (D123 phase 2), checked in the delete's own statement: the record still counts. A
+ * "withdrawn" never does; a record is cancelled once, among the member's live rows after it (oldest first),
+ * the "withdrawn" rows ever outnumber the other records (each "withdrawn" cancels the newest record counting,
+ * `liveRecords`). Ordered by id, as `liveRecords` reads them.
+ */
+export const stillCounting = sql`${memberFollowUps.action} <> 'withdrawn' and not exists (
+  select 1 from (
+    select sum(case when w.action = 'withdrawn' then 1 else -1 end) over (order by w.id) as depth
+    from member_follow_ups w
+    where w.workspace_id = ${memberFollowUps.workspaceId} and w.uid = ${memberFollowUps.uid}
+      and w.id > ${memberFollowUps.id} and w.deleted_at is null
+  ) after_it where after_it.depth > 0)`;
+
 /** One follow-up, with the name the officer who wrote it shows in the desk (D87). */
 export interface MemberFollowUp {
   id: number;
