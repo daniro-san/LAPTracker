@@ -98,8 +98,8 @@ export const membersPt: MembersWords = {
   "thanks.progress": "Agradeça a",
   "thanks.adDone": "terminou o AD Tech",
   "thanks.squadUp": "aumentou o esquadrão principal",
-  "thanks.improved": "Mais evoluíram no Alliance Duel",
-  "thanks.improvedWhy": "Mais pontos que na semana salva anterior.",
+  "thanks.improved": "Mais evoluíram no Alliance Duel na semana passada",
+  "thanks.improvedWhy": "Pelo menos 10% mais pontos na semana passada que na anterior.",
   "thanks.both": "terminou o AD Tech e aumentou o esquadrão principal",
   "updates.open": "Colar atualizações",
   "updates.help":

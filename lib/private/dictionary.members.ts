@@ -99,8 +99,8 @@ export const membersEn = {
   "thanks.adDone": "finished AD Tech",
   "thanks.squadUp": "grew their main squad",
   "thanks.both": "finished AD Tech and grew their main squad",
-  "thanks.improved": "Most improved in Alliance Duel",
-  "thanks.improvedWhy": "More points than in their earlier saved week.",
+  "thanks.improved": "Most improved in Alliance Duel last week",
+  "thanks.improvedWhy": "At least 10% more points last week than the week before.",
   "updates.open": "Paste updates",
   "updates.help":
     "One member per line: name, then main squad and AD Tech %. Example: Ana 10.2M 74%",

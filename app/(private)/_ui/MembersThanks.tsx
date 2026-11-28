@@ -23,7 +23,9 @@ export function MembersThanks(props: {
       <h2 id="thanks" className="font-subhead text-display-sm">
         {t["thanks.head"]}
       </h2>
-      {rows.length > 0 && <p className="text-body-sm">{t["thanks.intro"]}</p>}
+      {(rows.length > 0 || improved.length > 0) && (
+        <p className="text-body-sm">{t["thanks.intro"]}</p>
+      )}
       <div className="mt-2 grid grid-cols-2 gap-x-4">
         {rows.map((k) => (
           <div key={k} className="min-w-0 border-t border-rule pt-1">

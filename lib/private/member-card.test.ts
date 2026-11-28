@@ -2,6 +2,7 @@
 // behind "Show map position". Invented values.
 import { describe, expect, it } from "vitest";
 
+import { calendarDates } from "./calendar-words";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { duelHistory } from "./duel-history";
 import { cardData, cardFormats } from "./member-card";
@@ -128,15 +129,16 @@ describe("the member card's Alliance Duel by week (issue 467, D158)", () => {
     const h = duelHistory(rows, new Set([1, 2]), 1, "2026-11-23");
     if (!h) throw new Error("no history");
     const card = duelCard(h, WORKSPACE_DICTIONARIES.en, f);
-    const at = (week: string) => card.rows.find((r) => r.label.includes(f.date(week)));
+    const at = (week: string) =>
+      card.rows.find((r) => r.label.startsWith(calendarDates("en").dayMonth(week)));
     // 2026-11-09 has no picture: no value, no share, never 0.
     expect(at("2026-11-09")).toMatchObject({ value: null, share: null });
     // Bars are drawn against the alliance's best member-week (8M), and a real 0 has a share of 0.
     expect(at("2026-11-02")?.share).toBe(0.5);
     expect(at("2026-11-16")).toMatchObject({ value: "0", share: 0 });
-    expect(card.rows.at(-1)?.label).toBe(`Week of ${f.date("2026-11-23")} · so far`);
+    expect(card.rows.at(-1)?.label).toBe(`${calendarDates("en").dayMonth("2026-11-23")} · so far`);
     // The running week (2M) is in no average: the member has 4M and 0 in the finished weeks.
-    expect(card.average).toBe("Average 2.00M · 2 weeks with points");
-    expect(card.alliance).toBe("Alliance average 6.00M a week · 2 weeks with data");
+    expect(card.average).toBe("Average 2.00M a week · 2 finished weeks");
+    expect(card.alliance).toBe("Alliance total, average 6.00M a week · 2 finished weeks");
   });
 });

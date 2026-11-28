@@ -30,7 +30,15 @@
 - `pnpm check`: prettier, eslint, tsc, vitest, drift and i18n checks passed. Two lint rules (complexity, function length) made me move the card's duel words into `cardDuelWeeks`.
 - Not checked in a browser: the layout (grid of 8 rem date, bar, 4.5 rem number) is meant for 360 px but was not viewed.
 
+## UX review changes
+
+- Row labels are "Nov 23" and "Nov 23 · so far" and fit one line. The running week's bar and number are lighter.
+- Averages read "Average 1.18M a week · N finished weeks" and "Alliance total, average 9.44M a week · N finished weeks". The legend reads "○ No picture saved for that week." A member with no saved week gets one line instead of the rows.
+- The bar track fills the middle column. The thanks group says "last week" and the "Thank them in the game." line shows when "most improved" is the only content.
+
 ## Open issues
+
+- The line "Alliance Duel this week · from a screenshot" above the bars partly repeats the running week's row. Left as it is; a follow-up can fold it into the bars.
 
 - A partial picture (top rows only) lowers the alliance total of that week. The average says how many weeks it rests on, not how many members.
 

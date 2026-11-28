@@ -3,6 +3,7 @@
 // Also the line a quiet day gives (D127).
 import type { FactRow } from "../repo/member-facts";
 import { fill, plural } from "../words";
+import { calendarDates } from "./calendar-words";
 import type { WorkspaceDictionary } from "./dictionary";
 import type { DuelHistory } from "./duel-history";
 import { FACT_FIELDS, type FactField, type FactValues, type MemberFacts } from "./fact-fields";
@@ -100,15 +101,17 @@ export function quietDayLine(m: MemberRow, t: WorkspaceDictionary, f: Formats): 
 export interface DuelCard {
   head: string;
   /** Oldest first; `value` is null for a week with no saved points (never 0), and then `share` is null too. */
-  rows: { label: string; value: string | null; share: number | null }[];
+  rows: { label: string; value: string | null; share: number | null; partial: boolean }[];
   /** "Average 4.1M · 3 weeks with points"; null when no week has points for the member. */
   average: string | null;
   /** "Alliance average 310M a week · 4 weeks with data"; null when no week has data. */
   alliance: string | null;
   /** The name of the marker drawn where a value is "—". */
   noData: string;
-  /** Why a "—" week has no number: plain information, never a fault (D75). */
+  /** Why a "○" week has no number: plain information, never a fault (D75). */
   none: string;
+  /** Said once instead of the rows when the member has no saved week at all. */
+  empty: string;
 }
 
 /** The weeks as the desk shows them. Bars are drawn against the alliance's best member-week (D158). */
@@ -124,8 +127,9 @@ export function duelCard(h: DuelHistory, t: WorkspaceDictionary, f: CardFormats)
     rows: h.weeks.map((w, i) => ({
       // The last week is the one still running: "so far", and in no average.
       label: fill(t[i === h.weeks.length - 1 ? "card.duel.weekSoFar" : "card.duel.week"], {
-        date: f.date(w.week),
+        date: calendarDates(f.language).dayMonth(w.week),
       }),
+      partial: i === h.weeks.length - 1,
       value: w.points === null ? null : f.compact(w.points),
       // D158: drawn against the alliance's best member-week; a real 0 is a hairline, no data draws nothing.
       share: w.points === null ? null : h.best > 0 ? w.points / h.best : 0,
@@ -134,5 +138,6 @@ export function duelCard(h: DuelHistory, t: WorkspaceDictionary, f: CardFormats)
     alliance: line("alliance", h.alliance),
     noData: t["nodata.mark"],
     none: t["card.duel.none"],
+    empty: t["card.duel.empty"],
   };
 }
