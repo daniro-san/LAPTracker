@@ -279,10 +279,11 @@ export const patchNotes: PatchNote[] = [
       'KvK plan: members can say "I\'m in" for a role from their own page, and officers confirm or decline. An optional KvK reminder posts 60 and 15 minutes before the start, only for plans members can see.',
       "Recruit check (Members → Recruit check, off until turned on): officers look up a player by name or ID and see public facts: alliance moves, renames, might and kills over 30 days, and events seen. No score. A player nobody has stored costs one read on the alliance's own tracker key, at most 20 a day.",
       "Tracker key: a saved key that is the site's own key is now treated as the site's key, so its reads keep the event reserve and pause during events, and Alliance settings says so.",
+      "Raid Shield: officers choose when the automated reads run (night 23:30 or 23:45 ST, the after-reset read on or off and its time, the morning read between 10:00 and 11:00 ST). Times never meet an event window, and the card shows what each choice costs.",
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
-      815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847, 849, 850, 852, 856,
+      815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847, 849, 850, 852, 856, 863,
     ],
     officer: [
       {
