@@ -93,6 +93,39 @@ describe("POST /api/w/[slug]/members/[uid]/left-reason (issue 469)", () => {
     ]);
   });
 
+  it("answers a stale version with 409 and the newer reason", async () => {
+    await post("nse", tokens.officer, REASON);
+    const stale = { version: 0, reason: "inactive", note: "" };
+
+    expect(await answer(await post("nse", tokens.officer, stale))).toEqual([
+      409,
+      {
+        status: "conflict",
+        version: 1,
+        value: { reason: "removed", note: "asked to leave after the season" },
+      },
+    ]);
+  });
+
+  it("refuses a bad body with 400 and another origin with 403", async () => {
+    expect(
+      await answer(await post("nse", tokens.officer, { ...REASON, reason: "booted" })),
+    ).toEqual([400, { code: "bad_request" }]);
+    const elsewhere = new Request(`${ORIGIN}/api/w/nse/members/102/left-reason`, {
+      method: "POST",
+      headers: {
+        origin: "https://elsewhere.test",
+        "content-type": "application/json",
+        cookie: `${SESSION_COOKIE}=${tokens.officer}`,
+      },
+      body: JSON.stringify(REASON),
+    });
+    const res = await route.POST(elsewhere, {
+      params: Promise.resolve({ slug: "nse", uid: "102" }),
+    });
+    expect(await answer(res)).toEqual([403, { code: "forbidden" }]);
+  });
+
   it("refuses a member with 401 and another workspace's officer with 404", async () => {
     expect(await answer(await post("nse", tokens.member, REASON))).toEqual([
       401,

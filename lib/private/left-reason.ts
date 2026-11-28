@@ -57,8 +57,9 @@ export async function saveLeftReason(
   const current = newest?.version ?? 0;
   const value: LeftReason = { reason: change.reason, note: change.note };
   if (newest && change.version !== current) {
-    // Two officers saved the same thing: nothing to refuse.
-    const same = JSON.stringify(newest.value) === JSON.stringify(value);
+    // Two officers saved the same thing: nothing to refuse. Field by field: jsonb keeps no key order.
+    const had = newest.value as LeftReason | null;
+    const same = had !== null && had.reason === value.reason && had.note === value.note;
     return answer(same ? "saved" : "conflict", newest);
   }
   const row = { workspaceId: access.workspaceId, uid, field: LEFT_FIELD, version: current + 1 };

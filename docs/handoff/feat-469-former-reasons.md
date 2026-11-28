@@ -39,6 +39,7 @@ Issue 469 (owner-approved 2026-11-19).
 
 - `pnpm vitest related --run <changed files>`: the first run found 3 failures (the D105 fixture list and the tracking-plan check). After fixing them, the 5 affected test files passed (58 tests).
 - `pnpm check`, exit 0: prettier, eslint, tsc, vitest (389 files passed, 2 skipped; 2115 tests passed), drift check ("No schema changes"), i18n check.
+- Review fix (PR 802): the identical-save check compares `reason` and `note` one by one, after checking the stored value is not null. jsonb returns `{note, reason}`, so the `JSON.stringify` comparison returned a 409 for an identical save. I added a test for an identical stale save. With the old comparison put back, that test failed (`conflict` instead of `saved`); with the fix it passes. New route tests: a stale version gets 409 with the newer `{version, value}`, a bad body gets 400, and a request from another origin gets 403. `pnpm check` exit 0 (2117 tests passed).
 - I did not run a browser check at 360, 640 or 1280 px, in dark mode or with a screen reader: no local app with data was started in this session. The layout reuses `RadioField`, `Button`, the `drawn-card` style and the existing row classes.
 
 ## Open issues

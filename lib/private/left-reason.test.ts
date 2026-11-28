@@ -94,6 +94,12 @@ describe("why a former member left (issue 469)", () => {
       version: 2,
       value: { reason: "inactive", note: "no log-in for weeks" },
     });
+    // A stale save of the very value saved since is no conflict, whatever key order jsonb returns.
+    expect(await saveLeftReason(db, ana, 22, { ...corrected, version: 1 }, NOW)).toEqual({
+      status: "saved",
+      version: 2,
+      value: { reason: "inactive", note: "no log-in for weeks" },
+    });
     const history = await factHistory(db, ana.workspaceId, ["leftReason"], 22);
     expect(history.map((r) => [r.version, r.value])).toEqual([
       [1, { reason: "left", note: "" }],
