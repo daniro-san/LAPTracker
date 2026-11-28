@@ -291,11 +291,14 @@ export const patchNotes: PatchNote[] = [
       "Insights: a KvK debrief on one screen (our result, the opponent or this week's raid opponent, and the thanks), saved as a picture to share.",
       "Officers' KvK map: an Origin of Chaos week no longer replaces the KvK map; it shows the newest KvK.",
       "Discord: /join lets a player ask to join with their game name or ID. Officers approve it under Members → Requests, which links the player, gives the chosen member role and can post a welcome. Off until turned on. Roles with admin powers or the leaders' roles can never be chosen.",
+      "Member card: Alliance Duel points by week for the last 8 weeks, a week with no picture shown as no data, and the member's and the alliance's weekly averages over finished weeks.",
+      'Members thanks: "Most improved in Alliance Duel" (10% more points last week than the week before), "Helped the alliance every day this week" (1,000 Alliance Help coins on every day read) and "Quests every day this week" replace the one-day Most active list, also in Home and the share. Names only, alphabetical.',
+      "Elixir Scramble roll call: Registered, Registered for 09:00 only, Sub and Excused marks, a score for Joined, the team's result per week, and the last 4 Elixir on the member card. A follow-up line only comes from officers' own Did not join marks.",
     ],
     prs: [
       766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807, 808, 812,
       815, 816, 819, 835, 836, 837, 838, 839, 840, 841, 842, 845, 846, 847, 849, 850, 852, 856, 863,
-      865, 870, 871, 875, 876, 879, 880, 881, 882,
+      865, 870, 871, 875, 876, 879, 880, 881, 882, 883, 884, 885, 886,
     ],
     officer: [
       {
