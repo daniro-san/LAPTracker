@@ -10,17 +10,17 @@ paths:
 
 # Private workspace: roster fields
 
-The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?private?/**` is `app/(private)/**` written so every glob matcher reads the parentheses literally. Sources: D22, D71, D76, D142, D143, D148. The list itself is `BLOCKED_ROSTER_KEYS` in `lib/queries/blocked-keys.ts`.
+The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?private?/**` is `app/(private)/**` written so every glob matcher reads the parentheses literally. Sources: D22, D71, D76, D142, D143, D148, D163. The list itself is `BLOCKED_ROSTER_KEYS` in `lib/queries/blocked-keys.ts`.
 
 ## The fields
 
-| Field                                 | Desk (officers, `requireWorkspace`, own alliance)                 | Member's own page `/w/[slug]/board/me` (D142) | Public pages, `/admin`                                                                        |
-| ------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `daily_tech`, `daily_honor`, `active` | yes                                                               | yes, own uid only                             | D76 only: alliance aggregates on public pages, per member on `/admin`, `OWN_ALLIANCE_ID` only |
-| `joined_at`                           | yes                                                               | no                                            | no                                                                                            |
-| `x`, `y`, `online`, `last_online_at`  | yes, but never in copies or exports                               | no                                            | no                                                                                            |
-| `avatar_url`                          | never returned; the photo is the image `/img/avatar/[uid]` serves | never                                         | never                                                                                         |
-| badges (`badge_id` 101–110)           | only as `/img/badge/[id]`                                         | same                                          | same                                                                                          |
+| Field                                                | Desk (officers, `requireWorkspace`, own alliance)                        | Member's own page `/w/[slug]/board/me` (D142) | Public pages, `/admin`                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `daily_tech`, `daily_honor`, `active`                | yes                                                                      | yes, own uid only                             | D76 only: alliance aggregates on public pages, per member on `/admin`, `OWN_ALLIANCE_ID` only |
+| `joined_at`                                          | yes, also in copies and exports (D163)                                   | no                                            | no                                                                                            |
+| `x`, `y`, `online`, `last_online_at`, `last_seen_at` | yes, also in copies and exports; a name may sit next to its place (D163) | no                                            | never `online`, `last_online_at`, `last_seen_at` (D163); `x`, `y`: no, pending the owner      |
+| `avatar_url`                                         | never returned; the photo is the image `/img/avatar/[uid]` serves        | never                                         | never                                                                                         |
+| badges (`badge_id` 101–110)                          | only as `/img/badge/[id]`                                                | same                                          | same                                                                                          |
 
 ## Where they may go
 
@@ -35,7 +35,7 @@ The CLAUDE.md roster-fields rule is binding; this is its checklist. `app/?privat
 - [ ] Discord messages.
 - [ ] AI or translation requests.
 - [ ] Any shared cache (D143 caches hold public reads only).
-- [ ] Copies and exports: leave out `x`, `y`, `online` and `last_online_at`.
+- [ ] Copies and exports outside the desk: leave out `x`, `y`, `online` and `last_online_at`. On the desk, for the own alliance, they may be included (D163).
 - [ ] Analytics events and properties (PostHog), which also carry no member names.
 - [ ] Session replay: `/w` and `/admin` text is masked by the layout's `ph-mask`; per-member values such as bars also need `ph-no-capture`.
 - [ ] Fixtures: `x`, `y`, `online`, `last_online_at` and `joined_at` stay neutralised (D76); names are invented.

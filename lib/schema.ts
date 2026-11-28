@@ -175,6 +175,9 @@ export const allianceSnapshots = pgTable(
     memberNames: text("member_names").array(),
     memberPower: big("member_power").array(),
     memberKills: big("member_kills").array(),
+    // A sample's members' map places (D163), in member_uids' order; null where the read gave no place.
+    memberX: integer("member_x").array(),
+    memberY: integer("member_y").array(),
   },
   (t) => [
     unique("alliance_snapshots_snapshot_union_unique").on(t.snapshotId, t.unionId),

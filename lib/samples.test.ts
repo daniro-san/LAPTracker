@@ -152,6 +152,23 @@ describe("event samples through the tick (D69)", () => {
     ]);
   });
 
+  it("keeps each sampled member's map place in member order, null where the read gave none (D163)", async () => {
+    const t = testContext(db, KVK);
+    t.ctx.v1 = fakeV1((id) =>
+      roster(id, ago(t.clock.now, minutes(1)), {
+        raw: { members: [{ uid: id * 10 + 2, x: 431, y: 612 }] },
+      }),
+    );
+    await tickAt(t, ["12:00", "12:15"]);
+
+    const [sample] = await db
+      .select({ x: allianceSnapshots.memberX, y: allianceSnapshots.memberY })
+      .from(allianceSnapshots)
+      .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+      .where(and(eq(allianceSnapshots.unionId, IDS[0] as number), eq(snapshots.phase, "sample")));
+    expect(sample).toEqual({ x: [null, 431, null], y: [null, 612, null] });
+  });
+
   it("runs the After, not the sample, on a tick where both are due, and samples nothing after it", async () => {
     // After at 16:10 server (18:10 UTC): the 18:00 slot is still open when the After falls due.
     const t = testContext(db, { ...KVK, SNAPSHOT_AFTER: "16:10" });
