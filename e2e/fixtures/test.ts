@@ -73,10 +73,16 @@ const slugOf = (side: Side) => ALLIANCES[side].slug;
  * The fields an answer from `path` may carry, and whose they are (null: any alliance's); none for any other
  * path.
  */
-function allowedAt(path: string): { side: Side | null; fields: string[] } | null {
-  // The public alliance page shows every member's daily fields, nothing else private (D76 amendment
-  // 2026-11-28); its /history page is not this page.
-  if (/^\/alliances\/\d+$/.test(path)) return { side: null, fields: DAILY_FIELDS };
+function allowedAt(
+  path: string,
+  search: URLSearchParams,
+): { side: Side | null; fields: string[] } | null {
+  // The public alliance page's Members tab shows every member's daily fields, nothing else private (D76
+  // amendment 2026-11-28); its Joins & leaves tab (`?tab=moves`, as the page reads it) and its /history page
+  // show none.
+  if (/^\/alliances\/\d+$/.test(path)) {
+    return search.get("tab") === "moves" ? null : { side: null, fields: DAILY_FIELDS };
+  }
   for (const side of SIDES) {
     const slug = slugOf(side);
     if (new RegExp(`^/api/w/${slug}/members/\\d+$`).test(path)) {
@@ -106,8 +112,8 @@ const CHECKS: { label: string; re: RegExp; field: string; side?: Side }[] = [
 
 /** Which private fields of whose show in `body`, an answer from `url`. */
 export function leaksIn(url: string, body: string): string[] {
-  const path = new URL(url).pathname;
-  const allowed = allowedAt(path);
+  const { pathname: path, searchParams } = new URL(url);
+  const allowed = allowedAt(path, searchParams);
   const mayCarry = (field: string, side?: Side) =>
     !!allowed?.fields.includes(field) &&
     (side === undefined || allowed.side === null || side === allowed.side);

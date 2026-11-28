@@ -50,13 +50,13 @@ beforeAll(async () => {
 describe("allianceMoves", () => {
   it("counts joined and left for the last 7 and 30 days", async () => {
     const moves = await allianceMoves(db, 7, TODAY);
-    expect(moves.week).toEqual({ joined: 1, left: 2 });
-    expect(moves.month).toEqual({ joined: 2, left: 2 });
-    expect(moves.compared).toBe(true);
+    expect(moves?.week).toEqual({ joined: 1, left: 2 });
+    expect(moves?.month).toEqual({ joined: 2, left: 2 });
+    expect(moves?.compared).toBe(true);
   });
 
   it("lists each person by day, newest first, with the alliance they came from or went to", async () => {
-    const { moves } = await allianceMoves(db, 7, TODAY);
+    const moves = (await allianceMoves(db, 7, TODAY))?.moves;
     expect(moves).toEqual([
       { day: "2026-11-27", kind: "joined", uid: 30, name: "P30", other: null },
       { day: "2026-11-27", kind: "left", uid: 10, name: "P10", other: null },
@@ -75,6 +75,12 @@ describe("allianceMoves", () => {
     const moves = await allianceMoves(db, 7, TODAY);
     expect(findBlockedKeys(moves)).toEqual([]);
     expect(JSON.stringify(moves)).not.toMatch(/1793000000|"(x|y|online)"/);
+  });
+
+  it("is null, which the shared cache never keeps, for an alliance with no roster in the window", async () => {
+    expect(await allianceMoves(db, 999, TODAY)).toBeNull();
+    // Its newest roster is older than the 30 days.
+    expect(await allianceMoves(db, 7, "2026-12-31")).toBeNull();
   });
 
   it("has nothing to compare for an alliance with one roster in the window", async () => {

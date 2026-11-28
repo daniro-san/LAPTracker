@@ -27,6 +27,14 @@ export interface AllianceMove {
   other: { unionId: number; tag: string | null } | null;
 }
 
+/** The tab of an alliance with no usable roster in the window. */
+export const NO_MOVES: AllianceMoves = {
+  compared: false,
+  week: { joined: 0, left: 0 },
+  month: { joined: 0, left: 0 },
+  moves: [],
+};
+
 export interface MoveCounts {
   joined: number;
   left: number;
@@ -47,7 +55,8 @@ const countsOf = (moves: readonly AllianceMove[]): MoveCounts => ({
 });
 
 /**
- * The alliance's joins and leaves of the MOVES_DAYS server days up to `today`. One query: every usable daily
+ * The alliance's joins and leaves of the MOVES_DAYS server days up to `today`, or null when it has no usable
+ * daily roster in them. One query: every usable daily
  * roster of the window that is this alliance's or lists any of its members of the window (the GIN index on
  * member_uids).
  */
@@ -55,10 +64,17 @@ export async function allianceMoves(
   db: Db,
   unionId: number,
   today: string,
-): Promise<AllianceMoves> {
+): Promise<AllianceMoves | null> {
   const since = addDays(today, -MOVES_DAYS);
-  const ownUids = sql`(select coalesce(array_agg(u), '{}') from ${dailyRosters} o cross join unnest(o.member_uids) u
-    where o.union_id = ${unionId} and o.read_day between ${since} and ${today} and o.is_fresh and o.error is null and o.member_count > 0)`;
+  // A usable roster of the window (dailyFit), for both the outer query and the subquery of this alliance's
+  // uids: the subquery reads `daily_rosters` unaliased, so these qualified columns name its own rows there.
+  const inWindow = and(
+    dailyFit,
+    gte(dailyRosters.readDay, since),
+    lte(dailyRosters.readDay, today),
+  );
+  const ownUids = sql`(select coalesce(array_agg(u), '{}') from ${dailyRosters}
+    cross join unnest(${dailyRosters.memberUids}) u where ${and(eq(dailyRosters.unionId, unionId), inWindow)})`;
   const rows = await db
     .select({
       day: dailyRosters.readDay,
@@ -73,13 +89,14 @@ export async function allianceMoves(
     .from(dailyRosters)
     .where(
       and(
-        dailyFit,
-        gte(dailyRosters.readDay, since),
-        lte(dailyRosters.readDay, today),
+        inWindow,
         sql`(${eq(dailyRosters.unionId, unionId)} or ${dailyRosters.memberUids} && ${ownUids})`,
       ),
     );
   const own = rows.filter((r) => r.unionId === unionId).sort((a, b) => a.day.localeCompare(b.day));
+  // No usable roster in the window: null, which the shared cache never keeps, so a crawl of unknown ids
+  // leaves no entries (D143).
+  if (own.length === 0) return null;
   const placed = new Map<string, Map<number, number>>();
   const placeOn = (day: string) => {
     let map = placed.get(day);

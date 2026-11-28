@@ -354,8 +354,8 @@ test.describe("no answer carries a private roster field", () => {
     await ctx.dispose();
   });
 
-  // The daily fields, each by surface: the public alliance page shows any alliance's (D76 amendment
-  // 2026-11-28), every other public page and the board's home show none; the member's own page and the desk
+  // The daily fields, each by surface: the public alliance page's Members tab shows any alliance's (D76
+  // amendment 2026-11-28), its Joins & leaves tab and every other public page and the board's home show none; the member's own page and the desk
   // show the own alliance's (D142, CLAUDE.md), never another's; an export keeps joined_at but not the map
   // position (D71).
   test("the scan sees the daily fields and the export's fields where no rule allows them", () => {
@@ -374,6 +374,7 @@ test.describe("no answer carries a private roster field", () => {
     expect(leaksIn(alliancePage, daily)).toEqual([]);
     expect(leaksIn(alliancePage, `map ${a.x}`)).toEqual(["a.x"]);
     expect(leaksIn(`${alliancePage}/history`, daily)).toContain("a.active");
+    expect(leaksIn(`${alliancePage}?tab=moves`, daily)).toContain("a.active");
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board`, daily)).toContain("a.active");
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board/me`, daily)).toEqual([]);
     expect(leaksIn(`${BASE_URL}/w/${slug("a")}/board/me`, `Average ${b.active}`)).toContain(

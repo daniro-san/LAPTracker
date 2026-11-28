@@ -12,6 +12,8 @@
   - It returns `week` and `month` counts (joined, left), `compared` (false with fewer than two rosters), and `moves`. Moves are sorted newest day first; within a day, joins come before leaves, each sorted by name.
   - Fields read: day, union id, tag, read time and uids of each roster, plus this alliance's `member_names`. No raw_json is read.
   - It is one query: the alliance's rosters, plus every roster in the window whose `member_uids` overlaps the alliance's members of the window.
+  - The outer query and the subquery that collects the alliance's uids share one condition, `dailyFit` plus the window. The subquery reads `daily_rosters` unaliased, so the qualified columns name its own rows and the two cannot drift apart.
+  - It returns null when the alliance has no usable roster in the window. The shared cache never keeps null (`lib/public-cache.ts`), so a crawl of unknown ids leaves no entries. The page shows `NO_MOVES` (zero counts, nothing to compare) in that case.
 - `app/_ui/AllianceMoves.tsx`:
   - The tab body has two rows of tiles, one for the last 7 days and one for the last 30 days. Each row shows joined (`+4`), left (`−6`) and net.
   - Under the tiles, a line says how the moves are found.
@@ -24,15 +26,18 @@
   - The read goes through the shared cache: `sharedRead("alliance-moves", [unionId, serverDay, lookup])`. The key holds the server day, so a new day starts a new entry. A write to `reads` drops the entry, as for the page's other reads (D143).
 - Copy: 15 keys in `lib/copy-alliance-page.ts`. They are translated into all 17 public languages with the translate-copy skill, then stamped. Glossary rows were added by the translators (es, pt-BR, fr, de, it, nl, ru, tr, zh-CN, ja, id).
 - Tests:
-  - `lib/queries/alliance-moves.test.ts` has 4 tests: the counts for 7 and 30 days; the from and to tags; no blocked key or value (the seeded raw_json has x, y, online and joined_at); and nothing to compare with one roster.
+  - `lib/queries/alliance-moves.test.ts` has 5 tests: the counts for 7 and 30 days; the from and to tags; no blocked key or value (the seeded raw_json has x, y, online and joined_at); null with no roster in the window (an unknown id, and an alliance whose newest roster is older than the window); and nothing to compare with one roster.
+- Rules: D89 has a dated amendment (owner, 2026-11-28, issues 818 and 823). It allows per-person moves, the name with the from/to tag, on the public alliance page. `FLOW_MIN` and "never a member name" still bind `/alliances/flow`. Online, last seen, join date and X/Y are still never shown.
   - `app/_ui/AllianceMoves.test.ts` has 3 tests: the from/to wording; the wording for an untracked other side, which never says "no alliance"; and the three filters.
-- e2e: `/alliances/<a>?tab=moves` is added to the public sweep in `e2e/isolation.spec.ts`.
+- e2e:
+  - `/alliances/<a>?tab=moves` is added to the public sweep in `e2e/isolation.spec.ts`.
+  - `leaksIn` (`e2e/fixtures/test.ts`) now passes the query string to `allowedAt`. `/alliances/<id>?tab=moves` gets no daily-field allowance; only the Members tab keeps one. The scan's self-test asserts that `active` on `?tab=moves` is reported.
 
 ## Decisions
 
 - **"Tracked alliance" means any alliance with a usable daily roster on the compared day.** This includes an alliance read through "Get today's details" (D133), not only the tracked set of 20. The page only knows where someone went when it has that alliance's roster for the day.
 - **The tab badge is the net change of the last 7 days**, as in the owner's reference (`Joins & leaves (−2)`). The joined and left counts appear only inside the tab.
-- **The tab is a query parameter (`?tab=moves`), not a route**, so it keeps the head, the statement and the growth card, as in the reference. `allowedAt` in the e2e fixture matches on the pathname, so this tab gets the same allowance as the Members tab (the daily fields). The tab renders none of those fields.
+- **The tab is a query parameter (`?tab=moves`), not a route**, so it keeps the head, the statement and the growth card, as in the reference.
 - **The 7 days and 30 days count back from today's server day, not from the newest roster.** The cache is keyed by the server day.
 - **No time of day on each line.** The change happened somewhere between two daily reads. The read time would suggest a precision we do not have.
 - **The other alliance's tag is plain text, not a link.** The task did not ask for a link.
@@ -53,6 +58,9 @@
 - After the rebase onto `dev` with #843:
   - `pnpm vitest related --run`: 191 files, 1131 tests passed.
   - `pnpm check`: green. 408 test files passed and 2 were skipped (2233 tests). Lint, types, drift and i18n (17 languages up to date) passed. Before the commit, the pre-commit hook had failed once on prettier and on `max-lines-per-function` in the page. The fix moved the link builder into `pageHref` and `tabOf` at module level.
+- After the review fixes on PR 845 (no cache entry for unknown ids, the D89 amendment, the shared subquery condition, the e2e query string):
+  - `pnpm vitest related --run`: 31 files, 179 tests passed.
+  - `pnpm check`: green. 408 test files passed and 2 were skipped (2234 tests).
 - Not run: the e2e suite and a rendered check at 360/640/1280 px. No local Postgres was running.
 
 ## Open issues

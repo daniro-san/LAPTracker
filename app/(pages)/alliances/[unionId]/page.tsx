@@ -41,6 +41,7 @@ import {
   alliancePage,
   allianceStatement,
   homeEvent,
+  NO_MOVES,
   type GrowthPoint,
 } from "@/lib/queries";
 import { allianceOnBoard, detailsState, type DetailsState } from "@/lib/queries/alliance-list";
@@ -70,7 +71,8 @@ const load = cache(async (unionId: number) => {
     ]);
     return page || board ? { page, board } : null;
   };
-  // Joins and leaves are keyed by the server day too: a new day drops the window that went stale.
+  // Joins and leaves are keyed by the server day too: a new day drops the window that went stale. Null (no
+  // usable roster in the window, an unknown id among them) is never cached.
   const today = serverDay(now, env);
   const [rows, events, statement, moves] = await Promise.all([
     sharedRead("alliance-page", [unionId, lookup], read),
@@ -84,7 +86,7 @@ const load = cache(async (unionId: number) => {
   ]);
   if (!rows) return null;
   const homeId = homeEvent(events, now, env.SNAPSHOT_WINDOW_MIN)?.id ?? null;
-  return { ...rows, events, homeId, details, statement, moves };
+  return { ...rows, events, homeId, details, statement, moves: moves ?? NO_MOVES };
 });
 
 const unionIdOf = async (params: Params) => {

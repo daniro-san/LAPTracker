@@ -35,6 +35,7 @@ export {
 export {
   allianceMoves,
   MOVES_DAYS,
+  NO_MOVES,
   WEEK_DAYS,
   type AllianceMove,
   type AllianceMoves,
