@@ -331,6 +331,10 @@ export const vi = {
     copy: "Chép cho bảng tính",
     copied: "Đã chép",
     copyFailed: "Không chép được. Thử lại.",
+    playerTitle: "Theo từng ngày",
+    playerLead: "Mỗi dòng so sánh một lần đọc của người chơi này với lần đọc trước đó.",
+    gap: "Không có lần đọc từ {date}. Người chơi không thuộc liên minh theo dõi nào, hoặc lần đọc của ngày đó bị lỗi.",
+    moved: "Chuyển sang {tag} từ {from}",
   },
   settings: {
     language: "Ngôn ngữ",

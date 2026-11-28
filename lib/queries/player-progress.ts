@@ -1,7 +1,8 @@
 // Daily progress of one player (issue 270): every usable roster that holds the player, from the daily
 // reads (D60) and from public events' Start and End, oldest first, with the player's rank by might inside
 // that roster; and the change over the last 7 days next to the alliance's median member. Served fields:
-// the alliance's union id and tag, the player's might, kills and rank (§12.1); raw_json is never read.
+// the alliance's union id and tag, the player's name, might, kills and rank (§12.1); raw_json is never read.
+// `progressSteps` turns the readings into the player's day by day (issue 773).
 import { and, arrayContains, desc, eq, sql } from "drizzle-orm";
 
 import { pickRosterRows } from "../compute";
@@ -18,6 +19,8 @@ export interface ProgressReading {
   event: HistoryEvent | null;
   unionId: number;
   tag: string | null;
+  /** The player's name in that roster. */
+  name: string;
   power: number | null;
   kills: number | null;
   /** 1 + the roster-mates with more might; null without a might. */
@@ -53,6 +56,7 @@ async function dailyOf(db: Db, uid: number): Promise<ProgressReading[]> {
       at: dailyRosters.sourceUpdatedAt,
       unionId: dailyRosters.unionId,
       tag: dailyRosters.tag,
+      name: sql<string | null>`(${dailyRosters.memberNames})[${i}]`,
       // As text: Drizzle reads a null bigint element as 0, and a null stays null (D15).
       power: sql<string | null>`${own}::text`,
       kills: sql<string | null>`((${dailyRosters.memberKills})[${i}])::text`,
@@ -65,6 +69,7 @@ async function dailyOf(db: Db, uid: number): Promise<ProgressReading[]> {
   return rows.map((r) => ({
     ...r,
     at: r.at as Date,
+    name: r.name ?? "",
     event: null,
     power: num(r.power),
     kills: num(r.kills),
@@ -81,6 +86,7 @@ async function eventsOf(db: Db, uid: number): Promise<ProgressReading[]> {
       unionId: allianceSnapshots.unionId,
       tag: allianceSnapshots.tag,
       event: eventHead.event,
+      name: memberSnapshots.name,
       power: memberSnapshots.power,
       kills: memberSnapshots.kills,
       rank: peerRank(memberSnapshots.power, "power"),
@@ -148,4 +154,43 @@ export async function playerProgress(db: Db, uid: number): Promise<PlayerProgres
   const [daily, fromEvents] = await Promise.all([dailyOf(db, uid), eventsOf(db, uid)]);
   const readings = [...daily, ...fromEvents].sort((a, b) => a.at.getTime() - b.at.getTime());
   return { readings, summary: await summaryOf(db, readings) };
+}
+
+/** More than this between two readings: no usable roster held the player in between (issue 773). A daily
+ * read's time moves by a few hours from day to day (D72), so one missed day is more than 24 h. */
+const GAP_MS = 36 * 3_600_000;
+
+export interface ProgressStep {
+  reading: ProgressReading;
+  /** The reading before it; null for the first reading. */
+  previous: ProgressReading | null;
+  /** Might and kills against the previous reading; null for the first or without a value on either side. */
+  power: number | null;
+  kills: number | null;
+  /** The previous name, when the player changed name since the previous reading. */
+  renamedFrom: string | null;
+  /** The previous alliance, when the player is in another alliance than at the previous reading. */
+  movedFrom: { unionId: number; tag: string | null } | null;
+  /** More than 36 h since the previous reading: the change spans days with no reading. */
+  gap: boolean;
+}
+
+const diffOf = (a: number | null, b: number | null) => (a === null || b === null ? null : b - a);
+
+/** Each reading against the one before it, newest first: the player's day by day (issue 773). */
+export function progressSteps(readings: ProgressReading[]): ProgressStep[] {
+  return readings
+    .map((r, i): ProgressStep => {
+      const p = readings[i - 1] ?? null;
+      return {
+        reading: r,
+        previous: p,
+        power: p && diffOf(p.power, r.power),
+        kills: p && diffOf(p.kills, r.kills),
+        renamedFrom: p && p.name !== "" && r.name !== "" && p.name !== r.name ? p.name : null,
+        movedFrom: p && p.unionId !== r.unionId ? { unionId: p.unionId, tag: p.tag } : null,
+        gap: p !== null && r.at.getTime() - p.at.getTime() > GAP_MS,
+      };
+    })
+    .reverse();
 }

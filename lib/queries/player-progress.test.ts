@@ -10,7 +10,8 @@ import {
   memberSnapshots,
   snapshots,
 } from "../schema";
-import { playerProgress } from "./player-progress";
+import { findBlockedKeys } from "./blocked-keys";
+import { playerProgress, progressSteps, type ProgressReading } from "./player-progress";
 
 type Member = [uid: number, power: number];
 
@@ -168,5 +169,65 @@ describe("playerProgress (issue 270)", () => {
 
     expect(summary?.from.at).toEqual(at("2026-10-20"));
     expect(summary?.alliance).toEqual({ unionId: 2, tag: "TRI", medianPercent: 10 });
+  });
+});
+
+describe("progressSteps: the player's day by day (issue 773)", () => {
+  it("reads the player's own name from daily and event rosters, with no blocked roster key", async () => {
+    const progress = await playerProgress(db, 8);
+
+    expect(progress.readings.map((r) => r.name)).toEqual(["P8", "P8", "P8", "P8"]);
+    expect(findBlockedKeys(progressSteps(progress.readings))).toEqual([]);
+  });
+
+  const reading = (day: string, over: Partial<ProgressReading> = {}): ProgressReading => ({
+    at: at(day),
+    event: null,
+    unionId: 1,
+    tag: "OGs",
+    name: "Nana",
+    power: 100,
+    kills: 5,
+    rank: 1,
+    ...over,
+  });
+
+  it("lists the readings newest first, each with its might and kills change", () => {
+    const steps = progressSteps([
+      reading("2026-11-01"),
+      reading("2026-11-02", { power: 120, kills: 9 }),
+    ]);
+
+    expect(steps.map((s) => [s.reading.at, s.power, s.kills])).toEqual([
+      [at("2026-11-02"), 20, 4],
+      [at("2026-11-01"), null, null],
+    ]);
+  });
+
+  it("shows no change when either side has no value", () => {
+    const [step] = progressSteps([reading("2026-11-01", { power: null }), reading("2026-11-02")]);
+
+    expect([step?.power, step?.kills]).toEqual([null, 0]);
+  });
+
+  it("names a rename and a move to another alliance", () => {
+    const [step] = progressSteps([
+      reading("2026-11-01"),
+      reading("2026-11-02", { name: "Nana Prime", unionId: 2, tag: "TRI" }),
+    ]);
+
+    expect(step?.renamedFrom).toBe("Nana");
+    expect(step?.movedFrom).toEqual({ unionId: 1, tag: "OGs" });
+  });
+
+  it("marks a change that spans days with no reading, and not the next day's reading", () => {
+    const steps = progressSteps([
+      reading("2026-11-01"),
+      // The daily read's time moves by a few hours from day to day (D72): still the next day.
+      reading("2026-11-02", { at: at("2026-11-02", "14:00") }),
+      reading("2026-11-06"),
+    ]);
+
+    expect(steps.map((s) => s.gap)).toEqual([true, false, false]);
   });
 });

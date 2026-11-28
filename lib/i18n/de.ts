@@ -337,6 +337,10 @@ export const de = {
     copy: "Für Tabelle kopieren",
     copied: "Kopiert",
     copyFailed: "Kopieren hat nicht geklappt. Nochmal versuchen.",
+    playerTitle: "Tag für Tag",
+    playerLead: "Jede Zeile vergleicht eine Messung dieses Spielers mit der davor.",
+    gap: "Keine Messung seit {date}. Der Spieler war in keiner erfassten Allianz, oder der Tagesabruf dieses Tages ist fehlgeschlagen.",
+    moved: "Nach {tag} gewechselt, von {from}",
   },
   settings: {
     language: "Sprache",

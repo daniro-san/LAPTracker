@@ -337,6 +337,10 @@ export const pl = {
     copy: "Kopiuj do arkusza",
     copied: "Skopiowano",
     copyFailed: "Nie udało się skopiować. Spróbuj ponownie.",
+    playerTitle: "Dzień po dniu",
+    playerLead: "Każda linia porównuje jeden odczyt tego gracza z poprzednim odczytem.",
+    gap: "Brak odczytu od {date}. Gracz nie był w żadnym sojuszu, który odczytujemy, albo tego dnia odczyt się nie udał.",
+    moved: "Przejście do {tag} z {from}",
   },
   settings: {
     language: "Język",

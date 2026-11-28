@@ -168,6 +168,8 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | Start to End                  | Od Początku do Końca               | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — the change between the Start and End readings                                                                              |
 | Unknown                       | nieznany                           | `members.startUnknown`, `members.endUnknown` — a figure the reading did not get at Start or End                                                                                |
 | Earlier / Later               | Wcześniej / Później                | `ledger.readoutEarlier`, `ledger.readoutLater` — the step buttons of a pulse or line chart readout                                                                             |
+| Day by day                    | Dzień po dniu                      | `history.playerTitle` — the player page's history section title                                                                                                                |
+| Moved to {tag} from {from}    | Przejście do {tag} z {from}        | `history.moved` — a player's line when they are in another tracked alliance than at the reading before                                                                         |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

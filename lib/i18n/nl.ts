@@ -335,6 +335,10 @@ export const nl = {
     copy: "Kopieer voor spreadsheet",
     copied: "Gekopieerd",
     copyFailed: "Kopiëren mislukt. Probeer het opnieuw.",
+    playerTitle: "Dag voor dag",
+    playerLead: "Elke regel vergelijkt één meting van deze speler met de meting ervoor.",
+    gap: "Geen meting sinds {date}. De speler zat in geen gevolgde alliantie, of de dagelijkse meting van die dag is mislukt.",
+    moved: "Overgestapt naar {tag} van {from}",
   },
   settings: {
     language: "Taal",

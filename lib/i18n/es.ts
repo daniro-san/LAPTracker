@@ -337,6 +337,10 @@ export const es = {
     copy: "Copiar para hoja de cálculo",
     copied: "Copiado",
     copyFailed: "No se pudo copiar. Vuelve a intentarlo.",
+    playerTitle: "Día a día",
+    playerLead: "Cada línea compara una lectura de este jugador con la anterior.",
+    gap: "Sin lectura desde {date}. El jugador no estaba en ninguna alianza que leamos, o la lectura de ese día falló.",
+    moved: "Pasó a {tag} desde {from}",
   },
   settings: {
     language: "Idioma",

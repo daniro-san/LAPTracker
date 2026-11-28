@@ -170,6 +170,14 @@ export const en = {
     copy: "Copy for spreadsheet",
     copied: "Copied",
     copyFailed: "Could not copy. Try again.",
+    /** The player page's own history (issue 773): each reading of the player against the one before it. */
+    playerTitle: "Day by day",
+    /** Under its title. */
+    playerLead: "Each line compares one reading of this player with the reading before it.",
+    /** Under a line whose change spans days with no reading: `No reading since Nov 3. …`. */
+    gap: "No reading since {date}. The player was in no alliance we read, or that day's read failed.",
+    /** A line where the player is in another alliance than at the reading before: `Moved to [TmS] from [TRI]`. */
+    moved: "Moved to {tag} from {from}",
   },
   /** The header's settings menu (D38). */
   settings: {

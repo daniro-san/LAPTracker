@@ -323,6 +323,10 @@ export const ko = {
     copy: "스프레드시트용 복사",
     copied: "복사됨",
     copyFailed: "복사하지 못했어요. 다시 시도해 보세요.",
+    playerTitle: "날짜별 기록",
+    playerLead: "각 줄은 이 플레이어의 한 읽기를 그 전 읽기와 비교합니다.",
+    gap: "{date} 이후 읽기가 없어요. 그 사이 플레이어가 추적 중인 연맹에 없었거나, 그날 읽기가 실패했어요.",
+    moved: "{from}에서 {tag} 소속으로 옮김",
   },
   settings: {
     language: "언어",
