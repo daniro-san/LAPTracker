@@ -9,7 +9,7 @@ import {
   workspacePostTouches,
   workspaceWebhooks,
 } from "./schema-discord";
-import { workspaceFeatures, workspaceUsage } from "./schema-features";
+import { recruitReads, workspaceFeatures, workspaceUsage } from "./schema-features";
 import { feedback, feedbackPictures } from "./schema-feedback";
 import {
   allianceDuelPoints,
@@ -260,6 +260,11 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
     .insert(workspaceDiscord)
     .values({ workspaceId: ws, botSeenAt: SEED_AT, commands: [], commandsAt: SEED_AT });
   await seedPush(db, ws, officer);
+}
+
+/** Issue 833: the recruit check's count of the day. */
+export async function seedRecruitReads(db: Db, ws: number) {
+  await db.insert(recruitReads).values({ workspaceId: ws, day: DAY, used: 2 });
 }
 
 /** D156: the alliance's own line on its weekly thanks. */

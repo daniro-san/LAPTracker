@@ -89,6 +89,22 @@ export const workspaceUsage = pgTable(
   ],
 );
 
+/**
+ * The recruit check's new tracker reads (issue 833, D124 amendment 2026-11-28): one row per workspace per UTC
+ * quota day, the count only. The cap (RECRUIT_READS_A_DAY) is enforced by the counting statement itself.
+ */
+export const recruitReads = pgTable(
+  "recruit_reads",
+  {
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    day: date("day", { mode: "string" }).notNull(),
+    used: integer("used").notNull(),
+  },
+  (t) => [primaryKey({ name: "recruit_reads_pk", columns: [t.workspaceId, t.day] })],
+);
+
 /** The owner's global pause of a paid allowance: a row turns its features off in every workspace. */
 export const allowancePauses = pgTable(
   "allowance_pauses",

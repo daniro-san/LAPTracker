@@ -1,5 +1,6 @@
 // player_reads and player_history (D132) against PGlite: overlapping reads add each history row once, per
-// alliance, and the daily clean-up clears raw bodies past 90 days while their columns stay.
+// alliance, and the daily clean-up clears raw bodies past 90 days while their columns stay. The recruit check's
+// name search reads 90 days only, and the download leaves a non-member's shield and map times empty.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -8,7 +9,9 @@ import { appErrorDetail } from "../report-error";
 import { playerHistory, playerReads } from "../schema-squads";
 import type { HistoryInput } from "../sources/types";
 import { playerAnswer } from "../squads.test-helpers";
-import { clearOldPlayerRaw, gameLanguages, storePlayerRead } from "./player-reads";
+import { seedRoster } from "../workspace-data.test-helpers";
+import { clearOldPlayerRaw, gameLanguages, storePlayerRead, trailNames } from "./player-reads";
+import { workspaceDumps } from "./workspace-data";
 
 const NOW = new Date("2026-11-20T02:00:00Z");
 const DAY = 86_400_000;
@@ -92,4 +95,46 @@ describe("player reads (D132)", () => {
       [{ uid: 7, nick: "Invented" }, 1],
     ]);
   });
+
+  it("finds history names of the last 90 days only (D149, issue 833)", async () => {
+    const named = (uid: number, daysAgo: number, nick: string) => ({
+      unionId: 900001,
+      uid,
+      t: new Date(NOW.getTime() - daysAgo * DAY),
+      nick,
+    });
+    await db
+      .insert(playerHistory)
+      .values([named(7, 2, "Wren Recent"), named(8, 91, "Wren Old"), named(9, 1, "Other")]);
+    expect(await trailNames(db, 900001, "wren", 10, NOW)).toEqual([
+      { uid: 7, name: "Wren Recent" },
+    ]);
+  });
+
+  it("downloads shield and map times only for players the alliance's rosters listed (D163, issue 833)", async () => {
+    // The roster of 900001 lists uid 101; uid 202 is a recruit the recruit check read.
+    await seedRoster(db, 900001);
+    const read = (uid: number) => ({
+      unionId: 900001,
+      uid,
+      readAt: NOW,
+      shielding: 1,
+      shieldType: 2,
+      mapUpdatedAt: NOW,
+      power: 5_000,
+    });
+    await db.insert(playerReads).values([read(101), read(202)]);
+    const dumps = await workspaceDumps(db, { id: 0, unionId: 900001 });
+    const dump = dumps.find((d) => d.file === "player-reads");
+    const rows = (dump?.rows ?? []).map((r) => Object.fromEntries(zip(dump?.columns ?? [], r)));
+    expect(rows.map((r) => [r.uid, r.shielding, r.shield_type, r.map_updated_at, r.power])).toEqual(
+      [
+        [101, 1, 2, NOW, 5_000],
+        [202, null, null, null, 5_000],
+      ],
+    );
+    expect(dump?.columns).not.toContain("last_seen_at");
+  });
 });
+
+const zip = (keys: string[], values: unknown[]) => keys.map((k, i) => [k, values[i]] as const);

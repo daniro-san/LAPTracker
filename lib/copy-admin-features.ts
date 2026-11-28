@@ -1,6 +1,6 @@
 // /admin's feature switches per workspace (D126), re-exported as `copy.admin.features`. English only (D48).
 import { DAILY_QUOTA_TEXT } from "./budget";
-import { TRACKER_CALLS, type Feature } from "./workspace-features";
+import { RECRUIT_READS_A_DAY, TRACKER_CALLS, type Feature } from "./workspace-features";
 
 /** A feature's tracker calls per 100 members, from its measured rate (D134). */
 const per100 = (f: Feature) => Math.ceil(100 * (TRACKER_CALLS[f]?.perMember ?? 0));
@@ -13,7 +13,7 @@ export const featuresAdminCopy = {
   changed: "Changed: {value}",
   reset: "Reset to default",
   allianceOff: "the alliance turned it off",
-  callsHelp: `Own key: the alliance's tracker key. Squads read: about ${per100("squads")} calls a day per 100 members. Raid Shield check: about ${per100("shield_check")} calls per 100 members from Friday night to Saturday morning.`,
+  callsHelp: `Own key: the alliance's tracker key. Squads read: about ${per100("squads")} calls a day per 100 members. Raid Shield check: about ${per100("shield_check")} calls per 100 members from Friday night to Saturday morning. Recruit check: at most ${RECRUIT_READS_A_DAY} calls a day, only for players not stored yet.`,
   estimate: `Tracker calls: about {daily} a day of ${DAILY_QUOTA_TEXT} ({members} members)`,
   estimatePeak: `Tracker calls: about {daily} a day, {peak} on Saturdays (UTC), of ${DAILY_QUOTA_TEXT} ({members} members)`,
   defaults: {
@@ -54,6 +54,7 @@ export const featuresAdminCopy = {
     post_kvk_soon: "Post: KvK reminder (off until the alliance turns it on)",
     squads: "Squads read (own key)",
     shield_check: "Raid Shield check (own key)",
+    recruit_check: "Recruit check (own key)",
     notice_pictures: "Notice pictures (Neon storage)",
     export: "Download our data",
   },

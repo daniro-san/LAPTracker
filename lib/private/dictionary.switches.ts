@@ -42,6 +42,7 @@ export const switchesEn = {
   "switches.name.post_kvk_soon": "KvK reminder",
   "switches.name.squads": "Squads from the tracker",
   "switches.name.shield_check": "Raid Shield check",
+  "switches.name.recruit_check": "Recruit check",
   "switches.name.notice_pictures": "Notice pictures",
   "switches.name.export": "Download our data",
   "switches.rateLimited": "Too many changes just now. Wait 15 minutes, then try again.",
@@ -91,6 +92,7 @@ export const switchesPt: typeof switchesEn = {
   "switches.name.post_kvk_soon": "Lembrete da KvK",
   "switches.name.squads": "Esquadrões do tracker",
   "switches.name.shield_check": "Conferência do Escudo de raid",
+  "switches.name.recruit_check": "Consulta de recruta",
   "switches.name.notice_pictures": "Imagens dos avisos",
   "switches.name.export": "Baixar nossos dados",
   "switches.rateLimited": "Mudanças demais agora. Espere 15 minutos e tente de novo.",
@@ -139,6 +141,7 @@ export const switchesFr: typeof switchesEn = {
   "switches.name.post_kvk_soon": "Rappel de la KvK",
   "switches.name.squads": "Escouades du tracker",
   "switches.name.shield_check": "Vérification du Bouclier de raid",
+  "switches.name.recruit_check": "Vérifier une recrue",
   "switches.name.notice_pictures": "Images des annonces",
   "switches.name.export": "Télécharger nos données",
   "switches.rateLimited":

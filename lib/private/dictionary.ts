@@ -19,6 +19,7 @@ import { membersEn } from "./dictionary.members";
 import { noticesEn } from "./dictionary.notices";
 import { profileEn } from "./dictionary.profile";
 import { pt } from "./dictionary.pt-BR";
+import { recruitEn } from "./dictionary.recruit";
 import { rollEn } from "./dictionary.rollcall";
 import { settingsEn } from "./dictionary.settings";
 import { shareEn } from "./dictionary.share";
@@ -290,6 +291,7 @@ const en = {
   ...dataEn,
   ...featuresEn,
   ...feedbackEn,
+  ...recruitEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

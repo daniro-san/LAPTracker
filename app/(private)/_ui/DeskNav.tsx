@@ -26,6 +26,7 @@ const FEATURE_OF: Partial<Record<TabId | DeskView, Feature>> = {
   mark: "roll_call",
   review: "follow_up",
   insights: "insights",
+  recruit: "recruit_check",
   caravans: "caravans",
   notices: "notices",
   thefts: "thefts",
@@ -61,10 +62,11 @@ function Waiting({
 }
 
 /** A view of a destination, open on this page (the sidebar marks it, D122), and its destination. */
-export type DeskView = "former" | "insights" | "caravans" | "notices" | "thefts";
+export type DeskView = "former" | "insights" | "recruit" | "caravans" | "notices" | "thefts";
 export const VIEW_TAB: Record<DeskView, TabId> = {
   former: "members",
   insights: "members",
+  recruit: "members",
   caravans: "days",
   notices: "days",
   thefts: "days",
@@ -82,6 +84,7 @@ function navItems(
       [
         { id: "former", label: t["members.view.former"], href: `${base}/members?view=former` },
         { id: "insights", label: t["members.view.insights"], href: `${base}/insights` },
+        { id: "recruit", label: t["members.view.recruit"], href: `${base}/recruit` },
       ] as const
     ).filter((v) => shown(on)(v.id)),
     days: (

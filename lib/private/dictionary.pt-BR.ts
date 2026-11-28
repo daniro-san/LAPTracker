@@ -16,6 +16,7 @@ import { kvkPlanPt } from "./dictionary.kvk-plan";
 import { lifecyclePt } from "./dictionary.lifecycle";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
+import { recruitPt } from "./dictionary.recruit";
 import { rollPt } from "./dictionary.rollcall.pt-BR";
 import { settingsPt } from "./dictionary.settings";
 import { sharePt } from "./dictionary.share";
@@ -312,4 +313,5 @@ export const pt: WorkspaceDictionary = {
   ...dataPt,
   ...featuresPt,
   ...feedbackPt,
+  ...recruitPt,
 };

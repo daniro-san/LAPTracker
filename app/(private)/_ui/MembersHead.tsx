@@ -1,29 +1,30 @@
-// The top of Members: "Send a screenshot" (D110) and the Members · Former members · Insights switch (D107,
-// issue 489), moved out of the page for its size.
+// The top of Members: "Send a screenshot" (D110) and the Members · Former members · Insights · Recruit check
+// switch (D107, issues 489 and 833), moved out of the page for its size.
 import { chip } from "@/lib/brand/components/controls";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
-import { featureOn } from "@/lib/private/features";
+import type { Feature } from "@/lib/workspace-features";
 
 import { TabSend } from "./ToReview";
 
-/** Members · Former members (D107) · Insights (issue 489, when on): links, the open one pressed. */
+/** Members · Former members (D107) · Insights (issue 489) · Recruit check (issue 833), each when its switch is
+ * on (`on`, D126): links, the open one pressed. */
 export function ViewSwitch({
   slug,
   open,
-  insights,
+  on,
   t,
 }: {
   slug: string;
-  open: "current" | "former" | "insights";
-  insights: boolean;
+  open: "current" | "former" | "insights" | "recruit";
+  on: ReadonlySet<Feature>;
   t: WorkspaceDictionary;
 }) {
-  const link = (on: boolean, href: string, label: string) => (
+  const link = (here: boolean, href: string, label: string) => (
     <a
       href={href}
-      aria-current={on ? "page" : undefined}
-      className={`${chip(on)} shrink-0 justify-center whitespace-nowrap`}
+      aria-current={here ? "page" : undefined}
+      className={`${chip(here)} shrink-0 justify-center whitespace-nowrap`}
     >
       {label}
     </a>
@@ -34,7 +35,10 @@ export function ViewSwitch({
     <nav aria-label={t["members.view.aria"]} className="mt-2 flex gap-2 overflow-x-auto md:hidden">
       {link(open === "current", `/w/${slug}/members`, t["members.view.current"])}
       {link(open === "former", `/w/${slug}/members?view=former`, t["members.view.former"])}
-      {insights && link(open === "insights", `/w/${slug}/insights`, t["members.view.insights"])}
+      {on.has("insights") &&
+        link(open === "insights", `/w/${slug}/insights`, t["members.view.insights"])}
+      {on.has("recruit_check") &&
+        link(open === "recruit", `/w/${slug}/recruit`, t["members.view.recruit"])}
     </nav>
   );
 }
@@ -52,7 +56,7 @@ export function MembersHead(props: {
       <ViewSwitch
         slug={access.slug}
         open={props.former ? "former" : "current"}
-        insights={featureOn(access, "insights")}
+        on={access.features.on}
         t={t}
       />
     </>
