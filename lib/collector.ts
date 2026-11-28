@@ -124,7 +124,7 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
     const quota = await run.deps.v1.fetchQuota(
       attemptHook(run, null),
       run.controller.signal,
-      callOptions(run),
+      callOptions(run, "quota"),
     );
     await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
     run.quotaBefore = quota.remaining;
@@ -174,7 +174,7 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
       unionId,
       attemptHook(run, unionId),
       run.controller.signal,
-      callOptions(run),
+      callOptions(run, "alliance"),
     );
     noteQuota(run, a.quota?.remaining);
     // A 200 holding another alliance is a failed read of this one: its call is spent, nothing retries it,

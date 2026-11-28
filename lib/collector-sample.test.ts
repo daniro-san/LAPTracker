@@ -46,7 +46,7 @@ describe("runSample hardening (D69)", () => {
     return { v1, options };
   };
 
-  it("closes a sample partial at 25 s when every read hangs, and gives each call the sample's timeout and one attempt", async () => {
+  it("closes a sample partial at 25 s when every read hangs; each call gets the sample's timeout, each read one attempt", async () => {
     vi.useFakeTimers({ now: T0 });
     const { v1, options } = recordingV1(() => new Promise(() => {}));
     const { deps } = makeDeps(v1);
@@ -61,7 +61,7 @@ describe("runSample hardening (D69)", () => {
     expect(summary.durationMs).toBeGreaterThanOrEqual(SAMPLE_DEADLINE_MS);
     expect(summary.durationMs).toBeLessThanOrEqual(SAMPLE_DEADLINE_MS + 1_000);
     expect(summary.failed.map((f) => f.error)).toEqual(IDS.map(() => "not fetched: deadline"));
-    expect(options.quota).toEqual([{ timeoutMs: SAMPLE_CALL_TIMEOUT_MS, maxRetries: 0 }]);
+    expect(options.quota).toEqual([{ timeoutMs: SAMPLE_CALL_TIMEOUT_MS }]);
     expect([...options.alliance.values()]).toEqual(
       [...options.alliance.keys()].map(() => ({
         timeoutMs: SAMPLE_CALL_TIMEOUT_MS,
@@ -84,6 +84,7 @@ describe("runSample hardening (D69)", () => {
 describe("a hung call in a sample (issue 866)", () => {
   const OGS = JSON.parse(readFixture("v1-20261104T155902Z/alliance-67111155.json")) as object;
   const HUNG = IDS.slice(0, 4);
+  const QUOTA = 0;
 
   afterEach(() => {
     vi.useRealTimers();
@@ -92,8 +93,9 @@ describe("a hung call in a sample (issue 866)", () => {
     vi.restoreAllMocks();
   });
 
-  /** The real /v1 adapter over a mocked fetch: `answer` says what each alliance's attempt gets. A hung call
-   * waits on its signal, as fetch does; AbortSignal.timeout runs on the fake timers. */
+  /** The real /v1 adapter over a mocked fetch: `answer` says what each attempt of an alliance, or of the quota
+   * call (id QUOTA), gets. A hung call waits on its signal, as fetch does; AbortSignal.timeout runs on the fake
+   * timers. */
   function upstream(answer: (id: number, attempt: number) => "hang" | 503 | 200) {
     stubSourceEnv();
     vi.useFakeTimers({ now: T0 });
@@ -104,16 +106,19 @@ describe("a hung call in a sample (issue 866)", () => {
     });
     const attempts = new Map<number, number>();
     const fetch = vi.fn((url: string, init?: RequestInit) => {
-      if (url.endsWith("/quota"))
-        return Promise.resolve(respond('{"quota":{"limit":1000,"used":0,"remaining":1000}}'));
-      const id = Number(/alliances\/(\d+)/.exec(url)?.[1]);
+      const id = url.endsWith("/quota") ? QUOTA : Number(/alliances\/(\d+)/.exec(url)?.[1]);
       const n = attempts.get(id) ?? 0;
       attempts.set(id, n + 1);
       const outcome = answer(id, n);
       return new Promise<Response>((resolve, reject) => {
         init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
         if (outcome === "hang") return;
-        const body = outcome === 503 ? "error code: 503" : JSON.stringify({ ...OGS, union_id: id });
+        const body =
+          outcome === 503
+            ? "error code: 503"
+            : id === QUOTA
+              ? '{"quota":{"limit":1000,"used":0,"remaining":1000}}'
+              : JSON.stringify({ ...OGS, union_id: id });
         // A normal read answers in about 1 s.
         setTimeout(() => resolve(respond(body, outcome)), 1_000);
       });
@@ -157,6 +162,18 @@ describe("a hung call in a sample (issue 866)", () => {
     );
   });
 
+  it("still retries a sample's quota call: a 503 then a 200 reads the alliances", async () => {
+    const { deps, repo, attempts } = upstream((id, n) => (id === QUOTA && n === 0 ? 503 : 200));
+
+    const run = runSample(EVENT_ID, T0, deps);
+    await vi.advanceTimersByTimeAsync(SAMPLE_DEADLINE_MS);
+    const summary = await run;
+
+    expect(attempts.get(QUOTA)).toBe(2);
+    expect(summary.error).toBeNull();
+    expect(rowsOf(repo, summary.snapshotId)).toHaveLength(IDS.length);
+  });
+
   it("still retries a Before's call, with the adapter's 30 s timeout", async () => {
     const { deps, repo, attempts, timeouts } = upstream((id, n) =>
       id === FIRST && n === 0 ? 503 : 200,
@@ -194,7 +211,6 @@ describe("a sample's identity check (D69 amendment, 2026-11-21)", () => {
     expect(rows.find((r) => r.unionId === THIRD)?.error).toBe("v1 wrong alliance (tag)");
     expect(summary.status).toBe("partial");
     expect(summary.callsUsed).toBe(IDS.length + 1);
-    expect(await repo.failedSampleUnionIds(EVENT_ID)).toEqual([FIRST, THIRD]);
   });
 
   it("stores a read under a new tag and name when its members are the alliance's own: a rename", async () => {
