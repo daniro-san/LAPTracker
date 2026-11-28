@@ -189,6 +189,7 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | by alliance (an interval split)       | nach Allianz                           | `ledger.splitLink`, `ledger.splitSum` — one interval's kills split by alliance                                                               |
 | Where you are in this chart           | Wo du in diesem Diagramm bist          | `ledger.drillPath` — the accessible name of a chart's drill path                                                                             |
 | All intervals                         | Alle Intervalle                        | `ledger.splitBack` — the path's Back step from one interval's split to the interval bars                                                     |
+| Alliances recruiting                  | Allianzen suchen Mitglieder            | `alliances.recruiting` — the section heading: alliances with a spot free, read in the last days                                              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

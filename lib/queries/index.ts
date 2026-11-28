@@ -23,7 +23,8 @@ export {
 export { LOST_MIGHT_PCT, MIN_DAILY_READS, mightUnchanged } from "./might-unchanged";
 export { BALANCE_DAYS, powerBalance, type PowerBalance } from "./balance";
 export { allianceStanding, type Standing } from "./standing";
-export { allianceStatement, type AllianceStatement } from "./statement";
+export { allianceStatement, type AllianceStatement, type Joining } from "./statement";
+export { RECRUITING_DAYS, recruitingAlliances, type RecruitingRow } from "./recruiting";
 export {
   FLOW_DAYS,
   defaultPeriod,

@@ -32,8 +32,9 @@ function seats(members: number, capacity: number, c: Dictionary["statement"]) {
   return fill(template, { n, members: `${members}`, capacity: `${capacity}` });
 }
 
-/** A game minimum is a round number: `8M`, not D78's `8.00M` (owner, 2026-11-20); `8.5M` keeps its digit. */
-const roundMinimum = (n: number, locale: string): string =>
+/** A game minimum is a round number: `8M`, not D78's `8.00M` (owner, 2026-11-20); `8.5M` keeps its digit.
+ * Also /alliances' "Alliances recruiting". */
+export const roundMinimum = (n: number, locale: string): string =>
   compact(n, locale)
     .replace(/([.,]\d*?)0+(?=\D*$)/, "$1")
     .replace(/[.,](?=\D*$)/, "");

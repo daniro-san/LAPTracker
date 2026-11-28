@@ -18,6 +18,19 @@ export const alliancesCopy = {
   page: "Page {page} of {pages}",
   previous: "Previous",
   next: "Next",
+  /** The recruiting section's heading (issue 792; the owner's words, 2026-11-28): alliances with room. */
+  recruiting: "Alliances recruiting",
+  /** Under it, one plain line (the owner's words). */
+  recruitingLead: "Alliances with room right now, and what they ask to join.",
+  /** No alliance read in that time has room. `{days}`: how many days back a read still counts (2). */
+  recruitingNone: "No alliance read in the last {days} days has a spot free.",
+  /** A row's free places: `27 spots free (73/100)`. */
+  spotsFree: "{n} spots free ({members}/{capacity})",
+  spotFree: "1 spot free ({members}/{capacity})",
+  /** A row's least might to join, `{might}` compact (`8M`). */
+  minMight: "Minimum might {might}",
+  /** A row's least headquarters level to join (`14`). */
+  minHq: "Minimum HQ {level}",
   /** Before the first board was read. */
   none: "The list fills after tonight's daily update.",
   /** The ledger's link under its table: `All 98 alliances on the server`. */

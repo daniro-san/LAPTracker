@@ -301,6 +301,13 @@ export const pl = {
     page: "Strona {page} z {pages}",
     previous: "Wstecz",
     next: "Dalej",
+    recruiting: "Sojusze przyjmujące nowych",
+    recruitingLead: "Sojusze z wolnymi miejscami teraz i to, czego wymagają, żeby dołączyć.",
+    recruitingNone: "Żaden sojusz odczytany w ciągu ostatnich {days} dni nie ma wolnego miejsca.",
+    spotsFree: "Wolne miejsca: {n} ({members}/{capacity})",
+    spotFree: "Wolne miejsce: 1 ({members}/{capacity})",
+    minMight: "Might min. {might}",
+    minHq: "Min. HQ {level}",
     none: "Lista pojawi się po dzisiejszej dziennej aktualizacji.",
     link: "Wszystkie sojusze na serwerze ({n})",
     board:

@@ -502,6 +502,7 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | War turnout                           | Partecipazione                        | `ledger.fought`, `ledger.foughtSoFar`, `ledger.arrivedTurnout` — the members who fought in a war; the arrival line says "Dalla Partecipazione"                                             |
 | Day by day                            | Giorno per giorno                     | `history.playerTitle`, `history.playerLead` — a player's own readings on the player page                                                                                                   |
 | by alliance (an interval split)       | per alleanza                          | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split by alliance                                                                                           |
+| Recruiting                            | Alleanze che reclutano                | `alliances.recruiting*`, `alliances.spot*`, `alliances.min*` — alliances with free seats; "posti liberi" for free seats                                                                    |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -296,6 +296,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | statement (alliance's text)       | Açıklama                        | `statement.title`, `statement.by` — the alliance's own in-game text, never translated                                             |
 | joining                           | Katılım                         | `statement.joining`, `statement.open`, `statement.byApplication` — how a player joins an alliance                                 |
 | free seat                         | boş koltuk                      | `statement.seats`, `statement.seatOne` — a place left under the Members cap                                                       |
+| recruiting (alliance with room)   | üye alan                        | `alliances.recruiting`, `alliances.recruitingLead` — alliances taking new members; the heading must read at first sight           |
 | Ranks board                       | sıralama tablosu                | `alliances.*` — the server's board of alliances by Might, with the Kills rank                                                     |
 | lookup (an alliance's details)    | sorgu                           | `alliances.*` — one fetch of an alliance's details for the day                                                                    |
 | KvK                               | KvK                             | `kvk.title`, `kvk.versus` — the game's server-vs-server event, kept as its name                                                   |

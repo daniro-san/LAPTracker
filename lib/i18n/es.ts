@@ -318,6 +318,13 @@ export const es = {
     tooMany:
       "Demasiadas consultas desde aquí en este momento. Vuelve a intentarlo en unos minutos.",
     error: "Algo salió mal. Vuelve a intentarlo en un momento.",
+    recruiting: "Alianzas reclutando",
+    recruitingLead: "Alianzas con plazas libres ahora mismo, y lo que piden para entrar.",
+    recruitingNone: "Ninguna alianza leída en los últimos {days} días tiene una plaza libre.",
+    spotsFree: "{n} plazas libres ({members}/{capacity})",
+    spotFree: "1 plaza libre ({members}/{capacity})",
+    minMight: "Mín. Might {might}",
+    minHq: "Mín. HQ {level}",
   },
   history: {
     title: "Historial de miembros",

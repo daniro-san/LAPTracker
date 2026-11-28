@@ -320,6 +320,14 @@ export const fr = {
       "Les consultations sont suspendues pendant l’événement hebdomadaire. Réessayez après.",
     tooMany: "Trop de consultations depuis ici pour l’instant. Réessayez dans quelques minutes.",
     error: "Quelque chose s’est mal passé. Réessayez dans un instant.",
+    recruiting: "Alliances qui recrutent",
+    recruitingLead:
+      "Alliances qui ont de la place en ce moment, et ce qu’elles demandent pour rejoindre.",
+    recruitingNone: "Aucune alliance relevée ces {days} derniers jours n’a de place libre.",
+    spotsFree: "{n} places libres ({members}/{capacity})",
+    spotFree: "1 place libre ({members}/{capacity})",
+    minMight: "Might min. {might}",
+    minHq: "HQ min. {level}",
   },
   history: {
     title: "Historique des membres",
