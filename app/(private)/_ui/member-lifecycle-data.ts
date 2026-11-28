@@ -4,9 +4,10 @@
 // Duel points saved). Nothing else of theirs. Also the pending members an officer deleted (dismissed).
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import { lifecycleEn } from "@/lib/private/dictionary.lifecycle";
-import type { MemberFacts } from "@/lib/private/fact-fields";
+import { LEFT_REASONS, type LeftReasonCode, type MemberFacts } from "@/lib/private/fact-fields";
 import { NONE } from "@/lib/private/fact-text";
 import type { FormerMember } from "@/lib/private/former-members";
+import { leftByMonth } from "@/lib/private/left-reason";
 import { factLines, or, type CardFormats } from "@/lib/private/member-card";
 import type { Pending } from "@/lib/private/pending-members";
 import { fill, plural } from "@/lib/words";
@@ -94,6 +95,15 @@ export interface FormerRow extends FactsCard {
   summary: string;
   /** "Alliance Duel points, week of Mon, Nov 9: Mon 2.40M · Tue 3.10M", the newest week saved; else null. */
   duel: string | null;
+  /** Why they left (issue 469): the saved reason and note, its version (0: none), and its line. */
+  left: { reason: LeftReasonCode | null; note: string; version: number; text: string | null };
+}
+
+/** "Joined another alliance · moved to a friend's alliance", or null when no reason was saved. */
+function leftText(m: FormerMember, t: WorkspaceDictionary): string | null {
+  const v = m.facts.leftReason?.value;
+  if (!v) return null;
+  return [t[`former.reason.${v.reason}`], v.note].filter((x) => x !== "").join(" · ");
 }
 
 export function formerRow(m: FormerMember, t: WorkspaceDictionary, f: CardFormats): FormerRow {
@@ -112,8 +122,62 @@ export function formerRow(m: FormerMember, t: WorkspaceDictionary, f: CardFormat
     ].join(" · "),
     summary: summaryOf(lines),
     duel: m.duel && duelLine(m.duel, t, f),
+    left: {
+      reason: m.facts.leftReason?.value?.reason ?? null,
+      note: m.facts.leftReason?.value?.note ?? "",
+      version: m.facts.leftReason?.version ?? 0,
+      text: leftText(m, t),
+    },
   };
 }
+
+/** One month of Former members' counts, as the view shows it. Numbers only, never names. */
+export interface LeftMonthLine {
+  month: string;
+  /** "November 2026". */
+  label: string;
+  /** "3 former members". */
+  total: string;
+  /** "Left 1 · Unknown 2": only the reasons counted, in the picker's order. */
+  counts: string;
+}
+
+function leftMonthLines(
+  former: readonly FormerMember[],
+  t: WorkspaceDictionary,
+  f: CardFormats,
+): LeftMonthLine[] {
+  const name = new Intl.DateTimeFormat(f.language, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  return leftByMonth(former).map((m) => {
+    const label = name.format(new Date(`${m.month}-01T00:00:00Z`));
+    return {
+      month: m.month,
+      label: label.charAt(0).toLocaleUpperCase(f.language) + label.slice(1),
+      total: fill(
+        plural(
+          m.total,
+          { one: t["former.months.one"], other: t["former.months.other"] },
+          f.language,
+        ),
+        { n: f.number(m.total) },
+      ),
+      counts: LEFT_REASONS.filter((r) => m.counts[r] > 0)
+        .map((r) => `${t[`former.reason.${r}`]}\u00a0${f.number(m.counts[r])}`)
+        .join(" · "),
+    };
+  });
+}
+
+/** The Former members view's rows and its counts by month. */
+export const formerView = (
+  former: readonly FormerMember[],
+  t: WorkspaceDictionary,
+  f: CardFormats,
+) => ({ rows: former.map((m) => formerRow(m, t, f)), months: leftMonthLines(former, t, f) });
 
 const KEYS = [
   ...(Object.keys(lifecycleEn) as (keyof typeof lifecycleEn)[]),

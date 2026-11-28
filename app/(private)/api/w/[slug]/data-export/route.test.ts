@@ -2,6 +2,7 @@
 // (deleted records in their own files), the notices' pictures and a README; no private roster field, no
 // key, no session and no Discord id is in any byte of it. A member and another workspace are refused, and
 // a workspace gets 3 downloads a day.
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -9,7 +10,7 @@ import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
-import { dailyRosters, workspaceUsers } from "@/lib/schema";
+import { dailyReads, dailyRosters, memberFacts, workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceDataEvents } from "@/lib/schema-retention";
 import {
   KEY_MARKER,
@@ -214,6 +215,40 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
     for (const [name, data] of alone) expect(text(beside.get(name)), name).toBe(text(data));
     expect(Buffer.concat([...beside.values()]).toString("utf8")).not.toMatch(
       /Bea Invented|Officer ogs/,
+    );
+  });
+
+  it("writes why each former member left, in the officer's words, in former-members.csv (issue 469)", async () => {
+    const [nse] = await db.select().from(workspaces).where(eq(workspaces.slug, "nse"));
+    await db
+      .insert(dailyReads)
+      .values({ day: "2026-11-10", startedAt: SEED_AT, status: "complete" });
+    await db.insert(dailyRosters).values({
+      readDay: "2026-11-10",
+      unionId: nse?.unionId ?? 0,
+      memberCount: 2,
+      sourceUpdatedAt: new Date("2026-11-10T12:00:00Z"),
+      isFresh: true,
+      memberUids: [101, 102],
+      memberNames: ["Ana Example", "Bo Invented"],
+      memberPower: [1000, 2000],
+      memberKills: [10, 20],
+    });
+    await db.insert(memberFacts).values({
+      workspaceId: nse?.id ?? 0,
+      uid: 102,
+      field: "leftReason",
+      version: 1,
+      value: { reason: "otherAlliance", note: "moved to a friend" },
+      source: "officer",
+      writtenAt: SEED_AT,
+    });
+
+    const files = unzip(new Uint8Array(await (await post(tokens.officer)).arrayBuffer()));
+    const lines = files.get("former-members.csv")?.toString("utf8").slice(1).split("\r\n");
+    expect(lines?.[0]).toBe("uid,name,last_seen,might,kills,left_reason,left_note");
+    expect(lines?.[1]).toMatch(
+      /^102,Bo Invented,2026-11-\d\d,2000,20,Joined another alliance,moved to a friend$/,
     );
   });
 

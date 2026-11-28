@@ -3,7 +3,9 @@
 // The Members tab's "Former members" view (D107): who an earlier roster listed and the newest does not,
 // newest leavers first, with a name search (accents and case do not matter) and 25 rows at a time. Each
 // row: the name, the day they were last seen, the last public might and kills, the newest week of
-// Alliance Duel points saved for them, and what officers recorded. A row opens a sheet whose facts can still be edited, so an officer can note why they left.
+// Alliance Duel points saved for them, why they left (issue 469), and what officers recorded. A row opens a
+// sheet with the reason's picker and the facts, which can still be edited. Above the search, who left by
+// month and reason.
 // From 1024 the list and the open one sit side by side, the open one in the address (`?m=`), as on
 // Members (D122); Up and Down step through the rows and open the one the focus lands on.
 import { useState, type ReactNode } from "react";
@@ -12,7 +14,8 @@ import { MasterDetail } from "@/lib/brand/components/layout/MasterDetail";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fold } from "@/lib/private/members-list";
 
-import type { FormerRow, LifecycleWords } from "./member-lifecycle-data";
+import { LeftMonths, LeftReasonSection } from "./FormerLeftReason";
+import type { FormerRow, LeftMonthLine, LifecycleWords } from "./member-lifecycle-data";
 import { Facts, factsActions, type EditorContext, type FactsMode } from "./MemberCards";
 import { withNoData } from "./NoData";
 import { shown, stepRow, useOpenMember } from "./open-member";
@@ -48,6 +51,7 @@ function FormerSheet(props: {
           {row.duel}
         </p>
       )}
+      <LeftReasonSection slug={props.editor.slug} row={row} words={props.words} />
       <Facts
         card={row}
         editor={props.editor}
@@ -92,6 +96,7 @@ function FormerRowButton(p: {
           {r.duel}
         </span>
       )}
+      {r.left.text && <span className="line-clamp-1 text-body-sm">{r.left.text}</span>}
       {r.summary && <span className="line-clamp-2 text-body-sm text-ink/75">{r.summary}</span>}
     </button>
   );
@@ -100,6 +105,7 @@ function FormerRowButton(p: {
 /** The lead, the name search, 25 rows at a time. */
 function FormerList(p: {
   rows: FormerRow[];
+  months: LeftMonthLine[];
   t: LifecycleWords;
   at: ReturnType<typeof useOpenMember>;
 }) {
@@ -111,6 +117,7 @@ function FormerList(p: {
   return (
     <>
       <p className="text-body-sm text-ink/80">{t["former.lead"]}</p>
+      <LeftMonths months={p.months} words={t} />
       {rows.length === 0 ? (
         <p className="drawn-card mt-4 px-4 py-5">{t["former.none"]}</p>
       ) : (
@@ -166,6 +173,8 @@ function FormerList(p: {
 
 export function FormerMembers(props: {
   rows: FormerRow[];
+  /** Who left, by month and reason (issue 469). */
+  months: LeftMonthLine[];
   words: LifecycleWords;
   editor: EditorContext;
   /** `?m=` when the page was opened. */
@@ -195,7 +204,7 @@ export function FormerMembers(props: {
       <MasterDetail
         list={
           <>
-            <FormerList rows={rows} t={t} at={at} />
+            <FormerList rows={rows} months={props.months} t={t} at={at} />
             {props.foot}
           </>
         }

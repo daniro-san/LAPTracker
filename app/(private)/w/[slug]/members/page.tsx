@@ -53,7 +53,7 @@ import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import {
   dismissedRow,
-  formerRow,
+  formerView,
   lifecycleWords,
   pendingRow,
   toMatchLine,
@@ -307,7 +307,7 @@ export default async function MembersPage({
         {roster && <PasteUpdates slug={slug} words={updatesWords(t)} shots={editor.shots} />}
         {showFormer ? (
           <FormerMembers
-            rows={lifecycle.former.map((m) => formerRow(m, t, f))}
+            {...formerView(lifecycle.former, t, f)}
             words={lifecycleWords(t)}
             editor={editor}
             initialOpen={search.get("m")}
