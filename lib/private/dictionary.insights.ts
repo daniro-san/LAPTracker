@@ -5,12 +5,14 @@
 import { drillEn, drillFr, drillPt } from "./dictionary.drill";
 import { insightsMapEn, insightsMapFr, insightsMapPt } from "./dictionary.insights-map";
 import { insightsMoreEn, insightsMoreFr, insightsMorePt } from "./dictionary.insights-more";
+import { insightsUsualEn, insightsUsualFr, insightsUsualPt } from "./dictionary.insights-usual";
 import { insightsZonesEn, insightsZonesFr, insightsZonesPt } from "./dictionary.insights-zones";
 
 export const insightsEn = {
   ...drillEn,
   ...insightsMoreEn,
   ...insightsZonesEn,
+  ...insightsUsualEn,
   ...insightsMapEn,
   "members.view.insights": "Insights",
   "insights.lead":
@@ -108,6 +110,7 @@ export const insightsPt: InsightsWords = {
   ...drillPt,
   ...insightsMorePt,
   ...insightsZonesPt,
+  ...insightsUsualPt,
   ...insightsMapPt,
   "members.view.insights": "Análises",
   "insights.lead":
@@ -204,6 +207,7 @@ export const insightsFr: InsightsWords = {
   ...drillFr,
   ...insightsMoreFr,
   ...insightsZonesFr,
+  ...insightsUsualFr,
   ...insightsMapFr,
   "members.view.insights": "Analyses",
   "insights.lead":
