@@ -13,10 +13,12 @@ import { chip } from "@/lib/brand/components/controls";
 import type { SheetAction } from "@/lib/brand/components/Sheet";
 import { Tag } from "@/lib/brand/components/Tag";
 import type { CardData } from "@/lib/private/member-card";
+import { fill } from "@/lib/words";
 
 import { CardFollowUp } from "./CardFollowUp";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
+import { LANGUAGE_NAME } from "./languages";
 import {
   CardTabs,
   Details,
@@ -248,6 +250,16 @@ function Header({ card, zoneNow, editor, onChanged }: CardProps) {
           {line}
         </p>
       ))}
+      {card.gameLanguage && (
+        <p className="mt-1 text-body-sm text-ink/80">
+          {fill(card.gameLanguage.line, {
+            name: card.gameLanguage.language
+              ? LANGUAGE_NAME[card.gameLanguage.language]
+              : card.gameLanguage.other,
+            date: card.gameLanguage.date,
+          })}
+        </p>
+      )}
       {card.link && <CardLink slug={slug} link={card.link} words={card.link.words} />}
       <SelfReportCard
         slug={slug}

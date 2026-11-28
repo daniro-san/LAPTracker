@@ -166,3 +166,45 @@ describe("the member card's Follow-up block (issue 516)", () => {
     expect(await blockOf(await signedIn("Ana"), 101)).toBeNull();
   });
 });
+
+describe("the member card's game language (issue 814)", () => {
+  const languageOf = async (access: WorkspaceAccess, uid: number) =>
+    (
+      await memberCard(db, access, uid, {
+        now: NOW,
+        zone: ZONE,
+        language: "en",
+        t: WORKSPACE_DICTIONARIES.en,
+      })
+    )?.gameLanguage;
+  const read = (unionId: number, iso: string, language: string) => ({
+    unionId,
+    uid: 101,
+    readAt: new Date(iso),
+    language,
+  });
+
+  it("shows the newest read's language and the day it was read", async () => {
+    await db
+      .insert(playerReads)
+      .values([read(OGS, "2026-11-10T12:00:00Z", "fr"), read(OGS, "2026-11-19T12:00:00Z", "pt")]);
+    expect(await languageOf(await signedIn("Ana"), 101)).toEqual({
+      line: "Game language: {name} (read {date})",
+      language: "pt-BR",
+      other: "Other",
+      date: "Thu, Nov 19",
+    });
+  });
+
+  it("has no line without a read (D75), and a code the notices are not written in is Other", async () => {
+    const ana = await signedIn("Ana");
+    expect(await languageOf(ana, 101)).toBeNull();
+    await db.insert(playerReads).values(read(OGS, "2026-11-19T12:00:00Z", "es"));
+    expect(await languageOf(ana, 101)).toMatchObject({ language: null, other: "Other" });
+  });
+
+  it("never uses another alliance's read", async () => {
+    await db.insert(playerReads).values(read(99999999, "2026-11-19T12:00:00Z", "fr"));
+    expect(await languageOf(await signedIn("Ana"), 101)).toBeNull();
+  });
+});

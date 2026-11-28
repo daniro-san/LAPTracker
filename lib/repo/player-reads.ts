@@ -103,21 +103,21 @@ export async function clearOldPlayerRaw(db: Db, now: Date): Promise<number> {
 }
 
 /**
- * Each of `uids`' game language from the newest read of `unionId`'s own workspace since `since` that has
- * one (D132), by uid: one row per member (`DISTINCT ON`), on the members asked for and a bounded window
- * only, never the whole history (#521). Only that alliance's rows: a player read by another workspace is
- * not seen here (D71).
+ * Each of `uids`' game language and the time of the read it came from: the newest read of `unionId`'s own
+ * workspace since `since` that has one (D132), by uid: one row per member (`DISTINCT ON`), on the members
+ * asked for and a bounded window only, never the whole history (#521). Only that alliance's rows: a player
+ * read by another workspace is not seen here (D71).
  */
-export async function gameLanguages(
+export async function gameLanguageReads(
   db: Db,
   unionId: number,
   uids: readonly number[],
   since: Date,
-): Promise<Map<number, string>> {
+): Promise<Map<number, { language: string; readAt: Date }>> {
   if (uids.length === 0) return new Map();
   const p = playerReads;
   const rows = await db
-    .selectDistinctOn([p.uid], { uid: p.uid, language: p.language })
+    .selectDistinctOn([p.uid], { uid: p.uid, language: p.language, readAt: p.readAt })
     .from(p)
     .where(
       and(
@@ -128,5 +128,16 @@ export async function gameLanguages(
       ),
     )
     .orderBy(p.uid, desc(p.readAt));
-  return new Map(rows.map((r) => [r.uid, r.language as string]));
+  return new Map(rows.map((r) => [r.uid, { language: r.language as string, readAt: r.readAt }]));
+}
+
+/** `gameLanguageReads` without the time: each member's newest game language code. */
+export async function gameLanguages(
+  db: Db,
+  unionId: number,
+  uids: readonly number[],
+  since: Date,
+): Promise<Map<number, string>> {
+  const reads = await gameLanguageReads(db, unionId, uids, since);
+  return new Map([...reads].map(([uid, r]) => [uid, r.language]));
 }
