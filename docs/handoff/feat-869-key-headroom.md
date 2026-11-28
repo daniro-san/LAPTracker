@@ -17,6 +17,7 @@
 - Settings card shows for states `ok` and `site`; Home warns only for `ok` with a stored quota.
 - Home reads the member count first and runs the log query only when the whole plan exceeds the quota left.
 - Copy says "Daily update" (glossary term).
+- Review fixes: a site-equal key shows "quota shared with the site" and no plan line; the after-reset sentence shows only on the Saturday (UTC) peak, other days say "Some reads may be skipped."; a test covers a Saturday line with Friday's read_day.
 
 ## Deviations
 

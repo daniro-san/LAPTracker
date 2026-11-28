@@ -67,7 +67,11 @@ export const settingsEn = {
   "headroom.left": "Left on the key: {n}",
   "headroom.leftNone": "Left on the key: not known yet",
   "headroom.short":
+    "Today’s plan needs about {planned} calls; {left} are left. Some reads may be skipped.",
+  "headroom.shortSaturday":
     "Today’s plan needs about {planned} calls; {left} are left. The after-reset read may be skipped.",
+  "headroom.shared":
+    "This key is the site’s, so its quota is shared with the site. The plan cannot be checked against it.",
   "headroom.fits": "Today’s plan fits in what is left.",
   "headroom.home":
     "Today’s plan needs about {planned} calls; {left} are left. A read may be skipped.",
@@ -182,7 +186,11 @@ export const settingsPt: typeof settingsEn = {
   "headroom.left": "Restante na chave: {n}",
   "headroom.leftNone": "Restante na chave: ainda não se sabe",
   "headroom.short":
+    "O plano de hoje precisa de cerca de {planned} chamadas; restam {left}. Algumas leituras podem ser puladas.",
+  "headroom.shortSaturday":
     "O plano de hoje precisa de cerca de {planned} chamadas; restam {left}. A leitura após o reset pode ser pulada.",
+  "headroom.shared":
+    "Esta chave é a do site, então a cota é dividida com o site. O plano não pode ser conferido com ela.",
   "headroom.fits": "O plano de hoje cabe no que resta.",
   "headroom.home":
     "O plano de hoje precisa de cerca de {planned} chamadas; restam {left}. Uma leitura pode ser pulada.",
@@ -299,7 +307,11 @@ export const settingsFr: typeof settingsEn = {
   "headroom.left": "Restant sur la clé : {n}",
   "headroom.leftNone": "Restant sur la clé : pas encore connu",
   "headroom.short":
+    "Le plan d’aujourd’hui demande environ {planned} appels ; il en reste {left}. Certaines lectures peuvent être sautées.",
+  "headroom.shortSaturday":
     "Le plan d’aujourd’hui demande environ {planned} appels ; il en reste {left}. La lecture après la réinitialisation peut être sautée.",
+  "headroom.shared":
+    "Cette clé est celle du site, donc son quota est partagé avec le site. Le plan ne peut pas être comparé à ce quota.",
   "headroom.fits": "Le plan d’aujourd’hui tient dans ce qui reste.",
   "headroom.home":
     "Le plan d’aujourd’hui demande environ {planned} appels ; il en reste {left}. Une lecture peut être sautée.",

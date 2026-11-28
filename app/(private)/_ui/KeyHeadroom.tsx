@@ -16,6 +16,8 @@ const UNCOUNTED = ["headroom.raid", "headroom.daily"] as const;
 
 export function KeyHeadroom(props: {
   headroom: Headroom;
+  /** The saved key is the site's own: its quota is shared, so no plan check is made (issue 855). */
+  siteKey: boolean;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
 }) {
@@ -47,12 +49,22 @@ export function KeyHeadroom(props: {
       <p className="text-body-sm tabular-nums">
         {left === null ? t["headroom.leftNone"] : fill(t["headroom.left"], { n: n.format(left) })}
       </p>
-      {left !== null && (
-        <p role="status" className={`mt-1 ${h.short ? "font-semibold text-seal" : "text-body-sm"}`}>
-          {h.short
-            ? fill(t["headroom.short"], { planned: n.format(planned), left: n.format(left) })
-            : t["headroom.fits"]}
-        </p>
+      {props.siteKey ? (
+        <p className="mt-1 text-body-sm">{t["headroom.shared"]}</p>
+      ) : (
+        left !== null && (
+          <p
+            role="status"
+            className={`mt-1 ${h.short ? "font-semibold text-seal" : "text-body-sm"}`}
+          >
+            {h.short
+              ? fill(t[h.peak ? "headroom.shortSaturday" : "headroom.short"], {
+                  planned: n.format(planned),
+                  left: n.format(left),
+                })
+              : t["headroom.fits"]}
+          </p>
+        )
       )}
     </section>
   );

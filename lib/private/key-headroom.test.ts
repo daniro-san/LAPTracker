@@ -12,7 +12,7 @@ import type { WorkspaceAccess } from "./access";
 import { callsToday, headroomOf, headroomView, headroomWarning } from "./key-headroom";
 import type { TrackerKeyView } from "./tracker-key";
 
-// A Thursday: no weekly reads in the plan.
+// Thursday 13:00 ST (server time is UTC-2): no weekly reads in the plan.
 const NOW = new Date("2026-11-26T15:00:00Z");
 const DAY = "2026-11-26";
 const OTHER_UNION = 67109944;
@@ -61,7 +61,7 @@ describe("callsToday", () => {
       "squads.batch",
       { workspace: "ogs", calls: 99 },
       null,
-      new Date("2026-11-25T23:00:00Z"),
+      new Date("2026-11-25T23:00:00Z") /* Wednesday 21:00 ST */,
     );
     expect(await callsToday(db, ogs(), NOW)).toEqual({
       squads: 50,
@@ -82,6 +82,23 @@ describe("callsToday", () => {
       recruit: 0,
     });
   });
+
+  it("counts a Saturday UTC line that carries Friday's read_day", async () => {
+    await db.insert(dailyReads).values({ day: "2026-11-27", startedAt: NOW, status: "complete" });
+    // Saturday 02:30 ST, after the 00:00 UTC reset: the morning read's line carries Friday's day.
+    const at = new Date("2026-11-28T04:30:00Z");
+    await db.insert(runLogs).values({
+      readDay: "2026-11-27",
+      at,
+      level: "info",
+      code: "shield.reset",
+      unionId: OWN_ALLIANCE_ID,
+      data: { union_id: OWN_ALLIANCE_ID, calls: 12 },
+    });
+    // Saturday 08:00 ST, the same quota day.
+    const calls = await callsToday(db, ogs(), new Date("2026-11-28T10:00:00Z"));
+    expect(calls.afterReset).toBe(12);
+  });
 });
 
 describe("headroomOf", () => {
@@ -92,8 +109,9 @@ describe("headroomOf", () => {
     const h = headroomOf({ ...none, squads: 20 }, plan, 500, NOW);
     expect(h).toMatchObject({ planned: 100, left: 500, short: false });
     // Saturday (UTC) plans the weekly reads as well.
-    const saturday = new Date("2026-11-28T10:00:00Z");
-    expect(headroomOf(none, plan, 500, saturday).planned).toBe(330);
+    const saturday = new Date("2026-11-28T10:00:00Z"); // Saturday 08:00 ST
+    expect(headroomOf(none, plan, 500, saturday)).toMatchObject({ planned: 330, peak: true });
+    expect(h.peak).toBe(false);
   });
 
   it("is short only when the plan needs more than is left, and never without a known quota", () => {

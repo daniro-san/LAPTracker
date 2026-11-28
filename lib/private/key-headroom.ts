@@ -73,8 +73,9 @@ export async function callsToday(db: Db, access: WorkspaceAccess, now: Date): Pr
 }
 
 /** The calls the features on plan for today's quota day: Saturday (UTC) adds the weekly ones. */
+const isPeakDay = (now: Date): boolean => now.getUTCDay() === 6;
 export const plannedToday = (plan: Plan, now: Date): number =>
-  now.getUTCDay() === 6 ? plan.peak : plan.daily;
+  isPeakDay(now) ? plan.peak : plan.daily;
 
 export interface Headroom {
   calls: KeyCalls;
@@ -84,6 +85,8 @@ export interface Headroom {
   left: number | null;
   /** The plan needs more than the key has left. */
   short: boolean;
+  /** The plan is Saturday (UTC)'s peak, which includes the after-reset read. */
+  peak: boolean;
 }
 
 /** Pure: the headroom from the counts, the plan and the key's stored quota. */
@@ -96,7 +99,7 @@ export function headroomOf(
   const used = calls.squads + calls.shield + calls.afterReset + calls.recruit;
   const planned = Math.max(0, plannedToday(plan, now) - used);
   const short = quotaRemaining !== null && planned > quotaRemaining;
-  return { calls, planned, left: quotaRemaining, short };
+  return { calls, planned, left: quotaRemaining, short, peak: isPeakDay(now) };
 }
 
 /** Alliance settings: the card's numbers. Null when the key's state has no quota to measure. */

@@ -174,6 +174,7 @@ function TrackerKeyCard(props: {
   view: ReturnType<typeof keyForm>;
   squads: string | null;
   headroom: Awaited<ReturnType<typeof headroomView>>;
+  siteKey: boolean;
   language: WorkspaceLanguage;
   t: Awaited<ReturnType<typeof workspaceWords>>["t"];
 }) {
@@ -191,7 +192,14 @@ function TrackerKeyCard(props: {
         t={t}
       />
       {props.squads && <p className="mt-3 text-body-sm tabular-nums">{props.squads}</p>}
-      {props.headroom && <KeyHeadroom headroom={props.headroom} t={t} language={props.language} />}
+      {props.headroom && (
+        <KeyHeadroom
+          headroom={props.headroom}
+          siteKey={props.siteKey}
+          t={t}
+          language={props.language}
+        />
+      )}
     </section>
   );
 }
@@ -292,6 +300,7 @@ function SettingsCards(props: {
         view={keyForm(view, t, language, now)}
         squads={squads && squadsLine(squads, t, env.SERVER_TZ)}
         headroom={props.page.headroom}
+        siteKey={view.siteKey}
         language={language}
         t={t}
       />
