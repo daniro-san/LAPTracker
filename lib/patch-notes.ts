@@ -220,8 +220,9 @@ export const patchNotes: PatchNote[] = [
       "Desk: a follow-up note can be deleted and an open review request withdrawn, with Undo for a short while. Both vanish from lists, counts and Home, and go to their own file in the export.",
       "The daily read now keeps its list of alliances, so /admin/runs shows an alliance it never reached and the automatic retry reads it. A roster the read itself stored is never read again (D72).",
       "Desktop shows one feedback entry: the floating badge from 1280 px, the button at the end of the page below that. The daily quest cap is 250, the game's limit.",
+      'Calendar: every KvK entry has a KvK plan. Officers name roles (four are suggested), add members by name, write a note, and "Make the message" turns it into a notice with the day and time in ST, ready for languages, copying and Discord. Roles are never a ranking.',
     ],
-    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774],
+    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797],
   },
   {
     version: "v5.70.0",
