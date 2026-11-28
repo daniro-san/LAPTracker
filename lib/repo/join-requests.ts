@@ -104,6 +104,32 @@ export async function joinUser(
   return row.id;
 }
 
+/** The approved member's welcome was posted by an officer's Approve (issue 868). */
+export async function markWelcomed(db: Db, workspaceId: number, userId: number, at: Date) {
+  await db
+    .update(workspaceUsers)
+    .set({ welcomedAt: at })
+    .where(and(eq(workspaceUsers.workspaceId, workspaceId), eq(workspaceUsers.id, userId)));
+}
+
+/**
+ * The players an Approve welcomed since `since`, through the user's approved link: the daily welcome post
+ * leaves them out, so nobody is welcomed twice.
+ */
+export async function welcomedUids(db: Db, workspaceId: number, since: Date): Promise<number[]> {
+  const rows = await db
+    .select({ uid: sql<number>`${workspaceUsers.playerUid}`.mapWith(Number) })
+    .from(workspaceUsers)
+    .where(
+      and(
+        eq(workspaceUsers.workspaceId, workspaceId),
+        eq(workspaceUsers.playerLink, "approved"),
+        gt(workspaceUsers.welcomedAt, since),
+      ),
+    );
+  return rows.map((r) => r.uid);
+}
+
 /** INVARIANT join-requests.expire: deletes every workspace's requests made at or before `since`. */
 export async function purgeOldJoinRequests(db: Db, since: Date): Promise<number> {
   const done = await db.delete(j).where(lte(j.createdAt, since)).returning({ id: j.id });

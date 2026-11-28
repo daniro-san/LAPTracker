@@ -7,8 +7,9 @@
 - **`POST /api/w/[slug]/join-requests`** (`lib/private/join-requests.ts`): officers only (`requireWorkspace`), same origin, strict zod body. Approve upserts the Discord user's `workspace_users` row (`joinUser`; a row grants no access) and sets an approved link through `setLink` (D142's flow: other pending claims of that player go; `409 taken` when someone else holds it). It then deletes the request, gives the member role (`PUT /guilds/{g}/members/{u}/roles/{r}` with the bot token), and posts the welcome (D159 post 3) for that one member when the owner allows it and officers turned it on. The answer carries codes only. Decline deletes the request and posts nothing. Both count as `ws_action` `join_request` (tracking plan updated).
 - **Alliance settings → Discord → Member role** (`_ui/DiscordMemberRole.tsx`, `lib/private/discord-member-role.ts`): "Choose a role" reads the server's roles and the bot's own member with the bot token and offers only roles below the bot's highest, without @everyone and managed roles. "Check and save" reads them again and stores only a role still in that list (422 `not_below` otherwise). Remove clears it. These are actions `roles`, `member_role` and `remove_member_role` on `/api/w/[slug]/discord`, limited to 10 per 15 minutes per workspace.
 - `BOT_PERMISSIONS` gains Manage Roles: `309506083840`. The bot step's lead line says the bot gives the member role.
+- Double welcome: when an Approve posts the welcome it sets `workspace_users.welcomed_at`. For 7 days the daily welcome (`joinersOf` in `lib/private/catalog-posts.ts`) leaves out the player of that approved link. Test in `lib/private/catalog-posts-welcome.test.ts`.
 - Expiry: a request older than 7 days is neither listed nor answered; the daily tick deletes it (`purgeOldJoinRequests` in `lib/tick.ts`).
-- Migration `drizzle/0092_join_requests.sql` (from `pnpm db:generate`): table `join_requests`, columns `workspace_discord.member_role_id` and `member_role_name`. `join_requests` is in D125's list (`lib/repo/workspace-data.ts`, not downloaded).
+- Migration `drizzle/0093_join_requests.sql` (from `pnpm db:generate`, renumbered after dev's `0092_raid_opponent`; no hand-added statements): table `join_requests`, columns `workspace_discord.member_role_id`, `member_role_name` and `workspace_users.welcomed_at`. `join_requests` is in D125's list (`lib/repo/workspace-data.ts`, not downloaded).
 - Words: `lib/private/dictionary.join.ts` (EN, PT-BR, FR), spread into the settings dictionaries.
 - Tests:
   - `lib/private/discord-join.test.ts`: a signed `/join` records the request and gives the note; an unsigned one records nothing; the 4th in an hour is refused; the tick purges a request older than 7 days.
@@ -32,10 +33,11 @@
 - `pnpm vitest related --run` on all changed files: 272 files ran. Eight failures were the expected list checks (command set, D125 tables, tracking plan, officer-route fixtures). After fixing them, the failed files and 33 seed-related files pass.
 - `pnpm typecheck`: passed.
 - `pnpm check`: passed on the second run (422 test files and 2,316 tests passed, 2 files skipped; drift and i18n checks clean). The first run stopped at a type error in the settings route's role-action narrowing, which is fixed.
+- After the rebase onto dev (migration renumbered to 0093) and the double-welcome guard: `pnpm vitest related --run` covered the whole suite (426 files, 2,338 tests passed). `pnpm check` passed on its second run; the first stopped at an import-order lint error, which is fixed.
 - No real Discord or upstream call was made: every test stubs `fetch`.
 
 ## Open issues
-- **Double welcome:** a member approved here gets the welcome at once. The daily welcome also names everyone new in the roster against the day before, so a player who joined in the game that same day may be named twice.
+- **Double welcome, reverse order:** the daily welcome skips a member an Approve already welcomed. Usually, though, the daily welcome comes first: Approve needs the player in the newest roster, and that roster comes from the end-of-day read the welcome follows. A member the daily welcome already named is welcomed again by a later Approve. Fix: skip the Approve's welcome when the player was new in a roster whose welcome `post_runs` row is `posted`.
 - Home's "To review" count does not include join requests. Officers learn of them from the leaders' channel note and the Requests view.
 - A server that added the bot before this release has no Manage Roles until an officer taps "Add LAPTracker to Discord" again. Until then, Approve says the role was not given.
 - `/join` replies are in the sender's language. The command's name stays `join` in every language; only its descriptions are localized.
@@ -46,8 +48,8 @@
   2. Each alliance: tap "Add LAPTracker to Discord" again to grant Manage Roles. In Discord, under Server Settings → Roles, put the LAPTracker role above the member role. Then choose the member role in Alliance settings → Discord.
   3. Update the new-alliance guide artifact with the Member role step and `/join`.
 - Follow-up: count open join requests in Home's "To review".
-- Follow-up: skip the daily welcome for a member already welcomed by an Approve that day.
+- Follow-up: skip the Approve's welcome for a member the daily welcome already named (see Open issues).
 
-What was missing from the task prompt? Whether `/join` should be on by default for new alliances, and whether the daily welcome should skip a member already welcomed by an Approve.
+What was missing from the task prompt? Whether `/join` should be on by default for new alliances, and which of the two welcomes should give way when both would name the same member.
 
 PR: (added by the orchestrator)

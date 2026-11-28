@@ -148,7 +148,12 @@ describe("POST /api/w/[slug]/join-requests (issue 868)", () => {
       .select()
       .from(workspaceUsers)
       .where(eq(workspaceUsers.discordUserId, JOINER));
-    expect(linked).toMatchObject({ workspaceId: alpha, playerUid: UID, playerLink: "approved" });
+    expect(linked).toMatchObject({
+      workspaceId: alpha,
+      playerUid: UID,
+      playerLink: "approved",
+      welcomedAt: T0,
+    });
     expect(await db.select().from(joinRequests)).toEqual([]);
     const put = calls.find((c) => c.method === "PUT");
     expect(put).toMatchObject({

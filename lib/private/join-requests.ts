@@ -14,6 +14,7 @@ import {
   findJoinRequest,
   joinSince,
   joinUser,
+  markWelcomed,
   openJoinRequests,
 } from "../repo/join-requests";
 import { setLink } from "../repo/player-links";
@@ -164,5 +165,7 @@ export async function answerJoinRequest(
     return { ok: false, code: "taken" };
   await deleteJoinRequest(db, access.workspaceId, request.id);
   const given = await role(db, access, deps, request.discordUserId);
-  return { ok: true, role: given, welcome: await welcome(db, access, deps, player.name) };
+  const welcomed = await welcome(db, access, deps, player.name);
+  if (welcomed === "posted") await markWelcomed(db, access.workspaceId, userId, now);
+  return { ok: true, role: given, welcome: welcomed };
 }
