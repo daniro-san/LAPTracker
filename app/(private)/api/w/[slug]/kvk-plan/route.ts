@@ -4,6 +4,8 @@
 //     another officer saved first, 400 invalid when a role names someone not on the newest roster.
 //   {action: "message", entry, week, requestId}: a new notice draft from the saved plan, in the officer's
 //     language, once per request id (D100); answers its id for the notice editor.
+//   {action: "answer", entry, role, uid, answer}: Confirm (the uid goes into the role, a new rev; 409 stale
+//     when the plan changed meanwhile) or Decline a member's "I'm in" (issue 831); 404 when no such ask.
 // The lib calls run in `privately`, so an error leaves as a code; nothing about members is logged.
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
@@ -17,6 +19,7 @@ import {
   privateError,
   requestCookies,
 } from "@/lib/private/http";
+import { answerKvkClaim } from "@/lib/private/kvk-claims";
 import { kvkPlanInput, makeKvkMessage, saveKvkPlan } from "@/lib/private/kvk-plan";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
@@ -44,6 +47,13 @@ export async function POST(
       if (!saved.ok) return privateError(STATUS[saved.code], saved.code);
       const body = Response.json({ ok: true, rev: saved.rev }, { headers: NO_STORE });
       return withActionEvent(ctx, access, "kvk_plan", "save", body);
+    }
+    if (input.action === "answer") {
+      const done = await privately("kvk_plan.answer", () => answerKvkClaim(db, access, input, now));
+      if (!done.ok) return privateError(STATUS[done.code], done.code);
+      const body = Response.json({ ok: true, rev: done.rev }, { headers: NO_STORE });
+      const action = input.answer === "confirm" ? "approve" : "decline";
+      return withActionEvent(ctx, access, "kvk_plan", action, body);
     }
     const language = pickWorkspaceLanguage(
       jar.get(WORKSPACE_LANG_COOKIE)?.value,

@@ -5,7 +5,9 @@
 // searchable by name. A note, then Save and "Make the message". Save names the version it started from (a
 // 409 says another officer saved first). "Make the message" builds from the saved plan only, so it is off
 // while there are unsaved changes; one request id per message (D100), so a double tap makes one notice.
-// Roles are jobs, never a ranking (D75): no numbers, people in name order.
+// Roles are jobs, never a ranking (D75): no numbers, people in name order. Issue 831: under a role's people,
+// the members who said "I'm in" from their own page, "(asked)", each with Confirm (into the role, saved at
+// once) and Decline; off while the plan has unsaved changes, so an answer never drops an officer's edits.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -18,12 +20,13 @@ import { searchRoster } from "@/lib/private/roster-search";
 import { fill } from "@/lib/words";
 
 import { Labeled, TextInput } from "./CalendarFields";
+import { Asks, type Ask, type Reply } from "./KvkPlanAsks";
 import { newRequestId } from "./request-id";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 type Member = { uid: number; name: string; away: boolean };
 type Role = { key: number; name: string; uids: number[] };
-type State = "idle" | "saving" | "saved" | "making";
+type State = "idle" | "saving" | "saved" | "making" | "answering";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
@@ -38,6 +41,9 @@ function RoleCard(props: {
   onChange: (role: Role) => void;
   onRemove: () => void;
   onPick: () => void;
+  asks: Ask[];
+  dirty: boolean;
+  onAnswer: ((role: string, uid: number, reply: Reply) => void) | null;
 }) {
   const { role, words } = props;
   const id = `kvk-role-${role.key}`;
@@ -75,6 +81,13 @@ function RoleCard(props: {
           })}
         </ul>
       )}
+      <Asks
+        role={role.name}
+        asks={props.asks}
+        words={words}
+        dirty={props.dirty}
+        onAnswer={props.onAnswer}
+      />
       <p className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
         <button type="button" className={buttonClass("secondary")} onClick={props.onPick}>
           {words["kvkPlan.add"]}
@@ -193,6 +206,8 @@ type Props = {
   rev: number;
   members: Member[];
   noticeId: number | null;
+  /** Members' "I'm in" not answered yet (issue 831), by the role's saved name. */
+  asks: Ask[];
   words: KvkPlanWords;
   sheet: SheetWords;
 };
@@ -238,6 +253,21 @@ function usePlan(props: Props) {
     setState("idle");
     setError(json?.code === SIGNED_OUT ? SIGNED_OUT : words["kvkPlan.makeFailed"]);
   }
+  /** Confirm or Decline one ask; the page is read again (a Confirm's new rev remounts the editor). */
+  async function answer(role: string, uid: number, reply: Reply) {
+    setState("answering");
+    setError(null);
+    const body = { action: "answer", entry: props.entry, role, uid, answer: reply };
+    const { ok, json } = await postPlan(props.slug, body);
+    setState("idle");
+    if (ok) return router.refresh();
+    const code = json?.code ?? "failed";
+    setError(
+      code === SIGNED_OUT
+        ? SIGNED_OUT
+        : words[code === "stale" ? "kvkPlan.stale" : "kvkPlan.answerFailed"],
+    );
+  }
   const editRoles = (change: Role[]) => {
     setRoles(change);
     changed();
@@ -246,7 +276,7 @@ function usePlan(props: Props) {
     setNote(value);
     changed();
   };
-  return { roles, note, dirty, saved, state, error, editRoles, editNote, save, make };
+  return { roles, note, dirty, saved, state, error, editRoles, editNote, save, make, answer };
 }
 
 function PlanActions(props: {
@@ -257,7 +287,7 @@ function PlanActions(props: {
   words: KvkPlanWords;
 }) {
   const { plan, words } = props;
-  const busy = plan.state === "saving" || plan.state === "making";
+  const busy = plan.state !== "idle" && plan.state !== "saved";
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-rule pt-3">
       <button
@@ -303,6 +333,7 @@ export function KvkPlanEditor(props: Props) {
   const [picking, setPicking] = useState<number | null>(null);
   const set = (role: Role) => plan.editRoles(roles.map((r) => (r.key === role.key ? role : r)));
   const pickRole = roles.find((r) => r.key === picking);
+  const free = !plan.dirty && (plan.state === "idle" || plan.state === "saved");
   return (
     <>
       {!plan.saved && <p className="mt-4 text-body-sm">{words["kvkPlan.suggested"]}</p>}
@@ -316,6 +347,9 @@ export function KvkPlanEditor(props: Props) {
             onChange={set}
             onRemove={() => plan.editRoles(roles.filter((r) => r.key !== role.key))}
             onPick={() => setPicking(role.key)}
+            asks={props.asks.filter((a) => a.role === role.name)}
+            dirty={plan.dirty}
+            onAnswer={free ? (...a) => void plan.answer(...a) : null}
           />
         ))}
       </ul>

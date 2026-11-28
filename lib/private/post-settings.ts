@@ -89,6 +89,15 @@ const windowEnd = (post: CatalogPost, cfg: ScheduleConfig, weekday: number | nul
     ? "00:00"
     : sendBy(cfg, sampleDay(weekday ?? 0), fromOf(post, cfg));
 
+/**
+ * The starts a post sent before the KvK can be reminded of in full (issue 831): from the Before read plus
+ * its largest mark (its first tick opens the database at the Before, D160) to the End read.
+ */
+function marksWindow(cfg: ScheduleConfig, marks: readonly number[]) {
+  const [h = 0, m = 0] = cfg.SNAPSHOT_BEFORE.split(":").map(Number);
+  return { from: hhmm(h * 60 + m + Math.max(...marks)), to: cfg.SNAPSHOT_AFTER };
+}
+
 /** The card's rows: the catalog posts the owner allows, as saved (off by default); null when none is. */
 export async function postsView(
   db: Db,
@@ -112,7 +121,9 @@ export async function postsView(
     const entry = POST_CATALOG[post];
     const row = saved.get(post);
     const weekday = row?.weekday ?? weekdayOf(post, cfg);
-    const from = fromOf(post, cfg);
+    const window = entry.marks
+      ? marksWindow(cfg, entry.marks)
+      : { from: fromOf(post, cfg), to: windowEnd(post, cfg, weekday) };
     return {
       post,
       on: row?.on ?? false,
@@ -127,8 +138,7 @@ export async function postsView(
       ) as Record<WorkspaceLanguage, string>,
       channels: entry.channels.map((c) => ({ channel: c, name: nameOf(c) })),
       day: dayName(weekday),
-      from,
-      to: windowEnd(post, cfg, weekday),
+      ...window,
     };
   });
 }

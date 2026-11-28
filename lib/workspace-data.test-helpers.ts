@@ -11,6 +11,7 @@ import {
   dailyReads,
   dailyRosters,
   garrisonPlans,
+  kvkClaims,
   kvkPlans,
   memberFacts,
   memberSelfReports,
@@ -98,7 +99,7 @@ export async function seedWorkspace(db: Db, slug: string, unionId: number) {
   return { workspaceId, unionId, officer };
 }
 
-/** A KvK entry and its plan (D161). */
+/** A KvK entry, its plan (D161) and a member's ask for a role (issue 831). */
 async function seedKvkPlan(db: Db, ws: number, by: { createdBy: number; createdAt: Date }) {
   const kvk = id(
     await db
@@ -108,6 +109,8 @@ async function seedKvkPlan(db: Db, ws: number, by: { createdBy: number; createdA
   );
   const roles = [{ name: "Scout", uids: [101] }];
   await db.insert(kvkPlans).values({ workspaceId: ws, entryId: kvk, roles, rev: 1 });
+  const asked = { workspaceId: ws, entryId: kvk, role: "Scout", uid: 102, askedAt: by.createdAt };
+  await db.insert(kvkClaims).values(asked);
 }
 
 /** A row in every table the workspace owns (the squads rows need `seedRoster`'s daily read first). */

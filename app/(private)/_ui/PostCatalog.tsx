@@ -102,9 +102,12 @@ function nextPost(row: PostView, v: Values, t: WorkspaceDictionary) {
     return { text: fill(t["posts.noChannel"], { channel }), warn: true };
   }
   const when = { day: row.day ?? "", from: row.from, to: row.to, channel: target.name };
-  // The KvK recap goes only on a KvK's day: "After each KvK (Saturday), …", never "Every Saturday".
-  const key =
-    POST_CATALOG[row.post].weekday === "event"
+  // The KvK recap goes only on a KvK's day: "After each KvK (Saturday), …", never "Every Saturday". The
+  // KvK reminder goes before the KvK's start, when that start is in the event's window.
+  const entry = POST_CATALOG[row.post];
+  const key = entry.marks
+    ? "posts.whenKvkSoon"
+    : entry.weekday === "event"
       ? "posts.whenKvk"
       : row.day === null
         ? "posts.whenDaily"

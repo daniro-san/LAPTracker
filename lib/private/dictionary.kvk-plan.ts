@@ -45,6 +45,25 @@ export const kvkPlanEn = {
   "kvkPlan.message.title": "KvK plan · {day}",
   "kvkPlan.message.head": "KvK · {day} · {time}",
   "kvkPlan.message.role": "{role}: {names}",
+  // Issue 831: the members' "I'm in" on the desk, and the "KvK roles" card on a member's own page.
+  "kvkPlan.asked": "{name} (asked)",
+  "kvkPlan.confirm": "Confirm",
+  "kvkPlan.decline": "Decline",
+  "kvkPlan.confirmOf": "Confirm {name} for {role}",
+  "kvkPlan.declineOf": "Decline {name} for {role}",
+  "kvkPlan.answerSaveFirst": "Save the plan before you answer the members who asked.",
+  "kvkPlan.answerFailed": "Couldn’t answer. Reload the page and try again.",
+  "meKvk.head": "KvK roles",
+  "meKvk.lead":
+    "Say which job you can take for the next KvK. An officer confirms it. Roles are jobs, not ranks.",
+  "meKvk.nobody": "No one confirmed yet.",
+  "meKvk.ask": "I’m in",
+  "meKvk.askOf": "I’m in for {role}",
+  "meKvk.asked": "You asked. An officer will confirm.",
+  "meKvk.withdraw": "Withdraw",
+  "meKvk.withdrawOf": "Withdraw from {role}",
+  "meKvk.in": "Confirmed: you’re in.",
+  "meKvk.failed": "Couldn’t send. Reload the page and try again.",
 };
 
 export type KvkPlanWords = typeof kvkPlanEn;
@@ -96,6 +115,24 @@ export const kvkPlanPt: KvkPlanWords = {
   "kvkPlan.message.title": "Plano da KvK · {day}",
   "kvkPlan.message.head": "KvK · {day} · {time}",
   "kvkPlan.message.role": "{role}: {names}",
+  "kvkPlan.asked": "{name} (pediu)",
+  "kvkPlan.confirm": "Confirmar",
+  "kvkPlan.decline": "Recusar",
+  "kvkPlan.confirmOf": "Confirmar {name} em {role}",
+  "kvkPlan.declineOf": "Recusar {name} em {role}",
+  "kvkPlan.answerSaveFirst": "Salve o plano antes de responder aos membros que pediram.",
+  "kvkPlan.answerFailed": "Não deu para responder. Recarregue a página e tente de novo.",
+  "meKvk.head": "Funções na KvK",
+  "meKvk.lead":
+    "Diga que tarefa você pode assumir na próxima KvK. Um oficial confirma. Funções são tarefas, não postos.",
+  "meKvk.nobody": "Ninguém confirmado ainda.",
+  "meKvk.ask": "Estou dentro",
+  "meKvk.askOf": "Estou dentro em {role}",
+  "meKvk.asked": "Você pediu. Um oficial vai confirmar.",
+  "meKvk.withdraw": "Desistir",
+  "meKvk.withdrawOf": "Desistir de {role}",
+  "meKvk.in": "Confirmado: você está dentro.",
+  "meKvk.failed": "Não deu para enviar. Recarregue a página e tente de novo.",
 };
 
 export const kvkPlanFr: KvkPlanWords = {
@@ -146,4 +183,22 @@ export const kvkPlanFr: KvkPlanWords = {
   "kvkPlan.message.title": "Plan de la KvK · {day}",
   "kvkPlan.message.head": "KvK · {day} · {time}",
   "kvkPlan.message.role": "{role} : {names}",
+  "kvkPlan.asked": "{name} (a demandé)",
+  "kvkPlan.confirm": "Confirmer",
+  "kvkPlan.decline": "Refuser",
+  "kvkPlan.confirmOf": "Confirmer {name} pour {role}",
+  "kvkPlan.declineOf": "Refuser {name} pour {role}",
+  "kvkPlan.answerSaveFirst": "Enregistrez le plan avant de répondre aux membres qui ont demandé.",
+  "kvkPlan.answerFailed": "Impossible de répondre. Rechargez la page et réessayez.",
+  "meKvk.head": "Rôles de KvK",
+  "meKvk.lead":
+    "Dites quelle tâche vous pouvez prendre pour la prochaine KvK. Un officier la confirme. Les rôles sont des tâches, pas des rangs.",
+  "meKvk.nobody": "Personne de confirmé pour l’instant.",
+  "meKvk.ask": "J’en suis",
+  "meKvk.askOf": "J’en suis pour {role}",
+  "meKvk.asked": "Vous avez demandé. Un officier va confirmer.",
+  "meKvk.withdraw": "Retirer ma demande",
+  "meKvk.withdrawOf": "Retirer ma demande pour {role}",
+  "meKvk.in": "Confirmé : vous en êtes.",
+  "meKvk.failed": "Impossible d’envoyer. Rechargez la page et réessayez.",
 };

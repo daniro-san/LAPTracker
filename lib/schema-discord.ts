@@ -69,7 +69,14 @@ export const workspaceWebhooks = pgTable(
 );
 
 /** The catalog's optional posts (#713 part C, D159), in build order; lib/post-catalog.ts describes each. */
-export const CATALOG_POSTS = ["week", "shield_up", "welcome", "summary", "kvk"] as const;
+export const CATALOG_POSTS = [
+  "week",
+  "shield_up",
+  "welcome",
+  "summary",
+  "kvk",
+  "kvk_soon",
+] as const;
 export type CatalogPost = (typeof CATALOG_POSTS)[number];
 
 /** The posts an alliance may put its own line on (#713, D156), the catalog's posts included (D159). */
@@ -96,7 +103,7 @@ export const workspacePostTouches = pgTable(
     primaryKey({ columns: [t.workspaceId, t.postKey] }),
     check(
       "workspace_post_touches_post_key_check",
-      sql`${t.postKey} in ('shield', 'thanks', 'garrison', 'week', 'shield_up', 'welcome', 'summary', 'kvk')`,
+      sql`${t.postKey} in ('shield', 'thanks', 'garrison', 'week', 'shield_up', 'welcome', 'summary', 'kvk', 'kvk_soon')`,
     ),
   ],
 );
@@ -132,7 +139,7 @@ export const workspacePosts = pgTable(
     primaryKey({ columns: [t.workspaceId, t.postKey] }),
     check(
       "workspace_posts_post_key_check",
-      sql`${t.postKey} in ('week', 'shield_up', 'welcome', 'summary', 'kvk')`,
+      sql`${t.postKey} in ('week', 'shield_up', 'welcome', 'summary', 'kvk', 'kvk_soon')`,
     ),
     check("workspace_posts_channel_check", sql`${t.channel} in ('members', 'leaders')`),
     check("workspace_posts_weekday_check", sql`${t.weekday} between 0 and 6`),
@@ -142,7 +149,8 @@ export const workspacePosts = pgTable(
 
 /**
  * One catalog post's send for one period (D159): the claim that makes it go out at most once per workspace,
- * post and period (a server day, "2026-11-23"), however many ticks overlap. `sent`: the messages Discord
+ * post and period (a server day, "2026-11-23"; the KvK reminder's two marks, "2026-11-28 T-60" and
+ * "2026-11-28 T-15", D161), however many ticks overlap. `sent`: the messages Discord
  * took. A send Discord refused (`failed`) before any message went through is claimed again by a later tick of
  * the same period, up to 3 attempts; one Discord never answered (`unanswered`: a timeout, so it may have
  * posted) never is. A week with no entry for members is `skipped`, so later ticks read nothing more for

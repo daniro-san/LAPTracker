@@ -11,6 +11,7 @@ import {
   calendarEntries,
   calendarOccurrences,
   garrisonPlans,
+  kvkClaims,
   kvkPlans,
   memberFacts,
   memberSelfReports,
@@ -97,6 +98,8 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "calendar-weeks", table: calendarOccurrences, scope: "workspace" },
   { file: "garrison-plans", table: garrisonPlans, scope: "workspace" },
   { file: "kvk-plans", table: kvkPlans, scope: "workspace" },
+  // Issue 831: the members' "I'm in" for a KvK role, not answered yet.
+  { file: "kvk-claims", table: kvkClaims, scope: "workspace" },
   { file: "notices", table: notices, scope: "workspace" },
   { file: "notice-texts", table: noticeEdits, scope: "workspace" },
   { file: "notice-posts", table: noticePublishes, scope: "workspace" },

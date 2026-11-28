@@ -34,7 +34,8 @@ type Fixture = { body?: unknown; query?: string; picture?: true; officer?: false
  * session of either tier (D105). me: a member's own "This is me" (D142), behind the board's door
  * (requireBoard), tested in me/route.test.ts; me/facts: a member tells their officers their own facts
  * (D154), behind the same door and an approved link, tested in me/facts/route.test.ts; me/away: the same member's own days away (issue 829),
- * tested in me/away/route.test.ts; feedback: "Send
+ * tested in me/away/route.test.ts; me/kvk: the same member's "I'm in" for a KvK role (issue 831), tested in
+ * me/kvk/route.test.ts; feedback: "Send
  * feedback" (D157), which members send from the board behind its door (requireBoard) and officers from the
  * desk behind requireWorkspace, tested in feedback/route.test.ts. The board and how-to
  * are pages, not API routes: the board
@@ -46,6 +47,7 @@ const EXCLUDED = new Set([
   "me/route.ts",
   "me/facts/route.ts",
   "me/away/route.ts",
+  "me/kvk/route.ts",
   "feedback/route.ts",
 ]);
 

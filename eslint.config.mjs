@@ -163,7 +163,8 @@ export default defineConfig(
     // D159, the second exception: the tick's catalog posts are made and sent by one lib/private module, which
     // reads the calendar entries members can see, for the welcome the joiners' public names, and for the
     // weekly summary the rosters' uids, counted, and for the KvK recap the event's kills with the top 3's
-    // public names; never a private roster field.
+    // public names, and for the KvK reminder the confirmed people of the KvK plan by public name; never a
+    // private roster field.
     files: ["lib/posts-tick.ts"],
     rules: {
       "import-x/no-restricted-paths": restrict([

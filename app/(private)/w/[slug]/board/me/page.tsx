@@ -14,9 +14,12 @@ import { dayIn } from "@/lib/calendar-time";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { meAccess, requireBoard, type CookieReader } from "@/lib/private/access";
+import { calendarDates, stOf } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { kvkPlanEn, type KvkPlanWords } from "@/lib/private/dictionary.kvk-plan";
 import { selfReportWords } from "@/lib/private/dictionary.self-report";
 import { featureOn } from "@/lib/private/features";
+import { meKvkView, type MeKvkView } from "@/lib/private/kvk-claims";
 import { meView, type MeView } from "@/lib/private/me";
 import { linkedName, linkPicker, type LinkPicker } from "@/lib/private/me-link";
 import { cardFormats } from "@/lib/private/member-card";
@@ -32,10 +35,12 @@ import { fill } from "@/lib/words";
 
 import { BoardAccount } from "../../../../_ui/BoardAccount";
 import { LINK } from "../../../../_ui/BoardSections";
+import { calendarWords } from "../../../../_ui/calendar-data";
 import { editorWords } from "../../../../_ui/facts-form";
 import { Feedback } from "../../../../_ui/Feedback";
 import { Frame, workspaceWords } from "../../../../_ui/Frame";
 import { MeAway } from "../../../../_ui/MeAway";
+import { MeKvk } from "../../../../_ui/MeKvk";
 import { MeLink } from "../../../../_ui/MeLink";
 import { MeNeeded, MeProgress, MeSquads, MeWeek } from "../../../../_ui/MeSections";
 import { MeSelfReport } from "../../../../_ui/MeSelfReport";
@@ -46,7 +51,14 @@ export const metadata: Metadata = { title: "Your page" };
 type Shown =
   | { kind: "pick"; picker: LinkPicker }
   | { kind: "pending"; name: string | null }
-  | { kind: "me"; view: MeView; reports: OwnReports; away: OwnAway | null };
+  | {
+      kind: "me";
+      view: MeView;
+      reports: OwnReports;
+      away: OwnAway | null;
+      /** Issue 831: the next KvK's roles, while Notices (the plan's switch, D126) is on. */
+      kvk: MeKvkView | null;
+    };
 
 /** INVARIANT workspace.access-first: nothing private is read before the access check. */
 function readMe(
@@ -71,7 +83,8 @@ function readMe(
             meView(db, me, at),
             ownReport(db, board, me),
             ownAwayDays(db, board, me, dayIn(at.zone, at.now.getTime())),
-          ]).then(([view, reports, away]) => ({ view, reports, away }))),
+            featureOn(board, "notices") ? meKvkView(db, me, at.now, at.zone) : null,
+          ]).then(([view, reports, away, kvk]) => ({ view, reports, away, kvk }))),
         }
       : board.player
         ? { kind: "pending", name: await linkedName(db, board) }
@@ -79,6 +92,12 @@ function readMe(
     return { board, shown };
   });
 }
+
+/** The KvK plan's words only, for the client card. */
+const kvkWords = (t: WorkspaceDictionary) =>
+  Object.fromEntries(
+    Object.keys(kvkPlanEn).map((k) => [k, t[k as keyof KvkPlanWords]]),
+  ) as KvkPlanWords;
 
 /** The saved days as dates in the member's language, for the saved line. */
 const awayShown = (away: OwnAway | null, date: (day: string) => string) =>
@@ -93,6 +112,41 @@ const sentDays = (reports: OwnReports, date: (at: Date) => string) =>
     }),
   ) as Record<(typeof REPORT_FIELDS)[number], string | null>;
 
+type Link = { slug: string; t: WorkspaceDictionary; language: WorkspaceLanguage };
+
+/** "This is me": the member picks their player (D87). */
+function PickLink({ picker, ...link }: Link & { picker: LinkPicker }) {
+  const { t } = link;
+  return (
+    <section aria-labelledby="me-link" className="drawn-card mt-4 max-w-(--form-max) px-4 py-4">
+      <h2 id="me-link" className="font-subhead text-display-sm">
+        {t["me.link.head"]}
+      </h2>
+      <p className="mt-1 text-body-sm">{t["me.link.lead"]}</p>
+      {picker.roster.length === 0 ? (
+        <p className="mt-2">{t["me.link.noRoster"]}</p>
+      ) : (
+        <MeLink {...link} state={{ kind: "pick", picker }} />
+      )}
+    </section>
+  );
+}
+
+/** Issue 831: the next KvK's roles, its time in ST and in the member's own. */
+function KvkCard({ kvk, slug, t, language }: Link & { kvk: MeKvkView | null }) {
+  if (!kvk) return null;
+  return (
+    <MeKvk
+      slug={slug}
+      view={kvk}
+      day={calendarDates(language).long(kvk.day)}
+      st={stOf("kvk", kvk.minute, t)}
+      words={kvkWords(t)}
+      calendar={calendarWords(t)}
+    />
+  );
+}
+
 function Body(props: {
   shown: Shown;
   slug: string;
@@ -103,20 +157,7 @@ function Body(props: {
 }) {
   const { shown, slug, t, language } = props;
   const link = { slug, t, language };
-  if (shown.kind === "pick")
-    return (
-      <section aria-labelledby="me-link" className="drawn-card mt-4 max-w-(--form-max) px-4 py-4">
-        <h2 id="me-link" className="font-subhead text-display-sm">
-          {t["me.link.head"]}
-        </h2>
-        <p className="mt-1 text-body-sm">{t["me.link.lead"]}</p>
-        {shown.picker.roster.length === 0 ? (
-          <p className="mt-2">{t["me.link.noRoster"]}</p>
-        ) : (
-          <MeLink {...link} state={{ kind: "pick", picker: shown.picker }} />
-        )}
-      </section>
-    );
+  if (shown.kind === "pick") return <PickLink {...link} picker={shown.picker} />;
   if (shown.kind === "pending")
     return (
       <section className="drawn-card mt-4 max-w-(--form-max) px-4 py-4">
@@ -124,7 +165,7 @@ function Body(props: {
         <MeLink {...link} state={{ kind: "pending" }} />
       </section>
     );
-  const { view, reports, away } = shown;
+  const { view, reports, away, kvk } = shown;
   if (view.left)
     return (
       <section className="drawn-card mt-4 max-w-(--form-max) px-4 py-4">
@@ -156,6 +197,7 @@ function Body(props: {
             shown={awayShown(away, f.date)}
             today={dayIn(zone, new Date().getTime())}
           />
+          <KvkCard {...link} kvk={kvk} />
           <MeProgress view={view} t={t} language={language} f={f} />
           <MeWeek view={view} t={t} />
           <MeSquads view={view} />
