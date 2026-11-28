@@ -1,7 +1,8 @@
 // Insights → KvK's map (issues 791, 817), server-rendered: the own alliance's members where the newest KvK's
 // End reading saw them, as a hand-built inline SVG scene (D68, D158): one drawn house a member with its name
 // in HTML under it, the castle drawn at the officers' castle point, a light ring round a member whose newest
-// shield reading before that KvK saw a shield and a dashed ring with "no reading" when there is none (D75).
+// shield reading before that KvK saw a shield and a dashed ring when there is none (D75); the legend and the
+// readout say "no reading", and each name on the map is the name only, on a paper-coloured halo.
 // A tap on a house or a name, or the 44 px ‹ › steps in name order, names its member in the readout under the
 // plot, with its kills band and shield (D158 rule 7 (a), D163). The plot and its names are aria-hidden (the
 // readout and the "Who" lists say the same); the plot, the readout and the names are ph-no-capture. Both
@@ -30,8 +31,8 @@ import { Caret } from "./InsightsSets";
 import { KvkCastleForm } from "./KvkCastleForm";
 
 const MAP_CARD = "insights-kvk-map";
-/** The plot's inner margin, in viewBox units of 100: room for a two-line name beside a house at the edge. */
-const PAD = 16;
+/** The plot's inner margin, in viewBox units of 100: room for a name beside a house at the edge. */
+const PAD = 12;
 /** The smallest span drawn, in map squares, so a tight cluster is not blown up past what it is. */
 const MIN_SPAN = 20;
 /** Glyph sizes in plot units (of 100): a house, its shield ring, the castle. */
@@ -76,9 +77,8 @@ function labelsOf(dots: KvkMapDot[], points: Point[], castle: Point | null): Box
   for (const i of order) {
     const d = dots[i] as KvkMapDot;
     const { cx, cy } = points[i] as Point;
-    const h = (d.shield === "unknown" ? 2 : 1) * LINE;
-    const letters = Math.max(d.name.length, d.shield === "unknown" ? 10 : 0);
-    const w = Math.min(NAME_MAX, letters * LETTER + 2);
+    const h = LINE;
+    const w = Math.min(NAME_MAX, d.name.length * LETTER + 2);
     const tries: Box[] = [
       { x: cx - w / 2, y: cy + r, w, h },
       { x: cx - w / 2, y: cy - r - h, w, h },
@@ -157,7 +157,7 @@ function markWords(map: KvkMap, t: WorkspaceDictionary, language: string): Recor
  * The scene: houses, rings and the castle in the SVG, each member's name in HTML under its house (D68). A
  * house and its name carry `data-at` (its index in name order), the tap target the readout picks up.
  */
-function Plot({ map, noReading }: { map: KvkMap; noReading: string }) {
+function Plot({ map }: { map: KvkMap }) {
   const { at } = frameOf(map);
   const castle = map.castle ? at(map.castle.x, map.castle.y) : null;
   const points = map.dots.map((d) => at(d.x, d.y));
@@ -193,11 +193,10 @@ function Plot({ map, noReading }: { map: KvkMap; noReading: string }) {
           <span
             key={i}
             data-at={i}
-            className="absolute cursor-pointer truncate rounded-sm bg-paper/75 px-0.5 text-center text-xs leading-tight aria-[current=true]:font-semibold"
+            className="absolute cursor-pointer truncate px-0.5 text-center [text-shadow:0_0_2px_var(--color-paper),0_0_2px_var(--color-paper),0_0_3px_var(--color-paper)] text-xs leading-tight aria-[current=true]:font-semibold"
             style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%` }}
           >
             <bdi translate="no">{d.name}</bdi>
-            {d.shield === "unknown" && <span className="block text-ink/80">{noReading}</span>}
           </span>
         );
       })}
@@ -409,7 +408,7 @@ export function KvkMapCard(props: {
           initial={0}
           words={{ earlier: t["insights.map.prev"], later: t["insights.map.next"] }}
         >
-          <Plot map={map} noReading={t["insights.map.shield.none"]} />
+          <Plot map={map} />
         </Readout>
         <figcaption className="mt-1 text-body-sm font-medium">
           {fill(t["insights.map.caption"], { time })}

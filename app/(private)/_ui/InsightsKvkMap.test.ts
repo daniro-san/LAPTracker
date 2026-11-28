@@ -1,5 +1,5 @@
 // Insights → KvK's map (issues 791, 817, D163): one drawn house a member with its name under it, a shield ring
-// or a dashed "no reading" ring, the two "as of" lines, the readout naming the first member with ‹ › steps by
+// or a dashed ring with "no reading" in the readout (not on the map's name labels), the two "as of" lines, the readout naming the first member with ‹ › steps by
 // name, and each near/mid/far row naming its members; the plot, the readout and the table sit inside
 // ph-no-capture, posthog-js's block class (.claude/rules/private.md). Invented names, places and kills.
 import { createElement } from "react";
@@ -56,9 +56,10 @@ describe("the KvK map card (issue 791, D163)", () => {
     expect(
       [...figure.matchAll(/<span data-at="\d+"[^>]*><bdi[^>]*>([^<]+)/g)].map((m) => m[1]),
     ).toEqual(["Alder", "Birch", "Cedar", "Dawn"]);
-    // Shield seen: the light ring; no reading: the dashed ring and the words, never "unshielded" (D75).
+    // Shield seen: the light ring; no reading: the dashed ring, its words only in the readout and the legend,
+    // never "unshielded" (D75). Each map label is the name only.
     expect(figure.match(/fill-opacity="0.14"/g)).toHaveLength(1);
-    expect(figure.match(/>no reading</g)).toHaveLength(2);
+    expect(figure).not.toMatch(/>no reading</);
     expect(html).not.toMatch(/unshielded/i);
     expect(figure).toMatch(
       /Alder<\/span> · X 470, Y 655 · Kills not known \(not in the Start reading\) · no reading/,
