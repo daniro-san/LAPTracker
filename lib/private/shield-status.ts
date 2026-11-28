@@ -15,10 +15,15 @@ import { dateWords } from "../date-words";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { membersOfRaid, raidPrepUrl } from "../raid-prep-fill";
-import { getShieldCheck, shieldReadings, type ShieldCheckRow } from "../repo/shield-checks";
+import {
+  getShieldCheck,
+  shieldReadings,
+  shieldSettingsOf,
+  type ShieldCheckRow,
+} from "../repo/shield-checks";
 import { getSquadRead } from "../repo/squads";
 import { quotaDayRead } from "../schedule";
-import { kvkStart, passWindows, suggestionOf } from "../shield-check";
+import { kvkStart, passWindows, suggestionOf, timesOf } from "../shield-check";
 import { fill, plural } from "../words";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
@@ -52,7 +57,8 @@ export async function shieldStatus(
   if (!check || now >= kvkStart(day, env)) return null;
   const pass = check.morningStartedAt ? "morning" : check.nightAt ? "night" : null;
   if (!pass) return null;
-  const w = passWindows(day, env)[pass];
+  const times = timesOf(await shieldSettingsOf(db, access.workspaceId));
+  const w = passWindows(day, env, times)[pass];
   const zone = env.SERVER_TZ;
   const [readings, raid, running] = await Promise.all([
     shieldReadings(db, access.unionId, w.from, w.to),

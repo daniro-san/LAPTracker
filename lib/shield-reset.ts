@@ -1,5 +1,6 @@
-// The Raid Shield check's after-reset check (issue 827, D137 2026-11-28b): every Saturday, on the ticks of
-// 02:30 and 02:45 ST, every member of each alliance whose `shield_check` is on (D134) is read once with the
+// The Raid Shield check's after-reset check (issue 827, D137 2026-11-28b): every Saturday, on the two ticks
+// from the alliance's after-reset time (02:30 and 02:45 ST by default; officers move it or turn it off,
+// issue 859), every member of each alliance whose `shield_check` is on (D134) is read once with the
 // checks' call (`readOne`, no `fresh`) on the alliance's own key (D124), from the day's roster. At that hour
 // most maps are from after the 00:00 ST reset (issue 726: 64 % and 56 % in the two probes), so its readings
 // tell Raid prep's "To check by hand" which members a map near the reset vouches for; officers still
@@ -19,10 +20,16 @@ import { createRunLogger } from "./logger";
 import { claimAlert } from "./repo/app-errors";
 import { getDailyRead } from "./repo/daily-reads";
 import { insertRunLog } from "./repo/run-logs";
-import { shieldReadings } from "./repo/shield-checks";
+import { allShieldSettings, shieldReadings } from "./repo/shield-checks";
 import { dayRosterUids, getSquadRead } from "./repo/squads";
 import { quotaDayRead } from "./schedule";
-import { resetReadDue, resetWindow, SHIELD_CALLS_MAX } from "./shield-check";
+import {
+  resetReadDue,
+  resetSpanOpen,
+  resetWindow,
+  SHIELD_CALLS_MAX,
+  timesOf,
+} from "./shield-check";
 import { SQUADS_SAFETY_MARGIN, squadsReserve } from "./squads";
 import { readOne, startQuota, type Batch, type StartDaily } from "./squads-call";
 import { PACE_MS, type SquadsDeps } from "./squads-read";
@@ -44,24 +51,42 @@ const RESET_GAP_MS = 10 * 60_000;
  */
 export async function shieldReset(deps: SquadsDeps, db: Db, deadline: number): Promise<void> {
   const now = deps.now();
-  if (!resetReadDue(now, deps.env)) return;
+  // The clock first: outside Saturday 00:15–10:45 ST no alliance's check can be due.
+  if (!resetSpanOpen(now, deps.env)) return;
+  const [targets, settings] = await Promise.all([
+    squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now, "shield_check"),
+    allShieldSettings(db),
+  ]);
+  // Issue 859: each alliance on its own time; one that turned the check off is never read.
+  const due = targets.flatMap((target) => {
+    const row = target.workspaceId === null ? null : (settings.get(target.workspaceId) ?? null);
+    const minute = timesOf(row).reset;
+    return minute !== null && resetReadDue(now, deps.env, minute) ? [{ target, minute }] : [];
+  });
+  if (due.length === 0) return;
   // One statement, so two overlapping ticks never both win.
   if (!(await claimAlert(db, RESET_ALERT, now, RESET_GAP_MS))) return;
   const day = quotaDayRead(now, deps.env);
-  const targets = await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now, "shield_check");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Math.max(0, deadline - now.getTime()));
   try {
-    for (const target of targets) {
+    for (const { target, minute } of due) {
       if (controller.signal.aborted || deps.now().getTime() >= deadline) return;
-      await readTarget(deps, db, { day, target, signal: controller.signal, deadline });
+      await readTarget(deps, db, { day, target, minute, signal: controller.signal, deadline });
     }
   } finally {
     clearTimeout(timer);
   }
 }
 
-type Run = { day: string; target: SquadTarget; signal: AbortSignal; deadline: number };
+type Run = {
+  day: string;
+  target: SquadTarget;
+  /** The alliance's after-reset time: its readings' window starts there. */
+  minute: number;
+  signal: AbortSignal;
+  deadline: number;
+};
 type Calls = Run & { uids: number[]; reserve: number; quotaCalls: number };
 
 /** One alliance's read and its log line. */
@@ -115,7 +140,7 @@ async function readAlliance(deps: SquadsDeps, db: Db, run: Run) {
     b.stop = "no_roster";
     return { members: roster?.length ?? 0, calls: 0, b };
   }
-  const w = resetWindow(run.day, deps.env);
+  const w = resetWindow(run.day, deps.env, run.minute);
   const done = new Set(
     (await shieldReadings(db, run.target.unionId, w.from, w.to)).map((r) => r.uid),
   );

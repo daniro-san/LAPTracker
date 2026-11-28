@@ -66,6 +66,8 @@ export interface SquadsRun {
   unionId?: number;
   /** D137: Friday night's Raid Shield burst reads the alliances whose shield check is on. */
   shield?: boolean;
+  /** The burst's alliances: those whose night time has come (issue 859). */
+  unionIds?: readonly number[];
 }
 
 export type SquadsOutcome =
@@ -131,7 +133,10 @@ export async function runSquadsBatch(
   // the site reserve and the event pause (`key: null`).
   const feature = run.shield ? "shield_check" : "squads";
   const targets = (await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now, feature)).filter(
-    (t) => (run.unionId === undefined || t.unionId === run.unionId) && (t.key || !eventOn),
+    (t) =>
+      (run.unionId === undefined || t.unionId === run.unionId) &&
+      (run.unionIds === undefined || run.unionIds.includes(t.unionId)) &&
+      (t.key || !eventOn),
   );
   const forced = run.force === true;
   // Each alliance on its own key and quota, at once: one alliance's batch never waits for another's.

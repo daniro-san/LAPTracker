@@ -30,7 +30,7 @@ export const prepEn = {
   ...glanceEn,
   ...handEn,
   "roll.prep.read.none":
-    "Night check: Friday from 23:30 ST. Morning check: Saturday from {time} ST. The tracker reads every member at each.",
+    "Night check: Friday from {night} ST. Morning check: Saturday from {time} ST. The tracker reads every member at each.",
   "roll.prep.read.unread": "{n} not read yet",
   "roll.prep.hint":
     "The tracker sees a shield at its map scan, every 1 to 7 hours. The times on the cards are those scans, in server time (ST), with how far each is from the reset. A shield turned on after the scan is not seen yet.",
@@ -73,8 +73,19 @@ export const prepEn = {
   "roll.prep.lang.fr": "French",
   "prep.settings.head": "Raid Shield check",
   "prep.settings.lead":
-    "The tracker reads every member twice: the night check on Friday from 23:30 ST, before the reset, and the morning check on Saturday from the time below. Nothing is read after 12:00 ST, when KvK starts.",
+    "The tracker reads every member at the times below: the night check on Friday, before the reset, the after-reset check, and the morning check on Saturday. Nothing is read after 12:00 ST, when KvK starts.",
+  "prep.settings.night": "Night check from (ST)",
   "prep.settings.morning": "Morning check from (ST)",
+  "prep.settings.reset": "After-reset check",
+  "prep.settings.resetHelp":
+    "One more read of every member after the 00:00 ST reset, before the morning check.",
+  "prep.settings.resetAt": "After-reset check at (ST)",
+  "prep.settings.tradeoff":
+    "Earlier means fewer maps refreshed after the reset: the tracker rescans maps in the hours after it, and about half of maps were refreshed by 02:30 ST.",
+  "prep.settings.eventWindow":
+    "Not saved: one of these times falls in an event's window. Pick another time.",
+  "prep.settings.readsOverlap":
+    "Not saved: the after-reset check must end before the morning check starts. Pick an earlier time or a later morning check.",
   "prep.settings.discord": "Post the summary to Discord",
   "prep.settings.discordHelp":
     "One message after the night check, updated after the morning check: how many have a shield seen and who not yet, with a link here. It is posted only to the Raid Shield channel set up under Discord. Never to the leaders' or members' channel.",
@@ -110,7 +121,7 @@ export const prepPt: PrepWords = {
   ...glancePt,
   ...handPt,
   "roll.prep.read.none":
-    "Conferência da noite: sexta a partir das 23:30 ST. Conferência da manhã: sábado a partir das {time} ST. O tracker lê todos os membros em cada uma.",
+    "Conferência da noite: sexta a partir das {night} ST. Conferência da manhã: sábado a partir das {time} ST. O tracker lê todos os membros em cada uma.",
   "roll.prep.read.unread": "{n} ainda sem leitura",
   "roll.prep.hint":
     "O tracker vê o escudo na varredura do mapa, a cada 1 a 7 horas. Os horários nos cartões são dessas varreduras, no horário do servidor (ST), com a distância de cada uma até o reset. Um escudo ligado depois da varredura ainda não foi visto.",
@@ -154,8 +165,19 @@ export const prepPt: PrepWords = {
   "roll.prep.lang.fr": "francês",
   "prep.settings.head": "Conferência do Escudo de raid",
   "prep.settings.lead":
-    "O tracker lê todos os membros duas vezes: a conferência da noite na sexta a partir das 23:30 ST, antes do reset, e a conferência da manhã no sábado a partir do horário abaixo. Nada é lido depois das 12:00 ST, quando o KvK começa.",
+    "O tracker lê todos os membros nos horários abaixo: a conferência da noite na sexta, antes do reset, a conferência após o reset e a conferência da manhã no sábado. Nada é lido depois das 12:00 ST, quando o KvK começa.",
+  "prep.settings.night": "Conferência da noite a partir das (ST)",
   "prep.settings.morning": "Conferência da manhã a partir das (ST)",
+  "prep.settings.reset": "Conferência após o reset",
+  "prep.settings.resetHelp":
+    "Mais uma leitura de todos os membros depois do reset das 00:00 ST, antes da conferência da manhã.",
+  "prep.settings.resetAt": "Conferência após o reset às (ST)",
+  "prep.settings.tradeoff":
+    "Mais cedo significa menos mapas atualizados depois do reset: o tracker varre os mapas nas horas seguintes, e cerca de metade dos mapas estava atualizada às 02:30 ST.",
+  "prep.settings.eventWindow":
+    "Não foi salvo: um desses horários cai na janela de um evento. Escolha outro horário.",
+  "prep.settings.readsOverlap":
+    "Não foi salvo: a conferência após o reset precisa terminar antes de a conferência da manhã começar. Escolha um horário mais cedo ou uma conferência da manhã mais tarde.",
   "prep.settings.discord": "Postar o resumo no Discord",
   "prep.settings.discordHelp":
     "Uma mensagem depois da conferência da noite, atualizada depois da conferência da manhã: quantos têm escudo visto e quem ainda não, com um link para cá. É postada só no canal do Escudo de raid configurado em Discord. Nunca no canal dos líderes nem no dos membros.",
@@ -189,7 +211,7 @@ export const prepFr: PrepWords = {
   ...glanceFr,
   ...handFr,
   "roll.prep.read.none":
-    "Vérification du soir : vendredi à partir de 23:30 ST. Vérification du matin : samedi à partir de {time} ST. Le tracker lit chaque membre à chacune.",
+    "Vérification du soir : vendredi à partir de {night} ST. Vérification du matin : samedi à partir de {time} ST. Le tracker lit chaque membre à chacune.",
   "roll.prep.read.unread": "{n} pas encore lus",
   "roll.prep.hint":
     "Le tracker voit un bouclier lors de son scan de la carte, toutes les 1 à 7 heures. Les heures sur les cartes sont celles de ces scans, à l’heure du serveur (ST), avec leur écart au reset. Un bouclier activé après le scan n’est pas encore vu.",
@@ -233,8 +255,19 @@ export const prepFr: PrepWords = {
   "roll.prep.lang.fr": "français",
   "prep.settings.head": "Vérification du Bouclier de raid",
   "prep.settings.lead":
-    "Le tracker lit chaque membre deux fois : la vérification du soir le vendredi à partir de 23:30 ST, avant le reset, et la vérification du matin le samedi à partir de l’heure ci-dessous. Rien n’est lu après 12:00 ST, quand le KvK commence.",
+    "Le tracker lit chaque membre aux heures ci-dessous : la vérification du soir le vendredi, avant le reset, la vérification après le reset et la vérification du matin le samedi. Rien n’est lu après 12:00 ST, quand le KvK commence.",
+  "prep.settings.night": "Vérification du soir à partir de (ST)",
   "prep.settings.morning": "Vérification du matin à partir de (ST)",
+  "prep.settings.reset": "Vérification après le reset",
+  "prep.settings.resetHelp":
+    "Une lecture de plus de chaque membre après le reset de 00:00 ST, avant la vérification du matin.",
+  "prep.settings.resetAt": "Vérification après le reset à (ST)",
+  "prep.settings.tradeoff":
+    "Plus tôt, moins de cartes sont rafraîchies après le reset : le tracker rescanne les cartes dans les heures qui suivent, et environ la moitié des cartes l’étaient à 02:30 ST.",
+  "prep.settings.eventWindow":
+    "Pas enregistré : une de ces heures tombe dans la fenêtre d’un événement. Choisissez une autre heure.",
+  "prep.settings.readsOverlap":
+    "Pas enregistré : la vérification après le reset doit finir avant le début de celle du matin. Choisissez une heure plus tôt ou une vérification du matin plus tard.",
   "prep.settings.discord": "Publier le résumé sur Discord",
   "prep.settings.discordHelp":
     "Un message après la vérification du soir, mis à jour après celle du matin : combien ont un bouclier vu et qui pas encore, avec un lien ici. Il est publié seulement dans le salon du Bouclier de raid configuré sous Discord. Jamais dans le salon des chefs ni dans celui des membres.",

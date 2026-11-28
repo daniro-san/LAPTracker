@@ -89,9 +89,10 @@ export const shieldQueue = pgTable(
 );
 
 /**
- * The alliance's own choices for the check (Alliance settings, officers only): the morning read's time
- * (minutes after 00:00 server time, 10:00 to 11:00), and whether the leaders' channel gets the summary,
- * in which language. No row: 10:00 and no Discord message.
+ * The alliance's own choices for the check (Alliance settings, officers only): the reads' times (minutes
+ * after 00:00 server time: the night read 20:00 to 23:45, the morning read 10:00 to 11:00, the after-reset
+ * check on or off and 00:15 to 10:15, issue 859), and whether the leaders' channel gets the summary, in
+ * which language. No row: 23:30, 10:00, the after-reset check on at 02:30, and no Discord message.
  */
 export const shieldSettings = pgTable(
   "shield_settings",
@@ -100,6 +101,9 @@ export const shieldSettings = pgTable(
       .primaryKey()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     morningMinute: integer("morning_minute").notNull().default(600),
+    nightMinute: integer("night_minute").notNull().default(1410),
+    resetRead: boolean("reset_read").notNull().default(true),
+    resetMinute: integer("reset_minute").notNull().default(150),
     discord: boolean("discord").notNull().default(false),
     language: text("language").notNull().default("en"),
     updatedBy: integer("updated_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
@@ -107,6 +111,8 @@ export const shieldSettings = pgTable(
   },
   (t) => [
     check("shield_settings_minute_check", sql`${t.morningMinute} between 600 and 660`),
+    check("shield_settings_night_check", sql`${t.nightMinute} between 1200 and 1425`),
+    check("shield_settings_reset_check", sql`${t.resetMinute} between 15 and 615`),
     check("shield_settings_language_check", sql`${t.language} in ('en', 'pt-BR', 'fr')`),
   ],
 );

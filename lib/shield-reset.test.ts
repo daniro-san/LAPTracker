@@ -18,7 +18,7 @@ import { inEventWindow, serverInstant } from "./schedule";
 import { dailyReads, dailyRosters, runLogs } from "./schema";
 import { memberFacts } from "./schema-facts";
 import { rollCallMarks } from "./schema-rollcall";
-import { shieldChecks } from "./schema-shield";
+import { shieldChecks, shieldSettings } from "./schema-shield";
 import { playerReads, squadReads } from "./schema-squads";
 import { passWindows, resetWindow, SHIELD_CALLS_MAX } from "./shield-check";
 import { shieldReset } from "./shield-reset";
@@ -249,6 +249,17 @@ describe("the after-reset check (issue 827)", () => {
         expect.objectContaining({ union_id: OTHER, members: 3, calls: 4, players: 3 }),
       ],
     ]);
+  });
+
+  it("reads no alliance whose officers turned the after-reset check off (issue 859)", async () => {
+    const ws = await findWorkspaceBySlug(db, "ogs");
+    await db
+      .insert(shieldSettings)
+      .values({ workspaceId: ws?.id ?? 0, resetRead: false, updatedAt: AT });
+    const d = deps(AT);
+    await read(d);
+    expect(d.calls).toEqual([]);
+    expect(await lines()).toEqual([]);
   });
 
   it("reads no alliance whose Raid Shield check is off", async () => {

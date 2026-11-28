@@ -8,6 +8,7 @@ import type { Db } from "./db";
 import { REHEARSAL_AFTER_MS } from "./rehearsal";
 import { getDailyRead } from "./repo/daily-reads";
 import { hasPendingRehearsal } from "./repo/rehearsals";
+import { resetMovedFrom } from "./repo/shield-checks";
 import { dayRosterUids, getSquadRead } from "./repo/squads";
 import {
   dailyReadDue,
@@ -17,7 +18,7 @@ import {
   serverInstant,
   type ScheduleConfig,
 } from "./schedule";
-import { resetReadDue, shieldWindowOpen } from "./shield-check";
+import { RESET_FROM, resetReadDue, resetSpanOpen, shieldWindowOpen } from "./shield-check";
 import { squadsQueueDay } from "./squads";
 import { squadTargets } from "./workspace-keys";
 
@@ -134,8 +135,18 @@ export async function squadsMayRun(ctx: AppContext, db: Db): Promise<boolean> {
 export async function tickMayBeDue(ctx: AppContext, db: Db): Promise<boolean> {
   const now = ctx.now();
   if (tickClockDue(now, ctx.env) || shieldWindowOpen(now, ctx.env)) return true;
-  // Issue 827: the after-reset check's ticks, Saturdays 02:30 and 02:45 ST.
+  // Issue 827: the after-reset check's ticks, Saturdays 02:30 and 02:45 ST. Issue 859: officers may move
+  // it; until one does, the kept fact leaves the rest of Saturday morning asleep.
   if (resetReadDue(now, ctx.env)) return true;
+  if (
+    resetSpanOpen(now, ctx.env) &&
+    !(await ctx.wakeCache.holds(
+      "shield-reset-default",
+      KEPT_MAX_AGE_S,
+      async () => !(await resetMovedFrom(db, RESET_FROM)),
+    ))
+  )
+    return true;
   // Issue 789: the one-off /v1 discovery's window (2026-11-29 02:30 ST); removed by a follow-up PR.
   if (apiProbeDue(now, ctx.env)) return true;
   if (await squadsMayRun(ctx, db)) return true;

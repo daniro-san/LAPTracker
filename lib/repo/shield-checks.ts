@@ -156,12 +156,25 @@ export async function saveShieldSettings(db: Db, row: typeof shieldSettings.$inf
       target: shieldSettings.workspaceId,
       set: {
         morningMinute: row.morningMinute,
+        nightMinute: row.nightMinute,
+        resetRead: row.resetRead,
+        resetMinute: row.resetMinute,
         discord: row.discord,
         language: row.language,
         updatedBy: row.updatedBy,
         updatedAt: row.updatedAt,
       },
     });
+}
+
+/** Whether some alliance's after-reset check is on at a time other than `minute` (issue 859). */
+export async function resetMovedFrom(db: Db, minute: number): Promise<boolean> {
+  const [row] = await db
+    .select({ workspaceId: shieldSettings.workspaceId })
+    .from(shieldSettings)
+    .where(and(eq(shieldSettings.resetRead, true), sql`${shieldSettings.resetMinute} <> ${minute}`))
+    .limit(1);
+  return row !== undefined;
 }
 
 /** Every workspace's settings, for the tick. */

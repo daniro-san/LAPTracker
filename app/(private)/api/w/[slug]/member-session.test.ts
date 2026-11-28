@@ -108,7 +108,16 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     },
   },
   "raid-prep/route.ts": {
-    POST: { body: { morningMinute: 600, discord: false, language: "en" } },
+    POST: {
+      body: {
+        nightMinute: 1410,
+        morningMinute: 600,
+        resetRead: true,
+        resetMinute: 150,
+        discord: false,
+        language: "en",
+      },
+    },
   },
   "kvk-castle/route.ts": { POST: { body: { castleX: null, castleY: null } } },
   "roll-call/route.ts": {

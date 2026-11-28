@@ -2,8 +2,9 @@
 // member on the alliance's own key (D124), no `fresh` (it does not refresh the map scan), sequential and
 // paced, the reserve kept, at most 120 calls a read. Only alliances whose `shield_check` is on (D134).
 //
-// - Friday from 23:30 ST: the quota day's squads queue (D132) read as one burst of batches, so the burst IS
-//   that day's squads read and nobody is read twice that night. It stops before 00:00 ST.
+// - Friday from the alliance's night time (23:30 ST by default, issue 859): the quota day's squads queue
+//   (D132) read as one burst of batches, so the burst IS that day's squads read and nobody is read twice
+//   that night. It stops before 00:00 ST.
 // - Saturday from the alliance's morning time (10:00–11:00 ST): every member once more, from a queue of its
 //   own (`shield_queue`), until 12:00 ST at the latest, when KvK starts.
 //
@@ -27,7 +28,7 @@ import {
   type ShieldSettingsRow,
 } from "./repo/shield-checks";
 import { dayRosterUids, getSquadRead } from "./repo/squads";
-import { SHIELD_CALLS_MAX, shieldPassAt, morningMinuteOf } from "./shield-check";
+import { SHIELD_CALLS_MAX, shieldPassAt, timesOf } from "./shield-check";
 import { SQUADS_BATCH_CALLS, SQUADS_BATCH_MS, SQUADS_SAFETY_MARGIN, squadsReserve } from "./squads";
 import { readOne, startQuota, type Batch, type StartDaily } from "./squads-call";
 import { PACE_MS, runSquadsBatch, type SquadsDeps } from "./squads-read";
@@ -49,7 +50,9 @@ export async function shieldNight(
   for (const t of run.targets) await noteNight(db, { day: run.day, unionId: t.unionId }, now);
   for (;;) {
     if (deps.now().getTime() + SQUADS_BATCH_MS > run.until) return;
-    const outcome = await runSquadsBatch(deps, db, { shield: true });
+    // Only the alliances whose night time has come: another's waits for its own (issue 859).
+    const unionIds = run.targets.map((t) => t.unionId);
+    const outcome = await runSquadsBatch(deps, db, { shield: true, unionIds });
     if (outcome.kind === "idle" || !outcome.more || outcome.calls === 0) return;
   }
 }
@@ -258,10 +261,10 @@ async function readMorning(
   }
 }
 
-/** Which read runs now for each shield-check alliance, by its own morning time. */
+/** Which read runs now for each shield-check alliance, by its own night and morning times (issue 859). */
 export function passesAt(now: Date, deps: SquadsDeps, targets: ShieldTarget[]) {
   return targets.flatMap((target) => {
-    const pass = shieldPassAt(now, deps.env, morningMinuteOf(target.settings?.morningMinute));
+    const pass = shieldPassAt(now, deps.env, timesOf(target.settings));
     return pass ? [{ target, ...pass }] : [];
   });
 }

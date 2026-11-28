@@ -1,7 +1,7 @@
 // The tick's share of the Raid Shield check (issue 474, D137): after the squads batch (lib/squads-tick.ts),
 // on the same connection and inside the same `after`, the read that is due now for each alliance whose
-// `shield_check` is on (D134): Friday's burst from 23:30 ST, Saturday's morning read from the alliance's
-// morning time. Then each alliance's leaders' message is posted or edited, and its officers notified when a
+// `shield_check` is on (D134): Friday's burst from the alliance's night time, Saturday's morning read from
+// its morning time (issue 859). Then each alliance's leaders' message is posted or edited, and its officers notified when a
 // read is over or its count changed (lib/push-uses.ts, D148). Nothing runs at other times. The tick makes
 // the week's Raid prep roll call when there is none, but no longer marks it from the readings (D137,
 // 2026-11-22, issue 726): officers mark, the tiles show the readings, until the officers' marks and the

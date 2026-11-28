@@ -15,7 +15,7 @@ import { dayIn } from "../calendar-time";
 import type { Db } from "../db";
 import { recordFailure } from "../repo/auth-attempts";
 import { mapClusters, type MapCluster } from "../repo/map-clusters";
-import { shieldReadings } from "../repo/shield-checks";
+import { shieldReadings, shieldSettingsOf } from "../repo/shield-checks";
 import {
   endOfDayReads,
   eventEndPlaces,
@@ -27,6 +27,7 @@ import {
   passWindows,
   raidOf,
   suggestionOf,
+  timesOf,
   type ShieldReading,
   type ShieldSuggestion,
 } from "../shield-check";
@@ -206,14 +207,15 @@ export async function kvkMapView(
   now: Date,
   zone: string,
 ): Promise<KvkMap | null> {
-  const [end, castle] = await Promise.all([
+  const [end, castle, settings] = await Promise.all([
     eventEndPlaces(db, access.unionId, new Date(now.getTime() - SINCE_MS)),
     castleOf(db, access.workspaceId),
+    shieldSettingsOf(db, access.workspaceId),
   ]);
   if (!end) return null;
   const day = dayIn(zone, end.at.getTime());
   const raid = raidOf(day, { SERVER_TZ: zone });
-  const from = passWindows(raid.friday, { SERVER_TZ: zone }).night.from;
+  const from = passWindows(raid.friday, { SERVER_TZ: zone }, timesOf(settings)).night.from;
   const [readings, [newest], others] = await Promise.all([
     shieldReadings(db, access.unionId, from, raid.kvk),
     endOfDayReads(db, access.unionId, 1),

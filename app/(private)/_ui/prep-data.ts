@@ -168,7 +168,10 @@ function answerOf(view: PrepView, t: WorkspaceDictionary, zone: string) {
     return view.ahead
       ? {
           answer: t["roll.prep.status.none"],
-          next: fill(t["roll.prep.read.none"], { time: morningAt }),
+          next: fill(t["roll.prep.read.none"], {
+            night: hhmm(view.nightMinute),
+            time: morningAt,
+          }),
         }
       : { answer: t["roll.prep.status.noRead"], next: null };
   const { c } = newest;

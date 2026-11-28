@@ -9,11 +9,12 @@ import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import type { Db } from "../db";
 import { sightingsElsewhere } from "../queries/roster-stays";
 import { allianceLabels, type AllianceLabel } from "../repo/alliances";
-import { shieldPassCounts } from "../repo/shield-checks";
+import { shieldPassCounts, shieldSettingsOf } from "../repo/shield-checks";
 import { latestSquadSightings } from "../repo/squads";
 import { endOfDayReads, firstSeenDays, scheduledEventMight } from "../repo/workspace-rosters";
 import { serverDay } from "../schedule";
 import { playerHistory } from "../schema-squads";
+import { timesOf } from "../shield-check";
 import type { WorkspaceAccess } from "./access";
 import { addDays, dayIn } from "./calendar-time";
 import { awayNoteUntil } from "./fact-fields";
@@ -354,7 +355,11 @@ export async function insightsView(
     flowPart(db, access, reads, weeks, firstSeen, oldest, zone, asked.flowDay),
     scheduledEventMight(db, access.unionId, since),
     squadsOn ? latestSquadSightings(db, access.unionId) : [],
-    fridays ? shieldPassCounts(db, access.unionId, shieldWindows(fridays, zone)) : [],
+    fridays
+      ? shieldSettingsOf(db, access.workspaceId).then((s) =>
+          shieldPassCounts(db, access.unionId, shieldWindows(fridays, zone, timesOf(s))),
+        )
+      : [],
   ]);
   const kvk = kvkOf(events, reads, zone, away, now);
   // Members whose Needs help mark stands sit in Follow-up's Needs help group, not in the KvK one.
