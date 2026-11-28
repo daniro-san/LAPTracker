@@ -176,6 +176,22 @@ async function opened(db: Db, secret: string, r: SealedKey, now: Date): Promise<
 }
 
 /**
+ * One workspace's own saved key opened for one call (the recruit check, issue 833), or null: none saved, the
+ * keys off (no WORKSPACE_KEYS_SECRET), or the key cannot read now. Never LAP_API_KEY, not even for the own
+ * alliance, and never another workspace's key (INVARIANT keys.own-quota-only).
+ */
+export async function ownKeyOf(
+  db: Db,
+  secret: string | undefined,
+  workspaceId: number,
+  now: Date,
+): Promise<OpenKey | null> {
+  if (!secret) return null;
+  const row = (await sealedKeys(db)).find((r) => r.workspaceId === workspaceId);
+  return row ? opened(db, secret, row, now) : null;
+}
+
+/**
  * The squads reads due at `now`, own alliance first. A workspace without a usable key of its own is not
  * read, except the own alliance's, on LAP_API_KEY, while it has no saved key or the feature is off
  * (no WORKSPACE_KEYS_SECRET). With no workspace of its own (D125: deleted), the own alliance is not read. A key sealed under another master key is skipped and not written. D126: a

@@ -153,7 +153,7 @@ export default async function InsightsPage({
       wide
     >
       <PageHead title={t["members.view.insights"]} />
-      <ViewSwitch slug={slug} open="insights" insights t={t} />
+      <ViewSwitch slug={slug} open="insights" on={access.features.on} t={t} />
       <p className="mt-2 text-body-sm text-ink/80">{t["insights.lead"]}</p>
       <div className="mt-4">
         <Spread main={main} margin={<Margin t={t} />} />

@@ -44,7 +44,8 @@ export async function openRollCall<T>(
     zone: string,
   ) => Promise<T>,
   /** D126: the switch this page belongs to. */
-  feature: "roll_call" | "garrison" | "follow_up" | "insights" | "notices" = "roll_call",
+  feature:
+    "roll_call" | "garrison" | "follow_up" | "insights" | "notices" | "recruit_check" = "roll_call",
 ) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();

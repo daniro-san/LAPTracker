@@ -103,7 +103,7 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     expect(await settingsOf(3)).toEqual({
       off: [],
       caps: { ai: null, translate: null },
-      allianceOff: ["squads", "shield_check"],
+      allianceOff: ["squads", "shield_check", "recruit_check"],
     });
     expect((await post(TEST_PIN, { action: "copy", workspace_id: 3, from_id: 3 })).status).toBe(
       400,

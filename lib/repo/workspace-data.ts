@@ -32,7 +32,12 @@ import {
   workspacePostTouches,
   workspaceWebhooks,
 } from "../schema-discord";
-import { workspaceFeatures, workspaceGlossary, workspaceUsage } from "../schema-features";
+import {
+  recruitReads,
+  workspaceFeatures,
+  workspaceGlossary,
+  workspaceUsage,
+} from "../schema-features";
 import { feedback, feedbackPictures } from "../schema-feedback";
 import {
   allianceDuelPoints,
@@ -138,6 +143,8 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   // D126: the owner's switches and the daily counts are the owner's settings, not the alliance's data.
   { file: null, table: workspaceFeatures, scope: "workspace" },
   { file: null, table: workspaceUsage, scope: "workspace" },
+  // Issue 833: the recruit check's daily count of new reads, a count like the usage above.
+  { file: null, table: recruitReads, scope: "workspace" },
   { file: null, table: discordPictures, scope: "workspace" },
   { file: null, table: squadReads, scope: "union" },
   { file: null, table: squadQueue, scope: "union" },

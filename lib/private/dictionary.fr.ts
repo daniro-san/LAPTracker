@@ -16,6 +16,7 @@ import { kvkPlanFr } from "./dictionary.kvk-plan";
 import { lifecycleFr } from "./dictionary.lifecycle";
 import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
+import { recruitFr } from "./dictionary.recruit";
 import { rollFr } from "./dictionary.rollcall.fr";
 import { settingsFr } from "./dictionary.settings";
 import { shareFr } from "./dictionary.share";
@@ -313,4 +314,5 @@ export const fr: WorkspaceDictionary = {
   ...dataFr,
   ...featuresFr,
   ...feedbackFr,
+  ...recruitFr,
 };

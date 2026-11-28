@@ -33,7 +33,7 @@ export const FEATURE_GROUPS = {
     "post_kvk",
     "post_kvk_soon",
   ],
-  data: ["squads", "shield_check", "notice_pictures", "export"],
+  data: ["squads", "shield_check", "recruit_check", "notice_pictures", "export"],
 } as const;
 export type FeatureGroup = keyof typeof FEATURE_GROUPS;
 export type Feature = (typeof FEATURE_GROUPS)[FeatureGroup][number];
@@ -63,12 +63,19 @@ export const SPENDS: Partial<Record<Feature, Allowance>> = {
  * read of 2026-11-18 (one per member plus about 5 % retries, D132). Raid Shield check (issue 474, D137): three
  * reads of every member, Friday 23:30 ST, Saturday 02:30 ST after the reset (issue 827) and Saturday
  * morning, all in Saturday's UTC quota day; with the squads read on, Friday's read is that day's squads
- * read, so only the other two are extra.
+ * read, so only the other two are extra. Recruit check (issue 833): at most `perDay` new reads a quota day,
+ * whatever the roster's size, counted as if all were used.
  */
-export const TRACKER_CALLS: Partial<Record<Feature, { perMember: number; weekly: boolean }>> = {
+export const TRACKER_CALLS: Partial<
+  Record<Feature, { perMember: number; weekly: boolean; perDay?: number }>
+> = {
   squads: { perMember: 1.06, weekly: false },
   shield_check: { perMember: 3, weekly: true },
+  recruit_check: { perMember: 0, weekly: false, perDay: 20 },
 };
+
+/** The recruit check's new tracker reads a workspace may make in one UTC quota day (issue 833, D124). */
+export const RECRUIT_READS_A_DAY = TRACKER_CALLS.recruit_check?.perDay ?? 0;
 
 /** The members an estimate assumes when no roster was read yet: an alliance's capacity. */
 export const ESTIMATE_MEMBERS = 100;
@@ -85,12 +92,12 @@ export function trackerEstimate(
   let weekly = 0;
   for (const [f, calls] of Object.entries(TRACKER_CALLS) as [
     Feature,
-    { perMember: number; weekly: boolean },
+    { perMember: number; weekly: boolean; perDay?: number },
   ][]) {
     if (!on.has(f)) continue;
     // D137: Friday's shield read is the squads read of that quota day when both are on.
     const per = f === "shield_check" && on.has("squads") ? calls.perMember - 1 : calls.perMember;
-    const n = Math.ceil(members * per);
+    const n = Math.ceil(members * per) + (calls.perDay ?? 0);
     if (calls.weekly) weekly += n;
     else daily += n;
   }

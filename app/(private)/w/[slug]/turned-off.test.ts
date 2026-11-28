@@ -40,6 +40,7 @@ const { default: NoticesPage } = await import("./notices/page");
 const { default: StartHerePage } = await import("./start-here/page");
 const { default: BoardPage } = await import("./board/page");
 const { default: InsightsPage } = await import("./insights/page");
+const { default: RecruitPage } = await import("./recruit/page");
 
 const params = Promise.resolve({ slug: "ogs" });
 const searchParams = Promise.resolve({});
@@ -98,8 +99,10 @@ describe("a page turned off for the alliance (D126, issue 483)", () => {
       notices: false,
       board: false,
       insights: false,
+      recruit_check: false,
     });
     const pages = [
+      () => RecruitPage({ params, searchParams }),
       () => TheftsPage({ params }),
       () => RollCallPage({ params, searchParams }),
       () => CaravansPage({ params, searchParams }),

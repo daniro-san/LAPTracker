@@ -1,8 +1,8 @@
 // player_reads and player_history (D132, issue 490): every /v1/players answer of the squads read, kept for
 // the alliance whose workspace read it. Writes, the 90-day clean-up and each member's newest game language
-// (D140): no query here returns raw_json, and nothing reads x, y, online, last_online_at or avatar_url out
-// of it (D71, D22).
-import { and, desc, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
+// (D140), and one player's own rows for the recruit check (issue 833): no query here returns raw_json, and
+// nothing reads x, y, online, last_online_at or avatar_url out of it (D71, D22).
+import { and, desc, eq, gte, ilike, inArray, isNotNull, lt } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { playerHistory, playerReads } from "../schema-squads";
@@ -140,4 +140,64 @@ export async function gameLanguages(
 ): Promise<Map<number, string>> {
   const reads = await gameLanguageReads(db, unionId, uids, since);
   return new Map([...reads].map(([uid, r]) => [uid, r.language]));
+}
+
+/** One stored sighting of a player in an alliance's own reads: a history row, or a read's columns. */
+export interface TrailPoint {
+  at: Date;
+  unionId: number | null;
+  tag: string | null;
+  name: string | null;
+  power: number | null;
+  kills: number | null;
+}
+
+/**
+ * Every history row and read `unionId`'s workspace keeps of `uid` (issue 833): the alliance, tag, name, might
+ * and kills at each time. Only that alliance's rows (D132); never raw_json or a private field.
+ */
+export async function playerTrail(db: Db, unionId: number, uid: number): Promise<TrailPoint[]> {
+  const h = playerHistory;
+  const p = playerReads;
+  const [history, reads] = await Promise.all([
+    db
+      .select({
+        at: h.t,
+        unionId: h.playerUnionId,
+        tag: h.unionAbbr,
+        name: h.nick,
+        power: h.power,
+        kills: h.kills,
+      })
+      .from(h)
+      .where(and(eq(h.unionId, unionId), eq(h.uid, uid))),
+    db
+      .select({ at: p.readAt, unionId: p.playerUnionId, power: p.power, kills: p.kills })
+      .from(p)
+      .where(and(eq(p.unionId, unionId), eq(p.uid, uid))),
+  ]);
+  return [...history, ...reads.map((r) => ({ ...r, tag: null, name: null }))];
+}
+
+/** The players whose name in `unionId`'s own history rows contains `q`, newest name each, at most `limit`. */
+export async function trailNames(
+  db: Db,
+  unionId: number,
+  q: string,
+  limit: number,
+): Promise<{ uid: number; name: string }[]> {
+  const h = playerHistory;
+  const rows = await db
+    .selectDistinctOn([h.uid], { uid: h.uid, name: h.nick })
+    .from(h)
+    .where(
+      and(
+        eq(h.unionId, unionId),
+        isNotNull(h.nick),
+        ilike(h.nick, `%${q.replace(/[\\%_]/g, "\\$&")}%`),
+      ),
+    )
+    .orderBy(h.uid, desc(h.t))
+    .limit(limit);
+  return rows.map((r) => ({ uid: r.uid, name: r.name as string }));
 }

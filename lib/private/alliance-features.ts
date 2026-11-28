@@ -71,7 +71,12 @@ export async function allianceFeaturesView(
           return {
             feature,
             on: !found?.settings.allianceOff.includes(feature),
-            calls: calls ? { n: Math.ceil(members * calls.perMember), weekly: calls.weekly } : null,
+            calls: calls
+              ? {
+                  n: Math.ceil(members * calls.perMember) + (calls.perDay ?? 0),
+                  weekly: calls.weekly,
+                }
+              : null,
           };
         }),
     }))

@@ -1,0 +1,100 @@
+// Members → Recruit check (issue 833), in English, Brazilian Portuguese and French: one module the three
+// workspace dictionaries spread. Facts only, no judging words (D75). Might and Kills are the game's words in
+// every language. French puts a no-break space before : and ?.
+export const recruitEn = {
+  "members.view.recruit": "Recruit check",
+  "recruit.lead":
+    "Look up a player before you invite them: what our stores have seen of them in public. Nothing is posted and nobody is told.",
+  "recruit.label": "Player name or ID",
+  "recruit.search": "Look up",
+  "recruit.matches": "Players with this name",
+  "recruit.noMatch": "No stored player has this name. Try their player ID.",
+  "recruit.unnamed": "Player {uid}",
+  "recruit.allianceId": "alliance {id}",
+  "recruit.alliance": "Alliance: {tag}",
+  "recruit.asOf": "Newest in our stores: {time}",
+  "recruit.month": "Last 30 days",
+  "recruit.might": "Might: {from} → {to}",
+  "recruit.mightOne": "Might: {value}",
+  "recruit.kills": "Kills: {from} → {to}",
+  "recruit.killsOne": "Kills: {value}",
+  "recruit.between": "{from} – {to}",
+  "recruit.moves": "Alliance moves",
+  "recruit.renames": "Name changes",
+  "recruit.change": "{date}: {from} → {to}",
+  "recruit.events": "Events seen ({n})",
+  "recruit.notStored": "This player is not in our stores yet.",
+  "recruit.readHelp":
+    "One read from the tracker, on your alliance’s key: {left} of {cap} left today. They reset at 00:00 UTC.",
+  "recruit.read": "Read from the tracker",
+  "recruit.noKey": "A new read needs your alliance’s own tracker key. Add it in Alliance settings.",
+  "recruit.capReached": "Today’s {cap} reads are used. They reset at 00:00 UTC.",
+  "recruit.notFound": "The tracker does not know this player ID.",
+  "recruit.failed": "The tracker did not answer. Try again later.",
+};
+
+export const recruitPt: typeof recruitEn = {
+  "members.view.recruit": "Consulta de recruta",
+  "recruit.lead":
+    "Consulte um jogador antes de convidar: o que os nossos registros viram dele em público. Nada é postado e ninguém é avisado.",
+  "recruit.label": "Nome ou ID do jogador",
+  "recruit.search": "Consultar",
+  "recruit.matches": "Jogadores com este nome",
+  "recruit.noMatch": "Nenhum jogador guardado tem este nome. Tente o ID do jogador.",
+  "recruit.unnamed": "Jogador {uid}",
+  "recruit.allianceId": "aliança {id}",
+  "recruit.alliance": "Aliança: {tag}",
+  "recruit.asOf": "Mais recente nos nossos registros: {time}",
+  "recruit.month": "Últimos 30 dias",
+  "recruit.might": "Might: {from} → {to}",
+  "recruit.mightOne": "Might: {value}",
+  "recruit.kills": "Kills: {from} → {to}",
+  "recruit.killsOne": "Kills: {value}",
+  "recruit.between": "{from} – {to}",
+  "recruit.moves": "Mudanças de aliança",
+  "recruit.renames": "Mudanças de nome",
+  "recruit.change": "{date}: {from} → {to}",
+  "recruit.events": "Eventos em que apareceu ({n})",
+  "recruit.notStored": "Este jogador ainda não está nos nossos registros.",
+  "recruit.readHelp":
+    "Uma leitura do tracker, na chave da sua aliança: restam {left} de {cap} hoje. Elas voltam às 00:00 UTC.",
+  "recruit.read": "Ler do tracker",
+  "recruit.noKey":
+    "Uma nova leitura precisa da chave do tracker da própria aliança. Adicione em Configurações da aliança.",
+  "recruit.capReached": "As {cap} leituras de hoje acabaram. Elas voltam às 00:00 UTC.",
+  "recruit.notFound": "O tracker não conhece este ID de jogador.",
+  "recruit.failed": "O tracker não respondeu. Tente de novo mais tarde.",
+};
+
+export const recruitFr: typeof recruitEn = {
+  "members.view.recruit": "Vérifier une recrue",
+  "recruit.lead":
+    "Consultez un joueur avant de l’inviter : ce que nos données ont vu de lui en public. Rien n’est publié et personne n’est prévenu.",
+  "recruit.label": "Nom ou ID du joueur",
+  "recruit.search": "Chercher",
+  "recruit.matches": "Joueurs avec ce nom",
+  "recruit.noMatch": "Aucun joueur enregistré n’a ce nom. Essayez son ID de joueur.",
+  "recruit.unnamed": "Joueur {uid}",
+  "recruit.allianceId": "alliance {id}",
+  "recruit.alliance": "Alliance : {tag}",
+  "recruit.asOf": "Le plus récent dans nos données : {time}",
+  "recruit.month": "30 derniers jours",
+  "recruit.might": "Might : {from} → {to}",
+  "recruit.mightOne": "Might : {value}",
+  "recruit.kills": "Kills : {from} → {to}",
+  "recruit.killsOne": "Kills : {value}",
+  "recruit.between": "{from} – {to}",
+  "recruit.moves": "Changements d’alliance",
+  "recruit.renames": "Changements de nom",
+  "recruit.change": "{date} : {from} → {to}",
+  "recruit.events": "Événements où il a été vu ({n})",
+  "recruit.notStored": "Ce joueur n’est pas encore dans nos données.",
+  "recruit.readHelp":
+    "Une lecture du tracker, sur la clé de votre alliance : il en reste {left} sur {cap} aujourd’hui. Elles repartent à 00:00 UTC.",
+  "recruit.read": "Lire depuis le tracker",
+  "recruit.noKey":
+    "Une nouvelle lecture demande la clé du tracker de votre alliance. Ajoutez-la dans Réglages de l’alliance.",
+  "recruit.capReached": "Les {cap} lectures du jour sont utilisées. Elles repartent à 00:00 UTC.",
+  "recruit.notFound": "Le tracker ne connaît pas cet ID de joueur.",
+  "recruit.failed": "Le tracker n’a pas répondu. Réessayez plus tard.",
+};

@@ -182,5 +182,7 @@ describe("two layers over the defaults (D134)", () => {
     });
     expect(trackerEstimate(new Set(["shield_check"]), 100)).toEqual({ daily: 0, peak: 300 });
     expect(trackerEstimate(new Set(["thefts"]), 100)).toEqual({ daily: 0, peak: 0 });
+    // Issue 833: the recruit check counts its whole daily cap, whatever the roster's size.
+    expect(trackerEstimate(new Set(["recruit_check"]), 100)).toEqual({ daily: 20, peak: 20 });
   });
 });
