@@ -16,7 +16,8 @@ export function MembersThanks(props: {
   const { view, t, f } = props;
   const rows = (["donors", "activity"] as const).filter((k) => view.thanks[k].length > 0);
   const progress = view.thanks.progress;
-  if (rows.length === 0 && progress.length === 0) return null;
+  const improved = view.thanks.improved;
+  if (rows.length === 0 && progress.length === 0 && improved.length === 0) return null;
   return (
     <section aria-labelledby="thanks" className="drawn-card mt-4 px-4 py-3">
       <h2 id="thanks" className="font-subhead text-display-sm">
@@ -42,6 +43,23 @@ export function MembersThanks(props: {
           </div>
         ))}
       </div>
+      {/* Issue 467: who improved in Alliance Duel, in name order, not a ranking; never who did not. */}
+      {improved.length > 0 && (
+        <div className="mt-4 border-t-2 border-rule pt-2">
+          <h3 className="font-semibold">{t["thanks.improved"]}</h3>
+          <p className="text-body-sm text-ink/75">{t["thanks.improvedWhy"]}</p>
+          {/* ph-no-capture: names grouped by their Alliance Duel points never reach session replay. */}
+          <ul className="ph-no-capture text-body-sm">
+            {improved.map((name) => (
+              <li key={name}>
+                <bdi translate="no" className="font-semibold">
+                  {name}
+                </bdi>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {/* D114: its own block under the top lists, with the share button. */}
       {progress.length > 0 && (
         <div className="mt-4 border-t-2 border-rule pt-2">

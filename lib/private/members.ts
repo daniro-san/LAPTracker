@@ -23,6 +23,7 @@ import {
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
 import { buddyOf } from "./buddy";
+import { duelTotals, mostImproved } from "./duel-history";
 import { awayNoteUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
 import { progressOf, thanksWeek, TREND_FIELDS, type Progress } from "./fact-trend";
 import { duelSaved } from "./import-save";
@@ -126,7 +127,13 @@ export interface MembersView {
   week: string[];
   members: MemberRow[];
   /** Top donors and quest points this week, and who made progress (AD Tech 100 %, main squad, D109). */
-  thanks: { donors: Thank[]; activity: Thank[]; progress: Progress[] };
+  thanks: {
+    donors: Thank[];
+    activity: Thank[];
+    progress: Progress[];
+    /** Names of who improved most in Alliance Duel (issue 467), alphabetical; empty without `history`. */
+    improved: string[];
+  };
   /** The time zones the members have, most used first (the picker lists them first). */
   zones: string[];
   /**
@@ -283,7 +290,7 @@ function earlyView(
   s: Pick<Signals, "facts" | "today" | "firstSeen"> & { pending: readonly number[] },
   zone: string,
 ): MembersView {
-  const none = { donors: [], activity: [], progress: [] };
+  const none = { donors: [], activity: [], progress: [], improved: [] };
   if (!roster)
     return {
       readAt: null,
@@ -399,6 +406,10 @@ export async function membersView(
       donors: topOf(counted, (m) => weekTotal(weekDonations(thanksReads, thanksDays, m.uid))),
       activity: topOf(counted, (m) => weekQuestPoints(thanksReads, m.uid)),
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
+      // Issue 467: read only where the week's progress is shown, so the card and the list do not pay for it.
+      improved: history
+        ? mostImproved(await duelTotals(db, access, week[0] as string), counted)
+        : [],
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),
     facts,

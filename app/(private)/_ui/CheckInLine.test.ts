@@ -76,7 +76,7 @@ describe("the check-in line on Home and Members (issue 585)", () => {
     const early = {
       ...view,
       early: true,
-      thanks: { donors: [], activity: [], progress: [] },
+      thanks: { donors: [], activity: [], progress: [], improved: [] },
     } as unknown as MembersView;
     const html = renderToStaticMarkup(
       createElement(HomeMembers, {

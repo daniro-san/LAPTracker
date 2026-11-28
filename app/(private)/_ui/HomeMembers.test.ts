@@ -20,7 +20,7 @@ const view = {
   members: [],
   early: false,
   reads: [],
-  thanks: { donors: [], activity: [], progress: [] },
+  thanks: { donors: [], activity: [], progress: [], improved: [] },
 } as unknown as MembersView;
 
 const card = (followUp: WeekCounts | null) =>
@@ -81,7 +81,7 @@ describe("Home's Say thanks to (issue 772)", () => {
       { uid: 2, name: "Thistle", adDone: true, squadGrowth: null },
       { uid: 3, name: "Moss", adDone: false, squadGrowth: 0.08 },
     ];
-    const thanks = { donors: [], activity: [], progress };
+    const thanks = { donors: [], activity: [], progress, improved: [] };
     const html = margin(null, { ...view, thanks } as unknown as MembersView);
     // textOf puts a space between elements; the comma follows the name.
     expect(textOf(html).replaceAll(" ,", ",")).toContain(

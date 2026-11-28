@@ -14,11 +14,12 @@ import { endOfDayReads, lastOnlineTimes } from "../repo/workspace-rosters";
 import { fill } from "../words";
 import type { WorkspaceAccess } from "./access";
 import { cardBuddy, type CardBuddy } from "./buddy";
-import { addDays, dayIn } from "./calendar-time";
+import { addDays, dayIn, mondayOf } from "./calendar-time";
 import { cardFollowUp, type CardFollowUp } from "./card-follow-up";
 import { cardShield, type CardShield } from "./card-shield";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import type { CardTab } from "./dictionary.card";
+import { duelHistory, duelTotals } from "./duel-history";
 import {
   FACT_FIELDS,
   type FactField,
@@ -32,7 +33,15 @@ import { followUpsOf, helpMarksOf } from "./follow-up";
 import { historyLine, markLines } from "./follow-up-rules";
 import { usualLine } from "./insights-usual-words";
 import { cardLink, type CardLink } from "./me-link";
-import { daysFormats, duelText, quietDayLine, toAskLine, versionLines } from "./member-card-parts";
+import {
+  daysFormats,
+  duelCard,
+  duelText,
+  quietDayLine,
+  toAskLine,
+  versionLines,
+  type DuelCard,
+} from "./member-card-parts";
 import {
   allianceBest,
   daysCard,
@@ -120,6 +129,8 @@ export interface CardData {
   daysEarly: string;
   /** This week's Alliance Duel from screenshots (issue 299), when any was saved this week. */
   duel: { label: string; value: string } | null;
+  /** Alliance Duel by week with the alliance's weekly average (issue 467); null with no saved week. */
+  duelWeeks: DuelCard | null;
   details: { label: string; value: string }[];
   /** Map position, behind "Show map position" on the Info tab. */
   map: { label: string; value: string; show: string };
@@ -340,6 +351,7 @@ export function cardData(
     days: x.days ? daysCard(x.days, t, daysFormats(t, f)) : null,
     daysEarly: t["card.days.early"],
     duel: shown.duel ? duel : null,
+    duelWeeks: null,
     details: detailsOf(m, t, f),
     map: mapOf(m, t),
     toAsk: toAskLine(m.facts, t),
@@ -378,6 +390,19 @@ function cardDays(reads: Parameters<typeof lastDays>[0], uid: number): LastDays 
   return days && { ...days, best: allianceBest(reads, days.days) };
 }
 
+/** Issue 467: Alliance Duel by week; null until a week of the alliance has saved points. */
+function cardDuelWeeks(
+  totals: Parameters<typeof duelHistory>[0],
+  members: readonly MemberRow[],
+  uid: number,
+  monday: string,
+  t: WorkspaceDictionary,
+  f: CardFormats,
+): DuelCard | null {
+  const weeks = duelHistory(totals, new Set(members.map((m) => m.uid)), uid, monday);
+  return weeks && duelCard(weeks, t, f);
+}
+
 /** One member's card in `language`, or null when the uid is not in the workspace's own alliance. */
 export async function memberCard(
   db: Db,
@@ -385,12 +410,15 @@ export async function memberCard(
   uid: number,
   at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
 ): Promise<CardData | null> {
-  const [view, followUps, history, reads] = await Promise.all([
+  const monday = mondayOf(dayIn(at.zone, at.now.getTime()));
+  const [view, followUps, history, reads, totals] = await Promise.all([
     membersView(db, access, at.now, at.zone),
     followUpsOf(db, access, uid),
     factHistory(db, access.workspaceId, FACT_FIELDS, uid),
     // One read more: the first day's quest points are its running total less the day before's (#739).
     endOfDayReads(db, access.unionId, LAST_DAYS + 1),
+    // Issue 467: the workspace's saved Alliance Duel week totals, for this alliance only.
+    duelTotals(db, access, monday),
   ]);
   const member = view.members.find((m) => m.uid === uid);
   if (!member) return null;
@@ -458,5 +486,16 @@ export async function memberCard(
     at.zone,
   );
   card.presence = [...card.presence, usualLine(usual, { t: at.t, language: at.language })];
-  return { ...card, statusMark, squads, link, followUp, shield, selfReport, gameLanguage, buddy };
+  return {
+    ...card,
+    statusMark,
+    squads,
+    link,
+    followUp,
+    shield,
+    selfReport,
+    gameLanguage,
+    buddy,
+    duelWeeks: cardDuelWeeks(totals, view.members, uid, monday, at.t, f),
+  };
 }

@@ -1,7 +1,7 @@
 // The screenshot import's tables (issue 299, D96): drafts, Alliance Duel points and check records, plus
 // the roster names and numbers a draft is matched and checked against. Every function takes the
 // workspace (or its alliance) from lib/private's WorkspaceAccess; nothing here reads a picture.
-import { and, desc, eq, gt, inArray, isNull, lte, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyRosters, workspaceUsers } from "../schema";
@@ -248,6 +248,24 @@ export async function duelWeek(db: Db, workspaceId: number, week: string) {
     })
     .from(allianceDuelPoints)
     .where(and(eq(allianceDuelPoints.workspaceId, workspaceId), eq(allianceDuelPoints.week, week)));
+}
+
+/** The workspace's saved Alliance Duel week totals (the "week" rows) from the Monday `since` on, all weeks. */
+export async function duelWeekTotals(db: Db, workspaceId: number, since: string) {
+  return db
+    .select({
+      uid: allianceDuelPoints.uid,
+      week: allianceDuelPoints.week,
+      points: allianceDuelPoints.points,
+    })
+    .from(allianceDuelPoints)
+    .where(
+      and(
+        eq(allianceDuelPoints.workspaceId, workspaceId),
+        eq(allianceDuelPoints.day, "week"),
+        gte(allianceDuelPoints.week, since),
+      ),
+    );
 }
 
 export async function insertCheck(
