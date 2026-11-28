@@ -37,8 +37,10 @@ export function thanksLine(d: KvkDebrief, { t, language }: Formats): string {
     : t["debrief.thanks.none"];
 }
 
-/** The opponent's two rows: kills gained and might change, us then them. */
-export function opponentRows(o: NonNullable<KvkDebrief["opponent"]>, { t, language }: Formats) {
+type Sums = { kills: number; might: number };
+
+/** Two rows, kills gained and might change, each "us · them". */
+function opponentRows(o: { us: Sums; them: Sums }, { t, language }: Formats) {
   return [
     ["debrief.opponent.kills", o.us.kills, o.them.kills] as const,
     ["debrief.opponent.might", o.us.might, o.them.might] as const,
@@ -80,18 +82,38 @@ function mapSection(d: KvkDebrief, { t, language }: Formats): CardSection {
   };
 }
 
+/**
+ * The Opponent section's lead and rows: the KvK matchup's Start to End (D152), else the raid opponent's
+ * (issue 861, D165); null with neither.
+ */
+export function opponentWords(d: KvkDebrief, f: Formats) {
+  const { t } = f;
+  const { opponent: o, raid: r } = d;
+  if (o) {
+    const lead = fill(t["debrief.opponent.lead"], {
+      server: o.server,
+      us: o.us.counted,
+      them: o.them.counted,
+    });
+    return { lead, rows: opponentRows(o, f) };
+  }
+  if (!r) return null;
+  const lead = fill(t["debrief.raid.lead"], { tag: r.tag, server: r.server });
+  return { lead, rows: opponentRows(r, f) };
+}
+
 function opponentSection(d: KvkDebrief, f: Formats): CardSection {
   const { t } = f;
-  const o = d.opponent;
-  if (!o)
-    return { head: t["debrief.opponent.head"], lines: [t["debrief.opponent.none"]], rows: [] };
-  const lead = fill(t["debrief.opponent.lead"], {
-    server: o.server,
-    us: o.us.counted,
-    them: o.them.counted,
-  });
-  return { head: t["debrief.opponent.head"], lines: [lead], rows: opponentRows(o, f) };
+  const o = opponentWords(d, f);
+  return {
+    head: t["debrief.opponent.head"],
+    lines: [o?.lead ?? t["debrief.opponent.none"]],
+    rows: o?.rows ?? [],
+  };
 }
+
+/** A name the card's fonts can draw; with nothing drawable, the member's uid (as `label` does for an alliance). */
+const drawnName = (p: { uid: number; name: string }) => drawable(p.name) || `#${p.uid}`;
 
 /** The card's words: each section's heading, its lines, and its label–value rows. */
 export function debriefCard(d: KvkDebrief, f: Formats): DebriefCard {
@@ -107,7 +129,7 @@ export function debriefCard(d: KvkDebrief, f: Formats): DebriefCard {
       {
         head: t["debrief.thanks.head"],
         lines: [thanksLine(d, f), t["debrief.thanks.support"]],
-        rows: d.thanks.map((p) => ({ label: p.name, value: signed(p.gain, language) })),
+        rows: d.thanks.map((p) => ({ label: drawnName(p), value: signed(p.gain, language) })),
       },
       rollSection(d, f),
       mapSection(d, f),

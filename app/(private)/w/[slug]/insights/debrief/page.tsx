@@ -14,7 +14,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { compact } from "@/lib/private/insights-format";
 import { kvkWords } from "@/lib/private/insights-more-words";
 import { kvkDebriefView, type KvkDebrief } from "@/lib/private/kvk-debrief";
-import { opponentRows, signed, thanksLine } from "@/lib/private/kvk-debrief-card";
+import { opponentWords, signed, thanksLine } from "@/lib/private/kvk-debrief-card";
 import { fill } from "@/lib/words";
 
 import { SignedInFrame } from "../../../../_ui/Frame";
@@ -151,20 +151,14 @@ function Recovery({ d, t, language }: Props) {
 }
 
 function Opponent({ d, t, language }: Props) {
-  const o = d.opponent;
+  const o = opponentWords(d, { t, language });
   return (
     <Card id="debrief-opponent" title={t["debrief.opponent.head"]} based={[]}>
       {o ? (
         <>
-          <Line>
-            {fill(t["debrief.opponent.lead"], {
-              server: o.server,
-              us: o.us.counted,
-              them: o.them.counted,
-            })}
-          </Line>
+          <Line>{o.lead}</Line>
           <ul className="mt-1 text-body-sm">
-            {opponentRows(o, { t, language }).map((r) => (
+            {o.rows.map((r) => (
               <li key={r.label} className={`${ROW} flex-wrap`}>
                 <span>{r.label}</span>
                 <span className="tabular-nums">{r.value}</span>
@@ -208,8 +202,11 @@ export default async function DebriefPage({ params }: { params: Promise<{ slug: 
   const { access, slug, t, language, data, waiting } = await openRollCall(
     params,
     "insights/debrief",
-    async (db, access, _today, _language, zone) =>
-      kvkDebriefView(db, access, new Date(), zone, await isOn("kvk-matchup")),
+    async (db, access) =>
+      kvkDebriefView(db, access, new Date(), {
+        cfg: getEnv(),
+        matchup: await isOn("kvk-matchup"),
+      }),
     "insights",
   );
   return (

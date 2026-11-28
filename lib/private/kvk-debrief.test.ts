@@ -3,6 +3,7 @@
 // Against a real Postgres (PGlite). Invented names and places only.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { TEST_ENV } from "../app-context.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findBlockedKeys } from "../queries/blocked-keys";
@@ -17,6 +18,7 @@ import {
   snapshots,
   workspaces,
 } from "../schema";
+import { raidOpponents, raidReads } from "../schema-shield";
 import type { WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { kvkDebriefView } from "./kvk-debrief";
@@ -39,15 +41,21 @@ const MEMBERS = {
     { uid: 8, kills: [100, 600], power: [1000, 900], x: 710, y: 710 },
   ],
 };
+const CFG = { ...TEST_ENV, SERVER_TZ: "UTC" };
 const nameOf = (uid: number) => (uid > 6 ? `Theirs ${uid}` : `Invented ${uid}`);
 
 describe("kvkDebriefView", () => {
   let db: Db;
   const ids = { ours: 0, theirs: 0 };
-  const access = () => ({ workspaceId: ids.ours, unionId: OURS }) as WorkspaceAccess;
+  const access = () =>
+    ({
+      workspaceId: ids.ours,
+      unionId: OURS,
+      features: { on: new Set(["shield_check"]) },
+    }) as unknown as WorkspaceAccess;
   /** The seeded KvK's debrief, which must be there. */
   async function shown() {
-    const d = await kvkDebriefView(db, access(), NOW, "UTC", false);
+    const d = await kvkDebriefView(db, access(), NOW, { cfg: CFG, matchup: false });
     if (!d) throw new Error("no debrief");
     return d;
   }
@@ -168,7 +176,7 @@ describe("kvkDebriefView", () => {
   }
 
   it("builds Thanks, Roll call, Map and Recovery from the stored KvK; no opponent with none set", async () => {
-    const d = await kvkDebriefView(db, access(), NOW, "UTC", true);
+    const d = await kvkDebriefView(db, access(), NOW, { cfg: CFG, matchup: true });
     expect(d?.day).toBe("2026-11-21");
     expect(d?.thanks).toEqual([
       { uid: 1, name: "Invented 1", gain: 30 },
@@ -220,15 +228,76 @@ describe("kvkDebriefView", () => {
     },
   );
 
+  it("draws a thanked member whose name the fonts cannot draw as their uid", async () => {
+    const d = await shown();
+    const card = debriefCard(
+      { ...d, thanks: [{ uid: 42, name: "龍の会 🔥", gain: 5 }] },
+      { t: WORKSPACE_DICTIONARIES.en, language: "en" },
+    );
+    expect(card.sections[0]?.rows).toEqual([{ label: "#42", value: "+5" }]);
+  });
+
+  it("shows the raid opponent's Start to End when no KvK matchup is set (issue 861)", async () => {
+    const them = 777_001;
+    await db.insert(raidOpponents).values({
+      workspaceId: ids.ours,
+      saturday: "2026-11-21",
+      server: 328,
+      unionId: them,
+      tag: "RIV",
+      setAt: AT,
+    });
+    const read = (phase: "start" | "end", side: "us" | "them", kills: number, power: number) => ({
+      workspaceId: ids.ours,
+      saturday: "2026-11-21",
+      phase,
+      side,
+      unionId: side === "us" ? OURS : them,
+      memberCount: 1,
+      memberUids: [side === "us" ? 1 : 9],
+      memberPower: [power],
+      memberKills: [kills],
+      isFresh: true,
+      readAt: AT,
+    });
+    await db
+      .insert(raidReads)
+      .values([
+        read("start", "us", 100, 1000),
+        read("end", "us", 150, 900),
+        read("start", "them", 100, 1000),
+        read("end", "them", 120, 800),
+      ]);
+    const d = await shown();
+    expect(d.raid).toEqual({
+      tag: "RIV",
+      server: 328,
+      us: { kills: 50, might: -100, members: 1 },
+      them: { kills: 20, might: -200, members: 1 },
+    });
+    const card = debriefCard(d, { t: WORKSPACE_DICTIONARIES.en, language: "en" });
+    expect(card.sections[4]).toEqual({
+      head: "Opponent",
+      lines: ["Raid opponent RIV (S328), Start to End of the raid:"],
+      rows: [
+        { label: "Kills gained", value: "+50 us · +20 them" },
+        { label: "Might change", value: "−100 us · −200 them" },
+      ],
+    });
+  });
+
   it("has no debrief when the newest KvK-time event is an Origin of Chaos", async () => {
     await event(new Date("2026-12-05T14:00:00Z"));
     expect(
-      await kvkDebriefView(db, access(), new Date("2026-12-06T12:00:00Z"), "UTC", true),
+      await kvkDebriefView(db, access(), new Date("2026-12-06T12:00:00Z"), {
+        cfg: CFG,
+        matchup: true,
+      }),
     ).toBeNull();
   });
 
   it("reads only the own alliance: its members, its Raid prep marks and its castle point", async () => {
-    const d = await kvkDebriefView(db, access(), NOW, "UTC", true);
+    const d = await kvkDebriefView(db, access(), NOW, { cfg: CFG, matchup: true });
     expect(JSON.stringify(d)).not.toContain("Theirs");
     // Bravo's ✓ marks for uid 2 are not ours; ours has a ✗ for it and no wall mark.
     expect(d?.rollCall?.wall).toEqual(["Invented 3"]);

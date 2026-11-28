@@ -27,6 +27,7 @@ export const insightsDebriefEn = {
   "debrief.opponent.head": "Opponent",
   "debrief.opponent.lead":
     "Server {server}, Start to End: {us} of our alliances, {them} of theirs.",
+  "debrief.raid.lead": "Raid opponent {tag} (S{server}), Start to End of the raid:",
   "debrief.opponent.kills": "Kills gained",
   "debrief.opponent.might": "Might change",
   "debrief.opponent.sides": "{us} us · {them} them",
@@ -66,6 +67,7 @@ export const insightsDebriefPt: DebriefWords = {
   "debrief.opponent.head": "Adversário",
   "debrief.opponent.lead":
     "Servidor {server}, do Início ao Fim: {us} das nossas alianças, {them} das deles.",
+  "debrief.raid.lead": "Adversário do ataque {tag} (S{server}), do Início ao Fim do ataque:",
   "debrief.opponent.kills": "Kills ganhos",
   "debrief.opponent.might": "Mudança de poder",
   "debrief.opponent.sides": "{us} nós · {them} eles",
@@ -104,6 +106,7 @@ export const insightsDebriefFr: DebriefWords = {
   "debrief.opponent.head": "Adversaire",
   "debrief.opponent.lead":
     "Serveur {server}, du début à la fin : {us} de nos alliances, {them} des leurs.",
+  "debrief.raid.lead": "Adversaire du raid {tag} (S{server}), du début à la fin du raid :",
   "debrief.opponent.kills": "Kills gagnés",
   "debrief.opponent.might": "Variation de puissance",
   "debrief.opponent.sides": "{us} nous · {them} eux",

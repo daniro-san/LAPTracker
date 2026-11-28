@@ -9,7 +9,9 @@
 import { killsTurnout } from "../compute";
 import type { Db } from "../db";
 import type { KvkLine } from "../event-image-kvk";
+import type { MemberChange } from "../kvk";
 import { eventMatchup, type EventMatchup } from "../queries/kvk";
+import { recordFailure } from "../repo/auth-attempts";
 import { callsOfWeeks, newestMarks, type MarkRow } from "../repo/roll-call";
 import {
   endOfDayReads,
@@ -20,12 +22,13 @@ import {
   type RosterRead,
 } from "../repo/workspace-rosters";
 import { castleOf } from "../repo/workspaces";
-import { isKvkDay } from "../schedule";
+import { isKvkDay, type ScheduleConfig } from "../schedule";
 import { raidOf } from "../shield-check";
 import type { WorkspaceAccess } from "./access";
 import { dayIn, mondayOf } from "./calendar-time";
 import { KVK_EVENTS, kvkOf, type KvkEvent } from "./insights-kvk";
 import { kvkMapOf, type Ring } from "./kvk-map";
+import { raidOpponentView, type RaidOpponentView } from "./raid-opponent";
 
 /** The KvK map's month: the debrief is for the KvK it shows. */
 const SINCE_MS = KVK_EVENTS * 7 * 86_400_000;
@@ -49,6 +52,30 @@ export interface KvkDebrief {
   recovery: KvkEvent | null;
   /** The matchup's Start to End, each side's sums; null with no opponent, before the End, or flag off. */
   opponent: KvkLine | null;
+  /**
+   * With no matchup: that KvK's raid opponent (issue 861, D165) and each side's Start→End of the raid; null
+   * with none set, with Raid prep's check off, or while either side lacks a usable read.
+   */
+  raid: { tag: string; server: number; us: MemberChange; them: MemberChange } | null;
+}
+
+/** At most this many card renders per workspace per hour: far above officers saving a card or two. */
+export const CARD_RENDERS = 10;
+const CARD_WINDOW_MS = 3_600_000;
+
+/** Counts one card render of the workspace; false once it is past CARD_RENDERS this hour. */
+export async function cardRenderAllowed(
+  db: Db,
+  access: WorkspaceAccess,
+  now: Date,
+): Promise<boolean> {
+  const tries = await recordFailure(
+    db,
+    `debrief-card:ws:${access.workspaceId}`,
+    CARD_WINDOW_MS,
+    now,
+  );
+  return tries <= CARD_RENDERS;
 }
 
 const byName = (a: string, b: string) => a.localeCompare(b);
@@ -91,6 +118,14 @@ function opponentOf(m: EventMatchup | null): KvkLine | null {
   return m?.ended && us && them ? { server: m.server, us, them } : null;
 }
 
+/** The raid opponent's tag and server and both sides' Start→End, once both sides have usable reads. */
+function raidResultOf(view: RaidOpponentView | null): KvkDebrief["raid"] {
+  const o = view?.opponent;
+  const us = view?.result?.us.change;
+  const them = view?.result?.them.change;
+  return o && us && them ? { tag: o.tag, server: o.server, us, them } : null;
+}
+
 /** That KvK's Raid prep: the week's Raid Shield roll call whose raid is that Saturday, and its marks. */
 async function prepOf(db: Db, access: WorkspaceAccess, day: string, zone: string) {
   const calls = await callsOfWeeks(db, access.workspaceId, [mondayOf(day)]);
@@ -108,15 +143,15 @@ async function prepOf(db: Db, access: WorkspaceAccess, day: string, zone: string
 /**
  * The debrief of the own alliance's newest KvK as of `now`; null with no KvK End read in the last 4 weeks, or
  * when that event is an Origin of Chaos. `matchup`: the `kvk-matchup` flag (D91), so the opponent shows only
- * where the event page shows it.
+ * where the event page shows it; `cfg`: the schedule, for the raid opponent's read times.
  */
 export async function kvkDebriefView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
-  zone: string,
-  matchup: boolean,
+  { cfg, matchup }: { cfg: ScheduleConfig; matchup: boolean },
 ): Promise<KvkDebrief | null> {
+  const zone = cfg.SERVER_TZ;
   const end = await eventEndPlaces(db, access.unionId, new Date(now.getTime() - SINCE_MS));
   if (!end) return null;
   const day = dayIn(zone, end.at.getTime());
@@ -129,7 +164,8 @@ export async function kvkDebriefView(
     prepOf(db, access, day, zone),
   ]);
   const event = events.find((e) => e.at.getTime() === end.at.getTime());
-  const opponent = matchup && event ? await eventMatchup(db, event.id) : null;
+  const opponent = opponentOf(matchup && event ? await eventMatchup(db, event.id) : null);
+  const raid = opponent ? null : raidResultOf(await raidOpponentView(db, access, day, cfg, now));
   const names = namesOf(reads, recap);
   const bands = kvkMapOf(end, castle).bands;
   const recovery = kvkOf(events, reads, zone, new Set(), now).events.find((e) => e.day === day);
@@ -140,6 +176,7 @@ export async function kvkDebriefView(
     bands: bands && bands.map(({ band, members, kills }) => ({ band, members, kills })),
     castle: castle !== null,
     recovery: recovery ? { ...recovery, people: [], help: [] } : null,
-    opponent: opponentOf(opponent),
+    opponent,
+    raid,
   };
 }
