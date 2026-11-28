@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_users" ADD COLUMN "whats_new_seen" text;

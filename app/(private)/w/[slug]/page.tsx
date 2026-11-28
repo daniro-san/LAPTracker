@@ -135,6 +135,26 @@ function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; item
   );
 }
 
+/** Issue 782: "New: <title>" while this officer has not opened What's new since its newest note; no badge. */
+function WhatsNewLine({
+  slug,
+  t,
+  title,
+}: {
+  slug: string;
+  t: WorkspaceDictionary;
+  title: string | null;
+}) {
+  if (!title) return null;
+  return (
+    <p className="mb-4">
+      <a href={`/w/${slug}/whats-new`} className={LINK}>
+        {fill(t["home.whatsNew"], { title })}
+      </a>
+    </p>
+  );
+}
+
 /** "Mon, Nov 16, 18:54 ST", for each item to review. */
 function serverWhen(t: WorkspaceDictionary, language: WorkspaceLanguage) {
   const words = dateWords(language, getEnv().SERVER_TZ);
@@ -173,6 +193,7 @@ function Home(props: {
           ))}
         </div>
       )}
+      <WhatsNewLine slug={slug} t={t} title={props.desk.whatsNew?.[language] ?? null} />
       {/* No sticky margin (issue 720): at 1024 it scrolled inside itself, beside the page's own scrollbar. */}
       <Spread
         even

@@ -79,6 +79,11 @@ const en = {
   "home.members.head": "Members this week",
   "home.notYet": "Nothing yet. Thanks and check-ins appear after the first daily update.",
   "home.open": "Open Members",
+  "home.whatsNew": "New: {title}",
+  "whatsnew.title": "What’s new",
+  "whatsnew.lead": "What changed on the desk lately, newest first. Only what your alliance has.",
+  "whatsnew.none": "Nothing new yet.",
+  "whatsnew.back": "Home",
   "shell.help": "How this works",
   "signin.howto": "How to put it on your phone",
   "members.none":

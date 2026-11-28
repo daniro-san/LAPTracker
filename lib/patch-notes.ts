@@ -2,6 +2,24 @@
 // English only (D48). Before running Prepare release, add the release's entry on top (CONTRIBUTING.md).
 // Plain words for the owner: what changed for officers, members, the public or the owner, and why. No file
 // names, secrets, webhook URLs or member data; no player names. `#123` in a text links to GitHub.
+// Issue 782: an entry's optional `officer` notes are the desk's What's new, in its three languages, written
+// for officers (never about /admin or infrastructure). An entry without them stays on /admin/changes only.
+import type { Feature } from "./workspace-features";
+
+/** Officer copy in the desk's three languages. */
+export interface DeskWords {
+  en: string;
+  "pt-BR": string;
+  fr: string;
+}
+
+/** One change as officers see it on What's new. */
+export interface OfficerNote {
+  title: DeskWords;
+  text: DeskWords;
+  /** Shown only to a workspace with each of these features on; none: to every workspace. */
+  needs?: Feature[];
+}
 
 export interface PatchNote {
   version: string;
@@ -10,6 +28,8 @@ export interface PatchNote {
   title: string;
   changes: string[];
   prs?: number[];
+  /** What's new on the desk (issue 782); none: this release is told on /admin/changes only. */
+  officer?: OfficerNote[];
 }
 
 export interface OwnerTodo {
@@ -225,6 +245,132 @@ export const patchNotes: PatchNote[] = [
       "Errors now carry the release they happened in, and sign-in, sharing thanks and the screenshot import record where they stop, with reason codes only.",
     ],
     prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798],
+    officer: [
+      {
+        title: {
+          en: "KvK plans on the Calendar",
+          "pt-BR": "Planos da KvK na Agenda",
+          fr: "Plans de KvK dans l’agenda",
+        },
+        text: {
+          en: "Every KvK on the Calendar has a plan: give people a role, add a note, and Make the message turns it into a notice with the time in ST.",
+          "pt-BR":
+            "Toda KvK na Agenda tem um plano: dê uma função a cada pessoa, escreva um recado, e Gerar a mensagem transforma tudo em um aviso com o horário em ST.",
+          fr: "Chaque KvK de l’agenda a un plan : donnez un rôle à chacun, ajoutez une note, et Préparer le message en fait une annonce avec l’heure en ST.",
+        },
+        needs: ["notices"],
+      },
+      {
+        title: {
+          en: "Insights: the KvK map",
+          "pt-BR": "Análises: o mapa da KvK",
+          fr: "Analyses : la carte de la KvK",
+        },
+        text: {
+          en: "Insights → KvK shows where members were at the KvK’s End reading, one unnamed dot each, in three bands of kills gained. Type the castle’s point to see who was near, mid or far. Only officers see it.",
+          "pt-BR":
+            "Análises → KvK mostra onde os membros estavam na leitura do Fim da KvK, um ponto sem nome para cada um, em três faixas de kills ganhas. Digite o ponto do castelo para ver quem estava perto, no meio ou longe. Só os oficiais veem.",
+          fr: "Analyses → KvK montre où étaient les membres au relevé de fin de la KvK, un point sans nom par membre, en trois tranches de kills gagnés. Tapez le point du château pour voir qui était près, à mi-distance ou loin. Seuls les officiers la voient.",
+        },
+        needs: ["insights"],
+      },
+      {
+        title: {
+          en: "Welcome new members post",
+          "pt-BR": "Post de boas-vindas aos novos membros",
+          fr: "Message d’accueil des nouveaux membres",
+        },
+        text: {
+          en: "Alliance settings → Posts: once a day, an optional post greets by name the members who joined since yesterday, in the members’ channel. It pings nobody. Off until you turn it on.",
+          "pt-BR":
+            "Configurações da aliança → Posts: uma vez por dia, um post opcional dá boas-vindas pelo nome a quem entrou desde ontem, no canal dos membros. Não menciona ninguém. Desligado até você ligar.",
+          fr: "Réglages de l’alliance → Messages : une fois par jour, un message facultatif accueille par leur nom les membres arrivés depuis hier, dans le salon des membres. Il ne mentionne personne. Éteint jusqu’à ce que vous l’allumiez.",
+        },
+        needs: ["post_welcome"],
+      },
+      {
+        title: {
+          en: "Weekly members summary",
+          "pt-BR": "Resumo semanal dos membros",
+          fr: "Bilan hebdomadaire des membres",
+        },
+        text: {
+          en: "Every Monday, an optional post in the leaders’ channel gives last week’s counts: how many joined, how many left, and the member count. Counts only, no names. Off until you turn it on.",
+          "pt-BR":
+            "Toda segunda, um post opcional no canal dos líderes traz os números da semana passada: quantos entraram, quantos saíram e o total de membros. Só números, sem nomes. Desligado até você ligar.",
+          fr: "Chaque lundi, un message facultatif dans le salon des chefs donne les chiffres de la semaine passée : arrivées, départs et nombre de membres. Des chiffres seulement, aucun nom. Éteint jusqu’à ce que vous l’allumiez.",
+        },
+        needs: ["post_summary"],
+      },
+      {
+        title: {
+          en: "KvK recap post",
+          "pt-BR": "Post de resumo da KvK",
+          fr: "Message de bilan de la KvK",
+        },
+        text: {
+          en: "After each KvK, an optional post thanks everyone, gives the kills gained together and the top 3 gainers, and thanks defenders and support. Nobody is named for gaining nothing. Off until you turn it on.",
+          "pt-BR":
+            "Depois de cada KvK, um post opcional agradece a todos, mostra as kills ganhas juntos e os 3 maiores ganhos, e agradece a defesa e o apoio. Ninguém é citado por não ganhar nada. Desligado até você ligar.",
+          fr: "Après chaque KvK, un message facultatif remercie tout le monde, donne les kills gagnés ensemble et les 3 plus gros gains, et remercie défense et soutien. Personne n’est nommé pour n’avoir rien gagné. Éteint jusqu’à ce que vous l’allumiez.",
+        },
+        needs: ["post_kvk"],
+      },
+      {
+        title: {
+          en: "Thanks, one line per reason",
+          "pt-BR": "Agradecimentos, uma linha por motivo",
+          fr: "Remerciements, une ligne par raison",
+        },
+        text: {
+          en: "The thanks card on Members lists one line per reason with the names after it, and the shared message follows a fixed template.",
+          "pt-BR":
+            "O cartão de agradecimentos em Membros mostra uma linha por motivo com os nomes depois, e a mensagem compartilhada segue um modelo fixo.",
+          fr: "La carte des remerciements dans Membres donne une ligne par raison suivie des noms, et le message partagé suit un modèle fixe.",
+        },
+      },
+      {
+        title: {
+          en: "Delete a follow-up note",
+          "pt-BR": "Apagar uma anotação de acompanhamento",
+          fr: "Supprimer une note de suivi",
+        },
+        text: {
+          en: "A follow-up note can be deleted, with Undo for a short while.",
+          "pt-BR":
+            "Uma anotação de acompanhamento pode ser apagada, com Desfazer por alguns instantes.",
+          fr: "Une note de suivi peut être supprimée, avec Annuler pendant un court moment.",
+        },
+        needs: ["follow_up"],
+      },
+      {
+        title: {
+          en: "Withdraw a review request",
+          "pt-BR": "Retirar um pedido de revisão",
+          fr: "Retirer une demande de relecture",
+        },
+        text: {
+          en: "An open review request on a notice can be withdrawn, with Undo for a short while.",
+          "pt-BR":
+            "Um pedido de revisão aberto em um aviso pode ser retirado, com Desfazer por alguns instantes.",
+          fr: "Une demande de relecture ouverte sur une annonce peut être retirée, avec Annuler pendant un court moment.",
+        },
+        needs: ["notices"],
+      },
+      {
+        title: {
+          en: "A player’s day by day",
+          "pt-BR": "O dia a dia de um jogador",
+          fr: "Le jour par jour d’un joueur",
+        },
+        text: {
+          en: "Player pages list every reading, newest first: might and kills with their change, and when the player moved alliance or changed name.",
+          "pt-BR":
+            "As páginas de jogador mostram cada leitura, da mais nova para a mais antiga: poder e kills com a mudança, e quando o jogador mudou de aliança ou de nome.",
+          fr: "Les pages de joueur listent chaque relevé, du plus récent au plus ancien : puissance et kills avec leur évolution, et quand le joueur a changé d’alliance ou de nom.",
+        },
+      },
+    ],
   },
   {
     version: "v5.70.0",
@@ -234,6 +380,22 @@ export const patchNotes: PatchNote[] = [
       "Alliance settings → Posts: a second optional post, the Shield-up reminder. Every Friday from 20:30 ST (3 hours before the night check) it asks members, in their channel, to make sure their shield is on before the 00:00 ST reset, take squads off the wall and bring troops home. It names and counts no one and pings nobody. Off until officers turn it on; allowed by default.",
     ],
     prs: [763],
+    officer: [
+      {
+        title: {
+          en: "Shield-up reminder post",
+          "pt-BR": "Post do lembrete do escudo",
+          fr: "Message de rappel du bouclier",
+        },
+        text: {
+          en: "Alliance settings → Posts: every Friday from 20:30 ST, an optional post asks members to put their shield on before the 00:00 ST reset. It names and pings nobody. Off until you turn it on.",
+          "pt-BR":
+            "Configurações da aliança → Posts: toda sexta a partir das 20:30 ST, um post opcional pede aos membros que ativem o escudo antes do reset das 00:00 ST. Não cita nem menciona ninguém. Desligado até você ligar.",
+          fr: "Réglages de l’alliance → Messages : chaque vendredi dès 20:30 ST, un message facultatif demande aux membres de mettre leur bouclier avant le reset de 00:00 ST. Il ne nomme ni ne mentionne personne. Éteint jusqu’à ce que vous l’allumiez.",
+        },
+        needs: ["post_shield_up"],
+      },
+    ],
   },
   {
     version: "v5.69.1",
@@ -244,6 +406,22 @@ export const patchNotes: PatchNote[] = [
       "One test read at 02:30 ST on Saturday 28 (raid night), about 100 calls, once: it shows how many members the game's map saw after the reset, to decide whether a third Raid Shield read each week is worth it. It never touches Raid prep, the summary or notifications, and it keeps the morning check's calls.",
     ],
     prs: [761, 758],
+    officer: [
+      {
+        title: {
+          en: "Posts the tracker writes for you",
+          "pt-BR": "Posts que o tracker escreve por você",
+          fr: "Des messages que le tracker écrit pour vous",
+        },
+        text: {
+          en: "Alliance settings → Posts: the first optional post, “This week in the alliance”, sends the week’s Calendar entries for members every Monday, with ST times, to the channel you pick. Off until you turn it on.",
+          "pt-BR":
+            "Configurações da aliança → Posts: o primeiro post opcional, “Esta semana na aliança”, envia toda segunda os itens da Agenda da semana para os membros, com horários em ST, no canal que você escolher. Desligado até você ligar.",
+          fr: "Réglages de l’alliance → Messages : le premier message facultatif, « Cette semaine dans l’alliance », envoie chaque lundi les entrées de l’agenda de la semaine pour les membres, avec les heures en ST, dans le salon choisi. Éteint jusqu’à ce que vous l’allumiez.",
+        },
+        needs: ["post_week"],
+      },
+    ],
   },
   {
     version: "v5.69.0",
@@ -254,6 +432,22 @@ export const patchNotes: PatchNote[] = [
       'Flow weeks with nothing to compare show "—", never 0, and each start date says which start it is.',
     ],
     prs: [755],
+    officer: [
+      {
+        title: {
+          en: "Insights: open a day",
+          "pt-BR": "Análises: abrir um dia",
+          fr: "Analyses : ouvrir un jour",
+        },
+        text: {
+          en: "A day on Insights opens one level more: where newcomers came from and where leavers went, “n of N members” for each measure, and a tap shows who did it.",
+          "pt-BR":
+            "Um dia em Análises abre mais um nível: de onde vieram os novos e para onde foram os que saíram, “n de N membros” em cada medida, e um toque mostra quem fez.",
+          fr: "Un jour dans Analyses s’ouvre d’un niveau de plus : d’où viennent les arrivants et où vont les partants, « n sur N membres » pour chaque mesure, et un appui montre qui l’a fait.",
+        },
+        needs: ["insights"],
+      },
+    ],
   },
   {
     version: "v5.68.0",
@@ -264,6 +458,22 @@ export const patchNotes: PatchNote[] = [
       'Insights: an earlier week\'s pulse opens its seven days, and a membership flow week opens its days (joined and left counts, "—" where no daily update came). A path with Back sits above each level, and the address reopens it.',
     ],
     prs: [751],
+    officer: [
+      {
+        title: {
+          en: "Insights: tap a week to open its days",
+          "pt-BR": "Análises: toque numa semana para ver os dias",
+          fr: "Analyses : touchez une semaine pour voir ses jours",
+        },
+        text: {
+          en: "An earlier week’s pulse opens its seven days, and a membership flow week opens its joined and left counts by day. Back takes you up one level.",
+          "pt-BR":
+            "O pulso de uma semana anterior abre os sete dias, e uma semana do fluxo de membros abre as entradas e saídas por dia. Voltar sobe um nível.",
+          fr: "Le pouls d’une semaine passée ouvre ses sept jours, et une semaine du flux des membres ouvre ses arrivées et départs par jour. Retour remonte d’un niveau.",
+        },
+        needs: ["insights"],
+      },
+    ],
   },
   {
     version: "v5.67.1",
@@ -273,6 +483,21 @@ export const patchNotes: PatchNote[] = [
       "Members tab thanks: on a Monday the activity and donors lists now show last week, as the weekly thanks should; both lists always cover the same week, even when a day's read is missing.",
     ],
     prs: [748],
+    officer: [
+      {
+        title: {
+          en: "Monday’s thanks cover last week",
+          "pt-BR": "Os agradecimentos de segunda cobrem a semana passada",
+          fr: "Les remerciements du lundi couvrent la semaine passée",
+        },
+        text: {
+          en: "On a Monday, the activity and donors lists in Members show last week, as the weekly thanks should.",
+          "pt-BR":
+            "Na segunda, as listas de atividade e de doadores em Membros mostram a semana passada, como devem os agradecimentos semanais.",
+          fr: "Le lundi, les listes d’activité et de donateurs dans Membres montrent la semaine passée, comme il se doit pour les remerciements de la semaine.",
+        },
+      },
+    ],
   },
   {
     version: "v5.67.0",
@@ -285,6 +510,35 @@ export const patchNotes: PatchNote[] = [
       "The feedback sheet keeps a focused field clear of its Send bar on a phone.",
     ],
     prs: [745, 744],
+    officer: [
+      {
+        title: {
+          en: "Tap a chart to read it",
+          "pt-BR": "Toque num gráfico para ler",
+          fr: "Touchez un graphique pour le lire",
+        },
+        text: {
+          en: "Tap a column: a line under the chart gives its time and numbers, with ‹ › to step.",
+          "pt-BR":
+            "Toque numa coluna: uma linha abaixo do gráfico mostra o horário e os números, com ‹ › para avançar.",
+          fr: "Touchez une colonne : une ligne sous le graphique donne son heure et ses chiffres, avec ‹ › pour avancer.",
+        },
+      },
+      {
+        title: {
+          en: "Insights: see who",
+          "pt-BR": "Análises: veja quem",
+          fr: "Analyses : voyez qui",
+        },
+        text: {
+          en: "A count of members on Insights opens their names, and “Open these n in Members ›” shows exactly that group in Members.",
+          "pt-BR":
+            "Uma contagem de membros em Análises abre os nomes, e “Abrir estes n em Membros ›” mostra exatamente esse grupo em Membros.",
+          fr: "Un nombre de membres dans Analyses ouvre leurs noms, et « Ouvrir ces n dans Membres › » montre exactement ce groupe dans Membres.",
+        },
+        needs: ["insights"],
+      },
+    ],
   },
   {
     version: "v5.66.0",
@@ -296,6 +550,34 @@ export const patchNotes: PatchNote[] = [
       "Feedback can carry one picture (up to 400 KB). Only you see it on /admin/feedback; it is deleted with the feedback after 180 days.",
     ],
     prs: [740, 738, 734],
+    officer: [
+      {
+        title: {
+          en: "Right daily quest points",
+          "pt-BR": "Pontos de missão diária corretos",
+          fr: "Points de quête quotidienne justes",
+        },
+        text: {
+          en: "Daily quest points were wrong: the game sends a running total for the week. Every page now shows each day’s real points.",
+          "pt-BR":
+            "Os pontos de missão diária estavam errados: o jogo envia um total acumulado da semana. Agora todas as páginas mostram os pontos reais de cada dia.",
+          fr: "Les points de quête quotidienne étaient faux : le jeu envoie un total cumulé de la semaine. Chaque page montre maintenant les vrais points de chaque jour.",
+        },
+      },
+      {
+        title: {
+          en: "A picture with your feedback",
+          "pt-BR": "Uma imagem com o seu feedback",
+          fr: "Une image avec votre avis",
+        },
+        text: {
+          en: "Feedback can carry one picture, up to 400 KB. Only the site’s maintainer sees it, and it is deleted with the feedback after 180 days.",
+          "pt-BR":
+            "O feedback pode levar uma imagem, até 400 KB. Só o responsável pelo site a vê, e ela é apagada com o feedback depois de 180 dias.",
+          fr: "Un avis peut porter une image, jusqu’à 400 Ko. Seul le responsable du site la voit, et elle est supprimée avec l’avis après 180 jours.",
+        },
+      },
+    ],
   },
   {
     version: "v5.65.0",

@@ -76,6 +76,12 @@ export const pt: WorkspaceDictionary = {
   "home.notYet":
     "Nada ainda. Os agradecimentos e quem ver como está aparecem depois da primeira atualização diária.",
   "home.open": "Abrir Membros",
+  "home.whatsNew": "Novidade: {title}",
+  "whatsnew.title": "Novidades",
+  "whatsnew.lead":
+    "O que mudou na Mesa nos últimos dias, do mais novo ao mais antigo. Só o que a sua aliança tem.",
+  "whatsnew.none": "Nada de novo por enquanto.",
+  "whatsnew.back": "Início",
   "shell.help": "Como funciona",
   "signin.howto": "Como colocar no seu celular",
   "members.none":

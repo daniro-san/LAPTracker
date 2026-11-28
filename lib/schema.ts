@@ -425,6 +425,8 @@ export const workspaceUsers = pgTable(
      */
     playerLink: text("player_link", { enum: ["approved", "pending"] }),
     playerLinkedAt: tstz("player_linked_at"),
+    /** Issue 782: the newest release whose officer notes this officer opened on What's new; null: none. */
+    whatsNewSeen: text("whats_new_seen"),
   },
   (t) => [
     unique("workspace_users_workspace_discord_unique").on(t.workspaceId, t.discordUserId),

@@ -75,6 +75,12 @@ export const fr: WorkspaceDictionary = {
   "home.notYet":
     "Rien pour l’instant. Les remerciements et les membres à contacter apparaissent après la première mise à jour quotidienne.",
   "home.open": "Ouvrir Membres",
+  "home.whatsNew": "Nouveau : {title}",
+  "whatsnew.title": "Nouveautés",
+  "whatsnew.lead":
+    "Ce qui a changé sur le Bureau ces derniers temps, du plus récent au plus ancien. Seulement ce que votre alliance a.",
+  "whatsnew.none": "Rien de nouveau pour l’instant.",
+  "whatsnew.back": "Accueil",
   "shell.help": "Comment ça marche",
   "signin.howto": "Comment l’avoir sur votre téléphone",
   "members.none":
