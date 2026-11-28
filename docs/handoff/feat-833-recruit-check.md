@@ -14,7 +14,7 @@
 - `playerTrail` and `trailNames` (`lib/repo/player-reads.ts`) read one player's own-alliance `player_history` and `player_reads` columns, and search names in the history rows. They never read raw_json.
 - `lib/private/recruit-check.ts`:
   - `recruitFacts` merges public `playerProgress` readings (daily rosters and public events) with the workspace's own trail. From these it gives: the newest name, the alliance and the time; alliance moves and name changes between consecutive sightings; might and kills as the first and newest value of the last 30 days; and the events seen.
-  - `recruitMatches`: a name goes through the public `searchPlayers` and then the own history names, at most 10 matches.
+  - `recruitMatches`: a name goes through the public `searchPlayers` and then the own history names of the last 90 days (`TRAIL_NAME_DAYS`, D149), at most 10 matches.
   - `recruitBudget`: whether an own key reads now, and how many reads are left today.
   - `readRecruit` takes these steps in order:
     1. Checks the switch.
@@ -24,7 +24,8 @@
     5. Sends one `fetchPlayer` with `{ apiKey, maxRetries: 0 }`.
     6. Keeps the answer with `storePlayerRead` under `access.unionId`.
 
-    A 401 or 429 marks the key. Log lines carry the workspace id and counts only.
+    A 404 (`NotFoundError`) answers `not_found`. A 401 or 429 marks the key (`invalid`, `out_of_quota`). Log lines carry the workspace id and counts only.
+- Export: `player-reads.csv` leaves `map_updated_at`, `shielding` and `shield_type` empty on rows of a player no daily roster of the alliance ever listed (`membersOnly` in `WORKSPACE_TABLES`, D163). `last_seen_at` was already never downloaded.
 - `POST /api/w/[slug]/recruit-check` `{uid}`. Answers:
   - 200 `{called}`
   - 401 `signed_out` (also for a member's session)
@@ -39,7 +40,9 @@
 - Nav: the view `recruit` is in `DeskNav` (rail and sidebar) and in the phone switch `ViewSwitch`. `ViewSwitch` now takes the served feature set `on` instead of an `insights` boolean, and the insights page and `MembersHead` pass `access.features.on`.
 - Copy: `lib/private/dictionary.recruit.ts` (EN, PT-BR, FR), spread into the three workspace dictionaries.
 - Decision: a dated amendment to D124 (2026-11-28) records the 20 a day budget, the own-key rule, storage, the switch and privacy.
-- Tests (`app/(private)/api/w/[slug]/recruit-check/route.test.ts`, 7 tests):
+- Tests (`app/(private)/api/w/[slug]/recruit-check/route.test.ts`, 10 tests):
+  - a 404 answers `not_found` and keeps nothing;
+  - a 401 marks the key `invalid`, and a 429 marks it `out_of_quota`; after either, the next press sends nothing (409);
   - a stored player is shown without a call;
   - an unstored player gets one call on the workspace key and is kept under its alliance, and the next lookup makes no call;
   - the 21st read of the day is refused;
@@ -54,6 +57,8 @@
   - The route gets a fixture in `member-session.test.ts`.
   - The admin copy test's `allianceOff` now includes `recruit_check`.
   - The purge seed has a `recruit_reads` row.
+  - `lib/repo/player-reads.test.ts`: the name search reads 90 days only; the download keeps a member's shield and map times and leaves a non-member's empty.
+  - `playerFailure(status)` in `lib/squads.test-helpers.ts` builds the error `fetchPlayer` throws for a status, because app/ tests may not import `lib/sources`.
 
 ## Decisions
 
@@ -73,7 +78,9 @@
 
 - `pnpm typecheck`: clean.
 - `pnpm vitest related --run <changed files>`: 234 files and 1380 tests passed, after the fixture, admin test and seed fixes.
-- `pnpm check`: the first two rounds failed: lint (import order, restricted imports in the route test, two functions over 80 lines), then the purge test, which needs a `recruit_reads` seed row. The seed row first pushed `seedKeyAndData` to 81 lines. With the orchestrator's go-ahead for a third round, the row moved into its own helper `seedRecruitReads` (`lib/workspace-seed-parts.test-helpers.ts`), which `seedEverything` calls. The result of the third run is in the commit report.
+- `pnpm check`: the first two rounds failed: lint (import order, restricted imports in the route test, two functions over 80 lines), then the purge test, which needs a `recruit_reads` seed row. The seed row first pushed `seedKeyAndData` to 81 lines. With the orchestrator's go-ahead for a third round, the row moved into its own helper `seedRecruitReads` (`lib/workspace-seed-parts.test-helpers.ts`), which `seedEverything` calls. The third run passed.
+- After the review of PR 852 (the 404 error class, the 90-day name window, the export of non-members' shield and map times): `pnpm vitest related --run` and `pnpm check`; the results are in the commit report.
+- The name window has no index of its own: `player_history`'s key starts with `union_id`, so the query still walks that alliance's history rows and filters them by `t`. An index `(union_id, t)` would bound the walk too. It is not added here.
 - Not run: the page in a browser at 360 / 640 / 1280 px. No dev server was started in this session.
 
 ## Open issues
@@ -83,7 +90,8 @@
 
 ## Next
 
-- The orchestrator pushes `feat/833-recruit-check` and opens the PR against `dev` (`Closes #833`).
+- The orchestrator pushes the review fixes to PR 852.
+- Decide whether the name search needs a `player_history (union_id, t)` index once the table is measured.
 - Follow-up idea, not built: allow a new read of a stored player whose newest sighting is old. The task did not ask for it.
 - The owner decides whether OGs should also read on `LAP_API_KEY` when it has no saved key. Today it needs a saved key.
 

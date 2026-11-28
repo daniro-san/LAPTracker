@@ -1,7 +1,9 @@
 // POST /api/w/[slug]/recruit-check and the recruit check's facts (issue 833): a stored player costs no call; an
 // unstored one is read once on the workspace's own key and kept (D132); the 21st new read of a UTC day is
 // refused; a member's session and a switch turned off are refused; another workspace's key is never used;
-// the facts carry no private roster key. Stubs only, no upstream call; invented names and values.
+// the facts carry no private roster key; a 404 is not_found, a 401 or 429 marks the key. Stubs only, no
+// upstream call; invented names and values.
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -16,7 +18,7 @@ import { workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceFeatures } from "@/lib/schema-features";
 import { workspaceKeys } from "@/lib/schema-keys";
 import { playerReads } from "@/lib/schema-squads";
-import { playerAnswer } from "@/lib/squads.test-helpers";
+import { playerAnswer, playerFailure } from "@/lib/squads.test-helpers";
 import { PRIVATE_MARKERS, seedRoster } from "@/lib/workspace-data.test-helpers";
 import { sealKey } from "@/lib/workspace-keys";
 
@@ -43,6 +45,8 @@ let officer = "";
 let member = "";
 /** Each /v1/players call: the uid and the key it was sent on (undefined: LAP_API_KEY). */
 let calls: { uid: number; apiKey: string | undefined }[] = [];
+/** What the next /v1/players calls throw, as the adapter does for a 404, 401 or 429; null: an answer. */
+let fails: Error | null = null;
 
 async function workspace(slug: string, unionId: number, on: boolean) {
   const [ws] = await db
@@ -57,6 +61,15 @@ async function workspace(slug: string, unionId: number, on: boolean) {
     .values({ workspaceId: id, switches, allianceSwitches: switches });
   return id;
 }
+
+/** A workspace's stored key status and quota. */
+const keyOf = async (workspaceId: number) => {
+  const [row] = await db
+    .select({ status: workspaceKeys.status, quotaRemaining: workspaceKeys.quotaRemaining })
+    .from(workspaceKeys)
+    .where(eq(workspaceKeys.workspaceId, workspaceId));
+  return row;
+};
 
 /** A saved key that reads now, sealed for its own workspace (D124). */
 const saveKey = (workspaceId: number, key: string) =>
@@ -76,9 +89,11 @@ beforeEach(async () => {
   const test = testContext(db, { ...TEST_ENV, WORKSPACE_KEYS_SECRET: SECRET });
   test.clock.now = NOW;
   calls = [];
+  fails = null;
   test.ctx.v1.fetchPlayer = async (uid, onAttempt, _signal, options) => {
     onAttempt?.(0);
     calls.push({ uid, apiKey: options?.apiKey });
+    if (fails) throw fails;
     return playerAnswer(uid, [], null, {
       history: [
         {
@@ -175,6 +190,31 @@ describe("the recruit check (issue 833)", () => {
     await db.update(workspaceFeatures).set({ allianceSwitches: { recruit_check: false } });
     expect(await answer(await post(202))).toEqual([403, { code: "turned_off" }]);
     expect(calls).toEqual([]);
+  });
+
+  it("says the tracker does not know a uid it answers 404 for, and keeps nothing", async () => {
+    await saveKey(nse, OWN_KEY);
+    fails = playerFailure(404);
+    expect(await answer(await post(202))).toEqual([404, { code: "not_found" }]);
+    expect(await db.select().from(playerReads)).toEqual([]);
+  });
+
+  it("marks the key invalid after a 401, then sends nothing more on it", async () => {
+    await saveKey(nse, OWN_KEY);
+    fails = playerFailure(401);
+    expect(await answer(await post(202))).toEqual([502, { code: "unavailable" }]);
+    expect(await keyOf(nse)).toEqual({ status: "invalid", quotaRemaining: 900 });
+    expect(await answer(await post(203))).toEqual([409, { code: "no_key" }]);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("marks the key out of quota after a 429, until the 00:00 UTC reset", async () => {
+    await saveKey(nse, OWN_KEY);
+    fails = playerFailure(429);
+    expect(await answer(await post(202))).toEqual([502, { code: "unavailable" }]);
+    expect(await keyOf(nse)).toEqual({ status: "out_of_quota", quotaRemaining: 0 });
+    expect(await answer(await post(203))).toEqual([409, { code: "no_key" }]);
+    expect(calls).toHaveLength(1);
   });
 
   it("never reads on another workspace's key or on LAP_API_KEY", async () => {

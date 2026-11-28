@@ -233,7 +233,7 @@ export default async function RecruitPage({
     async (db, access) => {
       const now = new Date();
       if (uid === null) {
-        const matches = q ? await recruitMatches(db, access, q) : null;
+        const matches = q ? await recruitMatches(db, access, q, now) : null;
         return { facts: null, budget: null, matches };
       }
       const facts = await recruitFacts(db, access, uid, now);

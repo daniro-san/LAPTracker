@@ -179,20 +179,29 @@ export async function playerTrail(db: Db, unionId: number, uid: number): Promise
   return [...history, ...reads.map((r) => ({ ...r, tag: null, name: null }))];
 }
 
-/** The players whose name in `unionId`'s own history rows contains `q`, newest name each, at most `limit`. */
+/** The name search reads history rows this recent only (D149: a growing table is read by a window). */
+export const TRAIL_NAME_DAYS = 90;
+
+/**
+ * The players whose name in `unionId`'s own history rows of the last TRAIL_NAME_DAYS contains `q`, the
+ * newest matching name each, at most `limit`.
+ */
 export async function trailNames(
   db: Db,
   unionId: number,
   q: string,
   limit: number,
+  now: Date,
 ): Promise<{ uid: number; name: string }[]> {
   const h = playerHistory;
+  const since = new Date(now.getTime() - TRAIL_NAME_DAYS * 86_400_000);
   const rows = await db
     .selectDistinctOn([h.uid], { uid: h.uid, name: h.nick })
     .from(h)
     .where(
       and(
         eq(h.unionId, unionId),
+        gte(h.t, since),
         isNotNull(h.nick),
         ilike(h.nick, `%${q.replace(/[\\%_]/g, "\\$&")}%`),
       ),

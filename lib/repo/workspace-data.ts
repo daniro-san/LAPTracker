@@ -10,6 +10,7 @@ import { UNLOGGED_ROSTER_KEYS } from "../queries/blocked-keys";
 import {
   calendarEntries,
   calendarOccurrences,
+  dailyRosters,
   garrisonPlans,
   kvkClaims,
   kvkPlans,
@@ -73,6 +74,12 @@ export interface WorkspaceTable {
   scope: Scope;
   /** Columns never downloaded, by their database names. */
   omit?: readonly string[];
+  /**
+   * Columns downloaded only on rows of a player the alliance's own daily rosters ever listed; empty on any
+   * other player's row (D163: presence and position are own-alliance data; the recruit check reads players
+   * who never were members, issue 833). By their database names; the table needs a `uid` column.
+   */
+  membersOnly?: readonly string[];
 }
 
 /**
@@ -131,7 +138,13 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "squads", table: memberSquads, scope: "union" },
   // D132: every tracker read of a member as its columns, and the history rows. The raw bodies stay out:
   // about 90 days of them would pass the download's 4.4 MB, and they hold private fields (D71).
-  { file: "player-reads", table: playerReads, scope: "union", omit: ["raw_json"] },
+  {
+    file: "player-reads",
+    table: playerReads,
+    scope: "union",
+    omit: ["raw_json"],
+    membersOnly: ["last_seen_at", "map_updated_at", "shielding", "shield_type"],
+  },
   { file: "player-history", table: playerHistory, scope: "union" },
   { file: "tracker-key-changes", table: workspaceKeyChanges, scope: "workspace" },
   { file: "data-requests", table: workspaceDataEvents, scope: "workspace" },
@@ -207,6 +220,19 @@ function officerColumns(table: PgTable): Set<string> {
   return new Set(names);
 }
 
+/**
+ * Each column as downloaded: a `membersOnly` column is empty on a row whose player no daily roster of
+ * `unionId` ever listed (the GIN index on member_uids); every other column as stored.
+ */
+function membersOnlyColumns(t: WorkspaceTable, unionId: number) {
+  const only = new Set(t.membersOnly ?? []);
+  if (only.size === 0) return (col: PgColumn): PgColumn | SQL.Aliased => col;
+  const uid = columnsOf(t.table).uid as PgColumn;
+  const member = sql`exists (select 1 from ${dailyRosters} where ${dailyRosters.unionId} = ${unionId} and ${dailyRosters.memberUids} @> array[${uid}])`;
+  return (col: PgColumn): PgColumn | SQL.Aliased =>
+    only.has(col.name) ? sql`case when ${member} then ${col} end`.mapWith(col).as(col.name) : col;
+}
+
 /** Every downloadable table of the workspace, every row, ordered by the table's first column. */
 export async function workspaceDumps(
   db: Db,
@@ -220,9 +246,10 @@ export async function workspaceDumps(
         ([, col]) => !omit.has(col.name) && !NEVER.has(col.name),
       );
       const first = kept[0]?.[1] as PgColumn;
+      const shown = membersOnlyColumns(t, ws.unionId);
       // Only the columns downloaded: a notice picture's bytes are never read here (review of PR 449).
       const rows = (await db
-        .select(Object.fromEntries(kept))
+        .select(Object.fromEntries(kept.map(([key, col]) => [key, shown(col)])))
         .from(t.table)
         .where(ownedBy(t, ws))
         .orderBy(asc(first))) as Record<string, unknown>[];

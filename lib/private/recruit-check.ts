@@ -13,7 +13,7 @@ import { allianceLabels } from "../repo/alliances";
 import { playerTrail, storePlayerRead, trailNames, type TrailPoint } from "../repo/player-reads";
 import { countRecruitRead, recruitReadsOn } from "../repo/recruit-reads";
 import { keyFacts, markKey } from "../repo/workspace-keys";
-import { UpstreamError, type V1Source } from "../sources/types";
+import { NotFoundError, type V1Source } from "../sources/types";
 import { RECRUIT_READS_A_DAY, usageDay } from "../workspace-features";
 import { keyStatusOf, ownKeyOf, squadsKey } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
@@ -151,12 +151,13 @@ export async function recruitMatches(
   db: Db,
   access: WorkspaceAccess,
   q: string,
+  now: Date,
 ): Promise<{ uid: number; name: string; tag: string | null }[]> {
   const text = q.trim();
   if (text === "") return [];
   const [found, own] = await Promise.all([
     searchPlayers(db, text),
-    trailNames(db, access.unionId, text, RECRUIT_MATCHES),
+    trailNames(db, access.unionId, text, RECRUIT_MATCHES, now),
   ]);
   const out = new Map(found.map((m) => [m.uid, { uid: m.uid, name: m.name, tag: m.tag }]));
   for (const m of own) if (!out.has(m.uid)) out.set(m.uid, { ...m, tag: null });
@@ -230,8 +231,7 @@ export async function readRecruit(
       await markKey(db, key.workspaceId, key.nonce, patch, now);
     }
     privateLog("recruit.read_failed", { workspace: access.workspaceId, used });
-    const missing = e instanceof UpstreamError && e.status === 404;
-    return { ok: false, code: missing ? "not_found" : "unavailable" };
+    return { ok: false, code: e instanceof NotFoundError ? "not_found" : "unavailable" };
   }
   privateLog("recruit.read", { workspace: access.workspaceId, used });
   return { ok: true, called: true };
