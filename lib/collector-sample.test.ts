@@ -15,7 +15,10 @@ import {
   T0,
 } from "./collector.test-helpers";
 import { createMemoryRepo } from "./repo/memory";
-import { type CallOptions, UpstreamError } from "./sources/types";
+import { v1 as realV1 } from "./sources";
+import { TIMEOUT_MS } from "./sources/shared";
+import { readFixture, respond, stubSourceEnv } from "./sources/test-helpers";
+import type { CallOptions } from "./sources/types";
 
 const fresh = (id: number) => roster(id, ago(T0, minutes(2)));
 const [FIRST, SECOND] = IDS as [number, number];
@@ -43,7 +46,7 @@ describe("runSample hardening (D69)", () => {
     return { v1, options };
   };
 
-  it("closes a sample partial at 25 s when every read hangs, and gives each call the 12 s timeout", async () => {
+  it("closes a sample partial at 25 s when every read hangs, and gives each call the sample's timeout and one attempt", async () => {
     vi.useFakeTimers({ now: T0 });
     const { v1, options } = recordingV1(() => new Promise(() => {}));
     const { deps } = makeDeps(v1);
@@ -58,38 +61,13 @@ describe("runSample hardening (D69)", () => {
     expect(summary.durationMs).toBeGreaterThanOrEqual(SAMPLE_DEADLINE_MS);
     expect(summary.durationMs).toBeLessThanOrEqual(SAMPLE_DEADLINE_MS + 1_000);
     expect(summary.failed.map((f) => f.error)).toEqual(IDS.map(() => "not fetched: deadline"));
-    expect(options.quota).toEqual([{ timeoutMs: SAMPLE_CALL_TIMEOUT_MS, maxRetries: undefined }]);
+    expect(options.quota).toEqual([{ timeoutMs: SAMPLE_CALL_TIMEOUT_MS, maxRetries: 0 }]);
     expect([...options.alliance.values()]).toEqual(
       [...options.alliance.keys()].map(() => ({
         timeoutMs: SAMPLE_CALL_TIMEOUT_MS,
-        maxRetries: undefined,
+        maxRetries: 0,
       })),
     );
-  });
-
-  it("reads an alliance that failed in an earlier sample of the event once, with no retries", async () => {
-    const failing = recordingV1(async (id) => {
-      if (id === FIRST) throw new UpstreamError(502);
-      return fresh(id);
-    });
-    const { deps } = makeDeps(failing.v1);
-    expect(await runSample(EVENT_ID, T0, deps)).toMatchObject({ status: "partial" });
-    expect(failing.options.alliance.get(FIRST)).toEqual({
-      timeoutMs: SAMPLE_CALL_TIMEOUT_MS,
-      maxRetries: undefined,
-    });
-
-    deps.now = () => new Date(T0.getTime() + minutes(15));
-    await runSample(EVENT_ID, new Date(T0.getTime() + minutes(15)), deps);
-
-    expect(failing.options.alliance.get(FIRST)).toEqual({
-      timeoutMs: SAMPLE_CALL_TIMEOUT_MS,
-      maxRetries: 0,
-    });
-    expect(failing.options.alliance.get(SECOND)).toEqual({
-      timeoutMs: SAMPLE_CALL_TIMEOUT_MS,
-      maxRetries: undefined,
-    });
   });
 
   it("gives a Before and After the adapter's defaults: no per-call options", async () => {
@@ -100,6 +78,97 @@ describe("runSample hardening (D69)", () => {
 
     expect(options.quota).toEqual([{}]);
     expect([...options.alliance.values()]).toEqual(IDS.map(() => ({})));
+  });
+});
+
+describe("a hung call in a sample (issue 866)", () => {
+  const OGS = JSON.parse(readFixture("v1-20261104T155902Z/alliance-67111155.json")) as object;
+  const HUNG = IDS.slice(0, 4);
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  /** The real /v1 adapter over a mocked fetch: `answer` says what each alliance's attempt gets. A hung call
+   * waits on its signal, as fetch does; AbortSignal.timeout runs on the fake timers. */
+  function upstream(answer: (id: number, attempt: number) => "hang" | 503 | 200) {
+    stubSourceEnv();
+    vi.useFakeTimers({ now: T0 });
+    const timeouts = vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
+      const c = new AbortController();
+      setTimeout(() => c.abort(new DOMException("timed out", "TimeoutError")), ms);
+      return c.signal;
+    });
+    const attempts = new Map<number, number>();
+    const fetch = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/quota"))
+        return Promise.resolve(respond('{"quota":{"limit":1000,"used":0,"remaining":1000}}'));
+      const id = Number(/alliances\/(\d+)/.exec(url)?.[1]);
+      const n = attempts.get(id) ?? 0;
+      attempts.set(id, n + 1);
+      const outcome = answer(id, n);
+      return new Promise<Response>((resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+        if (outcome === "hang") return;
+        const body = outcome === 503 ? "error code: 503" : JSON.stringify({ ...OGS, union_id: id });
+        // A normal read answers in about 1 s.
+        setTimeout(() => resolve(respond(body, outcome)), 1_000);
+      });
+    });
+    vi.stubGlobal("fetch", fetch);
+    // No daily rosters: the fixture's members are not the invented alliances' own.
+    const repo = createMemoryRepo([{ id: EVENT_ID, allianceIds: IDS }], IDS, LABELS);
+    const deps = { ...makeDeps(realV1).deps, repo, now: () => vi.getMockedSystemTime() ?? T0 };
+    return { deps, repo, attempts, timeouts };
+  }
+
+  it("reads the other 16 alliances before the deadline while 4 calls hang until their timeout", async () => {
+    const { deps, repo, timeouts } = upstream((id) => (HUNG.includes(id) ? "hang" : 200));
+
+    const run = runSample(EVENT_ID, T0, deps);
+    await vi.advanceTimersByTimeAsync(SAMPLE_DEADLINE_MS);
+    const summary = await run;
+
+    expect(summary).toMatchObject({ status: "partial", error: null });
+    expect(summary.durationMs).toBeLessThan(SAMPLE_DEADLINE_MS);
+    const rows = rowsOf(repo, summary.snapshotId);
+    expect(rows.filter((r) => r.error === null)).toHaveLength(IDS.length - HUNG.length);
+    expect(summary.failed).toEqual(
+      HUNG.map((unionId) => ({ unionId, tag: LABELS.get(unionId)?.tag, error: "v1 TimeoutError" })),
+    );
+    expect(new Set(timeouts.mock.calls.map(([ms]) => ms))).toEqual(
+      new Set([SAMPLE_CALL_TIMEOUT_MS]),
+    );
+  });
+
+  it("never retries a sample's call: a 503 is the alliance's error row", async () => {
+    const { deps, repo, attempts } = upstream((id, n) => (id === FIRST && n === 0 ? 503 : 200));
+
+    const run = runSample(EVENT_ID, T0, deps);
+    await vi.advanceTimersByTimeAsync(SAMPLE_DEADLINE_MS);
+    const summary = await run;
+
+    expect(attempts.get(FIRST)).toBe(1);
+    expect(rowsOf(repo, summary.snapshotId).find((r) => r.unionId === FIRST)?.error).toBe(
+      "v1 http 503",
+    );
+  });
+
+  it("still retries a Before's call, with the adapter's 30 s timeout", async () => {
+    const { deps, repo, attempts, timeouts } = upstream((id, n) =>
+      id === FIRST && n === 0 ? 503 : 200,
+    );
+
+    const run = runSnapshot(EVENT_ID, "before", deps);
+    await vi.advanceTimersByTimeAsync(60_000);
+    const summary = await run;
+
+    expect(attempts.get(FIRST)).toBe(2);
+    expect(rowsOf(repo, summary.snapshotId).find((r) => r.unionId === FIRST)?.error).toBeNull();
+    expect(new Set(timeouts.mock.calls.map(([ms]) => ms))).toEqual(new Set([TIMEOUT_MS]));
   });
 });
 

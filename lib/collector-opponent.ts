@@ -6,7 +6,6 @@ import type { Deps } from "./collector";
 import { sameMembers } from "./collector-identity";
 import { logV1Fetch } from "./collector-log";
 import { FRESH_MAX_AGE_MS, MAX_UPSTREAM_CALLS } from "./collector-rows";
-import { SAMPLE_CALL_TIMEOUT_MS } from "./collector-sample";
 import { isFresh } from "./compute";
 import { opponentDue } from "./kvk";
 import type { OpponentInfo, OpponentRead, Phase, SnapshotPhase } from "./repo";
@@ -20,6 +19,8 @@ import { describe } from "./upstream-errors";
 
 /** No opponent call starts with less of the run's time left: it must end before the run answers. */
 export const OPPONENT_MIN_LEFT_MS = 5_000;
+/** An opponent call's longest timeout (D152); within the time left, as `callOne` sets it. */
+const OPPONENT_CALL_TIMEOUT_MS = 12_000;
 /** The row a call claims before it is sent (INVARIANT kvk.one-call-per-row); the answer replaces it. A run
  * that dies in between leaves it, so that tag is never sent again. */
 export const SENT = "sent: no answer stored";
@@ -130,7 +131,7 @@ async function callOne(p: Pass, due: Due, sent: OpponentRead): Promise<OpponentR
   const { deps } = run;
   const options = {
     maxRetries: 0,
-    timeoutMs: Math.min(SAMPLE_CALL_TIMEOUT_MS, timeLeft(run) - 1_000),
+    timeoutMs: Math.min(OPPONENT_CALL_TIMEOUT_MS, timeLeft(run) - 1_000),
   };
   // The one attempt was counted when the worker reserved it (`reserve`): no retry adds another.
   const hook = () => {};
