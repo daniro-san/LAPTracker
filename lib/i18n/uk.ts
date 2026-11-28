@@ -56,7 +56,6 @@ export const uk = {
     names: "Імена",
     alliances: "Альянси",
     movers: "Найбільші зміни в цій події",
-    progress: "Щоденний прогрес",
     progressMight: "Ви: {change} з {date}.",
     progressMedian: "Типовий учасник {tag}: {percent}.",
     rankIn: "в {tag}",

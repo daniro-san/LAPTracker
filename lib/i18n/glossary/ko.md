@@ -29,7 +29,6 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | grandma                   | 할머니                 | the voice in empty states and errors                                                                                        |
 | Member history            | 멤버 이력              | `history.title` — the alliance's rosters over time                                                                          |
 | Daily update              | 일일 업데이트          | `history.daily`; the one phrase for the once-a-day read of the member lists in `flow.*`, `balance.*`, `standing.*`          |
-| Daily progress            | 일일 추이              | `ledger.progress` — the player page's chart card heading                                                                    |
 | English                   | ko                     | Key and use                                                                                                                 |
 | ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------                          |
 | Server 325 · Event Ledger | 서버 325 · 이벤트 장부 | `site.ledger` — the page title                                                                                              |
@@ -93,7 +92,6 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | grandma                   | 할머니                 | the voice in empty states and errors                                                                                        |
 | Member history            | 멤버 이력              | `history.title` — the alliance's rosters over time                                                                          |
 | Daily update              | 일일 업데이트          | `history.daily`; the one phrase for the once-a-day read of the member lists in `flow.*`, `balance.*`, `standing.*`          |
-| Daily progress            | 일일 추이              | `ledger.progress` — the player page's chart card heading                                                                    |
 | English                   | ko                     | Key and use                                                                                                                 |
 | ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------                          |
 | Server 325 · Event Ledger | 서버 325 · 이벤트 장부 | `site.ledger` — the page title                                                                                              |
@@ -160,7 +158,6 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | grandma                   | 할머니                 | the voice in empty states and errors                                                                                        |
 | Member history            | 멤버 이력              | `history.title` — the alliance's rosters over time                                                                          |
 | Daily update              | 일일 업데이트          | `history.daily`; the one phrase for the once-a-day read of the member lists in `flow.*`, `balance.*`, `standing.*`          |
-| Daily progress            | 일일 추이              | `ledger.progress` — the player page's chart card heading                                                                    |
 | English                   | ko                     | Key and use                                                                                                                 |
 | ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------                          |
 | Server 325 · Event Ledger | 서버 325 · 이벤트 장부 | `site.ledger` — the page title                                                                                              |
@@ -224,7 +221,6 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | grandma                   | 할머니                 | the voice in empty states and errors                                                                                        |
 | Member history            | 멤버 이력              | `history.title` — the alliance's rosters over time                                                                          |
 | Daily update              | 일일 업데이트          | `history.daily`; the one phrase for the once-a-day read of the member lists in `flow.*`, `balance.*`, `standing.*`          |
-| Daily progress            | 일일 추이              | `ledger.progress` — the player page's chart card heading                                                                    |
 | English                   | ko                     | Key and use                                                                                                                 |
 | ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------                          |
 | Server 325 · Event Ledger | 서버 325 · 이벤트 장부 | `site.ledger` — the page title                                                                                              |

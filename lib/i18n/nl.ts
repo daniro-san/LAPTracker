@@ -56,7 +56,6 @@ export const nl = {
     names: "Namen",
     alliances: "Allianties",
     movers: "Grootste veranderingen in dit event",
-    progress: "Dagelijkse voortgang",
     progressMight: "Jij: {change} sinds {date}.",
     progressMedian: "Typisch lid van {tag}: {percent}.",
     rankIn: "in {tag}",

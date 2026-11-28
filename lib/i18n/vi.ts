@@ -56,7 +56,6 @@ export const vi = {
     names: "Tên",
     alliances: "Liên minh",
     movers: "Thay đổi lớn nhất trong sự kiện",
-    progress: "Tiến độ hằng ngày",
     progressMight: "Bạn: {change} từ {date}.",
     progressMedian: "Thành viên điển hình của {tag}: {percent}.",
     rankIn: "ở {tag}",

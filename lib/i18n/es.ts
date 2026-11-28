@@ -56,7 +56,6 @@ export const es = {
     names: "Nombres",
     alliances: "Alianzas",
     movers: "Lo que más cambió en este evento",
-    progress: "Progreso diario",
     progressMight: "Tú: {change} desde {date}.",
     progressMedian: "Miembro típico de {tag}: {percent}.",
     rankIn: "en {tag}",

@@ -56,7 +56,6 @@ export const th = {
     names: "ชื่อ",
     alliances: "พันธมิตร",
     movers: "การเปลี่ยนแปลงมากที่สุดในกิจกรรมนี้",
-    progress: "ความคืบหน้ารายวัน",
     progressMight: "คุณ: {change} ตั้งแต่ {date}",
     progressMedian: "สมาชิกทั่วไปของ {tag}: {percent}",
     rankIn: "ใน {tag}",

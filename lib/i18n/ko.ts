@@ -57,7 +57,6 @@ export const ko = {
     names: "이름",
     alliances: "연맹",
     movers: "이번 이벤트의 가장 큰 변화",
-    progress: "일일 추이",
     progressMight: "내 변화: {date} 이후 {change}.",
     progressMedian: "{tag} 전형적인 멤버: {percent}.",
     rankIn: "{tag} 소속",

@@ -85,7 +85,6 @@ export const en = {
     /** The event's biggest gains and losses (#70). */
     movers: "Biggest changes in this event",
     /** The player page's section of every reading (#270): daily reads and events' Start and End. */
-    progress: "Daily progress",
     /** Its summary line, the player's might change in percent: `You: +4.1% since Nov 9.` */
     progressMight: "You: {change} since {date}.",
     /** After it, when both readings are of one alliance: the change of that alliance's typical member (the

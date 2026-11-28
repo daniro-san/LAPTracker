@@ -56,7 +56,6 @@ export const zhCN = {
     names: "名称",
     alliances: "联盟",
     movers: "本次活动的最大变化",
-    progress: "每日进度",
     progressMight: "你：自 {date} 以来 {change}。",
     progressMedian: "{tag} 的典型成员：{percent}。",
     rankIn: "在 {tag}",

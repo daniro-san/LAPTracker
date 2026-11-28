@@ -56,7 +56,6 @@ export const ptBR = {
     names: "Nomes",
     alliances: "Alianças",
     movers: "Maiores mudanças neste evento",
-    progress: "Progresso diário",
     progressMight: "Você: {change} desde {date}.",
     progressMedian: "Membro típico de {tag}: {percent}.",
     rankIn: "em {tag}",

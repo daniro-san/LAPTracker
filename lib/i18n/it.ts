@@ -56,7 +56,6 @@ export const itIT = {
     names: "Nomi",
     alliances: "Alleanze",
     movers: "Variazioni maggiori di questo evento",
-    progress: "Progresso giornaliero",
     progressMight: "Tu: {change} da {date}.",
     progressMedian: "Membro tipico di {tag}: {percent}.",
     rankIn: "in {tag}",

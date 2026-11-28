@@ -56,7 +56,6 @@ export const ja = {
     names: "名前",
     alliances: "同盟",
     movers: "このイベントの最も大きな変化",
-    progress: "毎日の推移",
     progressMight: "あなた：{date} から {change}。",
     progressMedian: "{tag} の典型的なメンバー：{percent}。",
     rankIn: "{tag} 所属",

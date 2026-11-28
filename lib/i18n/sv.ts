@@ -56,7 +56,6 @@ export const sv = {
     names: "Namn",
     alliances: "Allianser",
     movers: "Största förändringarna i eventet",
-    progress: "Dagsutveckling",
     progressMight: "Du: {change} sedan {date}.",
     progressMedian: "Typisk medlem i {tag}: {percent}.",
     rankIn: "i {tag}",

@@ -56,7 +56,6 @@ export const pl = {
     names: "Nazwy",
     alliances: "Sojusze",
     movers: "Największe zmiany w tym wydarzeniu",
-    progress: "Postęp dzienny",
     progressMight: "Ty: {change} od {date}.",
     progressMedian: "Typowy członek {tag}: {percent}.",
     rankIn: "w {tag}",

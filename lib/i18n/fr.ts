@@ -56,7 +56,6 @@ export const fr = {
     names: "Noms",
     alliances: "Alliances",
     movers: "Plus fortes évolutions de l’événement",
-    progress: "Progression quotidienne",
     progressMight: "Vous : {change} depuis {date}.",
     progressMedian: "Membre du milieu de {tag} : {percent}.",
     rankIn: "dans {tag}",
