@@ -24,6 +24,8 @@ import {
   type Feature,
   type FeatureSettings,
   type OwnerSettings,
+  type Plan,
+  type PlanState,
   type StoredDefaults,
   type StoredOverrides,
 } from "../workspace-features";
@@ -39,12 +41,16 @@ export interface WorkspaceSettings {
   settings: FeatureSettings;
   defaults: OwnerSettings;
   stored: StoredOverrides;
+  /** D160: its plan, set by the owner on /admin. */
+  plan: PlanState;
 }
 
 const COLUMNS = {
   workspaceId: workspaces.id,
   slug: workspaces.slug,
   unionId: workspaces.unionId,
+  plan: workspaces.plan,
+  grandfathered: workspaces.planGrandfathered,
   switches: workspaceFeatures.switches,
   caps: workspaceFeatures.caps,
   alliance: workspaceFeatures.allianceSwitches,
@@ -56,6 +62,8 @@ type Row = {
   workspaceId: number;
   slug: string;
   unionId: number;
+  plan: Plan;
+  grandfathered: boolean;
   switches: Record<string, boolean> | null;
   caps: StoredDefaults["caps"] | null;
   alliance: Record<string, boolean> | null;
@@ -70,13 +78,15 @@ const settingsOf = (row: Row): WorkspaceSettings => {
     caps: row.caps ?? {},
     alliance: row.alliance ?? {},
   };
+  const plan = { plan: row.plan, grandfathered: row.grandfathered };
   return {
     workspaceId: row.workspaceId,
     slug: row.slug,
     unionId: row.unionId,
-    settings: storedSettings(row.unionId, stored, defaults),
+    settings: storedSettings(row.unionId, stored, defaults, plan),
     defaults: ownerDefaults(row.unionId, defaults),
     stored,
+    plan,
   };
 };
 
@@ -204,6 +214,20 @@ export async function setAllianceSwitch(
   const done = await changeKey(db, workspaceId, "alliance_switches", feature, { set: on }, now);
   if (done && picturesSwitch(feature)) await restartPictureWarnings(db, workspaceId);
   return done;
+}
+
+/**
+ * D160: the owner sets a workspace's plan and whether it is grandfathered, in one statement. Nothing else
+ * changes: every switch stays stored, so a feature the plan leaves out comes back as it was. False: no such
+ * workspace.
+ */
+export async function setPlan(db: Db, workspaceId: number, state: PlanState): Promise<boolean> {
+  const rows = await db
+    .update(workspaces)
+    .set({ plan: state.plan, planGrandfathered: state.grandfathered })
+    .where(eq(workspaces.id, workspaceId))
+    .returning({ id: workspaces.id });
+  return rows.length > 0;
 }
 
 /**

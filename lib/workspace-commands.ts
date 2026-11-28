@@ -19,21 +19,22 @@ const COMMAND_FEATURES: readonly Feature[] = Object.values(COMMAND_FEATURE);
 
 /**
  * A change of D126's settings, as far as the Discord commands care: the owner's on /admin (a switch, a
- * default for new alliances, a copy, a cap, a pause) or the alliance's own switch (D134).
+ * default for new alliances, a copy, a plan, a cap, a pause) or the alliance's own switch (D134).
  */
 export type SettingsChange =
   | { action: "switch" | "default_switch"; feature: Feature }
-  | { action: "copy" }
+  | { action: "copy" | "plan" }
   | { action: "cap" | "default_cap" }
   | { action: "pause"; allowance: Allowance };
 
 /**
  * Whether the change can add or remove a Discord command, so the servers that had commands are registered
- * again: a command's switch, a copy of every switch, or a pause of an allowance a command spends. A cap
- * changes no command.
+ * again: a command's switch, a copy of every switch, a plan (D160), or a pause of an allowance a command
+ * spends. A cap changes no command.
  */
 export const changesCommands = (c: SettingsChange): boolean =>
   c.action === "copy" ||
+  c.action === "plan" ||
   ((c.action === "switch" || c.action === "default_switch") &&
     COMMAND_FEATURES.includes(c.feature)) ||
   (c.action === "pause" && COMMAND_FEATURES.some((f) => SPENDS[f] === c.allowance));

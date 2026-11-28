@@ -41,6 +41,7 @@ const { default: StartHerePage } = await import("./start-here/page");
 const { default: BoardPage } = await import("./board/page");
 const { default: InsightsPage } = await import("./insights/page");
 const { default: RecruitPage } = await import("./recruit/page");
+const { default: PlansPage } = await import("./settings/plans/page");
 
 const params = Promise.resolve({ slug: "ogs" });
 const searchParams = Promise.resolve({});
@@ -118,5 +119,21 @@ describe("a page turned off for the alliance (D126, issue 483)", () => {
     await signIn("member");
     await turnOff({ board: false });
     expect(await outcome(() => BoardPage({ params }))).toBe("404");
+  });
+});
+
+describe("plans (D160)", () => {
+  it("send a member away from the Plans page to the board, so members never see plan words", async () => {
+    await signIn("member");
+    expect(await outcome(() => PlansPage({ params }))).toBe("→ /w/ogs/board");
+    await signIn("officer");
+    expect(await outcome(() => PlansPage({ params }))).toBe("rendered");
+  });
+
+  it("send an officer of a free alliance from a premium page to Home, as a page the owner turned off", async () => {
+    await db.update(workspaces).set({ unionId: 67109944 });
+    await signIn("officer");
+    expect(await outcome(() => InsightsPage({ params, searchParams }))).toBe("→ /w/ogs");
+    expect(await outcome(() => TheftsPage({ params }))).toBe("rendered");
   });
 });

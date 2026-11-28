@@ -1,6 +1,7 @@
 // D126, D134: each workspace's features as served and its daily allowances. OGs keeps everything on with no cap
 // (today's behaviour, from code, with no data row); a new workspace starts with the paid features off; a
 // cap stops at N, starts again the next UTC day, and holds when requests arrive together at the boundary.
+// D160: the plan joins the owner's layer; nothing is deleted when it leaves a feature out.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../../config/alliances";
@@ -11,13 +12,18 @@ import {
   setCap,
   setDefault,
   setPaused,
+  setPlan,
   setSwitch,
+  settingsById,
 } from "../repo/workspace-features";
 import { saveWorkspace } from "../repo/workspaces";
 import { workspaceUsage } from "../schema-features";
 import {
   FEATURES,
+  isPremium,
+  NEW_PLAN,
   NO_DEFAULTS,
+  PLAN_FEATURES,
   SPENDS,
   storedSettings,
   TRACKER_CALLS,
@@ -60,7 +66,8 @@ describe("defaults (D126)", () => {
     expect([...ogs.on].sort()).toEqual([...FEATURES].sort());
     expect(ogs.caps).toEqual({ ai: null, translate: null });
     const nse = await served("nse");
-    const paid = FEATURES.filter((f) => SPENDS[f] || TRACKER_CALLS[f]);
+    // D160: a new workspace is on the free plan, so its premium features are off too.
+    const paid = FEATURES.filter((f) => SPENDS[f] || TRACKER_CALLS[f] || isPremium(f));
     expect(paid.filter((f) => nse.on.has(f))).toEqual([]);
     expect(FEATURES.filter((f) => !paid.includes(f) && !nse.on.has(f))).toEqual([]);
     expect(nse.caps).toEqual({ ai: 20, translate: 20 });
@@ -131,11 +138,13 @@ describe("a feature added to the catalog later (D126)", () => {
       caps: {},
       alliance: {},
     };
-    const nse = storedSettings(67109944, saved, NO_DEFAULTS);
+    const nse = storedSettings(67109944, saved, NO_DEFAULTS, NEW_PLAN);
     expect(nse.off).toContain("notice_fit");
     expect(nse.off).toContain("roll_call");
     expect(nse.off).not.toContain("notice_translate");
-    expect(storedSettings(OWN_ALLIANCE_ID, saved, NO_DEFAULTS).off).toEqual(["roll_call"]);
+    expect(storedSettings(OWN_ALLIANCE_ID, saved, NO_DEFAULTS, NEW_PLAN).off).toEqual([
+      "roll_call",
+    ]);
   });
 });
 
@@ -160,6 +169,7 @@ describe("two layers over the defaults (D134)", () => {
   });
 
   it("a feature is on only when the owner allows it and the alliance turns it on", async () => {
+    await setPlan(db, 2, { plan: "premium", grandfathered: false });
     await setSwitch(db, 2, "squads", true, NOW);
     // Allowed, but tracker calls wait for the alliance's own yes.
     expect((await served("nse")).on.has("squads")).toBe(false);
@@ -184,5 +194,69 @@ describe("two layers over the defaults (D134)", () => {
     expect(trackerEstimate(new Set(["thefts"]), 100)).toEqual({ daily: 0, peak: 0 });
     // Issue 833: the recruit check counts its whole daily cap, whatever the roster's size.
     expect(trackerEstimate(new Set(["recruit_check"]), 100)).toEqual({ daily: 20, peak: 20 });
+  });
+});
+
+describe("plans (D160)", () => {
+  const PREMIUM_PLAN = { plan: "premium", grandfathered: false } as const;
+  const FREE_PLAN = { plan: "free", grandfathered: false } as const;
+
+  it("maps each plan to its features: the core is free, premium is everything", () => {
+    expect(PLAN_FEATURES.premium).toEqual(FEATURES);
+    expect(PLAN_FEATURES.free).toEqual(FEATURES.filter((f) => !isPremium(f)));
+    // The owner's examples are premium; privacy, safety, export, the board and Discord sending stay free.
+    for (const f of [
+      "garrison",
+      "insights",
+      "shield_check",
+      "squads",
+      "notice_translate",
+    ] as const) {
+      expect(PLAN_FEATURES.free).not.toContain(f);
+    }
+    for (const f of [
+      "export",
+      "board",
+      "roll_call",
+      "notices",
+      "discord_send",
+      "post_shield_up",
+    ] as const) {
+      expect(PLAN_FEATURES.free).toContain(f);
+    }
+  });
+
+  it("hides a premium feature on the free plan, even allowed and turned on", async () => {
+    // Insights spends nothing, so the owner's defaults allow it and the alliance's switch is on.
+    expect((await served("nse")).on.has("insights")).toBe(false);
+    expect((await served("nse")).on.has("thefts")).toBe(true);
+  });
+
+  it("unlocks it on the premium plan", async () => {
+    await setPlan(db, 2, PREMIUM_PLAN);
+    expect((await served("nse")).on.has("insights")).toBe(true);
+  });
+
+  it("keeps it for a grandfathered workspace on the free plan", async () => {
+    await setPlan(db, 2, { plan: "free", grandfathered: true });
+    expect((await served("nse")).on.has("insights")).toBe(true);
+  });
+
+  it("deletes nothing on a downgrade: every switch comes back as it was", async () => {
+    await setPlan(db, 2, PREMIUM_PLAN);
+    await setSwitch(db, 2, "squads", true, NOW);
+    await setAllianceSwitch(db, 2, "squads", true, NOW);
+    expect((await served("nse")).on.has("squads")).toBe(true);
+    await setPlan(db, 2, FREE_PLAN);
+    expect((await served("nse")).on.has("squads")).toBe(false);
+    const stored = (await settingsById(db, 2))?.stored;
+    expect([stored?.switches.squads, stored?.alliance.squads]).toEqual([true, true]);
+    await setPlan(db, 2, PREMIUM_PLAN);
+    expect((await served("nse")).on.has("squads")).toBe(true);
+  });
+
+  it("leaves OGs with every feature on, whatever its plan says", async () => {
+    await setPlan(db, 1, FREE_PLAN);
+    expect([...(await served("ogs")).on].sort()).toEqual([...FEATURES].sort());
   });
 });

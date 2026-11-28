@@ -44,7 +44,13 @@ beforeAll(async () => {
 async function workspace(slug: string, unionId: number, at: Date) {
   const [ws] = await db
     .insert(workspaces)
-    .values({ unionId, slug, discordGuildId: String(unionId), leaderRoleIds: ["2"] })
+    .values({
+      unionId,
+      slug,
+      discordGuildId: String(unionId),
+      leaderRoleIds: ["2"],
+      plan: "premium",
+    })
     .returning({ id: workspaces.id });
   const workspaceId = ws?.id ?? 0;
   const [user] = await db

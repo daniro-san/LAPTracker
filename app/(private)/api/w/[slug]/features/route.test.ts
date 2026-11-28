@@ -37,7 +37,13 @@ beforeEach(async () => {
   holder.ctx = testContext(db).ctx;
   const [ws] = await db
     .insert(workspaces)
-    .values({ unionId: 67109944, slug: "nse", discordGuildId: "1", leaderRoleIds: ["2"] })
+    .values({
+      unionId: 67109944,
+      slug: "nse",
+      discordGuildId: "1",
+      leaderRoleIds: ["2"],
+      plan: "premium",
+    })
     .returning({ id: workspaces.id });
   workspaceId = ws?.id ?? 0;
   const [user] = await db
@@ -146,5 +152,18 @@ describe("POST /api/w/[slug]/features (D134)", () => {
     expect([limited.status, await limited.json()]).toEqual([429, { code: "rate_limited" }]);
     officer = "not-a-session";
     expect((await post({ feature: "thefts", on: true })).status).toBe(401);
+  });
+});
+
+describe("a premium feature on the free plan (D160)", () => {
+  it("is shown only as a Premium note, and its switch is refused like one the owner did not allow", async () => {
+    await db.update(workspaces).set({ plan: "free" });
+    expect(await listed()).not.toContain("insights");
+    const premium = (await view()).groups.flatMap((g) => g.premium);
+    expect(premium).toContain("insights");
+    expect(premium).not.toContain("thefts");
+    const refused = await post({ feature: "insights", on: true });
+    expect([refused.status, await refused.json()]).toEqual([403, { code: "not_allowed" }]);
+    expect((await featuresBySlug(db, "nse"))?.on.has("insights")).toBe(false);
   });
 });

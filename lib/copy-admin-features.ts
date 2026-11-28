@@ -87,6 +87,18 @@ export const featuresAdminCopy = {
     pause: "Pause",
     resume: "Resume",
   },
+  plan: {
+    head: "Plan",
+    help: "Free: the core. Premium: the core and the features that cost processing (tracker calls, the model, the screenshot reader). A feature the plan leaves out counts as not allowed; nothing is deleted, so a later Premium or Grandfathered shows everything as it was. OGs ignores the plan. No payment is attached yet.",
+    line: "Plan: {plan}",
+    names: { free: "Free", premium: "Premium" },
+    grandfathered: "grandfathered (keeps what it had)",
+    setFree: "Set Free",
+    setPremium: "Set Premium",
+    grandfather: "Grandfathered: {value}",
+    locked: "not in its plan",
+    own: "Plan: everything (OGs)",
+  },
   saved: "Saved.",
   copied: "Settings copied.",
 };

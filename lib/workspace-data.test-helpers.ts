@@ -83,7 +83,14 @@ export async function seedRoster(db: Db, unionId: number) {
 export async function seedWorkspace(db: Db, slug: string, unionId: number) {
   const [w] = await db
     .insert(workspaces)
-    .values({ unionId, slug, discordGuildId: String(unionId), leaderRoleIds: ["2"] })
+    // D160: premium, so every feature can be switched on as before plans.
+    .values({
+      unionId,
+      slug,
+      discordGuildId: String(unionId),
+      leaderRoleIds: ["2"],
+      plan: "premium",
+    })
     .returning({ id: workspaces.id });
   const workspaceId = w?.id ?? 0;
   const [u] = await db

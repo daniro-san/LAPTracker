@@ -76,7 +76,13 @@ beforeEach(async () => {
   ] as const) {
     const [row] = await db
       .insert(workspaces)
-      .values({ unionId, slug: name, discordGuildId: String(unionId), leaderRoleIds: ["2"] })
+      .values({
+        unionId,
+        slug: name,
+        discordGuildId: String(unionId),
+        leaderRoleIds: ["2"],
+        plan: "premium",
+      })
       .returning({ id: workspaces.id });
     ws[name] = row?.id ?? 0;
   }
