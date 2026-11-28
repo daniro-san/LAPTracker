@@ -6,7 +6,6 @@ import { testContext, TEST_ENV } from "./app-context.test-helpers";
 import { ago, fakeV1, IDS, minutes, roster } from "./collector.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
-import { failedSampleUnionIds } from "./repo/alliance-snapshots";
 import { dueSample } from "./repo/events";
 import { executeSample, SAMPLE_NOTIFY_CAP_MS } from "./run";
 import { snapshots } from "./schema";
@@ -41,22 +40,6 @@ async function tickAt(ctx: ReturnType<typeof testContext>, times: string[]) {
 }
 
 describe("event sample hardening (D69)", () => {
-  it("names the alliances that failed in a sample of the event, and not those that failed in the Before", async () => {
-    const t = testContext(db, KVK);
-    const [inBefore, inSample] = IDS as [number, number];
-    t.ctx.v1 = fakeV1((id) =>
-      id === inBefore ? new Error("timeout") : roster(id, ago(t.clock.now, minutes(1))),
-    );
-    await tickAt(t, ["12:00"]);
-    t.ctx.v1 = fakeV1((id) =>
-      id === inSample ? new Error("timeout") : roster(id, ago(t.clock.now, minutes(1))),
-    );
-    await tickAt(t, ["12:15", "12:30"]);
-
-    expect(await failedSampleUnionIds(db, 1)).toEqual([inSample]);
-    expect(await failedSampleUnionIds(db, 2)).toEqual([]);
-  });
-
   it("answers a sample's tick by 28 s even when the admin message hangs", async () => {
     const t = testContext(db, KVK);
     await tickAt(t, ["12:00"]);

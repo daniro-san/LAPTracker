@@ -60,8 +60,6 @@ interface Run {
   sample: boolean;
   /** Measured from `startedAt`: RUN_DEADLINE_MS, or SAMPLE_DEADLINE_MS for a sample. */
   deadlineMs: number;
-  /** A sample's alliances that failed in an earlier sample of the event: one attempt each (D69). */
-  noRetry: Set<number>;
   eventId: number;
   /** A sample's count of the KvK opponent's End reads still due (D152), kept in its quota rule. */
   opponentDue?: number;
@@ -126,7 +124,7 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
     const quota = await run.deps.v1.fetchQuota(
       attemptHook(run, null),
       run.controller.signal,
-      callOptions(run, null),
+      callOptions(run, "quota"),
     );
     await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
     run.quotaBefore = quota.remaining;
@@ -176,7 +174,7 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
       unionId,
       attemptHook(run, unionId),
       run.controller.signal,
-      callOptions(run, unionId),
+      callOptions(run, "alliance"),
     );
     noteQuota(run, a.quota?.remaining);
     // A 200 holding another alliance is a failed read of this one: its call is spent, nothing retries it,
@@ -309,7 +307,6 @@ export async function runSample(
   if (snapshotId === null) throw new RunRefusedError("taken");
   const run = newRun(deps, eventId, snapshotId, true);
   run.laterReads = await laterReadsOf(deps, eventId, window);
-  run.noRetry = new Set(await deps.repo.failedSampleUnionIds(eventId));
   // INVARIANT budget.samples-yield-to-after, with the opponent's End reads in the After's reserve (D152).
   run.opponentDue = await opponentEndsDue(deps, eventId);
   return collectRun(run, await allianceIds(deps, eventId, "sample"), "sample");
@@ -322,7 +319,6 @@ function newRun(deps: Deps, eventId: number, snapshotId: number, sample: boolean
     snapshotId,
     sample,
     deadlineMs: sample ? SAMPLE_DEADLINE_MS : RUN_DEADLINE_MS,
-    noRetry: new Set(),
     laterReads: 0,
     startedAt: deps.now(),
     calls: 0,

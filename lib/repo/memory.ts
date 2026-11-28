@@ -116,14 +116,6 @@ export function createMemoryRepo(
     },
     startSnapshot: async (eventId, phase, startedAt, expected, window = 1) =>
       claim(tables, { eventId, phase, startedAt, window }, expected),
-    failedSampleUnionIds: async (eventId) => [
-      ...new Set(
-        tables.snapshots
-          .filter((s) => s.eventId === eventId && s.phase === "sample")
-          .flatMap((s) => rowsOf(s.id).filter((r) => r.row.error !== null))
-          .map((r) => r.row.unionId),
-      ),
-    ],
     clearAllianceRows: async (id) => void tables.rows.delete(id),
     clearFailedAllianceRows: async (id, stale) => {
       const kept = rowsOf(id).filter(({ row }) => row.error === null && (!stale || row.isFresh));
