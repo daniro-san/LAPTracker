@@ -282,16 +282,24 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
 });
 
 describe("the member role a /join approval gives (issue 868)", () => {
-  it("offers and saves only a role below the bot's highest, as Discord says at save time", async () => {
-    const [member, integration, bot, leaders] = ["11", "12", "13", "14"].map(
-      (n) => `9000000000000006${n}`,
-    );
+  const role = (n: number) => `90000000000000061${n}`;
+  const [member, integration, bot, top, officers, admins] = [1, 2, 3, 4, 5, 6].map(role) as [
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
+  /** The server's roles as Discord answers them, and the bot holding its own; anything else is a 404. */
+  function stubRoles(extra: { id: string; name: string; position: number; permissions: string }[]) {
     const roles = [
-      { id: GUILD, name: "@everyone", position: 0 },
-      { id: member, name: "Member", position: 1 },
-      { id: integration, name: "Some app", position: 2, managed: true },
-      { id: bot, name: "LAPTracker", position: 5, managed: true },
-      { id: leaders, name: "Leaders", position: 8 },
+      { id: GUILD, name: "@everyone", position: 0, permissions: "1024" },
+      { id: member, name: "Member", position: 1, permissions: "3072" },
+      { id: integration, name: "Some app", position: 2, permissions: "0", managed: true },
+      { id: bot, name: "LAPTracker", position: 5, permissions: "268435456", managed: true },
+      { id: top, name: "Top", position: 8, permissions: "0" },
+      ...extra,
     ];
     const ctx = holder.ctx as AppContext;
     ctx.fetch = async (input) => {
@@ -301,17 +309,36 @@ describe("the member role a /join approval gives (issue 868)", () => {
         return Response.json({ roles: [bot] });
       return new Response("", { status: 404 });
     };
+  }
+
+  /** `role` is not offered, and saving it is refused with nothing stored. */
+  async function refused(role: string) {
     expect(await (await post({ action: "roles" })).json()).toEqual({
       roles: [{ id: member, name: "Member" }],
     });
-    const above = await post({ action: "member_role", role: leaders });
-    expect([above.status, await above.json()]).toEqual([422, { code: "not_below" }]);
+    const saved = await post({ action: "member_role", role });
+    expect([saved.status, await saved.json()]).toEqual([422, { code: "not_below" }]);
     expect((await db.select().from(workspaceDiscord))[0]?.memberRoleId ?? null).toBeNull();
+  }
 
+  it("offers and saves only a role below the bot's highest, as Discord says at save time", async () => {
+    stubRoles([]);
+    await refused(top);
     const below = await post({ action: "member_role", role: member });
     expect(await below.json()).toEqual({ role: { id: member, name: "Member" } });
     expect(await db.select().from(workspaceDiscord)).toMatchObject([
       { memberRoleId: member, memberRoleName: "Member" },
     ]);
+  });
+
+  it("never offers or saves a leadership role, which would make its holder an officer", async () => {
+    await db.update(workspaces).set({ leaderRoleIds: ["2", officers] });
+    stubRoles([{ id: officers, name: "R4", position: 3, permissions: "1024" }]);
+    await refused(officers);
+  });
+
+  it("never offers or saves a role with Administrator or another powerful permission", async () => {
+    stubRoles([{ id: admins, name: "Helpers", position: 3, permissions: String(1n << 3n) }]);
+    await refused(admins);
   });
 });

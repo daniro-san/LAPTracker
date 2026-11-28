@@ -4,8 +4,8 @@
 import { and, asc, eq, gt, lte, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { workspaceUsers } from "../schema";
-import { joinRequests } from "../schema-discord";
+import { dailyRosters, workspaceUsers } from "../schema";
+import { joinRequests, postRuns } from "../schema-discord";
 
 const j = joinRequests;
 
@@ -128,6 +128,38 @@ export async function welcomedUids(db: Db, workspaceId: number, since: Date): Pr
       ),
     );
   return rows.map((r) => r.uid);
+}
+
+/**
+ * Whether the daily welcome post (D159 post 3) may already have named the player: they are in the alliance's
+ * roster of a day whose welcome went out (`post_runs` `posted`). A player there long before is no newcomer
+ * either, so an Approve's welcome is left out for both.
+ */
+export async function welcomedByDailyPost(
+  db: Db,
+  ws: { workspaceId: number; unionId: number },
+  uid: number,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ day: dailyRosters.readDay })
+    .from(postRuns)
+    .innerJoin(
+      dailyRosters,
+      and(
+        eq(sql`${dailyRosters.readDay}::text`, postRuns.period),
+        eq(dailyRosters.unionId, ws.unionId),
+      ),
+    )
+    .where(
+      and(
+        eq(postRuns.workspaceId, ws.workspaceId),
+        eq(postRuns.postKey, "welcome"),
+        eq(postRuns.status, "posted"),
+        sql`${uid} = any(${dailyRosters.memberUids})`,
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
 }
 
 /** INVARIANT join-requests.expire: deletes every workspace's requests made at or before `since`. */

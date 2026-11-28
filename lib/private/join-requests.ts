@@ -16,6 +16,8 @@ import {
   joinUser,
   markWelcomed,
   openJoinRequests,
+  recordJoinRequest,
+  welcomedByDailyPost,
 } from "../repo/join-requests";
 import { setLink } from "../repo/player-links";
 import { liveCallout } from "../repo/post-touches";
@@ -26,7 +28,7 @@ import { matchName } from "../screenshot/match-name";
 import type { WorkspaceAccess } from "./access";
 import { postTitle, welcomeText } from "./catalog-posts";
 import { WORKSPACE_DICTIONARIES, WORKSPACE_LANGUAGES, type WorkspaceLanguage } from "./dictionary";
-import { giveMemberRole } from "./discord-member-role";
+import { givableRoles, giveMemberRole } from "./discord-member-role";
 import { noticeChannels } from "./discord-webhooks";
 import { featureOn } from "./features";
 import { privateLog } from "./log";
@@ -125,15 +127,26 @@ async function welcome(
   return sent === messages.length ? "posted" : "failed";
 }
 
-/** The member role officers chose, given to the Discord user; "none" when no role is chosen. */
+/**
+ * The member role officers chose, given to the Discord user; "none" when no role is chosen. INVARIANT
+ * discord.role-below-bot: the stored role is checked with Discord again first (`givableRoles`), so a role
+ * that became a leadership role, gained a POWERFUL permission or moved above the bot since it was saved is
+ * never given ("failed").
+ */
 async function role(db: Db, access: WorkspaceAccess, deps: JoinDeps, userId: string) {
   const [state, workspace] = await Promise.all([
     discordState(db, access.workspaceId),
     findWorkspaceBySlug(db, access.slug),
   ]);
-  if (!state.memberRoleId) return "none" as const;
+  const id = state.memberRoleId;
+  if (!id) return "none" as const;
   if (!deps.env.DISCORD_BOT_TOKEN || !workspace) return "failed" as const;
-  const given = await giveMemberRole(deps, workspace.discordGuildId, userId, state.memberRoleId);
+  const givable = await givableRoles(deps, workspace);
+  if (!givable.ok || !givable.roles.some((r) => r.id === id)) {
+    privateLog("join.role_refused");
+    return "failed" as const;
+  }
+  const given = await giveMemberRole(deps, workspace.discordGuildId, userId, id);
   privateLog("join.role", { given: given === "given" ? 1 : 0 });
   return given;
 }
@@ -159,13 +172,20 @@ export async function answerJoinRequest(
   }
   const player = (await playersOf(db, access.unionId)).find((p) => p.uid === input.uid);
   if (!player) return { ok: false, code: "gone" };
+  // The delete is the claim: of two officers answering at once, only one goes on.
+  if (!(await deleteJoinRequest(db, access.workspaceId, request.id)))
+    return { ok: false, code: "gone" };
   const userId = await joinUser(db, access.workspaceId, request.discordUserId, request.discordName);
   const link = { uid: player.uid, state: "approved" as const, at: now };
-  if ((await setLink(db, access.workspaceId, userId, link)) === "taken")
+  if ((await setLink(db, access.workspaceId, userId, link)) === "taken") {
+    // Nothing was done: the request comes back as it was, for the officer to look again.
+    await recordJoinRequest(db, { ...request, at: request.createdAt }, joinSince(now));
     return { ok: false, code: "taken" };
-  await deleteJoinRequest(db, access.workspaceId, request.id);
+  }
   const given = await role(db, access, deps, request.discordUserId);
-  const welcomed = await welcome(db, access, deps, player.name);
-  if (welcomed === "posted") await markWelcomed(db, access.workspaceId, userId, now);
+  // The daily welcome already named a member it saw new in a roster: no second welcome (issue 868).
+  const named = await welcomedByDailyPost(db, access, player.uid);
+  const welcomed = named ? "off" : await welcome(db, access, deps, player.name);
+  if (named || welcomed === "posted") await markWelcomed(db, access.workspaceId, userId, now);
   return { ok: true, role: given, welcome: welcomed };
 }

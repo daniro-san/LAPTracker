@@ -32,9 +32,25 @@ const rolesSchema = z.array(
     id: z.string(),
     name: z.string(),
     position: z.number(),
+    /** The role's permission bits, as Discord sends them (a decimal string). */
+    permissions: z.string().regex(/^\d+$/),
     managed: z.boolean().optional(),
   }),
 );
+
+/**
+ * Permissions a role handed to anyone approved must never carry: Kick Members, Ban Members, Administrator,
+ * Manage Channels, Manage Server, Mention Everyone, Manage Roles and Manage Webhooks.
+ */
+const POWERFUL =
+  (1n << 1n) |
+  (1n << 2n) |
+  (1n << 3n) |
+  (1n << 4n) |
+  (1n << 5n) |
+  (1n << 17n) |
+  (1n << 28n) |
+  (1n << 29n);
 const memberSchema = z.object({ roles: z.array(z.string()) });
 
 export interface Role {
@@ -48,7 +64,7 @@ export type RolesResult =
 
 const base = (env: RoleEnv) => env.DISCORD_API_BASE_URL.replace(/\/$/, "");
 
-function botGet(deps: RoleDeps, path: string) {
+function botGet(deps: Omit<RoleDeps, "now">, path: string) {
   return deps
     .fetch(`${base(deps.env)}${path}`, {
       headers: { authorization: `Bot ${deps.env.DISCORD_BOT_TOKEN}` },
@@ -59,9 +75,15 @@ function botGet(deps: RoleDeps, path: string) {
 
 /**
  * The server's roles the bot may give, highest first: below the bot's own highest role (the bot's user id is
- * the app's id), less @everyone (its id is the server's) and roles an integration manages.
+ * the app's id), less @everyone (its id is the server's), roles an integration manages, the workspace's
+ * leadership roles (holding one makes a person an officer on the desk, D71) and roles with a POWERFUL
+ * permission. Read again before every give, since the role or its permissions may have changed since saved.
  */
-async function rolesBelowBot(deps: RoleDeps, guildId: string): Promise<RolesResult> {
+export async function givableRoles(
+  deps: Omit<RoleDeps, "now">,
+  workspace: { discordGuildId: string; leaderRoleIds: readonly string[] },
+): Promise<RolesResult> {
+  const guildId = workspace.discordGuildId;
   const [rolesRes, botRes] = await Promise.all([
     botGet(deps, `/guilds/${guildId}/roles`),
     botGet(deps, `/guilds/${guildId}/members/${deps.env.DISCORD_CLIENT_ID}`),
@@ -78,7 +100,14 @@ async function rolesBelowBot(deps: RoleDeps, guildId: string): Promise<RolesResu
     ...roles.data.filter((r) => bot.data.roles.includes(r.id)).map((r) => r.position),
   );
   const below = roles.data
-    .filter((r) => r.position < top && r.id !== guildId && !r.managed)
+    .filter(
+      (r) =>
+        r.position < top &&
+        r.id !== guildId &&
+        !r.managed &&
+        !workspace.leaderRoleIds.includes(r.id) &&
+        (BigInt(r.permissions) & POWERFUL) === 0n,
+    )
     .sort((a, b) => b.position - a.position)
     .map((r) => ({ id: r.id, name: r.name }));
   return { ok: true, roles: below };
@@ -89,12 +118,15 @@ async function guildOf(
   db: Db,
   access: WorkspaceAccess,
   deps: RoleDeps,
-): Promise<{ guild: string } | { code: "bot_off" | "rate_limited" | "unreachable" }> {
+): Promise<
+  | { workspace: { discordGuildId: string; leaderRoleIds: string[] } }
+  | { code: "bot_off" | "rate_limited" | "unreachable" }
+> {
   if (!deps.env.DISCORD_BOT_TOKEN || !deps.env.DISCORD_CLIENT_ID) return { code: "bot_off" };
   const tries = await recordFailure(db, `memberrole:ws:${access.workspaceId}`, WINDOW_MS, deps.now);
   if (tries > ROLE_TRIES) return { code: "rate_limited" };
-  const guild = (await findWorkspaceBySlug(db, access.slug))?.discordGuildId;
-  return guild ? { guild } : { code: "unreachable" };
+  const workspace = await findWorkspaceBySlug(db, access.slug);
+  return workspace ? { workspace } : { code: "unreachable" };
 }
 
 /** "Choose a role": the roles the bot may give in the workspace's server. */
@@ -105,7 +137,7 @@ export async function memberRoleChoices(
 ): Promise<RolesResult> {
   const found = await guildOf(db, access, deps);
   if ("code" in found) return { ok: false, code: found.code };
-  return rolesBelowBot(deps, found.guild);
+  return givableRoles(deps, found.workspace);
 }
 
 export type SaveRoleResult =
@@ -114,7 +146,8 @@ export type SaveRoleResult =
 
 /**
  * INVARIANT discord.role-below-bot: a role is saved only when Discord says, at save time, that it is one the
- * bot may give in the workspace's own server. Any other id ("not_below") is never stored.
+ * bot may give in the workspace's own server and it is neither a leadership role nor one with a POWERFUL
+ * permission (`givableRoles`). Any other id ("not_below") is never stored.
  */
 export async function chooseMemberRole(
   db: Db,

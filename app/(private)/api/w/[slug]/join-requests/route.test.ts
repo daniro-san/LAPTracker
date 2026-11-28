@@ -14,7 +14,7 @@ import { requireWorkspace } from "@/lib/private/access";
 import { joinRequestsView } from "@/lib/private/join-requests";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { dailyReads, dailyRosters, workspaces, workspaceUsers } from "@/lib/schema";
-import { joinRequests, workspaceDiscord, workspacePosts } from "@/lib/schema-discord";
+import { joinRequests, postRuns, workspaceDiscord, workspacePosts } from "@/lib/schema-discord";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -27,6 +27,7 @@ const route = await import("./route");
 const ORIGIN = "https://laptracker.test";
 const GUILD = "900000000000000101";
 const ROLE = "900000000000000606";
+const BOT_ROLE = "900000000000000607";
 const JOINER = "700000000000000002";
 const MEMBERS_HOOK = "https://discord.com/api/webhooks/900000000000000404/members-hook-test-token";
 const ENV = {
@@ -55,6 +56,14 @@ function stubDiscord(): typeof fetch {
       body: typeof init?.body === "string" ? init.body : "",
     });
     if (init?.method === "PUT") return new Response(null, { status: 204 });
+    // The give's re-check: the member role sits below the bot's own, with no powerful permission.
+    if (String(input).endsWith(`/guilds/${GUILD}/roles`))
+      return Response.json([
+        { id: ROLE, name: "Member", position: 1, permissions: "1024" },
+        { id: BOT_ROLE, name: "LAPTracker", position: 5, permissions: "268435456", managed: true },
+      ]);
+    if (String(input).endsWith(`/members/${ENV.DISCORD_CLIENT_ID}`))
+      return Response.json({ roles: [BOT_ROLE] });
     return Response.json({ id: "1" });
   };
 }
@@ -162,6 +171,45 @@ describe("POST /api/w/[slug]/join-requests (issue 868)", () => {
     });
     const welcome = calls.find((c) => c.url.startsWith(MEMBERS_HOOK));
     expect(welcome?.body).toContain("Moss Invented");
+  });
+
+  it("two officers approving at once: one goes on, the other finds it gone, and one role is given", async () => {
+    await db
+      .insert(workspaceDiscord)
+      .values({ workspaceId: ids.alpha ?? 0, memberRoleId: ROLE, memberRoleName: "Member" });
+    const id = await requestId();
+    const answers = await Promise.all(
+      [0, 1].map(async () => (await post("alpha", { action: "approve", id, uid: UID })).status),
+    );
+    expect(answers.sort()).toEqual([200, 404]);
+    expect(calls.filter((c) => c.method === "PUT")).toHaveLength(1);
+  });
+
+  it("no second welcome for a player the daily welcome already named; the mark is still set", async () => {
+    const alpha = ids.alpha ?? 0;
+    await db.insert(workspacePosts).values({
+      workspaceId: alpha,
+      postKey: "welcome",
+      on: true,
+      channel: "members",
+      updatedAt: T0,
+    });
+    // The welcome of the roster's day went out, so it named the newcomers in it.
+    await db.insert(postRuns).values({
+      workspaceId: alpha,
+      postKey: "welcome",
+      period: "2026-11-06",
+      status: "posted",
+      at: T0,
+    });
+    const res = await post("alpha", { action: "approve", id: await requestId(), uid: UID });
+    expect(await res.json()).toEqual({ ok: true, role: "none", welcome: "off" });
+    expect(calls.filter((c) => c.url.startsWith(MEMBERS_HOOK))).toEqual([]);
+    const [linked] = await db
+      .select()
+      .from(workspaceUsers)
+      .where(eq(workspaceUsers.discordUserId, JOINER));
+    expect(linked?.welcomedAt).toEqual(T0);
   });
 
   it("Decline: the request goes and nothing is posted or linked", async () => {
