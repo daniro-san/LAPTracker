@@ -2,7 +2,7 @@
 // window 1 00:00…00:45 and window 2 12:15…13:15 server (02:00…02:45 and 14:15…15:15 UTC), a tick every
 // 15 minutes. Kills grow inside the windows and much more between them, so the event's change (the sum of
 // its windows' changes) differs from End − Start.
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PUBLIC_WEBHOOK, ADMIN_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
@@ -12,11 +12,12 @@ import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import type { EventImageInput } from "./event-image";
 import { topGains } from "./notify";
-import { allianceHistory } from "./queries";
+import { allianceHistory, getEventDetail, memberTurnout, playerHistory } from "./queries";
+import { whoCarried } from "./queries/carried";
 import { getEventPage } from "./queries/event-page";
 import { eventProgress } from "./queries/live";
 import { findOrCreateEvent } from "./repo/events";
-import { snapshots } from "./schema";
+import { allianceSnapshots, snapshots } from "./schema";
 import { runTick, type TickOutcome } from "./tick";
 
 // The picture (D58) is drawn by a real renderer that can take seconds under load: its input is kept instead.
@@ -77,6 +78,29 @@ async function tickAt(t: ReturnType<typeof testContext>, times: string[]) {
   return kinds;
 }
 
+/** The readers of the ticked event: each change is the sum of the windows' changes. Two members with kills
+ * each gained 50 + 70 in the windows; the 1,000 between them is not the event's. */
+async function expectWindowSums(eventId: number) {
+  const { page } = await getEventPage(db, eventId, 45);
+  const ledger = page?.movers.alliances?.killsGains ?? [];
+  expect(ledger).toHaveLength(3);
+  expect(ledger.every((m) => m.delta === 2 * (50 + 70))).toBe(true);
+  const members = page?.movers.members?.killsGains ?? [];
+  expect(members.map((m) => m.delta)).toEqual(Array(5).fill(50 + 70));
+  await expectAcrossEvents();
+}
+
+/** The alliance page's chain and the player page read the same sums. */
+async function expectAcrossEvents() {
+  // The alliance page's chain: the event's own change, read at its End.
+  const [chain] = await allianceHistory(db, IDS[0] as number);
+  expect(chain?.reference).toBe("after");
+  expect(chain?.inEvent?.kills).toBe(240);
+  // The player page: the member's own change, the same sum.
+  const player = await playerHistory(db, (IDS[0] as number) * 10 + 1);
+  expect(player?.rows[0]?.inEvent?.kills).toBe(50 + 70);
+}
+
 describe("a two-window event through the tick (D160)", () => {
   it("runs each window's Before, samples and After, and sums the windows' changes", async () => {
     const t = context();
@@ -93,7 +117,12 @@ describe("a two-window event through the tick (D160)", () => {
     // Between the windows the event page waits for nothing, so no reading shows as late.
     const gap = await eventProgress(db, event.id, { now: utc("08:00"), everyMin: 15 });
     expect(gap).toMatchObject({ live: false, next: null, overdue: null, readings: 2 });
-    const kinds = [...first, ...(await tickAt(t, grid("14:15", "15:15")))];
+    const second = await tickAt(t, ["14:15"]);
+    // Window 2's Before is its newest reading: its 14:15 slot is not late before the 14:30 sample.
+    const window2 = await eventProgress(db, event.id, { now: utc("14:25"), everyMin: 15 });
+    expect(window2).toMatchObject({ live: true, overdue: null });
+    expect(window2?.next?.at).toEqual(utc("14:30"));
+    const kinds = [...first, ...second, ...(await tickAt(t, grid("14:30", "15:15")))];
 
     expect(kinds.filter(([, k]) => k === "run").map(([at]) => at)).toEqual([
       "02:00",
@@ -127,17 +156,53 @@ describe("a two-window event through the tick (D160)", () => {
     ]);
     expect(rows.filter((r) => r.phase === "sample").map((r) => r.window)).toEqual([1, 1, 2, 2, 2]);
 
-    // Two members with kills each gained 50 + 70 in the windows; the 1,000 between them is not the event's.
-    const { page } = await getEventPage(db, event.id, 45);
-    const ledger = page?.movers.alliances?.killsGains ?? [];
-    expect(ledger).toHaveLength(3);
-    expect(ledger.every((m) => m.delta === 2 * (50 + 70))).toBe(true);
-    const members = page?.movers.members?.killsGains ?? [];
-    expect(members.map((m) => m.delta)).toEqual(Array(5).fill(50 + 70));
-    // The alliance page's chain: the event's own change, read at its End.
-    const [chain] = await allianceHistory(db, IDS[0] as number);
-    expect(chain?.reference).toBe("after");
-    expect(chain?.inEvent?.kills).toBe(240);
+    await expectWindowSums(event.id);
+  });
+
+  it("gives an alliance no turnout figure when its row between the windows is stale", async () => {
+    const t = context();
+    const event = await findOrCreateEvent(db, {
+      name: "Origin of Chaos 2026-12-05",
+      eventAtUtc: utc("02:10"),
+      beforeAt: W1.beforeAt,
+      afterAt: W2.afterAt,
+      windows: [W1, W2],
+    });
+    await tickAt(t, ["02:00", "02:45", "14:15", "15:15"]);
+    const [w1End] = await db
+      .select({ id: snapshots.id })
+      .from(snapshots)
+      .where(
+        and(
+          eq(snapshots.eventId, event.id),
+          eq(snapshots.phase, "after"),
+          eq(snapshots.windowN, 1),
+        ),
+      );
+    await db
+      .update(allianceSnapshots)
+      .set({ isFresh: false })
+      .where(
+        and(
+          eq(allianceSnapshots.snapshotId, w1End?.id ?? 0),
+          eq(allianceSnapshots.unionId, IDS[0] as number),
+        ),
+      );
+
+    const detail = await getEventDetail(db, event.id);
+    const lists = await memberTurnout(db, detail?.snapshots ?? [], detail?.between);
+
+    const ids = lists?.withKills.map((r) => r.unionId) ?? [];
+    expect(ids).not.toContain(IDS[0]);
+    expect(ids).toHaveLength(IDS.length - 1);
+    expect(lists?.withKills.every((r) => r.gained === 2 * (50 + 70))).toBe(true);
+    // Kill share vs might share: the same alliance has no figure; the others count both windows.
+    const carried = detail && (await whoCarried(db, detail, lists));
+    expect(carried?.rows.map((r) => r.unionId)).not.toContain(IDS[0]);
+    expect(carried?.totals).toMatchObject({
+      alliances: IDS.length - 1,
+      killsGained: (IDS.length - 1) * 2 * (50 + 70),
+    });
   });
 
   it("keeps quota for window 2's Before and After when window 1's Before starts", async () => {

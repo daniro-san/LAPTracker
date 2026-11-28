@@ -20,9 +20,10 @@ export function GET(
     const event = await getEventDetail(db, id.data);
     if (!event) return errorResponse(404, "not_found");
     // Only what the public pages show: no run bookkeeping (calls, quota, duration, error), no isTest,
-    // and no board numbers or their source (lib/sources/internal.ts is a cross-check only, D5).
+    // and no board numbers or their source (lib/sources/internal.ts is a cross-check only, D5). The rows
+    // between windows (D160) are read for the sum of the windows' changes only; they are not served.
     const body = {
-      ...(({ isTest: _, ...e }) => e)(event),
+      ...(({ isTest: _, between: _w, ...e }) => e)(event),
       snapshots: event.snapshots.map(
         ({
           callsUsed: _c,

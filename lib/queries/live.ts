@@ -227,14 +227,24 @@ export function eventProgressOf(
   );
   const ended = rows.some((r) => r.phase === "after" && !isBetween(r));
   const afterAt = new Date(first.afterAt);
+  const sinceAt = lastReadAt(rows, latest?.at ?? start.at);
   // D160: between two windows no reading is due, so nothing is waited for or late.
   const next =
     startDone && !ended && !betweenWindowsNow(rows)
-      ? nextReading(now, everyMin, afterAt, latest?.at ?? start.at)
+      ? nextReading(now, everyMin, afterAt, sinceAt)
       : null;
   // Nothing to show before the first reading unless the event is live (the strip says when it comes).
   if (!latest && !next) return null;
-  return progressOf(start, samples, next, { now, everyMin, afterAt });
+  return progressOf(start, samples, next, { now, everyMin, afterAt, sinceAt });
+}
+
+/** The newest reading: `readingAt` (the latest sample, else the Start), or a later window's Before when it
+ * finished after that (D160), so window 2's first slot is not shown as late before its first sample. */
+function lastReadAt(rows: readonly ProgressRow[], readingAt: Date): Date {
+  const befores = rows
+    .filter((r) => isBetween(r) && r.phase === "before" && r.status !== "running")
+    .map((r) => r.finishedAt ?? r.startedAt);
+  return new Date(Math.max(readingAt.getTime(), ...befores));
 }
 
 /** A window's After has a row and the next window's Before has none yet (D160). */
@@ -260,7 +270,12 @@ function progressOf(
   start: Slice,
   samples: Slice[],
   next: EventProgress["next"],
-  { now, everyMin, afterAt }: { now: Date; everyMin: number; afterAt: Date },
+  {
+    now,
+    everyMin,
+    afterAt,
+    sinceAt,
+  }: { now: Date; everyMin: number; afterAt: Date; sinceAt: Date },
 ): EventProgress {
   const latest = samples.at(-1);
   const pulse = serverPulse([start, ...samples], everyMin * 60_000);
@@ -274,7 +289,7 @@ function progressOf(
     startAt: start.at,
     latestAt: latest?.at ?? null,
     next,
-    overdue: next ? overdueSlot(now, everyMin, latest?.at ?? start.at, afterAt) : null,
+    overdue: next ? overdueSlot(now, everyMin, sinceAt, afterAt) : null,
     standings: rank,
     killsTotal,
     pulse,

@@ -111,20 +111,21 @@ export interface MemberMover extends MoverInput {
 /**
  * Member movers between an event's two snapshots, keyed by uid across every tracked alliance; null
  * until both have run. A member read on one side only is not ranked. `unionId` narrows the lists to
- * one alliance's after roster. `between`: the event detail's rows between windows (D160); a member's
- * change is then the sum of its windows' changes, and a member missing from one of them is not ranked.
+ * one alliance's after roster. `between`: the event's rows between windows (D160; the event detail's
+ * `between`, or `eventBetweenIds`), required so no caller forgets it; a member's change is then the sum of
+ * its windows' changes, and a member missing from one of them is not ranked.
  */
 export async function memberMovers(
   db: Db,
   snapshots: readonly { id: number; phase: "before" | "after" }[],
+  between: readonly { id: number | null }[] | undefined,
   unionId?: number,
-  between: readonly { id: number | null }[] = [],
 ): Promise<MoverLists<MemberMover> | null> {
   const [b, a] = (["before", "after"] as const).map((ph) => snapshots.find((s) => s.phase === ph));
   if (!b || !a) return null;
   const slots = await betweenMembers(
     db,
-    between.map((s) => s.id),
+    (between ?? []).map((s) => s.id),
   );
   const snapshotIds = { before: b.id, after: a.id };
   const rows = await db

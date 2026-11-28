@@ -45,25 +45,49 @@ const usable = (a: Totals) => a.isFresh && !a.failed;
 /**
  * Per event and alliance (`eventId:unionId`), the kills its members in both the Start and the End roster
  * gained, a fall counting as none and a null kills as 0, as #271's `gained` (`killsTurnout`). Each window's
- * Before is paired with its own After (D160), so an event of several windows sums its windows' gains.
+ * Before is paired with its own After (D160): an event of several windows sums its windows' gains, and an
+ * alliance without a usable (fresh, no error) Before and After in every window up to the End has no figure
+ * (INVARIANT freshness.no-stale-delta).
  */
 async function stayedGains(db: Db, eventIds: readonly number[]): Promise<Map<string, number>> {
   if (eventIds.length === 0) return new Map();
-  const result = await db.execute<{ event_id: number; union_id: string; gained: number }>(sql`
-    select e.event_id, ea.union_id,
-      sum(greatest(coalesce(em.kills, 0) - coalesce(bm.kills, 0), 0))::float8 as gained
-    from snapshots e
-    join snapshots b on b.event_id = e.event_id and b.window_n = e.window_n and b.phase = 'before'
-    join alliance_snapshots ea on ea.snapshot_id = e.id and ea.error is null
-    join alliance_snapshots ba on ba.snapshot_id = b.id and ba.union_id = ea.union_id and ba.error is null
-    join member_snapshots em on em.alliance_snapshot_id = ea.id
-    join member_snapshots bm on bm.alliance_snapshot_id = ba.id and bm.uid = em.uid
-    where e.phase = 'after' and e.event_id in (${sql.join(
-      eventIds.map((id) => sql`${id}`),
-      sql`, `,
-    )})
-    group by e.event_id, ea.union_id`);
-  return new Map(result.rows.map((r) => [`${r.event_id}:${Number(r.union_id)}`, Number(r.gained)]));
+  const result = await db.execute<{
+    event_id: number;
+    union_id: string;
+    gained: number;
+    windows: number;
+    expected: number;
+  }>(sql`
+    with pairs as (
+      select e.event_id, e.window_n, ea.union_id, ea.id as ea_id, ba.id as ba_id
+      from snapshots e
+      join snapshots b on b.event_id = e.event_id and b.window_n = e.window_n and b.phase = 'before'
+      join alliance_snapshots ea on ea.snapshot_id = e.id and ea.error is null and ea.is_fresh
+      join alliance_snapshots ba on ba.snapshot_id = b.id and ba.union_id = ea.union_id
+        and ba.error is null and ba.is_fresh
+      where e.phase = 'after' and e.event_id in (${sql.join(
+        eventIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})
+    )
+    select p.event_id, p.union_id, sum(m.g)::float8 as gained,
+      count(distinct p.window_n)::int as windows,
+      (select max(x.window_n) from snapshots x
+        where x.event_id = p.event_id and x.phase = 'after')::int as expected
+    from pairs p
+    join lateral (
+      select greatest(coalesce(em.kills, 0) - coalesce(bm.kills, 0), 0) as g
+      from member_snapshots em
+      join member_snapshots bm on bm.alliance_snapshot_id = p.ba_id and bm.uid = em.uid
+      where em.alliance_snapshot_id = p.ea_id
+    ) m on true
+    group by p.event_id, p.union_id`);
+  // INVARIANT freshness.no-stale-delta: the sum of every window's gains, or no figure.
+  return new Map(
+    result.rows
+      .filter((r) => Number(r.windows) === Number(r.expected))
+      .map((r) => [`${r.event_id}:${Number(r.union_id)}`, Number(r.gained)]),
+  );
 }
 
 /** One event's inputs: an alliance with a usable Start and a usable End, and its members' `gained`. */

@@ -79,13 +79,13 @@ function turnoutLists(all: AllianceTurnout[], soFar: boolean): TurnoutLists | nu
 export async function memberTurnout(
   db: Db,
   snapshots: readonly { id: number; phase: "before" | "after" }[],
-  between: readonly { id: number | null }[] = [],
+  between: readonly { id: number | null }[] | undefined,
 ): Promise<TurnoutLists | null> {
   const [b, a] = (["before", "after"] as const).map((ph) => snapshots.find((s) => s.phase === ph));
   if (!b || !a) return null;
   const slots = await betweenMembers(
     db,
-    between.map((s) => s.id),
+    (between ?? []).map((s) => s.id),
   );
   const rows = await db
     .select({

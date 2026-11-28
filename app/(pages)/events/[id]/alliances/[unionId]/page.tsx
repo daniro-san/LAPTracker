@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { ACROSS_ID, AcrossEvents, NameTimeline, TITLE_ID } from "@/app/_ui/AcrossEvents";
-import { showsMemberMark, totalsMetrics } from "@/app/_ui/alliance-totals";
+import { canChange, showsMemberMark, totalsMetrics } from "@/app/_ui/alliance-totals";
 import { AllianceLinks } from "@/app/_ui/AllianceLinks";
 import { AllianceStatementCard } from "@/app/_ui/AllianceStatement";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
@@ -31,7 +31,7 @@ import { SplitMark } from "@/app/_ui/SplitMark";
 import { AllianceStanding } from "@/app/_ui/Standing";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
-import { comparable, rankDelta } from "@/lib/compute";
+import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -40,6 +40,7 @@ import {
   allianceHistory,
   allianceNames,
   allianceStatement,
+  eventBetweenIds,
   eventRanks,
   getAllianceDetail,
   homeEvent,
@@ -178,7 +179,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
       ledger: ranks.get(unionId),
       statement,
       phases,
-      movers: await memberMovers(db, phases, unionId),
+      movers: await memberMovers(db, phases, await eventBetweenIds(db, eventId), unionId),
     };
   }),
 );
@@ -246,7 +247,7 @@ export default async function AlliancePage({ params, searchParams }: Props) {
     data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
-  const canDelta = comparable(detail.before, detail.after);
+  const canDelta = canChange(detail);
   const metrics = totalsMetrics(detail, canDelta, change, copy);
   const page = `/events/${eventId}/alliances/${unionId}`;
   return (

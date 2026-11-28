@@ -9,11 +9,26 @@ import { allianceSnapshots, events, snapshots } from "../schema";
 import { chainEvent, phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
 
 /**
- * The ids of an event's Befores and Afters between its windows (D160), in the order `windowedStart` takes
- * them: window 1's After, window 2's Before, … up to the window of the event's End; null where a row is
- * missing. Empty while the event has no End or has one window.
+ * The ids of an event's Befores and Afters between its windows (D160), from its non-sample rows, in the order
+ * `windowedStart` takes them: window 1's After, window 2's Before, … up to the window of the event's End;
+ * null where a row is missing. Empty while the event has no End or has one window.
  */
-export async function betweenWindowIds(db: Db, eventId: number): Promise<(number | null)[]> {
+function betweenWindowIds(
+  rows: readonly { id: number; phase: string; window: number; between: boolean }[],
+): (number | null)[] {
+  const end = rows.find((r) => r.phase === "after" && !r.between);
+  if (!end || end.window === 1) return [];
+  const id = (window: number, phase: string) =>
+    rows.find((r) => r.between && r.window === window && r.phase === phase)?.id ?? null;
+  return Array.from({ length: end.window - 1 }, (_, i) => [
+    id(i + 1, "after"),
+    id(i + 2, "before"),
+  ]).flat();
+}
+
+/** The event's rows between windows as `getEventDetail`'s `between` gives their ids (D160), for a reader
+ * that has no event detail; none for a one-window event. */
+export async function eventBetweenIds(db: Db, eventId: number): Promise<{ id: number | null }[]> {
   const rows = await db
     .select({
       id: snapshots.id,
@@ -23,14 +38,7 @@ export async function betweenWindowIds(db: Db, eventId: number): Promise<(number
     })
     .from(snapshots)
     .where(and(eq(snapshots.eventId, eventId), ne(snapshots.phase, "sample")));
-  const end = rows.find((r) => r.phase === "after" && !r.between);
-  if (!end || end.window === 1) return [];
-  const id = (window: number, phase: string) =>
-    rows.find((r) => r.between && r.window === window && r.phase === phase)?.id ?? null;
-  return Array.from({ length: end.window - 1 }, (_, i) => [
-    id(i + 1, "after"),
-    id(i + 2, "before"),
-  ]).flat();
+  return betweenWindowIds(rows).map((id) => ({ id }));
 }
 
 const snapshotColumns = {
@@ -156,7 +164,8 @@ export async function getEventDetail(db: Db, eventId: number) {
     .from(events)
     .where(and(eq(events.id, eventId), publicEvent));
   if (!event) return null;
-  const phases = await db
+  // One read of the Befores and Afters: the Start and End (`phaseSnapshot`) and the rows between windows.
+  const read = await db
     .select({
       ...snapshotColumns,
       callsUsed: snapshots.callsUsed,
@@ -165,10 +174,13 @@ export async function getEventDetail(db: Db, eventId: number) {
       durationMs: snapshots.durationMs,
       // One line: codes and counts only (plan §6); the chips show it.
       error: snapshots.error,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
     })
     .from(snapshots)
-    .where(and(eq(snapshots.eventId, eventId), phaseSnapshot));
-  const betweenIds = await betweenWindowIds(db, eventId);
+    .where(and(eq(snapshots.eventId, eventId), ne(snapshots.phase, "sample")));
+  const phases = read.filter((r) => !r.between).map(({ window: _, between: __, ...s }) => s);
+  const betweenIds = betweenWindowIds(read);
   const rows = await allianceRows(db, [
     ...phases.map((s) => s.id),
     ...betweenIds.filter((id) => id !== null),

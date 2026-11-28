@@ -1,15 +1,17 @@
 // Read models for the player pages (plan Phase 5d, 5e). Served member fields: uid, name, power,
 // kills, lv only, plus the alliance tag, badge and event dates (§12.1) and whether a photo exists
 // (never its URL, D22); raw_json is never selected.
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 
 import {
+  delta,
   nameHistory,
   pickRosterRows,
   seriesDeltas,
   type NameHistoryEntry,
   type NameSighting,
   type SeriesStep,
+  windowedStart,
 } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
@@ -17,6 +19,7 @@ import { rolesOf, type Role } from "./leadership";
 import { type Photo, photoColumns } from "./photo";
 import type { Ranks } from "./ranks";
 import { chainEvent, phaseColumn, phaseSnapshot } from "./visibility";
+import { betweenSlots } from "./windows";
 
 type Phase = "before" | "after";
 
@@ -167,9 +170,33 @@ const noChange = { name: false, tag: false, alliance: false, lv: false };
 
 const diff = (a: number | null, b: number | null) => (a === null || b === null ? null : b - a);
 
-function eventRow(before: Sighting | undefined, after: Sighting | undefined): PlayerEventRow {
+/** A player's figures in one roster, for a change. */
+type Side = { isFresh: boolean; totalPower: number | null; totalKills: number | null };
+const sideOf = (s: Sighting): Side => ({
+  isFresh: s.isFresh,
+  totalPower: s.power,
+  totalKills: s.kills,
+});
+
+/** Might and Kills from Start to End; with rows between windows (D160) the sum of the windows' changes,
+ * or null when one of them is missing or stale. */
+function changeOf(before: Sighting, after: Sighting, between: (Side | undefined)[]) {
+  if (between.length === 0)
+    return { power: diff(before.power, after.power), kills: diff(before.kills, after.kills) };
+  return delta(windowedStart(sideOf(before), between), sideOf(after));
+}
+
+/** `between`: the player's rows between the event's windows (D160); Might and Kills then change by the
+ * sum of the windows' changes, and not at all when one of them is missing or stale. Level stays Start to
+ * End. */
+function eventRow(
+  before: Sighting | undefined,
+  after: Sighting | undefined,
+  between: (Side | undefined)[] = [],
+): PlayerEventRow {
   const ref = (after ?? before) as Sighting;
-  const both = before && after && before.isFresh && after.isFresh;
+  const both =
+    before && after && before.isFresh && after.isFresh && changeOf(before, after, between);
   return {
     eventId: ref.eventId,
     eventName: ref.eventName,
@@ -188,8 +215,7 @@ function eventRow(before: Sighting | undefined, after: Sighting | undefined): Pl
           fromPower: before.power,
           fromKills: before.kills,
           fromLv: before.lv,
-          power: diff(before.power, after.power),
-          kills: diff(before.kills, after.kills),
+          ...both,
           lv: diff(before.lv, after.lv),
         }
       : null,
@@ -201,10 +227,13 @@ function eventRow(before: Sighting | undefined, after: Sighting | undefined): Pl
 }
 
 /** One row per event the player was seen in, with deltas vs the previous such event. */
-function eventRows(sightings: Sighting[]): PlayerEventRow[] {
+function eventRows(
+  sightings: Sighting[],
+  between: (eventId: number) => (Side | undefined)[] = () => [],
+): PlayerEventRow[] {
   const byEvent = new Map<number, { before?: Sighting; after?: Sighting }>();
   for (const s of sightings) byEvent.set(s.eventId, { ...byEvent.get(s.eventId), [s.phase]: s });
-  const rows = [...byEvent.values()].map((e) => eventRow(e.before, e.after));
+  const rows = [...byEvent].map(([id, e]) => eventRow(e.before, e.after, between(id)));
   const steps = seriesDeltas(
     rows.map((r) => ({
       isFresh: (r.reference === "after" ? r.after : r.before)?.isFresh ?? false,
@@ -255,9 +284,47 @@ function allianceStays(sightings: Sighting[]): AllianceStay[] {
   return stays;
 }
 
+/**
+ * The player's rows between the windows of each chain event (D160), in the order `windowedStart` takes
+ * them; none for a one-window event. One read of the player's non-sample rows: the End gives the windows.
+ */
+async function betweenSightings(db: Db, uid: number) {
+  const rows = await db
+    .select({
+      eventId: snapshots.eventId,
+      phase: snapshots.phase,
+      window: snapshots.windowN,
+      between: snapshots.betweenWindows,
+      isFresh: allianceSnapshots.isFresh,
+      power: memberSnapshots.power,
+      kills: memberSnapshots.kills,
+    })
+    .from(memberSnapshots)
+    .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .innerJoin(events, eq(events.id, snapshots.eventId))
+    .where(and(eq(memberSnapshots.uid, uid), chainEvent, ne(snapshots.phase, "sample")));
+  return (eventId: number): (Side | undefined)[] => {
+    const own = rows.filter((r) => r.eventId === eventId);
+    const end = own.find((r) => r.phase === "after" && !r.between);
+    if (!end) return [];
+    const inner = own
+      .filter((r) => r.between)
+      .map((r) => ({
+        window: r.window,
+        phase: r.phase,
+        value: { isFresh: r.isFresh, totalPower: r.power, totalKills: r.kills },
+      }));
+    return betweenSlots(inner, end.window);
+  };
+}
+
 /** One player across events, by uid (§3.8). Null when no real event has a roster row for the uid. */
 export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory | null> {
-  const sightings = await sightingsOf(db, [uid]);
+  const [sightings, between] = await Promise.all([
+    sightingsOf(db, [uid]),
+    betweenSightings(db, uid),
+  ]);
   const latest = sightings.at(-1);
   if (!latest) return null;
   const roles = await rolesOf(db, [latest.allianceSnapshotId]);
@@ -283,7 +350,7 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
       isFresh: latest.isFresh,
       role: roles.get(latest.allianceSnapshotId)?.get(uid) ?? null,
     },
-    rows: eventRows(sightings),
+    rows: eventRows(sightings, between),
     names: nameHistory(sightedNames),
     alliances: allianceStays(sightings),
   };

@@ -11,7 +11,7 @@ import type { Db } from "../db";
 import { mergedCapacity, simulateMerge, type MergeResult } from "../merge";
 import { trackedAllianceIds } from "../repo/alliances";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
-import { listEvents } from "./events";
+import { eventBetweenIds, listEvents } from "./events";
 import { dailyFit, eventFit, numbers } from "./history-readings";
 import { memberTurnout } from "./turnout";
 import { publicEvent } from "./visibility";
@@ -186,9 +186,12 @@ async function latestTurnouts(
     }
   };
   const [newest, ...older] = withBoth.slice(0, TURNOUT_EVENTS);
-  if (newest) keep(newest, await memberTurnout(db, newest.snapshots));
+  // D160: each event's rows between windows, so a two-window event's gains are its windows' sum.
+  const turnoutOf = async (e: Events[number]) =>
+    memberTurnout(db, e.snapshots, await eventBetweenIds(db, e.id));
+  if (newest) keep(newest, await turnoutOf(newest));
   if (older.length > 0 && !ids.every((id) => found.has(id))) {
-    const lists = await Promise.all(older.map((e) => memberTurnout(db, e.snapshots)));
+    const lists = await Promise.all(older.map(turnoutOf));
     older.forEach((event, i) => keep(event, lists[i] ?? null));
   }
   return found;

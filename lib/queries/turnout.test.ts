@@ -69,7 +69,7 @@ describe("memberTurnout (#271)", () => {
       before: [{ unionId: 1, members: [m(1, 10), m(2, 10), m(3, 10), m(4, 10)] }],
       after: [{ unionId: 1, members: [m(1, 15), m(2, 10), m(3, 12), m(4, 10)] }],
     });
-    const lists = await memberTurnout(db, snaps);
+    const lists = await memberTurnout(db, snaps, undefined);
     expect(lists?.withKills[0]).toMatchObject({ unionId: 1, n: 4, gainers: 2, gained: 7 });
   });
 
@@ -78,7 +78,7 @@ describe("memberTurnout (#271)", () => {
       before: [{ unionId: 1, members: [m(1, 0), m(2, 0), m(3, 0)] }],
       after: [{ unionId: 1, members: [m(1, 5), m(3, 0), m(9, 500)] }],
     });
-    const lists = await memberTurnout(db, snaps);
+    const lists = await memberTurnout(db, snaps, undefined);
     expect(lists?.withKills[0]).toMatchObject({ n: 2, gainers: 1, gained: 5 });
   });
 
@@ -95,7 +95,7 @@ describe("memberTurnout (#271)", () => {
         { unionId: 3, members: [] },
       ],
     });
-    const lists = await memberTurnout(db, snaps);
+    const lists = await memberTurnout(db, snaps, undefined);
     expect(lists?.withKills.map((t) => t.unionId)).toEqual([1]);
   });
 
@@ -111,7 +111,7 @@ describe("memberTurnout (#271)", () => {
         { unionId: 2, members: [m(21, 7), m(22, 3), m(23, 0)] },
       ],
     });
-    const lists = await memberTurnout(db, snaps);
+    const lists = await memberTurnout(db, snaps, undefined);
     const byId = new Map(lists?.topShare.map((t) => [t.unionId, t]));
     expect(byId.get(1)).toMatchObject({ top: 210, gained: 211 });
     expect(byId.get(2)).toMatchObject({ top: 10, gained: 10 });
@@ -125,7 +125,7 @@ describe("memberTurnout (#271)", () => {
       before: [{ unionId: 1, members: [m(1, 10), m(2, 4)] }],
       after: [{ unionId: 1, members: [m(1, 10), m(2, 4)] }],
     });
-    expect(await memberTurnout(db, snaps)).toBeNull();
+    expect(await memberTurnout(db, snaps, undefined)).toBeNull();
   });
 
   it("ranks the top-5 share of alliances with 10 gainers or more before the rest", async () => {
@@ -141,7 +141,7 @@ describe("memberTurnout (#271)", () => {
         { unionId: 2, members: [m(41, 9), m(42, 1)] },
       ],
     });
-    const lists = await memberTurnout(db, snaps);
+    const lists = await memberTurnout(db, snaps, undefined);
     expect(lists?.topShare.map((t) => t.unionId)).toEqual([1, 2]);
   });
 });
