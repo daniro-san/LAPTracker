@@ -6,13 +6,8 @@ import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { dailyRosters } from "../schema";
 
-export interface AllianceStatement {
-  /** The server day of the read the card comes from (`2026-11-19`). */
-  day: string;
-  /** `declaration`, else `bulletin`, as written; null when both are empty. */
-  text: string | null;
-  /** `language` when it names a known language (`en`); null for `all` or an unknown code. */
-  lang: string | null;
+/** How to join, from one daily read's response; also the rows of /alliances' open seats (issue 792). */
+export interface Joining {
   /** `join.auto`: true, anyone may join; false, by application; null when the read has no `join`. */
   open: boolean | null;
   /** `join.power`, the least might to join; null when there is none (0). */
@@ -21,6 +16,15 @@ export interface AllianceStatement {
   minHq: number | null;
   members: number | null;
   capacity: number | null;
+}
+
+export interface AllianceStatement extends Joining {
+  /** The server day of the read the card comes from (`2026-11-19`). */
+  day: string;
+  /** `declaration`, else `bulletin`, as written; null when both are empty. */
+  text: string | null;
+  /** `language` when it names a known language (`en`); null for `all` or an unknown code. */
+  lang: string | null;
 }
 
 const raw = (path: string) =>
@@ -44,6 +48,31 @@ function count(value: string | null): number | null {
   return value !== null && value !== "" && Number.isSafeInteger(n) && n >= 0 ? n : null;
 }
 
+/** The joining fields picked out of `raw_json` in SQL: never `members`, `leader_id` or a roster key. */
+export const joiningColumns = {
+  auto: raw("join,auto"),
+  power: raw("join,power"),
+  castle: raw("join,castle_level"),
+  members: raw("member_count"),
+  capacity: raw("capacity"),
+};
+
+type JoiningRaw = { [K in keyof typeof joiningColumns]: string | null };
+
+/** The joining fields as numbers and a flag; a minimum of 0 means none. */
+export function joiningOf(row: JoiningRaw): Joining {
+  const members = count(row.members);
+  const capacity = count(row.capacity);
+  return {
+    open: row.auto === null ? null : row.auto === "true",
+    minMight: count(row.power) || null,
+    minHq: count(row.castle) || null,
+    // Issue 481: the tracker once sent 101 of 100; the card never shows more than the capacity.
+    members: members !== null && capacity !== null ? Math.min(members, capacity) : members,
+    capacity,
+  };
+}
+
 /** The statement and joining rules of the newest daily read with a response; null when there is none.
  * A failed read keeps no response (D72), so the card falls back to the newest one that succeeded. */
 export async function allianceStatement(
@@ -56,11 +85,7 @@ export async function allianceStatement(
       declaration: raw("declaration"),
       bulletin: raw("bulletin"),
       language: raw("language"),
-      auto: raw("join,auto"),
-      power: raw("join,power"),
-      castle: raw("join,castle_level"),
-      members: raw("member_count"),
-      capacity: raw("capacity"),
+      ...joiningColumns,
     })
     .from(dailyRosters)
     .where(
@@ -74,17 +99,10 @@ export async function allianceStatement(
     .limit(1);
   if (!row) return null;
   const text = [row.declaration, row.bulletin].find((t) => t?.trim()) ?? null;
-  const members = count(row.members);
-  const capacity = count(row.capacity);
   return {
     day: row.day,
     text: text?.trim() ?? null,
     lang: knownLanguage(row.language),
-    open: row.auto === null ? null : row.auto === "true",
-    minMight: count(row.power) || null,
-    minHq: count(row.castle) || null,
-    // Issue 481: the tracker once sent 101 of 100; the card never shows more than the capacity.
-    members: members !== null && capacity !== null ? Math.min(members, capacity) : members,
-    capacity,
+    ...joiningOf(row),
   };
 }

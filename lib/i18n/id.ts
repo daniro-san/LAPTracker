@@ -303,6 +303,14 @@ export const idID = {
     page: "Halaman {page} dari {pages}",
     previous: "Sebelumnya",
     next: "Berikutnya",
+    recruiting: "Aliansi yang menerima anggota",
+    recruitingLead: "Aliansi yang masih punya tempat sekarang, beserta syarat untuk bergabung.",
+    recruitingNone:
+      "Tidak ada aliansi yang dibaca dalam {days} hari terakhir yang masih punya kursi kosong.",
+    spotsFree: "{n} kursi kosong ({members}/{capacity})",
+    spotFree: "1 kursi kosong ({members}/{capacity})",
+    minMight: "Minimal might {might}",
+    minHq: "Minimal HQ {level}",
     none: "Daftar terisi setelah pembacaan harian malam ini.",
     link: "Semua {n} aliansi di server",
     board:

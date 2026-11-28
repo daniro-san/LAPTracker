@@ -133,6 +133,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | fight clock                     | relógio de lutas                   | `ledger.fightClock`, `ledger.fightClockLink` — the server's events on one clock                  |
 | seat (free place)               | vaga                               | `statement.seats`, `statement.seatOne` — a free place in an alliance                             |
 | joining                         | entrada                            | `statement.joining`, `statement.title` — how a player joins an alliance                          |
+| recruiting (alliance with room) | recrutando                         | `alliances.recruiting`, `alliances.recruitingLead` — alliances with a seat free                  |
 | tracked alliance                | aliança acompanhada                | `balance.*`, `compare.notTracked`, `standing.*` — an alliance the ledger follows                 |
 | Start to End                    | Do Início ao Fim                   | `kvk.change`, `kvk.changeLater`, `kvk.changeHelp` — the change between the two readings          |
 | War turnout                     | Participação                       | `ledger.fought`, `ledger.arrivedTurnout` — the War turnout row                                   |

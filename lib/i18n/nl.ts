@@ -316,6 +316,14 @@ export const nl = {
       "Opvragingen liggen stil zolang het wekelijkse event loopt. Probeer het daarna nog eens.",
     tooMany: "Net te veel opvragingen van hier. Probeer het over een paar minuten nog eens.",
     error: "Er is iets misgegaan. Probeer het zo nog eens.",
+    recruiting: "Allianties werven",
+    recruitingLead: "Allianties met nu plek vrij, en wat ze vragen om aan te sluiten.",
+    recruitingNone:
+      "Geen alliantie die in de laatste {days} dagen is gelezen, heeft een plek vrij.",
+    spotsFree: "{n} plekken vrij ({members}/{capacity})",
+    spotFree: "1 plek vrij ({members}/{capacity})",
+    minMight: "Minimaal might {might}",
+    minHq: "Minimaal HQ {level}",
   },
   history: {
     title: "Ledengeschiedenis",

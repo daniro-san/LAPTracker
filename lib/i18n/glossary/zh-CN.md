@@ -237,6 +237,8 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | event reading             | 活动读取                | `ledger.readoutEventRead` — a line chart's value when the reading was taken at an event's Start or End |
 | Later                     | 更晚                    | `ledger.readoutLater` — the readout's step after the current point; `ledger.readoutEarlier` is 更早    |
 | Split by alliance         | 按联盟                  | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — one interval's kills, split by alliance     |
+| Alliances recruiting      | 招募中的联盟            | `alliances.recruiting` — section heading, alliances with a spot free                                   |
+| spot free                 | 空位                    | `alliances.spotsFree`, `alliances.spotFree`, `statement.seats` — an open place in an alliance          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

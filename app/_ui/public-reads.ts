@@ -5,7 +5,7 @@
 import { getAppContext } from "@/lib/app-context";
 import type { Db } from "@/lib/db";
 import { withOwnDb } from "@/lib/page";
-import { listEvents, upstreamRows } from "@/lib/queries";
+import { listEvents, recruitingAlliances, upstreamRows } from "@/lib/queries";
 import { allianceList, eventAllianceIds } from "@/lib/queries/alliance-list";
 import { sampledEventIds } from "@/lib/queries/fight-clock";
 import { allianceNames } from "@/lib/queries/names";
@@ -34,6 +34,11 @@ export async function sharedAllianceList(asked: number) {
   const page = Math.min(Math.max(1, asked), first.pages);
   return page === 1 ? first : sharedRead("alliance-list", [page], (db) => allianceList(db, page));
 }
+
+/** /alliances' "Alliances recruiting" (issue 792), keyed by the server day: a new day drops the reads that
+ * went stale. The daily read and the details lookup write `daily_rosters` and invalidate `reads`. */
+export const sharedRecruiting = (today: string) =>
+  sharedRead("recruiting", [today], (db) => recruitingAlliances(db, today));
 
 /** The alliances an event read: which list rows link into it. */
 export const sharedEventAllianceIds = (eventId: number) =>

@@ -312,6 +312,13 @@ export const vi = {
       "Tra cứu tạm dừng trong lúc sự kiện hằng tuần đang chạy. Thử lại sau khi sự kiện kết thúc.",
     tooMany: "Quá nhiều lượt tra cứu từ đây vừa rồi. Thử lại sau vài phút.",
     error: "Có gì đó trục trặc. Thử lại sau một chút.",
+    recruiting: "Liên minh đang tuyển thành viên",
+    recruitingLead: "Liên minh còn chỗ ngay lúc này, và điều kiện để xin vào.",
+    recruitingNone: "Không liên minh nào được đọc trong {days} ngày qua còn chỗ trống.",
+    spotsFree: "{n} chỗ trống ({members}/{capacity})",
+    spotFree: "1 chỗ trống ({members}/{capacity})",
+    minMight: "Lực Chiến tối thiểu {might}",
+    minHq: "HQ tối thiểu {level}",
   },
   history: {
     title: "Lịch sử thành viên",

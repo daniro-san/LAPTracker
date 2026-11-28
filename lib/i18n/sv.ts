@@ -243,6 +243,13 @@ export const sv = {
     page: "Sida {page} av {pages}",
     previous: "Föregående",
     next: "Nästa",
+    recruiting: "Rekryterande allianser",
+    recruitingLead: "Allianser med plats just nu, och vad de vill ha för att gå med.",
+    recruitingNone: "Ingen allians som lästs de senaste {days} dagarna har någon ledig plats.",
+    spotsFree: "{n} platser lediga ({members}/{capacity})",
+    spotFree: "1 plats ledig ({members}/{capacity})",
+    minMight: "Lägsta Might {might}",
+    minHq: "Lägsta HQ {level}",
     none: "Listan fylls efter ikvällens dagliga uppdatering.",
     link: "Alla {n} allianser på servern",
     board:

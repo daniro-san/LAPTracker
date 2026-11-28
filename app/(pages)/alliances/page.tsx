@@ -5,11 +5,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { allianceHref, AllianceRows } from "@/app/_ui/AllianceRows";
+import { AlliancesRecruiting } from "@/app/_ui/AlliancesRecruiting";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { EmptyState } from "@/app/_ui/EmptyState";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { dayDate } from "@/app/_ui/format";
-import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { sharedAllianceList, sharedEventAllianceIds, sharedEvents } from "@/app/_ui/public-reads";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -17,6 +18,7 @@ import { TRACKED_COUNT } from "@/config/alliances";
 import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { homeEvent } from "@/lib/queries";
+import { serverDay } from "@/lib/schedule";
 import { fill } from "@/lib/words";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -63,7 +65,7 @@ function Pager({ page, pages, copy }: { page: number; pages: number; copy: Dicti
 export default async function AlliancesPage({ searchParams }: { searchParams: Search }) {
   const sp = await searchParams;
   const asked = typeof sp.page === "string" && /^\d{1,4}$/.test(sp.page) ? Number(sp.page) : 1;
-  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
+  const [clock, copy, locale] = await Promise.all([requestClock(), requestCopy(), requestLocale()]);
   const [events, list] = await Promise.all([sharedEvents(), sharedAllianceList(asked)]);
   const homeId = homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null;
   const inHome = new Set(homeId === null ? [] : await sharedEventAllianceIds(homeId));
@@ -93,6 +95,15 @@ export default async function AlliancesPage({ searchParams }: { searchParams: Se
             <p className="text-body-sm text-ink/70">
               {fill(a.asOf, { date: clock.day(dayDate(list.day)) })}
             </p>
+            {list.page === 1 && (
+              <AlliancesRecruiting
+                today={serverDay(new Date(), getEnv())}
+                href={href}
+                clock={clock}
+                locale={locale}
+                copy={copy}
+              />
+            )}
             {list.page === 1 && (
               <section aria-labelledby="tracked-h" className="mt-6">
                 <h2 id="tracked-h" className="mb-2 font-subhead text-display-md">

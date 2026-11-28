@@ -297,6 +297,13 @@ export const ptBR = {
     page: "Página {page} de {pages}",
     previous: "Anterior",
     next: "Próxima",
+    recruiting: "Alianças recrutando",
+    recruitingLead: "Alianças com vagas agora, e o que pedem para entrar.",
+    recruitingNone: "Nenhuma aliança lida nos últimos {days} dias tem vaga aberta.",
+    spotsFree: "{n} vagas abertas ({members}/{capacity})",
+    spotFree: "1 vaga aberta ({members}/{capacity})",
+    minMight: "Might mínimo {might}",
+    minHq: "HQ mínimo {level}",
     none: "A lista se preenche após a atualização diária desta noite.",
     link: "Todas as {n} alianças do servidor",
     board:

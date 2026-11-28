@@ -301,6 +301,13 @@ export const tr = {
     page: "Sayfa {page} / {pages}",
     previous: "Önceki",
     next: "Sonraki",
+    recruiting: "Üye alan ittifaklar",
+    recruitingLead: "Şu an boş koltuğu olan ittifaklar ve katılmak için istedikleri şartlar.",
+    recruitingNone: "Son {days} günde okunan hiçbir ittifakta boş koltuk yok.",
+    spotsFree: "{n} boş koltuk ({members}/{capacity})",
+    spotFree: "1 boş koltuk ({members}/{capacity})",
+    minMight: "En az Might {might}",
+    minHq: "En az HQ {level}",
     none: "Liste, bu geceki günlük okumadan sonra dolar.",
     link: "Sunucudaki {n} ittifakın tümü",
     board:

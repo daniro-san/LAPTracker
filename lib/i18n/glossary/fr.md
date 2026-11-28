@@ -76,6 +76,7 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | Sign in | Connexion | `site.signIn` — the header link to the Discord sign-in (noun, one word); `site.signInFooter` uses `se connecter` after the colon |
 | Alliance officers | Officiers d’alliance | `site.signInFooter` — the alliance's officers, who sign in to the workspace |
 | Ranks board | Tableau des classements | `alliances.*`, `alliances.board` — the server's board of alliances by Might; not the server rank (`ledger.ranking`) |
+| Alliances recruiting | Alliances qui recrutent | `alliances.recruiting`, `alliances.recruitingLead` — alliances with a free seat; the heading must read at first sight |
 | lookup | consultation | `alliances.get*`, `alliances.usedUp` — one daily read of an alliance's details, shared by everyone |
 | KvK matchup | Affrontement KvK | `kvk.title` — the event page's section: both servers at the Start; KvK stays English |
 | event reading | relevé d’événement | `ledger.readoutEventRead` — a line chart's value at an event's Start or End, not a daily read |
