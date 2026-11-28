@@ -101,6 +101,13 @@ export const membersPt: MembersWords = {
   "thanks.improved": "Mais evoluíram no Alliance Duel na semana passada",
   "thanks.improvedWhy": "Pelo menos 10% mais pontos na semana passada que na anterior.",
   "thanks.both": "terminou o AD Tech e aumentou o esquadrão principal",
+  "thanks.help": "Ajudaram a aliança todos os dias esta semana",
+  "thanks.helpWhy":
+    "Todas as 1.000 moedas de Ajuda da Aliança em cada dia com leitura, em pelo menos 5 dias.",
+  "thanks.helpLine": "ajudou todos os dias",
+  "thanks.quests": "Missões todos os dias esta semana",
+  "thanks.questsWhy": "Pontos de missões diárias em cada dia com leitura, em pelo menos 5 dias.",
+  "thanks.questsLine": "fez as missões todos os dias",
   "updates.open": "Colar atualizações",
   "updates.help":
     "Um membro por linha: nome, depois esquadrão principal e AD Tech %. Exemplo: Ana 10.2M 74%",

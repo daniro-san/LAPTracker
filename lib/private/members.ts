@@ -41,13 +41,13 @@ import {
   questPoints,
   topOf,
   weekDonations,
-  weekQuestPoints,
   weekTotal,
   type DayValue,
   type Idle,
   type MissingField,
   type Thank,
 } from "./member-week";
+import { steadyOf } from "./steady";
 
 /** End-of-day reads fetched: a full week and the reads before it that the offline proxy may walk back. */
 const LOOKBACK_READS = 15;
@@ -119,6 +119,12 @@ export interface MemberRow {
   early: boolean;
 }
 
+/** A member named in a thanks group. */
+export interface Named {
+  uid: number;
+  name: string;
+}
+
 export interface MembersView {
   /** When the rows were read: the newest end-of-day read, or the roster before one; null when none. */
   readAt: Date | null;
@@ -130,7 +136,8 @@ export interface MembersView {
   /** Top donors and quest points this week, and who made progress (AD Tech 100 %, main squad, D109). */
   thanks: {
     donors: Thank[];
-    activity: Thank[];
+    /** Who helped every day, and who did quests every day, in name order (issue 465); names only. */
+    steady: { help: Named[]; quests: Named[] };
     progress: Progress[];
     /** Names of who improved most in Alliance Duel (issue 467), alphabetical; empty unless asked for. */
     improved: string[];
@@ -291,7 +298,7 @@ function earlyView(
   s: Pick<Signals, "facts" | "today" | "firstSeen"> & { pending: readonly number[] },
   zone: string,
 ): MembersView {
-  const none = { donors: [], activity: [], progress: [], improved: [] };
+  const none = { donors: [], steady: { help: [], quests: [] }, progress: [], improved: [] };
   if (!roster)
     return {
       readAt: null,
@@ -419,7 +426,7 @@ export async function membersView(
     members,
     thanks: {
       donors: topOf(counted, (m) => weekTotal(weekDonations(thanksReads, thanksDays, m.uid))),
-      activity: topOf(counted, (m) => weekQuestPoints(thanksReads, m.uid)),
+      steady: steadyThanks(counted, thanksReads, thanksDays),
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
       improved: improved ? mostImproved(duel, counted, mondayOf(today)) : [],
     },
@@ -427,6 +434,21 @@ export async function membersView(
     facts,
     reads,
   };
+}
+
+/** Issue 465: who helped every day and who did quests every day in the thanks week, by name; new members left out. */
+function steadyThanks(
+  counted: readonly MemberRow[],
+  reads: readonly RosterRead[],
+  days: readonly string[],
+) {
+  const rows = counted
+    .filter((m) => !m.isNew)
+    .map((m) => ({ uid: m.uid, name: m.name, ...steadyOf(reads, days, m.uid) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const named = (keep: (r: (typeof rows)[number]) => boolean) =>
+    rows.filter(keep).map(({ uid, name }) => ({ uid, name }));
+  return { help: named((r) => r.help), quests: named((r) => r.quests) };
 }
 
 /** A member as the list page shows them: the photo and frame, and the names they used before here. */

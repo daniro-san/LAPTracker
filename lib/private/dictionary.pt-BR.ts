@@ -90,7 +90,6 @@ export const pt: WorkspaceDictionary = {
   "thanks.head": "Destaques da semana",
   "thanks.intro": "Agradeça a eles no jogo.",
   "thanks.donors": "Quem mais doou",
-  "thanks.activity": "Pontos de missões diárias",
   "members.search.ph": "Nome (sem precisar de emoji)",
   "members.search.aria": "Buscar membros",
   "members.filter.aria": "Filtro",

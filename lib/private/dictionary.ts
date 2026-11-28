@@ -92,7 +92,6 @@ const en = {
   "thanks.head": "Top this week",
   "thanks.intro": "Thank them in the game.",
   "thanks.donors": "Top donors",
-  "thanks.activity": "Daily quest points",
   "members.search.ph": "Name (no emoji needed)",
   "members.search.aria": "Search members",
   "members.filter.aria": "Filter",

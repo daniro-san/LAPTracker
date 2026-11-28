@@ -11,7 +11,7 @@ import { plainText, wrap, type WritingLanguage } from "./notice-writing";
  * What a person did in the week: grew their main squad, finished AD Tech, or kept up their daily quests and
  * donations (Insights' "Quiet contributors", issue 489).
  */
-export type Deed = "squad" | "ad" | "steady";
+export type Deed = "squad" | "ad" | "steady" | "help" | "quests";
 
 /** One person as the model sees them: the week's deeds, and the officer's few words ("" when none). */
 export interface Person {
@@ -31,16 +31,22 @@ const DEEDS: Record<WritingLanguage, Record<Deed, string>> = {
     squad: "grew their main squad",
     ad: "finished AD Tech",
     steady: "kept up their daily quests and donations",
+    help: "helped the alliance every day",
+    quests: "did their daily quests every day",
   },
   "pt-BR": {
     squad: "aumentou o esquadrão principal",
     ad: "terminou o AD Tech",
     steady: "manteve as missões diárias e as doações",
+    help: "ajudou a aliança todos os dias",
+    quests: "fez as missões diárias todos os dias",
   },
   fr: {
     squad: "a fait grandir son escouade principale",
     ad: "a terminé l’AD Tech",
     steady: "a tenu ses quêtes du jour et ses dons",
+    help: "a aidé l’alliance tous les jours",
+    quests: "a fait ses quêtes du jour tous les jours",
   },
 };
 

@@ -103,6 +103,14 @@ export const membersFr: MembersWords = {
   "thanks.improvedWhy":
     "Au moins 10 % de points en plus la semaine dernière que la semaine d’avant.",
   "thanks.both": "a terminé l’AD Tech et fait grandir son escouade principale",
+  "thanks.help": "Ont aidé l’alliance tous les jours cette semaine",
+  "thanks.helpWhy":
+    "Les 1 000 pièces d’Aide d’alliance chaque jour avec une lecture, sur au moins 5 jours.",
+  "thanks.helpLine": "a aidé tous les jours",
+  "thanks.quests": "Quêtes tous les jours cette semaine",
+  "thanks.questsWhy":
+    "Des points de quêtes du jour chaque jour avec une lecture, sur au moins 5 jours.",
+  "thanks.questsLine": "a fait ses quêtes tous les jours",
   "updates.open": "Coller des mises à jour",
   "updates.help":
     "Un membre par ligne : nom, puis escouade principale et AD Tech %. Exemple : Ana 10.2M 74%",

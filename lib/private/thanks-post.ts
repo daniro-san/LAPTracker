@@ -22,7 +22,7 @@ export const withWords = <P extends { note?: string | undefined }>(people: reado
   people.filter((p) => p.note?.trim());
 
 /** The deeds in the order a combined reason names them; AD Tech always first. */
-const ORDER: readonly Deed[] = ["ad", "squad", "steady"];
+const ORDER: readonly Deed[] = ["ad", "squad", "steady", "help", "quests"];
 
 const WORDS: Record<
   PostLanguage,
@@ -45,6 +45,8 @@ const WORDS: Record<
       ad: "Finished AD Tech",
       squad: "Grew their main squad",
       steady: "Kept up their daily quests and donations",
+      help: "Helped the alliance every day",
+      quests: "Did their daily quests every day",
     },
     and: " and ",
     others: "Thank you as well",
@@ -60,6 +62,8 @@ const WORDS: Record<
       ad: "AD Tech concluído",
       squad: "Esquadrão principal maior",
       steady: "Missões diárias e doações em dia",
+      help: "Ajudou a aliança todos os dias",
+      quests: "Missões diárias todos os dias",
     },
     and: " e ",
     others: "Obrigado também a",
@@ -75,6 +79,8 @@ const WORDS: Record<
       ad: "AD Tech terminé",
       squad: "Escouade principale renforcée",
       steady: "Quêtes du jour et dons au rendez-vous",
+      help: "A aidé l’alliance tous les jours",
+      quests: "Quêtes du jour tous les jours",
     },
     and: " et ",
     others: "Merci aussi à",

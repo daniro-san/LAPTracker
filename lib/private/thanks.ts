@@ -44,7 +44,7 @@ export const draftInput = z
         z
           .object({
             name: NAME,
-            did: z.array(z.enum(["squad", "ad", "steady"])).max(3),
+            did: z.array(z.enum(["squad", "ad", "steady", "help", "quests"])).max(5),
             note: z.string().trim().max(NOTE_LIMIT).optional(),
           })
           .strict()
