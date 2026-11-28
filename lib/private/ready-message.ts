@@ -67,9 +67,11 @@ export const readyWords = (language: WorkspaceLanguage): ReadyWords => READY_MES
  * no number in it), the reasons only when they are under Check in, the tip, the facts still to ask.
  * Follow-up's panel and the member card (issue 516) both build it here.
  */
-export const inputOf = (item: Pick<WorkItem, "member" | "checkIn" | "tip" | "toAsk" | "kvk">) => ({
+export const inputOf = (
+  item: Pick<WorkItem, "member" | "checkIn" | "tip" | "toAsk" | "kvk"> & { hello?: boolean },
+) => ({
   name: item.member.name,
-  isNew: item.member.isNew,
+  isNew: item.member.isNew || item.hello === true,
   reasons: [
     ...(item.kvk ? (["kvk"] as const) : []),
     ...(item.checkIn ? item.member.reasons.map((r) => (r.kind === "seen" ? "idle" : r.kind)) : []),

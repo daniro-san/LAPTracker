@@ -44,6 +44,18 @@ function messageOf(item: FollowUpItem, officer: WorkspaceLanguage) {
 /** A head line and the officer's note under it, in quotes (the panel's review, issue 585 S2). */
 const said = (lines: string[]): RowLine[] => lines.map((text, i) => ({ text, quote: i > 0 }));
 
+/** Issue 828: the join date of a member worth a hello, and the buddy an officer named, next to the reasons. */
+function helloLines(item: FollowUpItem, t: WorkspaceDictionary, f: Formats): string[] {
+  const { member } = item;
+  const joined = item.hello ? member.joinedHello : null;
+  return [
+    ...(joined ? [fill(t["followup.reason.joined"], { date: f.date(joined) })] : []),
+    ...((item.checkIn || joined) && member.buddy
+      ? [fill(t["followup.buddy"], { name: member.buddy.name })]
+      : []),
+  ];
+}
+
 /**
  * Why a member is on the list: the Needs help mark (since when, who, the note), the reasons, the facts
  * still to ask, the tip, then last week's newest record as context (issue 585 S2). `plain` are the middle
@@ -55,6 +67,7 @@ function partsOf(item: FollowUpItem, t: WorkspaceDictionary, f: Formats, kvk: st
   const reasons = [
     ...(item.kvk && kvk ? [kvk] : []),
     ...(checkIn ? member.reasons.map((r) => reasonLine(r, t, f)) : []),
+    ...helloLines(item, t, f),
   ];
   // Every fact still to ask, by name (issue 460): never only a count.
   const list = toAsk.map((field) => t[`facts.${field}`]).join(", ");
@@ -136,9 +149,9 @@ export function groupsOf(
   const help = items.filter((i) => i.help);
   const hit = items.filter(inKvkGroup);
   const rest = items.filter((i) => !i.help && !i.kvk);
-  const checkIn = rest.filter((i) => i.checkIn);
-  const fresh = rest.filter((i) => !i.checkIn && i.toAsk.length > 0);
-  const tip = rest.filter((i) => !i.checkIn && i.toAsk.length === 0);
+  const checkIn = rest.filter((i) => i.checkIn || i.hello);
+  const fresh = rest.filter((i) => !i.checkIn && !i.hello && i.toAsk.length > 0);
+  const tip = rest.filter((i) => !i.checkIn && !i.hello && i.toAsk.length === 0);
   return [
     { id: "help", key: "followup.group.help" as const, items: help },
     { id: "kvk", key: "followup.group.kvk" as const, items: hit },

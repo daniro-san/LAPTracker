@@ -27,6 +27,7 @@ import {
   undoFollowUp,
   type FollowUpInput,
 } from "./follow-up";
+import { helloOnly } from "./follow-up-rules";
 import { insightsView } from "./insights";
 import { membersView } from "./members";
 import { createSession } from "./session";
@@ -164,7 +165,10 @@ async function seen(access: WorkspaceAccess, now: Date) {
     help: uids((i) => i.help),
     all: page.items.map((i) => i.member.uid),
     noted: page.noted.map((n) => n.member.uid),
-    equal: counts?.toLook === page.items.length && counts?.noted === page.noted.length,
+    // Home's number leaves out a hello alone (issue 828); no one here has one.
+    equal:
+      counts?.toLook === page.items.filter((i) => !helloOnly(i)).length &&
+      counts?.noted === page.noted.length,
   };
 }
 

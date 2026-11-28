@@ -66,7 +66,15 @@ export interface LeftReason {
   note: string;
 }
 
+/**
+ * A member's buddy (issue 828, D140 amendment 2026-11-28): the uid of a current member of the alliance an
+ * officer named to say hello. Stored as the member fact `buddy`, outside FACT_FIELDS, like `leftReason`:
+ * the facts editor never offers it, the member card has its own block. A null value clears it.
+ */
+export const BUDDY_FIELD = "buddy";
+
 export type MemberFacts = { [F in FactField]?: Fact<F> } & {
+  buddy?: Omit<Fact, "value"> & { value: number | null };
   leftReason?: Omit<Fact, "value"> & { value: LeftReason | null };
   /** The member's own away days (issue 829), laid over by `factsOf`; not a fact, never in member_facts. */
   ownAway?: { value: AwayNote | null; at?: string };
