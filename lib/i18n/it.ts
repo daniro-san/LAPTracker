@@ -337,6 +337,10 @@ export const itIT = {
     copy: "Copia per foglio",
     copied: "Copiato",
     copyFailed: "Impossibile copiare. Riprova.",
+    playerTitle: "Giorno per giorno",
+    playerLead: "Ogni riga confronta una lettura di questo giocatore con la lettura precedente.",
+    gap: "Nessuna lettura dal {date}. Il giocatore non era in nessuna alleanza seguita, oppure la lettura di quel giorno non è riuscita.",
+    moved: "Passato a {tag} da {from}",
   },
   settings: {
     language: "Lingua",

@@ -278,6 +278,10 @@ export const sv = {
     copy: "Kopiera till kalkylark",
     copied: "Kopierat",
     copyFailed: "Kopieringen misslyckades. Försök igen.",
+    playerTitle: "Dag för dag",
+    playerLead: "Varje rad jämför en avläsning av spelaren med avläsningen innan.",
+    gap: "Ingen avläsning sedan {date}. Spelaren var i ingen allians vi läser, eller så misslyckades den dagens avläsning.",
+    moved: "Flyttade till {tag} från {from}",
   },
   settings: {
     language: "Språk",

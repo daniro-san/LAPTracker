@@ -338,6 +338,10 @@ export const idID = {
     copy: "Salin untuk spreadsheet",
     copied: "Tersalin",
     copyFailed: "Gagal menyalin. Coba lagi.",
+    playerTitle: "Hari demi hari",
+    playerLead: "Tiap baris membandingkan satu pembacaan pemain ini dengan pembacaan sebelumnya.",
+    gap: "Tidak ada pembacaan sejak {date}. Pemain tidak ada di aliansi yang dilacak, atau pembacaan hari itu gagal.",
+    moved: "Pindah ke {tag} dari {from}",
   },
   settings: {
     language: "Bahasa",

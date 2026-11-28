@@ -52,8 +52,10 @@ export type { Photo } from "./photo";
 export type { PlayerEventRow, PlayerHistory } from "./players";
 export {
   playerProgress,
+  progressSteps,
   type PlayerProgress,
   type ProgressReading,
+  type ProgressStep,
   type ProgressSummary,
 } from "./player-progress";
 export { eventRanks, historyRanks, type Ranks } from "./ranks";

@@ -55,7 +55,8 @@ const pointsOf = (readings: ProgressReading[], key: "power" | "kills") =>
     return value === null ? [] : [{ at: r.at, value, mark: r.event !== null }];
   });
 
-function Kind({ r, clock, copy }: { r: ProgressReading; clock: Clock; copy: Dictionary }) {
+/** What was read: the daily update, or an event's Start or End. */
+export function Kind({ r, clock, copy }: { r: ProgressReading; clock: Clock; copy: Dictionary }) {
   if (!r.event) return <>{copy.history.daily}</>;
   return (
     <>

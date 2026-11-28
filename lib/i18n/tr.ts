@@ -336,6 +336,10 @@ export const tr = {
     copy: "Tabloya kopyala",
     copied: "Kopyalandı",
     copyFailed: "Kopyalanamadı. Tekrar dene.",
+    playerTitle: "Gün gün",
+    playerLead: "Her satır, oyuncunun bir okumasını bir önceki okumayla karşılaştırır.",
+    gap: "{date} tarihinden beri okuma yok. Oyuncu okuduğumuz hiçbir ittifakta değildi ya da o günkü okuma başarısız oldu.",
+    moved: "Geçiş: {from} → {tag}",
   },
   settings: {
     language: "Dil",

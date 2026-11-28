@@ -339,6 +339,10 @@ export const fr = {
     copy: "Copier pour tableur",
     copied: "Copié",
     copyFailed: "Impossible de copier. Réessayez.",
+    playerTitle: "Jour par jour",
+    playerLead: "Chaque ligne compare un relevé de ce joueur à celui juste avant.",
+    gap: "Aucun relevé depuis {date}. Le joueur était hors des alliances suivies, ou le relevé de ce jour a échoué.",
+    moved: "Passé de {from} à {tag}",
   },
   settings: {
     language: "Langue",

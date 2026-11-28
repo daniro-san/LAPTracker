@@ -333,6 +333,10 @@ export const ptBR = {
     copy: "Copiar para planilha",
     copied: "Copiado",
     copyFailed: "Não foi possível copiar. Tente de novo.",
+    playerTitle: "Dia a dia",
+    playerLead: "Cada linha compara uma leitura deste jogador com a leitura anterior.",
+    gap: "Sem leitura desde {date}. O jogador não estava em nenhuma aliança acompanhada, ou a leitura daquele dia falhou.",
+    moved: "Mudou para {tag}, vindo de {from}",
   },
   settings: {
     language: "Idioma",

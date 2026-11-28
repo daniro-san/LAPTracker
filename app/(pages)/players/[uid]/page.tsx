@@ -11,6 +11,7 @@ import { notFoundTitle, requestClock, requestCopy } from "@/app/_ui/locale";
 import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
+import { PlayerDays } from "@/app/_ui/PlayerDays";
 import { PlayerProgress } from "@/app/_ui/PlayerProgress";
 import { previewImage } from "@/app/_ui/preview";
 import { sharedEvents, sharedRead } from "@/app/_ui/public-reads";
@@ -22,7 +23,13 @@ import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import { homeEvent, playerHistory, playerProgress, type PlayerHistory } from "@/lib/queries";
+import {
+  homeEvent,
+  playerHistory,
+  playerProgress,
+  progressSteps,
+  type PlayerHistory,
+} from "@/lib/queries";
 import { fill } from "@/lib/words";
 
 function Timelines({
@@ -128,6 +135,14 @@ const loadPlayer = cache(async (uid: number) => {
 });
 
 type Params = Promise<{ uid: string }>;
+type Search = Promise<Record<string, string | string[] | undefined>>;
+
+/** Day by day's cursor (`?before=<ISO time>`); a malformed one reads as the newest page. */
+const beforeOf = async (searchParams: Search) => {
+  const { before } = await searchParams;
+  const ms = typeof before === "string" ? Date.parse(before) : Number.NaN;
+  return Number.isNaN(ms) ? null : new Date(ms);
+};
 
 const uidOf = async (params: Params) => {
   const { uid } = await params;
@@ -147,10 +162,67 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-export default async function PlayerPage({ params }: { params: Params }) {
+/** The title row: photo, name, alliance link and role, with Compare and the exact-numbers switch. */
+function PlayerHead({
+  history,
+  allianceName,
+  copy,
+}: {
+  history: PlayerHistory;
+  allianceName: string | null;
+  copy: Dictionary;
+}) {
+  const { current } = history;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <div className="flex min-w-0 items-center gap-3">
+        <PlayerAvatar uid={history.uid} photo={current} size="lg" />
+        <div className="min-w-0">
+          <h1 className="break-words font-display text-display-lg leading-tight">
+            <bdi>{current.name}</bdi>
+          </h1>
+          <TextLink
+            href={`/events/${current.eventId}/alliances/${current.unionId}`}
+            className="inline-flex min-h-11 items-center gap-2 font-medium"
+          >
+            <AllianceBadge badgeId={current.badgeId} />
+            {allianceLabel(current.tag, allianceName)}
+          </TextLink>
+          {current.role && (
+            <p className="flex items-center gap-2 text-sm text-ink/70">
+              <RoleMark role={current.role} />
+              {current.role.kind === "officer" ? current.role.title : copy.leadership.leader}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <PlayerCompareLink
+          eventIds={history.rows.map((r) => r.eventId)}
+          uid={history.uid}
+          copy={copy}
+        />
+        <ExactToggle />
+      </div>
+    </div>
+  );
+}
+
+export default async function PlayerPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: Search;
+}) {
   const uid = await uidOf(params);
   if (uid === null) notFound();
-  const [data, clock, copy] = await Promise.all([loadPlayer(uid), requestClock(), requestCopy()]);
+  const [data, clock, copy, before] = await Promise.all([
+    loadPlayer(uid),
+    requestClock(),
+    requestCopy(),
+    beforeOf(searchParams),
+  ]);
   if (!data) notFound();
   const { history, events, progress } = data;
   const { current } = history;
@@ -181,41 +253,18 @@ export default async function PlayerPage({ params }: { params: Params }) {
             },
           ]}
         />
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          <div className="flex min-w-0 items-center gap-3">
-            <PlayerAvatar uid={history.uid} photo={current} size="lg" />
-            <div className="min-w-0">
-              <h1 className="break-words font-display text-display-lg leading-tight">
-                <bdi>{current.name}</bdi>
-              </h1>
-              <TextLink
-                href={`/events/${current.eventId}/alliances/${current.unionId}`}
-                className="inline-flex min-h-11 items-center gap-2 font-medium"
-              >
-                <AllianceBadge badgeId={current.badgeId} />
-                {allianceLabel(current.tag, allianceName)}
-              </TextLink>
-              {current.role && (
-                <p className="flex items-center gap-2 text-sm text-ink/70">
-                  <RoleMark role={current.role} />
-                  {current.role.kind === "officer" ? current.role.title : copy.leadership.leader}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <PlayerCompareLink
-              eventIds={history.rows.map((r) => r.eventId)}
-              uid={uid}
-              copy={copy}
-            />
-            <ExactToggle />
-          </div>
-        </div>
+        <PlayerHead history={history} allianceName={allianceName} copy={copy} />
         <Legend copy={copy} />
         <Timelines history={history} clock={clock} copy={copy} />
         <Summary current={current} clock={clock} copy={copy} />
         <PlayerProgress progress={progress} clock={clock} />
+        <PlayerDays
+          uid={uid}
+          steps={progressSteps(progress.readings)}
+          before={before}
+          clock={clock}
+          copy={copy}
+        />
         <PlayerAcrossEvents
           rows={history.rows}
           clock={clock}

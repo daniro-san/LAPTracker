@@ -315,6 +315,10 @@ export const zhCN = {
     copy: "复制到表格",
     copied: "已复制",
     copyFailed: "无法复制。请重试。",
+    playerTitle: "逐日记录",
+    playerLead: "每一行都将该玩家的一次读取与此前的一次读取作比较。",
+    gap: "自 {date} 起没有读取。该玩家当时不在追踪的联盟中，或当天的读取失败了。",
+    moved: "从 {from} 转到 {tag}",
   },
   settings: {
     language: "语言",
