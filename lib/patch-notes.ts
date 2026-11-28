@@ -208,13 +208,20 @@ export const ownerTodo: OwnerTodo[] = [
 export const patchNotes: PatchNote[] = [
   {
     version: "v5.71.0",
-    date: "2026-11-23",
-    title: "A daily welcome for members, a weekly count for officers",
+    date: "2026-11-28",
+    title: "Origin of Chaos with its two windows, a player's day by day, and readable thanks",
     changes: [
       "Alliance settings → Posts: a third optional post, Welcome new members. Every day, after the end-of-day read (between 23:30 and 00:00 ST), it greets by name the members who joined since yesterday, in the members' channel. It runs only when both days' reads worked, never mentions anyone who left, pings nobody, and posts nothing on a day with no one new. Off until officers turn it on; allowed by default.",
       "Alliance settings → Posts: a fourth optional post, Weekly members summary, in the leaders' channel only. Every Monday between 00:00 and 01:15 ST it gives last week's counts: how many joined, how many left, the member count on two dated days, and how many of the 7 daily updates it is based on. Counts only: no names, no coins, quests or donations. Off until officers turn it on; allowed by default.",
+      "Alliance settings → Posts: a fifth optional post, the KvK recap, in the members' channel after each KvK's End. It thanks everyone first, gives the kills gained together and the top 3 gainers by name, and thanks defenders and support. No bottom list and no one named for gaining nothing. Off until officers turn it on; allowed by default.",
+      "Events can now have up to 4 windows, each read on its own, and an event's change is the sum of its windows. Origin of Chaos runs every fourth Saturday (next on 5 December) with two windows, 00:00–00:45 and 12:15–13:15 ST. Other reads pause only inside each window, not in the 12 hours between them.",
+      "Player pages: a Day by day section lists every reading of the player, newest first, 14 at a time. Each line shows might and kills with their change, and notes when the player moved alliance or changed name. A gap of more than 36 hours is marked and never filled in.",
+      "Thanks: the desk card lists one line per reason with the names after it. The shared message is now a fixed template, with writing help only for people an officer wrote a few words about. Members whose approved link is on the card see their own thank-you first on the board.",
+      "Desk: a follow-up note can be deleted and an open review request withdrawn, with Undo for a short while. Both vanish from lists, counts and Home, and go to their own file in the export.",
+      "The daily read now keeps its list of alliances, so /admin/runs shows an alliance it never reached and the automatic retry reads it. A roster the read itself stored is never read again (D72).",
+      "Desktop shows one feedback entry: the floating badge from 1280 px, the button at the end of the page below that. The daily quest cap is 250, the game's limit.",
     ],
-    prs: [766, 768],
+    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774],
   },
   {
     version: "v5.70.0",
