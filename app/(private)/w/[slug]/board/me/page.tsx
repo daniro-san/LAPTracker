@@ -10,6 +10,7 @@ import { notFound, redirect } from "next/navigation";
 import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { Spread } from "@/lib/brand/components/layout/Spread";
+import { dayIn } from "@/lib/calendar-time";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { meAccess, requireBoard, type CookieReader } from "@/lib/private/access";
@@ -19,7 +20,13 @@ import { featureOn } from "@/lib/private/features";
 import { meView, type MeView } from "@/lib/private/me";
 import { linkedName, linkPicker, type LinkPicker } from "@/lib/private/me-link";
 import { cardFormats } from "@/lib/private/member-card";
-import { ownReport, REPORT_FIELDS, type OwnReports } from "@/lib/private/self-report";
+import {
+  ownAwayDays,
+  ownReport,
+  REPORT_FIELDS,
+  type OwnAway,
+  type OwnReports,
+} from "@/lib/private/self-report";
 import { SLUG } from "@/lib/private/sign-in";
 import { fill } from "@/lib/words";
 
@@ -28,6 +35,7 @@ import { LINK } from "../../../../_ui/BoardSections";
 import { editorWords } from "../../../../_ui/facts-form";
 import { Feedback } from "../../../../_ui/Feedback";
 import { Frame, workspaceWords } from "../../../../_ui/Frame";
+import { MeAway } from "../../../../_ui/MeAway";
 import { MeLink } from "../../../../_ui/MeLink";
 import { MeNeeded, MeProgress, MeSquads, MeWeek } from "../../../../_ui/MeSections";
 import { MeSelfReport } from "../../../../_ui/MeSelfReport";
@@ -38,7 +46,7 @@ export const metadata: Metadata = { title: "Your page" };
 type Shown =
   | { kind: "pick"; picker: LinkPicker }
   | { kind: "pending"; name: string | null }
-  | { kind: "me"; view: MeView; reports: OwnReports };
+  | { kind: "me"; view: MeView; reports: OwnReports; away: OwnAway | null };
 
 /** INVARIANT workspace.access-first: nothing private is read before the access check. */
 function readMe(
@@ -59,9 +67,11 @@ function readMe(
     const shown: Shown = me
       ? {
           kind: "me",
-          ...(await Promise.all([meView(db, me, at), ownReport(db, board, me)]).then(
-            ([view, reports]) => ({ view, reports }),
-          )),
+          ...(await Promise.all([
+            meView(db, me, at),
+            ownReport(db, board, me),
+            ownAwayDays(db, board, me, dayIn(at.zone, at.now.getTime())),
+          ]).then(([view, reports, away]) => ({ view, reports, away }))),
         }
       : board.player
         ? { kind: "pending", name: await linkedName(db, board) }
@@ -69,6 +79,19 @@ function readMe(
     return { board, shown };
   });
 }
+
+/** The saved days as dates in the member's language, for the saved line. */
+const awayShown = (away: OwnAway | null, date: (day: string) => string) =>
+  away && { from: date(away.from), until: date(away.until) };
+
+/** "Tue, Nov 18" for each field's send, in the member's language and server time. */
+const sentDays = (reports: OwnReports, date: (at: Date) => string) =>
+  Object.fromEntries(
+    REPORT_FIELDS.map((field) => {
+      const at = reports[field]?.at;
+      return [field, at ? date(new Date(at)) : null];
+    }),
+  ) as Record<(typeof REPORT_FIELDS)[number], string | null>;
 
 function Body(props: {
   shown: Shown;
@@ -101,7 +124,7 @@ function Body(props: {
         <MeLink {...link} state={{ kind: "pending" }} />
       </section>
     );
-  const { view } = shown;
+  const { view, reports, away } = shown;
   if (view.left)
     return (
       <section className="drawn-card mt-4 max-w-(--form-max) px-4 py-4">
@@ -111,13 +134,6 @@ function Body(props: {
     );
   const zone = getEnv().SERVER_TZ;
   const f = cardFormats(language, zone, new Date());
-  const { reports } = shown;
-  const days = Object.fromEntries(
-    REPORT_FIELDS.map((field) => {
-      const at = reports[field]?.at;
-      return [field, at ? f.date(new Date(at)) : null];
-    }),
-  ) as Record<(typeof REPORT_FIELDS)[number], string | null>;
   return (
     <Spread
       marginFirst
@@ -131,7 +147,14 @@ function Body(props: {
             reports={reports}
             words={selfReportWords(t)}
             editor={editorWords(t)}
-            days={days}
+            days={sentDays(reports, f.date)}
+          />
+          <MeAway
+            slug={slug}
+            words={selfReportWords(t)}
+            away={away}
+            shown={awayShown(away, f.date)}
+            today={dayIn(zone, new Date().getTime())}
           />
           <MeProgress view={view} t={t} language={language} f={f} />
           <MeWeek view={view} t={t} />

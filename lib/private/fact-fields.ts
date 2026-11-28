@@ -4,7 +4,7 @@
 import type { AwayNote } from "../member-away";
 
 // Who is away on a day is shared with the tick's Raid prep fill (D137): lib/member-away.ts.
-export { awayOn, awayUntil, type AwayNote } from "../member-away";
+export { awayNoteUntil, awayOn, awayUntil, type AwayNote } from "../member-away";
 
 export const FACT_FIELDS = [
   "squadMight",
@@ -68,6 +68,8 @@ export interface LeftReason {
 
 export type MemberFacts = { [F in FactField]?: Fact<F> } & {
   leftReason?: Omit<Fact, "value"> & { value: LeftReason | null };
+  /** The member's own away days (issue 829), laid over by `factsOf`; not a fact, never in member_facts. */
+  ownAway?: { value: AwayNote | null; at?: string };
 };
 
 /** The languages offered, as codes (issue #297: EN, PT, FR, ES, DE, RU/UK, …). */

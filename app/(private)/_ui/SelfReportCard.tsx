@@ -85,6 +85,17 @@ export function SelfReportInfo({ text }: { text: string | undefined }) {
   return <span className="ph-no-capture block text-[12px] text-plum">{text}</span>;
 }
 
+/** The member's own days away (issue 829): said, with nothing to answer. */
+function AwayLine({ away }: { away: CardSelfReport["away"] | undefined }) {
+  if (!away) return null;
+  return (
+    <p className="border-t border-rule py-2 first:border-t-0">
+      <span className="font-semibold">{away.head}</span>
+      <span className="block text-ink/75">{away.line}</span>
+    </p>
+  );
+}
+
 /** One answer at a time; a refusal says why, and a report that changed reads the card again. */
 function useAnswer(
   props: { slug: string; uid: number; onChanged?: (() => void) | undefined; failed: string },
@@ -117,6 +128,12 @@ function useAnswer(
   return { busy, error, done, answer };
 }
 
+const nothingToShow = (
+  lines: unknown[],
+  done: unknown[],
+  report: CardSelfReport | null | undefined,
+) => lines.length === 0 && done.length === 0 && !report?.away;
+
 export function SelfReportCard(props: {
   slug: string;
   uid: number;
@@ -130,7 +147,7 @@ export function SelfReportCard(props: {
   const w = props.report?.words ?? kept;
   const { busy, error, done, answer } = useAnswer(props, w);
   const lines = (props.report?.unseen ?? []).filter((l) => !done.some((d) => d.field === l.field));
-  if (!w || (lines.length === 0 && done.length === 0)) return null;
+  if (!w || nothingToShow(lines, done, props.report)) return null;
   return (
     <section
       aria-labelledby={`self-report-${props.uid}`}
@@ -139,6 +156,7 @@ export function SelfReportCard(props: {
       <h3 id={`self-report-${props.uid}`} className="font-semibold">
         {w["self.card.head"]}
       </h3>
+      <AwayLine away={props.report?.away} />
       <ul>
         {lines.map((l) => (
           <Line key={l.field} l={l} w={w} busy={busy} answer={(line, a) => void answer(line, a)} />

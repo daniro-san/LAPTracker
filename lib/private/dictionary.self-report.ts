@@ -48,6 +48,24 @@ export const selfReportEn = {
   "self.notSent": "Not sent yet: {n}",
   "self.notSent.one": "1 change",
   "self.notSent.other": "{n} changes",
+  "self.away.head": "Days you are away",
+  "self.away.lead":
+    "Tell your officers when you cannot play. They see it as your own report, and you are left out of roll calls and Follow-up on those days. Clear it any time.",
+  "self.away.from": "First day away",
+  "self.away.until": "Last day away",
+  "self.away.save": "Save my days away",
+  "self.away.clear": "Clear my days away",
+  "self.away.saving": "Saving…",
+  "self.away.state": "You are set as away from {from} to {until}.",
+  "self.away.none": "No days away set.",
+  "self.away.saved": "Saved. Your officers see it as your own report.",
+  "self.away.cleared": "Cleared. You are back on the lists.",
+  "self.away.bad": "The last day cannot be before the first day.",
+  "self.away.past": "The last day has already passed.",
+  "self.away.far": "The last day is too far ahead. Pick a day within 90 days.",
+  "self.card.awayHead": "Away, the member’s own report",
+  "self.card.away":
+    "{from} to {until}. Left out of roll calls and Follow-up on those days. The member can clear it.",
   "src.member": "from the member",
   // D125's download README: the file of what members sent (D154).
   "data.file.member-self-reports":
@@ -101,6 +119,24 @@ export const selfReportPt: SelfReportWords = {
   "self.notSent": "Ainda não enviado: {n}",
   "self.notSent.one": "1 mudança",
   "self.notSent.other": "{n} mudanças",
+  "self.away.head": "Dias em que você está ausente",
+  "self.away.lead":
+    "Avise seus oficiais quando você não puder jogar. Eles veem como um relato seu, e você fica fora das chamadas e da lista de acompanhamento nesses dias. Apague quando quiser.",
+  "self.away.from": "Primeiro dia ausente",
+  "self.away.until": "Último dia ausente",
+  "self.away.save": "Salvar meus dias de ausência",
+  "self.away.clear": "Apagar meus dias de ausência",
+  "self.away.saving": "Salvando…",
+  "self.away.state": "Você está marcado como ausente de {from} a {until}.",
+  "self.away.none": "Nenhum dia de ausência marcado.",
+  "self.away.saved": "Salvo. Seus oficiais veem como um relato seu.",
+  "self.away.cleared": "Apagado. Você voltou às listas.",
+  "self.away.bad": "O último dia não pode ser antes do primeiro.",
+  "self.away.past": "O último dia já passou.",
+  "self.away.far": "O último dia está longe demais. Escolha um dia dentro de 90 dias.",
+  "self.card.awayHead": "Ausente, relato do próprio membro",
+  "self.card.away":
+    "{from} a {until}. Fica fora das chamadas e da lista de acompanhamento nesses dias. O membro pode apagar.",
   "src.member": "do membro",
   // D125's download README: the file of what members sent (D154).
   "data.file.member-self-reports":
@@ -155,6 +191,24 @@ export const selfReportFr: SelfReportWords = {
   "self.notSent": "Pas encore envoyé : {n}",
   "self.notSent.one": "1 changement",
   "self.notSent.other": "{n} changements",
+  "self.away.head": "Vos jours d’absence",
+  "self.away.lead":
+    "Prévenez vos officiers quand vous ne pouvez pas jouer. Ils le voient comme votre propre déclaration, et vous êtes laissé de côté des appels et de la liste à suivre ces jours-là. Effacez-le quand vous voulez.",
+  "self.away.from": "Premier jour d’absence",
+  "self.away.until": "Dernier jour d’absence",
+  "self.away.save": "Enregistrer mes jours d’absence",
+  "self.away.clear": "Effacer mes jours d’absence",
+  "self.away.saving": "Enregistrement…",
+  "self.away.state": "Vous êtes noté absent du {from} au {until}.",
+  "self.away.none": "Aucun jour d’absence indiqué.",
+  "self.away.saved": "Enregistré. Vos officiers le voient comme votre propre déclaration.",
+  "self.away.cleared": "Effacé. Vous êtes de retour sur les listes.",
+  "self.away.bad": "Le dernier jour ne peut pas précéder le premier.",
+  "self.away.past": "Le dernier jour est déjà passé.",
+  "self.away.far": "Le dernier jour est trop loin. Choisissez un jour dans les 90 jours.",
+  "self.card.awayHead": "Absent, déclaration du membre",
+  "self.card.away":
+    "Du {from} au {until}. Laissé de côté des appels et de la liste à suivre ces jours-là. Le membre peut l’effacer.",
   "src.member": "du membre",
   // D125's download README: the file of what members sent (D154).
   "data.file.member-self-reports":

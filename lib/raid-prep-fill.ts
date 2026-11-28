@@ -14,7 +14,7 @@
 import { layOut } from "./calendar-layout";
 import { addDays, mondayOf } from "./calendar-time";
 import type { Db } from "./db";
-import { awayOn, type AwayFacts } from "./member-away";
+import { awayOn, ownAwayOf, type AwayFacts } from "./member-away";
 import { calendarRows } from "./repo/calendar";
 import { latestFacts } from "./repo/member-facts";
 import {
@@ -26,6 +26,7 @@ import {
   newestMarks,
   type MarkRow,
 } from "./repo/roll-call";
+import { awayReports } from "./repo/self-reports";
 import { shieldReadings, type StoredReading } from "./repo/shield-checks";
 import { anyRoster } from "./repo/workspace-any-roster";
 import { fridayOf, passWindows, suggestionOf } from "./shield-check";
@@ -38,7 +39,7 @@ export interface FillScope {
 
 export { fridayOf };
 
-/** Each member's away note and On a break, as the roll call reads them (D103); the summary reads them too. */
+/** Each member's away note (an officer's or their own report) and On a break, as the roll call reads them (D103). */
 export async function awayFacts(db: Db, workspaceId: number): Promise<Map<number, AwayFacts>> {
   const facts = new Map<number, AwayFacts>();
   for (const r of await latestFacts(db, workspaceId)) {
@@ -46,6 +47,10 @@ export async function awayFacts(db: Db, workspaceId: number): Promise<Map<number
     const own = facts.get(r.uid) ?? {};
     own[r.field] = { value: r.value as never, at: r.writtenAt.toISOString() };
     facts.set(r.uid, own);
+  }
+  // Issue 829: the member's own away days count the same.
+  for (const a of await awayReports(db, workspaceId)) {
+    facts.set(a.uid, { ...facts.get(a.uid), ownAway: ownAwayOf(a.value, a.writtenAt) });
   }
   return facts;
 }

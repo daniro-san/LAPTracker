@@ -17,6 +17,8 @@ export interface AwayNote {
 export interface AwayFacts {
   status?: { value: string | null; at?: string } | undefined;
   away?: { value: AwayNote | null; at?: string } | undefined;
+  /** The member's own report of their away days (issue 829): both days always set, never an officer's fact. */
+  ownAway?: { value: AwayNote | null; at?: string } | undefined;
 }
 
 /**
@@ -25,6 +27,13 @@ export interface AwayFacts {
  */
 export const awayUntil = (away: AwayNote | null | undefined, day: string): string | null =>
   away?.until && away.until >= day && (!away.from || away.from <= day) ? away.until : null;
+
+/**
+ * The last day of the away note that runs on `day`: an officer's note, else the member's own report
+ * (issue 829). The one place both are read, so Follow-up, Insights and the roll call agree.
+ */
+export const awayNoteUntil = (facts: AwayFacts | undefined, day: string): string | null =>
+  awayUntil(facts?.away?.value, day) ?? awayUntil(facts?.ownAway?.value, day);
 
 /** The server day (SERVER_TZ `zone`) a fact version was written; null when not known. */
 const savedDay = (fact: { at?: string } | undefined, zone: string) =>
@@ -41,7 +50,7 @@ export function awayOn(
   day: string,
   zone: string,
 ): { until: string | null } | null {
-  const until = noteUntil(facts?.away, day, zone);
+  const until = noteUntil(facts?.away, day, zone) ?? awayUntil(facts?.ownAway?.value, day);
   if (until !== null) return { until };
   return onBreak(facts?.status, day, zone) ? { until: null } : null;
 }
@@ -56,4 +65,13 @@ function noteUntil(away: AwayFacts["away"], day: string, zone: string) {
 function onBreak(status: AwayFacts["status"], day: string, zone: string) {
   const since = savedDay(status, zone);
   return status?.value === "break" && (since === null || since <= day);
+}
+
+/** A stored away report (`{from, until}` or null, issue 829) as the rule reads it. */
+export function ownAwayOf(value: unknown, writtenAt: Date): NonNullable<AwayFacts["ownAway"]> {
+  const days = value as { from: string; until: string } | null;
+  return {
+    value: days && { text: "", from: days.from, until: days.until },
+    at: writtenAt.toISOString(),
+  };
 }
