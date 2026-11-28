@@ -245,8 +245,10 @@ export const patchNotes: PatchNote[] = [
       "Errors now carry the release they happened in, and sign-in, sharing thanks and the screenshot import record where they stop, with reason codes only.",
       "Former members: officers can record why someone left (left, joined another alliance, removed by officers, inactive or unknown, with an optional note), and the view counts who left by month and reason, never by name.",
       'Desk Home: a "New" line points officers to What\'s new, a page of the changes for the features their alliance has on, in their language.',
+      "A member's own page on the board opens with a thank-you for the kills they gained in the last KvK, summed over its windows. The line is absent when there was no KvK in 30 days or no gain.",
+      '/alliances: an "Alliances recruiting" list of alliances with spots free, from the last 2 days\' reads, with what each asks to join. Hidden until the alliances-recruiting flag is on.',
     ],
-    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803],
+    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803, 805, 807],
     officer: [
       {
         title: {
