@@ -2,6 +2,7 @@
 // query and stays up about 5 minutes after the last, so a tick that only finds nothing to do still costs
 // those minutes. The clock rules come first and need no database; the two facts only the database knows (a
 // rehearsal pressed on /admin, the day's squads queue settled) are kept in the wake cache once they hold.
+import { apiProbeDue } from "./api-probe";
 import type { AppContext } from "./app-context";
 import type { Db } from "./db";
 import { REHEARSAL_AFTER_MS } from "./rehearsal";
@@ -136,6 +137,8 @@ export async function tickMayBeDue(ctx: AppContext, db: Db): Promise<boolean> {
   if (tickClockDue(now, ctx.env) || shieldWindowOpen(now, ctx.env)) return true;
   // Issue 726: the one-off probe read's window (2026-11-28 02:30 ST); removed by a follow-up PR.
   if (probeDue(now, ctx.env)) return true;
+  // Issue 789: the one-off /v1 discovery's window (2026-11-29 02:30 ST); removed by a follow-up PR.
+  if (apiProbeDue(now, ctx.env)) return true;
   if (await squadsMayRun(ctx, db)) return true;
   const idle = await ctx.wakeCache.holds(
     "no-rehearsal-pending",

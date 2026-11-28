@@ -6,6 +6,7 @@
 // /admin's "Run the squads read now" takes the same path (D117, amendment 2026-11-19b).
 import { after } from "next/server";
 
+import { apiProbe } from "./api-probe";
 import { secretsOf, type AppContext } from "./app-context";
 import { recordAppError } from "./app-errors";
 import { shieldProbe } from "./shield-probe";
@@ -60,6 +61,8 @@ export async function squadsBatch(
       await shieldTick({ ...deps, origin }, db, startedAt + AFTER_BUDGET_MS);
       // Issue 726: the one-off probe read of 2026-11-28 02:30 ST; removed by a follow-up PR.
       await shieldProbe(deps, db, startedAt + AFTER_BUDGET_MS);
+      // Issue 789: the one-off /v1 discovery of 2026-11-29 02:30 ST; removed by a follow-up PR.
+      await apiProbe({ ...deps, v1: ctx.v1 }, db, startedAt + AFTER_BUDGET_MS);
     }
   } catch (error) {
     const route = press?.route ?? "/api/tick";
