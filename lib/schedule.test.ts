@@ -4,11 +4,14 @@ import { describe, expect, it } from "vitest";
 import { RUN_DEADLINE_MS } from "./compute";
 import {
   endsInServerDay,
+  inEventWindow,
+  nextEvent,
   serverMinuteOfDay,
   slotOf,
   targetEvent,
   type ScheduleConfig,
 } from "./schedule";
+import { tickClockDue } from "./tick-gate";
 
 // Saturdays at 12:00 server time (UTC−2), so Saturday 2026-11-07 is 14:00Z.
 const cfg: ScheduleConfig = {
@@ -37,6 +40,60 @@ describe("targetEvent", () => {
 
   it("is the past Saturday on a Tuesday when its After is missing", () => {
     expect(day("2026-11-10T12:00:00Z")).toBe("Saturday Event 2026-11-07");
+  });
+});
+
+// The Friday noon before each Saturday: the event the tick makes next.
+const saturday = (iso: string) => nextEvent(new Date(`${iso}T12:00:00Z`), cfg);
+const iso = (d: Date) => d.toISOString();
+
+describe("the 4-week cycle", () => {
+  it("makes Origin of Chaos with two windows on 2026-12-05 and keeps the env event on 2026-11-28 and 2026-12-12", () => {
+    const ooc = saturday("2026-12-04");
+    expect(ooc.name).toBe("Origin of Chaos 2026-12-05");
+    expect(iso(ooc.eventAtUtc)).toBe("2026-12-05T02:10:00.000Z");
+    expect(ooc.windows.map((w) => [iso(w.beforeAt), iso(w.afterAt)])).toEqual([
+      ["2026-12-05T02:00:00.000Z", "2026-12-05T02:45:00.000Z"],
+      ["2026-12-05T14:15:00.000Z", "2026-12-05T15:15:00.000Z"],
+    ]);
+    expect([iso(ooc.beforeAt), iso(ooc.afterAt)]).toEqual([
+      "2026-12-05T02:00:00.000Z",
+      "2026-12-05T15:15:00.000Z",
+    ]);
+    expect(saturday("2026-11-27").name).toBe("Saturday Event 2026-11-28");
+    expect(saturday("2026-12-11").name).toBe("Saturday Event 2026-12-12");
+    expect(saturday("2026-12-11").windows).toHaveLength(1);
+  });
+
+  it("repeats every 4 weeks from week 1 (2026-11-14) and leaves the weeks before it alone", () => {
+    const names = ["2026-11-06", "2026-12-25", "2027-01-01", "2027-01-29", "2027-12-03"].map(
+      (fri) => saturday(fri).name,
+    );
+    expect(names).toEqual([
+      "Saturday Event 2026-11-07",
+      "Saturday Event 2026-12-26",
+      "Origin of Chaos 2027-01-02",
+      "Origin of Chaos 2027-01-30",
+      "Origin of Chaos 2027-12-04",
+    ]);
+  });
+
+  it("opens the tick's clock gate for the day-ahead row and each window, not in the gap (D141)", () => {
+    const due = [
+      "2026-12-04T02:00:00Z",
+      "2026-12-05T02:00:00Z",
+      "2026-12-05T08:00:00Z",
+      "2026-12-05T14:15:00Z",
+    ].map((t) => tickClockDue(new Date(t), cfg));
+    expect(due).toEqual([true, true, false, true]);
+  });
+
+  it("pauses inside each window only, not in the gap between them", () => {
+    const paused = ["02:30", "03:30", "08:00", "14:30", "15:50"].map((t) =>
+      inEventWindow(new Date(`2026-12-05T${t}:00Z`), cfg),
+    );
+    // After 02:45 and 15:15, each After keeps its 30 min window (03:15, 15:45).
+    expect(paused).toEqual([true, false, false, true, false]);
   });
 });
 

@@ -23,7 +23,8 @@ export interface ScheduledEvent {
   beforeAt: Date;
   /** The last window's After. */
   afterAt: Date;
-  /** The event's windows in time order (D160): from the env, one window from beforeAt to afterAt. */
+  /** The event's windows in time order (D160): from the env, one window from beforeAt to afterAt; Origin of
+   * Chaos, two. */
   windows: { beforeAt: Date; afterAt: Date }[];
 }
 
@@ -39,8 +40,11 @@ export const WEEKDAY_NAMES = [
 ];
 const DAY_MS = 86_400_000;
 
-// The name `eventOn` gives a scheduled event ("Saturday Event 2026-10-31"; the seed prefixes "Seed ").
-const GENERATED_NAME = new RegExp(`\\b(${WEEKDAY_NAMES.join("|")}) Event \\d{4}-\\d{2}-\\d{2}$`);
+// The name `eventOn` gives a scheduled event ("Saturday Event 2026-10-31", "Origin of Chaos 2026-12-05"; the
+// seed prefixes "Seed ").
+const GENERATED_NAME = new RegExp(
+  `\\b((${WEEKDAY_NAMES.join("|")}) Event|Origin of Chaos) \\d{4}-\\d{2}-\\d{2}$`,
+);
 
 /** True while a scheduled event keeps its generated name, i.e. the owner has not renamed it (D39). */
 export const isGeneratedName = (name: string) => GENERATED_NAME.test(name);
@@ -101,7 +105,41 @@ function addDays(day: Day, n: number): Day {
 const isoDate = (day: Day) =>
   `${day.y}-${String(day.m).padStart(2, "0")}-${String(day.d).padStart(2, "0")}`;
 
+// The game's 4-week cycle (owner, spike 08zzh answer 8): week 1 starts Saturday 2026-11-14; weeks 1–3 run the
+// env's weekly event (KvK), week 4 runs Origin of Chaos. Earlier weeks keep the env event: their rows exist.
+const CYCLE_START = Date.UTC(2026, 10, 14);
+const CYCLE_WEEKS = 4;
+// Origin of Chaos, server time: game windows 00:10–00:40 and 12:30–13:00, read 00:00–00:45 and 12:15–13:15.
+const ORIGIN_OF_CHAOS = {
+  name: "Origin of Chaos",
+  eventAt: "00:10",
+  windows: [
+    ["00:00", "00:45"],
+    ["12:15", "13:15"],
+  ],
+} as const;
+
+/** True when `day` falls in week 4 of the cycle (2026-12-05, then every 4 weeks). */
+function isOriginOfChaosWeek(day: Day): boolean {
+  const week = Math.floor((Date.UTC(day.y, day.m - 1, day.d) - CYCLE_START) / (7 * DAY_MS));
+  return week >= 0 && week % CYCLE_WEEKS === CYCLE_WEEKS - 1;
+}
+
+function originOfChaosOn(day: Day, cfg: ScheduleConfig): ScheduledEvent {
+  const at = (hhmm: string) => zonedToUtc(day, hhmm, cfg.SERVER_TZ);
+  const windows = ORIGIN_OF_CHAOS.windows.map(([b, a]) => ({ beforeAt: at(b), afterAt: at(a) }));
+  const [first, last] = ORIGIN_OF_CHAOS.windows;
+  return {
+    name: `${ORIGIN_OF_CHAOS.name} ${isoDate(day)}`,
+    eventAtUtc: at(ORIGIN_OF_CHAOS.eventAt),
+    beforeAt: at(first[0]),
+    afterAt: at(last[1]),
+    windows,
+  };
+}
+
 function eventOn(day: Day, cfg: ScheduleConfig): ScheduledEvent {
+  if (isOriginOfChaosWeek(day)) return originOfChaosOn(day, cfg);
   const beforeAt = zonedToUtc(day, cfg.SNAPSHOT_BEFORE, cfg.SERVER_TZ);
   const afterAt = zonedToUtc(day, cfg.SNAPSHOT_AFTER, cfg.SERVER_TZ);
   return {
@@ -235,10 +273,12 @@ export function quotaDayRead(
   return isoDate(day ?? today);
 }
 
-/** True from the scheduled event's Before until its After's window closes. */
+/** True from a window's Before until its After's window closes, in any of the scheduled event's windows
+ * (D160): between two windows nothing is paused. */
 export function inEventWindow(now: Date, cfg: ScheduleConfig): boolean {
-  const e = currentEvent(now, cfg);
-  return now >= e.beforeAt && now.getTime() < e.afterAt.getTime() + windowMs(cfg);
+  return currentEvent(now, cfg).windows.some(
+    (w) => now >= w.beforeAt && now.getTime() < w.afterAt.getTime() + windowMs(cfg),
+  );
 }
 
 /** The server date `now` falls on, as a daily read's `day` ("2026-11-12"). */

@@ -32,6 +32,11 @@ describe("the squads read's quota guard (D117)", () => {
     expect(eventReserve(new Date("2026-11-21T17:00:00Z"), CFG, 20)).toBe(0);
   });
 
+  it("keeps both Origin of Chaos windows on its quota day (D160): Friday 2026-12-04 night's read", () => {
+    // Two windows: 4 reads (100 calls for 20 alliances) and 2 + 3 samples of 1 + 20 calls.
+    expect(eventReserve(new Date("2026-12-05T01:37:00Z"), CFG, 20)).toBe(205);
+  });
+
   it("counts no samples when they are off", () => {
     expect(eventReserve(FRI_NIGHT, { ...CFG, SAMPLE_EVERY_MIN: 0 }, 20)).toBe(requiredQuota(20));
   });

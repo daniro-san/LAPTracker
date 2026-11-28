@@ -121,8 +121,9 @@ export async function runSquadsBatch(
   if (!day) return { kind: "idle" };
   const daily = await getDailyRead(db, day);
   if (!daily || daily.status === "running") return { kind: "idle" };
-  // INVARIANT squads.event-pause: on LAP_API_KEY nothing runs from the event's Before until its After's
-  // window closes (samples included); a workspace key funds none of our event reads (D124).
+  // INVARIANT squads.event-pause: on LAP_API_KEY nothing runs from a window's Before until its After's
+  // window closes (samples included), in each of the event's windows (D160); a workspace key funds none of
+  // our event reads (D124).
   const eventOn = inEventWindow(now, deps.env);
   // INVARIANT keys.own-quota-only: a workspace is read only on its own key; LAP_API_KEY only for the own
   // alliance (D124).
