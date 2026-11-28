@@ -1,0 +1,124 @@
+// Insights → KvK's map (issue 791) in English, Brazilian Portuguese and French; dictionary.insights.ts
+// spreads them. The words say where members were at the End reading, never where they fought or why they
+// gained kills; "map squares" is the game's grid. Times end in ST. French puts a no-break space before : ; ? !.
+export const insightsMapEn = {
+  "insights.map.head": "KvK map at the End reading",
+  "insights.map.none": "No KvK End reading with members' places in the last 4 weeks.",
+  "insights.map.based.one": "KvK {date}: {n} member with a place on the map.",
+  "insights.map.based.other": "KvK {date}: {n} members with a place on the map.",
+  "insights.map.unplaced.one": "{n} member had no place in that reading.",
+  "insights.map.unplaced.other": "{n} members had no place in that reading.",
+  "insights.map.caption":
+    "Where members were at the End reading ({time} ST), not where they fought.",
+  "insights.map.axes": "Map squares: X {x1} to {x2}, Y {y1} to {y2}.",
+  "insights.map.legend.none": "No kills gained",
+  "insights.map.legend.fewer": "1 to {median} kills gained",
+  "insights.map.legend.more": "More than {median} kills gained",
+  "insights.map.legend.unknown": "Kills not known (not in the Start reading)",
+  "insights.map.legend.castle": "Castle point ({x}, {y})",
+  "insights.map.bands.head": "Distance from the castle point",
+  "insights.map.bands.distance": "Distance",
+  "insights.map.bands.members": "Members",
+  "insights.map.bands.kills": "Kills gained",
+  "insights.map.bands.near": "Near",
+  "insights.map.bands.mid": "Mid-way",
+  "insights.map.bands.far": "Far",
+  "insights.map.bands.range": "{from} to {to} squares",
+  "insights.map.bands.note":
+    "Each row is about a third of the members whose kills are known, by distance in map squares.",
+  "insights.map.bands.few": "Fewer than 3 members have known kills, so there are no rows.",
+  "insights.map.bands.empty":
+    "Type a castle point to see how many members were near, mid-way and far from it.",
+  "insights.map.castle.head": "Castle point (optional)",
+  "insights.map.castle.help":
+    "Where the castle stands on the map, 0 to 999. Only officers see it; it is not in copies or exports.",
+  "insights.map.castle.x": "X",
+  "insights.map.castle.y": "Y",
+  "insights.map.castle.save": "Save point",
+  "insights.map.castle.clear": "Remove point",
+  "insights.map.castle.saved": "Saved.",
+  "insights.map.castle.failed": "Not saved. Type whole numbers from 0 to 999 and try again.",
+};
+
+type MapWords = Record<keyof typeof insightsMapEn, string>;
+
+export const insightsMapPt: MapWords = {
+  "insights.map.head": "Mapa da KvK na leitura do Fim",
+  "insights.map.none":
+    "Nenhuma leitura do Fim de KvK com o lugar dos membros nas últimas 4 semanas.",
+  "insights.map.based.one": "KvK de {date}: {n} membro com lugar no mapa.",
+  "insights.map.based.other": "KvK de {date}: {n} membros com lugar no mapa.",
+  "insights.map.unplaced.one": "{n} membro não tinha lugar nessa leitura.",
+  "insights.map.unplaced.other": "{n} membros não tinham lugar nessa leitura.",
+  "insights.map.caption":
+    "Onde os membros estavam na leitura do Fim ({time} ST), não onde lutaram.",
+  "insights.map.axes": "Quadrados do mapa: X de {x1} a {x2}, Y de {y1} a {y2}.",
+  "insights.map.legend.none": "Nenhum abate ganho",
+  "insights.map.legend.fewer": "1 a {median} abates ganhos",
+  "insights.map.legend.more": "Mais de {median} abates ganhos",
+  "insights.map.legend.unknown": "Abates desconhecidos (fora da leitura do Início)",
+  "insights.map.legend.castle": "Ponto do castelo ({x}, {y})",
+  "insights.map.bands.head": "Distância do ponto do castelo",
+  "insights.map.bands.distance": "Distância",
+  "insights.map.bands.members": "Membros",
+  "insights.map.bands.kills": "Abates ganhos",
+  "insights.map.bands.near": "Perto",
+  "insights.map.bands.mid": "No meio",
+  "insights.map.bands.far": "Longe",
+  "insights.map.bands.range": "{from} a {to} quadrados",
+  "insights.map.bands.note":
+    "Cada linha é cerca de um terço dos membros com abates conhecidos, pela distância em quadrados do mapa.",
+  "insights.map.bands.few": "Menos de 3 membros têm abates conhecidos, então não há linhas.",
+  "insights.map.bands.empty":
+    "Digite um ponto do castelo para ver quantos membros estavam perto, no meio e longe dele.",
+  "insights.map.castle.head": "Ponto do castelo (opcional)",
+  "insights.map.castle.help":
+    "Onde o castelo fica no mapa, de 0 a 999. Só os oficiais veem; não vai em cópias nem exportações.",
+  "insights.map.castle.x": "X",
+  "insights.map.castle.y": "Y",
+  "insights.map.castle.save": "Salvar ponto",
+  "insights.map.castle.clear": "Remover ponto",
+  "insights.map.castle.saved": "Salvo.",
+  "insights.map.castle.failed": "Não salvo. Digite números inteiros de 0 a 999 e tente de novo.",
+};
+
+export const insightsMapFr: MapWords = {
+  "insights.map.head": "Carte de la KvK au relevé de fin",
+  "insights.map.none":
+    "Aucun relevé de fin de KvK avec la place des membres ces 4 dernières semaines.",
+  "insights.map.based.one": "KvK du {date} : {n} membre placé sur la carte.",
+  "insights.map.based.other": "KvK du {date} : {n} membres placés sur la carte.",
+  "insights.map.unplaced.one": "{n} membre n’avait pas de place dans ce relevé.",
+  "insights.map.unplaced.other": "{n} membres n’avaient pas de place dans ce relevé.",
+  "insights.map.caption":
+    "Où étaient les membres au relevé de fin ({time} ST), pas où ils ont combattu.",
+  "insights.map.axes": "Cases de la carte : X de {x1} à {x2}, Y de {y1} à {y2}.",
+  "insights.map.legend.none": "Aucune élimination gagnée",
+  "insights.map.legend.fewer": "1 à {median} éliminations gagnées",
+  "insights.map.legend.more": "Plus de {median} éliminations gagnées",
+  "insights.map.legend.unknown": "Éliminations inconnues (absent du relevé de début)",
+  "insights.map.legend.castle": "Point du château ({x}, {y})",
+  "insights.map.bands.head": "Distance au point du château",
+  "insights.map.bands.distance": "Distance",
+  "insights.map.bands.members": "Membres",
+  "insights.map.bands.kills": "Éliminations gagnées",
+  "insights.map.bands.near": "Près",
+  "insights.map.bands.mid": "À mi-chemin",
+  "insights.map.bands.far": "Loin",
+  "insights.map.bands.range": "{from} à {to} cases",
+  "insights.map.bands.note":
+    "Chaque ligne compte environ un tiers des membres aux éliminations connues, par distance en cases.",
+  "insights.map.bands.few": "Moins de 3 membres ont des éliminations connues : aucune ligne.",
+  "insights.map.bands.empty":
+    "Saisissez un point du château pour voir combien de membres étaient près, à mi-chemin et loin.",
+  "insights.map.castle.head": "Point du château (facultatif)",
+  "insights.map.castle.help":
+    "Où se trouve le château sur la carte, de 0 à 999. Seuls les officiers le voient ; il n’est ni dans les copies ni dans les exports.",
+  "insights.map.castle.x": "X",
+  "insights.map.castle.y": "Y",
+  "insights.map.castle.save": "Enregistrer le point",
+  "insights.map.castle.clear": "Retirer le point",
+  "insights.map.castle.saved": "Enregistré.",
+  "insights.map.castle.failed":
+    "Non enregistré. Saisissez des nombres entiers de 0 à 999 et réessayez.",
+};

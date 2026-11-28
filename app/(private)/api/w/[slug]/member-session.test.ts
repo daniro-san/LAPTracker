@@ -100,6 +100,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "raid-prep/route.ts": {
     POST: { body: { morningMinute: 600, discord: false, language: "en" } },
   },
+  "kvk-castle/route.ts": { POST: { body: { castleX: null, castleY: null } } },
   "roll-call/route.ts": {
     POST: { body: { action: "add", kind: "cheese", day: "2026-11-16", requestId: ID } },
   },

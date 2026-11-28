@@ -1,7 +1,7 @@
 // /w/[slug]/insights (issue 489): the officers' analysis of their own alliance, a view of Members. The
 // week's pulse, effort at every might level with "Quiet contributors", the membership flow, KvK cost and
-// recovery, squads seen, the Raid Shield history and the members' time zones, all from data
-// already stored (0 upstream calls). The access check runs before anything is read (D71); a page turned
+// recovery, the KvK map at the End reading (issue 791), squads seen, the Raid Shield history and the
+// members' time zones, all from data already stored (0 upstream calls). The access check runs before anything is read (D71); a page turned
 // off for the alliance goes to Home (D126).
 // Nobody is ranked: names show in a thanks list, a help list, and behind a tap on a count, the members it
 // counts in name order with nothing beside them (D75, D114, issue 678). Every section says what it rests on.
@@ -28,9 +28,11 @@ import {
   squadsWords,
 } from "@/lib/private/insights-more-words";
 import { insightsWords } from "@/lib/private/insights-words";
+import { kvkMapView } from "@/lib/private/kvk-map";
 
 import { SignedInFrame } from "../../../_ui/Frame";
 import { EffortCard } from "../../../_ui/InsightsEffort";
+import { KvkMapCard } from "../../../_ui/InsightsKvkMap";
 import { KvkCard, ShieldCard, SquadsCard } from "../../../_ui/InsightsMore";
 import { FlowCard, PulseCard } from "../../../_ui/InsightsSections";
 import { InsightsSetMemory } from "../../../_ui/InsightsSetMemory";
@@ -63,15 +65,16 @@ const openInsights = (params: Promise<{ slug: string }>, levels: InsightsLevels)
     "insights",
     async (db, access, _today, _language, zone) => {
       const now = new Date();
-      const [view, channels] = await Promise.all([
+      const [view, channels, map] = await Promise.all([
         insightsView(db, access, now, zone, {
           pulseWeek: levels.pulse,
           pulseDay: levels.pulseDay,
           flowDay: levels.flowDay,
         }),
         channelNames(db, access, getEnv()),
+        kvkMapView(db, access, now),
       ]);
-      return { view, channel: channels.members, now };
+      return { view, channel: channels.members, now, map };
     },
     "insights",
   );
@@ -85,8 +88,7 @@ export default async function InsightsPage({
   searchParams: Promise<Partial<Record<keyof InsightsLevels, string | string[]>>>;
 }) {
   const levels = levelsOf(await searchParams);
-  const page = await openInsights(params, levels);
-  const { access, slug, t, language, today, data } = page;
+  const { access, slug, t, language, today, data, waiting } = await openInsights(params, levels);
   const f = { t, language };
   const words = insightsWords(data.view, t, language);
   const noData = t["nodata.mark"];
@@ -131,6 +133,7 @@ export default async function InsightsPage({
         followUp={data.view.kvkFollowUp}
         {...{ slug, t, noData, nav }}
       />
+      <KvkMapCard map={data.map} {...{ slug, t, language }} />
       {data.view.squads && (
         <SquadsCard squads={squadsWords(data.view.squads, { t, language })} t={t} noData={noData} />
       )}
@@ -146,7 +149,7 @@ export default async function InsightsPage({
       language={language}
       t={t}
       current="insights"
-      waiting={page.waiting}
+      waiting={waiting}
       wide
     >
       <PageHead title={t["members.view.insights"]} />

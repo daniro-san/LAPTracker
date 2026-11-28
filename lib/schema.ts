@@ -389,6 +389,12 @@ export const workspaces = pgTable("workspaces", {
   deletionRequestedAt: tstz("deletion_requested_at"),
   deletionRequestedBy: integer("deletion_requested_by"),
   purgeAfter: tstz("purge_after"),
+  /**
+   * Insights → KvK's map (issue 791, D71 amendment 2026-11-27): the castle point the officers typed in, on
+   * the game map's grid; both null when none is set. Never in copies, exports, Discord, logs or analytics.
+   */
+  castleX: integer("castle_x"),
+  castleY: integer("castle_y"),
 });
 
 /**

@@ -350,3 +350,30 @@ export async function signOutWorkspace(
     .returning({ hash: workspaceSessions.tokenHash });
   return gone.length;
 }
+
+/** A castle point on the game map (issue 791): where the officers say the castle stands. */
+export interface CastlePoint {
+  x: number;
+  y: number;
+}
+
+/** The castle point the workspace's officers typed in for Insights → KvK's map; null when none is set. */
+export async function castleOf(db: Db, workspaceId: number): Promise<CastlePoint | null> {
+  const [row] = await db
+    .select({ x: workspaces.castleX, y: workspaces.castleY })
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId));
+  return row && row.x !== null && row.y !== null ? { x: row.x, y: row.y } : null;
+}
+
+/** Sets the workspace's castle point, or clears it (null). */
+export async function saveCastle(
+  db: Db,
+  workspaceId: number,
+  castle: CastlePoint | null,
+): Promise<void> {
+  await db
+    .update(workspaces)
+    .set({ castleX: castle?.x ?? null, castleY: castle?.y ?? null })
+    .where(eq(workspaces.id, workspaceId));
+}

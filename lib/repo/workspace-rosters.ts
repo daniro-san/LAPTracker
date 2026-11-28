@@ -1,7 +1,7 @@
 // The roster reads behind the workspace's Members tab (D71, D72): an alliance's end-of-day rosters with the
 // member fields the workspace shows, the day each member was first seen, and its newest scheduled event's
-// kills, and the KvK recap's Start and End kills (D159). Each function takes the alliance; lib/private passes
-// its WorkspaceAccess's own union id, so a player who moved is seen by the old alliance only in the rosters
+// kills, the KvK recap's Start and End kills (D159), and the officers' map's End places (issue 791). Each
+// function takes the alliance; lib/private passes its WorkspaceAccess's own union id, so a player who moved is seen by the old alliance only in the rosters
 // from before the move. avatar_url and
 // frame_url are never selected. The newest roster of any kind is in workspace-any-roster.ts.
 import { and, desc, eq, gte, inArray, isNotNull, isNull, gt, lt, ne, sql } from "drizzle-orm";
@@ -151,20 +151,28 @@ export interface EventKills {
   after: Map<number, number | null>;
 }
 
+/** A scheduled event and the ids of one alliance's Start and End rows in it. */
+interface StartEndRows {
+  at: Date;
+  startId: number;
+  endId: number;
+  /** When the End read started. */
+  endAt: Date;
+}
+
 /**
  * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
- * not failed, with each member's kills on both sides; null when there is none.
+ * not failed, with those two rows' ids; null when there is none. The one place the event rules live: not
+ * manual, not a test, not `admin` (D28), and only the event's Start and End, never a sample or a row
+ * between windows (D160).
  */
-export async function scheduledEventKills(
-  db: Db,
-  unionId: number,
-  since: Date,
-): Promise<EventKills | null> {
+async function newestStartEnd(db: Db, unionId: number, since: Date): Promise<StartEndRows | null> {
   const rows = await db
     .select({
       eventId: events.id,
       at: events.eventAtUtc,
       phase: snapshots.phase,
+      startedAt: snapshots.startedAt,
       id: allianceSnapshots.id,
     })
     .from(allianceSnapshots)
@@ -191,6 +199,21 @@ export async function scheduledEventKills(
     ? [side(event.eventId, "before"), side(event.eventId, "after")]
     : [];
   if (!event || !before || !after) return null;
+  return { at: event.at, startId: before.id, endId: after.id, endAt: after.startedAt };
+}
+
+/**
+ * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
+ * not failed, with each member's kills on both sides; null when there is none.
+ */
+export async function scheduledEventKills(
+  db: Db,
+  unionId: number,
+  since: Date,
+): Promise<EventKills | null> {
+  const event = await newestStartEnd(db, unionId, since);
+  if (!event) return null;
+  const { startId, endId } = event;
   const kills = await db
     .select({
       id: memberSnapshots.allianceSnapshotId,
@@ -198,10 +221,73 @@ export async function scheduledEventKills(
       kills: memberSnapshots.kills,
     })
     .from(memberSnapshots)
-    .where(inArray(memberSnapshots.allianceSnapshotId, [before.id, after.id]));
+    .where(inArray(memberSnapshots.allianceSnapshotId, [startId, endId]));
   const byUid = (id: number) =>
     new Map(kills.filter((k) => k.id === id).map((k) => [k.uid, k.kills]));
-  return { at: event.at, before: byUid(before.id), after: byUid(after.id) };
+  return { at: event.at, before: byUid(startId), after: byUid(endId) };
+}
+
+/** A member placed by a scheduled event's End read (issue 791): where it saw them, their kills on both sides. */
+export interface EndPlace {
+  x: number;
+  y: number;
+  /** Lifetime kills at the Start and End reads; null when that read has none (D15). */
+  before: number | null;
+  after: number | null;
+}
+
+/** The newest scheduled event's End read of one alliance, as the officers' map shows it (issue 791). */
+export interface EventEndPlaces {
+  at: Date;
+  /** When the End read started. */
+  endAt: Date;
+  places: EndPlace[];
+  /** Members of the End read with no place in it. */
+  unplaced: number;
+}
+
+/** Only uid, x and y are read from the End row's raw_json. */
+const placesOf = sql<
+  { uid: unknown; x: unknown; y: unknown }[]
+>`coalesce((select jsonb_agg(jsonb_build_object('uid', m->'uid', 'x', m->'x', 'y', m->'y')) from jsonb_array_elements(${allianceSnapshots.rawJson}->'members') m), '[]'::jsonb)`;
+
+/**
+ * The alliance's newest public scheduled event since `since` whose Start and End rows are both fresh and
+ * not failed: each End member's place on the map and kills on both sides, no uid or name; null when there
+ * is none. Three statements, bounded by the date and by the two rows' ids (D149).
+ */
+export async function eventEndPlaces(
+  db: Db,
+  unionId: number,
+  since: Date,
+): Promise<EventEndPlaces | null> {
+  const event = await newestStartEnd(db, unionId, since);
+  if (!event) return null;
+  const { startId, endId } = event;
+  const [kills, [raw]] = await Promise.all([
+    db
+      .select({
+        id: memberSnapshots.allianceSnapshotId,
+        uid: memberSnapshots.uid,
+        kills: memberSnapshots.kills,
+      })
+      .from(memberSnapshots)
+      .where(inArray(memberSnapshots.allianceSnapshotId, [startId, endId])),
+    db.select({ members: placesOf }).from(allianceSnapshots).where(eq(allianceSnapshots.id, endId)),
+  ]);
+  const at = new Map(
+    (raw?.members ?? []).flatMap((m) => {
+      const [uid, x, y] = [num(m.uid), num(m.x), num(m.y)];
+      return uid === null || x === null || y === null ? [] : [[uid, { x, y }] as const];
+    }),
+  );
+  const start = new Map(kills.filter((k) => k.id === startId).map((k) => [k.uid, k.kills]));
+  const end = kills.filter((k) => k.id === endId);
+  const places = end.flatMap((k) => {
+    const place = at.get(k.uid);
+    return place ? [{ ...place, before: start.get(k.uid) ?? null, after: k.kills }] : [];
+  });
+  return { at: event.at, endAt: event.endAt, places, unplaced: end.length - places.length };
 }
 
 /** A member in a KvK recap's Start or End roster: the public name (D22) and lifetime kills (D15). */
