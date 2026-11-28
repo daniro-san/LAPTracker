@@ -113,7 +113,7 @@ const queueOf = (day: string) =>
     .orderBy(squadQueue.uid);
 
 describe("the squads queue (D117, D132)", () => {
-  it("reads every member once in small batches, then is done; a big roster stops at the cap", async () => {
+  it("reads every member once in small batches, then is done", async () => {
     await dayRead(THU.day, range(30), 900);
     const d = deps(THU.now);
     expect(await runSquadsBatch(d, db)).toMatchObject({ status: "running", calls: 25, more: true });
@@ -125,16 +125,28 @@ describe("the squads queue (D117, D132)", () => {
     );
     // D132: each answer is kept as a player read, from the same call.
     expect(await db.select().from(playerReads)).toHaveLength(30);
+  });
 
-    await truncateAll(db);
-    await saveWorkspace(db, ogs);
+  it("stops the day at the cap of 120 calls, however many members wait", async () => {
+    // The day's read has made 100 of its 120 calls over earlier batches. Seeding that row, instead of
+    // making 100 real calls first, leaves 20 calls to the cap (each call is several PGlite queries).
     await dayRead(THU.day, range(130), 900);
+    await db.insert(squadReads).values({
+      day: THU.day,
+      unionId: OWN_ALLIANCE_ID,
+      status: "running",
+      startedAt: THU.now,
+      members: 130,
+      callsUsed: 100,
+      quotaRemaining: 800,
+    });
     const big = deps(THU.now);
-    for (let i = 0; i < 6; i++) await runSquadsBatch(big, db);
-    expect(big.calls).toHaveLength(120);
+    for (let i = 0; i < 2; i++) await runSquadsBatch(big, db);
+    expect(big.calls).toHaveLength(20);
     expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({
       status: "stopped",
       reason: "cap",
+      callsUsed: 120,
     });
   });
 
