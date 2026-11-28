@@ -26,6 +26,13 @@ export { allianceStanding, type Standing } from "./standing";
 export { allianceStatement, type AllianceStatement, type Joining } from "./statement";
 export { RECRUITING_DAYS, recruitingAlliances, type RecruitingRow } from "./recruiting";
 export {
+  alliancePage,
+  GROWTH_DAYS,
+  type AlliancePage,
+  type AlliancePageMember,
+  type GrowthPoint,
+} from "./alliance-page";
+export {
   FLOW_DAYS,
   defaultPeriod,
   flowPage,

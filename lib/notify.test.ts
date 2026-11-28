@@ -14,7 +14,8 @@ import {
   type PublicAlliance,
   type PublicContext,
 } from "./notify";
-import { BLOCKED_ROSTER_KEYS, findBlockedKeys } from "./queries";
+import { findBlockedKeys } from "./queries";
+import { UNLOGGED_ROSTER_KEYS } from "./queries/blocked-keys";
 
 // TEST_ENV's SERVER_TZ is Etc/GMT+2: 16:01 UTC is 14:01 server time.
 const clock = discordClock(TEST_ENV.SERVER_TZ);
@@ -296,7 +297,7 @@ describe("payloads", () => {
       const parsed = JSON.parse(body) as Record<string, unknown>;
       expect(parsed).not.toHaveProperty("username");
       expect(findBlockedKeys(parsed)).toEqual([]);
-      for (const key of BLOCKED_ROSTER_KEYS) expect(body).not.toContain(`"${key}"`);
+      for (const key of UNLOGGED_ROSTER_KEYS) expect(body).not.toContain(`"${key}"`);
     }
     expect(JSON.parse(bodies[1] ?? "{}")).toMatchObject({
       content: expect.stringMatching(/^\[rehearsal\] Locked:/),

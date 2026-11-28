@@ -4,7 +4,7 @@
 // sentinels. Runs on the phone project only: none of it depends on the window.
 import { request, type APIRequestContext, type Page } from "@playwright/test";
 
-import { BLOCKED_ROSTER_KEYS } from "../lib/queries/blocked-keys";
+import { UNLOGGED_ROSTER_KEYS } from "../lib/queries/blocked-keys";
 import { unzip } from "../lib/zip.test-helpers";
 import { BASE_URL } from "./env";
 import {
@@ -66,7 +66,7 @@ const PRIVATE_KEYS = new Set([
 ]);
 
 /** Columns no exported CSV may have (D125, as lib/repo/workspace-data.ts NEVER drops them). */
-const EXPORT_NEVER = new Set<string>([...BLOCKED_ROSTER_KEYS, "avatar_url"]);
+const EXPORT_NEVER = new Set<string>([...UNLOGGED_ROSTER_KEYS, "avatar_url"]);
 /** The banned columns in an exported CSV's header (English files use ","; a BOM may lead). */
 const bannedColumns = (csv: string) =>
   (csv.replace(/^\uFEFF/, "").split("\r\n")[0] ?? "")

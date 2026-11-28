@@ -18,7 +18,7 @@ export const matchesFilter = (body: HistoryCardBody, filter: HistoryFilter | nul
   filter === null || Object.values(parts(body, filter)).some(Boolean);
 
 /** A spreadsheet reads a leading = + − @ as a formula; a leading apostrophe keeps the name as text. */
-const cell = (name: string) => {
+export const cell = (name: string) => {
   const flat = name.replace(/[\t\r\n]+/g, " ");
   return /^[=+\-@]/.test(flat) ? `'${flat}` : flat;
 };

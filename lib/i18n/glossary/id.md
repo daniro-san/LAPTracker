@@ -379,6 +379,8 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Event reading                         | pembacaan event                     | `ledger.readoutEventRead` — a line chart's value when the reading was an event's Start or End                              |
 | Alliances read                        | aliansi dibaca                      | `ledger.readoutPulse`, `kvk.tagsRead` — the alliances whose reading an interval or a count uses                            |
 | By alliance                           | per aliansi                         | `ledger.splitLink`, `ledger.splitSum`, `ledger.splitKey` — an interval's kills split into each alliance's share            |
+| Growth                                | Pertumbuhan                         | `alliancePage.growth` — the growth card's heading, shared with the player page                                             |
+| Quest points                          | Poin quest                          | `alliancePage.active`, `alliancePage.read` — a member's quest points since Monday                                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

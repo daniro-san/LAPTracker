@@ -274,7 +274,7 @@ export default async function MemberHistoryPage({
             { key: "ledger", href: "/", label: copy.site.home },
             homeId !== null && inHome
               ? { key: "alliance", href: `/events/${homeId}/alliances/${unionId}`, label }
-              : { key: "alliances", href: "/alliances", label: copy.alliances.title },
+              : { key: "alliance", href: `/alliances/${unionId}`, label },
             { key: "history", label: copy.history.title },
           ]}
         />

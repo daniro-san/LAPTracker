@@ -18,6 +18,8 @@ const ALLOWED = [
   /^lib\/collector[\w-]*\.ts$/,
   /^lib\/raw-json\.ts$/,
   /^lib\/queries\/blocked-keys\.ts$/,
+  // The public alliance page reads daily_honor, daily_tech and active per member (D76 amendment 2026-11-28).
+  /^lib\/queries\/alliance-page\.ts$/,
   // The fixture neutraliser names the keys only to overwrite them before a body is written (D76).
   /^scripts\/neutralise-fixture\.ts$/,
 ];

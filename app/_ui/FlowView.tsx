@@ -19,8 +19,8 @@ import { MERGE_PATH } from "./MergePicker";
 type Id = number | null;
 const key = (from: Id, to: Id) => `${from}>${to}`;
 const short = (a: FlowAlliance) => a.tag ?? a.name ?? String(a.unionId);
-/** An alliance's own page: its member history, which every tracked alliance has. */
-const pageOf = (id: number) => `/alliances/${id}/history`;
+/** An alliance's own page (issue 822), which every tracked alliance has. */
+const pageOf = (id: number) => `/alliances/${id}`;
 const LINK = "text-link inline-flex min-h-11 items-center";
 
 /** An alliance's name as a link to its page; New and Left (no alliance) as plain text. */
