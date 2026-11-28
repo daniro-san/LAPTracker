@@ -243,8 +243,10 @@ export const patchNotes: PatchNote[] = [
       'Calendar: every KvK entry has a KvK plan. Officers name roles (four are suggested), add members by name, write a note, and "Make the message" turns it into a notice with the day and time in ST, ready for languages, copying and Discord. Roles are never a ranking.',
       "Insights → KvK: an officers-only map of where members were at the KvK's End reading, one unnamed dot each, in three bands of kills gained. Officers can type the castle's point to see who was near, mid or far. It shows where members stood at the reading, not where they fought, and never leaves the desk.",
       "Errors now carry the release they happened in, and sign-in, sharing thanks and the screenshot import record where they stop, with reason codes only.",
+      "Former members: officers can record why someone left (left, joined another alliance, removed by officers, inactive or unknown, with an optional note), and the view counts who left by month and reason, never by name.",
+      'Desk Home: a "New" line points officers to What\'s new, a page of the changes for the features their alliance has on, in their language.',
     ],
-    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798],
+    prs: [766, 768, 769, 784, 796, 786, 776, 787, 777, 774, 797, 800, 798, 802, 803],
     officer: [
       {
         title: {
